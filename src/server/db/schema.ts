@@ -81,10 +81,10 @@ export const gscConnections = pgTable('gsc_connections', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** kind: 'date' (key=''), 'query' (key=query), 'page' (key=page url) */
+/** kind: 'date' (key=''), 'query' (key=query), 'page' (key=page url), 'qpage' (key=page url + '\t' + query; last-28-day aggregate stored on the window's last date) */
 export const gscRows = pgTable('gsc_rows', {
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  kind: text('kind').$type<'date' | 'query' | 'page'>().notNull(),
+  kind: text('kind').$type<'date' | 'query' | 'page' | 'qpage'>().notNull(),
   date: date('date').notNull(),
   key: text('key').notNull().default(''),
   clicks: integer('clicks').notNull(),
@@ -112,6 +112,8 @@ export const calendarEntries = pgTable('calendar_entries', {
   publishError: jsonb('publish_error').$type<any>(),
   publishedUrl: text('published_url'),
   publishAttempts: integer('publish_attempts').notNull().default(0),
+  /** publishing area: the remote draft created for this entry ({ connId, id, url }) so retries reuse it instead of duplicating */
+  publishRemote: jsonb('publish_remote').$type<any>(),
   createdAt: created(),
 }, t => [index('cal_biz_date').on(t.businessId, t.date), index('cal_status').on(t.status, t.date)]);
 

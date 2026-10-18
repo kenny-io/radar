@@ -55,6 +55,17 @@ export const KW_SRC_L: Record<string, string> = { site: 'From your website', gsc
 export const COMMERCIAL_RE = /best|vs|alternative|software|app|template|tool/;
 export const kwIntentHeuristic = (kw: string) => (COMMERCIAL_RE.test(kw) ? 'Commercial' : 'Informational') as 'Commercial' | 'Informational';
 
+/* ── Business Profile fields (Inferred vs Edited is tracked per 'group.field') ── */
+export const PROFILE_FIELDS = {
+  business: ['name', 'industry', 'description', 'positioning', 'offerings', 'differentiators'],
+  audience: ['segments', 'buyers', 'needs', 'competitors'],
+  keywords: ['list'],
+  brand: ['logo', 'primary', 'secondary', 'voice', 'language', 'markets'],
+} as const;
+export type ProfileGroupKey = keyof typeof PROFILE_FIELDS;
+/** Fields in a group the user hasn't edited yet ("N to check"). */
+export const inferredLeft = (edited: Record<string, true> | null | undefined, g: ProfileGroupKey) => PROFILE_FIELDS[g].filter(k => !(edited || {})[g + '.' + k]).length;
+
 /* ── Blog connectors (radar-publish.jsx) ── */
 export interface PlatformDef { k: ConnType; l: string; d?: string; mono: string; fields?: [key: string, label: string, placeholder: string, type?: string][]; oauth?: boolean; oauthLabel?: string; pick?: string; secret?: boolean; help?: string }
 export const PLATFORMS: PlatformDef[] = ([

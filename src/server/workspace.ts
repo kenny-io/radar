@@ -4,6 +4,7 @@ import { notFound } from './errors';
 import { AI_DEFAULT, BRIEF_DEFAULT } from '@/lib/constants';
 import { addDays, todayIn } from '@/lib/format';
 import { kwMeasured } from './services/gsc/metrics';
+import { decrypt } from './crypto';
 import type { Article, BacklinksState, BlogState, BriefDay, BriefState, CalendarEntry, CalendarSettings, ConnectionPublic, GscState, JobSummary, Member, Profile, Proposal, Role, SocialAuto, SocialPack, Workspace, LiveLink } from '@/lib/types';
 
 export type BizRow = typeof schema.businesses.$inferSelect;
@@ -43,8 +44,10 @@ export function defaultProfile(domain: string): Profile {
 export function entryFromRow(r: typeof schema.calendarEntries.$inferSelect): CalendarEntry {
   return { id: r.id, title: r.title, kw: r.kw, type: r.type as any, vol: r.vol, kd: r.kd, date: String(r.date), mode: r.mode, url: r.url, measured: r.measured || null, audience: r.audience, relevance: r.relevance, dest: r.dest, status: r.status as any, publishError: r.publishError || null, publishedUrl: r.publishedUrl };
 }
+/** Webhook signing secret display form "whsec_7Kq2…f91A" (publishing area). The full secret never reaches the client. */
+function webhookSecretHint(enc: string): string { try { const s = decrypt<string>(enc) || ''; return s.length > 16 ? `whsec_${s.slice(6, 10)}…${s.slice(-4)}` : 'whsec_…'; } catch { return 'whsec_…'; } }
 export function connPublic(r: typeof schema.connections.$inferSelect): ConnectionPublic {
-  return { id: r.id, type: r.type as any, url: r.url, target: r.target, f: r.fields || {}, secretHint: r.secretEnc ? 'whsec_…' : null, status: r.status, lastError: r.lastError };
+  return { id: r.id, type: r.type as any, url: r.url, target: r.target, targetId: r.targetId, f: r.fields || {}, secretHint: r.secretEnc ? webhookSecretHint(r.secretEnc) : null, status: r.status, lastError: r.lastError };
 }
 export function proposalFromRow(r: typeof schema.proposals.$inferSelect): Proposal {
   return { ...(r.data || {}), id: r.id, direction: r.direction, partnerBusinessId: r.partnerBusinessId, decision: r.decision || null, note: r.note };

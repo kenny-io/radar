@@ -77,3 +77,19 @@ export async function kwMeasured(bid: string, kws: string[], days = 28): Promise
 
 /** The best ranking page for a query (most impressions), if the page dimension has it. Requires query+page data. */
 export async function hasData(bid: string) { return (await lastDataDate(bid)) != null; }
+
+/** Queries per page (query+page over the last 28 days with data; stored as kind 'qpage', key = page url + '\t' + query). */
+export async function pageQueries(bid: string): Promise<Map<string, QueryRow[]>> {
+  const rows = await db.select().from(R).where(and(eq(R.businessId, bid), eq(R.kind, 'qpage')));
+  const out = new Map<string, QueryRow[]>();
+  for (const r of rows) {
+    const i = r.key.indexOf('\t'); if (i < 0) continue;
+    const page = r.key.slice(0, i), q = r.key.slice(i + 1);
+    const a = out.get(page) || []; a.push({ q, clicks: r.clicks, impr: r.impressions, ctr: r.impressions ? r.clicks / r.impressions : 0, pos: r.position }); out.set(page, a);
+  }
+  for (const a of out.values()) a.sort((x, y) => y.impr - x.impr);
+  return out;
+}
+
+/** Expected CTR at a position (02-system.md §10): max(0.02, 0.30/pos). */
+export const expCtr = (pos: number) => Math.max(0.02, 0.3 / Math.max(1, pos));

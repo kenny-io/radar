@@ -45,20 +45,24 @@ export interface CalendarState { entries: CalendarEntry[]; settings: CalendarSet
 export type Block = ['p' | 'h2' | 'h3', string] | ['ul', string[]];
 export type ImageStyle = 'branded' | 'illustration' | 'photography' | 'infographic';
 export interface VideoRef { id: string; title: string; channel: string; dur: string; views: string; why: string }
-export interface Source { title: string; url: string; use: string; removed?: boolean }
+export interface Source { title: string; url: string; use: string; removed?: boolean; /** research notes (facts quoted from the source) — statistics in the draft must appear here */ notes?: string[] }
 export interface Article {
   entryId: string; generated: boolean; body: Block[];
   brief: { angle: string; outline: string[]; words: 900 | 1400 | 2200 };
   seo: { title: string; meta: string; slug: string };
-  img: { style: ImageStyle; seed: number; prompt: string; alt: string; url: string | null };
+  img: { style: ImageStyle; seed: number; prompt: string; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null };
   videos: string[]; videoMeta: VideoRef[]; sources: Source[];
   /** claim spans tied to sources: [blockIndex, text, sourceIndex] — used to flag claims when a source is removed */
   claims: { block: number; text: string; source: number }[];
+  /** ISO time the last draft job finished (content area) */
+  draftedAt?: string | null;
+  /** when videoMeta (YouTube suggestions) was fetched */
+  videoFetchedAt?: string | null;
 }
 
 export type ConnType = 'wordpress' | 'ghost' | 'webflow' | 'notion' | 'wix' | 'shopify' | 'wpcom' | 'webhook' | 'framer' | 'nextjs';
 /** Connection as the client sees it — never contains secrets. */
-export interface ConnectionPublic { id: string; type: ConnType; url: string; target: string | null; f: Record<string, string>; secretHint?: string | null; status: 'ok' | 'error'; lastError?: string | null }
+export interface ConnectionPublic { id: string; type: ConnType; url: string; target: string | null; targetId?: string | null; f: Record<string, string>; secretHint?: string | null; status: 'ok' | 'error'; lastError?: string | null }
 export interface BlogState { conns: ConnectionPublic[]; defaultId: string | null; mode: 'review' | 'autopilot'; autopilotAckAt: string | null; paused: boolean; tz: string; time: string }
 
 export type Platform = 'linkedin' | 'x' | 'facebook' | 'reddit' | 'quora';
@@ -77,6 +81,8 @@ export interface BriefItem {
   id: string; kind: 'reply' | 'post';
   plat?: BriefPlatform; where?: string; who?: string; url?: string; eng?: string; postedAt?: string; title: string; body?: string;
   replyTo?: { who: string; text: string } | null; asks?: boolean; fresh?: boolean;
+  /** The community's rules forbid self-promotion: Radar drafted no mention variant (mention === help). */
+  noMention?: boolean;
   plats?: BriefPlatform[]; pl?: BriefPlatform | null;
   tag: string; why: string;
   drafts: Record<string, string>; edits: Record<string, string>; mention: boolean; st: BriefItemState;

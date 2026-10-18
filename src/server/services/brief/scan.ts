@@ -1,0 +1,125 @@
+// The Daily Brief research agent (02-system §9): discover → collect (per platform) → rank → select → draft → save.
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/server/db';
+import { briefSettingsOf, bizToday, getBiz } from '@/server/workspace';
+import { notify } from '@/server/notify';
+import { getJob, type JobCtx } from '@/server/jobs/queue';
+import { fmtTime, nowHMIn } from '@/lib/format';
+import type { BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
+import { DRAFT_SUB, RANK_SUB, enabledInOrder, type BriefScanProgress, type BriefScanResult, type ScanMode, type ScanStep, type ScanStepKey } from '@/features/brief/model';
+import { buildPlan, clip, relevance, type Candidate } from './plan';
+import { sourceFor } from './sources';
+import { rankCandidates, selectReplies, type Scored } from './rank';
+import { draftPosts, draftReply, feedThemes } from './draft';
+import { createDay, getDay, withDay, type CandMark } from './store';
+import './stubs';
+
+export interface ScanPayload { mode: ScanMode; date?: string; fromJob?: string }
+const WINDOW_MS = 48 * 3600e3;
+const MAX_REPLIES = 2;
+
+/** Candidates kept with a failed job so "Keep this morning’s brief" can use them without re-reading. */
+const slim = (c: Candidate): Candidate => ({ ...c, body: clip(c.body, 400), comments: (c.comments || []).slice(0, 3) });
+
+export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult> {
+  const bid = ctx.businessId!;
+  const b = await getBiz(bid);
+  const profile = { ...(b.profile as Profile), domain: b.domain };
+  const settings = briefSettingsOf(b) as BriefSettings;
+  const date = ctx.payload.date || bizToday(b);
+  const existing = await getDay(bid, date);
+  let mode: ScanMode = ctx.payload.mode || 'first';
+  if (mode === 'first' && existing) mode = 'again';
+  if (mode === 'again' && !existing) mode = 'first';
+  const since = existing?.scannedAt ?? null;
+  const plats = enabledInOrder(settings.platforms);
+  const plan = buildPlan(profile);
+
+  let steps: ScanStep[] = [...plats.map(k => ({ k, sub: plan.subs[k] })), { k: 'rank', sub: RANK_SUB }, { k: 'draft', sub: DRAFT_SUB }];
+  let step: ScanStepKey = plats[0] || 'rank';
+  let threadsRead = 0;
+  const quiet = mode === 'keep';
+  const push = (extra: Partial<BriefScanProgress> = {}) => ctx.progress({ step, threadsRead, steps, mode, ...(quiet ? { quiet } : {}), ...extra } satisfies BriefScanProgress);
+  await push();
+
+  // ── Collect ──
+  const seen = new Set<string>([...((existing?.candidates || []) as CandMark[]).map(c => c.id)]);
+  let cands: Candidate[] = [];
+  if (mode === 'keep') {
+    const from = ctx.payload.fromJob ? await getJob(ctx.payload.fromJob) : null;
+    cands = ((from?.result as any)?.partialCands || []) as Candidate[];
+  } else {
+    for (const p of plats) {
+      step = p; await push();
+      try {
+        const got = await sourceFor(p)({
+          plan, profile, bid, mode, sinceMs: Date.now() - WINDOW_MS,
+          onRead: n => { threadsRead += n; push().catch(() => {}); },
+          setSub: s => { steps = steps.map(x => (x.k === p ? { ...x, sub: s } : x)); push().catch(() => {}); },
+        });
+        cands.push(...got);
+      } catch (e: any) {
+        console.error(`[brief.scan] ${p} source failed:`, e?.message || e);
+        await push({ failed: p });
+        // Partial results are kept only if the user chooses "Keep this morning’s brief" (only offered when a brief exists).
+        const partialCands = existing ? dedupe(cands).filter(c => !seen.has(c.id)).map(c => ({ c, r: relevance(c.title + ' ' + c.body, plan) })).sort((a, b2) => b2.r - a.r).slice(0, 40).map(x => slim(x.c)) : [];
+        return { mode, failed: p, since, partial: partialCands.length, ...({ partialCands } as any) };
+      }
+    }
+  }
+  const fresh = dedupe(cands).filter(c => !seen.has(c.id) && plats.includes(c.plat));
+
+  // ── Rank ──
+  step = 'rank'; await push();
+  const scored: Scored[] = fresh.length ? await rankCandidates(profile, plan, fresh, bid) : [];
+
+  // ── Select: at most 2 replies per enabled platform (counting what the day already has) ──
+  const have = (k: BriefPlatform) => ((existing?.items || []) as BriefItem[]).filter(i => i.kind === 'reply' && i.plat === k).length;
+  const cap: Partial<Record<BriefPlatform, number>> = Object.fromEntries(plats.map(k => [k, MAX_REPLIES - have(k)]));
+  const picked = selectReplies(scored, plats, cap);
+
+  // ── Draft ──
+  step = 'draft'; await push();
+  const isAdd = mode !== 'first';
+  const drafted = await Promise.all(picked.map(s => draftReply(profile, s, settings, bid, isAdd).catch(e => { console.error('[brief.scan] draft failed', s.id, e?.message); return null; })));
+  const replies = drafted.filter(Boolean) as BriefItem[];
+  if (picked.length && !replies.length) throw new Error('Drafting failed for every reply');
+  const posts = mode === 'first' ? await draftPosts(profile, feedThemes(scored), plats, bid, date).catch(e => { console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[]; }) : [];
+
+  // ── Save ──
+  const scannedAt = nowHMIn(b.timezone || 'America/New_York');
+  const at = new Date().toISOString();
+  const marks: CandMark[] = scored.map(s => ({ id: s.id, plat: s.plat, score: s.score, theme: s.theme, reject: s.reject, at }));
+  // Candidates that never reached ranking (pre-filtered) are still "seen" for Scan again.
+  for (const c of fresh) if (!marks.find(m => m.id === c.id)) marks.push({ id: c.id, plat: c.plat, at });
+  let addedIds: string[] = [];
+  if (mode === 'first') {
+    await createDay(bid, date, [...replies, ...posts], marks, scannedAt);
+    addedIds = [...replies, ...posts].map(i => i.id);
+    await db.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
+  } else {
+    addedIds = (await withDay(bid, date, row => {
+      const items = row.items as BriefItem[];
+      // Re-check the cap under the lock (items may have changed while drafting).
+      const counts: Record<string, number> = {};
+      for (const i of items) if (i.kind === 'reply' && i.plat) counts[i.plat] = (counts[i.plat] || 0) + 1;
+      const add: BriefItem[] = [];
+      for (const r of replies) {
+        if (items.some(i => i.id === r.id) || (counts[r.plat!] || 0) >= MAX_REPLIES) continue;
+        counts[r.plat!] = (counts[r.plat!] || 0) + 1; add.push(r);
+      }
+      return { items: [...add, ...items], candidates: [...((row.candidates || []) as CandMark[]), ...marks], scannedAt: mode === 'keep' ? undefined : scannedAt, ret: add.map(a => a.id) };
+    })) || [];
+  }
+  step = 'done'; await push();
+  if (mode === 'keep' && addedIds.length) {
+    await notify(bid, `${addedIds.length} new ${addedIds.length === 1 ? 'conversation' : 'conversations'} since ${fmtTime(since)}`, { tone: 'signal' });
+  }
+  return { mode, added: addedIds.length, addedIds, since };
+}
+
+function dedupe(cs: Candidate[]): Candidate[] {
+  const m = new Map<string, Candidate>();
+  for (const c of cs) if (!m.has(c.id)) m.set(c.id, c);
+  return [...m.values()];
+}

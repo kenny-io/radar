@@ -16,6 +16,12 @@ export const env = {
   // AI visibility engines (measurement targets)
   perplexityKey: e.PERPLEXITY_API_KEY || '',
   geminiKey: e.GEMINI_API_KEY || '',
+  // AI visibility engine model ids (official APIs; override per deployment)
+  visChatgptModel: e.VIS_CHATGPT_MODEL || 'gpt-6-sol',
+  visPerplexityModel: e.VIS_PERPLEXITY_MODEL || 'sonar-pro',
+  visGeminiModel: e.VIS_GEMINI_MODEL || 'gemini-2.5-flash',
+  visClaudeModel: e.VIS_CLAUDE_MODEL || 'claude-sonnet-5-5',
+  visGrokModel: e.VIS_GROK_MODEL || 'grok-4.7',
   // Data providers
   dataforseoLogin: e.DATAFORSEO_LOGIN || '',
   dataforseoPassword: e.DATAFORSEO_PASSWORD || '',
