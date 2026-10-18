@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   serverExternalPackages: ['@napi-rs/canvas', 'pg'],
   images: { unoptimized: true },
   async headers() {

@@ -1,3 +1,5 @@
+import nextEnv from '@next/env';
+nextEnv.loadEnvConfig(process.cwd());
 // Radar worker: runs jobs and the minute scheduler. `npm run worker`
 import '../server/jobs/all';
 import { startWorker } from '../server/jobs/queue';
