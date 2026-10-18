@@ -1,5 +1,4 @@
-import nextEnv from '@next/env';
-nextEnv.loadEnvConfig(process.cwd());
+import './env'; // must be first: loads .env / .env.local before anything reads process.env
 // Radar worker: runs jobs and the minute scheduler. `npm run worker`
 import '../server/jobs/all';
 import { startWorker } from '../server/jobs/queue';
