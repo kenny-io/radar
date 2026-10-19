@@ -13,6 +13,8 @@ export function Signup({ mode = 'signup' }: { mode?: 'signup' | 'signin' }) {
   const signin = mode === 'signin';
   const sp = useSearchParams();
   const [f, setF] = useState({ name: '', email: '', pw: '' }); const [err, setErr] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false);
+  const rawNext = sp?.get('next') || '';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/dashboard';
   useEffect(() => { if (sp?.get('error') === 'google') setErr({ email: GOOGLE_ERR }); }, [sp]);
   const submit = async (e?: React.FormEvent) => {
     e && e.preventDefault(); const er: Record<string, string> = {};
@@ -23,13 +25,13 @@ export function Signup({ mode = 'signup' }: { mode?: 'signup' | 'signin' }) {
     setBusy(true);
     try {
       await api(signin ? '/api/auth/signin' : '/api/auth/signup', { body: signin ? { email: f.email, password: f.pw } : { name: f.name.trim(), email: f.email, password: f.pw } });
-      window.location.href = '/dashboard';
+      window.location.href = next;
     } catch (x) {
       setBusy(false);
       if (x instanceof ApiError && x.errors) setErr(x.errors); else setErr({ pw: (x as Error).message || 'Radar couldn’t finish this. Try again.' });
     }
   };
-  const google = () => { setBusy(true); window.location.href = '/api/auth/google/start?next=/dashboard'; };
+  const google = () => { setBusy(true); window.location.href = '/api/auth/google/start?next=' + encodeURIComponent(next); };
   const hint = (k: string) => err[k] && <span style={{ color: 'var(--bad)' }}>{err[k]}</span>;
   return <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,1fr)', minHeight: '100vh' }} className="signup">
     <style>{`@media(max-width:860px){.signup{grid-template-columns:1fr!important}.signup-art{min-height:260px!important}}`}</style>
@@ -50,8 +52,8 @@ export function Signup({ mode = 'signup' }: { mode?: 'signup' | 'signin' }) {
         <Field label="Password" hint={err.pw ? hint('pw') : signin ? null : 'At least 8 characters'}><input className={'input' + (err.pw ? ' err' : '')} type="password" autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>
         <Btn kind="primary" size="lg" className="btn-block" type="submit" loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
         {signin
-          ? <p className="xs sub" style={{ textAlign: 'center' }}>New to Radar? <a href="/signup">Create account</a></p>
-          : <p className="xs sub" style={{ textAlign: 'center' }}>Already have an account? <a href="/signin">Sign in</a></p>}
+          ? <p className="xs sub" style={{ textAlign: 'center' }}>New to Radar? <a href={"/signup" + (rawNext ? "?next=" + encodeURIComponent(next) : "")}>Create account</a></p>
+          : <p className="xs sub" style={{ textAlign: 'center' }}>Already have an account? <a href={"/signin" + (rawNext ? "?next=" + encodeURIComponent(next) : "")}>Sign in</a></p>}
       </form>
     </div>
   </div>;

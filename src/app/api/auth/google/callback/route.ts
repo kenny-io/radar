@@ -30,5 +30,5 @@ export async function GET(req: Request) {
   await attachInvites(userId, email);
   await createSession(userId);
   const next = (st.data as any)?.next || '/';
-  return NextResponse.redirect(`${env.appUrl}${next.startsWith('/') ? next : '/'}`);
+  return NextResponse.redirect(`${env.appUrl}${next.startsWith('/') && !next.startsWith('//') ? next : '/'}`);
 }
