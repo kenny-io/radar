@@ -1,9 +1,10 @@
 // Shopify — Admin GraphQL API (OAuth, offline token). Target = a blog. articleCreate (unpublished) → articleUpdate(isPublished).
+import { env } from '@/server/env';
 import type { Connector, ConnCtx } from '../types';
 import { TEST_HTML, TEST_TITLE } from '../types';
 import { jsonBody, PublishError, reqJson } from '../http';
 
-export const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || '2026-07';
+export const SHOPIFY_API_VERSION = env.shopifyApiVersion;
 export const shopDomain = (s: string) => String(s || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 
 async function gql<T = any>(c: ConnCtx, query: string, variables: any = {}): Promise<T> {

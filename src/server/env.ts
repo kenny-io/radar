@@ -39,6 +39,9 @@ export const env = {
   shopifyClientId: e.SHOPIFY_CLIENT_ID || '', shopifyClientSecret: e.SHOPIFY_CLIENT_SECRET || '',
   wpcomClientId: e.WPCOM_CLIENT_ID || '', wpcomClientSecret: e.WPCOM_CLIENT_SECRET || '',
   githubClientId: e.GITHUB_CLIENT_ID || '', githubClientSecret: e.GITHUB_CLIENT_SECRET || '',
+  shopifyApiVersion: e.SHOPIFY_API_VERSION || '2026-07',
+  /** Allow blog connectors to reach private/internal hosts (self-hosted setups). Off by default (SSRF guard). */
+  allowPrivateHosts: e.RADAR_ALLOW_PRIVATE_HOSTS === '1',
   // Email
   resendKey: e.RESEND_API_KEY || '',
   mailFrom: e.MAIL_FROM || 'Radar <hello@radar.local>',

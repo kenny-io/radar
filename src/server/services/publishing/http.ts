@@ -40,7 +40,7 @@ function privateIp(ip: string): boolean {
   return v === '::1' || v === '::' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe80') || (v.startsWith('::ffff:') && privateIp(v.slice(7)));
 }
 export async function assertPublicHost(host: string) {
-  if (!env.isProd || process.env.RADAR_ALLOW_PRIVATE_HOSTS === '1') return;
+  if (!env.isProd || env.allowPrivateHosts) return;
   const name = host.replace(/:\d+$/, '').replace(/^\[|\]$/g, '');
   const addrs = net.isIP(name) ? [{ address: name }] : await dns.lookup(name, { all: true }).catch(() => []);
   if (!addrs.length) throw new PublishError(0, 'DNS lookup failed', host, 'network');

@@ -23,6 +23,7 @@
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.0",
+    "framer-api": "^5.1.0",
     "geist": "^1.8.1",
     "jose": "^6.0.0",
     "next": "15.5.28",
