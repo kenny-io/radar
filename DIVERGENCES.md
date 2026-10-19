@@ -257,3 +257,9 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 | Settings → Account name | Edits local state | Autosaves to `PATCH /api/me` (600ms debounce) and refreshes the signed-in user (sidebar initials). | — | No | Logged |
 | Backlinks → join toast with no matches | — | Shows "Welcome to the network. Radar found 0 relevant matches." (truthful count). | No copy designed for zero matches. | Yes | Needs approval |
 | Dashboard → Upcoming / Awaiting review (mobile) | `.grid-2` collapses to `1fr` below 900px | The two Sections get `minWidth: 0`, so long titles truncate instead of widening the page. The prototype has the same CSS and would overflow horizontally at 390px. | Layout bug in the shared CSS; fixed locally without visual change at desktop. | No (prevents overflow) | Logged |
+
+## Public pages (added for launch)
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| `/privacy`, `/terms`, `/bot` | Not designed | Three public pages with a minimal shell (Radar mark, nav, single text column) built from the existing tokens. Contact address comes from `SUPPORT_INBOX` (falls back to `MAIL_FROM`). | Google OAuth verification needs a live privacy policy and terms on the authorized domain, including the Limited Use disclosure for `webmasters.readonly`. `CRAWLER_USER_AGENT` links to `/bot`. | Yes (new pages) | Needs approval (design and legal review of the text) |
