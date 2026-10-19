@@ -57,8 +57,8 @@ export const searchSource = (plat: BriefPlatform): Source => async (ctx) => {
       id, plat, url: r.url, title: clip(cleanTitle(r.title || ''), 300), body: clip(r.snippet || '', 600), postedAt: posted,
       where: plat === 'reddit' ? 'r/' + sub : plat === 'x' ? handle : plat === 'linkedin' ? 'LinkedIn' : 'Quora',
       who: handle, engN: 0, eng: '', community: sub,
-      // Subreddit rules can't be read without the Reddit API → never draft a mention there.
-      promoBanned: plat === 'reddit' ? true : undefined,
+      // Subreddit rules can't be read without the Reddit API: the plug is drafted, and the user is asked to check them.
+      rulesUnknown: plat === 'reddit' ? true : undefined,
     });
   }
   const list = [...out.values()];

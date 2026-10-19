@@ -5,6 +5,7 @@ import { db, schema } from '@/server/db';
 import type { BriefItem } from '@/lib/types';
 
 export type DayRow = typeof schema.briefDays.$inferSelect;
+export type DayStats = Record<string, { read: number }>;
 export interface CandMark { id: string; plat: string; score?: number; theme?: string; reject?: string; at: string }
 
 export async function getDay(bid: string, date: string): Promise<DayRow | null> {
@@ -13,7 +14,7 @@ export async function getDay(bid: string, date: string): Promise<DayRow | null> 
 }
 
 /** Lock the day row, let `fn` compute the change, write it. Returns fn's value (null → no write). */
-export async function withDay<T>(bid: string, date: string, fn: (row: DayRow) => { items?: BriefItem[]; candidates?: CandMark[]; scannedAt?: string; ret: T } | null): Promise<T | null> {
+export async function withDay<T>(bid: string, date: string, fn: (row: DayRow) => { items?: BriefItem[]; candidates?: CandMark[]; scannedAt?: string; stats?: DayStats; ret: T } | null): Promise<T | null> {
   return db.transaction(async tx => {
     const r = await tx.select().from(schema.briefDays).where(and(eq(schema.briefDays.businessId, bid), eq(schema.briefDays.date, date))).for('update').limit(1);
     if (!r[0]) return null;
@@ -23,14 +24,22 @@ export async function withDay<T>(bid: string, date: string, fn: (row: DayRow) =>
     if (out.items) set.items = out.items;
     if (out.candidates) set.candidates = out.candidates;
     if (out.scannedAt) set.scannedAt = out.scannedAt;
+    if (out.stats) set.stats = out.stats;
     if (Object.keys(set).length) await tx.update(schema.briefDays).set(set).where(and(eq(schema.briefDays.businessId, bid), eq(schema.briefDays.date, date)));
     return out.ret;
   });
 }
 
+/** Sum two days' per-platform read counts. */
+export function mergeStats(a: DayStats | null | undefined, b: DayStats): DayStats {
+  const out: DayStats = { ...(a || {}) };
+  for (const [k, v] of Object.entries(b)) out[k] = { read: (out[k]?.read || 0) + v.read };
+  return out;
+}
+
 /** Insert a new day, or (if one appeared meanwhile) merge into it. */
-export async function createDay(bid: string, date: string, items: BriefItem[], candidates: CandMark[], scannedAt: string) {
-  await db.insert(schema.briefDays).values({ businessId: bid, date, items, candidates, scannedAt })
+export async function createDay(bid: string, date: string, items: BriefItem[], candidates: CandMark[], scannedAt: string, stats: DayStats = {}) {
+  await db.insert(schema.briefDays).values({ businessId: bid, date, items, candidates, scannedAt, stats })
     .onConflictDoNothing({ target: [schema.briefDays.businessId, schema.briefDays.date] });
 }
 

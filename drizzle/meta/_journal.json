@@ -15,6 +15,13 @@
       "when": 1792426844558,
       "tag": "0001_visibility_attempted_at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792436820092,
+      "tag": "0002_brief_day_stats",
+      "breakpoints": true
     }
   ]
 }

@@ -11,7 +11,7 @@ import { buildPlan, clip, relevance, type Candidate } from './plan';
 import { sourceFor } from './sources';
 import { rankCandidates, selectReplies, type Scored } from './rank';
 import { draftPosts, draftReply, feedThemes } from './draft';
-import { createDay, getDay, withDay, type CandMark } from './store';
+import { createDay, getDay, mergeStats, withDay, type CandMark, type DayStats } from './store';
 import './stubs';
 
 export interface ScanPayload { mode: ScanMode; date?: string; fromJob?: string }
@@ -38,6 +38,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   let steps: ScanStep[] = [...plats.map(k => ({ k, sub: plan.subs[k] })), { k: 'rank', sub: RANK_SUB }, { k: 'draft', sub: DRAFT_SUB }];
   let step: ScanStepKey = plats[0] || 'rank';
   let threadsRead = 0;
+  const stats: DayStats = {};
   const quiet = mode === 'keep';
   const push = (extra: Partial<BriefScanProgress> = {}) => ctx.progress({ step, threadsRead, steps, mode, ...(quiet ? { quiet } : {}), ...extra } satisfies BriefScanProgress);
   await push();
@@ -50,11 +51,11 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
     cands = ((from?.result as any)?.partialCands || []) as Candidate[];
   } else {
     for (const p of plats) {
-      step = p; await push();
+      step = p; stats[p] = stats[p] || { read: 0 }; await push();
       try {
         const got = await sourceFor(p)({
           plan, profile, bid, mode, sinceMs: Date.now() - WINDOW_MS,
-          onRead: n => { threadsRead += n; push().catch(() => {}); },
+          onRead: n => { threadsRead += n; stats[p] = { read: (stats[p]?.read || 0) + n }; push().catch(() => {}); },
           setSub: s => { steps = steps.map(x => (x.k === p ? { ...x, sub: s } : x)); push().catch(() => {}); },
         });
         cands.push(...got);
@@ -94,7 +95,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   for (const c of fresh) if (!marks.find(m => m.id === c.id)) marks.push({ id: c.id, plat: c.plat, at });
   let addedIds: string[] = [];
   if (mode === 'first') {
-    await createDay(bid, date, [...replies, ...posts], marks, scannedAt);
+    await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats);
     addedIds = [...replies, ...posts].map(i => i.id);
     await db.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
   } else {
@@ -108,7 +109,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
         if (items.some(i => i.id === r.id) || (counts[r.plat!] || 0) >= MAX_REPLIES) continue;
         counts[r.plat!] = (counts[r.plat!] || 0) + 1; add.push(r);
       }
-      return { items: [...add, ...items], candidates: [...((row.candidates || []) as CandMark[]), ...marks], scannedAt: mode === 'keep' ? undefined : scannedAt, ret: add.map(a => a.id) };
+      return { items: [...add, ...items], candidates: [...((row.candidates || []) as CandMark[]), ...marks], scannedAt: mode === 'keep' ? undefined : scannedAt, stats: mergeStats(row.stats as DayStats, stats), ret: add.map(a => a.id) };
     })) || [];
   }
   step = 'done'; await push();

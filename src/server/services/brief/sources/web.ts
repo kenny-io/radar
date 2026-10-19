@@ -65,8 +65,8 @@ export const webSource = (plat: BriefPlatform): Source => async (ctx) => {
       who: who || (plat === 'x' ? '@' + u.pathname.split('/')[1] : ''), url: t.url, title: clip(t.title, 300), body: clip(t.excerpt || '', 600), postedAt: posted,
       engN: n, eng: n ? engLabel(n, plat === 'quora' ? 'answers' : plat === 'x' ? 'replies' : 'comments') : '',
       community: plat === 'reddit' ? u.pathname.split('/')[2] : undefined,
-      // Subreddit rules can't be read without the API → never draft a mention there.
-      promoBanned: plat === 'reddit' ? true : undefined,
+      // Subreddit rules can't be read without the Reddit API: the plug is drafted, and the user is asked to check them.
+      rulesUnknown: plat === 'reddit' ? true : undefined,
     });
   }
   return out;

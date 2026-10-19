@@ -29,3 +29,22 @@ describe('cleanTitle', () => {
     expect(cleanTitle('Why our API docs drift | LinkedIn')).toBe('Why our API docs drift');
   });
 });
+
+import { plugOrFallback } from './draft';
+import { mergeStats } from './store';
+describe('plug variant', () => {
+  const p: any = { ...profile, brand: {}, domain: 'thally.io' };
+  it('keeps a model plug that names the business', () => {
+    expect(plugOrFallback('Map docs to anchors. Full disclosure, I work on Thally, which flags this per PR.', 'Map docs to anchors.', p, 'reddit')).toContain('Thally, which flags');
+  });
+  it('never returns the help text unchanged', () => {
+    const out = plugOrFallback('Map docs to anchors.', 'Map docs to anchors.', p, 'reddit');
+    expect(out).not.toBe('Map docs to anchors.');
+    expect(out).toMatch(/I work on Thally/);
+  });
+});
+describe('mergeStats', () => {
+  it('sums reads per platform across scans', () => {
+    expect(mergeStats({ hn: { read: 3 } }, { hn: { read: 2 }, x: { read: 0 } })).toEqual({ hn: { read: 5 }, x: { read: 0 } });
+  });
+});

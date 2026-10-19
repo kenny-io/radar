@@ -168,6 +168,9 @@ export function DailyBrief() {
   const it = items.find(i => i.id === sel) || (allDoneCalc(items, isToday) ? null : open[0] || items[0] || null);
   const allDone = allDoneCalc(items, isToday);
   const progress = (live?.progress || null) as BriefScanProgress | null;
+  /** Enabled platforms (or, for past days, the ones scanned) that produced no conversations, so silence is explained. */
+  const quietPlats: BriefPlatform[] = D ? PORDER.filter(k => (isToday ? br.settings.platforms.includes(k) : !!D.stats?.[k]) && !items.some(i => i.kind === 'reply' && i.plat === k)) : [];
+  const quietList = quietPlats.length ? <div className="col brief-quiet" style={{ gap: 8 }}>{quietPlats.map(k => { const n = D?.stats?.[k]?.read; return <span key={k} className="row xs sub" style={{ gap: 8 }}><PlatLogo k={k} s={13} /><span>{BPLAT[k]} · {n == null ? 'Not scanned yet. Scan again to include it.' : `Nothing worth joining${isToday ? ' yet' : ''} · ${n === 0 ? 'no recent threads found' : `read ${n} ${n === 1 ? 'thread' : 'threads'}`}`}</span></span>; })}</div> : null;
   return <div className="page">
     <PageHead title="Daily Brief" sub={isToday ? 'Conversations worth joining today, with replies drafted in your voice. You choose what to post.' : `What Radar found on ${fmtD(day, { weekday: 'long', month: 'long', day: 'numeric' })}.`}>
       <div className="row" style={{ gap: 4 }}>
@@ -188,6 +191,7 @@ export function DailyBrief() {
     : !items.length ? <Empty icon="brief" title={isToday ? 'Nothing worth joining yet' : 'Nothing worth joining that day'}
         body={isToday ? `Radar read today’s conversations but none were a good fit for ${name}. It scans again tomorrow at ${fmtTime(br.settings.time)}, or you can scan again later today.` : 'Radar scanned but found no conversations that were a good fit.'}>
         {isToday && <Btn kind="secondary" onClick={() => runScan('again')}>Scan again</Btn>}
+        {quietList && <div style={{ flexBasis: '100%', display: 'flex', justifyContent: 'center', marginTop: 16 }}>{quietList}</div>}
       </Empty>
     : <div className={'brief-grid' + (mob ? ' mob' : '')}>
       <nav className="brief-q" aria-label="Today’s recommendations">
@@ -197,6 +201,7 @@ export function DailyBrief() {
             <span className="row xs sub" style={{ gap: 6, minWidth: 0 }}>{x.kind === 'post' ? (x.plats || []).map(p => <PlatLogo key={p} k={p} s={13} />) : <span className="trunc">{x.where}{isToday && age != null ? ' · ' + ageL(age) : ''}</span>}{x.fresh && <span style={{ color: 'var(--signal-ink)', flex: 'none' }}>New</span>}<span className="grow" />{x.st === 'posted' ? <Status tone="ok" style={{ fontSize: 12 }}>Posted</Status> : x.st === 'skipped' ? <span>Skipped</span> : x.st === 'expired' ? <span>Expired</span> : x.st === 'copied' ? <Status tone="signal" style={{ fontSize: 12 }}>Copied</Status> : null}</span>
           </button>; })}
         </div>)}
+        {quietList}
         {isToday && <span className="xs sub brief-keys hide-sm"><span className="kbd">↑</span><span className="kbd">↓</span> move · <span className="kbd">C</span> copy · <span className="kbd">S</span> skip</span>}
       </nav>
       <div ref={detailRef} className="brief-dw">
@@ -252,7 +257,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     <div className="brief-compose">
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', minHeight: 32 }}>
         <span className="label grow">{it.kind === 'reply' ? 'Your reply' : 'Your post'}</span>
-        {it.kind === 'reply' && live && <Seg value={it.mention ? 'm' : 'h'} onChange={x => setItem({ mention: x === 'm' })} options={[{ v: 'h', l: 'Just help' }, { v: 'm', l: 'Mention ' + name }]} />}
+        {it.kind === 'reply' && live && <Seg value={it.mention ? 'm' : 'h'} onChange={x => setItem({ mention: x === 'm' })} options={it.noMention ? [{ v: 'h', l: 'Just help' }] : [{ v: 'h', l: 'Just help' }, { v: 'm', l: 'Plug ' + name }]} />}
         {it.kind === 'post' && (it.plats || []).length > 1 && live && <Seg value={it.pl as string} onChange={x => setItem({ pl: x as BriefPlatform })} options={(it.plats || []).map(p => ({ v: p as string, l: BPLAT[p] }))} />}
       </div>
       <AutoText className="input-bare brief-text" value={text} readOnly={!live} onChange={e => setText(e.target.value)} style={{ opacity: busy ? .35 : 1 }} aria-label={it.kind === 'reply' ? 'Reply text' : 'Post text'} />
@@ -279,7 +284,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={() => act.skip(it)}>Skip</Btn>}
       {!live && <Btn kind="link" className="small" onClick={() => act.undo(it)}>Undo</Btn>}
     </div>}
-    {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.` : it.mention ? `Mentions ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Mention ${name}” if it fits.`}</p>}
+    {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{it.noMention ? `${it.where} doesn’t allow self-promotion, so this reply stays purely helpful.` : it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.${it.mention && it.rulesUnknown ? ` Check ${it.where}’s rules on self-promotion before posting this version.` : ''}` : it.mention ? `Plugs ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Plug ${name}” if it fits.`}</p>}
   </article>;
 }
 
@@ -311,7 +316,7 @@ function BriefSettingsSheet({ open, onClose, br }: { open: boolean; onClose: () 
   return <Sheet open={open} onClose={onClose} title="Brief settings" width={480} footer={<><span className="grow" /><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" disabled={!dirty || !st.platforms.length} onClick={save}>Save</Btn></>}>
     <div className="col" style={{ gap: 28 }}>
       <Field label="Where to look" hint="Up to two conversations from each."><BriefPlatforms value={st.platforms} onChange={p => setSt({ ...st, platforms: p })} /></Field>
-      <Field label={`Mention ${name}`} hint={st.mention === 'asked' ? 'Only when someone asks for a tool or recommendation. You can switch any reply.' : st.mention === 'relevant' ? 'Whenever it fits, always with a disclosure.' : 'Replies stay purely helpful.'}><Seg value={st.mention} onChange={v => setSt({ ...st, mention: v })} options={BMENTION.map(o => ({ v: o.v, l: o.l }))} /></Field>
+      <Field label={`Plug ${name}`} hint={st.mention === 'asked' ? 'Only when someone asks for a tool or recommendation. You can switch any reply.' : st.mention === 'relevant' ? 'Whenever it fits, always with a disclosure.' : 'Replies stay purely helpful.'}><Seg value={st.mention} onChange={v => setSt({ ...st, mention: v })} options={BMENTION.map(o => ({ v: o.v, l: o.l }))} /></Field>
       <Field label="Have it ready by"><input type="time" className="input" style={{ width: 140 }} value={st.time} onChange={e => setSt({ ...st, time: e.target.value })} /></Field>
       <p className="small sub">Topics and voice come from your <Btn kind="link" className="small" onClick={() => { onClose(); go('profile'); }}>Business Profile</Btn>.</p>
     </div>

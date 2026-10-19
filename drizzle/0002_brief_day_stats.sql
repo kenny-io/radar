@@ -1,0 +1,1 @@
+ALTER TABLE "brief_days" ADD COLUMN "stats" jsonb DEFAULT '{}'::jsonb NOT NULL;

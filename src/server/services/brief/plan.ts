@@ -19,8 +19,10 @@ export interface Candidate {
   comments?: { who: string; text: string }[];
   /** Subreddit/community name, when the platform has one */
   community?: string;
-  /** Community rules forbid self-promotion (or the rules couldn't be read) → no mention variant */
+  /** Community rules forbid self-promotion → no plug variant */
   promoBanned?: boolean;
+  /** Found by search, so the community's rules weren't read: the plug variant is drafted and the user is told to check them */
+  rulesUnknown?: boolean;
 }
 
 export interface Plan {

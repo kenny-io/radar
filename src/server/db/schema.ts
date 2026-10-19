@@ -152,6 +152,8 @@ export const briefDays = pgTable('brief_days', {
   scannedAt: text('scanned_at').notNull(),
   items: jsonb('items').$type<any[]>().notNull().default([]),
   candidates: jsonb('candidates').$type<any[]>().notNull().default([]),
+  /** Per-platform scan outcome for the day: threads read (all scans), so the page can say where nothing fit. */
+  stats: jsonb('stats').$type<Record<string, { read: number }>>().notNull().default({}),
 }, t => [primaryKey({ columns: [t.businessId, t.date] })]);
 
 export const aiPrompts = pgTable('ai_prompts', {

@@ -87,7 +87,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
   for (const d of days) {
     const date = String(d.date);
     const past = date < today;
-    briefDaysMap[date] = { date, scannedAt: d.scannedAt, items: (d.items || []).map((i: any) => (past && (i.st === 'open' || i.st === 'copied') ? { ...i, st: 'expired' } : i)) };
+    briefDaysMap[date] = { date, scannedAt: d.scannedAt, stats: (d.stats || {}) as BriefDay['stats'], items: (d.items || []).map((i: any) => (past && (i.st === 'open' || i.st === 'copied') ? { ...i, st: 'expired' } : i)) };
   }
   const brief: BriefState = { setup: b.briefSetup, settings: briefSettingsOf(b) as any, days: briefDaysMap };
   const proposals = props.map(proposalFromRow);

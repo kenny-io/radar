@@ -83,11 +83,13 @@ export interface BriefItem {
   replyTo?: { who: string; text: string } | null; asks?: boolean; fresh?: boolean;
   /** The community's rules forbid self-promotion: Radar drafted no mention variant (mention === help). */
   noMention?: boolean;
+  /** The community's rules couldn't be read (found by search) */
+  rulesUnknown?: boolean;
   plats?: BriefPlatform[]; pl?: BriefPlatform | null;
   tag: string; why: string;
   drafts: Record<string, string>; edits: Record<string, string>; mention: boolean; st: BriefItemState;
 }
-export interface BriefDay { date: string; scannedAt: string; items: BriefItem[] }
+export interface BriefDay { date: string; scannedAt: string; items: BriefItem[]; stats?: Partial<Record<BriefPlatform, { read: number }>> }
 export interface BriefState { setup: boolean; settings: BriefSettings; days: Record<string, BriefDay> }
 
 export type AiEngine = 'ChatGPT' | 'Perplexity' | 'Gemini' | 'Claude' | 'Grok';
