@@ -56,12 +56,34 @@ function hasKey(p: string) { return p === 'Anthropic' ? !!env.anthropicKey : p =
 async function modelFor(task: AiTask, businessId?: string | null): Promise<string> {
   if (!businessId) return AI_DEFAULT[task];
   const r = await db.select({ ai: schema.businesses.ai }).from(schema.businesses).where(eq(schema.businesses.id, businessId)).limit(1);
-  const id = (r[0]?.ai || {})[task] || AI_DEFAULT[task];
-  if (!hasKey(providerOf(id)) && process.env.RADAR_AI_FALLBACK === '1') {
-    // Operator opted in: fall back to any configured provider (logged per call).
-    for (const fb of ['claude-opus-5.5', 'gpt-6-sol', 'grok-4.7']) if (hasKey(providerOf(fb))) return fb;
+  return (r[0]?.ai || {})[task] || AI_DEFAULT[task];
+}
+
+/* Provider failover. A business's chosen model is always tried first. If its provider has no key, is out of credit,
+   rejects the key, or keeps failing, the call moves to the next configured provider (closest equivalent per task).
+   Account-level failures (401/402/403, or 429 with a quota/credit/billing message) mark the provider unavailable for
+   10 minutes so later calls skip it without waiting. The model actually used is logged in ai_calls. */
+const FALLBACKS: Record<AiTask, string[]> = { writing: ['claude-sonnet-5.5', 'grok-4.7', 'gpt-6-sol'], research: ['claude-opus-5.5', 'gpt-6-sol', 'grok-4.7'] };
+const DOWN_MS = 10 * 60_000;
+const downUntil = new Map<string, number>();
+const isDown = (p: string) => (downUntil.get(p) || 0) > Date.now();
+export function isAccountError(e: any): boolean {
+  const st = Number(e?.status) || Number(String(e?.message || '').match(/^HTTP (\d{3})/)?.[1]) || 0;
+  const msg = String(e?.message || '');
+  if (st === 401 || st === 402 || st === 403) return true;
+  return st === 429 && /quota|credit|billing|insufficient|exceeded your current|spend limit|payment/i.test(msg);
+}
+function candidates(task: AiTask, chosen: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const id of [chosen, ...FALLBACKS[task]]) {
+    const p = providerOf(id);
+    if (seen.has(p)) continue;
+    seen.add(p);
+    if (hasKey(p) && !isDown(p)) out.push(id);
   }
-  return id;
+  // Every provider looks unavailable: still try the chosen model (a stale "down" mark should not block all work).
+  return out.length ? out : [chosen];
 }
 
 async function callProvider(modelId: string, c: ProviderCall): Promise<ProviderResult> {
@@ -69,6 +91,37 @@ async function callProvider(modelId: string, c: ProviderCall): Promise<ProviderR
   if (p === 'Anthropic') return anthropicRun(c);
   if (p === 'OpenAI') return openaiRun(c, { base: 'https://api.openai.com/v1', key: env.openaiKey });
   return openaiRun(c, { base: 'https://api.x.ai/v1', key: env.xaiKey });
+}
+
+/** Bring a model's output inside the schema's hard limits before validation: trim over-long strings at a word
+ *  boundary, drop surplus array items, clamp numbers. Models (especially with constraints relaxed for structured
+ *  output) occasionally overshoot by a few characters; that shouldn't fail a whole task. */
+export function fitToSchema(v: any, s: any, root: any = s): any {
+  if (v == null || !s || typeof s !== 'object') return v;
+  if (s.$ref && typeof s.$ref === 'string') { const ref = s.$ref.replace(/^#\/(\$defs|definitions)\//, ''); const d = root?.$defs?.[ref] ?? root?.definitions?.[ref]; return d ? fitToSchema(v, d, root) : v; }
+  for (const k of ['anyOf', 'oneOf'] as const) if (Array.isArray(s[k])) {
+    const branch = s[k].find((b: any) => (b.type === 'array') === Array.isArray(v) && (b.type === 'null') === (v === null) && (!b.type || b.type === 'array' || b.type === 'null' || typeof v === (b.type === 'integer' ? 'number' : b.type)));
+    return branch ? fitToSchema(v, branch, root) : v;
+  }
+  if (typeof v === 'string') {
+    if (s.maxLength != null && v.length > s.maxLength) { const cut = v.slice(0, s.maxLength); const sp = cut.lastIndexOf(' '); return (sp > 0 ? cut.slice(0, sp) : cut).replace(/[\s,;:.\-–—]+$/, ''); }
+    return v;
+  }
+  if (typeof v === 'number') {
+    let n = v; if (s.type === 'integer') n = Math.round(n);
+    if (s.minimum != null) n = Math.max(s.minimum, n); if (s.maximum != null) n = Math.min(s.maximum, n);
+    return n;
+  }
+  if (Array.isArray(v)) {
+    const items = s.items ? v.map(x => fitToSchema(x, s.items, root)) : v;
+    return s.maxItems != null ? items.slice(0, s.maxItems) : items;
+  }
+  if (typeof v === 'object' && s.properties) {
+    const o: any = { ...v };
+    for (const [k, sub] of Object.entries<any>(s.properties)) if (k in o) o[k] = fitToSchema(o[k], sub, root);
+    return o;
+  }
+  return v;
 }
 
 function extractJson(text: string): any {
@@ -81,37 +134,42 @@ function extractJson(text: string): any {
   return null;
 }
 
-/** Run a task. Retries transient failures; validates JSON against the schema. Throws RadarError with generic copy on failure. */
+/** Run a task. Retries transient failures, fails over between providers, validates JSON against the schema. Throws RadarError with generic copy on failure. */
 export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { businessId?: string | null; retries?: number } = {}): Promise<AiOutput<T>> {
-  const modelId = await modelFor(task, opts.businessId);
-  const provider = providerOf(modelId);
+  const chosen = await modelFor(task, opts.businessId);
   const jsonSchema = input.schema ? z.toJSONSchema(input.schema as any, { target: 'draft-7' } as any) : undefined;
-  const call: ProviderCall = { apiModel: apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || 120000 };
   const retries = opts.retries ?? 2;
+  const models = env.devStubs ? [chosen] : candidates(task, chosen);
   let lastErr: any = null;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const t0 = Date.now();
-    try {
-      let res: ProviderResult;
-      if (env.devStubs) res = await stubRun(input, jsonSchema);
-      else {
-        if (!hasKey(provider)) throw new Error(`No API key configured for ${provider}`);
-        res = await callProvider(modelId, call);
+  for (const modelId of models) {
+    const provider = providerOf(modelId);
+    const call: ProviderCall = { apiModel: apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || 120000 };
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const t0 = Date.now();
+      try {
+        let res: ProviderResult;
+        if (env.devStubs) res = await stubRun(input, jsonSchema);
+        else {
+          if (!hasKey(provider)) throw Object.assign(new Error(`No API key configured for ${provider}`), { permanent: true });
+          res = await callProvider(modelId, call);
+        }
+        let json: any = null;
+        if (input.schema) {
+          const raw = fitToSchema(res.json ?? extractJson(res.text), jsonSchema);
+          const parsed = (input.schema as z.ZodType<T>).safeParse(raw);
+          if (!parsed.success) throw new Error('Structured output failed validation: ' + parsed.error.message.slice(0, 300));
+          json = parsed.data;
+        }
+        log(opts.businessId, task, input.purpose, modelId, provider, Date.now() - t0, res, true, null);
+        if (modelId !== chosen) console.warn(`[ai] ${input.purpose}: used ${modelId} (fallback from ${chosen})`);
+        return { text: res.text, json, citations: res.citations || [], model: modelId, provider };
+      } catch (e: any) {
+        lastErr = e;
+        log(opts.businessId, task, input.purpose, modelId, provider, Date.now() - t0, null, false, String(e?.message || e));
+        if (isAccountError(e)) { downUntil.set(provider, Date.now() + DOWN_MS); console.warn(`[ai] ${provider} unavailable for 10 min: ${String(e?.message || e).slice(0, 160)}`); break; }
+        if (e?.permanent) break;
+        if (attempt < retries) await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
       }
-      let json: any = null;
-      if (input.schema) {
-        const raw = res.json ?? extractJson(res.text);
-        const parsed = (input.schema as z.ZodType<T>).safeParse(raw);
-        if (!parsed.success) throw new Error('Structured output failed validation: ' + parsed.error.message.slice(0, 300));
-        json = parsed.data;
-      }
-      log(opts.businessId, task, input.purpose, modelId, provider, Date.now() - t0, res, true, null);
-      return { text: res.text, json, citations: res.citations || [], model: modelId, provider };
-    } catch (e: any) {
-      lastErr = e;
-      log(opts.businessId, task, input.purpose, modelId, provider, Date.now() - t0, null, false, String(e?.message || e));
-      if (e?.permanent) break;
-      if (attempt < retries) await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
     }
   }
   console.error(`[ai] ${input.purpose} failed`, lastErr?.message || lastErr);

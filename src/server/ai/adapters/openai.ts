@@ -20,6 +20,16 @@ export async function openaiRun(c: ProviderCall, cfg: { base: string; key: strin
   if (c.system) input.push({ role: 'system', content: c.system });
   input.push({ role: 'user', content: c.prompt });
   const body: any = { model: c.apiModel, input, max_output_tokens: c.maxTokens, ...(c.temperature != null ? { temperature: c.temperature } : {}) };
+  if (c.webSearch && c.jsonSchema) {
+    // Two passes, as in the Anthropic adapter: research with web search in free text, then structure the findings.
+    // A single search+schema call can return an empty structure after searching (seen with Grok).
+    const researched = collect(await fetchJson(`${cfg.base}/responses`, { method: 'POST', headers, body: JSON.stringify({ ...body, tools: [{ type: 'web_search' }], input: [...input.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }), timeoutMs: c.timeoutMs }));
+    const prompt = `${c.prompt}\n\nResearch findings to use:\n${researched.text}\n\nSources found:\n${researched.citations.map(x => '- ' + x.url).join('\n')}`;
+    const out = await openaiRun({ ...c, webSearch: false, prompt }, cfg);
+    out.citations = [...researched.citations, ...out.citations];
+    out.inputTokens = (out.inputTokens || 0) + (researched.inputTokens || 0); out.outputTokens = (out.outputTokens || 0) + (researched.outputTokens || 0);
+    return out;
+  }
   if (c.webSearch) body.tools = [{ type: 'web_search' }];
   if (c.jsonSchema) body.text = { format: { type: 'json_schema', name: (c.schemaName || 'output').replace(/[^a-zA-Z0-9_-]/g, '_'), schema: c.jsonSchema, strict: false } };
   if (!c.onDelta || c.jsonSchema) {
@@ -30,7 +40,7 @@ export async function openaiRun(c: ProviderCall, cfg: { base: string; key: strin
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), c.timeoutMs);
   try {
     const r = await fetch(`${cfg.base}/responses`, { method: 'POST', headers, body: JSON.stringify({ ...body, stream: true }), signal: ctl.signal });
-    if (!r.ok) { const e: any = new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`); e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429; throw e; }
+    if (!r.ok) { const e: any = new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429; throw e; }
     let text = ''; let usage: any = {};
     for await (const ev of sseEvents(r)) {
       if (ev.data === '[DONE]') break;
