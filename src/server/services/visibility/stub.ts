@@ -14,22 +14,22 @@ export async function stubEngine(engine: AiEngine, prompt: string, ctx: { bid: s
   const p = ctx.profile; const name = p.business.name || p.domain;
   const comps = p.audience.competitors.length ? p.audience.competitors : ['Other tools'];
   const seg = (p.audience.segments[0] || 'small teams').toLowerCase();
-  const offer = (p.business.offerings[(h >> 3) % Math.max(1, p.business.offerings.length)] || 'its core features').toLowerCase();
-  const need = (p.audience.needs[(h >> 5) % Math.max(1, p.audience.needs.length)] || 'save time').toLowerCase();
+  const offer = (p.business.offerings[(h >>> 3) % Math.max(1, p.business.offerings.length)] || 'its core features').toLowerCase();
+  const need = (p.audience.needs[(h >>> 5) % Math.max(1, p.audience.needs.length)] || 'save time').toLowerCase();
   const mentioned = roll >= 20 && roll < 62;
   const third = ['https://www.g2.com/categories/time-tracking', 'https://www.reddit.com/r/freelance/', 'https://www.capterra.com/time-tracking-software/', 'https://zapier.com/blog/best-time-tracking-apps/'];
   if (mentioned) {
-    const pos = 1 + (h >> 7) % 3;
+    const pos = 1 + (h >>> 7) % 3;
     const names = [...comps.slice(0, 3)]; names.splice(Math.min(pos - 1, names.length), 0, name);
     const desc: Record<string, string> = { [name]: `which stands out for ${offer}` };
     comps.forEach((c, i) => { desc[c] = ['for its integrations', 'for teams that need approvals', 'if you want detailed reports'][i % 3]; });
     const list = names.map(n => `${n}, ${desc[n] || ''}`.replace(/, $/, ''));
     const text = `For ${seg}, commonly recommended options are ${list.slice(0, -1).join('; ')}; and ${list[list.length - 1]}. If your main goal is to ${need}, ${name} is worth a look — ${(p.business.differentiators[0] || '').replace(/\.$/, '').toLowerCase() || 'it keeps setup simple'}.`;
-    const own = ctx.pages[(h >> 9) % Math.max(1, ctx.pages.length)] || `https://${p.domain}/`;
-    return { text, cites: (h >> 2) % 3 === 0 ? [third[(h >> 4) % third.length]] : [own, third[(h >> 4) % third.length]], raw: { stub: true, engine } };
+    const own = ctx.pages[(h >>> 9) % Math.max(1, ctx.pages.length)] || `https://${p.domain}/`;
+    return { text, cites: (h >>> 2) % 3 === 0 ? [third[(h >>> 4) % third.length]] : [own, third[(h >>> 4) % third.length]], raw: { stub: true, engine } };
   }
   const text = `Popular options include ${comps.slice(0, 2).join(' and ')}. For ${seg}, look for tools that help you ${need}, and try a couple of free trials before committing to one.`;
-  return { text, cites: (h >> 6) % 2 ? [third[(h >> 8) % third.length]] : [], raw: { stub: true, engine } };
+  return { text, cites: (h >>> 6) % 2 ? [third[(h >>> 8) % third.length]] : [], raw: { stub: true, engine } };
 }
 
 /** Extraction stub: product names in order of appearance among known names. */

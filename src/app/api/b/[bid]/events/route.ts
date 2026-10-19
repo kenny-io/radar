@@ -14,7 +14,7 @@ export const GET = handle(async (req: Request, { params }: { params: Promise<{ b
   const stream = new ReadableStream({
     async start(ctl) {
       const send = (event: string, data: any) => { if (!closed) ctl.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)); };
-      let rev = -1; let since = new Date(); const jobSeen = new Map<string, string>();
+      let rev = -1; let since = new Date(); const jobSeen = new Map<string, string>(); const sentToasts = new Set<string>();
       const started = Date.now();
       req.signal.addEventListener('abort', () => { closed = true; });
       while (!closed && Date.now() - started < 4 * 60e3) {
@@ -25,7 +25,8 @@ export const GET = handle(async (req: Request, { params }: { params: Promise<{ b
             .from(schema.jobs).where(and(eq(schema.jobs.businessId, bid), or(inArray(schema.jobs.status, ['queued', 'running']), gte(schema.jobs.finishedAt, new Date(Date.now() - 15000)))));
           for (const j of js) { const sig = j.status + JSON.stringify(j.progress); if (jobSeen.get(j.id) !== sig) { jobSeen.set(j.id, sig); send('job', { ...j, result: j.status === 'done' || j.status === 'failed' ? j.result : null }); } }
           const ns = await db.select().from(schema.notifications).where(and(eq(schema.notifications.businessId, bid), gt(schema.notifications.createdAt, since))).orderBy(schema.notifications.createdAt);
-          for (const n of ns) { send('toast', { id: n.id, ...n.payload }); since = n.createdAt; }
+          for (const n of ns) { if (sentToasts.has(n.id)) continue; sentToasts.add(n.id); send('toast', { id: n.id, ...n.payload }); }
+          if (ns.length) since = new Date(Math.max(since.getTime(), ns[ns.length - 1].createdAt.getTime() - 1));
           send('ping', {});
         } catch { /* transient */ }
         await new Promise(r => setTimeout(r, 600));

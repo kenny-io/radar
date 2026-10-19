@@ -40,7 +40,14 @@ export function DailyBrief() {
   const detailRef = useRef<HTMLDivElement>(null);
   const br = B!.brief as BriefState;
 
-  const withOverlay = (i: BriefItem): BriefItem => (overlay[i.id] ? { ...i, edits: { ...(i.edits || {}), ...overlay[i.id] } } : i);
+  /** Status/mention/platform changes not yet confirmed by the server: a slower response to an earlier write must not undo them. */
+  const [pending, setPending] = useState<Record<string, Patch & { seq: number }>>({});
+  const seq = useRef(0);
+  const withOverlay = (i0: BriefItem): BriefItem => {
+    const pp = pending[i0.id]; let i = i0;
+    if (pp) { const { seq: _s, ...p } = pp; i = { ...i, ...p }; }
+    return overlay[i.id] ? { ...i, edits: { ...(i.edits || {}), ...overlay[i.id] } } : i;
+  };
   const D: BriefDay | undefined = br.days[day];
   const items = (D ? D.items : []).map(withOverlay);
   const open = items.filter(i => i.st === 'open' || i.st === 'copied');
@@ -51,11 +58,14 @@ export function DailyBrief() {
 
   /* ── item writes (optimistic) ── */
   const setItem = useCallback((id: string, patch: Patch, extra: { edit?: { v: string; text: string | null } } = {}) => {
+    const my = ++seq.current;
+    if (Object.keys(patch).length) setPending(m => ({ ...m, [id]: { ...(m[id] || {}), ...patch, seq: my } }));
+    const settle = () => setPending(m => { if (!m[id] || m[id].seq !== my) return m; const n = { ...m }; delete n[id]; return n; });
     app.act('brief.item', { date: day, id, ...patch, ...extra }, { optimistic: b => patchB(b, day, id, i => {
       const n: BriefItem = { ...i, ...patch, edits: { ...(i.edits || {}) } };
       if (extra.edit) { if (extra.edit.text == null) delete n.edits[extra.edit.v]; else n.edits[extra.edit.v] = extra.edit.text; }
       return n;
-    }) }).catch(() => {});
+    }) }).then(settle, settle);
   }, [app, day]);
   /** Pull a not-yet-saved edit for an item so the next write carries it. */
   const takePending = (id: string): { v: string; text: string } | undefined => {
