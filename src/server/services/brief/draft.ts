@@ -8,15 +8,33 @@ import { clip, shortHash } from './plan';
 import { cleanPost, cleanReply, namesBusiness, X_LIMIT } from './rules';
 import type { Scored } from './rank';
 
-const VOICE_RULES = (p: Profile) => `Write in this brand voice: ${p.brand.voice || 'plain, warm and practical'}. Language: ${p.brand.language || 'English (US)'}.
-Sound like a real person in the community and a peer: specific, generous, plain. No marketing language, no superlatives, no hashtags, no emoji, no calls to action.`;
+/** Tone sample approved by the owner: casual, typed-on-the-bus, still high quality. Copy the register, never the content. */
+export const TONE_SAMPLE = `I think the hard part is figuring out which docs a change actually affects. Comparing an entire PR against entire pages could get noisy pretty quickly.
+
+I'd start with specific things like endpoint names, config keys, env vars and CLI flags. If one changes, you have something concrete to check against wherever it's mentioned.
+
+Then keep the flag really simple. Here's what the docs say, here's the code change, here's why they might disagree. If someone has to go digging to work out whether the flag is valid, they'll probably stop checking after a while.
+
+This is actually what I'm building with Thally, I'm the founder. We use a knowledge graph to connect those pieces and open suggested updates as PRs with the evidence attached.
+
+Also give each flag an owner. Dropping it in a shared channel is an easy way for everyone to assume someone else has it covered.
+
+Are you thinking of putting the flags on the original PR or opening separate docs PRs?`;
+
+const VOICE_RULES = (p: Profile) => `Language: ${p.brand.language || 'English (US)'}. The brand voice (${p.brand.voice || 'plain, warm and practical'}) guides word choice, but community writing must sound like a person, not a company.
+Write like someone typing a reply on their phone on the bus: relaxed, conversational, short sentences, contractions ("I'd", "you'll"), plain everyday words, first person. Still genuinely useful and specific, never sloppy.
+Avoid: corporate or consultant phrasing, words like "leverage", "robust", "streamline", "seamless", "crucial", "key takeaway"; openers like "Great question" or "In my experience"; sign-offs like "Hope this helps"; em dashes; bullet lists and headings; marketing language, superlatives, hashtags, emoji, calls to action.
+Here is a sample with the right tone. Match its register and rhythm only; never reuse its content or wording:
+"""
+${TONE_SAMPLE}
+"""`;
 
 const PLAT_RULES: Record<BriefPlatform, string> = {
-  reddit: 'Reddit: NEVER include links or URLs of any kind. Write like a regular member of the subreddit.',
-  x: `X: each variant must be ${X_LIMIT} characters or fewer, including the disclosure.`,
-  linkedin: 'LinkedIn: two or three short paragraphs at most. Professional but human.',
-  hn: 'Hacker News: substantive and precise, no fluff, no salesmanship. HN readers dislike promotion.',
-  quora: 'Quora: written as a genuinely helpful answer to the question.',
+  reddit: 'Reddit: casual, like the sample. NEVER include links or URLs of any kind. Write like a regular member of the subreddit.',
+  x: `X: casual and punchy, like a quick reply typed on your phone. Each variant must be ${X_LIMIT} characters or fewer, including the disclosure.`,
+  linkedin: 'LinkedIn: this is the one platform to be a bit more polished and professional, still human and first person, never corporate. Two or three short paragraphs at most.',
+  hn: 'Hacker News: casual and technical, like the sample. Substantive and precise, no fluff, no salesmanship. HN readers dislike promotion.',
+  quora: 'Quora: conversational, like explaining it to a friend, and genuinely helpful.',
 };
 
 export const ReplyDraft = z.object({ tag: z.string(), why: z.string(), help: z.string(), mention: z.string() });
@@ -144,7 +162,7 @@ Platforms: ${platsFor(t).join(', ')}`).join('\n\n');
 export async function rewriteItem(p: Profile, it: BriefItem, text: string, instruction: string, bid: string): Promise<string> {
   const n = p.business.name; const reply = it.kind === 'reply'; const mention = reply && it.mention && !it.noMention;
   const plat = (reply ? it.plat : it.pl) as BriefPlatform;
-  const system = `You write ${reply ? 'replies to public threads' : 'posts for the company feed'} for ${n} (${p.business.description}). Voice: ${p.brand.voice} Sound like a real person in the community: specific, generous, plain. No marketing language, no hashtags, no emoji, no links. ${reply ? (mention ? `Keep a natural plug for ${n}: how it handles this exact problem, in one or two sentences after the help, with a plain disclosure that you work on it.` : `Do not mention ${n} or any product.`) : ''} ${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`;
+  const system = `You write ${reply ? 'replies to public threads' : 'posts for the company feed'} for ${n} (${p.business.description}). ${VOICE_RULES(p)}\n${PLAT_RULES[plat]}\nNo links. ${reply ? (mention ? `Keep a natural plug for ${n}: how it handles this exact problem, in one or two sentences after the help, with a plain disclosure that you work on it.` : `Do not mention ${n} or any product.`) : ''} ${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`;
   const ctx = reply
     ? `Platform: ${BPLAT[plat]} (${it.where})\nThread: ${it.title}\n${it.body || ''}\n${it.replyTo ? `Replying to ${it.replyTo.who}: ${it.replyTo.text}` : ''}`
     : `Platform: ${BPLAT[plat]}\nTopic: ${it.title}`;

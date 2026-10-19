@@ -7,7 +7,7 @@ const URL_RE = /\bhttps?:\/\/[^\s)\]]+|\bwww\.[^\s)\]]+/gi;
 const BARE_DOMAIN_RE = /\b[a-z0-9][a-z0-9-]*\.(?:com|app|io|co|net|org|dev|ai|so|xyz|me|studio|tools?)\b(?:\/[^\s)\]]*)?/gi;
 const HASHTAG_RE = /(^|\s)#[\p{L}\p{N}_]+/gu;
 const EMOJI_RE = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍]/gu;
-const DISCLOSURE_RE = /disclosure|\bi work (?:on|at|for)\b|\bi[’']m on the team\b|\b(?:we|i) built\b|\bi[’']m (?:one of )?the (?:founder|maker)s?\b|\bi run\b/i;
+const DISCLOSURE_RE = /disclosure|\bi work (?:on|at|for)\b|\bi[’']m on the team\b|\b(?:we|i) built\b|\bi[’']m (?:one of )?the (?:founder|maker)s?\b|\bi run\b|\bi[’']m building\b|\bwhat i[’']m building\b|\bfounder of\b/i;
 
 export const X_LIMIT = 280;
 /** Remove quotes wrapping the whole text (models sometimes quote their answer). */
