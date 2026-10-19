@@ -50,3 +50,9 @@ Status: `Needs approval` (user-visible) or `Logged` (implementation-only). Also 
 Every screen/state/copy in your area matches the prototype; every action works against the real server with dev stubs;
 real integrations implemented behind env credentials; your files typecheck; you verified visually with screenshots.
 Finish with a concise report: what you built (files), actions/jobs/crons, contracts you provide/consume, anything left unfinished, divergences.
+
+## RESOURCE LIMITS (the container has 8 GB RAM and restarted twice from memory pressure)
+- Run at most ONE `next dev` and ONE worker at a time, always with `NODE_OPTIONS=--max-old-space-size=700`.
+- Stop your web server and worker as soon as you finish a round of testing (kill by your port / dist dir). Never leave them running while you write code for a long stretch.
+- Launch chromium with `--single-process`/`--no-zygote` args off, but keep ONE browser instance at a time and close it after each script.
+- Prefer API-level checks (curl / small tsx scripts) and `npx tsc --noEmit`; take screenshots only for final visual verification.
