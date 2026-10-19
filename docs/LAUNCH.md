@@ -42,7 +42,7 @@ Defaults per business: writing = GPT-6 Sol (OpenAI), research = Claude Opus 5.5 
 
 - [ ] **DataForSEO** (keyword volume, difficulty, related keywords, competitor gaps) — required for the calendar and keyword estimates. → `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`. Without it, keywords stay "Estimating…".
 - [ ] **YouTube Data API v3** — enable in the same Google Cloud project, create an API key (restrict it to that API). → `YOUTUBE_API_KEY`
-- [ ] **Open PageRank** (free, backlink authority) → `OPENPAGERANK_API_KEY`
+- [ ] **Open PageRank** (free 30k domains/month, backlink authority) — now run by Keywords Everywhere: sign in at keywordseverywhere.com/openpagerank and create an Open PageRank key (`opr_live_…`; old DomCop keys no longer work) → `OPENPAGERANK_API_KEY`
 
 ## 5. AI Visibility engines
 

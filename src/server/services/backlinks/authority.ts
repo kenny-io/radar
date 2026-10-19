@@ -17,12 +17,18 @@ export async function fetchAuthority(domain: string): Promise<number | null> {
   if (env.devStubs) return stubAuthority(domain);
   if (!env.openPageRankKey) return null;
   try {
-    const r = await fetch(`https://openpagerank.com/api/v1.0/getPageRank?domains%5B0%5D=${encodeURIComponent(domain)}`, { headers: { 'API-OPR': env.openPageRankKey }, signal: AbortSignal.timeout(10000) });
-    if (!r.ok) return null;
+    // Open PageRank is now run by Keywords Everywhere (the DomCop endpoint and keys were retired).
+    const r = await fetch('https://openpagerank.keywordseverywhere.com/v1/domains/bulk', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.openPageRankKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ domains: [domain], include_history: false }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!r.ok) { console.warn('[backlinks] authority lookup', domain, r.status); return null; }
     const j: any = await r.json();
-    const row = j?.response?.[0];
-    if (!row || Number(row.status_code) !== 200 || row.page_rank_decimal == null) return null;
-    return Math.max(0, Math.min(100, Math.round(Number(row.page_rank_decimal) * 10)));
+    const row = j?.results?.[0];
+    if (!row || !row.found || row.open_page_rank == null) return null;
+    return Math.max(0, Math.min(100, Math.round(Number(row.open_page_rank) * 10)));
   } catch (e: any) {
     console.warn('[backlinks] authority lookup failed', domain, e?.message || e);
     return null;
