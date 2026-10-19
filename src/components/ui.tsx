@@ -16,10 +16,10 @@ export function Mark({ s = 22, night }: { s?: number; night?: boolean }) {
   return <svg width={s} height={s} viewBox="0 0 24 24" aria-label="Radar"><circle cx="12" cy="12" r="10" fill="none" stroke={night ? '#fff' : 'currentColor'} strokeWidth="1.8" /><path d="M12 12 L12 2 A10 10 0 0 1 20.66 7 Z" fill="var(--signal)" /><circle cx="12" cy="12" r="2.2" fill={night ? '#fff' : 'currentColor'} /></svg>;
 }
 
-type BtnProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & { kind?: 'primary' | 'secondary' | 'ghost' | 'link' | 'danger'; size?: 'sm' | 'lg' | null; icon?: IconName; iconR?: IconName | null; loading?: boolean; children?: React.ReactNode };
-export function Btn({ kind = 'secondary', size, icon, iconR, children, loading, disabled, className = '', type = 'button', ...p }: BtnProps) {
+type BtnProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & { kind?: 'primary' | 'secondary' | 'ghost' | 'link' | 'danger'; size?: 'sm' | 'lg' | null; icon?: IconName; iconNode?: React.ReactNode; iconR?: IconName | null; loading?: boolean; children?: React.ReactNode };
+export function Btn({ kind = 'secondary', size, icon, iconNode, iconR, children, loading, disabled, className = '', type = 'button', ...p }: BtnProps) {
   return <button type={type} className={`btn btn-${kind} ${size ? 'btn-' + size : ''} ${children == null || children === false ? 'btn-icon' : ''} ${className}`} disabled={disabled || loading} {...p}>
-    {loading ? <span className="spin" /> : icon && <Icon n={icon} s={16} />}{children != null && children !== false && <span>{children}</span>}{iconR && !loading && <Icon n={iconR} s={16} />}
+    {loading ? <span className="spin" /> : iconNode ?? (icon && <Icon n={icon} s={16} />)}{children != null && children !== false && <span>{children}</span>}{iconR && !loading && <Icon n={iconR} s={16} />}
   </button>;
 }
 
