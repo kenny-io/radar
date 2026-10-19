@@ -98,7 +98,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
 
   const timers = useRef<Record<string, any>>({});
   const revRef = useRef(0); revRef.current = B?.rev || 0;
-  const inflight = useRef(0); const staleRef = useRef(false);
+  const inflight = useRef(0); const latestWs = useRef<Workspace | null>(null); const staleRef = useRef(false);
   const setB = useCallback((fn: (B: Workspace) => Workspace) => setBState(b => (b ? fn(b) : b)), []);
 
   const act = useCallback(async <T,>(action: string, input?: any, opts: ActOpts = {}): Promise<T> => {
@@ -107,8 +107,14 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
     inflight.current++;
     try {
       const r = await actCall<T>(id, action, input);
-      if (r.workspace && !opts.keepLocal && bidRef.current === id) setBState(r.workspace);
-      else if (r.workspace && opts.keepLocal) setBState(b => (b ? { ...b, rev: r.workspace!.rev } : b));
+      if (r.workspace && bidRef.current === id) {
+        // Only the last in-flight write replaces local state; earlier responses must not clobber newer optimistic edits.
+        if (!latestWs.current || r.workspace.rev >= latestWs.current.rev) latestWs.current = r.workspace;
+        if (inflight.current === 1 && !Object.keys(timers.current).length) {
+          const ws = latestWs.current; latestWs.current = null;
+          if (!opts.keepLocal) setBState(ws); else setBState(b => (b ? { ...b, rev: ws.rev } : b));
+        }
+      }
       return r.data as T;
     } catch (e: any) {
       if (opts.optimistic) refresh();
