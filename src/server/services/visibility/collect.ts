@@ -62,12 +62,18 @@ export async function addPrompt(bid: string, prompt: string) {
 export async function listVisibility(bid: string) {
   const prompts = await db.select().from(P).where(eq(P.businessId, bid)).orderBy(asc(P.createdAt));
   const rows = await db.select().from(A).where(eq(A.businessId, bid));
+  // A collection run in progress: cells in its scope not yet attempted since it started show as "collecting".
+  const run = (await db.select({ createdAt: schema.jobs.createdAt, payload: schema.jobs.payload }).from(schema.jobs)
+    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'visibility.run'), inArray(schema.jobs.status, ['queued', 'running'])))
+    .orderBy(asc(schema.jobs.createdAt)).limit(1))[0];
+  const scope: string[] | null = run ? ((run.payload as any)?.promptIds || null) : null;
+  const pendingInRun = (r: typeof rows[number]) => !!run && (!scope || scope.includes(r.promptId)) && (!r.attemptedAt || r.attemptedAt < run.createdAt);
   const by = new Map(rows.map(r => [r.promptId + '|' + r.engine, r]));
   const results: AiResult[] = [];
   for (const p of prompts) for (const engine of AI_ENGINES) {
     const r = by.get(p.id + '|' + engine);
     if (!r) continue;
-    results.push({ id: r.id, promptId: p.id, prompt: p.prompt, engine, date: r.date ? String(r.date) : null, status: r.status, pos: r.pos, cites: r.cites || [], resp: r.resp });
+    results.push({ id: r.id, promptId: p.id, prompt: p.prompt, engine, date: r.date ? String(r.date) : null, status: r.status, pos: r.pos, cites: r.cites || [], resp: r.resp, ...(pendingInRun(r) ? { collecting: true } : {}) });
   }
   const dates = results.map(r => r.date).filter(Boolean) as string[];
   return { prompts: prompts.map(p => ({ id: p.id, prompt: p.prompt, source: p.source })) as AiPrompt[], results, lastCollected: dates.length ? dates.sort().pop()! : null };
@@ -88,7 +94,7 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     if (!text) throw new Error('empty response');
     const name = profile.business.name || profile.domain.split('.')[0];
     const ex = await ai.run('writing', {
-      purpose: 'visibility.extract', schema: ExtractOut, schemaName: 'products', temperature: 0,
+      purpose: 'visibility.extract', schema: ExtractOut, schemaName: 'products',
       stubContext: { text, candidates: [name, ...profile.audience.competitors] },
       system: 'You extract structured facts from text. Output only names that appear in the text.',
       prompt: `List every product, app, tool, service or company that this answer names as an option or recommendation, in the order they first appear. Copy each name as written. Exclude publishers that are only cited as sources.\n\nANSWER:\n${text.slice(0, 12000)}`,
@@ -105,14 +111,14 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     }
     const mentioned = idx >= 0;
     const cites = [...new Set(ans.cites.filter(Boolean))].slice(0, 20);
-    await db.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt: new Date() }).where(eq(A.id, resultId));
+    await db.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt: new Date(), attemptedAt: new Date() }).where(eq(A.id, resultId));
     await bump(bid);
     return { status: mentioned ? 'mentioned' : 'not-mentioned' };
   } catch (e: any) {
     const msg = e instanceof EngineUnavailable ? 'not_configured' : String(e?.message || e).slice(0, 300);
     if (!(e instanceof EngineUnavailable)) console.error(`[visibility] ${engine} failed`, msg);
     // Keep an earlier real measurement if there is one; otherwise the cell stays "not collected".
-    await db.update(A).set({ error: msg }).where(eq(A.id, resultId));
+    await db.update(A).set({ error: msg, attemptedAt: new Date() }).where(eq(A.id, resultId));
     await bump(bid);
     return { status: row.r.status === 'not-collected' ? 'not-collected' : row.r.status };
   }

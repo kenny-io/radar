@@ -44,7 +44,8 @@ export function claudeSchema(node: any): any {
 }
 
 export async function anthropicRun(c: ProviderCall): Promise<ProviderResult> {
-  const base: any = { model: c.apiModel, max_tokens: c.maxTokens, system: c.system, ...(c.temperature != null ? { temperature: c.temperature } : {}) };
+  // No temperature: Claude 5.x rejects it ("`temperature` is deprecated for this model").
+  const base: any = { model: c.apiModel, max_tokens: c.maxTokens, system: c.system };
   const search = { type: 'web_search_20250305', name: 'web_search', max_uses: 6 };
   // Pass 1 (optional): research with web search, free text.
   let researched: ProviderResult | null = null;

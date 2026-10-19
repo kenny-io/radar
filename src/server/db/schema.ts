@@ -175,6 +175,8 @@ export const aiResults = pgTable('ai_results', {
   raw: jsonb('raw').$type<any>(),
   error: text('error'),
   collectedAt: timestamp('collected_at', { withTimezone: true }),
+  /** Last time a collection was attempted (success or failure) — drives the "collecting" state during a run. */
+  attemptedAt: timestamp('attempted_at', { withTimezone: true }),
 }, t => [uniqueIndex('ai_results_pe_uq').on(t.promptId, t.engine)]);
 
 export const suggestions = pgTable('suggestions', {

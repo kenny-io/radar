@@ -194,7 +194,7 @@ function AiTab() {
   }, [app.jobs, B.jobs, pending, load, toast]);
   if (!vis) return <div className="col" style={{ gap: 18 }}><Skel h={56} /><Skel h={18} w="60%" /><Skel h={240} style={{ borderRadius: 14 }} /></div>;
   const domain = B.profile.domain; const bizName = B.profile.business.name;
-  const rows: AiResult[] = vis.results.map(r => { const j = pending[r.id] ? app.jobs[pending[r.id]] : app.jobFor('visibility.collect', r.id); return { ...r, collecting: !!pending[r.id] || (!!j && (j.status === 'queued' || j.status === 'running')) }; });
+  const rows: AiResult[] = vis.results.map(r => { const j = pending[r.id] ? app.jobs[pending[r.id]] : app.jobFor('visibility.collect', r.id); return { ...r, collecting: !!r.collecting || !!pending[r.id] || (!!j && (j.status === 'queued' || j.status === 'running')) }; });
   const measured = rows.filter(r => r.status !== 'not-collected'); const men = measured.filter(r => r.status === 'mentioned'); const cites = measured.reduce((s, r) => s + r.cites.filter(c => ownCite(c, domain)).length, 0);
   const prompts = vis.prompts.filter(p => rows.some(r => r.promptId === p.id)); const cell = (pid: string, en: string) => rows.find(r => r.promptId === pid && r.engine === en); const cur = rows.find(r => r.id === open);
   const collect = async (id: string) => {
