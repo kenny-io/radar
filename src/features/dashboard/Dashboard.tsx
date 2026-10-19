@@ -42,11 +42,11 @@ export function Dashboard() {
     <PerfSummary />
     {issues.length > 0 && <Section title="Needs attention"><div>{issues.map(i => <div key={i.id} className="list-row" style={{ flexWrap: 'wrap' }}><Status tone={i.tone} pulse={i.tone === 'bad'}>{i.label}</Status><span className="grow small sub" style={{ minWidth: 200 }}>{i.body}</span>{i.btnSmall}</div>)}</div></Section>}
     <div className="grid-2" style={{ gap: 48 }}>
-      <Section title="Upcoming articles" action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('calendar')}>Calendar</Btn>}>
+      <Section title="Upcoming articles" style={{ minWidth: 0 }} action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('calendar')}>Calendar</Btn>}>
         {upcoming.length ? <div>{upcoming.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('calendar', { open: e.id })}>
           <span className="mono sub" style={{ width: 52, flex: 'none' }}>{fmtD(e.date)}</span><span className="grow trunc">{e.title}</span><EntryStatus s={e.status} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>Nothing scheduled. <a href="#" onClick={e => { e.preventDefault(); go('calendar'); }}>Open the calendar</a></p>}
       </Section>
-      <Section title="Awaiting review">
+      <Section title="Awaiting review" style={{ minWidth: 0 }}>
         {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
           <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
       </Section>
