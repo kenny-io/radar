@@ -58,7 +58,7 @@ export function RadarField({ theme = 'night', energy = .4, blips = [], center = 
     }
     function draw() { frame(); if (vis) raf = requestAnimationFrame(draw); }
     resize(); frame(); if (!reduce) raf = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); const x = gl!.getExtension('WEBGL_lose_context'); x && x.loseContext(); };
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); /* no loseContext(): StrictMode remounts reuse this canvas's context */ };
   }, [theme]);
   const bgc = theme === 'night' ? 'var(--night)' : 'var(--paper)';
   return <div className={className} style={{ position: 'relative', overflow: 'hidden', background: bgc, ...style }}>
