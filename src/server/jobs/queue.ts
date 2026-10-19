@@ -51,6 +51,14 @@ async function claim(workerId: string): Promise<JobRow | null> {
   return getJob(rows[0].id);
 }
 
+/** Final writes only land if this worker still owns the job (it may have been handed back on shutdown or recovered). */
+const owned = (id: string, workerId: string) => workerId === 'inline' ? eq(schema.jobs.id, id) : and(eq(schema.jobs.id, id), eq(schema.jobs.lockedBy, workerId), eq(schema.jobs.status, 'running'));
+
+const STALE_MS = 90_000; // a running job whose lock isn't refreshed for this long belongs to a dead worker
+async function recoverStale() {
+  await db.update(schema.jobs).set({ status: 'queued', lockedAt: null, lockedBy: null }).where(and(eq(schema.jobs.status, 'running'), lte(schema.jobs.lockedAt, new Date(Date.now() - STALE_MS))));
+}
+
 async function execute(job: JobRow, workerId: string) {
   const def = registry.get(job.kind);
   if (!def) { await db.update(schema.jobs).set({ status: 'failed', error: `Unknown job kind ${job.kind}`, finishedAt: new Date() }).where(eq(schema.jobs.id, job.id)); return; }
@@ -64,7 +72,7 @@ async function execute(job: JobRow, workerId: string) {
   try {
     const result = await (def.timeoutMs ? Promise.race([def.run(ctx), new Promise((_, rej) => setTimeout(() => rej(new Error('Job timed out')), def.timeoutMs))]) : def.run(ctx));
     if (timer) clearTimeout(timer); await flush();
-    await db.update(schema.jobs).set({ status: 'done', result: result ?? null, finishedAt: new Date(), lockedAt: null }).where(eq(schema.jobs.id, job.id));
+    await db.update(schema.jobs).set({ status: 'done', result: result ?? null, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
   } catch (e: any) {
     if (timer) clearTimeout(timer); await flush().catch(() => {});
     const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
@@ -72,21 +80,25 @@ async function execute(job: JobRow, workerId: string) {
     console.error(`[job ${job.kind} ${job.id}] attempt ${job.attempts} failed:`, e?.message || e);
     if (!permanent && job.attempts < job.maxAttempts) {
       const delay = def.backoffMs ? def.backoffMs(job.attempts) : Math.min(15 * 60e3, 5000 * Math.pow(3, job.attempts - 1));
-      await db.update(schema.jobs).set({ status: 'queued', runAt: new Date(Date.now() + delay), lockedAt: null, error: msg }).where(eq(schema.jobs.id, job.id));
+      await db.update(schema.jobs).set({ status: 'queued', runAt: new Date(Date.now() + delay), lockedAt: null, error: msg }).where(owned(job.id, workerId));
     } else {
-      await db.update(schema.jobs).set({ status: 'failed', error: msg, finishedAt: new Date(), lockedAt: null, result: { detail: String(e?.message || e).slice(0, 500) } }).where(eq(schema.jobs.id, job.id));
+      await db.update(schema.jobs).set({ status: 'failed', error: msg, finishedAt: new Date(), lockedAt: null, result: { detail: String(e?.message || e).slice(0, 500) } }).where(owned(job.id, workerId));
     }
   } finally {
     if (job.businessId) await bump(job.businessId).catch(() => {});
   }
 }
 
-/** Long-running worker loop. */
+/** Long-running worker loop. Heartbeats its jobs' locks; recovers jobs of dead workers within ~90s; on stop, hands its
+ *  running jobs straight back to the queue (without using up an attempt) so a deploy never strands a job. */
 export async function startWorker({ concurrency = Number(process.env.WORKER_CONCURRENCY || 4) } = {}) {
   const workerId = `${os.hostname()}:${process.pid}`;
   let active = 0; let stopping = false;
-  // Recover jobs whose worker died (locked > 30 min ago).
-  await db.update(schema.jobs).set({ status: 'queued', lockedAt: null }).where(and(eq(schema.jobs.status, 'running'), lte(schema.jobs.lockedAt, new Date(Date.now() - 30 * 60e3))));
+  await recoverStale();
+  const beat = setInterval(() => {
+    db.update(schema.jobs).set({ lockedAt: new Date() }).where(and(eq(schema.jobs.status, 'running'), eq(schema.jobs.lockedBy, workerId))).catch(() => {});
+    recoverStale().catch(() => {});
+  }, 20_000);
   const loop = async () => {
     while (!stopping) {
       if (active >= concurrency) { await new Promise(r => setTimeout(r, 100)); continue; }
@@ -97,7 +109,12 @@ export async function startWorker({ concurrency = Number(process.env.WORKER_CONC
     }
   };
   loop();
-  return { stop: () => { stopping = true; } };
+  return {
+    stop: async () => {
+      stopping = true; clearInterval(beat);
+      await pool.query(`UPDATE jobs SET status='queued', locked_at=NULL, locked_by=NULL, attempts=GREATEST(attempts-1,0), run_at=now() WHERE status='running' AND locked_by=$1`, [workerId]).catch(() => {});
+    },
+  };
 }
 
 /** Run a callback once per key (idempotent scheduling). Returns true the first time. */

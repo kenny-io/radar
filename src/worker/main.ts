@@ -8,7 +8,7 @@ async function main() {
   const w = await startWorker();
   const s = startScheduler();
   console.log('[worker] started');
-  const stop = () => { w.stop(); s.stop(); setTimeout(() => process.exit(0), 500); };
+  const stop = async () => { s.stop(); await w.stop(); process.exit(0); };
   process.on('SIGINT', stop); process.on('SIGTERM', stop);
 }
 main().catch(e => { console.error(e); process.exit(1); });
