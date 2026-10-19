@@ -20,7 +20,10 @@ export async function setConn(bid: string, v: Partial<typeof C.$inferInsert>) {
   await db.insert(C).values({ businessId: bid, status: 'none', ...v }).onConflictDoUpdate({ target: C.businessId, set: { ...v, updatedAt: new Date() } });
 }
 
-async function upsert(bid: string, kind: Kind, rows: { date: string; key: string; clicks: number; impressions: number; ctr: number; position: number }[]) {
+async function upsert(bid: string, kind: Kind, input: { date: string; key: string; clicks: number; impressions: number; ctr: number; position: number }[]) {
+  // De-duplicate on the primary key (a batch must not touch the same row twice in one ON CONFLICT statement).
+  const m = new Map<string, (typeof input)[number]>(); for (const r of input) m.set(r.date + '\u0000' + r.key, r);
+  const rows = [...m.values()];
   for (let i = 0; i < rows.length; i += 1000) {
     const batch = rows.slice(i, i + 1000).map(r => ({ businessId: bid, kind, ...r }));
     await db.insert(R).values(batch).onConflictDoUpdate({ target: [R.businessId, R.kind, R.date, R.key], set: { clicks: sql`excluded.clicks`, impressions: sql`excluded.impressions`, ctr: sql`excluded.ctr`, position: sql`excluded.position` } });
@@ -85,7 +88,7 @@ export function monthChunks(start: string, end: string): [string, string][] {
 const sixteenMonthsBefore = (end: string) => { const d = new Date(end + 'T12:00'); d.setMonth(d.getMonth() - 16); return addDays([d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-'), 1); };
 
 async function fail(bid: string, e: any) {
-  const msg = e instanceof GscApiError ? e.message : String(e?.message || e);
+  const msg = e instanceof GscApiError ? e.message : String(e?.cause?.message || e?.message || e);
   console.error('[gsc] sync paused', bid, msg);
   await setConn(bid, { status: 'error', error: msg.slice(0, 500) });
   await bump(bid).catch(() => {});
