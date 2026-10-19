@@ -1,6 +1,6 @@
 // DEV-ONLY AI stubs for the Daily Brief (RADAR_DEV_STUBS=1). Deterministic, built from the Business Profile, and they
 // honor every rule the real prompts ask for (no links on Reddit, ≤280 on X, disclosure on mention, no hashtags/emoji).
-// BRIEF_STUB_FAIL=rewrite makes Rewrite fail, to verify its error toast.
+// BRIEF_STUB_FAIL=rewrite (or the custom instruction "#fail", stub mode only) makes Rewrite fail, to verify its error toast.
 import { registerStub } from '@/server/ai/adapters/stub';
 import type { BriefItem, Profile } from '@/lib/types';
 import { lcf } from '@/lib/format';
@@ -33,7 +33,7 @@ registerStub('brief.rank', async (_i, ctx: { profile: Profile; plan: Plan; cands
     const fit = +relevance(text, ctx.plan).toFixed(3);
     const asks = ASKS_RE.test(`${c.title} ${c.body}`);
     const reject: RankRow['reject'] = HOSTILE_RE.test(text) ? 'hostile' : RULE_RE.test(text) ? 'rule-violation'
-      : ctx.plan.competitors.some(x => c.where.toLowerCase().includes(x.toLowerCase())) ? 'competitor-owned' : /^show hn/i.test(c.title) && fit < 0.3 ? 'promotional' : fit < 0.2 ? 'off-topic' : 'none';
+      : ctx.plan.competitors.some(x => c.where.toLowerCase().includes(x.toLowerCase())) ? 'competitor-owned' : /^show hn/i.test(c.title) ? 'promotional' : fit < 0.2 ? 'off-topic' : 'none';
     const intent: RankRow['intent'] = asks ? 'asks-for-tool' : /\?|how do|best way|how to/i.test(text) ? 'asks-for-help' : /opinion|agree|debate|change my mind/i.test(text) ? 'discussion' : 'other';
     const replyTo = (c.comments || []).findIndex(x => relevance(x.text, ctx.plan) >= 0.25);
     return { id: c.id, fit, canHelp: fit >= 0.3 ? 0.85 : 0.5, intent, asks, reject, replyTo: replyTo >= 0 ? replyTo : null, theme: themeFor(text, ctx.profile) };
@@ -99,7 +99,7 @@ registerStub('brief.posts', async (_i, ctx: { profile: Profile; themes: (Theme &
 
 registerStub('brief.rewrite', async (_i, ctx: { profile: Profile; item: BriefItem; text: string; instruction: string }) => {
   await sleep(700);
-  if ((process.env.BRIEF_STUB_FAIL || '').split(',').map(s => s.trim()).includes('rewrite')) throw new Error('rewrite stub failed on purpose (BRIEF_STUB_FAIL)');
+  if ((process.env.BRIEF_STUB_FAIL || '').split(',').map(s => s.trim()).includes('rewrite') || ctx.instruction.trim() === '#fail') throw new Error('rewrite stub failed on purpose (BRIEF_STUB_FAIL)');
   const { text, instruction } = ctx; const need = needsOf(ctx.profile)[0];
   const sentences = text.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/).filter(Boolean);
   if (/short/i.test(instruction)) return sentences.slice(0, Math.max(2, Math.ceil(sentences.length / 2))).join(' ');

@@ -1,7 +1,7 @@
 // Social pack generation (02-system.md §8.1): per-platform copy with the writing model + on-brand visuals at exact sizes.
 // Radar never posts anything (README §2.5 #1): packs are only stored for the user to copy and download.
 import { z } from 'zod';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { ai, profileContext } from '../../ai';
 import { getBiz, bizToday } from '../../workspace';
@@ -21,7 +21,7 @@ export interface PackInput {
   platforms: Platform[]; style: PackStyle; custom?: string; voice?: string; auto?: boolean; idea?: IdeaContext | null;
 }
 /** Stored with the pack (jsonb) so Regenerate stays grounded in the same source. */
-export interface PackExtra { headline: string; grounding: { brief: string; link: string | null; idea?: IdeaContext | null } }
+export interface PackExtra { headline: string; order: Platform[]; grounding: { brief: string; link: string | null; idea?: IdeaContext | null } }
 export type StoredPack = SocialPack & Partial<PackExtra>;
 
 const KIND_L: Record<SourceKind, string> = { idea: 'an idea from the user', url: 'an article URL', article: 'one of the business’s own Radar articles', suggest: 'a Radar suggestion backed by search data' };
@@ -103,7 +103,7 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   const id = 'p' + Date.now().toString(36) + randomToken(4);
   const pack: StoredPack = {
     id, name: shortHead(input.source.label, input.source.kind === 'suggest' ? 120 : 64), source: { kind: input.source.kind, label: input.source.label, ref: input.source.ref ?? null },
-    created: bizToday(b), style, custom: input.custom || '', voice: input.voice || '', auto: !!input.auto, posts,
+    created: bizToday(b), style, custom: input.custom || '', voice: input.voice || '', auto: !!input.auto, posts, order: input.platforms,
     headline, grounding: { brief: g.brief.slice(0, 2500), link: g.link, idea: input.idea || null },
   };
   await db.insert(schema.socialPacks).values({ id, businessId: bid, data: pack });
@@ -124,4 +124,3 @@ export async function getPack(bid: string, packId: string): Promise<StoredPack |
   const r = (await db.select().from(schema.socialPacks).where(and(eq(schema.socialPacks.businessId, bid), eq(schema.socialPacks.id, packId))).limit(1))[0];
   return r ? { ...(r.data as StoredPack), id: r.id } : null;
 }
-export { sql };

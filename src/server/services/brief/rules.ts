@@ -10,6 +10,8 @@ const EMOJI_RE = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}️‍]/gu;
 const DISCLOSURE_RE = /disclosure|\bi work (?:on|at|for)\b|\bi[’']m on the team\b|\b(?:we|i) built\b|\bi[’']m (?:one of )?the (?:founder|maker)s?\b|\bi run\b/i;
 
 export const X_LIMIT = 280;
+/** Remove quotes wrapping the whole text (models sometimes quote their answer). */
+const unwrap = (t: string) => { const s = String(t || '').trim(); return /^["“][\s\S]*["”]$/.test(s) && !/["“”]/.test(s.slice(1, -1)) ? s.slice(1, -1).trim() : s; };
 
 function tidy(t: string) {
   return t.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').replace(/\(\s*\)/g, '').replace(/\s+([.,;:!?])/g, '$1').trim();
@@ -42,7 +44,7 @@ function dropSentencesNaming(t: string, name: string) {
 export interface RuleCtx { plat: BriefPlatform; name: string; domain: string }
 /** Clean any community-reply draft. variant 'help' must not mention the business; 'mention' must disclose. */
 export function cleanReply(text: string, variant: 'help' | 'mention', c: RuleCtx): string {
-  let t = stripEmoji(stripHashtags(String(text || '').replace(/^["“]|["”]$/g, '').trim()));
+  let t = stripEmoji(stripHashtags(unwrap(text)));
   if (c.plat === 'reddit') t = stripLinks(t, [c.domain]);
   if (variant === 'help' && namesBusiness(t, c.name)) t = dropSentencesNaming(t, c.name);
   if (variant === 'mention' && !hasDisclosure(t)) {
@@ -62,7 +64,7 @@ export function cleanReply(text: string, variant: 'help' | 'mention', c: RuleCtx
 }
 /** Clean a post for the business's own feed. */
 export function cleanPost(text: string, plat: BriefPlatform): string {
-  let t = stripEmoji(stripHashtags(String(text || '').replace(/^["“]|["”]$/g, '').trim()));
+  let t = stripEmoji(stripHashtags(unwrap(text)));
   if (plat === 'reddit') t = stripLinks(t);
   if (plat === 'x') t = fitLength(t);
   return tidy(t);

@@ -28,6 +28,11 @@ function stubGate(c: ConnCtx) {
   const vals = [...Object.values(c.fields || {}), ...Object.values(c.creds || {}).map(v => (typeof v === 'string' ? v : JSON.stringify(v ?? '')))];
   if (vals.some(v => /fail/i.test(String(v)))) throw new PublishError(401, 'dev stub: credential contains "fail"', 'stub');
 }
+/** DEV-ONLY: "unavailable" in a field makes publishing answer 503 (exercises retries + backoff). */
+function stubGatePublish(c: ConnCtx) {
+  stubGate(c);
+  if (Object.values(c.fields || {}).some(v => /unavailable/i.test(String(v)))) throw new PublishError(503, 'dev stub: field contains "unavailable"', 'stub');
+}
 let prN = 40;
 function stubUrl(c: ConnCtx, p: PublishPayload): string {
   const d = c.domain; const s = p.slug;
@@ -45,8 +50,8 @@ function stub(type: ConnType): Connector {
   return {
     ...(STUB_TARGETS[type] ? { targets: async (c: ConnCtx): Promise<Target[]> => { await wait(250); stubGate(c); return STUB_TARGETS[type]!.map(n => { const name = n.replace(/\{domain\}/g, c.domain); return { id: 'stub-' + slugify(name), name, url: type === 'wix' || type === 'wpcom' ? 'https://' + name.replace(/ \(staging\)$/, '') : null }; }); } } : {}),
     async test(c) { await wait(900); stubGate(c); },
-    async createDraft(c, p) { await wait(400); stubGate(c); return { id: 'stub-' + p.slug }; },
-    async publish(c, p) { await wait(500); stubGate(c); return { url: stubUrl(c, p) }; },
+    async createDraft(c, p) { await wait(400); stubGatePublish(c); return { id: 'stub-' + p.slug }; },
+    async publish(c, p) { await wait(500); stubGatePublish(c); return { url: stubUrl(c, p) }; },
   };
 }
 

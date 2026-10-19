@@ -3,12 +3,12 @@ import { db, pool, schema } from '../src/server/db';
 import '../src/server/services/analysis/jobs';
 import '../src/server/services/keywords/jobs';
 import { enqueue, runJobNow, getJob } from '../src/server/jobs/queue';
-async function main() {
+async function main() { console.log('main');
   const domain = process.argv[2] || 'fieldnote.app';
   const u = (await db.select().from(schema.users).limit(1))[0];
   const [b] = await db.insert(schema.businesses).values({ ownerId: u.id, domain, status: 'onboarding', profile: { domain, business: {}, audience: {}, keywords: { list: [] }, brand: {} } }).returning();
   const id = await enqueue('analysis.site', { keepEdits: false }, { businessId: b.id, ref: b.id });
-  await runJobNow(id);
+  console.log('enqueued', id); await runJobNow(id);
   const j = await getJob(id);
   console.log(j?.status, j?.error, JSON.stringify(j?.progress));
   const bb = (await db.select().from(schema.businesses).where(eq(schema.businesses.id, b.id)))[0];

@@ -32,9 +32,16 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    ".next-brief/types/**/*.ts",
+    ".next-content/types/**/*.ts",
+    ".next-onboarding/types/**/*.ts",
+    ".next-performance/types/**/*.ts",
+    ".next-platform/types/**/*.ts",
+    ".next-publishing/types/**/*.ts",
+    ".next-social/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-social/types/**/*.ts"
+    ".next-publishing-turbo/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -16,7 +16,8 @@ const MAX_LLM = 30;
 export async function ideaInputs(bid: string) {
   const b = await getBiz(bid); const profile = { ...(b.profile as Profile), domain: b.domain };
   const g = (await db.select({ status: schema.gscConnections.status }).from(schema.gscConnections).where(eq(schema.gscConnections.businessId, bid)).limit(1))[0];
-  const gscOn = g?.status === 'connected';
+  // 'error' = connected but the latest sync failed: the synced data is still real, so it's used (like Workspace.measured).
+  const gscOn = (g?.status === 'connected' || g?.status === 'error') && (await lastDataDate(bid)) != null;
   const [queries, gpages, crawl, last] = gscOn
     ? await Promise.all([topQueries(bid, 28, 500), topPages(bid, 28, 500), crawlPages(bid), lastDataDate(bid)])
     : [[], [], await crawlPages(bid), null];

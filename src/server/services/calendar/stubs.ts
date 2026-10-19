@@ -19,13 +19,14 @@ function stubTitle(kw: string, type: EntryType, seg: string, pageTitle?: string 
   if (pageTitle) return pageTitle;
   const k = kw.replace(/\b(how to|best|template|guide|tips|examples|checklist)\b/g, '').replace(/\s+/g, ' ').trim() || kw;
   const s = seg.toLowerCase().replace(/\s*\(.*\)/, '');
+  const forS = /\bfor\b/.test(k) ? '' : ` for ${s}`;
   switch (type) {
     case 'How-to': return /^how to/.test(kw) ? cap(kw) : `How to get ${k} right`;
     case 'Template': return `${cap(k)} template: a ready-to-use starting point`;
-    case 'Comparison': return /\bvs\b/.test(kw) ? `${cap(kw)}: an honest comparison` : `${cap(k)}: options compared for ${s}`;
-    case 'Listicle': return `The best ${k} options for ${s}`;
+    case 'Comparison': return /\bvs\b/.test(kw) ? `${cap(kw)}: an honest comparison` : `${cap(k)}: options compared${forS}`;
+    case 'Listicle': return `The best ${k} options${forS}`;
     case 'Explainer': return `${cap(k)}, explained`;
-    default: return `A practical guide to ${k} for ${s}`;
+    default: return `A practical guide to ${k}${forS}`;
   }
 }
 const AUD_TAIL: Record<EntryType, string> = { 'How-to': 'who need a quick, practical answer', Guide: 'making a pricing or process decision', Comparison: 'evaluating tools or approaches side by side', Listicle: 'shortlisting tools', Explainer: 'learning the vocabulary', Template: 'who need something ready to use today' };
@@ -42,7 +43,7 @@ registerStub('calendar.ideas', (_i, ctx: { profile: Profile }) => {
   const p = ctx.profile; const out: string[] = [];
   const seg = (p.audience.segments[0] || 'small business').toLowerCase().replace(/\s*\(.*\)/, '').replace(/s$/, '');
   for (const o of p.business.offerings) { const k = o.toLowerCase(); out.push(`${k} for ${seg}s`, `how does ${k} work`, `${k} tips`); }
-  for (const n of p.audience.needs) { const w = n.toLowerCase().split(' ').slice(0, 3).join(' '); out.push(`how to ${w}`, `${w} for ${seg}s`); }
+  for (const n of p.audience.needs) { const w = n.toLowerCase(); out.push(`how to ${w}`); }
   for (const s of p.audience.segments) out.push(`${s.toLowerCase().replace(/\s*\(.*\)/, '')} pricing guide`);
   return { keywords: out };
 });
@@ -55,7 +56,8 @@ registerStub('calendar.cluster', (_i, ctx: { cands: { kw: string }[]; profile: P
   ctx.cands.forEach((c, i) => {
     const t = toks(c.kw);
     if (!t.some(x => vocab.has(x)) || (comp.some(n => c.kw.includes(n)) && !/alternative|\bvs\b/.test(c.kw))) { offTopic.push(i); return; }
-    const key = [...new Set(t)].sort().join(' ');
+    const MOD = new Set(['best', 'tip', 'example', 'guide', 'template', 'checklist', 'cost', 'how', 'work', 'doe']);
+    const key = [...new Set(t.filter(x => !MOD.has(x)))].sort().join(' ') + '|' + stubType(c.kw);
     groups.set(key, [...(groups.get(key) || []), i]);
   });
   const duplicates = [...groups.values()].filter(g => g.length > 1).map(g => ({ keep: g[0], drop: g.slice(1) }));

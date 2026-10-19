@@ -26,7 +26,7 @@ function blocksText(body: Block[] = []): string {
 }
 async function hostPagesOf(b: BizRow): Promise<HostPage[]> {
   const crawl = await db.select().from(schema.crawlPages).where(eq(schema.crawlPages.businessId, b.id)).orderBy(desc(schema.crawlPages.kind)).limit(60);
-  const pages: HostPage[] = crawl.filter(p => p.text.length > 200).sort((x, y) => (x.kind === y.kind ? 0 : x.kind === 'article' ? -1 : 1))
+  const pages: HostPage[] = crawl.filter(p => p.text.length > 120).sort((x, y) => (x.kind === y.kind ? 0 : x.kind === 'article' ? -1 : 1))
     .map(p => ({ url: displayUrl(p.url), title: p.title || p.h1, text: p.text, links: p.links || [] }));
   // Articles Radar published (their live URL) — the next publish can carry an approved outbound link.
   const pub = await db.select({ e: schema.calendarEntries, a: schema.articles }).from(schema.calendarEntries)
@@ -37,7 +37,7 @@ async function hostPagesOf(b: BizRow): Promise<HostPage[]> {
     if (!url || pages.some(p => p.url === url)) continue;
     pages.push({ url, title: e.title, text: blocksText((a.data as any)?.body), links: [] });
   }
-  if (!pages.length && env.devStubs) return stubHostPages(b);
+  if (!pages.length && env.devStubs && !metaOf(b).synthetic) return stubHostPages(b);
   return pages;
 }
 async function targetPagesOf(b: BizRow): Promise<TargetPage[]> {
@@ -201,18 +201,25 @@ export async function matchBusiness(bid: string): Promise<{ created: number }> {
     .filter(x => x.r.score >= 0.15 || (env.devStubs && metaOf(x.b).synthetic))
     .sort((x, y) => y.r.score - x.r.score);
   let created = 0;
-  for (const { b } of ranked) {
-    if (remaining <= 0) break;
-    const bRemaining = metaOf(b).synthetic ? 99 : prefsOf(b).max - (await createdThisMonth(b.id, todayIn(b.timezone)));
-    // Inbound: b's page links to a.
-    if (bRemaining > 0 && !(await recentlyPaired(a.id, b.id, 'in'))) {
-      const p = await draftPlacement(b, a, a.id);
-      if (p) { await createPlacement(b, a, p); created++; remaining--; }
-    }
-    // Outbound request: a's article links to b — only when a accepts requests.
-    if (remaining > 0 && prefs.outbound && !(await recentlyPaired(a.id, b.id, 'out'))) {
-      const p = await draftPlacement(a, b, a.id);
-      if (p) { await createPlacement(a, b, p); created++; remaining--; }
+  // Leave room for one outbound request when the user accepts them, then fill with inbound.
+  const passes: ('in' | 'out')[] = prefs.outbound ? ['in', 'out', 'in'] : ['in'];
+  for (let pass = 0; pass < passes.length; pass++) {
+    const dir = passes[pass];
+    let budget = dir === 'out' ? Math.min(remaining, 1) : pass === 0 && prefs.outbound ? Math.max(1, remaining - 1) : remaining;
+    for (const { b } of ranked) {
+      if (budget <= 0 || remaining <= 0) break;
+      if (dir === 'in') {
+        // Inbound: b's page links to a.
+        const bRemaining = metaOf(b).synthetic ? 99 : prefsOf(b).max - (await createdThisMonth(b.id, todayIn(b.timezone)));
+        if (bRemaining <= 0 || (await recentlyPaired(a.id, b.id, 'in'))) continue;
+        const p = await draftPlacement(b, a, a.id);
+        if (p) { await createPlacement(b, a, p); created++; remaining--; budget--; }
+      } else {
+        // Outbound request: a's article links to b — only when a accepts requests.
+        if (await recentlyPaired(a.id, b.id, 'out')) continue;
+        const p = await draftPlacement(a, b, a.id);
+        if (p) { await createPlacement(a, b, p); created++; remaining--; budget--; }
+      }
     }
   }
   return { created };

@@ -68,7 +68,7 @@ export async function generateSuggestions(bid: string) {
   for (const p of pages) {
     const cur = p.clicks * M, mi = p.impr * M; const c = crawlOf(p);
     // Refresh: positions 8–20 with high impressions. Target: 3 to 6 positions higher (never above 4), CTR at 60% of expCtr.
-    if (p.pos >= 8 && p.pos <= 20 && p.impr >= imprFloor) {
+    if (p.pos >= 8 && p.pos <= 20 && p.impr >= imprFloor && (!c || c.kind === 'article')) {
       const lo = mi * expCtr(Math.max(5, p.pos - 3)) * 0.6 - cur, hi = mi * expCtr(Math.max(4, p.pos - 6)) * 0.6 - cur;
       if (hi >= 5) cands.push({ id: 'c' + n++, kind: 'refresh', page: p, crawl: c, lo: Math.max(1, lo), hi, queries: qOf(p) });
     }
@@ -91,7 +91,7 @@ export async function generateSuggestions(bid: string) {
   }
 
   // FAQ gaps: question-style queries the page ranks for (positions ≤ 15). The LLM checks the page text for answers.
-  const faqPages = pages.filter(p => p.pos <= 15 && crawlOf(p)?.text && qOf(p).filter(q => QUESTION.test(q.q) && q.impr >= 10).length >= 2).slice(0, 4);
+  const faqPages = pages.filter(p => p.pos <= 15 && crawlOf(p)?.kind === 'article' && crawlOf(p)?.text && qOf(p).filter(q => QUESTION.test(q.q) && q.impr >= 10).length >= 2).slice(0, 4);
   let unanswered = new Map<string, string[]>();
   if (faqPages.length) {
     const input = faqPages.map(p => ({ url: p.url, title: crawlOf(p)!.title, text: crawlOf(p)!.text.slice(0, 5000), questions: qOf(p).filter(q => QUESTION.test(q.q) && q.impr >= 10).slice(0, 8).map(q => q.q) }));
@@ -112,13 +112,12 @@ export async function generateSuggestions(bid: string) {
   }
 
   // One suggestion per page (best estimated gain), skip pages/kinds the user already handled, keep the top 6.
-  const best = new Map<string, Cand>();
-  for (const c of cands.sort((a, b) => b.hi - a.hi)) {
-    if (done.has(`${c.kind}|${c.page.path}`)) continue;
-    const k = c.kind === 'links' ? 'links' : c.page.path;
-    if (!best.has(k)) best.set(k, c);
-  }
-  const chosen = [...best.values()].slice(0, 6);
+  // The best candidate of each kind goes first so one kind can't crowd out the others; then fill by estimated gain.
+  const open = cands.filter(c => !done.has(`${c.kind}|${c.page.path}`)).sort((a, b) => b.hi - a.hi);
+  const chosen: Cand[] = []; const used = new Set<string>();
+  const take = (c: Cand) => { const k = c.kind === 'links' ? 'links' : c.page.path; if (used.has(k) || chosen.length >= 6) return; used.add(k); chosen.push(c); };
+  for (const kind of ['refresh', 'meta', 'faq', 'links'] as SuggKind[]) { const c = open.find(x => x.kind === kind && !used.has(x.kind === 'links' ? 'links' : x.page.path)); if (c) take(c); }
+  for (const c of open) take(c);
   if (!chosen.length) { await db.delete(schema.suggestions).where(and(eq(schema.suggestions.businessId, bid), eq(schema.suggestions.state, 'open'))); return []; }
 
   // The writing model drafts the diff wording. Old title/meta always come from the crawl, never from the model.

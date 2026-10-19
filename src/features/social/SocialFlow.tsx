@@ -112,7 +112,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
         : st.step === 'source' ? <>
           <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>What should the posts be about?</h2></div>
           <Seg value={st.kind} onChange={k => set({ kind: k })} options={[{ v: 'idea' as Kind, l: 'An idea' }, { v: 'url' as Kind, l: 'Article URL' }, { v: 'article' as Kind, l: 'Radar article' }, { v: 'suggest' as Kind, l: 'Suggest ideas' }]} />
-          {st.kind === 'suggest' && <SuggestIdeas gsc={B.gsc.status === 'connected'} picked={st.picked} onPick={(t, it) => set({ picked: t, pickedIdea: it })} onGenerate={run} />}
+          {st.kind === 'suggest' && <SuggestIdeas gsc={B.gsc.status === 'connected' || B.gsc.status === 'error'} picked={st.picked} onPick={(t, it) => set({ picked: t, pickedIdea: it })} onGenerate={run} />}
           {st.kind === 'idea' && <textarea autoFocus className="input" rows={4} style={{ fontSize: 16 }} placeholder="e.g. Why most freelancers undercharge in their first year" value={st.idea} onChange={e => set({ idea: e.target.value })} />}
           {st.kind === 'idea' && !st.idea.trim() && <Btn kind="link" className="small" style={{ alignSelf: 'flex-start' }} onClick={() => set({ kind: 'suggest' })}>Not sure what to post? Let Radar suggest ideas</Btn>}
           {st.kind === 'url' && <input autoFocus className="input" style={{ height: 50, fontSize: 16 }} placeholder="https://" value={st.url} onChange={e => set({ url: e.target.value })} />}

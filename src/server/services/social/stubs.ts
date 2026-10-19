@@ -8,7 +8,7 @@ import { factOverlaps, overlap, tokens, type Fact } from './ideas-core';
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const unq = (s: string) => s.replace(/[.?!…:]+$/, '').trim();
 function hash(s: string) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); }
-const tag = (s: string) => '#' + s.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 22);
+const tag = (s: string) => '#' + s.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
 export function stubPost(k: Platform, topic: string, p: Profile, v = 0): string {
   const n = p.business.name || 'our team';
@@ -18,18 +18,18 @@ export function stubPost(k: Platform, topic: string, p: Profile, v = 0): string 
   const d0 = unq(p.business.differentiators[0] || p.business.offerings[0] || 'A simpler way to do it');
   const h = unq(shortHead(topic, 120));
   const kws = (p.keywords?.list || []).filter(x => x.priority).concat(p.keywords?.list || []);
-  const tags = [...new Set(kws.map(x => tag(x.kw.split(' ').slice(0, 2).join(' '))))].slice(0, 2);
+  const tags = [...new Set([...kws].sort((a, b) => a.kw.length - b.kw.length).map(x => tag(x.kw)))].slice(0, 2);
   const T: Record<Platform, string[]> = {
     linkedin: [
       `${h}.\n\nMost ${seg} we talk to want the same thing: to ${need0}. The usual tools make that harder, not easier — they ask you to remember everything.\n\nWhat helps:\n→ Decide on one simple system and keep it\n→ ${cap(lcf(need1))}\n→ Review once a week, not once a quarter\n\nWhat’s worked for you?${tags.length ? '\n\n' + tags.join(' ') : ''}`,
-      `A question we hear from ${seg} almost every week: “${h}?”\n\nThe honest answer: it depends less on willpower and more on the system around you.\n\nAt ${n}, we built around one idea: ${lcf(d0)}. It’s a small change that makes it realistic to ${need0}.\n\nHow do you handle it today?`,
+      `A question we hear from ${seg} almost every week: “${h}?”\n\nThe honest answer: it depends less on willpower and more on the system around you.\n\nAt ${n}, one idea shapes what we build: “${d0}.” It’s a small change that makes it realistic to ${need0}.\n\nHow do you handle it today?`,
     ],
     x: [
       `${h}.\n\nPick one simple system. Review it weekly. ${cap(need0)}.\n\nThat’s most of it.`,
       `For ${seg}: ${lcf(h)} is a systems problem, not a discipline problem.`,
     ],
     facebook: [
-      `${h} — a question we hear a lot.\n\nHere’s the short version from all of us at ${n}: ${lcf(d0)}. That one change makes it much easier to ${need0}. Tell us how you handle it!`,
+      `${h} — a question we hear a lot.\n\nHere’s the short version: the easier it is to ${need0}, the more likely you’ll keep doing it. That’s the thinking behind ${n}: “${d0}.” Tell us how you handle it!`,
       `Quick question for the ${seg} here: how do you handle this? ${h}.\n\nWe’ve collected a few ideas that have worked for people we work with, and we’d love to hear yours too.`,
     ],
     reddit: [

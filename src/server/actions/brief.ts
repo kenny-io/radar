@@ -83,10 +83,9 @@ export const actions: ActionMap = {
         if (input.pl && it.kind === 'post' && (it.plats || []).includes(input.pl)) it.pl = input.pl;
         if (input.edit) {
           if (input.edit.text == null) delete it.edits[input.edit.v];
-          else { it.edits[input.edit.v] = input.edit.text; if (it.st === 'copied' && !input.st) it.st = 'open'; }
+          else it.edits[input.edit.v] = input.edit.text;
         }
         if (input.st) it.st = input.st;
-        if (input.st === 'open' && it.fresh) delete it.fresh;
         const next = [...items]; next[i] = it;
         return { items: next, ret: true };
       });

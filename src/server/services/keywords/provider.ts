@@ -73,7 +73,7 @@ export async function related(seed: string, market: string, language: string, li
 
 /** Keywords a competitor domain ranks for that `domain` doesn't (Labs domain_intersection, intersections=false). */
 export async function competitorGaps(domain: string, competitorDomain: string, market: string, language: string, limit = 30): Promise<RelatedKw[]> {
-  if (env.devStubs) return ['time tracking for freelancers', 'invoice software for designers', 'timesheet template'].slice(0, limit).map(kw => ({ ...stubData(kw), intent: kwIntentHeuristic(kw) }));
+  if (env.devStubs) { const { devProfileFor } = await import('../analysis/devsite'); return (devProfileFor(domain).gapKeywords || []).slice(0, limit).map(kw => ({ ...stubData(kw), intent: kwIntentHeuristic(kw) })); }
   if (!providerConfigured()) return [];
   try {
     const res = await dfs('/dataforseo_labs/google/domain_intersection/live', [{ target1: competitorDomain, target2: domain, intersections: false, location_name: market, language_name: languageName(language), limit, order_by: ['keyword_data.keyword_info.search_volume,desc'] }]);

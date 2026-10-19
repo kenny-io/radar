@@ -14,7 +14,6 @@ const singular = (s: string) => lcf(s).replace(/\s*\(.*?\)\s*/g, ' ').trim().rep
 type T = Omit<Candidate, 'postedAt' | 'eng' | 'plat'> & { age: number; late?: boolean };
 
 export function stubThreads(p: Profile, plat: BriefPlatform, subs: string[]): T[] {
-  const name = p.business.name;
   const needs = p.audience.needs.length ? p.audience.needs.map(lcf) : ['grow the business', 'spend less time on admin'];
   const need = (i: number) => needs[i % needs.length];
   const kws = p.keywords.list.filter(k => k.priority).map(k => k.kw);

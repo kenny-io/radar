@@ -11,6 +11,8 @@ export interface DevProfile {
   brand: { primary: string; secondary: string; voice: string; language: string; markets: string[] };
   keywords: { kw: string; intent: 'Commercial' | 'Informational' }[];
   needsKeywords: { kw: string; need: string }[];
+  /** Keywords the competitors rank for and the site doesn't (dev stub for competitor gaps). */
+  gapKeywords?: string[];
   pages: { path: string; title: string; h1: string; desc: string; body: string; article?: boolean }[];
   htmlLang: string;
 }
@@ -25,6 +27,7 @@ const FIELDNOTE: DevProfile = {
     { kw: 'project profitability', intent: 'Informational' }, { kw: 'billable vs non-billable hours', intent: 'Informational' }, { kw: 'tallyhour alternative', intent: 'Commercial' },
     { kw: 'raise freelance rates', intent: 'Informational' }, { kw: 'design invoice template', intent: 'Commercial' }, { kw: 'client portal for designers', intent: 'Commercial' },
   ],
+  gapKeywords: ['time tracking for freelancers', 'invoice software for designers', 'timesheet template'],
   needsKeywords: [{ kw: 'studio utilization rate', need: 'Know which projects are profitable' }, { kw: 'how to bill clients hourly', need: 'Bill accurately without micromanaging' }],
   htmlLang: 'en-US',
   pages: [
@@ -70,6 +73,7 @@ const VERTICALS: Vertical[] = [
     audience: { segments: ['Home coffee enthusiasts', 'Small offices', 'Gift buyers'], buyers: ['Home brewer', 'Office manager'], needs: ['Fresh coffee delivered on a schedule', 'Know where their coffee comes from', 'Easy gifting'], competitors: ['Trade Coffee', 'Blue Bottle', 'Counter Culture'] },
     brand: { primary: '#5B3A29', secondary: '#E9C46A', voice: 'Friendly and knowledgeable, never snobby. Explains coffee in plain words.', language: 'English (US)', markets: ['United States'] },
     keywords: [{ kw: 'coffee subscription', intent: 'Commercial' }, { kw: 'single origin coffee', intent: 'Commercial' }, { kw: 'fresh roasted coffee beans', intent: 'Commercial' }, { kw: 'office coffee delivery', intent: 'Commercial' }, { kw: 'how to brew pour over', intent: 'Informational' }, { kw: 'light vs dark roast', intent: 'Informational' }, { kw: 'coffee gift box', intent: 'Commercial' }, { kw: 'best coffee grinder', intent: 'Commercial' }],
+    gapKeywords: ['coffee beans subscription', 'best espresso beans'],
     needsKeywords: [{ kw: 'direct trade coffee', need: 'Know where their coffee comes from' }],
     htmlLang: 'en-US', pages: [] }) },
   { match: /tax|account|cpa|book|ledger|finance/, make: (name) => ({
@@ -77,6 +81,7 @@ const VERTICALS: Vertical[] = [
     audience: { segments: ['Small business owners', 'Self-employed professionals', 'Early-stage startups'], buyers: ['Business owner', 'Founder'], needs: ['Stay compliant without the stress', 'Understand cash flow', 'Save time on admin'], competitors: ['Bench', 'Pilot', 'Local CPA firms'] },
     brand: { primary: '#1D3557', secondary: '#A8DADC', voice: 'Calm, clear and reassuring. Explains money matters without jargon.', language: 'English (US)', markets: ['United States'] },
     keywords: [{ kw: 'small business bookkeeping', intent: 'Commercial' }, { kw: 'tax preparation for self employed', intent: 'Commercial' }, { kw: 'outsourced accounting', intent: 'Commercial' }, { kw: 'quarterly estimated taxes', intent: 'Informational' }, { kw: 'cash flow forecast template', intent: 'Commercial' }, { kw: 'bookkeeping vs accounting', intent: 'Informational' }, { kw: 'payroll services for small business', intent: 'Commercial' }, { kw: 'business tax deductions', intent: 'Informational' }],
+    gapKeywords: ['online bookkeeping service', 'small business tax accountant'],
     needsKeywords: [{ kw: 'how to read a cash flow statement', need: 'Understand cash flow' }],
     htmlLang: 'en-US', pages: [] }) },
   { match: /./, make: (name) => ({
@@ -84,6 +89,7 @@ const VERTICALS: Vertical[] = [
     audience: { segments: ['Small business owners', 'Professional services firms', 'Local service businesses'], buyers: ['Owner', 'Marketing lead'], needs: ['Look credible online', 'Get more enquiries from the website', 'Update the site without help'], competitors: ['Local agencies', 'Squarespace experts', 'Freelance designers'] },
     brand: { primary: '#2F5BD3', secondary: '#F4A261', voice: 'Confident and approachable. Short sentences, concrete examples, no buzzwords.', language: 'English (US)', markets: ['United States', 'Canada'] },
     keywords: [{ kw: 'small business website design', intent: 'Commercial' }, { kw: 'brand identity design', intent: 'Commercial' }, { kw: 'website redesign cost', intent: 'Informational' }, { kw: 'website care plan', intent: 'Commercial' }, { kw: 'how to write a website brief', intent: 'Informational' }, { kw: 'webflow vs squarespace', intent: 'Commercial' }, { kw: 'brand guidelines template', intent: 'Commercial' }, { kw: 'what makes a good homepage', intent: 'Informational' }],
+    gapKeywords: ['web design agency for small business'],
     needsKeywords: [{ kw: 'website that generates leads', need: 'Get more enquiries from the website' }],
     htmlLang: 'en-US', pages: [] }) },
 ];

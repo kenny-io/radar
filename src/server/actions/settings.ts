@@ -51,7 +51,7 @@ export const actions: ActionMap = {
       if (t.length < 6) throw new RadarError('Add a little more detail.');
       if (t.length > 5000) throw new RadarError('Keep it under 5,000 characters.');
       const [row] = await db.insert(schema.featureRequests).values({ userId: ctx.user.id, businessId: ctx.bid, text: t }).returning({ id: schema.featureRequests.id });
-      const to = env.supportInbox;
+      const to = env.supportInbox || (env.devStubs ? 'support@radar.local' : ''); // dev: lands in the outbox log
       if (to) {
         const body = [`From: ${ctx.user.name} <${ctx.user.email}>`, `Business: ${(ctx.biz.profile as any)?.business?.name || ''} (${ctx.biz.domain})`, `Role: ${ctx.role}`, `Request id: ${row.id}`, '', t].join('\n');
         // Stored first; a mail hiccup must not lose or fail the request (the inbox can be re-sent from feature_requests).

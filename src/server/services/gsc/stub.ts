@@ -66,7 +66,7 @@ export async function stubModel(bid: string, p: Profile, property: string) {
   const arts = pages.filter(x => x.kind === 'article');
   const kwl = p.keywords?.list || [];
   const POS = [3.2, 9.4, 12.8, 6.1, 11.6, 14.2, 4.8, 17.5, 8.6, 13.1];
-  const QV = [(k: string) => `how to ${k.replace(/^how to /, '')}`, (k: string) => `what is ${k}`, (k: string) => `${k} examples`, (k: string) => `best ${k} app`, (k: string) => `is ${k} worth it`, (k: string) => `${k} for small teams`, (k: string) => `${k} checklist`];
+  const QV = [(k: string) => (/^(track|raise|write|price|set|find|send)\b/.test(k) ? `how to ${k}` : `how to handle ${k}`), (k: string) => `what is ${k}`, (k: string) => `${k} examples`, (k: string) => `best ${k} app`, (k: string) => `is ${k} worth it`, (k: string) => `${k} for small teams`, (k: string) => `${k} checklist`];
   const qs: SynQ[] = [];
   const name = (p.business.name || p.domain.split('.')[0]).toLowerCase();
   qs.push({ q: name, page: urlOf('/'), impr: 48, pos: 1.1, ctrMul: 2.1 }, { q: `${name} pricing`, page: urlOf('/pricing'), impr: 9, pos: 1.3, ctrMul: 1.9 }, { q: `${name} login`, page: urlOf('/'), impr: 14, pos: 1.0, ctrMul: 2.4 });
@@ -79,7 +79,7 @@ export async function stubModel(bid: string, p: Profile, property: string) {
     const impr = Math.max(6, (vol / 30) * (pos <= 10 ? 1.3 : 0.9));
     qs.push({ q: k.kw, page, impr, pos, ctrMul: i === 3 || (kwl.length < 4 && i === 0) ? 0.42 : 1 });
     const picks = [0, 1, 2, 3, 4, 5, 6].sort(() => r() - 0.5).slice(0, 3);
-    for (const j of picks) qs.push({ q: QV[j](k.kw), page, impr: impr * (0.12 + r() * 0.22), pos: Math.min(38, pos + 1.5 + r() * 6), ctrMul: 0.9 + r() * 0.3 });
+    for (const j of picks) qs.push({ q: QV[j](k.kw), page, impr: impr * (0.08 + r() * 0.12), pos: Math.min(38, pos + 0.4 + r() * 2.6), ctrMul: 0.9 + r() * 0.3 });
   });
   (p.audience?.competitors || []).slice(0, 3).forEach((c, i) => qs.push({ q: `${c.toLowerCase()} alternative`, page: urlOf(pages.find(x => x.path === '/features') ? '/features' : '/'), impr: 22 - i * 5, pos: 7.4 + i * 3.6, ctrMul: 1 }));
   return { qs, pageUrls: [...new Set(qs.map(q => q.page))] };

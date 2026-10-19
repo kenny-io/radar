@@ -49,6 +49,8 @@ function get(url: URL, hops = 0): Promise<{ status: number; type: string; body: 
   return new Promise((resolve, reject) => {
     if (!/^https?:$/.test(url.protocol)) return reject(new Error('protocol'));
     if (url.port && !['80', '443', '8080', '8443'].includes(url.port)) return reject(new Error('port'));
+    const host = url.hostname.replace(/^\[|\]$/g, '');
+    if (net.isIP(host) && !isPublicIp(host)) return reject(new Error('blocked address')); // IP literals skip DNS lookup
     const mod = url.protocol === 'https:' ? https : http;
     const req = mod.request(url, { method: 'GET', lookup: safeLookup, timeout: 12000, headers: { 'user-agent': env.crawlerUserAgent, accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5', 'accept-language': 'en' } }, res => {
       const st = res.statusCode || 0;
@@ -85,7 +87,7 @@ export function extractPage(html: string): { title: string; description: string;
 export async function readUrl(raw: string): Promise<Grounding> {
   let u: URL; try { u = new URL(raw.trim()); } catch { throw new RadarError(URL_READ_ERROR); }
   if (env.devStubs) {
-    const head = shortHead(u.toString(), 90).replace(/\.(html?|php|aspx?)$/i, '');
+    const seg = u.pathname.split('/').filter(Boolean).pop() || ''; const head = (seg ? shortHead(seg, 90) : u.hostname).replace(/\.(html?|php|aspx?)$/i, '');
     return { headline: head || u.hostname, brief: `Page title: ${head}\nSite: ${u.hostname}\nSummary: An article on ${u.hostname} about ${head.toLowerCase()}. It walks through the problem, why it happens, and a few practical steps readers can take.`, link: u.toString() };
   }
   let r;

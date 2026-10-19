@@ -54,7 +54,7 @@ const SUB_MAP: [RegExp, string[]][] = [
   [/freelanc/, ['freelance']],
   [/graphic|brand designer|design studio|designer/, ['graphic_design']],
   [/web design|web develop/, ['web_design']],
-  [/small (?:business|team|studio|compan)|smb|owner/, ['smallbusiness']],
+  [/small\b.*\b(?:business|team|studio|compan)|smb|owner/, ['smallbusiness']],
   [/agency|studio/, ['agency']],
   [/consult/, ['consulting']],
   [/startup|founder|saas/, ['startups', 'SaaS']],

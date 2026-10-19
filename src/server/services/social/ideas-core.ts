@@ -24,6 +24,7 @@ export function stem(w: string): string {
   else if (s.length > 4 && s.endsWith('ies')) s = s.slice(0, -3) + 'y';
   else if (s.length > 4 && s.endsWith('ed')) s = s.slice(0, -2);
   else if (s.length > 3 && s.endsWith('s') && !s.endsWith('ss')) s = s.slice(0, -1);
+  if (s.length > 6 && s.endsWith('er')) s = s.slice(0, -2);
   if (s.length > 4 && s.endsWith('e')) s = s.slice(0, -1);
   return s;
 }

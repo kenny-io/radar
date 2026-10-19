@@ -4,13 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '@/client/app';
 import { AutoText, Btn, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
 import { Visual, visualBlob } from '@/components/Visual';
+import { packKeys } from './PackThumb';
 import { IMG_SIZES, STYLES, plat } from '@/lib/constants';
 import { ago, fmtD } from '@/lib/format';
 import type { Platform, SocialPack, SocialPost, Workspace } from '@/lib/types';
 
 export function PackView({ pack }: { pack: SocialPack }) {
   const app = useApp(); const B = app.B!; const { go, toast } = app; const brand = B.profile.brand;
-  const keys = (pack.posts ? Object.keys(pack.posts) : []) as Platform[]; const [cur, setCur] = useState<Platform>(keys[0]); const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const keys = packKeys(pack); const [cur, setCur] = useState<Platform>(keys[0]); const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [, tick] = useState(0); useEffect(() => { const iv = setInterval(() => tick(x => x + 1), 30000); return () => clearInterval(iv); }, []);
   const p = pack.posts && pack.posts[cur];
   const headline = (pack as any).headline || pack.source.label;

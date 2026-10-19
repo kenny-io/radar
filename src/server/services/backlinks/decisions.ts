@@ -40,10 +40,11 @@ export async function runDecisionNotice({ proposalId, decision, key }: { proposa
       '', 'The proposed sentence:', sentence, '',
       `Links to: ${absUrl(d.target)}`, `Anchor: ${d.anchor}`, `Attribute: ${d.rel}`, `Disclosure: ${d.disclosure}`, '',
       'You’re the editor: place it as written, adjust the sentence, or skip it. Please keep the attribute and the disclosure.',
-      counterpart && !counterpart.decision ? 'You can also approve it in Radar → Backlinks → Links from you, and Radar adds it the next time that article publishes.' : '',
+      ...(counterpart && !counterpart.decision ? ['You can also approve it in Radar → Backlinks → Links from you, and Radar adds it the next time that article publishes.'] : []),
       'Radar checks the page and reports the link to both sides once it’s live.',
-    ].filter(x => x !== null).join('\n');
+    ].join('\n');
     await sendMail(to.email, `${nameOf(me)} approved a partner link on ${displayUrl(d.page)}`, text);
+    await db.update(schema.proposals).set({ data: { ...d, approvedNoticeSent: true } }).where(eq(schema.proposals.id, row.id));
     return { sent: 'approved' };
   }
   if (decision === 'rejected' && row.note) {
