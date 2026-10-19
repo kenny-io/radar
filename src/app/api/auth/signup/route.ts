@@ -4,7 +4,6 @@ import { db, schema } from '@/server/db';
 import { createSession, hashPassword } from '@/server/auth/session';
 import { attachInvites } from '@/server/auth/users';
 import { handle, json } from '@/server/http/handle';
-import { RadarError } from '@/server/errors';
 import { EMAIL_RE } from '@/lib/format';
 
 const Body = z.object({ name: z.string(), email: z.string(), password: z.string() });
@@ -23,4 +22,3 @@ export const POST = handle(async (req: Request) => {
   await createSession(u.id);
   return json({ ok: true });
 });
-export { RadarError };

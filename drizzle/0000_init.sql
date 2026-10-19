@@ -95,6 +95,7 @@ CREATE TABLE "calendar_entries" (
 	"publish_error" jsonb,
 	"published_url" text,
 	"publish_attempts" integer DEFAULT 0 NOT NULL,
+	"publish_remote" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -125,6 +126,11 @@ CREATE TABLE "crawl_pages" (
 	"text" text DEFAULT '' NOT NULL,
 	"links" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "cron_marks" (
+	"key" text PRIMARY KEY NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "feature_requests" (
