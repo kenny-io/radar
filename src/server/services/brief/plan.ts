@@ -28,7 +28,8 @@ export interface Plan {
   terms: string[];
   needs: string[];
   competitors: string[];
-  /** Search phrases, most important first */
+  /** Short search phrases (keywords and "X alternative"), most important first. Never full sentences: search engines
+   *  and platform APIs match these literally, and long profile sentences match nothing. */
   queries: string[];
   /** "alternative to X" asks */
   alt: string[];
@@ -86,7 +87,9 @@ export function buildPlan(p: Profile): Plan {
   const competitors = p.audience.competitors.filter(Boolean);
   const alt = competitors.map(c => `alternative to ${c}`);
   const offerings = p.business.offerings.map(lcf).slice(0, 3);
-  const queries = [...new Set([...pri, ...needs, ...offerings, ...alt])].filter(Boolean);
+  const short = (s: string) => s.split(/\s+/).length <= 6 && s.length <= 60;
+  const q0 = [...new Set([...terms.filter(short), ...competitors.slice(0, 3).map(c => `${c} alternative`)])].filter(Boolean);
+  const queries = q0.length ? q0 : [lcf(p.business.industry || p.business.name)].filter(Boolean);
   const subreddits = seedSubreddits(p);
   const xTerms = (pri.length ? pri : terms).slice(0, 3);
   const quoraTerms = (pri.length ? pri : terms).slice(0, 2);

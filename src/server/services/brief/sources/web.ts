@@ -8,10 +8,10 @@ import type { BriefPlatform } from '@/lib/types';
 import { clip, engLabel, shortHash, type Candidate } from '../plan';
 import { SourceError, type Source } from './types';
 
-const HOSTS: Partial<Record<BriefPlatform, RegExp>> = {
+export const HOSTS: Partial<Record<BriefPlatform, RegExp>> = {
   linkedin: /(^|\.)linkedin\.com$/i, quora: /(^|\.)quora\.com$/i, reddit: /(^|\.)reddit\.com$/i, x: /(^|\.)(x|twitter)\.com$/i,
 };
-const PATHS: Partial<Record<BriefPlatform, RegExp>> = {
+export const PATHS: Partial<Record<BriefPlatform, RegExp>> = {
   linkedin: /^\/(posts|feed\/update|pulse)\//i, quora: /^\/(?!profile\/|topic\/)[^/]+/i, reddit: /^\/r\/[^/]+\/comments\//i, x: /^\/[^/]+\/status\/\d+/i,
 };
 const Threads = z.object({ threads: z.array(z.object({
@@ -19,18 +19,29 @@ const Threads = z.object({ threads: z.array(z.object({
   excerpt: z.string().nullable(), postedAt: z.string().nullable(), engagementCount: z.number().nullable(),
 })) });
 
-const norm = (u: string) => { try { const x = new URL(u); return (x.hostname.replace(/^www\./, '') + x.pathname.replace(/\/$/, '')).toLowerCase(); } catch { return u.toLowerCase(); } };
+export const norm = (u: string) => { try { const x = new URL(u); return (x.hostname.replace(/^www\./, '') + x.pathname.replace(/\/$/, '')).toLowerCase(); } catch { return u.toLowerCase(); } };
+
+/** Web search can't filter to the last 48 hours the way platform APIs can, so web-found threads may be up to a week old
+ *  (recency still lowers their score). */
+const WEB_WINDOW_MS = 7 * 864e5;
 
 export const webSource = (plat: BriefPlatform): Source => async (ctx) => {
   const { plan, profile } = ctx;
-  const site = plat === 'linkedin' ? 'linkedin.com/posts' : plat === 'quora' ? 'quora.com' : plat === 'reddit' ? 'reddit.com/r' : 'x.com';
-  const days = Math.max(2, Math.round((Date.now() - ctx.sinceMs) / 864e5));
+  const site = plat === 'linkedin' ? 'linkedin.com/posts' : plat === 'quora' ? 'quora.com' : plat === 'reddit' ? 'reddit.com' : 'x.com';
+  const sinceMs = Math.min(ctx.sinceMs, Date.now() - WEB_WINDOW_MS);
+  const days = Math.max(2, Math.round((Date.now() - sinceMs) / 864e5));
+  const subs = plat === 'reddit' ? plan.subreddits.slice(0, 3) : [];
+  const searches = [
+    ...plan.queries.slice(0, 6).map(q => `site:${site} ${q}`),
+    ...subs.map((r, i) => `site:reddit.com/r/${r} ${plan.queries[i % Math.max(1, plan.queries.length)] || ''}`.trim()),
+  ];
   const prompt = [
     `Find public ${BPLAT[plat]} ${plat === 'quora' ? 'questions' : 'posts'} from the last ${days} days where people in this audience ask for help or discuss problems this business can genuinely help with.`,
     `Audience: ${profile.audience.segments.join('; ')}. Buyers: ${profile.audience.buyers.join('; ')}. Needs: ${profile.audience.needs.join('; ')}.`,
-    `Search for: ${plan.queries.slice(0, 8).map(q => `site:${site} "${q}"`).join(' | ')}`,
+    `Run several separate web searches (short keyword searches work best; do not put whole sentences in quotes), for example:\n${searches.map(q => '- ' + q).join('\n')}`,
+    `Prefer the most recent posts. Skip anything older than ${days} days, and skip pages that are not individual ${plat === 'quora' ? 'questions' : 'posts or threads'} (profiles, topic pages, search pages).`,
     `Only include pages on ${site}. Do not include posts by ${profile.business.name} or by these competitors: ${plan.competitors.join(', ') || 'none'}.`,
-    `For each result give the exact URL you found, the post title or first sentence, the author, the author's headline if shown, a short excerpt, the posting date (ISO) if shown, and the comment/answer count if shown. Never invent results.`,
+    `For each result give the exact URL you found, the post title or first sentence, the author, the author's headline if shown, a short excerpt, the posting date (ISO) if shown, and the comment/answer count if shown. Return up to 10 results. Never invent results.`,
   ].join('\n');
   let res;
   try {
@@ -45,7 +56,7 @@ export const webSource = (plat: BriefPlatform): Source => async (ctx) => {
     if (!HOSTS[plat]!.test(u.hostname) || !PATHS[plat]!.test(u.pathname)) continue;
     if (found.size && !found.has(norm(t.url))) continue; // must come from the search itself
     const posted = t.postedAt && !isNaN(Date.parse(t.postedAt)) ? new Date(t.postedAt).toISOString() : null;
-    if (posted && Date.parse(posted) < ctx.sinceMs - 864e5) continue;
+    if (posted && Date.parse(posted) < sinceMs - 864e5) continue;
     const who = clip(t.author || '', 60);
     const n = Math.max(0, Math.round(t.engagementCount || 0));
     out.push({

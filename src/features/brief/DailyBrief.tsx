@@ -185,6 +185,10 @@ export function DailyBrief() {
         onRetry={() => runScan(scan.kind, { retryOf: scan.jobId || undefined })}
         onCancel={br.days[today] ? () => { if (scan.jobId) app.act('brief.keep', { jobId: scan.jobId }, { silent: true }).catch(() => {}); setResult(null); setScan(null); } : null} />
     : !D ? <Empty icon="brief" title="No brief for this day" body="Radar only keeps briefs from days it scanned." />
+    : !items.length ? <Empty icon="brief" title={isToday ? 'Nothing worth joining yet' : 'Nothing worth joining that day'}
+        body={isToday ? `Radar read today’s conversations but none were a good fit for ${name}. It scans again tomorrow at ${fmtTime(br.settings.time)}, or you can scan again later today.` : 'Radar scanned but found no conversations that were a good fit.'}>
+        {isToday && <Btn kind="secondary" onClick={() => runScan('again')}>Scan again</Btn>}
+      </Empty>
     : <div className={'brief-grid' + (mob ? ' mob' : '')}>
       <nav className="brief-q" aria-label="Today’s recommendations">
         {groups.map(g => <div key={g.k} className="col"><div className="brief-gh">{g.k !== 'post' && <PlatLogo k={g.k} s={14} />}<span>{g.l}</span></div>
