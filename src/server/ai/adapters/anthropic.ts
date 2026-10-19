@@ -83,6 +83,7 @@ export async function anthropicRun(c: ProviderCall): Promise<ProviderResult> {
       if (d.type === 'content_block_delta' && d.delta?.type === 'text_delta') { text += d.delta.text; c.onDelta(d.delta.text); }
       if (d.type === 'message_start') inTok = d.message?.usage?.input_tokens || 0;
       if (d.type === 'message_delta') outTok = d.usage?.output_tokens || outTok;
+      if (d.type === 'error') { const e: any = new Error(`Stream error: ${d.error?.type || ''} ${d.error?.message || ''}`.slice(0, 300)); e.status = d.error?.type === 'overloaded_error' ? 529 : /credit|billing/i.test(d.error?.message || '') ? 402 : 500; throw e; }
     }
     return { text, citations: [], inputTokens: inTok, outputTokens: outTok };
   } finally { clearTimeout(t); }

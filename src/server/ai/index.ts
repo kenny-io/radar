@@ -25,6 +25,8 @@ export interface AiInput<T = any> {
   temperature?: number;
   /** Streaming text deltas (plain text calls only). */
   onDelta?: (delta: string) => void;
+  /** Called before each new attempt (retry or provider failover) so streamed text from a failed attempt is discarded. */
+  onReset?: () => void;
   timeoutMs?: number;
   /** Stub-only: context passed to the dev stub generator. */
   stubContext?: any;
@@ -150,6 +152,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
     const call: ProviderCall = { apiModel: apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
     for (let attempt = 0; attempt <= retries; attempt++) {
       const t0 = Date.now();
+      input.onReset?.();
       try {
         let res: ProviderResult;
         if (env.devStubs) res = await stubRun(input, jsonSchema);
@@ -157,6 +160,8 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
           if (!hasKey(provider)) throw Object.assign(new Error(`No API key configured for ${provider}`), { permanent: true });
           res = await callProvider(modelId, call);
         }
+        // An empty answer is a failure (e.g. a provider that accepts the request and then errors inside the stream).
+        if (!String(res.text || '').trim() && res.json == null) throw new Error('Empty response from ' + provider);
         let json: any = null;
         if (input.schema) {
           const raw = fitToSchema(res.json ?? extractJson(res.text), jsonSchema);

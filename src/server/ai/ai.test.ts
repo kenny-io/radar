@@ -79,3 +79,30 @@ describe('keyword provider errors', () => {
     expect(classifyProviderError({ status: 500, message: 'DataForSEO 500' })).toBe('error');
   });
 });
+
+import { vi } from 'vitest';
+import { openaiRun } from './adapters/openai';
+import { imagePrompt } from '../services/images';
+const sse = (events: any[]) => new Response(new ReadableStream({ start(c) { for (const e of events) c.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(e)}\n\n`)); c.close(); } }), { status: 200 });
+describe('streaming errors', () => {
+  it('turns an in-stream quota error into an account error instead of an empty article', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => sse([{ type: 'response.created' }, { type: 'response.failed', response: { error: { code: 'insufficient_quota', message: 'You have no credits remaining.' } } }])));
+    let err: any = null;
+    try { await openaiRun({ apiModel: 'm', prompt: 'p', maxTokens: 10, timeoutMs: 5000, onDelta: () => {} }, { base: 'https://api.openai.com/v1', key: 'k' }); } catch (e) { err = e; }
+    vi.unstubAllGlobals();
+    expect(err).toBeTruthy();
+    expect(isAccountError(err)).toBe(true);
+  });
+  it('still returns streamed text on success', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => sse([{ type: 'response.output_text.delta', delta: 'Hello ' }, { type: 'response.output_text.delta', delta: 'world' }, { type: 'response.completed', response: { usage: { output_tokens: 2 } } }])));
+    const out = await openaiRun({ apiModel: 'm', prompt: 'p', maxTokens: 10, timeoutMs: 5000, onDelta: () => {} }, { base: 'https://api.openai.com/v1', key: 'k' });
+    vi.unstubAllGlobals();
+    expect(out.text).toBe('Hello world');
+  });
+});
+describe('image prompt', () => {
+  it('uses brand colors and forbids text', () => {
+    const p = imagePrompt({ style: 'illustration', headline: 'Move docs', name: 'Thally', brand: { primary: '#6B7A3A', secondary: '#F5E08A' } as any, seed: 1 });
+    expect(p).toContain('#6B7A3A'); expect(p).toMatch(/No words, letters/);
+  });
+});

@@ -1,10 +1,11 @@
 // Article drafting (02-system.md §7): research first (web search + the user's own pages + Search Console), then stream
 // the article with the writing model, map every statistic to a source, never invent statistics, then render the hero.
+import { RadarError } from '@/server/errors';
 import { z } from 'zod';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { ai, profileContext } from '../../ai';
-import { renderImage } from '../images';
+import { renderImage, defaultArticleImageStyle } from '../images';
 import { normKw, topQueries } from '../gsc/metrics';
 import { fmtN, slugify } from '@/lib/format';
 import { blockText, defaultArticle, extractClaims, normNum, parseBlocks, splitStream, statNumbers } from '@/features/article/blocks';
@@ -111,6 +112,7 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
     system: 'You are Radar, a senior writer producing a useful, accurate article for a small business’s blog. You follow the format and rules exactly.',
     prompt: draftPrompt(profile, e, a, sources, queries, refreshText),
     onDelta: d => { text += d; const s = splitStream(text.replace(MARKS, '')); ctx.progress({ ...s, stage: 'writing' }).catch(() => {}); },
+    onReset: () => { if (text) { text = ''; ctx.progress({ stage: 'writing', blocks: [], partial: '' }).catch(() => {}); } },
     stubContext: { e, a, profile, sources },
   }, { businessId: bid });
   if (!text) text = out.text;
@@ -119,6 +121,8 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   if (blocks[0] && blocks[0][0] !== 'p' && normKw(blockText(blocks[0])) === normKw(e.title)) blocks = blocks.slice(1);
   const ex = extractClaims(blocks);
   let body = ex.body;
+  // Never save an empty draft as "ready for review": fail so the job retries (or shows "couldn't draft").
+  if (!body.length) throw new RadarError('Radar couldn’t write this draft. Try again.', 502, 'ai_failed');
   let claims = ex.claims.filter(c => c.source >= 0 && c.source < sources.length);
 
   // Never invent statistics: every number in the body must appear in the source notes (or the brief/profile).
@@ -163,6 +167,9 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
 
   // Hero image (1200×628) in the article's style.
   const img = { ...a.img, alt };
+  // Entries created before AI images were available kept the template default; upgrade it on the first real draft
+  // unless the user picked a style themselves (the default direction text is untouched).
+  if (img.style === 'branded' && !(a.body || []).length && /^Calm, editorial image about /.test(img.prompt || '') && defaultArticleImageStyle() === 'illustration') img.style = 'illustration';
   const key = `${img.style}:${img.seed}`;
   if (!img.url || img.urlKey !== key) {
     try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }

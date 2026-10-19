@@ -1,5 +1,6 @@
 // Job + cron definitions for "calendar". Imported by src/server/jobs/all.ts.
 // calendar.generate (ref = businessId): the 7 research phases of 01-screens.md §5, streamed as { phase, results, keep, gsc }.
+import { defaultArticleImageStyle } from '@/server/services/images';
 import { keywordProviderIssue } from '../keywords/provider';
 import { and, eq, ne } from 'drizzle-orm';
 import { db, schema } from '../../db';
@@ -97,7 +98,7 @@ defineJob<CalGenPayload>({
           await tx.insert(schema.calendarEntries).values(rows);
           await tx.insert(schema.articles).values(rows.map((r, i) => ({
             entryId: r.id, businessId: bid,
-            data: { entryId: r.id, generated: false, body: [], brief: { angle: r.relevance, outline: topics[i].outline, words: 1400 }, seo: { title: r.title, meta: '', slug: slugify(r.kw) }, img: { style: 'branded', seed: 1, prompt: 'Calm, editorial image about ' + r.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null },
+            data: { entryId: r.id, generated: false, body: [], brief: { angle: r.relevance, outline: topics[i].outline, words: 1400 }, seo: { title: r.title, meta: '', slug: slugify(r.kw) }, img: { style: defaultArticleImageStyle(), seed: 1, prompt: 'Calm, editorial image about ' + r.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null },
           })));
         }
         await tx.update(schema.businesses).set({ calendarGeneratedAt: generatedAt, calendarSettings: settings }).where(eq(schema.businesses.id, bid));

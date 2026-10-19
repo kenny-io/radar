@@ -1,4 +1,5 @@
 // Actions for the Content Calendar (01-screens.md §5, 02-system.md §6).
+import { defaultArticleImageStyle } from '@/server/services/images';
 import { z } from 'zod';
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
@@ -106,7 +107,7 @@ export const actions: ActionMap = {
     const r = await entryRow(ctx.bid, entryId);
     if (r.status !== 'proposed') throw new RadarError('Only proposed topics can be replaced.');
     await db.update(E).set({ title: alt.title, kw: alt.kw, type: alt.type, vol: alt.vol, kd: alt.kd, mode: alt.mode, url: alt.url ?? null, measured: alt.measured ?? null, audience: alt.audience, relevance: alt.relevance }).where(eq(E.id, entryId));
-    const data = { entryId, generated: false, body: [], brief: { angle: alt.relevance, outline: alt.outline || [], words: 1400 }, seo: { title: alt.title, meta: '', slug: slugify(alt.kw) }, img: { style: 'branded', seed: 1, prompt: 'Calm, editorial image about ' + alt.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null };
+    const data = { entryId, generated: false, body: [], brief: { angle: alt.relevance, outline: alt.outline || [], words: 1400 }, seo: { title: alt.title, meta: '', slug: slugify(alt.kw) }, img: { style: defaultArticleImageStyle(), seed: 1, prompt: 'Calm, editorial image about ' + alt.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null };
     await db.insert(schema.articles).values({ entryId, businessId: ctx.bid, data }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
     return { ok: true };
   } }),

@@ -48,6 +48,13 @@ export async function openaiRun(c: ProviderCall, cfg: { base: string; key: strin
       const d = JSON.parse(ev.data);
       if (d.type === 'response.output_text.delta' && d.delta) { text += d.delta; c.onDelta(d.delta); }
       if (d.type === 'response.completed') usage = d.response?.usage || {};
+      // Errors arrive inside a 200 stream (e.g. out of credit): surface them so the call fails over instead of returning ''.
+      if (d.type === 'error' || d.type === 'response.failed' || d.type === 'response.incomplete') {
+        const m = d.error?.message || d.message || d.response?.error?.message || d.response?.incomplete_details?.reason || d.type;
+        const code = d.error?.code || d.code || d.response?.error?.code || '';
+        if (d.type === 'response.incomplete' && text) break; // truncated by max tokens: keep what was written
+        const e: any = new Error(`Stream ${d.type}: ${code} ${m}`.slice(0, 300)); e.status = /quota|credit|billing/i.test(m + code) ? 429 : 500; throw e;
+      }
     }
     return { text, citations: [], inputTokens: usage.input_tokens, outputTokens: usage.output_tokens };
   } finally { clearTimeout(t); }
