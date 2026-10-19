@@ -55,6 +55,7 @@ export function Signup({ mode = 'signup' }: { mode?: 'signup' | 'signin' }) {
         {signin
           ? <p className="xs sub" style={{ textAlign: 'center' }}>New to Radar? <a href={"/signup" + (rawNext ? "?next=" + encodeURIComponent(next) : "")}>Create account</a></p>
           : <p className="xs sub" style={{ textAlign: 'center' }}>Already have an account? <a href={"/signin" + (rawNext ? "?next=" + encodeURIComponent(next) : "")}>Sign in</a></p>}
+        <p className="xs" style={{ textAlign: 'center', color: 'var(--faint)', marginTop: 8 }}><a href="/privacy" style={{ color: 'inherit' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit' }}>Terms</a></p>
       </form>
     </div>
   </div>;
