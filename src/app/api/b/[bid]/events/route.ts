@@ -35,5 +35,5 @@ export const GET = handle(async (req: Request, { params }: { params: Promise<{ b
     },
     cancel() { closed = true; },
   });
-  return new Response(stream, { headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform', connection: 'keep-alive' } });
+  return new Response(stream, { headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform', connection: 'keep-alive', 'x-accel-buffering': 'no' } });
 });
