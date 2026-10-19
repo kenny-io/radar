@@ -1,0 +1,101 @@
+# Launch checklist — running Radar as a live product
+
+Everything you need to create, configure and provide. Env var names match `.env.example`.
+`{APP_URL}` = your production URL, e.g. `https://app.radar.yourdomain.com`.
+
+---
+
+## 1. Infrastructure (required)
+
+- [ ] **Domain** for the app (e.g. `app.yourdomain.com`) and a **sending domain** for email.
+- [ ] **Postgres 16** — managed (Neon, Supabase, Railway, RDS…). → `DATABASE_URL`
+- [ ] **Host with two always-on processes** (Railway, Render, Fly.io, a VM…):
+  - Web: `npm run build && npm start`
+  - Worker: `npm run worker` (jobs + the minute scheduler — drafting, publishing, Brief scans, GSC sync, AI visibility, link checks, auto packs)
+  - Not a fit: serverless-only hosting (e.g. Vercel alone) — the worker must run continuously. You can put the web on Vercel and the worker elsewhere, sharing the DB.
+- [ ] **Object storage** (logos, generated images) — S3, Cloudflare R2 or any S3-compatible bucket with public read on objects. → `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT` (R2/others), `S3_PUBLIC_URL`, plus `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Local disk only works on a single persistent server.
+- [ ] Core env: `APP_URL`, `RADAR_SECRET_KEY` (generate: `openssl rand -base64 48` — keep it forever; it decrypts stored tokens), `NODE_ENV=production`. Make sure `RADAR_DEV_STUBS` is **unset/0**.
+- [ ] Run `npm run db:migrate` on every deploy.
+- [ ] `CRAWLER_USER_AGENT` — point the URL at a real page describing the Radar bot (e.g. `RadarBot/1.0 (+https://yourdomain.com/bot)`).
+
+## 2. Google — sign-in + Search Console (required)
+
+- [ ] Google Cloud project → enable **Google Search Console API**.
+- [ ] OAuth consent screen: app name, logo, support email, privacy policy + terms URLs, authorized domain.
+- [ ] Scopes: `openid`, `email`, `profile`, `https://www.googleapis.com/auth/webmasters.readonly`.
+- [ ] OAuth client (Web application). Authorized redirect URIs:
+  - `{APP_URL}/api/auth/google/callback`
+  - `{APP_URL}/api/oauth/gsc/callback`
+- [ ] → `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- [ ] **Submit for Google verification.** `webmasters.readonly` is a sensitive scope: until verified, only listed test users (max 100) can connect, and they see an "unverified app" warning.
+
+## 3. AI models (required — at least the defaults)
+
+Defaults per business: writing = GPT-6 Sol (OpenAI), research = Claude Opus 5.5 (Anthropic). Users can switch in Settings → AI models, so add all three if you want every option to work.
+- [ ] **OpenAI** API key (also used for Photography/Illustration images and the ChatGPT visibility column) → `OPENAI_API_KEY`
+- [ ] **Anthropic** API key (also the Claude visibility column) → `ANTHROPIC_API_KEY`
+- [ ] **xAI** API key (Grok models + the Grok visibility column) → `XAI_API_KEY`
+- [ ] Verify model ids against your live keys (DIVERGENCES #4); override with `AI_MODEL_MAP` if any differ. Image model: `OPENAI_IMAGE_MODEL` (default `gpt-image-1`).
+- [ ] Set billing limits/alerts on each provider. Cost per call is logged in the `ai_calls` table.
+
+## 4. Data providers
+
+- [ ] **DataForSEO** (keyword volume, difficulty, related keywords, competitor gaps) — required for the calendar and keyword estimates. → `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`. Without it, keywords stay "Estimating…".
+- [ ] **YouTube Data API v3** — enable in the same Google Cloud project, create an API key (restrict it to that API). → `YOUTUBE_API_KEY`
+- [ ] **Open PageRank** (free, backlink authority) → `OPENPAGERANK_API_KEY`
+
+## 5. AI Visibility engines
+
+ChatGPT, Claude and Grok reuse the keys from §3. Add:
+- [ ] **Perplexity** API key → `PERPLEXITY_API_KEY`
+- [ ] **Google Gemini** API key (AI Studio) → `GEMINI_API_KEY`
+- [ ] Check the queried model ids: `VIS_CHATGPT_MODEL`, `VIS_PERPLEXITY_MODEL`, `VIS_GEMINI_MODEL`, `VIS_CLAUDE_MODEL`, `VIS_GROK_MODEL`.
+- Missing keys aren't fatal — those cells show "No data", never "not mentioned".
+
+## 6. Daily Brief sources
+
+- [ ] **Reddit** app (reddit.com/prefs/apps, type "web app"; app-only OAuth) → `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` (format `web:radar:1.0 (by /u/youraccount)`). Commercial use requires Reddit's data API agreement — apply.
+- [ ] **X API** project on a paid tier with recent search → `X_BEARER_TOKEN`
+- Hacker News needs nothing. LinkedIn and Quora use the research model's web search (needs approval — DIVERGENCES #1/#2).
+
+## 7. Blog connectors (per platform you want to offer)
+
+WordPress (self-hosted), Ghost, Webhook and Framer need nothing from you — users enter their own credentials. For the OAuth platforms, create an app on each and set its redirect URI to `{APP_URL}/api/oauth/{provider}/callback`:
+
+| Platform | Where | Redirect provider | Scopes / permissions | Env |
+|---|---|---|---|---|
+| Webflow | Webflow workspace → Apps & integrations → create Data client app | `webflow` | `sites:read sites:write cms:read cms:write` | `WEBFLOW_CLIENT_ID/SECRET` |
+| Notion | notion.so/my-integrations → **public** integration (OAuth) | `notion` | Read/insert/update content | `NOTION_CLIENT_ID/SECRET` |
+| Wix | Wix Dev Center → new app with Blog permissions (manage blog/draft posts) | `wix` | Wix Blog | `WIX_CLIENT_ID/SECRET` |
+| Shopify | Shopify Partners → app (public or custom distribution) | `shopify` | `read_content,write_content` | `SHOPIFY_CLIENT_ID/SECRET`, `SHOPIFY_API_VERSION` |
+| WordPress.com | developer.wordpress.com/apps | `wpcom` | `global` | `WPCOM_CLIENT_ID/SECRET` |
+| Next.js blog (GitHub) | GitHub → Developer settings → OAuth App | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
+
+Public Shopify and Wix apps go through store/marketplace review before arbitrary merchants can install them.
+
+## 8. Email
+
+- [ ] **Resend** account, verify your sending domain (SPF/DKIM) → `RESEND_API_KEY`, `MAIL_FROM`
+- [ ] Support inbox for feature requests → `SUPPORT_INBOX`
+- Without Resend, emails (team invites, backlink partner notices) are only logged — invites won't arrive.
+
+## 9. Legal and policy (before real users)
+
+- [ ] Privacy policy and terms (Google verification needs them).
+- [ ] A public "Radar bot" page (crawler identity + opt-out via robots.txt).
+- [ ] Backlink network terms (disclosure, `rel="sponsored"`, removal process).
+- [ ] Data-use agreements: Reddit, X, DataForSEO terms for commercial use.
+
+## 10. Product decisions to make (from DIVERGENCES.md)
+
+- [ ] Approve or change the 82 "Needs approval" items — especially: LinkedIn/Quora via web search, no sign-out button, invite-link policy, Next.js "published = PR opened", source-removal styling.
+- [ ] Brand assets: replace platform logos with each brand's official kit if required.
+- [ ] Billing/credits (not designed — AI costs are logged per business in `ai_calls`).
+
+## 11. Go-live checks
+
+- [ ] Sign up, onboard your own site, connect real Search Console, wait for the 16-month sync.
+- [ ] Generate a calendar, draft one article, publish to a test blog on each connector you offer.
+- [ ] Run a Daily Brief scan, generate a social pack, collect one AI-visibility cell.
+- [ ] Invite a teammate (email arrives, link works).
+- [ ] Error monitoring (Sentry or similar) and uptime checks on web + worker; Postgres backups on.

@@ -47,6 +47,7 @@ Run `npm run db:migrate` on deploy.
 ## Docs
 - `ARCHITECTURE.md` — code layout, the client `app` object, actions, jobs, AI layer, dev stubs
 - `DIVERGENCES.md` — every divergence from the design, with status (some need product approval)
+- `docs/LAUNCH.md` — everything to set up to run Radar live (accounts, keys, OAuth apps, hosting)
 - `docs/webhook.md` — the signed webhook payload for the Webhook connector
 - `docs/CONTRACTS.md` — actions, components and job kinds shared between feature areas
 
