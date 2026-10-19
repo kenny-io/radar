@@ -134,6 +134,10 @@ function extractJson(text: string): any {
   return null;
 }
 
+/** Reasoning models (e.g. Grok 4.7) can take minutes on large structured outputs: scale the default timeout with the
+ *  requested output size. Explicit timeoutMs on a call always wins. */
+const defaultTimeout = (maxTokens: number, webSearch: boolean) => Math.min(600_000, Math.max(180_000, maxTokens * 45) + (webSearch ? 60_000 : 0));
+
 /** Run a task. Retries transient failures, fails over between providers, validates JSON against the schema. Throws RadarError with generic copy on failure. */
 export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { businessId?: string | null; retries?: number } = {}): Promise<AiOutput<T>> {
   const chosen = await modelFor(task, opts.businessId);
@@ -143,7 +147,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
   let lastErr: any = null;
   for (const modelId of models) {
     const provider = providerOf(modelId);
-    const call: ProviderCall = { apiModel: apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || 120000 };
+    const call: ProviderCall = { apiModel: apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
     for (let attempt = 0; attempt <= retries; attempt++) {
       const t0 = Date.now();
       try {
