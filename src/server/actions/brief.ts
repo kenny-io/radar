@@ -1,4 +1,5 @@
 // Actions for the Daily Brief area. 01-screens §4, 02-system §9.
+import { trackSoon } from '@/server/events';
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
@@ -85,11 +86,17 @@ export const actions: ActionMap = {
           if (input.edit.text == null) delete it.edits[input.edit.v];
           else it.edits[input.edit.v] = input.edit.text;
         }
+        const before = items[i].st;
         if (input.st) it.st = input.st;
         const next = [...items]; next[i] = it;
-        return { items: next, ret: true };
+        return { items: next, ret: { it, before } };
       });
       if (!ok) throw new RadarError('That conversation wasn’t found.', 404, 'not_found');
+      const { it, before } = ok;
+      if (input.st && input.st !== before) {
+        const kind = input.st === 'posted' ? (it.kind === 'post' ? 'brief.post_posted' : 'brief.reply_posted') : input.st === 'copied' ? 'brief.reply_copied' : input.st === 'skipped' ? 'brief.skipped' : null;
+        if (kind) trackSoon(kind, { bid: ctx.bid, uid: ctx.user.id, ref: it.id, props: { date: input.date, kind: it.kind, plat: it.kind === 'post' ? it.pl : it.plat, plugged: it.kind === 'reply' ? !!it.mention : undefined, edited: Object.keys(it.edits || {}).length > 0, where: it.where, url: it.url, title: it.title } });
+      }
       return { ok: true };
     },
   }),

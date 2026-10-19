@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { track } from '@/server/events';
 import { eq, or } from 'drizzle-orm';
 import { decodeJwt } from 'jose';
 import { db, schema } from '@/server/db';
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
   const found = (await db.select().from(schema.users).where(or(eq(schema.users.googleSub, sub), eq(schema.users.email, email))).limit(1))[0];
   let userId: string;
   if (found) { userId = found.id; if (!found.googleSub) await db.update(schema.users).set({ googleSub: sub }).where(eq(schema.users.id, found.id)); }
-  else { const [u] = await db.insert(schema.users).values({ name, email, googleSub: sub }).returning(); userId = u.id; }
+  else { const [u] = await db.insert(schema.users).values({ name, email, googleSub: sub }).returning(); userId = u.id; await track('user.signed_up', { uid: u.id, props: { method: 'google' } }); }
   await attachInvites(userId, email);
   await createSession(userId);
   const next = (st.data as any)?.next || '/';

@@ -2,6 +2,7 @@
 // Parse rules: mentioned = the business is named in the answer; position = its order among the products the answer names
 // (the writing model extracts the ordered list; Radar matches the business name/domain). Citations are URLs; own-domain ones count
 // toward "Cited your site". Any failure leaves the cell "not collected" — never "not mentioned".
+import { trackSoon } from '@/server/events';
 import { z } from 'zod';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db, schema } from '../../db';
@@ -112,6 +113,8 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     const mentioned = idx >= 0;
     const cites = [...new Set(ans.cites.filter(Boolean))].slice(0, 20);
     await db.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt: new Date(), attemptedAt: new Date() }).where(eq(A.id, resultId));
+    trackSoon('visibility.checked', { bid, ref: resultId, props: { engine, mentioned, pos: mentioned ? idx + 1 : null, cites: cites.length } });
+    if (mentioned) trackSoon('visibility.mentioned', { bid, ref: resultId, props: { engine, pos: idx + 1, prompt: row.prompt } });
     await bump(bid);
     return { status: mentioned ? 'mentioned' : 'not-mentioned' };
   } catch (e: any) {

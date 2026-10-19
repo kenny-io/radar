@@ -306,3 +306,15 @@ export const cronMarks = pgTable('cron_marks', {
   key: text('key').primaryKey(),
   createdAt: created(),
 });
+
+/** Impact log: one row per thing Radar did for a founder (append-only, used for reporting). Props hold counts, ids,
+ *  platforms and URLs, never drafted text. Deleting a business or user detaches its events (anonymized counts remain). */
+export const events = pgTable('events', {
+  id: id(),
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'set null' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  kind: text('kind').notNull(),
+  ref: text('ref'),
+  props: jsonb('props').$type<Record<string, any>>().notNull().default({}),
+  createdAt: created(),
+}, t => [index('events_kind_at').on(t.kind, t.createdAt), index('events_biz_at').on(t.businessId, t.createdAt)]);

@@ -56,3 +56,17 @@ describe('fitToSchema', () => {
     expect(fitToSchema(ok, js)).toEqual(ok);
   });
 });
+
+import { summarize, jobProducedOutcome } from '../events';
+describe('impact events', () => {
+  it('keeps ids, counts and platforms but drops drafts, secrets and long text', () => {
+    const s: any = summarize({ input: { id: 'r1', plat: 'reddit', text: 'draft', drafts: { help: 'x' }, apiKey: 'sk', note: 'n' }, result: { added: 2, url: 'https://x.com/a', long: 'z'.repeat(300), list: [{ a: 1 }] } });
+    expect(s).toEqual({ input: { id: 'r1', plat: 'reddit' }, result: { added: 2, url: 'https://x.com/a', list: { count: 1 } } });
+  });
+  it('counts only jobs that did real work', () => {
+    expect(jobProducedOutcome('brief.scan', { added: 0 })).toBe(true);
+    expect(jobProducedOutcome('social.autoRun', { packId: null })).toBe(false);
+    expect(jobProducedOutcome('article.draft', { skipped: 'missing' })).toBe(false);
+    expect(jobProducedOutcome('gsc.backfill', {})).toBe(false);
+  });
+});

@@ -1,4 +1,5 @@
 // The publisher: scheduled entry → payload → draft on the platform → publish (02-system.md §7, §12).
+import { trackSoon } from '@/server/events';
 import path from 'node:path';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -121,6 +122,7 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
     const { url } = await connector.publish(c, payload, draft);
     await setEntry({ status: 'published', publishedUrl: url, publishError: null, publishRemote: null, publishAttempts: o.attempt });
     if (conn.status !== 'ok') await db.update(schema.connections).set({ status: 'ok', lastError: null }).where(eq(schema.connections.id, conn.id));
+    trackSoon('article.published', { bid: b.id, ref: entryId, props: { url, platform: type, title: e.title, keyword: (e as any).kw, attempt: o.attempt } });
     await notify(b.id, `Published to ${b.domain}`, { tone: 'ok' });
     return { status: 'published', url };
   } catch (err: any) {

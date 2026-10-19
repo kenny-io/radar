@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { track } from '@/server/events';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { createSession, hashPassword } from '@/server/auth/session';
@@ -18,6 +19,7 @@ export const POST = handle(async (req: Request) => {
   const exists = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
   if (exists[0]) return json({ ok: false, errors: { email: 'An account with this email already exists. Sign in instead.' } }, 409);
   const [u] = await db.insert(schema.users).values({ name: b.name.trim(), email, passwordHash: await hashPassword(b.password) }).returning();
+  await track('user.signed_up', { uid: u.id, props: { method: 'password' } });
   await attachInvites(u.id, email);
   await createSession(u.id);
   return json({ ok: true });

@@ -1,6 +1,7 @@
 // Link verification (02-system.md §13): the weekly crawler confirms each live link exists with the right rel (else lost,
 // reported to both sides); approved placements become live once the link is found; removal requests become removed once
 // the link is gone. Re-check runs the same check on demand.
+import { trackSoon } from '@/server/events';
 import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { env } from '../../env';
@@ -27,7 +28,10 @@ async function markPlaced(row: PropRow, rel: string | null) {
   for (const bid of owners) {
     const b = await bizRow(bid); if (!b) continue;
     const exists = await db.select({ id: schema.liveLinks.id }).from(schema.liveLinks).where(and(eq(schema.liveLinks.businessId, bid), eq(schema.liveLinks.fromUrl, d.page), eq(schema.liveLinks.toUrl, d.target))).limit(1);
-    if (!exists[0]) await db.insert(schema.liveLinks).values({ businessId: bid, proposalId: rows.find(r => r.businessId === bid)?.id || row.id, fromUrl: d.page, toUrl: d.target, anchor: d.anchor, rel: rel || relShort(d.rel || ''), since: todayIn(b.timezone), status: 'live', lastCheckedAt: new Date() });
+    if (!exists[0]) {
+      await db.insert(schema.liveLinks).values({ businessId: bid, proposalId: rows.find(r => r.businessId === bid)?.id || row.id, fromUrl: d.page, toUrl: d.target, anchor: d.anchor, rel: rel || relShort(d.rel || ''), since: todayIn(b.timezone), status: 'live', lastCheckedAt: new Date() });
+      trackSoon('backlinks.link_live', { bid, props: { from: d.page, to: d.target, inbound: String(d.target || '').includes(b.domain), via: 'network' } });
+    }
   }
   const now = new Date().toISOString();
   for (const r of rows) await db.update(schema.proposals).set({ data: { ...r.data, placedAt: now } }).where(eq(schema.proposals.id, r.id));
@@ -89,7 +93,10 @@ async function discoverEditorial(bid: string) {
     if (known.has(from + '→' + to)) continue;
     known.add(from + '→' + to);
     const res = await checkLink(from, to, 'Editorial', 'present');
-    if (res.found) await db.insert(schema.liveLinks).values({ businessId: bid, fromUrl: from, toUrl: to, anchor: res.anchorText || (a.profile as Profile)?.business?.name || a.domain, rel: res.rel || 'Editorial', since: todayIn(a.timezone), status: 'live', lastCheckedAt: new Date() });
+    if (res.found) {
+      await db.insert(schema.liveLinks).values({ businessId: bid, fromUrl: from, toUrl: to, anchor: res.anchorText || (a.profile as Profile)?.business?.name || a.domain, rel: res.rel || 'Editorial', since: todayIn(a.timezone), status: 'live', lastCheckedAt: new Date() });
+      trackSoon('backlinks.link_live', { bid, props: { from, to, via: 'discovered' } });
+    }
   }
 }
 

@@ -46,6 +46,8 @@ export const env = {
   resendKey: e.RESEND_API_KEY || '',
   mailFrom: e.MAIL_FROM || 'Radar <hello@radar.local>',
   supportInbox: e.SUPPORT_INBOX || '',
+  /** Comma-separated emails allowed to read /api/admin/metrics. Empty → the endpoint is off. */
+  adminEmails: (e.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
   // Storage
   storageDir: e.STORAGE_DIR || '.data/uploads',
   s3Bucket: e.S3_BUCKET || '', s3Region: e.S3_REGION || 'us-east-1', s3Endpoint: e.S3_ENDPOINT || '', s3PublicUrl: e.S3_PUBLIC_URL || '',

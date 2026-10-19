@@ -1,5 +1,6 @@
 // Durable Postgres-backed job queue (FOR UPDATE SKIP LOCKED) with retries + backoff and progress.
 // Implementation divergence (logged): a small in-repo queue instead of Inngest/Trigger.dev/BullMQ — no extra infrastructure.
+import { JOB_OUTCOME, jobProducedOutcome, trackSoon } from '@/server/events';
 import os from 'node:os';
 import { and, eq, inArray, lte, sql } from 'drizzle-orm';
 import { db, pool, schema } from '../db';
@@ -62,7 +63,7 @@ async function recoverStale() {
 async function execute(job: JobRow, workerId: string) {
   const def = registry.get(job.kind);
   if (!def) { await db.update(schema.jobs).set({ status: 'failed', error: `Unknown job kind ${job.kind}`, finishedAt: new Date() }).where(eq(schema.jobs.id, job.id)); return; }
-  let last = 0; let pending: any = undefined; let timer: NodeJS.Timeout | null = null;
+  let last = 0; let pending: any = undefined; let timer: NodeJS.Timeout | null = null; const started = Date.now();
   const flush = async () => { if (pending === undefined) return; const p = pending; pending = undefined; last = Date.now(); await db.update(schema.jobs).set({ progress: p }).where(eq(schema.jobs.id, job.id)); };
   const ctx: JobCtx = {
     job, payload: job.payload, businessId: job.businessId, attempt: job.attempts,
@@ -73,6 +74,8 @@ async function execute(job: JobRow, workerId: string) {
     const result = await (def.timeoutMs ? Promise.race([def.run(ctx), new Promise((_, rej) => setTimeout(() => rej(new Error('Job timed out')), def.timeoutMs))]) : def.run(ctx));
     if (timer) clearTimeout(timer); await flush();
     await db.update(schema.jobs).set({ status: 'done', result: result ?? null, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
+    trackSoon(`job.${job.kind}`, { bid: job.businessId, ref: job.ref, props: { status: 'done', attempt: job.attempts, ms: Date.now() - started, result } });
+    if (jobProducedOutcome(job.kind, result)) trackSoon(JOB_OUTCOME[job.kind], { bid: job.businessId, ref: job.ref, props: { ...(result && typeof result === 'object' ? result : {}), auto: job.kind === 'social.autoRun' || undefined } });
   } catch (e: any) {
     if (timer) clearTimeout(timer); await flush().catch(() => {});
     const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
@@ -83,6 +86,7 @@ async function execute(job: JobRow, workerId: string) {
       await db.update(schema.jobs).set({ status: 'queued', runAt: new Date(Date.now() + delay), lockedAt: null, error: msg }).where(owned(job.id, workerId));
     } else {
       await db.update(schema.jobs).set({ status: 'failed', error: msg, finishedAt: new Date(), lockedAt: null, result: { detail: String(e?.message || e).slice(0, 500) } }).where(owned(job.id, workerId));
+      trackSoon(`job.${job.kind}`, { bid: job.businessId, ref: job.ref, props: { status: 'failed', attempt: job.attempts, ms: Date.now() - started, error: String(e?.message || e).slice(0, 200) } });
     }
   } finally {
     if (job.businessId) await bump(job.businessId).catch(() => {});

@@ -15,6 +15,7 @@ export default function PrivacyPage() {
       <li><b>Google Search Console data.</b> If you connect Search Console, we read search performance data (queries, pages, clicks, impressions, position) for the property you choose.</li>
       <li><b>Connected services.</b> If you connect a blog platform (for example WordPress, Ghost, Webflow, Shopify or GitHub), we store the access tokens or credentials needed to publish on your behalf.</li>
       <li><b>Team members.</b> Email addresses of people you invite to your workspace.</li>
+      <li><b>Usage records.</b> A log of what Radar does for you and what you do with it, for example replies you mark as posted, articles published, social posts copied and AI answers checked. It holds counts, platforms, dates and public links, not the text of your drafts. We use it to measure and improve Radar and to report aggregate, anonymized results.</li>
       <li><b>Technical data.</b> A session cookie that keeps you signed in, and server logs (IP address, browser, timestamps) used for security and debugging.</li>
     </ul>
 

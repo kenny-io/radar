@@ -5,6 +5,7 @@ import { getBiz, loadWorkspace, bump } from '@/server/workspace';
 import { ACTIONS } from '@/server/actions';
 import { handle, json } from '@/server/http/handle';
 import { RadarError } from '@/server/errors';
+import { ACTION_OUTCOME, trackSoon } from '@/server/events';
 
 export const POST = handle(async (req: Request, { params }: { params: Promise<{ bid: string }> }) => {
   const { bid } = await params;
@@ -17,6 +18,8 @@ export const POST = handle(async (req: Request, { params }: { params: Promise<{ 
   const biz = await getBiz(bid);
   const data = await def.run({ user: u, bid, role, biz }, parsed);
   if (def.read) return json({ ok: true, data });
+  trackSoon(`action.${action}`, { bid, uid: u.id, props: { input: parsed, result: data } });
+  if (ACTION_OUTCOME[action] && !(action === 'onboarding.finish' && biz.status !== 'onboarding')) trackSoon(ACTION_OUTCOME[action], { bid, uid: u.id, props: { input: parsed, result: data } });
   await bump(bid);
   return json({ ok: true, data, workspace: await loadWorkspace(bid, u.id, role) });
 });

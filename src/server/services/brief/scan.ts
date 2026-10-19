@@ -116,7 +116,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   if (mode === 'keep' && addedIds.length) {
     await notify(bid, `${addedIds.length} new ${addedIds.length === 1 ? 'conversation' : 'conversations'} since ${fmtTime(since)}`, { tone: 'signal' });
   }
-  return { mode, added: addedIds.length, addedIds, since };
+  return { mode, added: addedIds.length, addedIds, since, ...({ threadsRead, replies: replies.length, posts: posts.length, perPlat: stats } as object) };
 }
 
 function dedupe(cs: Candidate[]): Candidate[] {
