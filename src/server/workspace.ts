@@ -1,3 +1,4 @@
+import { env } from './env';
 import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { notFound } from './errors';
@@ -27,10 +28,17 @@ export function calendarSettingsOf(b: BizRow): CalendarSettings {
   const p = b.profile as Profile;
   return { market: p?.brand?.markets?.[0] || 'United States', language: p?.brand?.language || 'English (US)', start: addDays(bizToday(b), 1), cadence: 'daily', perWeek: 3, ...(b.calendarSettings || {}) };
 }
+/** Blog platforms this deployment can actually connect: credential-based ones always; OAuth ones only when their app is configured. */
+export function availablePlatforms(): string[] {
+  if (env.devStubs) return ['wordpress', 'ghost', 'webhook', 'framer', 'webflow', 'notion', 'wix', 'shopify', 'wpcom', 'nextjs'];
+  const oauth: Record<string, boolean> = { webflow: !!env.webflowClientId, notion: !!env.notionClientId, wix: !!env.wixClientId, shopify: !!env.shopifyClientId, wpcom: !!env.wpcomClientId, nextjs: !!env.githubClientId };
+  return ['wordpress', 'ghost', 'webhook', 'framer', ...Object.keys(oauth).filter(k => oauth[k])];
+}
+
 export function blogOf(b: BizRow, conns: ConnectionPublic[]): BlogState {
   const bl = b.blog || {};
   const def = bl.defaultId && conns.find(c => c.id === bl.defaultId) ? bl.defaultId : conns[0]?.id || null;
-  return { conns, defaultId: def, mode: bl.mode || 'review', autopilotAckAt: bl.autopilotAckAt || null, paused: !!bl.paused, tz: b.timezone, time: bl.time || '09:00' };
+  return { conns, defaultId: def, mode: bl.mode || 'review', autopilotAckAt: bl.autopilotAckAt || null, paused: !!bl.paused, tz: b.timezone, time: bl.time || '09:00', available: availablePlatforms() };
 }
 export function socialAutoOf(b: BizRow): SocialAuto {
   return { on: false, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', ...(b.socialAuto || {}) };

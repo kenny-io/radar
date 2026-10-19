@@ -63,7 +63,7 @@ export interface Article {
 export type ConnType = 'wordpress' | 'ghost' | 'webflow' | 'notion' | 'wix' | 'shopify' | 'wpcom' | 'webhook' | 'framer' | 'nextjs';
 /** Connection as the client sees it — never contains secrets. */
 export interface ConnectionPublic { id: string; type: ConnType; url: string; target: string | null; targetId?: string | null; f: Record<string, string>; secretHint?: string | null; status: 'ok' | 'error'; lastError?: string | null }
-export interface BlogState { conns: ConnectionPublic[]; defaultId: string | null; mode: 'review' | 'autopilot'; autopilotAckAt: string | null; paused: boolean; tz: string; time: string }
+export interface BlogState { conns: ConnectionPublic[]; defaultId: string | null; mode: 'review' | 'autopilot'; autopilotAckAt: string | null; paused: boolean; tz: string; time: string; /** platforms this deployment can connect (OAuth apps configured) */ available?: string[] }
 
 export type Platform = 'linkedin' | 'x' | 'facebook' | 'reddit' | 'quora';
 export type PackStyle = ImageStyle | 'custom';
