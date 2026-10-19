@@ -19,7 +19,8 @@ export async function openaiRun(c: ProviderCall, cfg: { base: string; key: strin
   const input: any[] = [];
   if (c.system) input.push({ role: 'system', content: c.system });
   input.push({ role: 'user', content: c.prompt });
-  const body: any = { model: c.apiModel, input, max_output_tokens: c.maxTokens, ...(c.temperature != null ? { temperature: c.temperature } : {}) };
+  // temperature: only xAI accepts it; OpenAI's GPT-6 models reject it ("Unsupported parameter: 'temperature'").
+  const body: any = { model: c.apiModel, input, max_output_tokens: c.maxTokens, ...(c.temperature != null && cfg.base.includes('x.ai') ? { temperature: c.temperature } : {}) };
   if (c.webSearch && c.jsonSchema) {
     // Two passes, as in the Anthropic adapter: research with web search in free text, then structure the findings.
     // A single search+schema call can return an empty structure after searching (seen with Grok).
