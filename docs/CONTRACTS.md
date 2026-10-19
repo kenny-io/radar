@@ -1,4 +1,4 @@
-# Cross-area contracts
+# Cross-area contracts (actions, components, job kinds shared between feature areas)
 
 Areas are built in parallel. These names and shapes are fixed so areas can call each other. If you own an item, implement
 it exactly as listed (you may add optional fields). If you consume one, call it exactly as listed.
