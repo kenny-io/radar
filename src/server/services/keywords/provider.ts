@@ -14,14 +14,29 @@ export const providerConfigured = () => env.devStubs || !!(env.dataforseoLogin &
 /** "English (US)" → "English"; "Portuguese (BR)" → "Portuguese" */
 export const languageName = (l: string) => (l || 'English').replace(/\s*\(.*\)\s*$/, '').trim() || 'English';
 
+/** Last provider outcome in this process, so callers can say why keyword data is missing instead of failing silently. */
+let health: { ok: boolean; reason?: 'credit' | 'error'; at: number } = { ok: true, at: 0 };
+/** 'credit' (account out of funds), 'error' (other failure) or null, for failures in the last hour. */
+export const keywordProviderIssue = (): 'credit' | 'error' | null => (!health.ok && Date.now() - health.at < 3600e3 ? health.reason || 'error' : null);
+
+/** 40200 Payment Required / HTTP 402 / balance messages → the account has no funds. */
+export const classifyProviderError = (e: any): 'credit' | 'error' => (e?.status === 402 || e?.code === 40200 || /payment|balance|insufficient|funds/i.test(String(e?.message)) ? 'credit' : 'error');
+
 async function dfs(path: string, body: any[]): Promise<any> {
-  const auth = Buffer.from(`${env.dataforseoLogin}:${env.dataforseoPassword}`).toString('base64');
-  const r = await fetch(API + path, { method: 'POST', headers: { authorization: `Basic ${auth}`, 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(`DataForSEO ${r.status}`);
-  const j = await r.json();
-  const t = j.tasks?.[0];
-  if (!t || (t.status_code && t.status_code >= 40000)) throw new Error(`DataForSEO task error ${t?.status_code}: ${t?.status_message}`);
-  return t.result || [];
+  try {
+    const auth = Buffer.from(`${env.dataforseoLogin}:${env.dataforseoPassword}`).toString('base64');
+    const r = await fetch(API + path, { method: 'POST', headers: { authorization: `Basic ${auth}`, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const j: any = await r.json().catch(() => null);
+    const code = j?.status_code ?? j?.tasks?.[0]?.status_code;
+    if (!r.ok || (j?.status_code && j.status_code >= 40000)) throw Object.assign(new Error(`DataForSEO ${r.status} ${code ?? ''}: ${j?.status_message ?? ''}`), { code, status: r.status });
+    const t = j.tasks?.[0];
+    if (!t || (t.status_code && t.status_code >= 40000)) throw Object.assign(new Error(`DataForSEO task error ${t?.status_code}: ${t?.status_message}`), { code: t?.status_code });
+    health = { ok: true, at: Date.now() };
+    return t.result || [];
+  } catch (e: any) {
+    health = { ok: false, reason: classifyProviderError(e), at: Date.now() };
+    throw e;
+  }
 }
 
 function hash(s: string) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); }

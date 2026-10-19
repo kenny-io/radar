@@ -70,3 +70,12 @@ describe('impact events', () => {
     expect(jobProducedOutcome('gsc.backfill', {})).toBe(false);
   });
 });
+
+import { classifyProviderError } from '../services/keywords/provider';
+describe('keyword provider errors', () => {
+  it('recognises an empty account', () => {
+    expect(classifyProviderError({ code: 40200, message: 'DataForSEO task error 40200: Payment Required.' })).toBe('credit');
+    expect(classifyProviderError({ status: 402 })).toBe('credit');
+    expect(classifyProviderError({ status: 500, message: 'DataForSEO 500' })).toBe('error');
+  });
+});

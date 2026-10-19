@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { ai, profileContext } from '../../ai';
-import { estimate, related } from '../keywords/provider';
+import { estimate, related, keywordProviderIssue } from '../keywords/provider';
 import { normKw, topPages, topQueries } from '../gsc/metrics';
 import { ENTRY_TYPES } from '@/lib/constants';
 import { fmtN } from '@/lib/format';
@@ -13,7 +13,7 @@ import './stubs';
 
 export interface Candidate {
   kw: string; vol: number | null; kd: number | null;
-  src: 'target' | 'related' | 'gsc' | 'refresh'; seed: string | null; priority: boolean;
+  src: 'target' | 'related' | 'gsc' | 'refresh' | 'idea'; seed: string | null; priority: boolean;
   measured: Measured | null; mode: 'new' | 'refresh'; url: string | null; pageTitle: string | null;
   score: number; facts: string[];
 }
@@ -80,7 +80,14 @@ export async function researchCandidates(bid: string, profile: Profile, market: 
   // keyword provider has search volume for them (validated below), so nothing rests on the model's guess.
   const ideas = await ideaKeywords(bid, profile, market, language).catch(() => [] as string[]);
   const ideaEst = ideas.length ? await estimate(ideas, market, language) : {};
-  for (const kw of ideas) { const e = ideaEst[normKw(kw)] || ideaEst[kw.toLowerCase()]; if (e && e.vol) add({ kw, vol: e.vol, kd: e.kd, src: 'related', seed: null, priority: false, measured: null, mode: 'new', url: null, pageTitle: null }); }
+  // When the keyword provider is down (e.g. out of credit) nothing can be validated: keep the ideas, clearly marked as
+  // unverified (no volume, no difficulty), so the calendar still covers the month. They rank below measured keywords.
+  const unverified = !!keywordProviderIssue();
+  for (const kw of ideas) {
+    const e = ideaEst[normKw(kw)] || ideaEst[kw.toLowerCase()];
+    if (e && e.vol) add({ kw, vol: e.vol, kd: e.kd, src: 'related', seed: null, priority: false, measured: null, mode: 'new', url: null, pageTitle: null });
+    else if (unverified && !e) add({ kw, vol: null, kd: null, src: 'idea', seed: null, priority: false, measured: null, mode: 'new', url: null, pageTitle: null });
+  }
   if (gsc) {
     const brand = tokens(profile.business.name + ' ' + profile.domain.split('.')[0]);
     for (const q of (await topQueries(bid, 28, 400))) {
@@ -115,9 +122,10 @@ export async function researchCandidates(bid: string, profile: Profile, market: 
     if (need && need.o > 0) f.push(`Matches a stated buyer need in your Business Profile: “${need.n}”`);
     const off = offers.map(x => ({ ...x, o: overlap(ct, x.t) })).sort((a, b) => b.o - a.o)[0];
     if (off && off.o > 0) f.push(`Ties to “${off.n}”, one of your offerings`);
+    if (c.src === 'idea') f.push('Suggested from your Business Profile. Search volume couldn’t be checked because keyword data was unavailable');
     c.facts = f;
     const vol = c.vol ?? (c.measured ? c.measured.impr : 40);
-    c.score = Math.sqrt(Math.max(10, vol)) * (1 - Math.min(95, c.kd ?? 30) / 120) * (c.priority ? 1.6 : 1) * (c.measured ? 1.25 : 1) * (need && need.o > 0 ? 1.1 : 1);
+    c.score = (c.src === 'idea' ? 0.6 : 1) * Math.sqrt(Math.max(10, vol)) * (1 - Math.min(95, c.kd ?? 30) / 120) * (c.priority ? 1.6 : 1) * (c.measured ? 1.25 : 1) * (need && need.o > 0 ? 1.1 : 1);
   }
   return list.sort((a, b) => b.score - a.score);
 }
@@ -125,12 +133,12 @@ export async function researchCandidates(bid: string, profile: Profile, market: 
 const IdeasOut = z.object({ keywords: z.array(z.string()) });
 async function ideaKeywords(bid: string, profile: Profile, market: string, language: string): Promise<string[]> {
   const out = await ai.run('writing', {
-    purpose: 'calendar.ideas', schemaName: 'keywords', schema: IdeasOut, maxTokens: 1500, temperature: 0.3,
+    purpose: 'calendar.ideas', schemaName: 'keywords', schema: IdeasOut, maxTokens: 2000, temperature: 0.3,
     system: 'You are Radar, an SEO researcher. Return search phrases real customers type, lowercase, 2–6 words.',
-    prompt: `${profileContext(profile)}\n\nMarket: ${market}. Language: ${language}.\nList 30 search phrases (questions and how-to/comparison/template searches) that this business’s audience types when they have the needs listed in the profile. No brand names, no competitor names.`,
+    prompt: `${profileContext(profile)}\n\nMarket: ${market}. Language: ${language}.\nList 40 search phrases (questions and how-to/comparison/template searches) that this business’s audience types when they have the needs listed in the profile. No brand names, no competitor names.`,
     stubContext: { profile },
   }, { businessId: bid });
-  return [...new Set((out.json?.keywords || []).map(k => normKw(k)).filter(k => k.split(' ').length >= 2 && k.length <= 60))].slice(0, 40);
+  return [...new Set((out.json?.keywords || []).map(k => normKw(k)).filter(k => k.split(' ').length >= 2 && k.length <= 60))].slice(0, 50);
 }
 
 /** The keyword difficulty this domain can realistically win: what it already ranks for (GSC) or its target list, plus headroom. */

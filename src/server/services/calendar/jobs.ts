@@ -1,5 +1,6 @@
 // Job + cron definitions for "calendar". Imported by src/server/jobs/all.ts.
 // calendar.generate (ref = businessId): the 7 research phases of 01-screens.md §5, streamed as { phase, results, keep, gsc }.
+import { keywordProviderIssue } from '../keywords/provider';
 import { and, eq, ne } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { defineJob } from '../../jobs/queue';
@@ -54,7 +55,8 @@ defineJob<CalGenPayload>({
       });
       const cands = await step(4, async () => {
         const c = await researchCandidates(bid, profile, settings.market, settings.language, gsc);
-        return { v: c, label: `${fmtN(c.length + refresh.length)} candidates in ${settings.market}` };
+        const issue = keywordProviderIssue();
+        return { v: c, label: `${fmtN(c.length + refresh.length)} candidates in ${settings.market}${issue ? ' · keyword data unavailable' : ''}` };
       });
 
       // Entries that stay where they are (everything not proposed).
@@ -101,6 +103,14 @@ defineJob<CalGenPayload>({
         await tx.update(schema.businesses).set({ calendarGeneratedAt: generatedAt, calendarSettings: settings }).where(eq(schema.businesses.id, bid));
       });
       await notify(bid, keep ? `Calendar refreshed. ${keptRows.length} approved topics kept in place.` : `${topics.length} topics proposed. Approve the ones you like.`, { tone: 'ok' });
+      // Say why the month isn't full, or why volumes are missing, instead of leaving a quietly short calendar.
+      const issue = keywordProviderIssue();
+      const unverified = topics.filter((t: Topic) => t.src === 'idea').length;
+      if (issue || topics.length < open.length) {
+        const why = issue === 'credit' ? 'the keyword data provider is out of credit' : issue ? 'keyword data was unavailable' : 'Radar found fewer distinct, winnable topics than open days';
+        const parts = [topics.length < open.length ? `${open.length - topics.length} of ${open.length} days are still open because ${why}.` : '', unverified ? `${unverified} ${unverified === 1 ? 'topic comes' : 'topics come'} from your Business Profile without search volume${topics.length < open.length ? '' : ` because ${why}`}.` : ''].filter(Boolean);
+        await notify(bid, `${parts.join(' ')}${issue ? ' Regenerate once keyword data is back to use measured keywords.' : ''}`.trim(), { tone: 'warn' });
+      }
       const pool: PoolItem[] = chosen.pool.map(c => ({ kw: c.kw, vol: c.vol, kd: c.kd, facts: c.facts, measured: c.measured, priority: c.priority, seed: c.seed, src: c.src, score: c.score }));
       return { generatedAt: generatedAt.toISOString(), pool, count: topics.length };
     } catch (e) {
