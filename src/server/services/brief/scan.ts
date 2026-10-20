@@ -5,12 +5,12 @@ import { briefSettingsOf, bizToday, getBiz } from '@/server/workspace';
 import { notify } from '@/server/notify';
 import { getJob, type JobCtx } from '@/server/jobs/queue';
 import { fmtTime, nowHMIn } from '@/lib/format';
-import type { BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
-import { DRAFT_SUB, RANK_SUB, enabledInOrder, type BriefScanProgress, type BriefScanResult, type ScanMode, type ScanStep, type ScanStepKey } from '@/features/brief/model';
+import type { BriefAccount, BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
+import { DRAFT_SUB, DRAFT_SUB_BOTH, DRAFT_SUB_CO, RANK_SUB, accountsOf, acctOf, enabledInOrder, platsFor, type BriefScanProgress, type BriefScanResult, type ScanMode, type ScanStep, type ScanStepKey } from '@/features/brief/model';
 import { buildPlan, clip, relevance, type Candidate } from './plan';
 import { sourceFor } from './sources';
 import { rankCandidates, selectReplies, type Scored } from './rank';
-import { draftPosts, draftReply, feedThemes } from './draft';
+import { draftCompanyReply, draftPosts, draftReply, feedThemes } from './draft';
 import { createDay, getDay, mergeStats, withDay, type CandMark, type DayStats } from './store';
 import './stubs';
 
@@ -32,10 +32,14 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   if (mode === 'first' && existing) mode = 'again';
   if (mode === 'again' && !existing) mode = 'first';
   const since = existing?.scannedAt ?? null;
-  const plats = enabledInOrder(settings.platforms);
+  const accts = accountsOf(settings);
+  const both = accts.length > 1;
+  // Read only where some account drafts (the company alone never reads Reddit, Hacker News or Quora).
+  const plats = enabledInOrder([...new Set(accts.flatMap(a => platsFor(a, settings.platforms)))]);
   const plan = buildPlan(profile);
+  const draftSub = both ? DRAFT_SUB_BOTH : accts[0] === 'company' ? DRAFT_SUB_CO : DRAFT_SUB;
 
-  let steps: ScanStep[] = [...plats.map(k => ({ k, sub: plan.subs[k] })), { k: 'rank', sub: RANK_SUB }, { k: 'draft', sub: DRAFT_SUB }];
+  let steps: ScanStep[] = [...plats.map(k => ({ k, sub: plan.subs[k] })), { k: 'rank', sub: RANK_SUB }, { k: 'draft', sub: draftSub }];
   let step: ScanStepKey = plats[0] || 'rank';
   let threadsRead = 0;
   const stats: DayStats = {};
@@ -74,18 +78,36 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   step = 'rank'; await push();
   const scored: Scored[] = fresh.length ? await rankCandidates(profile, plan, fresh, bid) : [];
 
-  // ── Select: at most 2 replies per enabled platform (counting what the day already has) ──
-  const have = (k: BriefPlatform) => ((existing?.items || []) as BriefItem[]).filter(i => i.kind === 'reply' && i.plat === k).length;
-  const cap: Partial<Record<BriefPlatform, number>> = Object.fromEntries(plats.map(k => [k, MAX_REPLIES - have(k)]));
-  const picked = selectReplies(scored, plats, cap);
+  // ── Select: at most 2 replies per platform per account (counting what the day already has) ──
+  // Threads already in the day (either account) are never drafted twice.
+  const dayItems = (existing?.items || []) as BriefItem[];
+  const have = (a: BriefAccount, k: BriefPlatform) => dayItems.filter(i => i.kind === 'reply' && i.plat === k && acctOf(i) === a).length;
+  const capFor = (a: BriefAccount, ps: BriefPlatform[]) => Object.fromEntries(ps.map(k => [k, MAX_REPLIES - have(a, k)])) as Partial<Record<BriefPlatform, number>>;
+  const fPlats = accts.includes('founder') ? platsFor('founder', plats) : [];
+  const cPlats = accts.includes('company') ? platsFor('company', plats) : [];
+  // Direct requests for a tool are the company's to answer first (UPDATE-2026-10-20b §2); the founder takes the best of
+  // the rest; the company then fills its remaining slots with claims it can speak to. A thread is never drafted twice.
+  const cAsks = selectReplies(scored.filter(s => s.asks), cPlats, capFor('company', cPlats), { brand: true });
+  const fPicked = selectReplies(scored, fPlats, capFor('founder', fPlats), { skip: new Set(cAsks.map(s => s.id)) });
+  const cLeft = Object.fromEntries(cPlats.map(k => [k, (capFor('company', cPlats)[k] ?? 0) - cAsks.filter(s => s.plat === k).length])) as Partial<Record<BriefPlatform, number>>;
+  const cPicked = [...cAsks, ...selectReplies(scored, cPlats, cLeft, { brand: true, skip: new Set([...cAsks, ...fPicked].map(s => s.id)) })];
 
   // ── Draft ──
   step = 'draft'; await push();
   const isAdd = mode !== 'first';
-  const drafted = await Promise.all(picked.map(s => draftReply(profile, s, settings, bid, isAdd).catch(e => { console.error('[brief.scan] draft failed', s.id, e?.message); return null; })));
+  const fail = (s: Scored) => (e: any) => { console.error('[brief.scan] draft failed', s.id, e?.message); return null; };
+  const drafted = await Promise.all([
+    ...fPicked.map(s => draftReply(profile, s, settings, bid, isAdd).catch(fail(s))),
+    ...cPicked.map(s => draftCompanyReply(profile, s, bid, isAdd).catch(fail(s))),
+  ]);
   const replies = drafted.filter(Boolean) as BriefItem[];
-  if (picked.length && !replies.length) throw new Error('Drafting failed for every reply');
-  const posts = mode === 'first' ? await draftPosts(profile, feedThemes(scored), plats, bid, date).catch(e => { console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[]; }) : [];
+  if (fPicked.length + cPicked.length && !replies.length) throw new Error('Drafting failed for every reply');
+  const themes = mode === 'first' ? feedThemes(scored) : [];
+  const postFail = (e: any) => { console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[]; };
+  const posts = mode === 'first' ? (await Promise.all([
+    accts.includes('founder') ? draftPosts(profile, themes, fPlats, bid, date, 'founder').catch(postFail) : [],
+    accts.includes('company') && cPlats.length ? draftPosts(profile, themes, cPlats, bid, date, 'company').catch(postFail) : [],
+  ])).flat() : [];
 
   // ── Save ──
   const scannedAt = nowHMIn(b.timezone || 'America/New_York');
@@ -103,11 +125,12 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
       const items = row.items as BriefItem[];
       // Re-check the cap under the lock (items may have changed while drafting).
       const counts: Record<string, number> = {};
-      for (const i of items) if (i.kind === 'reply' && i.plat) counts[i.plat] = (counts[i.plat] || 0) + 1;
+      const key = (i: BriefItem) => `${acctOf(i)}:${i.plat}`;
+      for (const i of items) if (i.kind === 'reply' && i.plat) counts[key(i)] = (counts[key(i)] || 0) + 1;
       const add: BriefItem[] = [];
       for (const r of replies) {
-        if (items.some(i => i.id === r.id) || (counts[r.plat!] || 0) >= MAX_REPLIES) continue;
-        counts[r.plat!] = (counts[r.plat!] || 0) + 1; add.push(r);
+        if (items.some(i => i.id === r.id) || (counts[key(r)] || 0) >= MAX_REPLIES) continue;
+        counts[key(r)] = (counts[key(r)] || 0) + 1; add.push(r);
       }
       return { items: [...add, ...items], candidates: [...((row.candidates || []) as CandMark[]), ...marks], scannedAt: mode === 'keep' ? undefined : scannedAt, stats: mergeStats(row.stats as DayStats, stats), ret: add.map(a => a.id) };
     })) || [];

@@ -62,6 +62,26 @@ export function cleanReply(text: string, variant: 'help' | 'mention', c: RuleCtx
   }
   return tidy(t);
 }
+/** Figures that read as data claims: percentages, multipliers ("3x"), and numbers of 10 or more. */
+const FIGURE_RE = /\b\d[\d,.]*\s?(?:%|percent\b|x\b)|\b(?:\d{1,3}(?:,\d{3})+|\d{2,})(?:\.\d+)?\b/gi;
+const normFig = (f: string) => f.toLowerCase().replace(/[\s,]/g, '').replace(/percent$/, '%');
+/** Company drafts must not invent numbers (UPDATE-2026-10-20b §2): drop any sentence quoting a figure that doesn't
+ *  appear in the allowed source text (the Business Profile and the thread). Returns the cleaned text. */
+export function dropUnsupportedFigures(text: string, allowedSrc: string): string {
+  const allowed = new Set((allowedSrc.match(FIGURE_RE) || []).map(normFig));
+  const ok = (sent: string) => (sent.match(FIGURE_RE) || []).every(f => allowed.has(normFig(f)) || /^(19|20)\d\d$/.test(normFig(f)));
+  return tidy(text.split(/\n/).map(line => (line.match(/[^.!?]+[.!?]*["”’)]*\s*/g) || [line]).filter(ok).join('')).join('\n'));
+}
+export const hasUnsupportedFigures = (text: string, allowedSrc: string) => dropUnsupportedFigures(text, allowedSrc) !== tidy(text);
+
+/** Clean a company-account reply: no hashtags, emoji or links; X ≤ 280; no invented figures. */
+export function cleanBrand(text: string, c: RuleCtx, allowedSrc: string): string {
+  let t = stripLinks(stripEmoji(stripHashtags(unwrap(text))), [c.domain]);
+  t = dropUnsupportedFigures(t, allowedSrc);
+  if (c.plat === 'x') t = fitLength(t);
+  return tidy(t);
+}
+
 /** Clean a post for the business's own feed. */
 export function cleanPost(text: string, plat: BriefPlatform): string {
   let t = stripEmoji(stripHashtags(unwrap(text)));

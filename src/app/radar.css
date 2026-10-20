@@ -124,6 +124,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .brief-grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:40px;align-items:start}
 .brief-q{display:flex;flex-direction:column;gap:20px;position:sticky;top:24px}
 .brief-gh{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:var(--ink2);padding:0 12px 6px;letter-spacing:.01em}
+.brief-gh.post{flex-direction:column;align-items:flex-start;gap:3px;margin-top:8px;padding:20px 12px 10px;border-top:1px solid var(--line2);letter-spacing:0}
+.brief-ght{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.brief-ghs{font-size:12px;font-weight:400;color:var(--ink2)}
 .brief-qi{display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left;width:100%;border:0;background:none;padding:12px;border-radius:12px;cursor:pointer;transition:background .15s,opacity .3s;color:var(--ink)}
 .brief-qi:hover{background:var(--fill)}
 .brief-qi.on{background:var(--surface);box-shadow:0 1px 2px oklch(0 0 0 / .05),0 0 0 1px var(--line)}

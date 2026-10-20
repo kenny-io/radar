@@ -76,10 +76,14 @@ export interface SocialPack {
 export interface SocialAuto { on: boolean; freq: 'daily' | 'custom'; days: string[]; platforms: Platform[]; style: ImageStyle; time: string }
 
 export type BriefPlatform = 'reddit' | 'x' | 'linkedin' | 'hn' | 'quora';
-export interface BriefSettings { platforms: BriefPlatform[]; time: string; mention: 'asked' | 'relevant' | 'never' }
+/** Who a brief item is drafted for: the founder's personal account, or the company account (shown by business name). */
+export type BriefAccount = 'founder' | 'company';
+export interface BriefSettings { platforms: BriefPlatform[]; time: string; mention: 'asked' | 'relevant' | 'never'; /** Default both. */ accounts?: BriefAccount[] }
 export type BriefItemState = 'open' | 'copied' | 'posted' | 'skipped' | 'expired';
 export interface BriefItem {
   id: string; kind: 'reply' | 'post';
+  /** Missing = 'founder' (items from before company drafting). */
+  acct?: BriefAccount;
   plat?: BriefPlatform; where?: string; who?: string; url?: string; eng?: string; postedAt?: string; title: string; body?: string;
   replyTo?: { who: string; text: string } | null; asks?: boolean; fresh?: boolean;
   /** The community's rules forbid self-promotion: Radar drafted no mention variant (mention === help). */

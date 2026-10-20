@@ -3,9 +3,9 @@
 import { z } from 'zod';
 import { ai, profileContext } from '@/server/ai';
 import { BPLAT } from '@/lib/constants';
-import type { BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
+import type { BriefAccount, BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
 import { clip, shortHash } from './plan';
-import { cleanPost, cleanReply, namesBusiness, X_LIMIT } from './rules';
+import { cleanBrand, cleanPost, stripLinks, cleanReply, dropUnsupportedFigures, namesBusiness, X_LIMIT } from './rules';
 import type { Scored } from './rank';
 
 /** Tone sample approved by the owner: casual, typed-on-the-bus, still high quality. Copy the register, never the content. */
@@ -75,6 +75,51 @@ ${profileContext(p)}`;
   };
 }
 
+/* ── Company account (UPDATE-2026-10-20b §2) ── */
+/** Company voice: the official account, "we", useful first. Radar has no aggregated product data yet, so it never quotes figures. */
+const CO_RULES = (p: Profile) => `Language: ${p.brand.language || 'English (US)'}. Brand voice: ${p.brand.voice || 'plain, warm and practical'}.
+You write as the official ${p.business.name} company account. Speak as the company ("we"). Lead with something useful: a how-to, a clear answer, or what ${p.business.name} has learned from working on this problem. Name ${p.business.name} plainly when it answers the question. Help first, product second.
+No hype, superlatives, hashtags, emoji, links or calls to action. No em dashes, bullet lists or headings.
+Never quote numbers, percentages, customer names or customer results unless they appear in the business profile or the thread below. Radar has no product data to back them up, so leave figures out entirely rather than estimate.
+Never write personal stories ("I"); those belong on the founder's feed.`;
+const CO_PLAT_RULES: Partial<Record<BriefPlatform, string>> = {
+  x: `X: short and direct. ${X_LIMIT} characters or fewer.`,
+  linkedin: 'LinkedIn: professional and warm, two or three short paragraphs at most.',
+};
+/** Everything the company may quote figures from. */
+const coAllowed = (p: Profile, extra = '') => `${profileContext(p)}
+${extra}`;
+
+export const BrandDraft = z.object({ tag: z.string(), why: z.string(), brand: z.string() });
+
+export async function draftCompanyReply(p: Profile, s: Scored, bid: string, fresh: boolean): Promise<BriefItem> {
+  const name = p.business.name;
+  const replyTo = s.replyToIdx != null && s.comments ? s.comments[s.replyToIdx] : null;
+  const system = `You draft replies to public threads from the official ${name} company account (${p.business.description}). ${CO_RULES(p)}
+${CO_PLAT_RULES[s.plat] || ''}
+Never mention or praise competitors (${p.audience.competitors.join(', ') || 'none'}).
+Return "brand": the reply. Also "tag": a 2–6 word reason the company should reply (e.g. "Asking for your exact product"), and "why": one sentence telling the user why a reply from the company account fits here, grounded in the thread itself.
+
+${profileContext(p)}`;
+  const prompt = [
+    `Platform: ${BPLAT[s.plat]} (${s.where})`,
+    `Thread: ${s.title}`, s.body ? `Body: ${clip(s.body, 900)}` : '',
+    replyTo ? `You are replying to ${replyTo.who}: ${replyTo.text}` : '',
+    `Engagement: ${s.eng || 'unknown'}.`, s.asks ? 'They explicitly ask for a tool or recommendation.' : 'They are not asking for a tool; add something useful the company can speak to.',
+  ].filter(Boolean).join('\n');
+  const out = await ai.run('writing', { purpose: 'brief.brand', system, prompt, schema: BrandDraft, schemaName: 'reply', maxTokens: 1000, stubContext: { profile: p, cand: s, replyTo } }, { businessId: bid });
+  const d = out.json!;
+  const allowed = coAllowed(p, `${s.title}\n${s.body || ''}\n${replyTo?.text || ''}`);
+  const brand = cleanBrand(d.brand, { plat: s.plat, name, domain: p.domain }, allowed);
+  if (!brand) throw new Error('empty company reply');
+  return {
+    id: 'c' + shortHash(s.id), acct: 'company', kind: 'reply', plat: s.plat, where: s.where, who: s.who, url: s.url, eng: s.eng, postedAt: s.postedAt || undefined,
+    title: s.title, body: s.body ? clip(s.body, 600) : undefined, replyTo: replyTo ? { who: replyTo.who, text: replyTo.text } : null, asks: s.asks,
+    ...(fresh ? { fresh: true } : {}),
+    tag: clip(d.tag, 60), why: clip(dropUnsupportedFigures(d.why, allowed) || 'A reply from the company account fits here.', 280), drafts: { brand }, edits: {}, mention: false, st: 'open',
+  };
+}
+
 /** The plug variant must actually name the business. If the model returned the help text (or never named it), add a
  *  short, factual plug built from the profile so the two variants are never identical. */
 export function plugOrFallback(mention: string, help: string, p: Profile, plat: BriefPlatform): string {
@@ -123,15 +168,31 @@ const PostsSchema = z.object({ posts: z.array(z.object({
   drafts: z.array(z.object({ platform: z.enum(['linkedin', 'x', 'reddit', 'hn', 'quora']), text: z.string() })),
 })) });
 
-export async function draftPosts(p: Profile, themes: Theme[], enabled: BriefPlatform[], bid: string, date: string): Promise<BriefItem[]> {
+/** The company's "why" when the model's can't be substantiated. */
+export function evidenceWhyCo(t: Theme, name: string): string {
+  return t.recurring
+    ? `${cap(numWord(t.threads.length))} threads in the last two days were about ${t.theme}, with ${roughly(t.comments)} comments between them. A clear how-to from ${name} answers it for everyone at once.`
+    : `${cap(t.theme)} is one of the most-discussed topics in your audience today. The ${name} page can answer it with what the company knows.`;
+}
+
+export async function draftPosts(p: Profile, themes: Theme[], enabled: BriefPlatform[], bid: string, date: string, acct: BriefAccount = 'founder'): Promise<BriefItem[]> {
   if (!themes.length) return [];
+  const co = acct === 'company';
   const feed = FEED_PLATS.filter(k => enabled.includes(k));
   const platsFor = (t: Theme) => {
     const ps = feed.length ? feed : FEED_PLATS;
     const lead = t.threads.find(x => ps.includes(x.plat))?.plat;
     return lead ? [lead, ...ps.filter(x => x !== lead)] : ps;
   };
-  const system = `You write posts for ${p.business.name}'s own social feed, answering what the audience is asking about today. ${VOICE_RULES(p)}
+  const system = co
+    ? `You write posts for the official ${p.business.name} company page, answering what the audience is asking about today. ${CO_RULES(p)}
+Good company angles: a practical how-to on the topic, what ${p.business.name} has learned building for this problem, or a product fact from the profile that answers it. Never personal stories.
+For each topic return: "title" (a short headline, 4–9 words), "tag" (2–5 words, e.g. "How-to from the company" or "What the product answers"), "why" (one sentence on why the company page should post this, citing ONLY the evidence numbers given), and one draft per requested platform.
+LinkedIn: a few short paragraphs. X: ${X_LIMIT} characters or fewer. Never mention competitors.
+
+${profileContext(p)}`
+    : `You write posts for the personal feed of the founder of ${p.business.name}, in first person, answering what the audience is asking about today. ${VOICE_RULES(p)}
+Draw on personal experience and opinion: a founder's take lands better than a how-to from the brand. Keep anecdotes general; never invent specific figures, dates or events about the founder. ${p.business.name} may come up once, naturally, at most.
 For each topic return: "title" (a short headline, 4–9 words), "tag" ("Answer what people keep asking" for a recurring question, or "Trending in your audience today"), "why" (one sentence that cites ONLY the evidence numbers given — never invent counts), and one draft per requested platform.
 LinkedIn: a few short paragraphs, may end with a question. X: ${X_LIMIT} characters or fewer. Never mention competitors.
 
@@ -140,36 +201,49 @@ ${profileContext(p)}`;
 Evidence: ${t.threads.length} thread(s) in the last two days, ${t.comments} comments in total${t.recurring ? '' : ' (one thread)'}.
 Threads: ${t.threads.slice(0, 5).map(x => `"${clip(x.title, 140)}" (${BPLAT[x.plat]}, ${x.eng || 'no count'})`).join('; ')}
 Platforms: ${platsFor(t).join(', ')}`).join('\n\n');
-  const out = await ai.run('writing', { purpose: 'brief.posts', system, prompt, schema: PostsSchema, schemaName: 'posts', maxTokens: 2500, stubContext: { profile: p, themes: themes.map(t => ({ ...t, plats: platsFor(t) })) } }, { businessId: bid });
+  const out = await ai.run('writing', { purpose: 'brief.posts', system, prompt, schema: PostsSchema, schemaName: 'posts', maxTokens: 2500, stubContext: { profile: p, acct, themes: themes.map(t => ({ ...t, plats: platsFor(t) })) } }, { businessId: bid });
   const items: BriefItem[] = [];
   (out.json?.posts || []).slice(0, themes.length).forEach((po, i) => {
     const t = themes[i]; const plats = platsFor(t);
     const drafts: Record<string, string> = {};
-    for (const k of plats) { const d = po.drafts.find(x => x.platform === k); if (d && d.text.trim()) drafts[k] = cleanPost(d.text, k); }
+    const allowed = coAllowed(p, t.threads.map(x => `${x.title} ${x.body || ''}`).join('\n'));
+    for (const k of plats) {
+      const d = po.drafts.find(x => x.platform === k); if (!d || !d.text.trim()) continue;
+      const txt = co ? cleanPost(stripLinksFor(dropUnsupportedFigures(d.text, allowed), p.domain), k) : cleanPost(d.text, k);
+      if (txt) drafts[k] = txt;
+    }
     const ps = plats.filter(k => drafts[k]); if (!ps.length) return;
     items.push({
-      id: 'p' + shortHash(date + t.theme), kind: 'post', plats: ps, pl: ps[0], title: clip(po.title, 90),
-      tag: clip(po.tag || (t.recurring ? 'Answer what people keep asking' : 'Trending in your audience today'), 60),
+      id: (co ? 'q' : 'p') + shortHash(date + t.theme), ...(co ? { acct: 'company' as const } : {}), kind: 'post', plats: ps, pl: ps[0], title: clip(co ? dropUnsupportedFigures(po.title, allowed) || po.title.replace(/\d[\d,.%]*/g, '').trim() : po.title, 90),
+      tag: clip(po.tag || (co ? 'From the company' : t.recurring ? 'Answer what people keep asking' : 'Trending in your audience today'), 60),
       // Substantiation (README §2.5 #6): keep the model's why only if every number in it is real.
-      why: whySupported(po.why, t) ? clip(po.why, 300) : evidenceWhy(t),
+      why: whySupported(po.why, t) ? clip(po.why, 300) : co ? evidenceWhyCo(t, p.business.name) : evidenceWhy(t),
       drafts, edits: {}, mention: false, st: 'open',
     });
   });
   return items;
 }
 
+const stripLinksFor = (t: string, domain: string) => stripLinks(t, [domain]);
+
 /* ── Rewrite (Brief detail → Rewrite) ── */
 export async function rewriteItem(p: Profile, it: BriefItem, text: string, instruction: string, bid: string): Promise<string> {
   const n = p.business.name; const reply = it.kind === 'reply'; const mention = reply && it.mention && !it.noMention;
   const plat = (reply ? it.plat : it.pl) as BriefPlatform;
-  const system = `You write ${reply ? 'replies to public threads' : 'posts for the company feed'} for ${n} (${p.business.description}). ${VOICE_RULES(p)}\n${PLAT_RULES[plat]}\nNo links. ${reply ? (mention ? `Keep a natural plug for ${n}: how it handles this exact problem, in one or two sentences after the help, with a plain disclosure that you work on it.` : `Do not mention ${n} or any product.`) : ''} ${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`;
+  const co = it.acct === 'company';
+  const system = co
+    ? `You write ${reply ? 'replies to public threads' : 'posts'} from the official ${n} company account (${p.business.description}). ${CO_RULES(p)}\n${CO_PLAT_RULES[plat] || ''}\n${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`
+    : `You write ${reply ? 'replies to public threads' : 'posts for their personal feed'} for the founder of ${n} (${p.business.description}), in first person. ${VOICE_RULES(p)}\n${PLAT_RULES[plat]}\nNo links. ${reply ? (mention ? `Keep a natural plug for ${n}: how it handles this exact problem, in one or two sentences after the help, with a plain disclosure that you work on it.` : `Do not mention ${n} or any product.`) : ''} ${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`;
   const ctx = reply
     ? `Platform: ${BPLAT[plat]} (${it.where})\nThread: ${it.title}\n${it.body || ''}\n${it.replyTo ? `Replying to ${it.replyTo.who}: ${it.replyTo.text}` : ''}`
     : `Platform: ${BPLAT[plat]}\nTopic: ${it.title}`;
   const out = await ai.run('writing', { purpose: 'brief.rewrite', system, prompt: `${ctx}\n\nCurrent draft:\n${text}\n\nWhat to change: ${instruction}`, maxTokens: 900, stubContext: { profile: p, item: it, text, instruction } }, { businessId: bid, retries: 1 });
   const raw = String(out.text || '').trim().replace(/^"|"$/g, '');
   if (!raw) throw new Error('empty rewrite');
-  const cleaned = reply ? cleanReply(raw, mention ? 'mention' : 'help', { plat, name: n, domain: p.domain }) : cleanPost(raw, plat);
+  const rctx = { plat, name: n, domain: p.domain };
+  const allowed = coAllowed(p, `${it.title}\n${it.body || ''}\n${it.replyTo?.text || ''}\n${text}`);
+  const cleaned = co ? (reply ? cleanBrand(raw, rctx, allowed) : cleanPost(stripLinksFor(dropUnsupportedFigures(raw, allowed), p.domain), plat))
+    : reply ? cleanReply(raw, mention ? 'mention' : 'help', rctx) : cleanPost(raw, plat);
   if (!cleaned) throw new Error('empty rewrite');
   return cleaned;
 }

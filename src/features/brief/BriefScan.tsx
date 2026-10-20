@@ -5,7 +5,7 @@ import { Btn, Icon } from '@/components/ui';
 import { PlatLogo } from '@/components/brand';
 import { BPLAT } from '@/lib/constants';
 import type { BriefPlatform } from '@/lib/types';
-import { DRAFT_SUB, RANK_SUB, enabledInOrder, type BriefScanProgress, type ScanStep } from './model';
+import { DRAFT_SUB, DRAFT_SUB_BOTH, DRAFT_SUB_CO, RANK_SUB, enabledInOrder, type BriefScanProgress, type ScanStep } from './model';
 
 type Phase = 'read' | 'rank' | 'done';
 interface Blip { ang: number; r: number; t: number; keep: boolean; jit: number; kt?: number; ft?: number }
@@ -52,11 +52,13 @@ export function RadarSweep({ phase, kept, size = 280 }: { phase: Phase; kept: nu
  * Step list + sweep for one scan job. `progress` streams from the job; `err` is the failing platform's name
  * ("A source" when the failure wasn't a platform). The counter eases toward the job's live threads-read count.
  */
-export function BriefScan({ platforms, progress, err, onRetry, onCancel, busy }: {
+export function BriefScan({ platforms, progress, err, onRetry, onCancel, busy, who = 'founder', name = '' }: {
+  /** Whose drafts this scan writes (Brief settings → Draft for). */
+  who?: 'founder' | 'company' | 'both'; name?: string;
   platforms: BriefPlatform[]; progress: BriefScanProgress | null; err: string | null;
   onRetry: () => void; onCancel: (() => void) | null; busy?: boolean;
 }) {
-  const steps: ScanStep[] = progress?.steps?.length ? progress.steps : [...enabledInOrder(platforms).map(k => ({ k, sub: '' })), { k: 'rank', sub: RANK_SUB }, { k: 'draft', sub: DRAFT_SUB }];
+  const steps: ScanStep[] = progress?.steps?.length ? progress.steps : [...enabledInOrder(platforms).map(k => ({ k, sub: '' })), { k: 'rank', sub: RANK_SUB }, { k: 'draft', sub: who === 'both' ? DRAFT_SUB_BOTH : who === 'company' ? DRAFT_SUB_CO : DRAFT_SUB }];
   const cur = progress?.step;
   const i = cur === 'done' ? steps.length - 1 : Math.max(0, steps.findIndex(s => s.k === cur));
   const target = progress?.threadsRead || 0;
@@ -77,7 +79,7 @@ export function BriefScan({ platforms, progress, err, onRetry, onCancel, busy }:
         const isPlat = !!BPLAT[s.k as BriefPlatform];
         return <div key={s.k} className="brief-step" style={{ opacity: j > i ? .35 : 1 }}>
           <span className="brief-step-i">{bad ? <i className="dot" style={{ background: 'var(--bad)' }} /> : done ? <Icon n="check" s={14} w={2} style={{ color: 'var(--ok)' }} /> : now ? <span className="spin" style={{ color: 'var(--signal)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span>
-          <span className="col" style={{ minWidth: 0 }}><span className="small row" style={{ gap: 8, fontWeight: now || bad ? 500 : 400 }}>{isPlat && <PlatLogo k={s.k} s={14} />}{bad ? `${err} didn’t respond` : isPlat ? `Reading ${BPLAT[s.k as BriefPlatform]}` : s.k === 'rank' ? 'Choosing what’s worth your time' : 'Drafting in your voice'}</span>{(now || bad) && <span className="xs sub enter">{bad ? 'Nothing was lost. Try again in a minute.' : s.sub}</span>}</span>
+          <span className="col" style={{ minWidth: 0 }}><span className="small row" style={{ gap: 8, fontWeight: now || bad ? 500 : 400 }}>{isPlat && <PlatLogo k={s.k} s={14} />}{bad ? `${err} didn’t respond` : isPlat ? `Reading ${BPLAT[s.k as BriefPlatform]}` : s.k === 'rank' ? 'Choosing what’s worth your time' : who === 'both' ? `Drafting for you and ${name}` : who === 'company' ? `Drafting for ${name}` : 'Drafting in your voice'}</span>{(now || bad) && <span className="xs sub enter">{bad ? 'Nothing was lost. Try again in a minute.' : s.sub}</span>}</span>
         </div>;
       })}
       {err && <div className="row enter" style={{ gap: 10, marginTop: 18 }}><Btn kind="primary" icon="refresh" loading={busy} onClick={onRetry}>Try again</Btn>{onCancel && <Btn kind="ghost" onClick={onCancel}>Keep this morning’s brief</Btn>}</div>}

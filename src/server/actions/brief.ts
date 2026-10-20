@@ -11,13 +11,14 @@ import { enqueueScan } from '../services/brief/jobs';
 import { withDay } from '../services/brief/store';
 import { rewriteItem } from '../services/brief/draft';
 import '../services/brief/stubs';
-import { isLive, variantOf } from '@/features/brief/model';
+import { acctOf, isLive, variantOf } from '@/features/brief/model';
 import type { BriefItem, Profile } from '@/lib/types';
 
 const Plat = z.enum(['reddit', 'x', 'linkedin', 'hn', 'quora']);
 const Time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const Date_ = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const SettingsIn = z.object({ platforms: z.array(Plat).min(1).max(5), time: Time, mention: z.enum(['asked', 'relevant', 'never']) });
+const Acct = z.enum(['founder', 'company']);
+const SettingsIn = z.object({ platforms: z.array(Plat).min(1).max(5), time: Time, mention: z.enum(['asked', 'relevant', 'never']), accounts: z.array(Acct).min(1).max(2).optional() });
 
 export const REWRITE_ERROR = 'Radar couldn’t rewrite this. Try again.';
 const PAST_ERROR = 'Past briefs are read-only.';
@@ -25,6 +26,7 @@ const PAST_ERROR = 'Past briefs are read-only.';
 async function saveSettings(bid: string, cur: any, next: Partial<z.infer<typeof SettingsIn>>) {
   const s = { ...briefSettingsOf({ briefSettings: cur } as any), ...next };
   s.platforms = [...new Set(s.platforms)];
+  if (s.accounts) s.accounts = (['founder', 'company'] as const).filter(a => s.accounts!.includes(a));
   await db.update(schema.businesses).set({ briefSettings: s }).where(eq(schema.businesses.id, bid));
   return s;
 }
@@ -80,7 +82,7 @@ export const actions: ActionMap = {
         const i = items.findIndex(x => x.id === input.id);
         if (i < 0 || items[i].st === 'expired') return null;
         const it: BriefItem = { ...items[i], edits: { ...(items[i].edits || {}) } };
-        if (input.mention != null && it.kind === 'reply') it.mention = input.mention;
+        if (input.mention != null && it.kind === 'reply' && acctOf(it) === 'founder') it.mention = input.mention;
         if (input.pl && it.kind === 'post' && (it.plats || []).includes(input.pl)) it.pl = input.pl;
         if (input.edit) {
           if (input.edit.text == null) delete it.edits[input.edit.v];
@@ -95,7 +97,7 @@ export const actions: ActionMap = {
       const { it, before } = ok;
       if (input.st && input.st !== before) {
         const kind = input.st === 'posted' ? (it.kind === 'post' ? 'brief.post_posted' : 'brief.reply_posted') : input.st === 'copied' ? 'brief.reply_copied' : input.st === 'skipped' ? 'brief.skipped' : null;
-        if (kind) trackSoon(kind, { bid: ctx.bid, uid: ctx.user.id, ref: it.id, props: { date: input.date, kind: it.kind, plat: it.kind === 'post' ? it.pl : it.plat, plugged: it.kind === 'reply' ? !!it.mention : undefined, edited: Object.keys(it.edits || {}).length > 0, where: it.where, url: it.url, title: it.title } });
+        if (kind) trackSoon(kind, { bid: ctx.bid, uid: ctx.user.id, ref: it.id, props: { date: input.date, kind: it.kind, acct: acctOf(it), plat: it.kind === 'post' ? it.pl : it.plat, plugged: it.kind === 'reply' ? (acctOf(it) === 'company' || !!it.mention) : undefined, edited: Object.keys(it.edits || {}).length > 0, where: it.where, url: it.url, title: it.title } });
       }
       return { ok: true };
     },
@@ -110,7 +112,7 @@ export const actions: ActionMap = {
       const it = (row?.items as BriefItem[] | undefined)?.find(x => x.id === input.id);
       if (!it || !isLive(it)) throw new RadarError(REWRITE_ERROR, 400, 'rewrite_failed');
       // Rewrite the variant the user was looking at when they asked.
-      const view: BriefItem = it.kind === 'reply' ? { ...it, mention: input.v === 'mention' } : { ...it, pl: input.v as any };
+      const view: BriefItem = it.kind === 'reply' ? (acctOf(it) === 'company' ? it : { ...it, mention: input.v === 'mention' }) : { ...it, pl: input.v as any };
       let text: string;
       try { text = await rewriteItem({ ...(ctx.biz.profile as Profile), domain: ctx.biz.domain }, view, input.text, input.instruction, ctx.bid); }
       catch (e: any) { console.error('[brief.rewrite]', e?.message || e); throw new RadarError(REWRITE_ERROR, 502, 'rewrite_failed'); }

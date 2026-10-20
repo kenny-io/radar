@@ -17,12 +17,15 @@ export const RankSchema = z.object({ results: z.array(z.object({
   reject: z.enum(REJECT),
   replyTo: z.number().int().nullable(),
   theme: z.string(),
+  brand: z.boolean(),
 })) });
 export type RankRow = z.infer<typeof RankSchema>['results'][number];
 
 export interface Scored extends Candidate {
   fit: number; canHelp: number; intent: RankRow['intent']; asks: boolean; reject: RankRow['reject'];
   replyToIdx: number | null; theme: string; score: number;
+  /** The official company account could reply credibly (a direct tool request, or an industry claim it can speak to). */
+  brand: boolean;
 }
 
 export const MIN_SCORE = 0.45;
@@ -56,6 +59,7 @@ For every candidate thread, score:
 - reject: "hostile" (angry, a pile-on, harassment), "off-topic", "competitor-owned" (posted by or for a competitor), "rule-violation" (joining would break the community's rules, e.g. promotion threads), "promotional" (an ad or launch), else "none".
 - replyTo: the index of the comment that is the best place to reply (when the useful conversation is in a comment), else null.
 - theme: a 3–6 word lowercase topic label (e.g. "tracking time without timers"). Use the same label for threads about the same topic.
+- brand: true only when a reply from the official ${p.business.name} company account would be welcome and credible: the thread directly asks for a tool or recommendation that ${p.business.name} answers, or it makes an industry claim or stat that ${p.business.name}'s own product knowledge speaks to. False for personal stories, venting, opinion threads, and anything where a brand reply would feel like an ad.
 
 ${profileContext(p)}`;
 
@@ -89,17 +93,17 @@ export async function rankCandidates(p: Profile, plan: Plan, cands: Candidate[],
     if (reject === 'none' && plan.competitors.some(x => x && (lower(c.who).includes(lower(x)) || lower(c.where).includes(lower(x))))) reject = 'competitor-owned';
     if (reject === 'none' && plan.name && (lower(c.who).includes(lower(plan.name)) || lower(c.where).startsWith(lower(plan.name)))) reject = 'promotional';
     const replyToIdx = r.replyTo != null && c.comments && c.comments[r.replyTo] ? r.replyTo : null;
-    out.push({ ...c, fit: r.fit, canHelp: r.canHelp, intent: r.intent, asks: !!r.asks, reject, replyToIdx, theme: (r.theme || '').toLowerCase().trim(), score: scoreOf(c, r) });
+    out.push({ ...c, fit: r.fit, canHelp: r.canHelp, intent: r.intent, asks: !!r.asks, reject, replyToIdx, theme: (r.theme || '').toLowerCase().trim(), score: scoreOf(c, r), brand: !!r.brand });
   }
   return out.sort((a, b) => b.score - a.score);
 }
 
-/** Select at most `cap[plat]` replies per enabled platform, by score (02-system §9.3). */
-export function selectReplies(scored: Scored[], plats: BriefPlatform[], cap: Partial<Record<BriefPlatform, number>>): Scored[] {
+/** Select at most `cap[plat]` replies per enabled platform, by score (02-system §9.3). `skip` = threads already taken. */
+export function selectReplies(scored: Scored[], plats: BriefPlatform[], cap: Partial<Record<BriefPlatform, number>>, opts: { brand?: boolean; skip?: Set<string> } = {}): Scored[] {
   const out: Scored[] = [];
   for (const k of PORDER.filter(x => plats.includes(x))) {
     const n = Math.max(0, cap[k] ?? 2);
-    out.push(...scored.filter(s => s.plat === k && s.reject === 'none' && s.score >= MIN_SCORE).sort((a, b) => b.score - a.score).slice(0, n));
+    out.push(...scored.filter(s => s.plat === k && s.reject === 'none' && s.score >= MIN_SCORE && (!opts.brand || s.brand) && !opts.skip?.has(s.id)).sort((a, b) => b.score - a.score).slice(0, n));
   }
   return out;
 }

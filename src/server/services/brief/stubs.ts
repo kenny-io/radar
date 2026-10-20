@@ -36,7 +36,8 @@ registerStub('brief.rank', async (_i, ctx: { profile: Profile; plan: Plan; cands
       : ctx.plan.competitors.some(x => c.where.toLowerCase().includes(x.toLowerCase())) ? 'competitor-owned' : /^show hn/i.test(c.title) ? 'promotional' : fit < 0.2 ? 'off-topic' : 'none';
     const intent: RankRow['intent'] = asks ? 'asks-for-tool' : /\?|how do|best way|how to/i.test(text) ? 'asks-for-help' : /opinion|agree|debate|change my mind/i.test(text) ? 'discussion' : 'other';
     const replyTo = (c.comments || []).findIndex(x => relevance(x.text, ctx.plan) >= 0.25);
-    return { id: c.id, fit, canHelp: fit >= 0.3 ? 0.85 : 0.5, intent, asks, reject, replyTo: replyTo >= 0 ? replyTo : null, theme: themeFor(text, ctx.profile) };
+    const brand = (c.plat === 'x' || c.plat === 'linkedin') && (asks || /\b\d+%|survey|report|study|data\b/i.test(text));
+    return { id: c.id, fit, canHelp: fit >= 0.3 ? 0.85 : 0.5, intent, asks, reject, replyTo: replyTo >= 0 ? replyTo : null, theme: themeFor(text, ctx.profile), brand };
   });
   return { results };
 });
@@ -75,9 +76,31 @@ registerStub('brief.reply', async (_i, ctx: { profile: Profile; cand: Scored; re
     mention: `What finally worked for me was making it a small daily habit instead of a Friday project. A few minutes at the end of each day, while it’s still fresh, beats an hour of reconstruction later.\n\nDisclosure: I work on ${N} (${desc}). The habit works with any tool, though.` };
 });
 
-registerStub('brief.posts', async (_i, ctx: { profile: Profile; themes: (Theme & { plats: string[] })[] }) => {
+registerStub('brief.brand', async (_i, ctx: { profile: Profile; cand: Scored }) => {
+  await sleep(800);
+  const p = ctx.profile; const N = p.business.name; const c = ctx.cand;
+  const diff = lcf(noDot(p.business.differentiators[0] || 'fits the way you already work'));
+  if (c.asks) return { tag: 'Asking for your exact product', why: `They’re asking for exactly what ${N} does. A reply from the brand account is expected here.`,
+    brand: c.plat === 'x' ? `That’s what we built ${N} for. It ${diff}, so there’s nothing new to remember. Happy to help you set it up if you try it.`
+      : `That’s what we built ${N} for. It ${diff}, so the habit sticks without a new routine.\n\nHappy to walk you through how teams like yours set it up.` };
+  return { tag: 'A claim your product speaks to', why: `An industry claim ${N} can speak to. A comment from the company page adds a second view, and your buyers read these threads.`,
+    brand: `This matches what we hear from teams using ${N}. Most of the gap isn’t idle time, it’s small work that never gets written down.\n\nThe teams that close it review last week together every Monday.` };
+});
+
+registerStub('brief.posts', async (_i, ctx: { profile: Profile; acct?: 'founder' | 'company'; themes: (Theme & { plats: string[] })[] }) => {
   await sleep(1100);
   const p = ctx.profile;
+  if (ctx.acct === 'company') {
+    const N = p.business.name; const seg = lcf((p.audience.segments[0] || 'small teams').replace(/\s*\(.*?\)/, ''));
+    return { posts: ctx.themes.map(t => {
+      const need = t.theme.replace(/^how to /, '');
+      return { theme: t.theme, title: cap(`What we’ve learned helping ${seg} ${need}`), tag: 'How-to from the company',
+        why: `This came up across your audience today. A clear how-to from ${N} answers it for everyone at once.`,
+        drafts: t.plats.map(k => ({ platform: k as any, text: k === 'x'
+          ? `What we’ve learned helping ${seg} ${need}: a short daily review beats a big weekly cleanup.`
+          : `What we’ve learned helping ${seg} ${need}.\n\nThe teams that get it right don’t add a new system. They review a little every day, while the details are fresh, and look back together once a week.\n\nThat’s the habit ${N} is built around.` })) };
+    }) };
+  }
   const d0 = noDot(p.business.differentiators[0] || 'Make it part of something you already do');
   const seg = lcf((p.audience.segments[0] || 'small teams').replace(/\s*\(.*?\)/, ''));
   return { posts: ctx.themes.map((t, i) => {

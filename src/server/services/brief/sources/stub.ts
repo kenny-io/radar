@@ -43,6 +43,8 @@ export function stubThreads(p: Profile, plat: BriefPlatform, subs: string[]): T[
       title: `${comp(0)} support is a joke. Never again, absolute garbage.`, body: '' },
     { id: 'x:1849203', where: '@twopersonstudio', who: '@twopersonstudio', url: 'https://x.com/twopersonstudio/status/1849203', age: 0.33, engN: 12, late: true,
       title: `Any ${kw(0)} tool that actually works for a two-person team? What we use now isn’t working.`, body: '' },
+    { id: 'x:1849204', where: '@jonahmakes', who: '@jonahmakes', url: 'https://x.com/jonahmakes/status/1849204', age: 2, engN: 9,
+      title: `Can anyone recommend a ${kw(0)} app? Third week in a row I forgot to ${need(0)}.`, body: '' },
   ];
   if (plat === 'linkedin') return [
     { id: 'linkedin:p1', where: `Priya Raman · ${cap(buyer(0))}, Northbound`, who: 'Priya Raman', url: 'https://www.linkedin.com/posts/priya-raman_activity-7251', age: 5, engN: 64,
@@ -53,6 +55,8 @@ export function stubThreads(p: Profile, plat: BriefPlatform, subs: string[]): T[
       body: `It isn’t the money conversation. It’s the hour I spend digging through my calendar and email to work out what I actually did.` },
     { id: 'linkedin:p3', where: `${comp(1)} · Company page`, who: comp(1), url: 'https://www.linkedin.com/posts/company_activity-7253', age: 6, engN: 18,
       title: `Introducing ${comp(1)} 4.0: the fastest way to ${need(0)}.`, body: '' },
+    { id: 'linkedin:p4', where: 'Agency Review · 18k followers', who: 'Agency Review', url: 'https://www.linkedin.com/posts/agency-review_activity-7254', age: 6, engN: 27,
+      title: `Only 61% of ${seg(0)}s say they manage to ${need(0)} every week, according to our survey of 400 teams.`, body: 'Most couldn’t say where the missing hours went.' },
   ];
   if (plat === 'hn') return [
     { id: 'hn:41800101', where: 'Ask HN', who: 'throwaway_pm', url: 'https://news.ycombinator.com/item?id=41800101', age: 9, engN: 156,

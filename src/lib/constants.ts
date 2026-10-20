@@ -1,5 +1,5 @@
 // Constants shared by client and server. Copy is verbatim from the prototype (the copy deck).
-import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, AiEngine } from './types';
+import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, BriefAccount, AiEngine } from './types';
 
 /* ── AI models (Settings → AI models is the ONLY place these names render) ── */
 export const AI_MODELS = [
@@ -101,7 +101,9 @@ export const IMG_SIZES: Record<string, [number, number]> = { hero: [1200, 628], 
 export const BPLAT: Record<BriefPlatform, string> = { reddit: 'Reddit', x: 'X', linkedin: 'LinkedIn', hn: 'Hacker News', quora: 'Quora' };
 export const PORDER: BriefPlatform[] = ['reddit', 'x', 'linkedin', 'hn', 'quora'];
 export const BMENTION = [{ v: 'asked', l: 'Only when asked' }, { v: 'relevant', l: 'When relevant' }, { v: 'never', l: 'Never' }] as const;
-export const BRIEF_DEFAULT = { platforms: ['reddit', 'x', 'linkedin', 'hn'] as BriefPlatform[], time: '06:00', mention: 'asked' as const };
+export const BRIEF_DEFAULT = { platforms: ['reddit', 'x', 'linkedin', 'hn'] as BriefPlatform[], time: '06:00', mention: 'asked' as const, accounts: ['founder', 'company'] as BriefAccount[] };
+/** Company drafts only go where brand accounts are welcome. Reddit, Hacker News and Quora stay founder-only. */
+export const CO_PLATS: BriefPlatform[] = ['x', 'linkedin'];
 
 /* ── AI Visibility ── */
 export const AI_ENGINES: AiEngine[] = ['ChatGPT', 'Perplexity', 'Gemini', 'Claude', 'Grok'];

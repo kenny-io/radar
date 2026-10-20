@@ -1,10 +1,19 @@
 // Daily Brief — isomorphic helpers shared by the UI (features/brief) and the server (services/brief).
 // No React and no server imports here.
-import type { BriefItem, BriefPlatform } from '@/lib/types';
-import { PORDER } from '@/lib/constants';
+import type { BriefAccount, BriefItem, BriefPlatform, BriefSettings } from '@/lib/types';
+import { BRIEF_DEFAULT, CO_PLATS, PORDER } from '@/lib/constants';
 
-/** The variant the user currently sees: replies → 'help' | 'mention'; posts → the selected platform. */
-export const variantOf = (it: BriefItem): string => (it.kind === 'reply' ? (it.mention ? 'mention' : 'help') : (it.pl || (it.plats || [])[0] || ''));
+/** Missing acct = founder (items drafted before company accounts). */
+export const acctOf = (it: Pick<BriefItem, 'acct'>): BriefAccount => it.acct || 'founder';
+/** Accounts the brief drafts for (at least one; default both). */
+export const accountsOf = (s: Pick<BriefSettings, 'accounts'>): BriefAccount[] => {
+  const a = (s.accounts || BRIEF_DEFAULT.accounts).filter(x => x === 'founder' || x === 'company');
+  return a.length ? a : BRIEF_DEFAULT.accounts;
+};
+/** Platforms an account drafts on: the company only on X and LinkedIn. */
+export const platsFor = (a: BriefAccount, ps: BriefPlatform[]) => (a === 'company' ? ps.filter(p => CO_PLATS.includes(p)) : ps);
+/** The variant the user currently sees: founder replies → 'help' | 'mention'; company replies → 'brand'; posts → the selected platform. */
+export const variantOf = (it: BriefItem): string => (it.kind === 'reply' ? (acctOf(it) === 'company' ? 'brand' : it.mention ? 'mention' : 'help') : (it.pl || (it.plats || [])[0] || ''));
 export const textOf = (it: BriefItem): string => {
   const v = variantOf(it);
   return (it.edits && it.edits[v]) ?? it.drafts[v] ?? Object.values(it.drafts)[0] ?? '';
@@ -43,6 +52,8 @@ export interface BriefScanResult {
 
 export const RANK_SUB = 'By fit with your audience and how recently people replied';
 export const DRAFT_SUB = 'From your Business Profile';
+export const DRAFT_SUB_BOTH = 'Personal angles for you, company angles for the brand';
+export const DRAFT_SUB_CO = 'Company angles for the brand';
 
 /** Platform order for an enabled set. */
 export const enabledInOrder = (ps: BriefPlatform[]) => PORDER.filter(p => ps.includes(p));
