@@ -79,8 +79,8 @@ export function ArticleWorkspace() {
   const rewrite = async (m: string, selection: string, before: string, after: string) => (await app.act<{ text: string }>('article.rewrite', { entryId: id, mode: m, selection, before, after })).text;
   const embedded = (A.videoMeta || []).filter(v => A.videos.includes(v.id));
 
-  return <div style={{ margin: '-44px clamp(-56px,-4vw,-20px) 0' }}>
-    <div className="row" style={{ position: 'sticky', top: 0, zIndex: 20, padding: '12px clamp(16px,3vw,32px)', background: 'color-mix(in oklch,var(--paper) 88%,transparent)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}>
+  return <div className="art-wrap" style={{ margin: '-44px clamp(-56px,-4vw,-20px) 0' }}>
+    <div className="row art-bar" style={{ position: 'sticky', top: 0, zIndex: 20, padding: '12px clamp(16px,3vw,32px)', background: 'color-mix(in oklch,var(--paper) 88%,transparent)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}>
       <Btn kind="ghost" size="sm" icon="back" onClick={() => go('calendar', { open: null })}>Calendar</Btn>
       <span className="grow row" style={{ gap: 14, minWidth: 'min(220px,40vw)' }}><span className="trunc hide-sm" style={{ fontWeight: 500, minWidth: 0 }}>{e.title}</span><span style={{ flex: 'none' }}>{statusLine}</span></span>
       {conns.length > 1 && !['published', 'publishing'].includes(st) && <select className="input hide-sm" aria-label="Publish to" style={{ width: 'auto', height: 34, fontSize: 13, paddingLeft: 12 }} value={e.dest || blog.defaultId || ''} onChange={ev => { const v = ev.target.value; app.act('article.dest', { entryId: id, dest: v }, { optimistic: patchEntry(id, { dest: v }) }).catch(() => {}); }}>{conns.map(c => <option key={c.id} value={c.id}>To {platLabel(c.type)}{c.id === blog.defaultId ? ' (default)' : ''}</option>)}</select>}
@@ -91,18 +91,18 @@ export function ArticleWorkspace() {
     </div>
     {st === 'failed' && <div className="row enter" style={{ padding: '14px clamp(16px,3vw,32px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}><Status tone="bad">Publishing failed</Status><span className="small grow" style={{ minWidth: 220 }}>{platLabel(failPlat)} returned <span className="mono">{e.publishError ? `${e.publishError.http} ${e.publishError.message}` : 'an error'}</span>. Your article is safe — nothing was posted.</span><Btn size="sm" onClick={() => setConn({ type: destConn?.type || failPlat || 'wordpress', id: destConn?.id })}>Reconnect</Btn><Btn size="sm" kind="primary" icon="refresh" onClick={() => publishNow(true)}>Retry</Btn></div>}
     <div className="art-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', minHeight: 'calc(100vh - 62px)' }}>
-      <style>{`@media(max-width:1100px){.art-grid{grid-template-columns:1fr!important}.art-side{border-left:0!important;border-top:1px solid var(--line)}}`}</style>
+      <style>{`@media(max-width:1100px){.art-grid{grid-template-columns:1fr!important}.art-side{border-left:0!important;border-top:1px solid var(--line)}}@media(max-width:900px){.art-wrap{margin-top:-28px!important}.art-bar{top:61px!important;gap:10px!important}}@media(max-width:640px){.art-wrap{margin-left:-16px!important;margin-right:-16px!important}.art-h1{font-size:30px!important}.art-side{padding:20px 20px 60px!important}}`}</style>
       <div style={{ padding: '48px clamp(20px,5vw,72px) 120px' }}>
         <article style={{ maxWidth: 700, margin: '0 auto' }}>
           {!A.generated && !gen ? <div className="col enter" style={{ gap: 22, paddingTop: 24 }}>
             <span className="eyebrow">{e.mode === 'refresh' ? 'Refresh · ' + e.url : e.type} · {fmtDW(e.date)}</span>
-            <h1 className="h-display" style={{ fontSize: 40 }}>{e.title}</h1>
+            <h1 className="h-display art-h1" style={{ fontSize: 40 }}>{e.title}</h1>
             <p className="sub" style={{ fontSize: 17, maxWidth: 560 }}>{st === 'drafting' || genActive ? 'Radar is drafting this now. It’ll appear here in a moment.' : `Radar drafts this on ${fmtDW(addDays(e.date, -1))} — about ${A.brief.words.toLocaleString()} words in your brand voice, with sources and an image. Adjust the brief anytime before then.`}</p>
             <div className="row">{st === 'drafting' || genActive ? <Status tone="signal" pulse>Drafting…</Status> : <><Btn kind="secondary" size="lg" onClick={() => setTab('brief')}>Edit brief</Btn><Btn kind="ghost" size="lg" icon="doc" onClick={draftNow}>Draft now</Btn></>}</div>
           </div>
             : <div className="prose" ref={proseRef}>
               <div style={{ marginBottom: 28 }}><Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} busy={imgBusy || !!gen} url={heroUrl} /></div>
-              <h1 className="h-display" style={{ fontSize: 40, marginBottom: 20 }} contentEditable={mode === 'edit' && !gen} suppressContentEditableWarning onBlur={ev => { const t = ev.currentTarget.innerText.replace(/\s+/g, ' ').trim(); if (t && t !== e.title) app.act('calendar.update', { entryId: id, title: t }, { optimistic: patchEntry(id, { title: t }) }).catch(() => {}); }}>{e.title}</h1>
+              <h1 className="h-display art-h1" style={{ fontSize: 40, marginBottom: 20 }} contentEditable={mode === 'edit' && !gen} suppressContentEditableWarning onBlur={ev => { const t = ev.currentTarget.innerText.replace(/\s+/g, ' ').trim(); if (t && t !== e.title) app.act('calendar.update', { entryId: id, title: t }, { optimistic: patchEntry(id, { title: t }) }).catch(() => {}); }}>{e.title}</h1>
               {gen ? <GenStream blocks={gen} /> : A.body.map((b, i) => {
                 const vidAt = A.body.findIndex((x, j) => j > 0 && x[0] === 'h2'); const vs = i === vidAt - 1 ? embedded : [];
                 return <Fragment key={id + i}><Block b={b} edit={mode === 'edit'} flags={flagged(i)} onChange={v => { const body = A.body.map((x, j) => (j === i ? [x[0], v] as BlockT : x)); if (JSON.stringify(body[i]) !== JSON.stringify(A.body[i])) setA({ body }, false); }} />{vs.map(v => <VideoEmbed key={v.id} v={v} edit={mode === 'edit'} onRemove={() => setA({ videos: A.videos.filter(x => x !== v.id) }, false)} />)}</Fragment>;

@@ -45,8 +45,9 @@ export function Field({ label, hint, mark, children, style }: { label?: React.Re
     <span className="field-head"><span className="label">{label}</span>{mark}</span>{children}{hint && <span className="xs sub">{hint}</span>}
   </label>;
 }
-export function Seg<T extends string | number>({ value, options, onChange, style }: { value: T; options: (T | { v: T; l: React.ReactNode })[]; onChange: (v: T) => void; style?: React.CSSProperties }) {
-  return <div className="seg" role="tablist" style={style}>{options.map(o => {
+/** `wrap`: on phones the options wrap onto two rows instead of scrolling sideways (for 4+ long labels). */
+export function Seg<T extends string | number>({ value, options, onChange, style, wrap }: { value: T; options: (T | { v: T; l: React.ReactNode })[]; onChange: (v: T) => void; style?: React.CSSProperties; wrap?: boolean }) {
+  return <div className={'seg' + (wrap ? ' seg-wrap' : '')} role="tablist" style={style}>{options.map(o => {
     const v = (typeof o === 'object' ? (o as any).v : o) as T; const l = typeof o === 'object' ? (o as any).l : o;
     return <button type="button" key={String(v)} role="tab" aria-selected={value === v} className={value === v ? 'on' : ''} onClick={() => onChange(v)}>{l}</button>;
   })}</div>;
@@ -63,7 +64,8 @@ export function Skel({ w = '100%', h = 14, style }: { w?: number | string; h?: n
 
 function useMounted() { const [m, setM] = useState(false); useEffect(() => setM(true), []); return m; }
 
-export function Modal({ open, onClose, width = 720, children, dismissable = true, label }: { open: boolean; onClose?: (() => void) | null; width?: number; children?: React.ReactNode; dismissable?: boolean; label?: string }) {
+/** `full`: fills the screen on phones (multi-step flows) instead of floating as a bottom card. */
+export function Modal({ open, onClose, width = 720, children, dismissable = true, label, full }: { open: boolean; onClose?: (() => void) | null; width?: number; children?: React.ReactNode; dismissable?: boolean; label?: string; full?: boolean }) {
   const mounted = useMounted();
   useEffect(() => {
     if (!open) return;
@@ -71,7 +73,7 @@ export function Modal({ open, onClose, width = 720, children, dismissable = true
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [open, dismissable, onClose]);
   if (!open || !mounted) return null;
-  return createPortal(<div className="overlay" onMouseDown={e => { if (e.target === e.currentTarget && dismissable) onClose && onClose(); }}><div className="modal" role="dialog" aria-modal="true" aria-label={label} style={{ maxWidth: width }}>{children}</div></div>, document.body);
+  return createPortal(<div className={'overlay' + (full ? ' ov-full' : '')} onMouseDown={e => { if (e.target === e.currentTarget && dismissable) onClose && onClose(); }}><div className={'modal' + (full ? ' modal-full' : '')} role="dialog" aria-modal="true" aria-label={label} style={{ maxWidth: width }}>{children}</div></div>, document.body);
 }
 export function Sheet({ open, onClose, width = 520, title, eyebrow, children, footer }: { open: boolean; onClose: () => void; width?: number; title?: React.ReactNode; eyebrow?: React.ReactNode; children?: React.ReactNode; footer?: React.ReactNode }) {
   const mounted = useMounted();

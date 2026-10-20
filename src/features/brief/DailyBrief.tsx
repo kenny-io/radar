@@ -34,6 +34,9 @@ export function DailyBrief() {
   const today = B!.today;
   const [day, setDay] = useState(today); const [sel, setSel] = useState<string | null>(null); const [scan, setScan] = useState<ScanState | null>(null); const [sheet, setSheet] = useState(false); const [mob] = useState(false); const [acct, setAcct] = useState<BriefAccount>('founder');
   const [pendingSel, setPendingSel] = useState<string | null>(null);
+  // Phones and narrow windows: a list, then one conversation at a time (with a way back), instead of a long stacked page.
+  const narrow = useNarrow(1000); const [opened, setOpened] = useState(false);
+  useEffect(() => { setOpened(false); }, [day]);
   /** Local text the user typed that the server hasn't confirmed yet (per item + variant). */
   const [overlay, setOverlay] = useState<Record<string, Record<string, string>>>({});
   const editTimers = useRef<Record<string, any>>({});
@@ -62,7 +65,7 @@ export function DailyBrief() {
   useEffect(() => { if (!sel || !items.find(i => i.id === sel)) { const f = order.find(i => i.st === 'open' || i.st === 'copied'); setSel(f ? f.id : null); } }, [day, cur, items.map(i => i.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
   // A new item from Scan again: switch to its account and select it.
   useEffect(() => { const n = pendingSel ? all.find(i => i.id === pendingSel) : null; if (n) { setAcct(acctOf(n)); setSel(pendingSel); setPendingSel(null); } }, [pendingSel, all.map(i => i.id).join()]); // eslint-disable-line react-hooks/exhaustive-deps
-  const switchAcct = (a: BriefAccount) => { setAcct(a); setSel(null); };
+  const switchAcct = (a: BriefAccount) => { setAcct(a); setSel(null); setOpened(false); };
 
   /* ── item writes (optimistic) ── */
   const setItem = useCallback((id: string, patch: Patch, extra: { edit?: { v: string; text: string | null } } = {}) => {
@@ -104,8 +107,10 @@ export function DailyBrief() {
     setItem(it.id, {}, { edit: { v, text: null } });
   };
 
-  const pick = (id: string) => { setSel(id); if (window.innerWidth < 1000) setTimeout(() => { const el = detailRef.current; if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 16, behavior: 'smooth' }); }, 30); };
-  const advance = (id: string) => { const idx = order.findIndex(i => i.id === id); const rest = [...order.slice(idx + 1), ...order.slice(0, idx)].filter(i => i.id !== id && (i.st === 'open' || i.st === 'copied')); setSel(rest[0] ? rest[0].id : null); };
+  const toDetail = () => setTimeout(() => { const el = document.getElementById('brief-back'); if (el) window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 72) }); }, 30);
+  const pick = (id: string) => { setSel(id); if (narrow) { setOpened(true); toDetail(); } };
+  const backToList = () => { setOpened(false); setTimeout(() => { const el = document.querySelector('.brief-qi.on') as HTMLElement | null; if (el) el.scrollIntoView({ block: 'center' }); }, 30); };
+  const advance = (id: string) => { const idx = order.findIndex(i => i.id === id); const rest = [...order.slice(idx + 1), ...order.slice(0, idx)].filter(i => i.id !== id && (i.st === 'open' || i.st === 'copied')); setSel(rest[0] ? rest[0].id : null); if (narrow) toDetail(); };
   const act: Act = {
     copy: it => {
       copyText(textOf(it)); const pend = takePending(it.id);
@@ -207,7 +212,8 @@ export function DailyBrief() {
         {quietList && <div style={{ flexBasis: '100%', display: 'flex', justifyContent: 'center', marginTop: 16 }}>{quietList}</div>}
       </Empty>
     : <div className={'brief-grid' + (mob ? ' mob' : '')}>
-      <nav className="brief-q" aria-label="Today’s recommendations">
+      {narrow && allDone && !opened && <div className="brief-dw"><BriefDone items={items} settings={br.settings} acct={cur} name={name} other={accts.find(a => a !== cur && openOf(a) > 0)} otherN={accts.filter(a => a !== cur).reduce((n, a) => n + openOf(a), 0)} onSwitch={switchAcct} /></div>}
+      {!(narrow && opened) && <nav className="brief-q" aria-label="Today’s recommendations">
         {groups.map(g => <div key={g.k} className="col">{g.k === 'post' ? <div className="brief-gh post"><span className="brief-ght">{g.l}</span><span className="brief-ghs">Original posts to publish, not replies</span></div> : <div className="brief-gh"><PlatLogo k={g.k} s={14} /><span>{g.l}</span></div>}
           {g.items.map((x, j) => { const done = x.st === 'posted' || x.st === 'skipped' || x.st === 'expired'; const age = ageOf(x); return <button key={x.id} className={'brief-qi enter' + (sel === x.id ? ' on' : '') + (done ? ' done' : '')} style={{ animationDelay: j * 40 + 'ms' }} onClick={() => pick(x.id)} aria-current={sel === x.id}>
             <span className="brief-qt">{x.title}</span>
@@ -216,13 +222,14 @@ export function DailyBrief() {
         </div>)}
         {quietList}
         {isToday && <span className="xs sub brief-keys hide-sm"><span className="kbd">↑</span><span className="kbd">↓</span> move · <span className="kbd">C</span> copy · <span className="kbd">S</span> skip</span>}
-      </nav>
-      <div ref={detailRef} className="brief-dw">
+      </nav>}
+      {narrow && opened && <div id="brief-back" className="row" style={{ gap: 10, marginBottom: -8 }}><Btn kind="ghost" size="sm" icon="back" onClick={backToList}>{cur === 'company' ? `All ${name} items` : 'All conversations'}</Btn><span className="grow" />{it && order.length > 1 && <span className="xs sub num">{order.findIndex(x => x.id === it.id) + 1} of {order.length}</span>}</div>}
+      {(!narrow || opened) && <div ref={detailRef} className="brief-dw">
         {allDone && !it ? <BriefDone items={items} settings={br.settings} acct={cur} name={name} other={accts.find(a => a !== cur && openOf(a) > 0)} otherN={accts.filter(a => a !== cur).reduce((n, a) => n + openOf(a), 0)} onSwitch={switchAcct} />
         : it ? <BriefDetail key={it.id + day} it={it} day={day} name={name} past={!isToday} act={act} setItem={p => setItem(it.id, p)} setText={t => setText(it, t)} restore={() => restore(it)}
             takePending={() => takePending(it.id)} clearOverlay={(v, t) => clearOverlay(it.id, v, t)} />
         : null}
-      </div>
+      </div>}
     </div>}
     <BriefSettingsSheet open={sheet} onClose={() => setSheet(false)} br={br} />
   </div>;
@@ -336,4 +343,11 @@ function BriefSettingsSheet({ open, onClose, br }: { open: boolean; onClose: () 
       <p className="small sub">Topics and voice come from your <Btn kind="link" className="small" onClick={() => { onClose(); go('profile'); }}>Business Profile</Btn>.</p>
     </div>
   </Sheet>;
+}
+
+/** True below `px` wide (matches the CSS breakpoint where the brief stacks). */
+function useNarrow(px: number) {
+  const [n, setN] = useState(false);
+  useEffect(() => { const m = matchMedia(`(max-width:${px}px)`); const f = () => setN(m.matches); f(); m.addEventListener('change', f); return () => m.removeEventListener('change', f); }, [px]);
+  return n;
 }

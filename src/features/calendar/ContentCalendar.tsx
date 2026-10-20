@@ -151,17 +151,17 @@ function MonthGrid({ entries, today, onOpen, onMove }: { entries: Entries; today
   const last = entries[entries.length - 1].date; const days: string[] = []; let d = startD; while (d <= last || days.length % 7) { days.push(d); d = addDays(d, 1); }
   const by: Record<string, Entries> = {}; entries.forEach(e => { (by[e.date] = by[e.date] || []).push(e); });
   return <div className="cal-grid" style={{ border: '1px solid var(--line)', borderRadius: 18, overflow: 'hidden', background: 'var(--surface)' }}>
-    <style>{`.cal-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}@media(max-width:1180px){.cal-kw{display:none!important}.cal-t{-webkit-line-clamp:3!important;font-size:12px!important}}@media(max-width:760px){.cal-days{grid-template-columns:1fr}.cal-wk{display:none!important}.cal-empty{display:none!important}}`}</style>
+    <style>{`.cal-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}@media(max-width:1180px){.cal-kw{display:none!important}.cal-t{-webkit-line-clamp:3!important;font-size:12px!important}}@media(max-width:760px){.cal-days{grid-template-columns:1fr}.cal-wk{display:none!important}.cal-empty{display:none!important}.cal-cell{min-height:0!important;flex-direction:row!important;align-items:flex-start;gap:12px!important;padding:10px 12px!important;border-right:0!important}.cal-d{width:58px;flex:none;padding:7px 0 0!important;line-height:1.35}.cal-wd{display:block!important}.cal-es{flex:1;min-width:0}.cal-t{-webkit-line-clamp:3!important;font-size:13px!important}}`}</style>
     <div className="cal-days cal-wk" style={{ borderBottom: '1px solid var(--line)' }}>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => <span key={w} className="xs sub" style={{ padding: '10px 12px' }}>{w}</span>)}</div>
     <div className="cal-days">{days.map((day, i) => {
       const es = by[day] || []; const dt = new Date(day + 'T12:00'); const firstOfMonth = dt.getDate() === 1 || i === 0;
-      return <div key={day} className={(over === day ? 'drop-target ' : '') + (es.length ? '' : 'cal-empty')} onDragOver={e => { e.preventDefault(); setOver(day); }} onDragLeave={() => setOver(o => (o === day ? null : o))} onDrop={e => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData('text'); if (id) onMove(id, day); }}
-        style={{ minHeight: 118, padding: 8, borderRight: (i % 7 !== 6) ? '1px solid var(--line2)' : 0, borderBottom: '1px solid var(--line2)', display: 'flex', flexDirection: 'column', gap: 6, background: day < today ? 'var(--paper)' : 'transparent' }}>
-        <span className="xs num" style={{ color: day === today ? 'var(--signal-ink)' : 'var(--mute)', fontWeight: day === today ? 600 : 400, padding: '0 4px' }}>{firstOfMonth ? fmtD(day) : dt.getDate()}{day === today && ' · Today'}</span>
-        {es.map(e => <button key={e.id} draggable={!['published', 'scheduled', 'publishing'].includes(e.status)} onDragStart={ev => { ev.dataTransfer.setData('text', e.id); ev.dataTransfer.effectAllowed = 'move'; }} onClick={() => onOpen(e.id)} className="tap enter" style={{ textAlign: 'left', border: 0, background: e.status === 'proposed' ? 'transparent' : 'var(--fill)', boxShadow: e.status === 'proposed' ? 'inset 0 0 0 1px var(--line)' : 'none', borderRadius: 9, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', animationDelay: (i % 30) * 12 + 'ms' }}>
+      return <div key={day} onDragOver={e => { e.preventDefault(); setOver(day); }} onDragLeave={() => setOver(o => (o === day ? null : o))} onDrop={e => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData('text'); if (id) onMove(id, day); }}
+        className={'cal-cell ' + (over === day ? 'drop-target ' : '') + (es.length ? '' : 'cal-empty')} style={{ minHeight: 118, padding: 8, borderRight: (i % 7 !== 6) ? '1px solid var(--line2)' : 0, borderBottom: '1px solid var(--line2)', display: 'flex', flexDirection: 'column', gap: 6, background: day < today ? 'var(--paper)' : 'transparent' }}>
+        <span className="xs num cal-d" style={{ color: day === today ? 'var(--signal-ink)' : 'var(--mute)', fontWeight: day === today ? 600 : 400, padding: '0 4px' }}><span className="cal-wd" style={{ display: 'none' }}>{day === today ? 'Today' : dt.toLocaleDateString('en-US', { weekday: 'short' })}</span>{firstOfMonth ? fmtD(day) : dt.getDate()}<span className="hide-sm">{day === today && ' · Today'}</span></span>
+        <div className="cal-es col" style={{ gap: 6 }}>{es.map(e => <button key={e.id} draggable={!['published', 'scheduled', 'publishing'].includes(e.status)} onDragStart={ev => { ev.dataTransfer.setData('text', e.id); ev.dataTransfer.effectAllowed = 'move'; }} onClick={() => onOpen(e.id)} className="tap enter" style={{ textAlign: 'left', border: 0, background: e.status === 'proposed' ? 'transparent' : 'var(--fill)', boxShadow: e.status === 'proposed' ? 'inset 0 0 0 1px var(--line)' : 'none', borderRadius: 9, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', animationDelay: (i % 30) * 12 + 'ms' }}>
           <span className="small cal-t" style={{ lineHeight: 1.3, fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</span>
           <span className="row cal-kw" style={{ gap: 6 }}><i className="dot" style={{ background: DOT_COLOR[e.status], width: 6, height: 6 }} /><span className="xs sub trunc">{e.mode === 'refresh' ? 'Refresh · ' : ''}{e.kw}</span></span>
-        </button>)}
+        </button>)}</div>
       </div>;
     })}</div>
   </div>;
@@ -170,12 +170,13 @@ function MonthGrid({ entries, today, onOpen, onMove }: { entries: Entries; today
 function CalList({ entries, filter, setFilter, onOpen }: { entries: Entries; filter: string; setFilter: (v: string) => void; onOpen: (id: string) => void }) {
   const fl = entries.filter(e => filter === 'all' || (filter === 'proposed' ? e.status === 'proposed' : filter === 'review' ? e.status === 'review' : ['approved', 'scheduled', 'published', 'draft'].includes(e.status)));
   return <div>
-    <div className="row" style={{ marginBottom: 12 }}><Seg value={filter} onChange={setFilter} options={[{ v: 'all', l: 'All' }, { v: 'proposed', l: 'Proposed' }, { v: 'review', l: 'Ready for review' }, { v: 'approved', l: 'Approved' }]} /></div>
-    <div style={{ borderTop: '1px solid var(--line)' }}>{fl.map(e => <div key={e.id} className="row tap" onClick={() => onOpen(e.id)} style={{ padding: '14px 10px', borderBottom: '1px solid var(--line2)', gap: 18, cursor: 'pointer' }}>
-      <span className="mono sub" style={{ width: 84, flex: 'none' }}>{fmtDW(e.date)}</span>
-      <span className="col grow" style={{ minWidth: 0 }}><span className="trunc" style={{ fontWeight: 500 }}>{e.title}</span><span className="xs sub trunc">{e.kw}</span></span>
+    <div className="row" style={{ marginBottom: 12 }}><Seg wrap value={filter} onChange={setFilter} options={[{ v: 'all', l: 'All' }, { v: 'proposed', l: 'Proposed' }, { v: 'review', l: 'Ready for review' }, { v: 'approved', l: 'Approved' }]} /></div>
+    <style>{`@media(max-width:640px){.cl-row{flex-wrap:wrap;gap:6px 12px!important;padding:14px 4px!important}.cl-date{width:auto!important}.cl-st{width:auto!important;margin-left:auto}.cl-main{order:3;flex-basis:100%!important}.cl-main .cl-t{white-space:normal}}`}</style>
+    <div style={{ borderTop: '1px solid var(--line)' }}>{fl.map(e => <div key={e.id} className="row tap cl-row" onClick={() => onOpen(e.id)} style={{ padding: '14px 10px', borderBottom: '1px solid var(--line2)', gap: 18, cursor: 'pointer' }}>
+      <span className="mono sub cl-date" style={{ width: 84, flex: 'none' }}>{fmtDW(e.date)}</span>
+      <span className="col grow cl-main" style={{ minWidth: 0 }}><span className="trunc cl-t" style={{ fontWeight: 500 }}>{e.title}</span><span className="xs sub trunc">{e.kw}</span></span>
       <span className="small sub hide-sm" style={{ width: 110 }}>{e.mode === 'refresh' ? 'Refresh' : e.type}</span>
-      <span style={{ width: 140 }}><EntryStatus s={e.status} /></span>
+      <span className="cl-st" style={{ width: 140 }}><EntryStatus s={e.status} /></span>
     </div>)}{!fl.length && <p className="sub small" style={{ padding: 20 }}>Nothing here.</p>}</div>
   </div>;
 }

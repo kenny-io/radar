@@ -104,15 +104,15 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
 
   const idx = SF_STEPS.findIndex(s => s[0] === st.step); const brand = B.profile.brand;
   const previewHead = B.profile.business.differentiators[0] || B.profile.business.name || 'Your brand';
-  return <Modal open={open} onClose={gen >= 0 ? null : onClose} dismissable={gen < 0} width={820}><div className="col" style={{ minHeight: 'min(620px,calc(100vh - 48px))' }}>
-    <div className="row" style={{ padding: '20px 28px', borderBottom: '1px solid var(--line2)' }}><span className="h3 grow">Generate social posts</span>
+  return <Modal full open={open} onClose={gen >= 0 ? null : onClose} dismissable={gen < 0} width={820}><div className="col" style={{ minHeight: 'min(620px,calc(100vh - 48px))' }}>
+    <div className="row" style={{ padding: '20px 28px', borderBottom: '1px solid var(--line2)' }}><span className="h3 grow">Generate social posts</span>{gen < 0 && <span className="show-sm xs sub">Step {idx + 1} of {SF_STEPS.length}</span>}
       <nav className="row hide-sm" style={{ gap: 18 }}>{SF_STEPS.map(([k, l], i) => <span key={k} className="row small" style={{ gap: 6, color: i === idx ? 'var(--ink)' : i < idx ? 'var(--ink2)' : 'var(--faint)', fontWeight: i === idx ? 500 : 400 }}>{i < idx ? <Icon n="check" s={13} w={2} /> : <i className="dot" style={{ background: i === idx ? 'var(--signal)' : 'var(--line)' }} />}{l}</span>)}</nav>
       {gen < 0 && <Btn kind="ghost" icon="x" onClick={onClose} aria-label="Close" style={{ marginLeft: 8 }} />}</div>
     <div key={st.step + (gen >= 0)} className="grow col enter" style={{ padding: '30px clamp(20px,4vw,40px)', gap: 22 }}>
       {gen >= 0 ? <div className="col" style={{ gap: 4, maxWidth: 520 }}><h2 className="h1" style={{ fontSize: 24, marginBottom: 16 }}>Writing your pack…</h2>{st.platforms.map((k, i) => <div key={k} className="row" style={{ height: 46, borderTop: i ? '1px solid var(--line2)' : 0, opacity: i > gen ? .4 : 1 }}><span style={{ width: 20 }}>{i < gen ? <Icon n="check" s={15} w={2} style={{ color: 'var(--ok)' }} /> : i === gen ? <span className="spin" style={{ color: 'var(--signal)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span><span className="grow"><PlatName k={k} l={plat(k).l} /></span>{i < gen && <span className="small sub">Copy + visual</span>}</div>)}</div>
         : st.step === 'source' ? <>
           <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>What should the posts be about?</h2></div>
-          <Seg value={st.kind} onChange={k => set({ kind: k })} options={[{ v: 'idea' as Kind, l: 'An idea' }, { v: 'url' as Kind, l: 'Article URL' }, { v: 'article' as Kind, l: 'Radar article' }, { v: 'suggest' as Kind, l: 'Suggest ideas' }]} />
+          <Seg wrap value={st.kind} onChange={k => set({ kind: k })} options={[{ v: 'idea' as Kind, l: 'An idea' }, { v: 'url' as Kind, l: 'Article URL' }, { v: 'article' as Kind, l: 'Radar article' }, { v: 'suggest' as Kind, l: 'Suggest ideas' }]} />
           {st.kind === 'suggest' && <SuggestIdeas gsc={B.gsc.status === 'connected' || B.gsc.status === 'error'} picked={st.picked} onPick={(t, it) => set({ picked: t, pickedIdea: it })} onGenerate={run} />}
           {st.kind === 'idea' && <textarea autoFocus className="input" rows={4} style={{ fontSize: 16 }} placeholder="e.g. Why most freelancers undercharge in their first year" value={st.idea} onChange={e => set({ idea: e.target.value })} />}
           {st.kind === 'idea' && !st.idea.trim() && <Btn kind="link" className="small" style={{ alignSelf: 'flex-start' }} onClick={() => set({ kind: 'suggest' })}>Not sure what to post? Let Radar suggest ideas</Btn>}

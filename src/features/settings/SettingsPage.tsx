@@ -14,7 +14,7 @@ import type { CalendarSettings, Member, Role, Workspace, Appearance } from '@/li
 
 /** Hairline row: 220px label column (title + sub) and a control column. Module-level so inputs keep focus across renders. */
 function Row({ t, d, children }: { t: React.ReactNode; d?: React.ReactNode; children?: React.ReactNode }) {
-  return <div className="row" style={{ padding: '18px 0', borderTop: '1px solid var(--line2)', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}><span className="col" style={{ width: 220, gap: 3 }}><span className="small" style={{ fontWeight: 500 }}>{t}</span>{d && <span className="xs sub">{d}</span>}</span><div className="grow col" style={{ gap: 10, minWidth: 240 }}>{children}</div></div>;
+  return <div className="row" style={{ padding: '18px 0', borderTop: '1px solid var(--line2)', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}><span className="col set-l" style={{ width: 220, gap: 3 }}><span className="small" style={{ fontWeight: 500 }}>{t}</span>{d && <span className="xs sub">{d}</span>}</span><div className="grow col" style={{ gap: 10, minWidth: 240 }}>{children}</div></div>;
 }
 
 export function FreqSetting({ cs, set }: { cs: Pick<CalendarSettings, 'cadence' | 'perWeek'>; set: (p: Partial<CalendarSettings>) => void }) {
@@ -43,7 +43,7 @@ export function AISettings() {
       .then(() => toast(`${AI_TASKS.find(t => t.k === k)!.l} now uses ${modelName(v)}`)).catch(() => {});
   };
   return <>{AI_TASKS.map(t => <div key={t.k} className="row" style={{ padding: '18px 0', borderTop: '1px solid var(--line2)', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-    <span className="col" style={{ width: 220, gap: 3 }}><span className="small" style={{ fontWeight: 500 }}>{t.l}</span><span className="xs sub">{t.d}</span></span>
+    <span className="col set-l" style={{ width: 220, gap: 3 }}><span className="small" style={{ fontWeight: 500 }}>{t.l}</span><span className="xs sub">{t.d}</span></span>
     <div className="grow" style={{ minWidth: 240 }}><ModelSelect value={(B?.ai as any)?.[t.k] || AI_DEFAULT[t.k]} onChange={v => set(t.k, v)} label={t.l} /></div>
   </div>)}</>;
 }

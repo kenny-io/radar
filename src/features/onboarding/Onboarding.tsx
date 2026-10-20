@@ -147,7 +147,7 @@ export function Onboarding() {
   const obDomain = ob.W?.profile.domain || domain;
   const energy = step === 'analyzing' ? (done ? .35 : .95) : .3;
   const bandH = step === 'domain' || step === 'analyzing' ? 220 : 0;
-  return <Modal open width={940} dismissable={false} label="Set up your business">
+  return <Modal full open width={940} dismissable={false} label="Set up your business">
     <div className="col" style={{ minHeight: 'min(680px,calc(100vh - 48px))' }}>
       <div style={{ height: bandH, transition: 'height .7s var(--ease)', position: 'relative', flex: 'none', overflow: 'hidden' }}>
         <RadarField theme="night" energy={energy} blips={blips} center={[.5, .18]} scale={1.25} dens={30} style={{ position: 'absolute', inset: 0 }} />
@@ -166,15 +166,15 @@ export function Onboarding() {
         {step === 'analyzing' && <div className="col" style={{ gap: 0, maxWidth: 640 }}>
           {ANALYSIS.map((a, i) => {
             const st = i < phase ? 'done' : i === phase ? (fail ? 'fail' : 'run') : 'wait'; const brandErr = a.k === 'brand' && !!prog.logoMissing;
-            return <div key={a.k} className="row" style={{ height: 52, borderTop: i ? '1px solid var(--line2)' : 0, opacity: st === 'wait' ? .4 : 1, transition: 'opacity .4s' }}>
+            return <div key={a.k} className="row ob-row" style={{ height: 52, borderTop: i ? '1px solid var(--line2)' : 0, opacity: st === 'wait' ? .4 : 1, transition: 'opacity .4s' }}>
               <span style={{ width: 20, display: 'grid', placeItems: 'center' }}>{st === 'done' ? <Icon n="check" s={15} w={2} style={{ color: brandErr ? 'var(--warn)' : 'var(--ok)' }} /> : st === 'run' ? <span className="spin" style={{ color: 'var(--signal)' }} /> : st === 'fail' ? <i className="dot" style={{ background: 'var(--bad)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span>
-              <span className="grow" style={{ fontWeight: st === 'run' ? 500 : 400 }}>{a.l}</span>
-              {st === 'done' && <span className="small enter" style={{ color: brandErr ? 'var(--warn)' : 'var(--ink2)' }}>{prog.results?.[a.k]}</span>}
+              <span className="grow ob-l" style={{ fontWeight: st === 'run' ? 500 : 400 }}>{a.l}</span>
+              {st === 'done' && <span className="small enter ob-d" style={{ color: brandErr ? 'var(--warn)' : 'var(--ink2)' }}>{prog.results?.[a.k]}</span>}
               {st === 'done' && a.k === 'brand' && !brandErr && prog.colors && <span className="row enter" style={{ gap: 4 }}><i style={{ width: 14, height: 14, borderRadius: 4, background: prog.colors[0] }} /><i style={{ width: 14, height: 14, borderRadius: 4, background: prog.colors[1] }} /></span>}
             </div>;
           })}
           {fail && <div className="col enter" style={{ gap: 12, marginTop: 20 }}><p style={{ color: 'var(--bad)' }}>{fail}</p><div className="row"><Btn kind="primary" icon="refresh" onClick={() => run(true)}>Try again</Btn><Btn kind="ghost" onClick={() => setStep('domain')}>Change domain</Btn></div></div>}
-          {done && <div className="row enter" style={{ marginTop: 26, gap: 12 }}><Btn kind="primary" size="lg" iconR="arrow" autoFocus onClick={() => setStep('review')}>Review what Radar found</Btn><span className="small sub">About a minute to check.</span></div>}
+          {done && <div className="row enter" style={{ marginTop: 26, gap: 12, flexWrap: 'wrap' }}><Btn kind="primary" size="lg" iconR="arrow" autoFocus onClick={() => setStep('review')}>Review what Radar found</Btn><span className="small sub">About a minute to check.</span></div>}
         </div>}
         {step === 'review' && ob.W && <ReviewStep W={ob.W} onChange={ob.edit} next={async () => { await ob.flush().catch(() => {}); setStep('gsc'); }} reanalyze={() => run(true)} />}
         {step === 'gsc' && ob.W && ob.id && <GscStep W={ob.W} bid={ob.id} back={() => setStep('review')} next={() => setStep('save')} reload={() => ob.load()} />}
@@ -198,7 +198,7 @@ function ReviewStep({ W, onChange, next, reanalyze }: { W: Workspace; onChange: 
   return <div className="col enter" style={{ gap: 24, flex: 1 }}>
     <div className="col" style={{ gap: 8 }}><h1 className="h1">Here’s what Radar found.</h1><p className="sub">Everything marked <span className="inf" style={{ verticalAlign: 1 }}><i />Inferred</span> was read from {W.profile.domain}. Correct anything that’s off — your edits are kept, even if you re-analyze.</p></div>
     <div style={{ display: 'grid', gridTemplateColumns: '170px minmax(0,1fr)', gap: 32, flex: 1 }} className="review-grid">
-      <style>{`@media(max-width:700px){.review-grid{grid-template-columns:1fr!important}.review-nav{flex-direction:row!important;overflow-x:auto}}`}</style>
+      <style>{`@media(max-width:700px){.review-grid{grid-template-columns:1fr!important;gap:20px!important}.review-nav{flex-direction:row!important;overflow-x:auto;scrollbar-width:none;z-index:3;background:var(--surface);margin:0 -22px;padding:6px 22px;border-bottom:1px solid var(--line2)}}`}</style>
       <div className="col review-nav" style={{ gap: 2, position: 'sticky', top: 0, alignSelf: 'start' }}>
         {([['business', 'Business'], ['audience', 'Audience'], ['keywords', 'Keywords'], ['brand', 'Brand']] as const).map(([k, l]) => { const n = inferredLeft(W.edited, k); return <button key={k} className="nav-i" style={tab === k ? { background: 'var(--fill)', color: 'var(--ink)' } : {}} onClick={() => setTab(k)}>{l}<span className="ct">{n ? n + ' to check' : <Icon n="check" s={13} />}</span></button>; })}
       </div>
@@ -251,7 +251,7 @@ function SaveStep({ W, back, save }: { W: Workspace; back: () => void; save: () 
       <div className="row" style={{ gap: 6 }}><i style={{ width: 28, height: 28, borderRadius: 8, background: p.brand.primary }} /><i style={{ width: 28, height: 28, borderRadius: 8, background: p.brand.secondary, boxShadow: 'inset 0 0 0 1px oklch(0 0 0 / .08)' }} /></div>
     </div>
     <div className="col" style={{ borderTop: '1px solid var(--line2)' }}>
-      {rows.map(([k, v]) => <div key={k} className="row" style={{ padding: '13px 0', borderBottom: '1px solid var(--line2)', alignItems: 'baseline' }}><span className="label" style={{ width: 130, flex: 'none' }}>{k}</span><span className="grow small">{v}</span></div>)}
+      {rows.map(([k, v]) => <div key={k} className="row" style={{ padding: '13px 0', borderBottom: '1px solid var(--line2)', alignItems: 'baseline' }}><span className="label sum-l" style={{ width: 130, flex: 'none' }}>{k}</span><span className="grow small" style={{ minWidth: 0 }}>{v}</span></div>)}
     </div>
     <span className="grow" />
     <div className="row" style={{ flexWrap: 'wrap' }}><Btn kind="ghost" icon="back" onClick={back}>Back</Btn><span className="grow" /><Btn kind="primary" size="lg" loading={busy} onClick={onSave}>Save profile &amp; open dashboard</Btn></div>

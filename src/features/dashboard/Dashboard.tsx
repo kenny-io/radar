@@ -42,10 +42,10 @@ export function Dashboard() {
     </div>
     <PerfSummary />
     {issues.length > 0 && <Section title="Needs attention"><div>{issues.map(i => <div key={i.id} className="list-row" style={{ flexWrap: 'wrap' }}><Status tone={i.tone} pulse={i.tone === 'bad'}>{i.label}</Status><span className="grow small sub" style={{ minWidth: 200 }}>{i.body}</span>{i.btnSmall}</div>)}</div></Section>}
-    <div className="grid-2" style={{ gap: 48 }}>
+    <div className="grid-2" style={{ columnGap: 48, rowGap: 8 }}>
       <Section title="Upcoming articles" style={{ minWidth: 0 }} action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('calendar')}>Calendar</Btn>}>
         {upcoming.length ? <div>{upcoming.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('calendar', { open: e.id })}>
-          <span className="mono sub" style={{ width: 52, flex: 'none' }}>{fmtD(e.date)}</span><span className="grow trunc">{e.title}</span><EntryStatus s={e.status} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>Nothing scheduled. <a href="#" onClick={e => { e.preventDefault(); go('calendar'); }}>Open the calendar</a></p>}
+          <span className="mono sub" style={{ width: 52, flex: 'none' }}>{fmtD(e.date)}</span><span className="grow trunc up-t">{e.title}</span><EntryStatus s={e.status} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>Nothing scheduled. <a href="#" onClick={e => { e.preventDefault(); go('calendar'); }}>Open the calendar</a></p>}
       </Section>
       <Section title="Awaiting review" style={{ minWidth: 0 }}>
         {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
@@ -128,7 +128,7 @@ export function PerfSummary() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, app.bid, g.lastSyncedThrough]);
-  if (g.status === 'none' || g.status === 'skipped') return <div className="card row" style={{ padding: '18px 22px', gap: 16, flexWrap: 'wrap' }}><span className="grow col"><span className="h3">See how you perform in search</span><span className="small sub">Connect Search Console so topics and suggestions use your real data.</span></span><button className="btn btn-secondary" onClick={() => go('settings', { gsc: true })}><BrandIcon k="gsc" s={16} /><span>Connect Search Console</span></button></div>;
+  if (g.status === 'none' || g.status === 'skipped') return <div className="card row" style={{ padding: '18px 22px', gap: 16, flexWrap: 'wrap' }}><span className="col" style={{ flex: '1 1 260px', minWidth: 0 }}><span className="h3">See how you perform in search</span><span className="small sub">Connect Search Console so topics and suggestions use your real data.</span></span><button className="btn btn-secondary" onClick={() => go('settings', { gsc: true })}><BrandIcon k="gsc" s={16} /><span>Connect Search Console</span></button></div>;
   if (g.status === 'syncing') return <div className="card col" style={{ padding: '18px 22px', gap: 12 }}><div className="row"><Status tone="signal" pulse>Syncing Search Console</Status><span className="grow" /><span className="mono sub num">{Math.round(g.progress || 0)}%</span></div><div style={{ height: 2, background: 'var(--line2)', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: (g.progress || 0) + '%', background: 'var(--ink)', transition: 'width .6s var(--ease)' }} /></div><span className="xs sub">Importing 16 months of queries and pages. Keep working — Radar will update recommendations when it’s done.</span></div>;
   const loading = sum === undefined;
   const c = sum?.cur.clicks, pc = sum?.prev?.clicks;

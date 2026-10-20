@@ -11,7 +11,7 @@ import { PublishIntro } from './PublishIntro';
 import { BlogConnect, type BlogConnectProps } from './BlogConnect';
 
 function Row({ t, d, children }: { t: string; d?: string; children?: React.ReactNode }) {
-  return <div className="row" style={{ padding: '18px 0', borderTop: '1px solid var(--line2)', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}><span className="col" style={{ width: 220, gap: 3 }}><span className="small" style={{ fontWeight: 500 }}>{t}</span>{d && <span className="xs sub">{d}</span>}</span><div className="grow col" style={{ gap: 10, minWidth: 240 }}>{children}</div></div>;
+  return <div className="row" style={{ padding: '18px 0', borderTop: '1px solid var(--line2)', gap: 20, flexWrap: 'wrap', alignItems: 'flex-start' }}><span className="col set-l" style={{ width: 220, gap: 3 }}><span className="small" style={{ fontWeight: 500 }}>{t}</span>{d && <span className="xs sub">{d}</span>}</span><div className="grow col" style={{ gap: 10, minWidth: 240 }}>{children}</div></div>;
 }
 
 export function PublishingSettings() {
