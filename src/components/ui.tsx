@@ -12,8 +12,11 @@ export type IconName = keyof typeof IC;
 export function Icon({ n, s = 18, w = 1.6, style }: { n: IconName; s?: number; w?: number; style?: React.CSSProperties }) {
   return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', ...style }} aria-hidden="true"><path d={IC[n]} /></svg>;
 }
+/** Shutter · Spark (UPDATE-2026-10-21 §1): seven square bars around an open centre; the 45° bar is the one signal Radar caught.
+ *  Even bars (0°, 90°, 180°, 270°) start at r 2.6, length 7.6; diagonals start at r 6.5, length 4.8; 315° is empty on purpose. */
 export function Mark({ s = 22, night }: { s?: number; night?: boolean }) {
-  return <svg width={s} height={s} viewBox="0 0 24 24" aria-label="Radar"><circle cx="12" cy="12" r="10" fill="none" stroke={night ? '#fff' : 'currentColor'} strokeWidth="1.8" /><path d="M12 12 L12 2 A10 10 0 0 1 20.66 7 Z" fill="var(--signal)" /><circle cx="12" cy="12" r="2.2" fill={night ? '#fff' : 'currentColor'} /></svg>;
+  const ink = night ? '#fff' : 'currentColor';
+  return <svg width={s} height={s} viewBox="0 0 24 24" role="img" aria-label="Radar" style={{ flex: 'none' }}>{[0, 1, 2, 3, 4, 5, 6].map(i => { const card = i % 2 === 0; return <rect key={i} x="-1.3" y={card ? -10.2 : -11.3} width="2.6" height={card ? 7.6 : 4.8} transform={`translate(12 12) rotate(${i * 45})`} fill={i === 1 ? 'var(--signal)' : ink} />; })}</svg>;
 }
 
 type BtnProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & { kind?: 'primary' | 'secondary' | 'ghost' | 'link' | 'danger'; size?: 'sm' | 'lg' | null; icon?: IconName; iconNode?: React.ReactNode; iconR?: IconName | null; loading?: boolean; children?: React.ReactNode };

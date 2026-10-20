@@ -316,3 +316,13 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 | Done state button | Secondary button under the copy | Centered under the copy (the prototype's global `.col>.btn` rule pins it left) | Matches the centered done state | Yes (alignment) | Logged |
 | Impact tracking | — | Brief events record `acct`; company replies count as plugged | Reporting | No | Logged |
 | Connecting company accounts | Still open in the update | Unchanged: posting stays copy-and-paste for both accounts | — | — | Open |
+
+## Design update 2026-10-21 (logo, sign-up on the radar, input focus)
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| Logo (Shutter · Spark) | Seven bars per §1.1; `currentColor` + `var(--signal)` in app, white on dark art | As designed in `Mark`; sidebar, mobile bar, sign-up, onboarding and legal pages all swap through it | — | Yes | Matches design |
+| Favicon | `assets/radar-favicon.svg`, white bars under dark mode | The delivered file had lost its `<style>` block (its bars carry classes but no colours, so every bar renders black, including the orange one). Rebuilt with the same geometry and colours (`#13161c`/`#ed5f18`, dark `#fff`/`#f27636`) as `src/app/icon.svg` | Broken source file | No (looks as designed) | Logged |
+| Icon exports ("still open" in the update) | apple-touch-icon 180², PWA 192²/512², `.ico` 16/32/48 | Exported from `radar-app-icon.svg` (white mark on `#070709`): `apple-icon.png`, `icon-192.png`, `icon-512.png`, `favicon.ico`, plus a web manifest (name Radar, starts at Dashboard). The four mark/app-icon SVGs are also in `public/brand/` | Closes the open item | Yes (home-screen icon) | Done |
+| Sign-up on the radar | Full-bleed radar, theme-following, scrim behind the form | As designed (also applies to the Sign in page, which uses the same layout). The radar only mounts once the browser knows the theme, so it never flashes the wrong one; until then the page shows the plain `--paper` background | No server-side guess of the OS theme | Barely (radar fades in) | Logged |
+| Input focus | Softer border and ring, no orange outline on inputs | As designed; buttons and taps keep the orange keyboard outline | — | Yes | Matches design |

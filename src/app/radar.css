@@ -30,7 +30,7 @@ p{margin:0;text-wrap:pretty}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid transparent;font-size:14px;font-weight:500;letter-spacing:-0.005em;cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .15s var(--ease),opacity .2s;white-space:nowrap;user-select:none}
 .btn:active:not(:disabled){transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:default}
-.btn:focus-visible,.input:focus-visible,.tap:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.btn:focus-visible,.tap:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .btn-primary{background:var(--ink);color:var(--on-ink)}.btn-primary:hover:not(:disabled){background:var(--ink-hover)}
 .btn-secondary{background:var(--surface);border-color:var(--line);color:var(--ink)}.btn-secondary:hover:not(:disabled){border-color:var(--faint)}
 .btn-ghost{background:transparent;color:var(--ink2)}.btn-ghost:hover:not(:disabled){background:var(--fill);color:var(--ink)}
@@ -45,7 +45,7 @@ p{margin:0;text-wrap:pretty}
 @keyframes spin{to{transform:rotate(360deg)}}
 .input{width:100%;height:42px;padding:0 13px;border-radius:11px;border:1px solid var(--line);background:var(--surface);font-size:15px;transition:border-color .2s,box-shadow .2s;outline:none}
 .input:hover{border-color:var(--faint)}
-.input:focus{border-color:var(--ink);box-shadow:0 0 0 4px color-mix(in oklch,var(--ink) 8%,transparent)}
+.input:focus{border-color:color-mix(in oklch,var(--ink) 38%,var(--line));box-shadow:0 0 0 3px color-mix(in oklch,var(--ink) 6%,transparent)}
 .input.err{border-color:var(--bad)}
 textarea.input{height:auto;padding:11px 13px;resize:vertical;line-height:1.5}
 select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23707380' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
