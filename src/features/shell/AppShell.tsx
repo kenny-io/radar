@@ -51,6 +51,28 @@ function Side({ open, onClose }: { open: boolean; onClose: () => void }) {
     <span className="grow" />
     <button className={'nav-i' + (page === 'profile' ? ' on' : '')} onClick={() => nav('profile')} disabled={!B}><Icon n="profile" s={18} />Business Profile</button>
     <button className={'nav-i' + (page === 'settings' ? ' on' : '')} onClick={() => nav('settings')} disabled={!B}><Icon n="gear" s={18} />Settings</button>
-    <div className="row" style={{ padding: '14px 10px 4px', marginTop: 8, borderTop: '1px solid var(--line)', gap: 10 }}><span style={{ width: 28, height: 28, borderRadius: 99, background: 'var(--ink)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 }}>{initials}</span><span className="small grow trunc">{me.user.name}</span></div>
+    <UserMenu name={me.user.name} email={me.user.email} initials={initials} onNavigate={onClose} />
   </aside>;
+}
+
+/** Sidebar user row → menu with name, email and Log out (the only place to log out). Logging out ends the session and
+ *  returns to sign in; business data stays saved. */
+function UserMenu({ name, email, initials, onNavigate }: { name: string; email: string; initials: string; onNavigate: () => void }) {
+  const [open, setOpen] = useState(false); const ref = useRef<HTMLDivElement>(null); const [busy, setBusy] = useState(false);
+  const logout = async () => {
+    setBusy(true); setOpen(false); onNavigate();
+    try { await fetch('/api/auth/signout', { method: 'POST' }); } catch { /* the session cookie is cleared server-side when reachable */ }
+    window.location.href = '/signin';
+  };
+  return <div style={{ position: 'relative', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line)' }} ref={ref}>
+    <button className="nav-i" style={{ height: 44, background: open ? 'var(--fill)' : undefined }} onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open} disabled={busy}>
+      <span style={{ width: 28, height: 28, borderRadius: 99, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600, flex: 'none' }}>{initials}</span>
+      <span className="grow trunc" style={{ color: 'var(--ink)' }}>{name}</span><Icon n="chevUD" s={14} />
+    </button>
+    <Popover anchor={ref} open={open} onClose={() => setOpen(false)} style={{ width: '100%', top: 'auto', bottom: 'calc(100% + 6px)' }}>
+      <div className="col" style={{ padding: '8px 10px 10px', lineHeight: 1.3 }}><span className="small" style={{ fontWeight: 500 }}>{name}</span><span className="xs sub trunc">{email}</span></div>
+      <hr className="hair" style={{ margin: '0 0 6px' }} />
+      <button className="pop-i" onClick={logout}><Icon n="logout" s={16} />Log out</button>
+    </Popover>
+  </div>;
 }

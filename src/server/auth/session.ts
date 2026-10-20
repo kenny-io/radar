@@ -30,7 +30,7 @@ export async function currentUser() {
   const jar = await cookies();
   const t = jar.get(SESSION_COOKIE)?.value;
   if (!t) return null;
-  const rows = await db.select({ id: schema.users.id, name: schema.users.name, email: schema.users.email })
+  const rows = await db.select({ id: schema.users.id, name: schema.users.name, email: schema.users.email, appearance: schema.users.appearance })
     .from(schema.sessions).innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
     .where(and(eq(schema.sessions.id, sha256(t)), gt(schema.sessions.expiresAt, new Date()))).limit(1);
   return rows[0] || null;

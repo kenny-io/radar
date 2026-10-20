@@ -1,5 +1,6 @@
 'use client';
 // Pack view — port of PackView (prototype/radar-social.jsx). Copy and download only: nothing is ever posted.
+import { PlatName, PlatLogo } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/client/app';
 import { AutoText, Btn, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
@@ -30,12 +31,12 @@ export function PackView({ pack }: { pack: SocialPack }) {
     <PageHead title={pack.name} sub={<span>From {pack.source.kind === 'suggest' ? 'a Radar suggestion' : pack.source.kind === 'idea' ? 'an idea' : pack.source.kind === 'url' ? 'an article URL' : 'a Radar article'} · {fmtD(pack.created)}{pack.auto ? ' · Auto-generated' : ''}</span>}>
       <Btn icon="download" onClick={dlAll}>Download all</Btn>
     </PageHead>
-    <Tabs value={cur} onChange={setCur} items={keys.map(k => ({ v: k, l: plat(k).l }))} style={{ marginBottom: 30 }} />
+    <Tabs value={cur} onChange={setCur} items={keys.map(k => ({ v: k, l: <PlatName k={k} l={plat(k).l} /> }))} style={{ marginBottom: 30 }} />
     {p && <div className="pack-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(240px,1fr)', gap: 40, alignItems: 'start' }}>
       <style>{`@media(max-width:1100px){.pack-grid{grid-template-columns:1fr!important}}`}</style>
       <div className="card" style={{ padding: 18, borderRadius: 20, display: 'grid' }}>
         {keys.map(k => { const q = pack.posts[k]!; const on = k === cur; return <div key={k} aria-hidden={!on} style={{ gridArea: '1/1', visibility: on ? 'visible' : 'hidden', opacity: on ? 1 : 0, transition: on ? 'opacity .25s var(--ease)' : 'opacity .12s, visibility 0s .12s', pointerEvents: on ? 'auto' : 'none' }}>
-          <div className="row" style={{ marginBottom: 12, gap: 10 }}><LogoTile brand={brand} s={36} /><span className="col grow"><span className="small" style={{ fontWeight: 600 }}>{B.profile.business.name}</span><span className="xs sub">{plat(k).l} preview</span></span></div>
+          <div className="row" style={{ marginBottom: 12, gap: 10 }}><LogoTile brand={brand} s={36} /><span className="col grow"><span className="small" style={{ fontWeight: 600 }}>{B.profile.business.name}</span><span className="xs sub row" style={{ gap: 6 }}><PlatLogo k={k} s={12} />{plat(k).l} preview</span></span></div>
           <AutoText className="input-bare" tabIndex={on ? 0 : -1} value={q.text} onChange={e => { const text = e.target.value; app.actLater(`social.text:${pack.id}:${k}`, 'social.text', { packId: pack.id, platform: k, text }, { optimistic: patchPost(k, { text }) }); }} style={{ display: 'block', lineHeight: 1.55, fontSize: 15, opacity: on && busy.text ? .4 : 1, transition: 'opacity .3s' }} aria-label={plat(k).l + ' post text'} />
           <div style={{ marginTop: 12 }}><Visual style={q.style === 'custom' ? 'illustration' : q.style} brand={brand} headline={headline} seed={q.seed} ratio={plat(k).ratio} name={B.profile.business.name} radius={12} busy={on && busy.image} url={q.imageUrl} /></div>
         </div>; })}

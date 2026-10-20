@@ -3,7 +3,8 @@
 
 export type Role = 'Owner' | 'Admin' | 'Editor' | 'Viewer';
 
-export interface User { id: string; name: string; email: string }
+export type Appearance = 'system' | 'light' | 'dark';
+export interface User { id: string; name: string; email: string; appearance?: Appearance }
 
 export type Intent = 'Commercial' | 'Informational';
 export type KwSource = 'site' | 'gsc' | 'competitor' | 'user';

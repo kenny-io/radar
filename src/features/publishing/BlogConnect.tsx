@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { openOAuth } from '@/client/api';
 import { Btn, Field, Modal, Status } from '@/components/ui';
-import { PlatMark } from '@/components/brand';
+import { BrandIcon, PlatMark } from '@/components/brand';
 import { platOf, SECRET_FIELDS, timezones } from '@/lib/constants';
 import type { ConnectionPublic } from '@/lib/types';
 
@@ -112,7 +112,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
       <div className="row" style={{ gap: 14 }}><PlatMark k={P.k} s={44} /><div className="col"><span className="eyebrow">{editing ? 'Edit connection' : 'New connection'}</span><h2 className="h1" style={{ fontSize: 24 }}>Connect {P.l}</h2></div></div>
       {(P.fields || []).map(([k, l, ph, ty]) => <Field key={k} label={l}><input className={'input' + (['hook', 'repo', 'path', 'key'].includes(k) ? ' mono' : '')} style={['hook', 'repo', 'path', 'key'].includes(k) ? { fontSize: 13 } : undefined} type={ty || 'text'} placeholder={ph} value={f[k] || ''} autoComplete={ty === 'password' ? 'new-password' : 'off'} onChange={e => { setF({ ...f, [k]: e.target.value }); setTest('idle'); }} /></Field>)}
       {P.secret && <Field label="Signing secret" hint="Use it to verify each request came from Radar."><input className="input mono" style={{ fontSize: 13 }} readOnly value={secretValue} onFocus={e => { if (secret && !editing) { setShowSecret(true); const el = e.currentTarget; setTimeout(() => el.select(), 0); } }} onBlur={() => setShowSecret(false)} /></Field>}
-      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <Btn icon="lock" loading={auth === 'authing'} disabled={!!P.fields && !fieldsOk} onClick={doAuth}>Sign in with {P.oauthLabel || P.l}</Btn>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
+      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary" disabled={(!!P.fields && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
       {P.pick && (auth === 'ok' || !P.oauth) && <Field label={P.pick}><select className="input" value={pick || ''} onChange={e => { setPick(e.target.value); setTest('idle'); }}><option value="" disabled>Choose…</option>{(opts || []).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>}
       {P.help && <span className="xs sub">{P.help}</span>}
       <div className="row" style={{ minHeight: 40, gap: 14, flexWrap: 'wrap' }}><Btn icon="refresh" loading={test === 'testing'} disabled={!ready} onClick={run}>Test connection</Btn>

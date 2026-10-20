@@ -10,6 +10,8 @@ export const users = pgTable('users', {
   email: text('email').notNull(),
   passwordHash: text('password_hash'),
   googleSub: text('google_sub'),
+  /** Settings → Account → Appearance */
+  appearance: text('appearance').$type<'system' | 'light' | 'dark'>().notNull().default('system'),
   createdAt: created(),
 }, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub)]);
 

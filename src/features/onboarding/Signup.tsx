@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Btn, Field, Mark } from '@/components/ui';
-import { GoogleMark } from '@/components/brand';
+import { GoogleButton } from '@/components/brand';
 import { RadarField } from '@/components/RadarField';
 import { api, ApiError } from '@/client/api';
 import { EMAIL_RE } from '@/lib/format';
@@ -46,7 +46,7 @@ export function Signup({ mode = 'signup' }: { mode?: 'signup' | 'signin' }) {
         {signin
           ? <div className="col" style={{ gap: 6, marginBottom: 6 }}><h1 className="h1">Sign in</h1></div>
           : <div className="col" style={{ gap: 6, marginBottom: 6 }}><h1 className="h1">Create your account</h1><p className="sub">Free while you set up. No card needed.</p></div>}
-        <Btn kind="secondary" size="lg" className="btn-block" iconNode={<GoogleMark s={18} />} type="button" onClick={google} disabled={busy}>Continue with Google</Btn>
+        <GoogleButton onClick={google} disabled={busy}>Continue with Google</GoogleButton>
         <div className="row xs sub" style={{ gap: 12 }}><hr className="hair grow" />or<hr className="hair grow" /></div>
         {!signin && <Field label="Name" hint={hint('name')}><input className={'input' + (err.name ? ' err' : '')} autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>}
         <Field label="Work email" hint={hint('email')}><input className={'input' + (err.email ? ' err' : '')} type="email" autoComplete="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>

@@ -11,6 +11,9 @@ type Phase = 'read' | 'rank' | 'done';
 interface Blip { ang: number; r: number; t: number; keep: boolean; jit: number; kt?: number; ft?: number }
 
 /* ── radar sweep (scan) ──────────────────────────────── */
+/** Theme colours read from CSS on every frame, so the scan follows light/dark mode without hard-coded values. */
+function radarCols() { const cs = getComputedStyle(document.documentElement); return { line: cs.getPropertyValue('--line').trim(), line2: cs.getPropertyValue('--line2').trim(), ink: cs.getPropertyValue('--ink').trim() }; }
+
 export function RadarSweep({ phase, kept, size = 280 }: { phase: Phase; kept: number; size?: number }) {
   const ref = useRef<HTMLCanvasElement>(null); const st = useRef({ phase, kept }); st.current = { phase, kept };
   useEffect(() => {
@@ -24,9 +27,9 @@ export function RadarSweep({ phase, kept, size = 280 }: { phase: Phase; kept: nu
       if (phase === 'read' && Math.random() < dt * 22) blips.push({ ang: a - .05 - Math.random() * .15, r: .18 + Math.random() * .78, t, keep: false, jit: Math.random() });
       if (phase === 'rank') { const k = blips.filter(b => b.keep).length; if (k < kept) { const c2 = blips.filter(b => !b.keep && b.r > .3); if (c2.length && Math.random() < dt * 6) c2[Math.floor(Math.random() * c2.length)].keep = true; } }
       ctx.clearRect(0, 0, size, size);
-      ctx.strokeStyle = 'oklch(0.91 0.004 265)'; ctx.lineWidth = 1;
+      const C = radarCols(); ctx.strokeStyle = C.line; ctx.lineWidth = 1;
       [1, .72, .44, .16].forEach(f => { ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, tau); ctx.stroke(); });
-      ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.strokeStyle = 'oklch(0.955 0.003 265)'; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.strokeStyle = C.line2; ctx.stroke();
       if (phase !== 'done' && !reduce) {
         if ((ctx as any).createConicGradient) { const g = (ctx as any).createConicGradient(a - 1.1, cx, cy) as CanvasGradient; g.addColorStop(0, 'oklch(0.66 0.19 42 / 0)'); g.addColorStop(.175, 'oklch(0.66 0.19 42 / .22)'); g.addColorStop(.1751, 'oklch(0.66 0.19 42 / 0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a - 1.1, a); ctx.closePath(); ctx.fill(); }
         ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.strokeStyle = 'oklch(0.66 0.19 42 / .8)'; ctx.lineWidth = 1.25; ctx.stroke();
@@ -35,9 +38,9 @@ export function RadarSweep({ phase, kept, size = 280 }: { phase: Phase; kept: nu
         const since = norm(a - b.ang) / tau; const x = cx + Math.cos(b.ang) * R * b.r, y = cy + Math.sin(b.ang) * R * b.r;
         if (b.keep) { const pr = Math.min(1, (t - (b.kt || (b.kt = t))) / 500); ctx.fillStyle = 'oklch(0.66 0.19 42 / .16)'; ctx.beginPath(); ctx.arc(x, y, 9 * pr, 0, tau); ctx.fill(); ctx.fillStyle = 'oklch(0.66 0.19 42)'; ctx.beginPath(); ctx.arc(x, y, 3.4, 0, tau); ctx.fill(); return; }
         const fade = phase === 'rank' || phase === 'done' ? Math.max(0, 1 - (t - (b.ft || (b.ft = t))) / 700) * .5 : 1 - since;
-        if (fade <= 0) return; ctx.fillStyle = `oklch(0.2 0.012 265 / ${(fade * .55).toFixed(3)})`; ctx.beginPath(); ctx.arc(x, y, 1.8 + b.jit * .8, 0, tau); ctx.fill();
+        if (fade <= 0) return; ctx.globalAlpha = fade * .55; ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(x, y, 1.8 + b.jit * .8, 0, tau); ctx.fill(); ctx.globalAlpha = 1;
       });
-      ctx.fillStyle = 'oklch(0.2 0.012 265)'; ctx.beginPath(); ctx.arc(cx, cy, 2.6, 0, tau); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(cx, cy, 2.6, 0, tau); ctx.fill();
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame); return () => cancelAnimationFrame(raf);

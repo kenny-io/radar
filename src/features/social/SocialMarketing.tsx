@@ -1,6 +1,7 @@
 'use client';
 // Social Marketing library — port of SocialMarketing (prototype/radar-social.jsx). Routes: ?generate=1 opens the flow,
 // ?pack=ID shows the pack. Radar never posts to social platforms for the user (README §2.5 #1).
+import { PlatName } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Empty, PageHead, Status } from '@/components/ui';
@@ -24,7 +25,7 @@ export function SocialMarketing() {
       <Btn kind="primary" icon="plus" onClick={() => setFlow(true)}>Generate social posts</Btn>
     </PageHead>
     <div className="row small" style={{ gap: 14, margin: '-14px 0 30px', flexWrap: 'wrap' }}>
-      {a.on ? <><Status tone="ok">Auto-generating {a.freq === 'daily' ? 'daily' : a.days.join(', ')} at {fmtTime(a.time)}</Status><span className="sub">{a.platforms.map(k => plat(k).l).join(', ')} · saved to your library</span></> : <span className="sub">Automatic generation is off.</span>}
+      {a.on ? <><Status tone="ok">Auto-generating {a.freq === 'daily' ? 'daily' : a.days.join(', ')} at {fmtTime(a.time)}</Status><span className="sub"><span style={{ display: 'inline-flex', gap: 12, verticalAlign: 'middle', marginRight: 6 }}>{a.platforms.map(k => <PlatName key={k} k={k} l={plat(k).l} s={14} gap={6} />)}</span>· saved to your library</span></> : <span className="sub">Automatic generation is off.</span>}
       <Btn kind="link" className="small" onClick={() => setAuto(true)}>{a.on ? 'Edit' : 'Set up'}</Btn>
     </div>
     {packs.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 18 }}>{packs.map(p => <PackThumb key={p.id} p={p} brand={B.profile.brand} onClick={() => go('social', { pack: p.id })} />)}</div>

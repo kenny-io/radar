@@ -1,5 +1,6 @@
 'use client';
 // Dashboard — port of prototype/radar-dashboard.jsx (Dashboard, dashIssues, PerfSummary, DashEmpty, CalMotif, PostMotif).
+import { BrandIcon } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
 import { useApp, type AppCtx } from '@/client/app';
 import { Btn, EntryStatus, Icon, Metric, Section, Skel, Spark, Status } from '@/components/ui';
@@ -127,7 +128,7 @@ export function PerfSummary() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, app.bid, g.lastSyncedThrough]);
-  if (g.status === 'none' || g.status === 'skipped') return <div className="card row" style={{ padding: '18px 22px', gap: 16, flexWrap: 'wrap' }}><span className="grow col"><span className="h3">See how you perform in search</span><span className="small sub">Connect Search Console so topics and suggestions use your real data.</span></span><Btn icon="search" onClick={() => go('settings', { gsc: true })}>Connect Search Console</Btn></div>;
+  if (g.status === 'none' || g.status === 'skipped') return <div className="card row" style={{ padding: '18px 22px', gap: 16, flexWrap: 'wrap' }}><span className="grow col"><span className="h3">See how you perform in search</span><span className="small sub">Connect Search Console so topics and suggestions use your real data.</span></span><button className="btn btn-secondary" onClick={() => go('settings', { gsc: true })}><BrandIcon k="gsc" s={16} /><span>Connect Search Console</span></button></div>;
   if (g.status === 'syncing') return <div className="card col" style={{ padding: '18px 22px', gap: 12 }}><div className="row"><Status tone="signal" pulse>Syncing Search Console</Status><span className="grow" /><span className="mono sub num">{Math.round(g.progress || 0)}%</span></div><div style={{ height: 2, background: 'var(--line2)', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: (g.progress || 0) + '%', background: 'var(--ink)', transition: 'width .6s var(--ease)' }} /></div><span className="xs sub">Importing 16 months of queries and pages. Keep working — Radar will update recommendations when it’s done.</span></div>;
   const loading = sum === undefined;
   const c = sum?.cur.clicks, pc = sum?.prev?.clicks;
@@ -146,7 +147,7 @@ function DashEmpty({ first }: { first: string }) {
   const { go, B } = useApp(); const [hov, setHov] = useState<string | null>(null);
   const tile = (k: string, title: string, body: string, onClick: () => void) => <button className="card col" onMouseEnter={() => setHov(k)} onMouseLeave={() => setHov(null)} onClick={onClick} style={{ textAlign: 'left', padding: 28, gap: 0, cursor: 'pointer', minHeight: 300, position: 'relative', overflow: 'hidden', transition: 'transform .4s var(--ease),box-shadow .4s var(--ease),border-color .3s', transform: hov === k ? 'translateY(-3px)' : 'none', boxShadow: hov === k ? '0 24px 50px -24px oklch(0.2 0.02 265 / .3)' : 'none', borderColor: hov === k ? 'var(--faint)' : 'var(--line)' }}>
     <div className="grow" style={{ position: 'relative', marginBottom: 24, minHeight: 130 }}>{k === 'cal' ? <CalMotif on={hov === k} /> : <PostMotif on={hov === k} brand={B!.profile.brand} />}</div>
-    <span className="row" style={{ gap: 10, alignItems: 'center' }}><span className="h2 grow">{title}</span><span style={{ width: 34, height: 34, borderRadius: 99, background: hov === k ? 'var(--ink)' : 'var(--fill)', color: hov === k ? '#fff' : 'var(--ink)', display: 'grid', placeItems: 'center', transition: 'all .3s' }}><Icon n="arrow" s={16} /></span></span>
+    <span className="row" style={{ gap: 10, alignItems: 'center' }}><span className="h2 grow">{title}</span><span style={{ width: 34, height: 34, borderRadius: 99, background: hov === k ? 'var(--ink)' : 'var(--fill)', color: hov === k ? 'var(--on-ink)' : 'var(--ink)', display: 'grid', placeItems: 'center', transition: 'all .3s' }}><Icon n="arrow" s={16} /></span></span>
     <span className="sub small" style={{ marginTop: 6, maxWidth: 360 }}>{body}</span>
   </button>;
   return <div className="page">

@@ -1,6 +1,7 @@
 'use client';
 // Performance (Search + AI Visibility) — port of prototype/radar-performance.jsx.
 // Data: gsc.search / suggestions.list / visibility.list read actions; writes go through server actions and jobs.
+import { BrandIcon } from '@/components/brand';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Metric, PageHead, Section, Seg, Sheet, Skel, Status, Tabs } from '@/components/ui';
@@ -218,7 +219,7 @@ function AiTab() {
       <form className="row" style={{ gap: 8 }} onSubmit={add}><input className="input" style={{ height: 36, width: 260, fontSize: 14 }} placeholder="Track a new prompt" value={np} onChange={e => setNp(e.target.value)} /><Btn size="sm" icon="plus" type="submit" loading={adding} aria-label="Add prompt" /></form>
     </div>
     <div style={{ overflowX: 'auto' }}><table className="ai-grid" style={{ width: '100%', borderCollapse: 'collapse' }}>
-      <thead><tr className="xs sub" style={{ textAlign: 'left' }}><th style={{ fontWeight: 400, padding: '10px 8px 10px 0' }}>Prompt</th>{AI_ENGINES.map(en => <th key={en} style={{ fontWeight: 400, padding: '10px 4px', width: 78 }}>{en}</th>)}</tr></thead>
+      <thead><tr className="xs sub" style={{ textAlign: 'left' }}><th style={{ fontWeight: 400, padding: '10px 8px 10px 0' }}>Prompt</th>{AI_ENGINES.map(en => <th key={en} style={{ fontWeight: 400, padding: '10px 4px', width: 78 }}><span className="row" style={{ gap: 6 }}><BrandIcon k={en} s={14} />{en}</span></th>)}</tr></thead>
       <tbody>{prompts.map(pr => <tr key={pr.id} style={{ borderTop: '1px solid var(--line2)' }}><td style={{ padding: '14px 12px 14px 0', fontSize: 15, textWrap: 'pretty' } as React.CSSProperties}><span className="ai-q">{pr.prompt}</span></td>
         {AI_ENGINES.map(en => { const r = cell(pr.id, en); return <td key={en} data-eng={en} style={{ padding: '6px 0' }}>{r ? <button className="tap" onClick={() => setOpen(r.id)} aria-label={en + ': ' + (r.status === 'mentioned' ? 'mentioned at position ' + r.pos : r.status === 'not-mentioned' ? 'not mentioned' : 'not collected')} style={{ border: 0, background: 'none', borderRadius: 8, padding: '8px', width: '100%', textAlign: 'left', cursor: 'pointer' }}><AiCell r={r} /></button> : null}</td>; })}
       </tr>)}</tbody></table></div>

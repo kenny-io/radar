@@ -2,6 +2,7 @@
 // CONTRACT (owned by the performance/GSC area): connect flow — button → Google OAuth popup → "Finding your properties…" → radio list → connect.
 // bid: the business to connect (the onboarding business during onboarding). onConnected receives the chosen property after the server has saved it and queued the backfill.
 // Port of GscConnect (prototype/radar-onboarding.jsx) minus the drawn consent card: the real Google consent happens in the popup.
+import { BrandIcon } from '@/components/brand';
 import React, { useState } from 'react';
 import { useApp } from '@/client/app';
 import { actCall, openOAuth } from '@/client/api';
@@ -36,7 +37,7 @@ export function GscConnect({ bid, domain, compact, onConnected }: GscConnectProp
     } catch (e: any) { app.toast(e?.message || 'Radar couldn’t finish this. Try again.', { tone: 'bad' }); }
     finally { setBusy(false); }
   };
-  if (st === 'idle' || st === 'authing') return <Btn kind="primary" size={compact ? null : 'lg'} icon="search" loading={st === 'authing'} onClick={allow}>Connect Google Search Console</Btn>;
+  if (st === 'idle' || st === 'authing') return <button className={'btn btn-secondary' + (compact ? '' : ' btn-lg')} disabled={st === 'authing'} onClick={allow}>{st === 'authing' ? <span className="spin" /> : <BrandIcon k="gsc" s={18} />}<span>Connect Google Search Console</span></button>;
   if (st === 'denied') return <div className="col enter" style={{ gap: 12 }}><Status tone="bad">Access wasn’t granted</Status><p className="small sub" style={{ maxWidth: 440 }}>Google didn’t return permission. This happens if the window was closed or the account doesn’t own the property.</p><div className="row"><Btn kind="primary" icon="refresh" onClick={allow}>Try again</Btn></div></div>;
   if (st === 'empty') return <div className="col enter" style={{ gap: 12 }}><Status tone="warn">No properties found</Status><p className="small sub" style={{ maxWidth: 440 }}>This Google account doesn’t have access to a Search Console property. Try again with the account that manages {domain}.</p><div className="row"><Btn kind="primary" icon="refresh" onClick={allow}>Try again</Btn></div></div>;
   if (st === 'loading') return <div className="col" style={{ gap: 10, maxWidth: 520 }}><span className="small sub row" style={{ gap: 8 }}><span className="spin" />Finding your properties…</span><Skel h={52} /><Skel h={52} /></div>;

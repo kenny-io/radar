@@ -1,6 +1,7 @@
 'use client';
 // Generate flow — port of SocialFlow + SuggestIdeas (prototype/radar-social.jsx). Generation is the `social.generate`
 // job (ref = client token); the "Writing your pack…" rows follow its progress { done }.
+import { PlatName, PlatLogo } from '@/components/brand';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, EntryStatus, Field, Icon, LogoTile, Modal, Seg, Skel } from '@/components/ui';
@@ -108,7 +109,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
       <nav className="row hide-sm" style={{ gap: 18 }}>{SF_STEPS.map(([k, l], i) => <span key={k} className="row small" style={{ gap: 6, color: i === idx ? 'var(--ink)' : i < idx ? 'var(--ink2)' : 'var(--faint)', fontWeight: i === idx ? 500 : 400 }}>{i < idx ? <Icon n="check" s={13} w={2} /> : <i className="dot" style={{ background: i === idx ? 'var(--signal)' : 'var(--line)' }} />}{l}</span>)}</nav>
       {gen < 0 && <Btn kind="ghost" icon="x" onClick={onClose} aria-label="Close" style={{ marginLeft: 8 }} />}</div>
     <div key={st.step + (gen >= 0)} className="grow col enter" style={{ padding: '30px clamp(20px,4vw,40px)', gap: 22 }}>
-      {gen >= 0 ? <div className="col" style={{ gap: 4, maxWidth: 520 }}><h2 className="h1" style={{ fontSize: 24, marginBottom: 16 }}>Writing your pack…</h2>{st.platforms.map((k, i) => <div key={k} className="row" style={{ height: 46, borderTop: i ? '1px solid var(--line2)' : 0, opacity: i > gen ? .4 : 1 }}><span style={{ width: 20 }}>{i < gen ? <Icon n="check" s={15} w={2} style={{ color: 'var(--ok)' }} /> : i === gen ? <span className="spin" style={{ color: 'var(--signal)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span><span className="grow">{plat(k).l}</span>{i < gen && <span className="small sub">Copy + visual</span>}</div>)}</div>
+      {gen >= 0 ? <div className="col" style={{ gap: 4, maxWidth: 520 }}><h2 className="h1" style={{ fontSize: 24, marginBottom: 16 }}>Writing your pack…</h2>{st.platforms.map((k, i) => <div key={k} className="row" style={{ height: 46, borderTop: i ? '1px solid var(--line2)' : 0, opacity: i > gen ? .4 : 1 }}><span style={{ width: 20 }}>{i < gen ? <Icon n="check" s={15} w={2} style={{ color: 'var(--ok)' }} /> : i === gen ? <span className="spin" style={{ color: 'var(--signal)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span><span className="grow"><PlatName k={k} l={plat(k).l} /></span>{i < gen && <span className="small sub">Copy + visual</span>}</div>)}</div>
         : st.step === 'source' ? <>
           <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>What should the posts be about?</h2></div>
           <Seg value={st.kind} onChange={k => set({ kind: k })} options={[{ v: 'idea' as Kind, l: 'An idea' }, { v: 'url' as Kind, l: 'Article URL' }, { v: 'article' as Kind, l: 'Radar article' }, { v: 'suggest' as Kind, l: 'Suggest ideas' }]} />
@@ -122,7 +123,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
           : st.step === 'platforms' ? <>
             <div className="row"><h2 className="h1 grow" style={{ fontSize: 24 }}>Where will you post?</h2><Btn kind="link" className="small" onClick={() => set({ platforms: st.platforms.length === PLAT.length ? [] : PLAT.map(p => p.k) })}>{st.platforms.length === PLAT.length ? 'Clear' : 'Select all'}</Btn></div>
             <div className="grid-2" style={{ gap: 12 }}>{PLAT.map(p => { const on = st.platforms.includes(p.k); return <button key={p.k} aria-pressed={on} onClick={() => set({ platforms: on ? st.platforms.filter(x => x !== p.k) : [...st.platforms, p.k] })} className="row" style={{ padding: '16px 18px', borderRadius: 14, border: '1px solid ' + (on ? 'var(--ink)' : 'var(--line)'), background: 'var(--surface)', boxShadow: on ? 'inset 0 0 0 1px var(--ink)' : 'none', textAlign: 'left', cursor: 'pointer', transition: 'all .2s', gap: 14 }}>
-              <span className="col grow"><span style={{ fontWeight: 500 }}>{p.l}</span><span className="small sub">{p.d}</span></span><span style={{ width: 22, height: 22, borderRadius: 99, border: on ? 0 : '1.5px solid var(--line)', background: on ? 'var(--ink)' : 'transparent', color: '#fff', display: 'grid', placeItems: 'center' }}>{on && <Icon n="check" s={13} w={2.4} />}</span></button>; })}</div>
+              <PlatLogo k={p.k} s={28} /><span className="col grow"><span style={{ fontWeight: 500 }}>{p.l}</span><span className="small sub">{p.d}</span></span><span style={{ width: 22, height: 22, borderRadius: 99, border: on ? 0 : '1.5px solid var(--line)', background: on ? 'var(--ink)' : 'transparent', color: 'var(--on-ink)', display: 'grid', placeItems: 'center' }}>{on && <Icon n="check" s={13} w={2.4} />}</span></button>; })}</div>
           </>
             : st.step === 'style' ? <>
               <h2 className="h1" style={{ fontSize: 24 }}>Choose an image style</h2>

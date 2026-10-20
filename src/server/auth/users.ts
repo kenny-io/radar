@@ -18,7 +18,7 @@ export async function listBusinesses(userId: string): Promise<BusinessSummary[]>
   return rows.map(({ b, role }) => ({ id: b.id, name: (b.profile as any)?.business?.name || b.domain, domain: b.domain, brand: { logo: b.profile?.brand?.logo ?? null, primary: b.profile?.brand?.primary || '#17181C', secondary: b.profile?.brand?.secondary || '#EF6A2E' }, status: b.status, role: role as any }));
 }
 
-export async function getMe(user: { id: string; name: string; email: string }): Promise<Me> {
+export async function getMe(user: { id: string; name: string; email: string; appearance?: 'system' | 'light' | 'dark' }): Promise<Me> {
   const businesses = await listBusinesses(user.id);
   const jar = await cookies();
   const want = jar.get(BIZ_COOKIE)?.value;

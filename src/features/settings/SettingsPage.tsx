@@ -1,6 +1,7 @@
 'use client';
 // Settings — port of SettingsPage + FreqSetting (prototype/radar-app.jsx), AISettings/ModelSelect (radar-models.jsx),
 // TeamSettings + FeatureRequest (radar-extras.jsx). Max-width 860; sections in the designed order.
+import { BrandIcon } from '@/components/brand';
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { api } from '@/client/api';
@@ -9,7 +10,7 @@ import { GscConnect } from '@/features/gsc/GscConnect';
 import { PublishingSettings } from '@/features/publishing/PublishingSettings';
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
-import type { CalendarSettings, Member, Role, Workspace } from '@/lib/types';
+import type { CalendarSettings, Member, Role, Workspace, Appearance } from '@/lib/types';
 
 /** Hairline row: 220px label column (title + sub) and a control column. Module-level so inputs keep focus across renders. */
 function Row({ t, d, children }: { t: React.ReactNode; d?: React.ReactNode; children?: React.ReactNode }) {
@@ -28,9 +29,9 @@ export function FreqSetting({ cs, set }: { cs: Pick<CalendarSettings, 'cadence' 
 export function ModelSelect({ value, onChange, width = 280, label }: { value: string; onChange: (v: string) => void; width?: number; label?: string }) {
   const m = aiFind(value);
   return <div className="col" style={{ gap: 6 }}>
-    <select className="input" style={{ maxWidth: width }} value={value} onChange={e => onChange(e.target.value)} aria-label={label}>
+    <div style={{ position: 'relative', maxWidth: width }}>{m && <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><BrandIcon k={m.p} s={18} /></span>}<select className="input" style={{ paddingLeft: m ? 40 : 13 }} value={value} onChange={e => onChange(e.target.value)} aria-label={label}>
       {AI_MODELS.map(g => <optgroup key={g.p} label={g.p}>{g.list.map(x => <option key={x.id} value={x.id}>{x.l}</option>)}</optgroup>)}
-    </select>
+    </select></div>
     {m && <span className="xs sub">{m.p} · {m.d}</span>}
   </div>;
 }
@@ -68,7 +69,7 @@ export function SettingsPage() {
     <PageHead title="Settings" />
     <div ref={gscRef} style={{ scrollMarginTop: 24 }}><Section title="Search Console" style={{ marginTop: 0 }}>
       <Row t="Connection" d="Read-only access to search performance.">
-        {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <><div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{g.status === 'connected' ? <Status tone="ok">Connected</Status> : g.status === 'syncing' ? <Status tone="signal" pulse>Syncing · {Math.round(g.progress)}%</Status> : <Status tone="bad">Sync paused</Status>}<span className="mono sub">{g.property}</span></div><div className="row">{g.status === 'error' && <Btn size="sm" icon="refresh" onClick={() => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {})}>Resume sync</Btn>}<Btn size="sm" kind="ghost" onClick={() => act('gsc.disconnect', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'skipped', property: null, progress: 0 } }) }).then(() => toast('Search Console disconnected')).catch(() => {})}>Disconnect</Btn></div></>
+        {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <><div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{g.status === 'connected' ? <Status tone="ok">Connected</Status> : g.status === 'syncing' ? <Status tone="signal" pulse>Syncing · {Math.round(g.progress)}%</Status> : <Status tone="bad">Sync paused</Status>}<span className="row" style={{ gap: 8 }}><BrandIcon k="gsc" s={16} /><span className="mono sub">{g.property}</span></span></div><div className="row">{g.status === 'error' && <Btn size="sm" icon="refresh" onClick={() => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {})}>Resume sync</Btn>}<Btn size="sm" kind="ghost" onClick={() => act('gsc.disconnect', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'skipped', property: null, progress: 0 } }) }).then(() => toast('Search Console disconnected')).catch(() => {})}>Disconnect</Btn></div></>
           : <GscConnect bid={app.bid!} domain={B.profile.domain} compact onConnected={() => toast('Connected. Syncing in the background.', { tone: 'ok' })} />}
       </Row>
     </Section></div>
@@ -85,9 +86,26 @@ export function SettingsPage() {
     <Section title="Account">
       <Row t="Name"><AccountName /></Row>
       <Row t="Email"><span className="small">{app.user.email}</span></Row>
+      <Row t="Appearance" d="System follows your device."><AppearanceSetting /></Row>
     </Section>
     <Section title="Request a feature"><FeatureRequest /></Section>
   </div>;
+}
+
+/** Account → Appearance: applies instantly on <html data-theme> (removed for System), then saves per user. */
+function AppearanceSetting() {
+  const app = useApp();
+  const [v, setV] = useState<Appearance>(app.user.appearance || 'system');
+  const change = async (next: Appearance) => {
+    const prev = v; setV(next); applyAppearance(next);
+    try { await api('/api/me', { method: 'PATCH', body: { appearance: next } }); await app.refreshMe(); }
+    catch (e: any) { setV(prev); applyAppearance(prev); app.toast(e?.message || 'Radar couldn’t finish this. Try again.', { tone: 'bad' }); }
+  };
+  return <Seg value={v} onChange={x => change(x as Appearance)} options={[{ v: 'system', l: 'System' }, { v: 'light', l: 'Light' }, { v: 'dark', l: 'Dark' }]} />;
+}
+export function applyAppearance(a: Appearance) {
+  const r = document.documentElement;
+  if (a === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', a);
 }
 
 /** Account → Name: autosaves to PATCH /api/me, then refreshes the signed-in user (sidebar initials). */
@@ -124,7 +142,7 @@ export function TeamSettings() {
   const remove = (m: Member) => act('team.remove', { memberId: m.id }, { optimistic: b => ({ ...b, team: b.team.filter(x => x.id !== m.id) }) }).then(() => toast('Removed ' + m.email)).catch(() => {});
   return <div className="col" style={{ gap: 14 }}>
     <div className="col">{team.map((m, i) => <div key={m.id} className="row" style={{ gap: 12, padding: '10px 0', borderTop: i ? '1px solid var(--line2)' : 0, flexWrap: 'wrap' }}>
-      <span style={{ width: 30, height: 30, borderRadius: 99, background: m.status === 'invited' ? 'var(--fill)' : 'var(--ink)', color: m.status === 'invited' ? 'var(--mute)' : '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600, flex: 'none' }}>{(m.name || m.email).slice(0, 1).toUpperCase()}</span>
+      <span style={{ width: 30, height: 30, borderRadius: 99, background: m.status === 'invited' ? 'var(--fill)' : 'var(--ink)', color: m.status === 'invited' ? 'var(--mute)' : 'var(--on-ink)', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600, flex: 'none' }}>{(m.name || m.email).slice(0, 1).toUpperCase()}</span>
       <span className="col grow" style={{ minWidth: 160 }}><span className="small" style={{ fontWeight: 500 }}>{m.name || m.email}{m.you && <span className="sub" style={{ fontWeight: 400 }}> · You</span>}</span>{m.name && <span className="xs sub">{m.email}</span>}</span>
       {m.status === 'invited' && <Status tone="warn">Invited</Status>}
       {m.role === 'Owner' ? <span className="small sub" style={{ width: 110 }}>Owner</span> : <select className="input" style={{ width: 110, height: 34, fontSize: 13 }} value={m.role} onChange={e => setMemberRole(m, e.target.value as Role)} aria-label="Role"><option>Admin</option><option>Editor</option><option>Viewer</option></select>}
