@@ -2,9 +2,11 @@
 // Daily Brief — port of prototype/radar-brief.jsx on real data (01-screens §4, 02-system §9).
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
-import { AutoText, Btn, Empty, Field, Icon, PageHead, Popover, Seg, Sheet, Status, copyText } from '@/components/ui';
+import { AutoText, Btn, Empty, Field, Icon, Modal, PageHead, Popover, Seg, Sheet, Status, copyText, downloadBlob, sleep } from '@/components/ui';
+import { Visual, visualBlob } from '@/components/Visual';
+import { IMG_DEFAULT, STYLES, imgSeed, styleK, styleL, type ImgRange, type StyleKey } from '@/lib/imageOptions';
 import { PlatLogo } from '@/components/brand';
-import { BMENTION, BPLAT, BRIEF_DEFAULT, PORDER } from '@/lib/constants';
+import { BMENTION, BPLAT, BRIEF_DEFAULT, PLAT, PORDER } from '@/lib/constants';
 import { ageFromIso, ageL, fmtD, fmtTime } from '@/lib/format';
 import type { BriefAccount, BriefDay, BriefItem, BriefPlatform, BriefSettings, BriefState, JobSummary, Workspace } from '@/lib/types';
 import { BriefScan } from './BriefScan';
@@ -264,6 +266,32 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   };
   const live = it.st === 'open' || it.st === 'copied';
   const noun = it.kind === 'reply' ? 'reply' : 'post'; const co = acctOf(it) === 'company';
+  /* ── Add visuals (UPDATE-2026-10-21-image-options §5) ── */
+  const B = app.B!; const brand = B.profile.brand;
+  const [vis, setVis] = useState(false); const [vIx, setVIx] = useState(0);
+  const ratio = PLAT.find(p => p.k === plat)?.ratio || 1.91;
+  const im = it.kind === 'post' ? it.img || null : null;
+  const vn = im ? Math.min(im.n, plat === 'x' ? 4 : 5) : 0; const vi = Math.min(vIx, Math.max(0, vn - 1));
+  const vBusy = !!im && im.status === 'generating';
+  const vUrl = im ? im.urls[vi] || null : null;
+  const createVis = (x: { style: StyleKey; range: ImgRange }) => {
+    setVis(false); setVIx(0);
+    app.act('brief.visuals', { date: day, id: it.id, style: x.style, range: x.range }, { optimistic: b => {
+      const nb = patchB(b, day, it.id, i => ({ ...i, img: { style: x.style, range: x.range, seed: -1, n: x.range === 'many' ? 3 : 1, urls: [], status: 'generating' } }));
+      return { ...nb, social: { ...nb.social, img: { on: true, style: x.style, range: x.range } } };
+    } }).catch(() => {});
+  };
+  const removeVis = () => { app.act('brief.visuals', { date: day, id: it.id, style: null }, { optimistic: b => patchB(b, day, it.id, i => ({ ...i, img: null })) }).catch(() => {}); };
+  const dlVis = async () => {
+    if (!im) return;
+    for (let i = 0; i < vn; i++) {
+      if (i) await sleep(200);
+      const blob = await visualBlob(im.urls[i], { style: im.style, brand, headline: i ? '' : it.title, seed: imgSeed(im.seed, i), name }, 1200, Math.round(1200 / ratio));
+      if (blob) downloadBlob(blob, 'post' + (vn > 1 ? '-' + (i + 1) : '') + '.png');
+    }
+    toast(vn > 1 ? `Downloaded ${vn} images` : 'Downloaded image');
+  };
+  const visInitial: { style: StyleKey; range: ImgRange } = im ? { style: styleK(im.style), range: im.range || 'few' } : { style: styleK((B.social.img || IMG_DEFAULT).style), range: (B.social.img || IMG_DEFAULT).range || 'few' };
   return <article className="brief-d enter">
     {it.kind === 'reply' ? <>
       <div className="row xs sub" style={{ gap: 8, flexWrap: 'wrap' }}><PlatLogo k={it.plat!} s={16} /><span>{it.where}{!past && age != null ? ' · ' + ageL(age) : ''}{it.eng ? ' · ' + it.eng : ''}</span><span className="grow" />{it.url && <a className="small row" style={{ gap: 5, textDecoration: 'none', color: 'var(--ink2)' }} href={it.url} target="_blank" rel="noopener">Open thread<Icon n="ext" s={13} /></a>}</div>
@@ -288,6 +316,21 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
         {busy && <span className="row" style={{ gap: 6 }}><span className="spin" style={{ width: 11, height: 11, color: 'var(--signal)' }} />Rewriting…</span>}
       </div>
     </div>
+    {im && (vBusy || vn > 0 || im.status === 'failed') && <div className="col" style={{ gap: 10, marginTop: 18 }}>
+      {im.status === 'failed' && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>Radar couldn’t make these images.</span>{live && <Btn kind="link" className="small" onClick={() => createVis({ style: im.style, range: im.range })}>Try again</Btn>}{live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
+      <Visual key={vi + ':' + (vUrl || '')} style={im.style} brand={brand} headline={vi ? '' : it.title} seed={imgSeed(Math.max(1, im.seed), vi)} ratio={ratio} name={name} radius={12} busy={vBusy && !vUrl} url={vUrl} />
+      {!(vBusy && !vn) && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        {vn > 1 && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }} role="tablist" aria-label="Images">{Array.from({ length: vn }, (_, i) => <button key={i} type="button" role="tab" aria-selected={i === vi} aria-label={'Image ' + (i + 1)} onClick={() => setVIx(i)} style={{ width: 56, padding: 2, border: 0, borderRadius: 9, background: 'none', cursor: 'pointer', boxShadow: i === vi ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', transition: 'box-shadow .2s' }}><Visual style={im.style} brand={brand} headline="" seed={imgSeed(Math.max(1, im.seed), i)} ratio={1} name="" radius={7} url={im.urls[i] || null} busy={vBusy && !im.urls[i]} /></button>)}</div>}
+        <span className="grow" />
+        {!vBusy && <>
+          {live && <Btn kind="link" className="small" onClick={() => setVis(true)}>Change</Btn>}
+          <Btn kind="link" className="small" onClick={dlVis}>{vn > 1 ? 'Download ' + vn : 'Download'}</Btn>
+          {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}
+        </>}
+      </div>}
+      <span className="xs sub">{vBusy ? `Creating ${vn > 1 ? vn + ' images' : 'image'} · ${styleL(im.style)}` : `${styleL(im.style)}${vn > 1 ? ' · ' + vn + ' images' : ''}`}</span>
+      </>}
+    </div>}
     {past ? <div className="row brief-acts">{it.st === 'posted' ? <Status tone="ok">Posted</Status> : <span className="small sub">{it.st === 'expired' ? 'Expired. Replies this late rarely get seen.' : 'Skipped'}</span>}<span className="grow" /><Btn size="sm" kind="ghost" icon="copy" onClick={() => { copyText(text); toast('Copied'); }}>Copy</Btn></div>
     : <div className="row brief-acts">
       {it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
@@ -301,12 +344,25 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
           <form onSubmit={e => { e.preventDefault(); if (custom.trim()) rewrite(custom.trim()); }}><input className="input" style={{ height: 36, fontSize: 13 }} placeholder="Or say what to change" value={custom} onChange={e => setCustom(e.target.value)} autoFocus /></form>
         </Popover></span>}
       <span className="grow" />
-      {it.kind === 'post' && live && <Btn kind="link" className="small" onClick={() => go('social', { generate: true })}>Add visuals</Btn>}
+      {it.kind === 'post' && live && !im && <Btn kind="link" className="small" onClick={() => setVis(true)}>Add visuals</Btn>}
       {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={() => act.skip(it)}>Skip</Btn>}
       {!live && <Btn kind="link" className="small" onClick={() => act.undo(it)}>Undo</Btn>}
     </div>}
     {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{co ? `Post from the ${name} account. Help first, product second.` : it.noMention ? `${it.where} doesn’t allow self-promotion, so this reply stays purely helpful.` : it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.${it.mention && it.rulesUnknown ? ` Check ${it.where}’s rules on self-promotion before posting this version.` : ''}` : it.mention ? `Plugs ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Plug ${name}” if it fits.`}</p>}
+    {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} initial={visInitial} onCreate={createVis} />}
   </article>;
+}
+
+/** Add visuals window: style tiles and the number of images. */
+function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; range: ImgRange }; onCreate: (x: { style: StyleKey; range: ImgRange }) => void }) {
+  const [im, setIm] = useState(initial); useEffect(() => { if (open) setIm(initial); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <Modal open={open} onClose={onClose} width={640} label="Add visuals to this post"><div className="col" style={{ padding: '32px clamp(20px,5vw,32px) 26px', gap: 22 }}>
+    <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>Add visuals to this post</h2><p className="sub">Radar creates images to go with the post. You can regenerate, download or remove them.</p></div>
+    <Field label="Visual style"><div role="radiogroup" aria-label="Visual style" className="vis-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(104px,1fr))', gap: 12 }}>{STYLES.map(st => { const on = im.style === st.k; return <button key={st.k} type="button" role="radio" aria-checked={on} onClick={() => setIm({ ...im, style: st.k })} className="col" style={{ gap: 6, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}><span style={{ borderRadius: 12, boxShadow: on ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', padding: 2, transition: 'box-shadow .2s' }}><Visual style={st.k} brand={brand} headline="" seed={5} name="" radius={9} ratio={1} /></span><span className="xs" style={{ fontWeight: on ? 500 : 400, color: on ? 'var(--ink)' : 'var(--ink2)', lineHeight: 1.3 }}>{st.l}</span></button>; })}</div>
+      <span className="small sub" style={{ marginTop: 10, display: 'block' }}>{(STYLES.find(st => st.k === im.style) || STYLES[0]).d}</span></Field>
+    <Field label="Number of images" hint="Radar picks the exact number. X allows up to 4."><Seg value={im.range} onChange={v => setIm({ ...im, range: v })} options={[{ v: 'few' as ImgRange, l: <span className="row" style={{ gap: 7 }}>1–3<span style={{ color: 'var(--mute)', fontWeight: 400 }}>Recommended</span></span> }, { v: 'many' as ImgRange, l: '3–5' }]} /></Field>
+    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" onClick={() => onCreate(im)}>Create images</Btn></div>
+  </div></Modal>;
 }
 
 function BriefPlatforms({ value, onChange }: { value: BriefPlatform[]; onChange: (v: BriefPlatform[]) => void }) {

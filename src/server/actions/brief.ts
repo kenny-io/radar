@@ -10,6 +10,8 @@ import { getJob } from '../jobs/queue';
 import { enqueueScan } from '../services/brief/jobs';
 import { withDay } from '../services/brief/store';
 import { rewriteItem } from '../services/brief/draft';
+import { enqueueVisuals } from '../services/brief/visuals';
+import { imgN, type ImageSettings } from '@/lib/imageOptions';
 import '../services/brief/stubs';
 import { acctOf, isLive, variantOf } from '@/features/brief/model';
 import type { BriefItem, Profile } from '@/lib/types';
@@ -100,6 +102,32 @@ export const actions: ActionMap = {
         if (kind) trackSoon(kind, { bid: ctx.bid, uid: ctx.user.id, ref: it.id, props: { date: input.date, kind: it.kind, acct: acctOf(it), plat: it.kind === 'post' ? it.pl : it.plat, plugged: it.kind === 'reply' ? (acctOf(it) === 'company' || !!it.mention) : undefined, edited: Object.keys(it.edits || {}).length > 0, where: it.where, url: it.url, title: it.title } });
       }
       return { ok: true };
+    },
+  }),
+
+  /** Add visuals / Change (UPDATE-2026-10-21-image-options §5): set the post's images and make them (job brief.visuals,
+   *  ref = date:id). style null = Remove. The choice also becomes the social default (businesses.social_img). */
+  'brief.visuals': action({
+    input: z.object({ date: Date_, id: z.string().min(1).max(40), style: z.enum(['editorial', 'flat', 'render3d', 'handdrawn', 'photography']).nullable(), range: z.enum(['few', 'many']).optional() }),
+    run: async (ctx, input) => {
+      if (input.date < bizToday(ctx.biz)) throw new RadarError(PAST_ERROR, 400, 'read_only');
+      const seed = Math.floor(Math.random() * 500) + 1; const range = input.range || 'few';
+      const ok = await withDay(ctx.bid, input.date, row => {
+        const items = row.items as BriefItem[]; const i = items.findIndex(x => x.id === input.id);
+        if (i < 0 || items[i].kind !== 'post' || !isLive(items[i])) return null;
+        // Up to 5 (LinkedIn); the X version shows the first 4, X's limit.
+        const n = input.style ? imgN(range, 'linkedin', seed) : 0;
+        const next = [...items];
+        next[i] = { ...items[i], img: input.style ? { style: input.style, range, seed, n, urls: Array(n).fill(null), status: 'generating' } : null };
+        return { items: next, ret: next[i] };
+      });
+      if (!ok) throw new RadarError('That post wasn’t found.', 404, 'not_found');
+      if (!input.style) return { ok: true };
+      const img: ImageSettings = { on: true, style: input.style, range };
+      await db.update(schema.businesses).set({ socialImg: img }).where(eq(schema.businesses.id, ctx.bid));
+      const jobId = await enqueueVisuals(ctx.bid, input.date, input.id, seed);
+      trackSoon('brief.visuals_added', { bid: ctx.bid, uid: ctx.user.id, ref: input.id, props: { date: input.date, style: input.style, n: ok.img?.n } });
+      return { ok: true, jobId, img: ok.img };
     },
   }),
 

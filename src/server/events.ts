@@ -17,6 +17,7 @@ export const IMPACT = {
   'brief.reply_posted': 'Brief replies posted',
   'brief.post_posted': 'Brief feed posts posted',
   'brief.skipped': 'Brief items skipped',
+  'brief.visuals_added': 'Brief posts given visuals',
   'calendar.generated': 'Content calendars generated',
   'calendar.approved': 'Topics approved',
   'article.drafted': 'Articles drafted',

@@ -38,6 +38,7 @@ export const businesses = pgTable('businesses', {
   calendarGeneratedAt: timestamp('calendar_generated_at', { withTimezone: true }),
   blog: jsonb('blog').$type<any>().notNull().default({}),
   socialAuto: jsonb('social_auto').$type<any>().notNull().default({}),
+  socialImg: jsonb('social_img').$type<any>(),
   briefSettings: jsonb('brief_settings').$type<any>().notNull().default({}),
   briefSetup: boolean('brief_setup').notNull().default(false),
   backlinks: jsonb('backlinks').$type<any>().notNull().default({}),

@@ -93,6 +93,13 @@ export interface BriefItem {
   plats?: BriefPlatform[]; pl?: BriefPlatform | null;
   tag: string; why: string;
   drafts: Record<string, string>; edits: Record<string, string>; mention: boolean; st: BriefItemState;
+  /** Posts only: images Radar made for the post (Add visuals). null/absent = text only. */
+  img?: BriefImages | null;
+}
+export interface BriefImages {
+  style: import('./imageOptions').StyleKey; range: import('./imageOptions').ImgRange; seed: number; n: number;
+  /** One per image, filled in as each one finishes; null while generating or if it failed. */
+  urls: (string | null)[]; status: 'generating' | 'ready' | 'failed';
 }
 export interface BriefDay { date: string; scannedAt: string; items: BriefItem[]; stats?: Partial<Record<BriefPlatform, { read: number }>> }
 export interface BriefState { setup: boolean; settings: BriefSettings; days: Record<string, BriefDay> }
@@ -129,7 +136,7 @@ export interface Workspace {
   calendar: CalendarState;
   articles: Record<string, Article>;
   blog: BlogState;
-  social: { packs: SocialPack[]; auto: SocialAuto };
+  social: { packs: SocialPack[]; auto: SocialAuto; /** Last image setting used for social posts (Daily Brief included); the next default. */ img: import('./imageOptions').ImageSettings | null };
   brief: BriefState;
   backlinks: BacklinksState;
   ai: AiPrefs;

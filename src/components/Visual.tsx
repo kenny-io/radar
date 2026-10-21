@@ -5,6 +5,7 @@ import { drawVisual, type VisualOpts } from '@/lib/visual';
 /** On-brand visual. Shows the generated image (url) when Radar has one, otherwise renders the brand template live. */
 export function Visual({ style, brand, headline, seed = 1, ratio = 1.91, name, radius = 14, busy, url }: { style: string; brand: { primary: string; secondary: string }; headline: string; seed?: number; ratio?: number; name?: string; radius?: number; busy?: boolean; url?: string | null }) {
   const ref = useRef<HTMLCanvasElement>(null); const wrap = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = React.useState(false); useEffect(() => { setLoaded(false); }, [url]);
   useEffect(() => {
     if (url) return;
     const c = ref.current!; const draw = () => { if (!wrap.current) return; const W = wrap.current.clientWidth || 400; const dpr = Math.min(2, window.devicePixelRatio || 1); const w = Math.round(W * dpr), h = Math.round(W / ratio * dpr); c.width = w; c.height = h; drawVisual(c.getContext('2d'), { w, h, style, brand, headline, seed, name }); };
@@ -12,8 +13,8 @@ export function Visual({ style, brand, headline, seed = 1, ratio = 1.91, name, r
   }, [style, brand.primary, brand.secondary, headline, seed, ratio, name, url]);
   const fx: React.CSSProperties = { width: '100%', height: '100%', display: 'block', opacity: busy ? .35 : 1, transition: 'opacity .3s', filter: busy ? 'blur(6px)' : 'none' };
   return <div ref={wrap} style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: radius, overflow: 'hidden', background: 'var(--fill)' }}>
-    {url ? <img src={url} alt="" style={{ ...fx, objectFit: 'cover' }} /> : <canvas ref={ref} style={fx} />}
-    {busy && <span className="spin" style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: -7, marginTop: -7 }} />}
+    {url ? <img src={url} alt="" onLoad={() => setLoaded(true)} onError={() => setLoaded(true)} ref={el => { if (el && el.complete && el.naturalWidth && !loaded) setLoaded(true); }} style={{ ...fx, objectFit: 'cover', opacity: busy ? .35 : loaded ? 1 : 0 }} /> : <canvas ref={ref} style={fx} />}
+    {(busy || (url && !loaded)) && <span className="spin" style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: -7, marginTop: -7 }} />}
   </div>;
 }
 

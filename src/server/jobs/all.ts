@@ -7,6 +7,7 @@ import '../services/drafting/jobs';
 import '../services/publishing/jobs';
 import '../services/social/jobs';
 import '../services/brief/jobs';
+import '../services/brief/visuals';
 import '../services/visibility/jobs';
 import '../services/backlinks/jobs';
 import '../services/team/jobs';

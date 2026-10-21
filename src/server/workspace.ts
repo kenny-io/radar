@@ -3,6 +3,7 @@ import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { notFound } from './errors';
 import { AI_DEFAULT, BRIEF_DEFAULT } from '@/lib/constants';
+import { imageSettingsOf } from '@/lib/imageOptions';
 import { addDays, todayIn } from '@/lib/format';
 import { kwMeasured } from './services/gsc/metrics';
 import { decrypt } from './crypto';
@@ -107,7 +108,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
     calendar: { entries: calEntries, settings: calendarSettingsOf(b), generatedAt: b.calendarGeneratedAt ? b.calendarGeneratedAt.toISOString() : null },
     articles,
     blog: blogOf(b, connsPub),
-    social: { packs: packs.map(p => ({ ...(p.data as SocialPack), id: p.id })), auto: socialAutoOf(b) },
+    social: { packs: packs.map(p => ({ ...(p.data as SocialPack), id: p.id })), auto: socialAutoOf(b), img: b.socialImg ? imageSettingsOf(b.socialImg) : null },
     brief, backlinks, ai: aiPrefsOf(b), team: members,
     site: { pages: b.site?.pages ?? null, articles: b.site?.articles ?? null, ranking: b.site?.ranking ?? null, analyzedAt: b.site?.analyzedAt ?? null },
     jobs, measured, kwSuggestions: (b.kwSuggestions || []) as any,

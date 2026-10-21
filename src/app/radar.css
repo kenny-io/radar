@@ -171,6 +171,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   .ob-row{height:auto!important;min-height:52px;flex-wrap:wrap;padding:10px 0;row-gap:2px}.ob-l{flex-basis:calc(100% - 40px)!important}.ob-d{flex-basis:100%;padding-left:32px}
   .seg.seg-wrap{display:flex;flex-wrap:wrap;overflow:visible;border-radius:18px;align-self:stretch}.seg.seg-wrap button{flex:1 1 calc(50% - 2px)}
   .show-sm{display:inline!important}
+  .vis-tiles{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
   .toast-wrap{left:12px;right:12px;transform:none;bottom:max(12px,env(safe-area-inset-bottom))}.toast{border-radius:16px;max-width:100%}
   .vis-add{flex:1 1 100%}.vis-add .input{width:auto!important;flex:1;min-width:0}
   .kw-row{gap:10px!important}.kw-p{width:auto!important;min-width:56px}.kw-n{white-space:normal!important}

@@ -50,11 +50,22 @@ async function xaiImage(prompt: string, w: number, h: number): Promise<Buffer> {
 }
 
 /** The prompt sent to image models: the subject plus the brand's colors and style, never any text in the image. */
-export function imagePrompt(r: Pick<ImageReq, 'style' | 'prompt' | 'headline' | 'name' | 'brand' | 'seed'>): string {
-  const style = r.style === 'photography'
-    ? 'Editorial photograph, natural light, realistic, shallow depth of field'
-    : 'Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional';
-  return `${style}. Subject: ${r.prompt || r.headline}. Made for ${r.name}'s blog. Color palette built around the brand colors ${r.brand.primary} and ${r.brand.secondary}, with neutral tones. Variation ${r.seed}. No words, letters, numbers, logos or watermarks anywhere in the image.`;
+/** Prompt template per visual style (UPDATE-2026-10-21-image-options: each style key maps to a template; labels stay the same). */
+export const STYLE_PROMPTS: Record<string, string> = {
+  editorial: 'Conceptual editorial illustration built around one clear visual metaphor, textured shapes, magazine-cover quality, calm and professional',
+  flat: 'Flat vector illustration, clean geometric shapes, simple stylised characters, minimal detail, solid fills, generous negative space',
+  render3d: '3D render of glossy glass, soft clay or brushed metal objects with real depth, soft studio lighting and gentle shadows',
+  handdrawn: 'Hand-drawn illustration, ink and pencil sketch on textured paper, loose confident linework with light watercolor washes',
+  photography: 'Editorial photograph, natural light, realistic, shallow depth of field',
+  illustration: 'Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional',
+};
+/** Styles that go to the image model when one is configured (the rest are brand templates). */
+export const MODEL_STYLES = ['editorial', 'flat', 'render3d', 'handdrawn', 'photography', 'illustration'];
+
+export function imagePrompt(r: Pick<ImageReq, 'style' | 'prompt' | 'headline' | 'name' | 'brand' | 'seed' | 'kind'>): string {
+  const style = STYLE_PROMPTS[r.style] || STYLE_PROMPTS.illustration;
+  const where = r.kind === 'brief' || r.kind === 'social' ? `${r.name}'s social media post` : `${r.name}'s blog`;
+  return `${style}. Subject: ${r.prompt || r.headline}. Made for ${where}. Color palette built around the brand colors ${r.brand.primary} and ${r.brand.secondary}, with neutral tones. Variation ${r.seed}. No words, letters, numbers, logos or watermarks anywhere in the image.`;
 }
 
 async function generatePhoto(r: ImageReq): Promise<Buffer> {
@@ -79,7 +90,7 @@ async function generatePhoto(r: ImageReq): Promise<Buffer> {
 /** Render or generate a visual and store it. Returns a public URL. */
 export async function renderImage(r: ImageReq): Promise<string> {
   let png: Buffer;
-  if ((r.style === 'photography' || r.style === 'illustration') && imageModelConfigured()) {
+  if (MODEL_STYLES.includes(r.style) && imageModelConfigured()) {
     try { png = await generatePhoto(r); } catch (e: any) { console.error('[images] generation failed, using template', e.message); png = renderTemplatePng(r); }
   } else png = renderTemplatePng(r);
   return putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');
