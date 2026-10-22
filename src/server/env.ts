@@ -13,6 +13,15 @@ export const env = {
   anthropicKey: e.ANTHROPIC_API_KEY || '',
   openaiKey: e.OPENAI_API_KEY || '',
   xaiKey: e.XAI_API_KEY || '',
+  // OpenRouter: when the key is set it is the first route for every AI call (text, images, AI Visibility);
+  // the direct provider keys above stay as automatic fallback. Unset → behaviour is exactly as without OpenRouter.
+  openrouterKey: e.OPENROUTER_API_KEY || '',
+  /** JSON: catalogue id → OpenRouter model id, merged over the built-in map ("" disables OpenRouter for that model). */
+  openrouterModelMap: e.OPENROUTER_MODEL_MAP || '',
+  /** OpenRouter image model for Photography / Illustration (default in ai/adapters/openrouter.ts). */
+  openrouterImageModel: e.OPENROUTER_IMAGE_MODEL || '',
+  /** JSON: AI Visibility engine → OpenRouter model id, e.g. {"Gemini":"google/gemini-4-argon"} ("" = direct API only). */
+  openrouterVisModels: e.OPENROUTER_VIS_MODELS || '',
   // AI visibility engines (measurement targets)
   perplexityKey: e.PERPLEXITY_API_KEY || '',
   geminiKey: e.GEMINI_API_KEY || '',

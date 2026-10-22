@@ -1,11 +1,13 @@
 // Image generation (02-system.md §7 Images). Server renders brand templates ("Branded graphic", "Infographic") with
-// @napi-rs/canvas; "Photography" / "Illustration" use the OpenAI Images API when configured. Exact sizes per use.
+// @napi-rs/canvas; "Photography" / "Illustration" use an image model when configured: OpenRouter (if OPENROUTER_API_KEY),
+// then the OpenAI Images API, then xAI. Exact sizes per use (cover-cropped).
 // Without an image model configured, Photography/Illustration fall back to the brand template (DIVERGENCES).
 import path from 'node:path';
 import fs from 'node:fs';
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
 import { drawVisual } from '@/lib/visual';
 import { env } from '../env';
+import { OPENROUTER_BASE, openrouterHeaders, openrouterImageModel, openrouterDown, markOpenrouterDown } from '../ai/adapters/openrouter';
 import { objectKey, putObject } from './storage';
 
 let fontsReady = false;
@@ -26,7 +28,7 @@ export function renderTemplatePng(r: Omit<ImageReq, 'bid'>): Buffer {
   return c.toBuffer('image/png');
 }
 
-export const imageModelConfigured = () => !env.devStubs && !!(env.openaiKey || env.xaiKey);
+export const imageModelConfigured = () => !env.devStubs && !!(env.openrouterKey || env.openaiKey || env.xaiKey);
 /** New articles get a real brand-colored illustration when an image model is available, else the branded graphic. */
 export const defaultArticleImageStyle = (): 'illustration' | 'branded' => (imageModelConfigured() ? 'illustration' : 'branded');
 
@@ -34,6 +36,22 @@ export const defaultArticleImageStyle = (): 'illustration' | 'branded' => (image
 const imgDown = new Map<string, number>();
 const accountFail = (status: number, body: string) => status === 401 || status === 402 || status === 403 || (status === 429 && /quota|credit|billing|insufficient/i.test(body));
 
+/** Closest aspect ratio OpenRouter image models broadly accept; the result is cover-cropped to the exact size anyway. */
+const OR_RATIOS: [string, number][] = [['1:1', 1], ['4:3', 4 / 3], ['3:4', 3 / 4], ['3:2', 3 / 2], ['2:3', 2 / 3], ['16:9', 16 / 9], ['9:16', 9 / 16]];
+export function openrouterAspect(w: number, h: number): string {
+  const r = Math.log(w / h);
+  return OR_RATIOS.reduce((best, cur) => (Math.abs(Math.log(cur[1]) - r) < Math.abs(Math.log(best[1]) - r) ? cur : best))[0];
+}
+async function openrouterImage(prompt: string, w: number, h: number): Promise<Buffer> {
+  const res = await fetch(`${OPENROUTER_BASE}/images`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ model: openrouterImageModel(), prompt, aspect_ratio: openrouterAspect(w, h), n: 1 }) });
+  if (!res.ok) { const t = await res.text(); throw Object.assign(new Error(`openrouter image ${res.status}: ${t.slice(0, 200)}`), { account: accountFail(res.status, t) }); }
+  const j = await res.json();
+  if (j?.error) throw Object.assign(new Error(`openrouter image: ${String(j.error.message || j.error.code || 'error').slice(0, 200)}`), { account: accountFail(Number(j.error.code) || 0, String(j.error.message || '')) });
+  const img = j?.data?.[0];
+  const b64 = String(img?.b64_json || '').replace(/^data:[^,]*,/, ''); if (!b64) throw new Error('openrouter image: empty');
+  if (/svg/i.test(String(img?.media_type || ''))) throw new Error('openrouter image: SVG output is not supported');
+  return Buffer.from(b64, 'base64');
+}
 async function openaiImage(prompt: string, w: number, h: number): Promise<Buffer> {
   const size = w / h > 1.2 ? '1536x1024' : w / h < 0.83 ? '1024x1536' : '1024x1024';
   const res = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { authorization: `Bearer ${env.openaiKey}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1', prompt, size, n: 1 }) });
@@ -68,15 +86,20 @@ export function imagePrompt(r: Pick<ImageReq, 'style' | 'prompt' | 'headline' | 
   return `${style}. Subject: ${r.prompt || r.headline}. Made for ${where}. Color palette built around the brand colors ${r.brand.primary} and ${r.brand.secondary}, with neutral tones. Variation ${r.seed}. No words, letters, numbers, logos or watermarks anywhere in the image.`;
 }
 
-async function generatePhoto(r: ImageReq): Promise<Buffer> {
+export async function generatePhoto(r: ImageReq): Promise<Buffer> {
   const prompt = imagePrompt(r);
   const providers: [string, () => Promise<Buffer>][] = [];
+  if (env.openrouterKey && !openrouterDown()) providers.push(['openrouter', () => openrouterImage(prompt, r.w, r.h)]);
   if (env.openaiKey) providers.push(['openai', () => openaiImage(prompt, r.w, r.h)]);
   if (env.xaiKey) providers.push(['xai', () => xaiImage(prompt, r.w, r.h)]);
   let raw: Buffer | null = null; let last: any = null;
   for (const [name, run] of providers) {
     if ((imgDown.get(name) || 0) > Date.now()) continue;
-    try { raw = await run(); break; } catch (e: any) { last = e; if (e?.account) imgDown.set(name, Date.now() + 10 * 60e3); console.warn('[images]', e?.message); }
+    try { raw = await run(); break; } catch (e: any) {
+      last = e; console.warn('[images]', e?.message);
+      // OpenRouter is one account for text and images: an account failure here pauses it for both.
+      if (e?.account) { imgDown.set(name, Date.now() + 10 * 60e3); if (name === 'openrouter') markOpenrouterDown(String(e?.message || '')); }
+    }
   }
   if (!raw) throw last || new Error('no image provider available');
   // Cover-crop to the exact aspect ratio

@@ -1,0 +1,186 @@
+// OpenRouter adapter (openrouter.ai): OpenAI-compatible Chat Completions with streaming, structured outputs and the
+// openrouter:web_search server tool. Shared OpenRouter config (model map, headers, account cooldown) lives here too so
+// text calls (ai/index.ts), images (services/images.ts) and AI Visibility (services/visibility/engines.ts) agree.
+// Only used when OPENROUTER_API_KEY is set; the direct providers stay as fallback (DIVERGENCES: OpenRouter primary route).
+import { env } from '../../env';
+import { fetchJson, sseEvents } from './http';
+import { claudeSchema } from './anthropic';
+import type { ProviderCall, ProviderResult } from '../index';
+
+export const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
+export const openrouterEnabled = () => !!env.openrouterKey;
+/** HTTP-Referer / X-Title identify the app on OpenRouter (attribution and per-app analytics). */
+export const openrouterHeaders = (): Record<string, string> => ({ 'content-type': 'application/json', authorization: `Bearer ${env.openrouterKey}`, 'HTTP-Referer': env.appUrl, 'X-Title': 'Radar' });
+
+/** Catalogue id (Settings → AI models) → OpenRouter model id. Verified 2026-10-23 against OpenRouter's public API:
+ *  - listed in GET /api/v1/models: claude-opus/sonnet/haiku-5.5, gpt-6.1-sol, gpt-6-sol, gpt-6-luna, grok-4.7;
+ *  - confirmed one by one with GET /api/v1/models/{id}/endpoints (the full list was too long to read in one fetch):
+ *    claude-fable-5.1 (4 endpoints), gpt-6-astra (7), grok-4.6 (6); also grok-4.7, claude-sonnet-5.5, gpt-6-sol,
+ *    which all have endpoints supporting structured_outputs.
+ *  A model left out here (or set to "" in OPENROUTER_MODEL_MAP) is only served by its direct provider. */
+export const OPENROUTER_IDS: Record<string, string> = {
+  'claude-fable-5.1': 'anthropic/claude-fable-5.1', 'claude-opus-5.5': 'anthropic/claude-opus-5.5', 'claude-sonnet-5.5': 'anthropic/claude-sonnet-5.5', 'claude-haiku-5.5': 'anthropic/claude-haiku-5.5',
+  'gpt-6-astra': 'openai/gpt-6-astra', 'gpt-6.1-sol': 'openai/gpt-6.1-sol', 'gpt-6-sol': 'openai/gpt-6-sol', 'gpt-6-luna': 'openai/gpt-6-luna',
+  'grok-4.7': 'x-ai/grok-4.7', 'grok-4.6': 'x-ai/grok-4.6',
+};
+/** Image model default: listed in GET /api/v1/images/models (2026-10-23) with 1:1, 2:3, 3:2, 3:4, 4:3, 9:16, 16:9 among its ratios. */
+export const OPENROUTER_IMAGE_DEFAULT = 'google/gemini-nano-banana-2.1';
+
+function jsonEnv(raw: string): Record<string, string> {
+  try { const v = JSON.parse(raw || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; }
+}
+/** OpenRouter id for a catalogue model, or null when the model has no OpenRouter route. */
+export function openrouterId(catalogueId: string): string | null {
+  const over = jsonEnv(env.openrouterModelMap);
+  if (Object.prototype.hasOwnProperty.call(over, catalogueId)) return String(over[catalogueId] || '') || null;
+  return OPENROUTER_IDS[catalogueId] || null;
+}
+export const openrouterImageModel = () => env.openrouterImageModel || OPENROUTER_IMAGE_DEFAULT;
+
+/* ── Cooldowns (shared by text, images and visibility) ──
+   Account errors (no credit, bad key) pause OpenRouter for 10 minutes, like the direct providers.
+   A model OpenRouter doesn't know is skipped for that model only, for the same period. */
+const DOWN_MS = 10 * 60_000;
+let downUntil = 0;
+const modelSkip = new Map<string, number>();
+export const openrouterDown = () => downUntil > Date.now();
+export function markOpenrouterDown(reason: string) { downUntil = Date.now() + DOWN_MS; console.warn(`[ai] OpenRouter unavailable for 10 min: ${reason.slice(0, 160)}`); }
+export const openrouterSkips = (orModel: string) => (modelSkip.get(orModel) || 0) > Date.now();
+export function skipOpenrouterModel(orModel: string, reason: string) { modelSkip.set(orModel, Date.now() + DOWN_MS); console.warn(`[ai] OpenRouter can't serve ${orModel}, using its direct provider: ${reason.slice(0, 160)}`); }
+/** Tests only. */
+export function resetOpenrouterState() { downUntil = 0; modelSkip.clear(); }
+
+const statusOf = (e: any) => Number(e?.status) || Number(String(e?.message || '').match(/^HTTP (\d{3})/)?.[1]) || 0;
+/** Billing / auth failure on the OpenRouter account. A 403 for a moderation flag is about the request, not the account. */
+export function isOpenrouterAccountError(e: any): boolean {
+  const st = statusOf(e); const msg = String(e?.message || '');
+  if (/moderation|flagged/i.test(msg)) return false;
+  if (st === 401 || st === 402 || st === 403) return true;
+  return st === 429 && /quota|credit|billing|insufficient|spend limit|payment|key limit/i.test(msg);
+}
+/** OpenRouter doesn't have this model (unknown id, or no provider currently serving it). */
+export function isOpenrouterModelMissing(e: any): boolean {
+  const st = statusOf(e); const msg = String(e?.message || '');
+  if (/not a valid model id|model[^.]{0,80}(not found|does not exist|is not available)|no endpoints found for/i.test(msg)) return true;
+  // A 404 because no endpoint supports the requested parameters is about this call (e.g. structured outputs), not the model.
+  return st === 404 && !/parameter|support/i.test(msg);
+}
+
+/** Error object from an OpenRouter body or stream chunk ({ error: { code, message } }) → Error with an HTTP-like status. */
+function bodyError(err: any, where: string): Error {
+  const msg = String(err?.message || err?.metadata?.raw || 'unknown error');
+  const code = Number(err?.code);
+  const e: any = new Error(`${where}: ${err?.code ?? ''} ${msg}`.slice(0, 300));
+  e.status = code >= 400 && code < 600 ? code : /quota|credit|billing|insufficient|payment/i.test(msg) ? 402 : 500;
+  return e;
+}
+
+/** Text + url_citation annotations (+ Perplexity's top-level citations / search_results) from a Chat Completions body. */
+export function openrouterMessage(j: any): { text: string; citations: { url: string; title?: string }[] } {
+  if (j?.error) throw bodyError(j.error, 'OpenRouter error');
+  const ch = j?.choices?.[0];
+  if (ch?.finish_reason === 'error' || ch?.error) throw bodyError(ch?.error || { message: 'finish_reason error' }, 'OpenRouter error');
+  const m = ch?.message || {};
+  const text = typeof m.content === 'string' ? m.content : Array.isArray(m.content) ? m.content.map((p: any) => p?.text || '').join('') : '';
+  const citations: { url: string; title?: string }[] = [];
+  for (const a of m.annotations || []) {
+    if (a?.type !== 'url_citation') continue;
+    const u = a.url_citation?.url || a.url; if (u) citations.push({ url: u, title: a.url_citation?.title || a.title });
+  }
+  for (const u of j?.citations || []) { const url = typeof u === 'string' ? u : u?.url; if (url) citations.push({ url }); }
+  if (!citations.length) for (const s of j?.search_results || []) if (s?.url) citations.push({ url: s.url, title: s.title });
+  return { text, citations };
+}
+function collect(j: any): ProviderResult {
+  const { text, citations } = openrouterMessage(j);
+  return { text, citations, inputTokens: j?.usage?.prompt_tokens, outputTokens: j?.usage?.completion_tokens, costUsd: typeof j?.usage?.cost === 'number' ? j.usage.cost : undefined };
+}
+const addUsage = (out: ProviderResult, r: ProviderResult) => {
+  out.inputTokens = (out.inputTokens || 0) + (r.inputTokens || 0); out.outputTokens = (out.outputTokens || 0) + (r.outputTokens || 0);
+  if (out.costUsd != null || r.costUsd != null) out.costUsd = (out.costUsd || 0) + (r.costUsd || 0);
+};
+
+/** Web search the current OpenRouter way (the `web` plugin and `:online` suffix are deprecated). Engine "auto" uses the
+ *  model provider's native search where it has one, else Exa. Citations come back as url_citation annotations. */
+export const WEB_SEARCH_TOOL = { type: 'openrouter:web_search' };
+
+/** Every object closes and lists all of its properties as required: what OpenAI-style strict mode demands. */
+export function strictCompatible(node: any): boolean {
+  if (Array.isArray(node)) return node.every(strictCompatible);
+  if (!node || typeof node !== 'object') return true;
+  if (node.type === 'object' || node.properties) {
+    const keys = Object.keys(node.properties || {});
+    if (node.additionalProperties !== false) return false;
+    if (!keys.every(k => (node.required || []).includes(k))) return false;
+  }
+  for (const [k, v] of Object.entries(node)) {
+    if (['required', 'enum', 'const', 'default', 'examples'].includes(k)) continue;
+    // Maps of names → subschemas (a property may itself be called "type" or "properties").
+    if ((k === 'properties' || k === '$defs' || k === 'definitions') && v && typeof v === 'object' && !Array.isArray(v)) { if (!Object.values(v).every(strictCompatible)) return false; continue; }
+    if (!strictCompatible(v)) return false;
+  }
+  return true;
+}
+/** response_format for a model family. Anthropic models get the same schema subset the direct adapter sends. */
+export function openrouterResponseFormat(apiModel: string, schemaName: string | undefined, jsonSchema: any) {
+  const anthropic = apiModel.startsWith('anthropic/');
+  const { $schema: _drop, ...rest } = jsonSchema || {};
+  const schema = anthropic ? claudeSchema(jsonSchema) : rest;
+  return { type: 'json_schema', json_schema: { name: (schemaName || 'output').replace(/[^a-zA-Z0-9_-]/g, '_'), strict: anthropic || strictCompatible(schema), schema } };
+}
+
+const post = (body: any, timeoutMs: number) => fetchJson(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify(body), timeoutMs });
+
+export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
+  const messages: any[] = [];
+  if (c.system) messages.push({ role: 'system', content: c.system });
+  messages.push({ role: 'user', content: c.prompt });
+  // temperature: only for Grok, as with the direct adapters (GPT-6 and Claude 5.x reject it).
+  const base: any = { model: c.apiModel, messages, max_tokens: c.maxTokens, ...(c.temperature != null && c.apiModel.startsWith('x-ai/') ? { temperature: c.temperature } : {}) };
+
+  if (c.webSearch && c.jsonSchema) {
+    // Two passes, as in the direct adapters: research with web search in free text, then structure the findings.
+    const researched = collect(await post({ ...base, tools: [WEB_SEARCH_TOOL], messages: [...messages.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }, c.timeoutMs));
+    const prompt = `${c.prompt}\n\nResearch findings to use:\n${researched.text}\n\nSources found:\n${researched.citations.map(x => '- ' + x.url).join('\n')}`;
+    const out = await openrouterRun({ ...c, webSearch: false, prompt });
+    out.citations = [...researched.citations, ...out.citations];
+    addUsage(out, researched);
+    return out;
+  }
+  if (c.jsonSchema) {
+    let out: ProviderResult;
+    try {
+      // require_parameters: only route to endpoints that honour response_format (some Claude hosts don't).
+      out = collect(await post({ ...base, response_format: openrouterResponseFormat(c.apiModel, c.schemaName, c.jsonSchema), provider: { require_parameters: true } }, c.timeoutMs));
+    } catch (e: any) {
+      // A schema the model can't compile: ask for JSON in plain text instead (the caller validates against the full schema).
+      if (!(e?.status === 400 && /schema|response_format|json_schema|strict|structured/i.test(String(e?.message)))) throw e;
+      out = collect(await post({ ...base, messages: [...messages.slice(0, -1), { role: 'user', content: `${c.prompt}\n\nReturn only a JSON value (no prose, no code fences) that matches this JSON Schema:\n${JSON.stringify(c.jsonSchema)}` }] }, c.timeoutMs));
+    }
+    try { out.json = JSON.parse(out.text); } catch { /* extracted and validated upstream */ }
+    return out;
+  }
+  const body = c.webSearch ? { ...base, tools: [WEB_SEARCH_TOOL] } : base;
+  if (!c.onDelta) return collect(await post(body, c.timeoutMs));
+
+  // Streaming (SSE). OpenRouter sends ": OPENROUTER PROCESSING" comment lines (ignored by sseEvents) and ends with [DONE].
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), c.timeoutMs);
+  try {
+    const r = await fetch(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ ...body, stream: true }), signal: ctl.signal });
+    if (!r.ok) { const e: any = new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
+    let text = ''; let usage: any = {}; const citations: { url: string; title?: string }[] = [];
+    for await (const ev of sseEvents(r)) {
+      if (ev.data === '[DONE]') break;
+      let d: any; try { d = JSON.parse(ev.data); } catch { continue; }
+      // Errors after the 200 arrive as a chunk with `error` (and finish_reason "error"): fail so the call fails over.
+      if (d.error) throw bodyError(d.error, 'Stream error');
+      const ch = d.choices?.[0];
+      const delta = ch?.delta?.content;
+      if (typeof delta === 'string' && delta) { text += delta; c.onDelta(delta); }
+      for (const a of ch?.delta?.annotations || []) { const u = a?.url_citation?.url || a?.url; if (u) citations.push({ url: u, title: a?.url_citation?.title || a?.title }); }
+      if (ch?.finish_reason === 'error') throw bodyError(ch.error || { message: 'finish_reason error' }, 'Stream error');
+      if (d.usage) usage = d.usage;
+    }
+    return { text, citations, inputTokens: usage.prompt_tokens, outputTokens: usage.completion_tokens, costUsd: typeof usage.cost === 'number' ? usage.cost : undefined };
+  } finally { clearTimeout(t); }
+}

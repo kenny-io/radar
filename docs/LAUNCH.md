@@ -37,6 +37,7 @@ Defaults per business: writing = GPT-6 Sol (OpenAI), research = Claude Opus 5.5 
 - [ ] **xAI** API key (Grok models + the Grok visibility column) → `XAI_API_KEY`
 - [ ] Verify model ids against your live keys (DIVERGENCES #4); override with `AI_MODEL_MAP` if any differ. Image model: `OPENAI_IMAGE_MODEL` (default `gpt-image-1`).
 - [ ] Set billing limits/alerts on each provider. Cost per call is logged in the `ai_calls` table.
+- [ ] *(Optional, recommended)* **OpenRouter** API key → `OPENROUTER_API_KEY`. Makes OpenRouter the first route for every AI call, image and AI Visibility check; the direct keys above become automatic fallback (and can be left out — models then run on OpenRouter only). Optional overrides: `OPENROUTER_MODEL_MAP` (catalogue id → OpenRouter id, `""` disables one), `OPENROUTER_IMAGE_MODEL` (default `google/gemini-nano-banana-2.1`), `OPENROUTER_VIS_MODELS` (engine → model). Set a credit limit on the OpenRouter key; `ai_calls.provider` reads `openrouter` for calls it served.
 
 ## 4. Data providers
 
@@ -46,7 +47,7 @@ Defaults per business: writing = GPT-6 Sol (OpenAI), research = Claude Opus 5.5 
 
 ## 5. AI Visibility engines
 
-ChatGPT, Claude and Grok reuse the keys from §3. Add:
+ChatGPT, Claude and Grok reuse the keys from §3. With `OPENROUTER_API_KEY` set, all five engines (Perplexity and Gemini included) are asked through OpenRouter first, so the two keys below become fallbacks. Add:
 - [ ] **Perplexity** API key → `PERPLEXITY_API_KEY`
 - [ ] **Google Gemini** API key (AI Studio) → `GEMINI_API_KEY`
 - [ ] Check the queried model ids: `VIS_CHATGPT_MODEL`, `VIS_PERPLEXITY_MODEL`, `VIS_GEMINI_MODEL`, `VIS_CLAUDE_MODEL`, `VIS_GROK_MODEL`.

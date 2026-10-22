@@ -1,6 +1,9 @@
 // AI Visibility collection (02-system.md §11): ask each assistant through its official API with web/search grounding on.
 // These engines are measurement targets, not Radar's own models. Model ids are configurable (VIS_*_MODEL in env.ts).
+// With OPENROUTER_API_KEY set, each engine is asked through OpenRouter first (same model family, web search on) and
+// falls back to its official API on any failure (OPENROUTER_VIS_MODELS overrides the models).
 import { env } from '../../env';
+import { OPENROUTER_BASE, openrouterHeaders, openrouterEnabled, openrouterDown, markOpenrouterDown, isOpenrouterAccountError, openrouterMessage, WEB_SEARCH_TOOL } from '../../ai/adapters/openrouter';
 import type { AiEngine } from '@/lib/types';
 import { stubEngine } from './stub';
 
@@ -41,8 +44,52 @@ async function resolveRedirect(uri: string, title?: string): Promise<string> {
   return title && /\./.test(title) ? `https://${title}` : uri;
 }
 
+/** OpenRouter model per engine, same family as the official API. Ids verified 2026-10-23 (GET /api/v1/models and
+ *  /api/v1/models/{id}/endpoints). Perplexity's Sonar models search on their own; the others use openrouter:web_search. */
+export const OPENROUTER_VIS_DEFAULTS: Record<AiEngine, string> = {
+  ChatGPT: 'openai/gpt-6-sol', Claude: 'anthropic/claude-sonnet-5.5', Grok: 'x-ai/grok-4.7', Gemini: 'google/gemini-4-argon', Perplexity: 'perplexity/sonar-pro',
+};
+export function openrouterVisModel(engine: AiEngine): string | null {
+  let over: Record<string, string> = {};
+  try { const v = JSON.parse(env.openrouterVisModels || '{}'); if (v && typeof v === 'object' && !Array.isArray(v)) over = v; } catch { /* */ }
+  const k = Object.keys(over).find(x => x.toLowerCase() === engine.toLowerCase());
+  if (k !== undefined) return String(over[k] || '') || null;
+  return OPENROUTER_VIS_DEFAULTS[engine] || null;
+}
+
+async function askOpenrouter(model: string, prompt: string): Promise<EngineAnswer> {
+  const body: any = { model, messages: [{ role: 'user', content: prompt }] };
+  if (!model.startsWith('perplexity/')) body.tools = [WEB_SEARCH_TOOL];
+  if (model.startsWith('anthropic/')) body.max_tokens = 2048; // as the direct Claude request
+  const { 'content-type': _ct, ...headers } = openrouterHeaders();
+  const j = await post(`${OPENROUTER_BASE}/chat/completions`, headers, body);
+  const m = openrouterMessage(j);
+  if (!m.text.trim()) throw new Error('empty response');
+  // Google-grounded answers can cite redirect links; resolve them like the direct Gemini path.
+  const cites = await Promise.all(m.citations.map(c => resolveRedirect(c.url, c.title)));
+  return { text: m.text, cites, raw: j };
+}
+
 export async function askEngine(engine: AiEngine, prompt: string, ctx: { stub: { bid: string; profile: any; pages: string[]; manual: boolean } }): Promise<EngineAnswer> {
   if (env.devStubs) return stubEngine(engine, prompt, ctx.stub);
+  let orErr: any = null;
+  const model = openrouterEnabled() ? openrouterVisModel(engine) : null;
+  if (model && !openrouterDown()) {
+    try { return await askOpenrouter(model, prompt); } catch (e: any) {
+      orErr = e;
+      if (isOpenrouterAccountError(e)) markOpenrouterDown(String(e?.message || e));
+      console.warn(`[visibility] ${engine} via OpenRouter failed, trying its official API: ${String(e?.message || e).slice(0, 200)}`);
+    }
+  }
+  try { return await askDirect(engine, prompt); } catch (e) {
+    // OpenRouter was tried and failed, and the official API isn't configured: report the real failure. The cell still
+    // stays "not collected" (never "not mentioned"); EngineUnavailable is reserved for "nothing configured".
+    if (e instanceof EngineUnavailable && orErr) throw orErr;
+    throw e;
+  }
+}
+
+async function askDirect(engine: AiEngine, prompt: string): Promise<EngineAnswer> {
   switch (engine) {
     case 'ChatGPT': {
       if (!env.openaiKey) throw new EngineUnavailable(engine);
