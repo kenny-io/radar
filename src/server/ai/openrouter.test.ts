@@ -12,7 +12,8 @@ vi.mock('../db', () => ({
 
 import { env } from '../env';
 import { run, routes } from './index';
-import { openrouterRun, resetOpenrouterState, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterId, strictCompatible } from './adapters/openrouter';
+import { openrouterRun, resetOpenrouterState, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterId, strictCompatible, openrouterTripped, STREAM_IDLE_MS, BREAKER_MS } from './adapters/openrouter';
+import { OPENROUTER_IMAGE_TIMEOUT_MS } from '../services/images';
 import { generatePhoto, openrouterAspect } from '../services/images';
 import { askEngine, EngineUnavailable } from '../services/visibility/engines';
 
@@ -319,5 +320,144 @@ describe('AI Visibility via OpenRouter', () => {
     const e3 = await askEngine('Perplexity', 'q', ctx).catch(e => e);
     expect(e3).toBeInstanceOf(EngineUnavailable);
     expect(calls).toHaveLength(0);
+  });
+});
+
+/** A fetch body that sends `parts` at the given fake-timer offsets and errors when the request is aborted. */
+function timedStream(signal: AbortSignal | undefined, parts: [number, string][], close = true) {
+  return new Response(new ReadableStream({ start(c) {
+    let at = 0; const timers: any[] = [];
+    for (const [ms, text] of parts) { at = ms; timers.push(setTimeout(() => c.enqueue(new TextEncoder().encode(text)), ms)); }
+    if (close) timers.push(setTimeout(() => c.close(), at + 1));
+    signal?.addEventListener('abort', () => { timers.forEach(clearTimeout); c.error(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })); });
+  } }), { status: 200 });
+}
+function mockFetchInit(handler: (url: string, body: any, init: any) => Response | Promise<Response>) {
+  calls = [];
+  vi.stubGlobal('fetch', vi.fn(async (url: any, init: any = {}) => { const body = init.body ? JSON.parse(init.body) : null; calls.push({ url: String(url), body, headers: init.headers || {} }); return handler(String(url), body, init); }));
+}
+const hang = (init: any) => new Promise<Response>((_, rej) => init.signal?.addEventListener('abort', () => rej(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' }))));
+const oaOk = () => json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'direct' }] }] });
+
+describe('OpenRouter timeouts', () => {
+  afterEach(() => { vi.useRealTimers(); });
+  it('drops a stream that sends no bytes for 45 s and fails over to the direct provider', async () => {
+    vi.useFakeTimers();
+    mockFetchInit((url, _b, init) => (isOR(url) ? timedStream(init.signal, [[1000, ': OPENROUTER PROCESSING\n\n']], false)
+      : sseRaw(sseData([{ type: 'response.output_text.delta', delta: 'direct' }, { type: 'response.completed', response: { usage: {} } }]))));
+    let shown = '';
+    const p = run('writing', { purpose: 't.idle', prompt: 'p', onDelta: d => { shown += d; }, onReset: () => { shown = ''; } });
+    await vi.advanceTimersByTimeAsync(1000 + STREAM_IDLE_MS + 10);
+    const out = await p;
+    expect(out.provider).toBe('OpenAI');
+    expect(shown).toBe('direct');
+    expect(inserted[0]).toMatchObject({ provider: 'openrouter', ok: false, error: 'OpenRouter stream idle for 45s' });
+  });
+  it('keeps a slow stream alive while keep-alive comments arrive', async () => {
+    vi.useFakeTimers();
+    const ka = ': OPENROUTER PROCESSING\n\n';
+    mockFetchInit((url, _b, init) => timedStream(init.signal, [[30_000, ka], [60_000, ka], [90_000, ka], [120_000, `data: ${JSON.stringify({ choices: [{ delta: { content: 'slow but fine' } }] })}\n\n`], [120_001, 'data: [DONE]\n\n']]));
+    const p = run('writing', { purpose: 't.slow', prompt: 'p', onDelta: () => {} });
+    await vi.advanceTimersByTimeAsync(121_000);
+    expect(await p).toMatchObject({ provider: 'openrouter', text: 'slow but fine' });
+  });
+  it('drops a stream whose response headers never arrive within 45 s', async () => {
+    vi.useFakeTimers();
+    mockFetchInit((_u, _b, init) => hang(init));
+    const p = openrouterRun({ apiModel: 'openai/gpt-6-sol', prompt: 'p', maxTokens: 10, timeoutMs: 600_000, onDelta: () => {} }).catch(e => e);
+    await vi.advanceTimersByTimeAsync(STREAM_IDLE_MS + 10);
+    const e = await p;
+    expect(e.message).toMatch(/idle for 45s/);
+    expect(e.timeout).toBe(true);
+  });
+  it('gives the OpenRouter image call 60 s, then tries OpenAI', async () => {
+    vi.useFakeTimers();
+    const c = createCanvas(32, 32); const b64 = c.toBuffer('image/png').toString('base64');
+    mockFetchInit((url, _b, init) => (isOR(url) ? hang(init) : json({ data: [{ b64_json: b64 }] })));
+    const p = generatePhoto({ bid: 'b', style: 'illustration', brand: { primary: '#000', secondary: '#fff' }, headline: 'h', name: 'n', seed: 1, w: 100, h: 100 });
+    await vi.advanceTimersByTimeAsync(OPENROUTER_IMAGE_TIMEOUT_MS + 10);
+    expect(await p).toBeInstanceOf(Buffer);
+    expect(OPENROUTER_IMAGE_TIMEOUT_MS).toBe(60_000);
+    expect(calls.map(x => x.url)).toEqual(['https://openrouter.ai/api/v1/images', 'https://api.openai.com/v1/images/generations']);
+  });
+});
+
+describe('OpenRouter circuit breaker', () => {
+  it('opens after 3 consecutive transient failures and skips OpenRouter for 2 minutes', async () => {
+    mockFetch((url) => (isOR(url) ? json({ error: { message: 'busy' } }, 503) : oaOk()));
+    for (let i = 0; i < 3; i++) expect((await run('writing', { purpose: 't.cb', prompt: 'p' })).provider).toBe('OpenAI');
+    expect(calls.filter(c => isOR(c.url))).toHaveLength(3);
+    expect(openrouterTripped()).toBe(true);
+    calls.length = 0;
+    await run('writing', { purpose: 't.cb4', prompt: 'p' });
+    expect(calls.map(c => c.url)).toEqual(['https://api.openai.com/v1/responses']);
+    expect(routes('writing', 'gpt-6-sol').every(r => r.via === 'direct')).toBe(true);
+    // Not the 10-minute account cooldown: back after 2 minutes.
+    const now = Date.now(); vi.spyOn(Date, 'now').mockReturnValue(now + BREAKER_MS + 1);
+    expect(routes('writing', 'gpt-6-sol')[0]).toEqual({ modelId: 'gpt-6-sol', via: 'openrouter' });
+  });
+  it('trips within a single call (three models) and skips the rest of that call', async () => {
+    mockFetch((url) => (isOR(url) ? json({ error: { message: 'down' } }, 500) : json({ error: { message: 'down' } }, 500)));
+    await run('writing', { purpose: 't.cb1', prompt: 'p' }, { retries: 0 }).catch(() => {});
+    expect(calls.filter(c => isOR(c.url))).toHaveLength(3);
+    expect(openrouterTripped()).toBe(true);
+  });
+  it('counts timeouts and network errors; any OpenRouter answer resets the count', async () => {
+    let mode = 'net';
+    mockFetchInit((url, _b, init) => (!isOR(url) ? oaOk() : mode === 'net' ? Promise.reject(new TypeError('fetch failed')) : mode === 'hang' ? hang(init) : orText('ok')));
+    await run('writing', { purpose: 'a', prompt: 'p' });
+    mode = 'hang'; await run('writing', { purpose: 'b', prompt: 'p', timeoutMs: 20 });
+    expect(openrouterTripped()).toBe(false);
+    mode = 'ok'; expect((await run('writing', { purpose: 'c', prompt: 'p' })).provider).toBe('openrouter');
+    mode = 'net'; await run('writing', { purpose: 'd', prompt: 'p' }); await run('writing', { purpose: 'e', prompt: 'p' });
+    expect(openrouterTripped()).toBe(false); // 2 in a row after the reset
+    await run('writing', { purpose: 'f', prompt: 'p' });
+    expect(openrouterTripped()).toBe(true);
+  });
+  it('does not count request-level errors (400/429/validation)', async () => {
+    mockFetch((url) => (isOR(url) ? json({ error: { message: 'Rate limit exceeded' } }, 429) : oaOk()));
+    for (let i = 0; i < 4; i++) await run('writing', { purpose: 't.429', prompt: 'p' });
+    expect(openrouterTripped()).toBe(false);
+  });
+  it('still uses OpenRouter while open when there is no other route (OpenRouter-only setups)', async () => {
+    mockFetch(() => json({ error: { message: 'busy' } }, 503));
+    for (let i = 0; i < 3; i++) await run('writing', { purpose: 't.trip', prompt: 'p' }, { retries: 0 }).catch(() => {});
+    expect(openrouterTripped()).toBe(true);
+    env.openaiKey = ''; env.anthropicKey = ''; env.xaiKey = '';
+    expect(routes('writing', 'gpt-6-sol').map(r => r.via)).toEqual(['openrouter', 'openrouter', 'openrouter']);
+  });
+  it('applies to AI Visibility and images too, only where an official API exists', async () => {
+    mockFetch(() => json({ error: { message: 'busy' } }, 503));
+    for (let i = 0; i < 3; i++) await run('writing', { purpose: 't.trip', prompt: 'p' }, { retries: 0 }).catch(() => {});
+    expect(openrouterTripped()).toBe(true);
+    const c = createCanvas(16, 16); const b64 = c.toBuffer('image/png').toString('base64');
+    mockFetch((url) => (url.includes('/images') ? json({ data: [{ b64_json: b64 }] }) : url.includes('openai.com') ? oaOk() : json({ choices: [{ message: { content: 'pp' } }] })));
+    await askEngine('ChatGPT', 'q', { stub: { bid: 'b', profile: {}, pages: [], manual: false } });
+    expect(calls.map(x => x.url)).toEqual(['https://api.openai.com/v1/responses']);
+    calls.length = 0;
+    await askEngine('Perplexity', 'q', { stub: { bid: 'b', profile: {}, pages: [], manual: false } }); // no PERPLEXITY_API_KEY
+    expect(calls.map(x => x.url)).toEqual(['https://openrouter.ai/api/v1/chat/completions']);
+    calls.length = 0;
+    await generatePhoto({ bid: 'b', style: 'illustration', brand: { primary: '#000', secondary: '#fff' }, headline: 'h', name: 'n', seed: 1, w: 50, h: 50 });
+    expect(calls.map(x => x.url)).toEqual(['https://api.openai.com/v1/images/generations']);
+  });
+});
+
+describe('OpenRouter 403s', () => {
+  it('a 403 that is about one model skips OpenRouter for that model only', async () => {
+    mockFetch((url, body) => (isOR(url) && body.model === 'openai/gpt-6-sol' ? json({ error: { code: 403, message: 'This model is not available in your region' } }, 403) : isOR(url) ? orText('or') : oaOk()));
+    expect((await run('writing', { purpose: 't.403', prompt: 'p' })).provider).toBe('OpenAI');
+    const r = routes('writing', 'gpt-6-sol');
+    expect(r[0]).toEqual({ modelId: 'gpt-6-sol', via: 'direct' });
+    expect(r).toContainEqual({ modelId: 'claude-sonnet-5.5', via: 'openrouter' });
+  });
+  it('classifies 403s: key/credit wording = account; moderation = this request only; other = model', () => {
+    const e = (m: string) => ({ status: 403, message: `HTTP 403: ${m}` });
+    expect(isOpenrouterAccountError(e('Key limit exceeded (total limit)'))).toBe(true);
+    expect(isOpenrouterAccountError(e('Insufficient credits'))).toBe(true);
+    expect(isOpenrouterAccountError(e('Your input was flagged by moderation'))).toBe(false);
+    expect(isOpenrouterModelMissing(e('Your input was flagged by moderation'))).toBe(false);
+    expect(isOpenrouterAccountError(e('This model is not available in your region'))).toBe(false);
+    expect(isOpenrouterModelMissing(e('This model is not available in your region'))).toBe(true);
   });
 });

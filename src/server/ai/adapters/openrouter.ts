@@ -47,20 +47,48 @@ export const openrouterDown = () => downUntil > Date.now();
 export function markOpenrouterDown(reason: string) { downUntil = Date.now() + DOWN_MS; console.warn(`[ai] OpenRouter unavailable for 10 min: ${reason.slice(0, 160)}`); }
 export const openrouterSkips = (orModel: string) => (modelSkip.get(orModel) || 0) > Date.now();
 export function skipOpenrouterModel(orModel: string, reason: string) { modelSkip.set(orModel, Date.now() + DOWN_MS); console.warn(`[ai] OpenRouter can't serve ${orModel}, using its direct provider: ${reason.slice(0, 160)}`); }
+
+/* Circuit breaker for brownouts: 3 consecutive transient failures (timeout, 5xx, network) skip OpenRouter for 2 minutes
+   wherever another route exists, so calls stop waiting out timeouts before going direct. Any other outcome (success,
+   or an answer OpenRouter did give, even an unusable one) resets the count. Separate from the 10-minute account cooldown. */
+export const BREAKER_FAILS = 3;
+export const BREAKER_MS = 2 * 60_000;
+let strikes = 0;
+let breakerUntil = 0;
+export const openrouterTripped = () => breakerUntil > Date.now();
+export function isOpenrouterTransient(e: any): boolean {
+  if (e?.timeout || e?.name === 'AbortError' || e?.name === 'TimeoutError') return true;
+  const st = statusOf(e);
+  if (st >= 500) return true;
+  return !st && (e instanceof TypeError || /fetch failed|network|socket|ECONN|ETIMEDOUT|EAI_AGAIN|aborted|terminated/i.test(String(e?.message || '')));
+}
+/** Record the outcome of an OpenRouter request (text, image or visibility) for the circuit breaker. */
+export function noteOpenrouterOutcome(e?: any) {
+  if (!e || !isOpenrouterTransient(e)) { strikes = 0; return; }
+  if (++strikes >= BREAKER_FAILS) {
+    strikes = 0; breakerUntil = Date.now() + BREAKER_MS;
+    console.warn(`[ai] OpenRouter failing (${BREAKER_FAILS} timeouts/errors in a row), using direct providers for 2 min: ${String(e?.message || e).slice(0, 160)}`);
+  }
+}
 /** Tests only. */
-export function resetOpenrouterState() { downUntil = 0; modelSkip.clear(); }
+export function resetOpenrouterState() { downUntil = 0; modelSkip.clear(); strikes = 0; breakerUntil = 0; }
 
 const statusOf = (e: any) => Number(e?.status) || Number(String(e?.message || '').match(/^HTTP (\d{3})/)?.[1]) || 0;
-/** Billing / auth failure on the OpenRouter account. A 403 for a moderation flag is about the request, not the account. */
+const ACCOUNT_WORDING = /quota|credit|billing|insufficient|spend limit|payment|key limit|limit exceeded|api key|key (is )?(disabled|revoked|invalid)|account|suspend|banned/i;
+const isModeration = (msg: string) => /moderation|flagged/i.test(msg);
+/** Billing / auth failure on the OpenRouter account. A 403 is an account error only with key/credit wording: a moderation
+ *  flag is about the request, and other 403s (e.g. a model blocked in a region) are about that model. */
 export function isOpenrouterAccountError(e: any): boolean {
   const st = statusOf(e); const msg = String(e?.message || '');
-  if (/moderation|flagged/i.test(msg)) return false;
-  if (st === 401 || st === 402 || st === 403) return true;
+  if (isModeration(msg)) return false;
+  if (st === 401 || st === 402) return true;
+  if (st === 403) return ACCOUNT_WORDING.test(msg);
   return st === 429 && /quota|credit|billing|insufficient|spend limit|payment|key limit/i.test(msg);
 }
-/** OpenRouter doesn't have this model (unknown id, or no provider currently serving it). */
+/** OpenRouter can't serve this model (unknown id, no provider serving it, or a 403 that's about the model). */
 export function isOpenrouterModelMissing(e: any): boolean {
   const st = statusOf(e); const msg = String(e?.message || '');
+  if (st === 403 && !isModeration(msg) && !ACCOUNT_WORDING.test(msg)) return true;
   if (/not a valid model id|model[^.]{0,80}(not found|does not exist|is not available)|no endpoints found for/i.test(msg)) return true;
   // A 404 because no endpoint supports the requested parameters is about this call (e.g. structured outputs), not the model.
   return st === 404 && !/parameter|support/i.test(msg);
@@ -129,6 +157,9 @@ export function openrouterResponseFormat(apiModel: string, schemaName: string | 
   return { type: 'json_schema', json_schema: { name: (schemaName || 'output').replace(/[^a-zA-Z0-9_-]/g, '_'), strict: anthropic || strictCompatible(schema), schema } };
 }
 
+/** A stream with no bytes (not even a keep-alive comment) for this long is treated as hung. */
+export const STREAM_IDLE_MS = 45_000;
+
 const post = (body: any, timeoutMs: number) => fetchJson(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify(body), timeoutMs });
 
 export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
@@ -164,12 +195,19 @@ export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
   if (!c.onDelta) return collect(await post(body, c.timeoutMs));
 
   // Streaming (SSE). OpenRouter sends ": OPENROUTER PROCESSING" comment lines (ignored by sseEvents) and ends with [DONE].
-  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), c.timeoutMs);
+  // Besides the overall timeout, the stream is dropped when no bytes arrive for STREAM_IDLE_MS (from the request on):
+  // OpenRouter's keep-alive comments keep a slow but live generation going; a hung one fails over in under a minute.
+  const ctl = new AbortController(); let idle = false;
+  const t = setTimeout(() => ctl.abort(), c.timeoutMs);
+  let it: ReturnType<typeof setTimeout> | undefined;
+  const touch = () => { clearTimeout(it); it = setTimeout(() => { idle = true; ctl.abort(); }, Math.min(STREAM_IDLE_MS, c.timeoutMs)); };
+  touch();
   try {
     const r = await fetch(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ ...body, stream: true }), signal: ctl.signal });
+    touch();
     if (!r.ok) { const e: any = new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
     let text = ''; let usage: any = {}; const citations: { url: string; title?: string }[] = [];
-    for await (const ev of sseEvents(r)) {
+    for await (const ev of sseEvents(r, touch)) {
       if (ev.data === '[DONE]') break;
       let d: any; try { d = JSON.parse(ev.data); } catch { continue; }
       // Errors after the 200 arrive as a chunk with `error` (and finish_reason "error"): fail so the call fails over.
@@ -182,5 +220,8 @@ export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
       if (d.usage) usage = d.usage;
     }
     return { text, citations, inputTokens: usage.prompt_tokens, outputTokens: usage.completion_tokens, costUsd: typeof usage.cost === 'number' ? usage.cost : undefined };
-  } finally { clearTimeout(t); }
+  } catch (e: any) {
+    if (ctl.signal.aborted) throw Object.assign(new Error(idle ? `OpenRouter stream idle for ${Math.round(Math.min(STREAM_IDLE_MS, c.timeoutMs) / 1000)}s` : `OpenRouter timed out after ${Math.round(c.timeoutMs / 1000)}s`), { timeout: true });
+    throw e;
+  } finally { clearTimeout(t); clearTimeout(it); }
 }

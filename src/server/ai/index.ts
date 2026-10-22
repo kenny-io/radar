@@ -8,7 +8,7 @@ import { RadarError, GENERIC_AI_ERROR } from '../errors';
 import { AI_DEFAULT, aiFind } from '@/lib/constants';
 import { anthropicRun } from './adapters/anthropic';
 import { openaiRun } from './adapters/openai';
-import { openrouterRun, openrouterEnabled, openrouterId, openrouterDown, markOpenrouterDown, openrouterSkips, skipOpenrouterModel, isOpenrouterAccountError, isOpenrouterModelMissing } from './adapters/openrouter';
+import { openrouterRun, openrouterEnabled, openrouterId, openrouterDown, markOpenrouterDown, openrouterSkips, skipOpenrouterModel, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterTripped, noteOpenrouterOutcome } from './adapters/openrouter';
 import { stubRun } from './adapters/stub';
 import type { Profile } from '@/lib/types';
 
@@ -92,8 +92,11 @@ function candidates(task: AiTask, chosen: string): string[] {
 /* OpenRouter primary route (OPENROUTER_API_KEY). Same failover order as above, but each model is tried on OpenRouter
    first, then on its direct provider (if that key is set), before moving to the next model. A model whose direct
    provider has no key can still be served through OpenRouter. OpenRouter account errors pause OpenRouter for 10
-   minutes; a model OpenRouter doesn't have skips OpenRouter for that model only. Without the key: candidates() only. */
-export interface Route { modelId: string; via: 'openrouter' | 'direct' }
+   minutes; a model OpenRouter doesn't have skips OpenRouter for that model only. While the circuit breaker is open
+   (repeated timeouts/5xx), OpenRouter is skipped for models that have a direct route. Without the key: candidates() only. */
+export interface Route { modelId: string; via: 'openrouter' | 'direct'; /** Last-resort route: tried even if marked unavailable. */ force?: boolean }
+/** OpenRouter usable for this model right now? `hasDirect`: the breaker only applies when there's somewhere else to go. */
+const orUsable = (orId: string, hasDirect: boolean) => !openrouterDown() && !openrouterSkips(orId) && !(hasDirect && openrouterTripped());
 export function routes(task: AiTask, chosen: string): Route[] {
   if (!openrouterEnabled()) return candidates(task, chosen).map(modelId => ({ modelId, via: 'direct' as const }));
   const out: Route[] = [];
@@ -103,12 +106,13 @@ export function routes(task: AiTask, chosen: string): Route[] {
     if (seen.has(p)) continue;
     seen.add(p);
     const orId = openrouterId(id);
-    if (orId && !openrouterDown() && !openrouterSkips(orId)) out.push({ modelId: id, via: 'openrouter' });
-    if (hasKey(p) && !isDown(p)) out.push({ modelId: id, via: 'direct' });
+    const direct = hasKey(p) && !isDown(p);
+    if (orId && orUsable(orId, direct)) out.push({ modelId: id, via: 'openrouter' });
+    if (direct) out.push({ modelId: id, via: 'direct' });
   }
   if (out.length) return out;
   // Everything looks unavailable: still try the chosen model on both routes (stale marks should not block all work).
-  return [...(openrouterId(chosen) ? [{ modelId: chosen, via: 'openrouter' as const }] : []), { modelId: chosen, via: 'direct' as const }];
+  return [...(openrouterId(chosen) ? [{ modelId: chosen, via: 'openrouter' as const, force: true }] : []), { modelId: chosen, via: 'direct' as const }];
 }
 
 async function callProvider(modelId: string, c: ProviderCall): Promise<ProviderResult> {
@@ -171,16 +175,21 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
   const plan: Route[] = env.devStubs ? [{ modelId: chosen, via: 'direct' }] : routes(task, chosen);
   let lastErr: any = null;
   for (let ri = 0; ri < plan.length; ri++) {
-    const { modelId, via } = plan[ri];
+    const { modelId, via, force } = plan[ri];
     const provider = providerOf(modelId);
     const viaOr = via === 'openrouter';
     const logProvider = viaOr ? 'openrouter' : provider;
     const orModel = viaOr ? openrouterId(modelId)! : '';
+    const directNext = plan[ri + 1]?.modelId === modelId && plan[ri + 1]?.via === 'direct';
+    // Re-check at each step: an account error, unknown model or open breaker earlier in THIS call also applies here.
+    if (viaOr && !force && !orUsable(orModel, directNext)) continue;
     const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
     // OpenRouter gets one attempt when the same model's direct provider is next in line (failing over is faster than
     // retrying, and OpenRouter already retries across its own hosts); otherwise the usual retries.
-    const tries = viaOr && plan[ri + 1]?.modelId === modelId && plan[ri + 1]?.via === 'direct' ? 0 : retries;
+    const tries = viaOr && directNext ? 0 : retries;
     for (let attempt = 0; attempt <= tries; attempt++) {
+      // A breaker that opened during this route's own retries ends them when a direct route follows.
+      if (viaOr && attempt > 0 && !force && !orUsable(orModel, directNext)) break;
       const t0 = Date.now();
       input.onReset?.();
       try {
@@ -192,6 +201,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
           res = await callProvider(modelId, call);
         }
         // An empty answer is a failure (e.g. a provider that accepts the request and then errors inside the stream).
+        if (viaOr) noteOpenrouterOutcome(); // OpenRouter answered: breaker count resets even if the answer is unusable
         if (!String(res.text || '').trim() && res.json == null) throw new Error('Empty response from ' + logProvider);
         let json: any = null;
         if (input.schema) {
@@ -208,6 +218,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         lastErr = e;
         log(opts.businessId, task, input.purpose, modelId, logProvider, Date.now() - t0, null, false, String(e?.message || e));
         if (viaOr) {
+          noteOpenrouterOutcome(e);
           if (isOpenrouterAccountError(e)) { markOpenrouterDown(String(e?.message || e)); break; }
           if (isOpenrouterModelMissing(e)) { skipOpenrouterModel(orModel, String(e?.message || e)); break; }
         } else if (isAccountError(e)) { downUntil.set(provider, Date.now() + DOWN_MS); console.warn(`[ai] ${provider} unavailable for 10 min: ${String(e?.message || e).slice(0, 160)}`); break; }

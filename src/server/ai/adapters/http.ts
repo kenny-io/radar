@@ -8,10 +8,11 @@ export async function fetchJson(url: string, init: RequestInit & { timeoutMs?: n
   } finally { clearTimeout(t); }
 }
 /** Iterate server-sent events from a fetch Response. */
-export async function* sseEvents(res: Response): AsyncGenerator<{ event: string | null; data: string }> {
+export async function* sseEvents(res: Response, onChunk?: () => void): AsyncGenerator<{ event: string | null; data: string }> {
   const reader = res.body!.getReader(); const dec = new TextDecoder(); let buf = '';
   for (;;) {
     const { done, value } = await reader.read(); if (done) break;
+    onChunk?.(); // any bytes (including SSE comments) count as activity for idle timeouts
     buf += dec.decode(value, { stream: true });
     let i: number;
     while ((i = buf.indexOf('\n\n')) >= 0) {

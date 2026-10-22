@@ -3,7 +3,7 @@
 // With OPENROUTER_API_KEY set, each engine is asked through OpenRouter first (same model family, web search on) and
 // falls back to its official API on any failure (OPENROUTER_VIS_MODELS overrides the models).
 import { env } from '../../env';
-import { OPENROUTER_BASE, openrouterHeaders, openrouterEnabled, openrouterDown, markOpenrouterDown, isOpenrouterAccountError, openrouterMessage, WEB_SEARCH_TOOL } from '../../ai/adapters/openrouter';
+import { OPENROUTER_BASE, openrouterHeaders, openrouterEnabled, openrouterDown, markOpenrouterDown, isOpenrouterAccountError, openrouterMessage, WEB_SEARCH_TOOL, openrouterTripped, noteOpenrouterOutcome } from '../../ai/adapters/openrouter';
 import type { AiEngine } from '@/lib/types';
 import { stubEngine } from './stub';
 
@@ -62,8 +62,11 @@ async function askOpenrouter(model: string, prompt: string): Promise<EngineAnswe
   if (!model.startsWith('perplexity/')) body.tools = [WEB_SEARCH_TOOL];
   if (model.startsWith('anthropic/')) body.max_tokens = 2048; // as the direct Claude request
   const { 'content-type': _ct, ...headers } = openrouterHeaders();
-  const j = await post(`${OPENROUTER_BASE}/chat/completions`, headers, body);
-  const m = openrouterMessage(j);
+  let j: any;
+  try { j = await post(`${OPENROUTER_BASE}/chat/completions`, headers, body); } catch (e) { noteOpenrouterOutcome(e); throw e; }
+  let m: ReturnType<typeof openrouterMessage>;
+  try { m = openrouterMessage(j); } catch (e) { noteOpenrouterOutcome(e); throw e; }
+  noteOpenrouterOutcome(); // OpenRouter answered
   if (!m.text.trim()) throw new Error('empty response');
   // Google-grounded answers can cite redirect links; resolve them like the direct Gemini path.
   const cites = await Promise.all(m.citations.map(c => resolveRedirect(c.url, c.title)));
@@ -74,7 +77,8 @@ export async function askEngine(engine: AiEngine, prompt: string, ctx: { stub: {
   if (env.devStubs) return stubEngine(engine, prompt, ctx.stub);
   let orErr: any = null;
   const model = openrouterEnabled() ? openrouterVisModel(engine) : null;
-  if (model && !openrouterDown()) {
+  // The breaker (repeated OpenRouter timeouts/5xx) only skips OpenRouter when the engine's official API is configured.
+  if (model && !openrouterDown() && !(openrouterTripped() && hasDirect(engine))) {
     try { return await askOpenrouter(model, prompt); } catch (e: any) {
       orErr = e;
       if (isOpenrouterAccountError(e)) markOpenrouterDown(String(e?.message || e));
@@ -88,6 +92,8 @@ export async function askEngine(engine: AiEngine, prompt: string, ctx: { stub: {
     throw e;
   }
 }
+
+const hasDirect = (engine: AiEngine) => !!({ ChatGPT: env.openaiKey, Perplexity: env.perplexityKey, Gemini: env.geminiKey, Claude: env.anthropicKey, Grok: env.xaiKey } as Record<AiEngine, string>)[engine];
 
 async function askDirect(engine: AiEngine, prompt: string): Promise<EngineAnswer> {
   switch (engine) {

@@ -7,7 +7,7 @@
 // captured from the parent commit (ed5ec34). Re-capture with: QA_CAPTURE=/path/out.json vitest run -t parity
 // (run in a checkout of the parent commit).
 //
-// Tests marked it.fails document real bugs: they assert the expected behaviour and currently fail.
+// Two tests here were it.fails (bugs found by QA); both are fixed and now plain tests.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
@@ -256,12 +256,12 @@ describe('route order with OPENROUTER_API_KEY', () => {
     expect(r.provider).toBe('OpenAI');
     expect(calls.map(tag)).toEqual([OA]);
   });
-  it.fails('BUG: after an OpenRouter account error, later models in the SAME call still try OpenRouter', async () => {
-    // routes() is computed once before the loop; markOpenrouterDown() doesn't remove the remaining OpenRouter routes.
+  it('after an OpenRouter account error, later models in the SAME call skip OpenRouter', async () => {
+    // Was a bug: routes() is computed once, so each OpenRouter step now re-checks the cooldown before running.
     const { ai } = await bootOR();
     mockFetch(u => (isOR(u) ? err(402, 'Insufficient credits') : err(500, 'down')));
     await caught(ai.run('writing', { purpose: 'x', prompt: 'p' }));
-    expect(calls.filter(c => isOR(c.url))).toHaveLength(1); // actual: 3 (or:gpt, or:claude, or:grok)
+    expect(calls.filter(c => isOR(c.url))).toHaveLength(1); // was 3 (or:gpt, or:claude, or:grok)
   });
 });
 
@@ -302,12 +302,12 @@ describe('OpenRouter failure handling', () => {
     await ai.run('writing', { purpose: 'x', prompt: 'p' });
     expect(calls.map(tag)[0]).toBe('or:openai/gpt-6-sol');
   });
-  it.fails('BUG: a moderation-flagged 403 on an IMAGE request pauses OpenRouter for text and images for 10 minutes', async () => {
+  it('a moderation-flagged 403 on an IMAGE request does not pause OpenRouter', async () => {
     const { ai, images } = await bootOR();
     const b64 = pngB64();
     mockFetch(u => (isOR(u) ? json({ error: { code: 403, message: 'Your input was flagged by moderation' } }, 403) : json({ data: [{ b64_json: b64 }] })));
     await images.generatePhoto(imgReq(1200, 628) as any);
-    // Expected: request-level refusal, OpenRouter stays available. Actual: images.ts accountFail() treats any 403 as account.
+    // Request-level refusal: OpenRouter stays available (images.ts used to treat any 403 as an account error).
     expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('openrouter');
   });
   it('404 unknown model → skips OpenRouter for that model only (10 min), others still use it', async () => {
