@@ -82,7 +82,7 @@ describe('OpenRouter route order', () => {
     expect(c.headers).toMatchObject({ authorization: 'Bearer or-key', 'HTTP-Referer': 'https://radar.example', 'X-Title': 'Radar' });
     expect(c.body).toMatchObject({ model: 'openai/gpt-6-sol', max_tokens: 321, messages: [{ role: 'system', content: 'sys' }, { role: 'user', content: 'hi' }] });
     expect(c.body.temperature).toBeUndefined();
-    expect(c.body.stream).toBeUndefined();
+    expect(c.body.stream).toBe(true); // every OpenRouter call streams (idle timeout)
   });
 });
 
@@ -281,7 +281,7 @@ describe('AI Visibility via OpenRouter', () => {
     const a = await askEngine('ChatGPT', 'best docs tool?', ctx);
     expect(a.text).toBe('Try Acme and Foo.');
     expect(a.cites).toEqual(['https://acme.example/', 'https://foo.example/x']);
-    expect(calls[0].body).toEqual({ model: 'openai/gpt-6-sol', messages: [{ role: 'user', content: 'best docs tool?' }], tools: [{ type: 'openrouter:web_search' }] });
+    expect(calls[0].body).toEqual({ model: 'openai/gpt-6-sol', messages: [{ role: 'user', content: 'best docs tool?' }], tools: [{ type: 'openrouter:web_search' }], stream: true });
   });
   it('uses each engine\'s model family; Perplexity searches on its own', async () => {
     mockFetch(() => json({ choices: [{ message: { content: 'answer' } }], citations: ['https://p.example/1'] }));
@@ -402,17 +402,23 @@ describe('OpenRouter circuit breaker', () => {
     expect(calls.filter(c => isOR(c.url))).toHaveLength(3);
     expect(openrouterTripped()).toBe(true);
   });
-  it('counts timeouts and network errors; any OpenRouter answer resets the count', async () => {
+  it('counts network errors 3 in a row; any OpenRouter answer resets the count', async () => {
     let mode = 'net';
-    mockFetchInit((url, _b, init) => (!isOR(url) ? oaOk() : mode === 'net' ? Promise.reject(new TypeError('fetch failed')) : mode === 'hang' ? hang(init) : orText('ok')));
-    await run('writing', { purpose: 'a', prompt: 'p' });
-    mode = 'hang'; await run('writing', { purpose: 'b', prompt: 'p', timeoutMs: 20 });
+    mockFetchInit((url) => (!isOR(url) ? oaOk() : mode === 'net' ? Promise.reject(new TypeError('fetch failed')) : orText('ok')));
+    await run('writing', { purpose: 'a', prompt: 'p' }); await run('writing', { purpose: 'b', prompt: 'p' });
     expect(openrouterTripped()).toBe(false);
     mode = 'ok'; expect((await run('writing', { purpose: 'c', prompt: 'p' })).provider).toBe('openrouter');
     mode = 'net'; await run('writing', { purpose: 'd', prompt: 'p' }); await run('writing', { purpose: 'e', prompt: 'p' });
     expect(openrouterTripped()).toBe(false); // 2 in a row after the reset
     await run('writing', { purpose: 'f', prompt: 'p' });
     expect(openrouterTripped()).toBe(true);
+  });
+  it('a single timeout opens the breaker at once', async () => {
+    mockFetchInit((url, _b, init) => (isOR(url) ? hang(init) : oaOk()));
+    expect((await run('writing', { purpose: 't.to', prompt: 'p', timeoutMs: 20 })).provider).toBe('OpenAI');
+    expect(calls.filter(c => isOR(c.url))).toHaveLength(1);
+    expect(openrouterTripped()).toBe(true);
+    expect(inserted[0]).toMatchObject({ provider: 'openrouter', ok: false, error: 'OpenRouter timed out after 0s' });
   });
   it('does not count request-level errors (400/429/validation)', async () => {
     mockFetch((url) => (isOR(url) ? json({ error: { message: 'Rate limit exceeded' } }, 429) : oaOk()));
@@ -459,5 +465,61 @@ describe('OpenRouter 403s', () => {
     expect(isOpenrouterModelMissing(e('Your input was flagged by moderation'))).toBe(false);
     expect(isOpenrouterAccountError(e('This model is not available in your region'))).toBe(false);
     expect(isOpenrouterModelMissing(e('This model is not available in your region'))).toBe(true);
+  });
+});
+
+describe('every OpenRouter text call streams (PM 2026-10-23)', () => {
+  afterEach(() => { vi.useRealTimers(); });
+  const S = z.object({ title: z.string().max(40), tags: z.array(z.string()).max(3) });
+  it('structured-output calls send stream:true and parse the JSON assembled from the deltas', async () => {
+    mockFetch(() => sseRaw([': OPENROUTER PROCESSING\n\n', ...sseData([
+      { id: 'gen-9', model: 'openai/gpt-6-sol', choices: [{ delta: { role: 'assistant', content: '{"title":"Str' } }] },
+      { choices: [{ delta: { content: 'eamed","tags":["a",' } }] },
+      { choices: [{ delta: { content: '"b"]}' }, finish_reason: 'stop' }] },
+      { choices: [], usage: { prompt_tokens: 9, completion_tokens: 8, cost: 0.003 } }]), 'data: [DONE]\n\n']));
+    const onDelta = vi.fn();
+    const out = await run('writing', { purpose: 't.sjson', prompt: 'p', schema: S, onDelta });
+    expect(calls[0].body).toMatchObject({ stream: true, provider: { require_parameters: true }, response_format: { type: 'json_schema' } });
+    expect(out).toMatchObject({ provider: 'openrouter', json: { title: 'Streamed', tags: ['a', 'b'] } });
+    expect(onDelta).not.toHaveBeenCalled(); // JSON isn't streamed to the user
+    expect(inserted.at(-1)).toMatchObject({ provider: 'openrouter', ok: true, inputTokens: 9, outputTokens: 8, costUsd: 0.003 });
+  });
+  it('plain calls without onDelta and the research pass stream too; citations come from delta annotations', async () => {
+    let n = 0;
+    mockFetch(() => (++n === 1
+      ? sseRaw(sseData([{ choices: [{ delta: { content: 'findings' } }] }, { choices: [{ delta: { annotations: [{ type: 'url_citation', url_citation: { url: 'https://s.example/1', title: 'S' } }] }, finish_reason: 'stop' }] }]))
+      : sseRaw(sseData([{ choices: [{ delta: { content: '{"title":"t","tags":[]}' }, finish_reason: 'stop' }] }]))));
+    const out = await run('research', { purpose: 't.r', prompt: 'p', schema: S, webSearch: true });
+    expect(calls.map(c => c.body.stream)).toEqual([true, true]);
+    expect(out.citations).toEqual([{ url: 'https://s.example/1', title: 'S' }]);
+    expect(calls[1].body.messages.at(-1).content).toContain('https://s.example/1');
+  });
+  it('the schema-400 plain-JSON retry streams as well', async () => {
+    let n = 0;
+    mockFetch(() => (++n === 1 ? json({ error: { code: 400, message: 'Invalid schema for response_format' } }, 400) : sseRaw(sseData([{ choices: [{ delta: { content: '{"title":"t","tags":[]}' } }] }]))));
+    const out = await run('writing', { purpose: 't.r400', prompt: 'p', schema: S });
+    expect(out.json).toEqual({ title: 't', tags: [] });
+    expect(calls.map(c => [c.body.stream, !!c.body.response_format])).toEqual([[true, true], [true, false]]);
+  });
+  it('a hung JSON call is cut at 45 s of silence, falls back direct and opens the breaker', async () => {
+    vi.useFakeTimers();
+    mockFetchInit((url, _b, init) => (isOR(url) ? timedStream(init.signal, [[5_000, ': OPENROUTER PROCESSING\n\n']], false) : json({ output: [{ type: 'message', content: [{ type: 'output_text', text: '{"title":"D","tags":[]}' }] }] })));
+    const p = run('writing', { purpose: 't.hang', prompt: 'p', schema: S }); // default timeout is minutes; idle cuts it
+    await vi.advanceTimersByTimeAsync(5_000 + STREAM_IDLE_MS + 10);
+    const out = await p;
+    expect(out).toMatchObject({ provider: 'OpenAI', json: { title: 'D', tags: [] } });
+    expect(inserted[0]).toMatchObject({ provider: 'openrouter', ok: false, error: 'OpenRouter stream idle for 45s' });
+    expect(openrouterTripped()).toBe(true);
+    calls.length = 0;
+    await run('writing', { purpose: 't.hang2', prompt: 'p', schema: S });
+    expect(calls.some(c => isOR(c.url))).toBe(false);
+  });
+  it('AI Visibility streams and stores the reassembled completion as raw (Perplexity citations on chunks)', async () => {
+    mockFetch(() => sseRaw(sseData([{ id: 'g', model: 'perplexity/sonar-pro', choices: [{ delta: { content: 'Acme ' } }], citations: ['https://p.example/1'] }, { choices: [{ delta: { content: 'leads.' }, finish_reason: 'stop' }], citations: ['https://p.example/1', 'https://p.example/2'] }])));
+    const a = await askEngine('Perplexity', 'q', { stub: { bid: 'b', profile: {}, pages: [], manual: false } });
+    expect(calls[0].body.stream).toBe(true);
+    expect(a.text).toBe('Acme leads.');
+    expect(a.cites).toEqual(['https://p.example/1', 'https://p.example/2']);
+    expect(a.raw).toMatchObject({ id: 'g', model: 'perplexity/sonar-pro', choices: [{ message: { content: 'Acme leads.' }, finish_reason: 'stop' }] });
   });
 });

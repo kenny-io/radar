@@ -3,7 +3,7 @@
 // text calls (ai/index.ts), images (services/images.ts) and AI Visibility (services/visibility/engines.ts) agree.
 // Only used when OPENROUTER_API_KEY is set; the direct providers stay as fallback (DIVERGENCES: OpenRouter primary route).
 import { env } from '../../env';
-import { fetchJson, sseEvents } from './http';
+import { sseEvents } from './http';
 import { claudeSchema } from './anthropic';
 import type { ProviderCall, ProviderResult } from '../index';
 
@@ -49,7 +49,7 @@ export const openrouterSkips = (orModel: string) => (modelSkip.get(orModel) || 0
 export function skipOpenrouterModel(orModel: string, reason: string) { modelSkip.set(orModel, Date.now() + DOWN_MS); console.warn(`[ai] OpenRouter can't serve ${orModel}, using its direct provider: ${reason.slice(0, 160)}`); }
 
 /* Circuit breaker for brownouts: 3 consecutive transient failures (timeout, 5xx, network) skip OpenRouter for 2 minutes
-   wherever another route exists, so calls stop waiting out timeouts before going direct. Any other outcome (success,
+   wherever another route exists, so calls stop waiting out timeouts before going direct. A single timeout counts as 3. Any other outcome (success,
    or an answer OpenRouter did give, even an unusable one) resets the count. Separate from the 10-minute account cooldown. */
 export const BREAKER_FAILS = 3;
 export const BREAKER_MS = 2 * 60_000;
@@ -63,11 +63,14 @@ export function isOpenrouterTransient(e: any): boolean {
   return !st && (e instanceof TypeError || /fetch failed|network|socket|ECONN|ETIMEDOUT|EAI_AGAIN|aborted|terminated/i.test(String(e?.message || '')));
 }
 /** Record the outcome of an OpenRouter request (text, image or visibility) for the circuit breaker. */
+export const isOpenrouterTimeout = (e: any) => !!(e?.timeout || e?.name === 'AbortError' || e?.name === 'TimeoutError');
 export function noteOpenrouterOutcome(e?: any) {
   if (!e || !isOpenrouterTransient(e)) { strikes = 0; return; }
-  if (++strikes >= BREAKER_FAILS) {
+  // A timeout (idle or total) is the clearest brownout signal: it opens the breaker at once. 5xx/network: 3 in a row.
+  strikes += isOpenrouterTimeout(e) ? BREAKER_FAILS : 1;
+  if (strikes >= BREAKER_FAILS) {
     strikes = 0; breakerUntil = Date.now() + BREAKER_MS;
-    console.warn(`[ai] OpenRouter failing (${BREAKER_FAILS} timeouts/errors in a row), using direct providers for 2 min: ${String(e?.message || e).slice(0, 160)}`);
+    console.warn(`[ai] OpenRouter timing out or failing, using direct providers for 2 min: ${String(e?.message || e).slice(0, 160)}`);
   }
 }
 /** Tests only. */
@@ -160,7 +163,58 @@ export function openrouterResponseFormat(apiModel: string, schemaName: string | 
 /** A stream with no bytes (not even a keep-alive comment) for this long is treated as hung. */
 export const STREAM_IDLE_MS = 45_000;
 
-const post = (body: any, timeoutMs: number) => fetchJson(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify(body), timeoutMs });
+async function readAll(r: Response, onChunk: () => void): Promise<string> {
+  if (!r.body) return '';
+  const reader = r.body.getReader(); const dec = new TextDecoder(); let out = '';
+  for (;;) { const { done, value } = await reader.read(); if (done) break; onChunk(); out += dec.decode(value, { stream: true }); }
+  return out + dec.decode();
+}
+
+/** POST /chat/completions, always with stream:true so every call is covered by the idle timeout: the request is dropped
+ *  when no bytes (not even OpenRouter's ": OPENROUTER PROCESSING" keep-alive comments) arrive for STREAM_IDLE_MS, from
+ *  the moment it's sent; `timeoutMs` still caps the whole call. The SSE stream is reassembled into the usual
+ *  chat.completion shape (text, url_citation annotations, Perplexity citations/search_results, usage) so callers parse
+ *  one format; a plain JSON body is accepted too. Errors inside the stream throw (so the call fails over). */
+export async function openrouterChat(body: any, opts: { timeoutMs: number; onDelta?: (d: string) => void }): Promise<any> {
+  const ctl = new AbortController(); let idle = false;
+  const idleMs = Math.min(STREAM_IDLE_MS, opts.timeoutMs);
+  const t = setTimeout(() => ctl.abort(), opts.timeoutMs);
+  let it: ReturnType<typeof setTimeout> | undefined;
+  const touch = () => { clearTimeout(it); it = setTimeout(() => { idle = true; ctl.abort(); }, idleMs); };
+  touch();
+  try {
+    const r = await fetch(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ ...body, stream: true }), signal: ctl.signal });
+    touch();
+    if (!r.ok) { const txt = await readAll(r, touch); const e: any = new Error(`HTTP ${r.status}: ${txt.slice(0, 400)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
+    if (/application\/json/i.test(r.headers.get('content-type') || '')) { const txt = await readAll(r, touch); return txt ? JSON.parse(txt) : {}; }
+    let text = ''; let id: any, model: any, usage: any, finish: any, citations: any, searchResults: any;
+    const annotations: any[] = [];
+    for await (const ev of sseEvents(r, touch)) {
+      if (ev.data === '[DONE]') break;
+      let d: any; try { d = JSON.parse(ev.data); } catch { continue; }
+      // Errors after the 200 arrive as a chunk with `error` (and finish_reason "error"): fail so the call fails over.
+      if (d.error) throw bodyError(d.error, 'Stream error');
+      id ??= d.id; model ??= d.model;
+      const ch = d.choices?.[0];
+      const delta = ch?.delta?.content;
+      if (typeof delta === 'string' && delta) { text += delta; opts.onDelta?.(delta); }
+      for (const a of ch?.delta?.annotations || ch?.message?.annotations || []) annotations.push(a);
+      if (Array.isArray(d.citations)) citations = d.citations;
+      if (Array.isArray(d.search_results)) searchResults = d.search_results;
+      if (ch?.finish_reason === 'error') throw bodyError(ch.error || { message: 'finish_reason error' }, 'Stream error');
+      if (ch?.finish_reason) finish = ch.finish_reason;
+      if (d.usage) usage = d.usage;
+    }
+    return {
+      id, model, object: 'chat.completion',
+      choices: [{ index: 0, message: { role: 'assistant', content: text, ...(annotations.length ? { annotations } : {}) }, finish_reason: finish ?? null }],
+      ...(usage ? { usage } : {}), ...(citations ? { citations } : {}), ...(searchResults ? { search_results: searchResults } : {}),
+    };
+  } catch (e: any) {
+    if (ctl.signal.aborted) throw Object.assign(new Error(idle ? `OpenRouter stream idle for ${Math.round(idleMs / 1000)}s` : `OpenRouter timed out after ${Math.round(opts.timeoutMs / 1000)}s`), { timeout: true });
+    throw e;
+  } finally { clearTimeout(t); clearTimeout(it); }
+}
 
 export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
   const messages: any[] = [];
@@ -168,10 +222,11 @@ export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
   messages.push({ role: 'user', content: c.prompt });
   // temperature: only for Grok, as with the direct adapters (GPT-6 and Claude 5.x reject it).
   const base: any = { model: c.apiModel, messages, max_tokens: c.maxTokens, ...(c.temperature != null && c.apiModel.startsWith('x-ai/') ? { temperature: c.temperature } : {}) };
+  const send = (body: any, onDelta?: (d: string) => void) => openrouterChat(body, { timeoutMs: c.timeoutMs, onDelta });
 
   if (c.webSearch && c.jsonSchema) {
     // Two passes, as in the direct adapters: research with web search in free text, then structure the findings.
-    const researched = collect(await post({ ...base, tools: [WEB_SEARCH_TOOL], messages: [...messages.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }, c.timeoutMs));
+    const researched = collect(await send({ ...base, tools: [WEB_SEARCH_TOOL], messages: [...messages.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }));
     const prompt = `${c.prompt}\n\nResearch findings to use:\n${researched.text}\n\nSources found:\n${researched.citations.map(x => '- ' + x.url).join('\n')}`;
     const out = await openrouterRun({ ...c, webSearch: false, prompt });
     out.citations = [...researched.citations, ...out.citations];
@@ -179,49 +234,18 @@ export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
     return out;
   }
   if (c.jsonSchema) {
+    // Streamed too (for the idle timeout), but JSON deltas aren't shown to the user: parsed once the stream ends.
     let out: ProviderResult;
     try {
       // require_parameters: only route to endpoints that honour response_format (some Claude hosts don't).
-      out = collect(await post({ ...base, response_format: openrouterResponseFormat(c.apiModel, c.schemaName, c.jsonSchema), provider: { require_parameters: true } }, c.timeoutMs));
+      out = collect(await send({ ...base, response_format: openrouterResponseFormat(c.apiModel, c.schemaName, c.jsonSchema), provider: { require_parameters: true } }));
     } catch (e: any) {
       // A schema the model can't compile: ask for JSON in plain text instead (the caller validates against the full schema).
       if (!(e?.status === 400 && /schema|response_format|json_schema|strict|structured/i.test(String(e?.message)))) throw e;
-      out = collect(await post({ ...base, messages: [...messages.slice(0, -1), { role: 'user', content: `${c.prompt}\n\nReturn only a JSON value (no prose, no code fences) that matches this JSON Schema:\n${JSON.stringify(c.jsonSchema)}` }] }, c.timeoutMs));
+      out = collect(await send({ ...base, messages: [...messages.slice(0, -1), { role: 'user', content: `${c.prompt}\n\nReturn only a JSON value (no prose, no code fences) that matches this JSON Schema:\n${JSON.stringify(c.jsonSchema)}` }] }));
     }
     try { out.json = JSON.parse(out.text); } catch { /* extracted and validated upstream */ }
     return out;
   }
-  const body = c.webSearch ? { ...base, tools: [WEB_SEARCH_TOOL] } : base;
-  if (!c.onDelta) return collect(await post(body, c.timeoutMs));
-
-  // Streaming (SSE). OpenRouter sends ": OPENROUTER PROCESSING" comment lines (ignored by sseEvents) and ends with [DONE].
-  // Besides the overall timeout, the stream is dropped when no bytes arrive for STREAM_IDLE_MS (from the request on):
-  // OpenRouter's keep-alive comments keep a slow but live generation going; a hung one fails over in under a minute.
-  const ctl = new AbortController(); let idle = false;
-  const t = setTimeout(() => ctl.abort(), c.timeoutMs);
-  let it: ReturnType<typeof setTimeout> | undefined;
-  const touch = () => { clearTimeout(it); it = setTimeout(() => { idle = true; ctl.abort(); }, Math.min(STREAM_IDLE_MS, c.timeoutMs)); };
-  touch();
-  try {
-    const r = await fetch(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ ...body, stream: true }), signal: ctl.signal });
-    touch();
-    if (!r.ok) { const e: any = new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
-    let text = ''; let usage: any = {}; const citations: { url: string; title?: string }[] = [];
-    for await (const ev of sseEvents(r, touch)) {
-      if (ev.data === '[DONE]') break;
-      let d: any; try { d = JSON.parse(ev.data); } catch { continue; }
-      // Errors after the 200 arrive as a chunk with `error` (and finish_reason "error"): fail so the call fails over.
-      if (d.error) throw bodyError(d.error, 'Stream error');
-      const ch = d.choices?.[0];
-      const delta = ch?.delta?.content;
-      if (typeof delta === 'string' && delta) { text += delta; c.onDelta(delta); }
-      for (const a of ch?.delta?.annotations || []) { const u = a?.url_citation?.url || a?.url; if (u) citations.push({ url: u, title: a?.url_citation?.title || a?.title }); }
-      if (ch?.finish_reason === 'error') throw bodyError(ch.error || { message: 'finish_reason error' }, 'Stream error');
-      if (d.usage) usage = d.usage;
-    }
-    return { text, citations, inputTokens: usage.prompt_tokens, outputTokens: usage.completion_tokens, costUsd: typeof usage.cost === 'number' ? usage.cost : undefined };
-  } catch (e: any) {
-    if (ctl.signal.aborted) throw Object.assign(new Error(idle ? `OpenRouter stream idle for ${Math.round(Math.min(STREAM_IDLE_MS, c.timeoutMs) / 1000)}s` : `OpenRouter timed out after ${Math.round(c.timeoutMs / 1000)}s`), { timeout: true });
-    throw e;
-  } finally { clearTimeout(t); clearTimeout(it); }
+  return collect(await send(c.webSearch ? { ...base, tools: [WEB_SEARCH_TOOL] } : base, c.onDelta));
 }

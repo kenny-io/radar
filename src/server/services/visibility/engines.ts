@@ -3,7 +3,7 @@
 // With OPENROUTER_API_KEY set, each engine is asked through OpenRouter first (same model family, web search on) and
 // falls back to its official API on any failure (OPENROUTER_VIS_MODELS overrides the models).
 import { env } from '../../env';
-import { OPENROUTER_BASE, openrouterHeaders, openrouterEnabled, openrouterDown, markOpenrouterDown, isOpenrouterAccountError, openrouterMessage, WEB_SEARCH_TOOL, openrouterTripped, noteOpenrouterOutcome } from '../../ai/adapters/openrouter';
+import { openrouterChat, openrouterEnabled, openrouterDown, markOpenrouterDown, isOpenrouterAccountError, openrouterMessage, WEB_SEARCH_TOOL, openrouterTripped, noteOpenrouterOutcome } from '../../ai/adapters/openrouter';
 import type { AiEngine } from '@/lib/types';
 import { stubEngine } from './stub';
 
@@ -61,9 +61,10 @@ async function askOpenrouter(model: string, prompt: string): Promise<EngineAnswe
   const body: any = { model, messages: [{ role: 'user', content: prompt }] };
   if (!model.startsWith('perplexity/')) body.tools = [WEB_SEARCH_TOOL];
   if (model.startsWith('anthropic/')) body.max_tokens = 2048; // as the direct Claude request
-  const { 'content-type': _ct, ...headers } = openrouterHeaders();
+  // Streamed like every OpenRouter text call (45 s idle timeout), within the same 90 s total as the official APIs.
+  // `raw` is the reassembled chat.completion.
   let j: any;
-  try { j = await post(`${OPENROUTER_BASE}/chat/completions`, headers, body); } catch (e) { noteOpenrouterOutcome(e); throw e; }
+  try { j = await openrouterChat(body, { timeoutMs: 90_000 }); } catch (e) { noteOpenrouterOutcome(e); throw e; }
   let m: ReturnType<typeof openrouterMessage>;
   try { m = openrouterMessage(j); } catch (e) { noteOpenrouterOutcome(e); throw e; }
   noteOpenrouterOutcome(); // OpenRouter answered

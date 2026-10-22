@@ -344,13 +344,16 @@ describe('OpenRouter failure handling', () => {
       expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('openrouter');
     });
   }
-  it('network timeout → aborts after timeoutMs and falls back, no cooldown', async () => {
+  it('network timeout → aborts after timeoutMs, falls back, opens the 2-minute breaker (not the 10-minute cooldown)', async () => {
     const { ai } = await bootOR();
     mockFetch((u, _b, init) => (isOR(u) ? new Promise<Response>((_, rej) => init.signal.addEventListener('abort', () => rej(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })))) : oaText('direct')));
     const t0 = Date.now();
     const r = await ai.run('writing', { purpose: 'x', prompt: 'p', timeoutMs: 60 });
     expect(Date.now() - t0).toBeLessThan(2000);
     expect(r.provider).toBe('OpenAI');
+    // PM 2026-10-23: one timeout counts as 3 strikes → breaker open for 2 minutes.
+    expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('direct');
+    const now = Date.now(); vi.spyOn(Date, 'now').mockReturnValue(now + 2 * 60_000 + 1);
     expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('openrouter');
   });
   it('network error (fetch rejects) → falls back', async () => {
@@ -409,12 +412,14 @@ describe('OpenRouter failure handling', () => {
 /* ════════════════════════════ 4. Structured outputs ════════════════════════════ */
 
 describe('OpenRouter structured outputs', () => {
-  it('request shape: json_schema + strict + require_parameters, no stream/tools, even when onDelta is given', async () => {
+  it('request shape: json_schema + strict + require_parameters, streamed (PM 2026-10-23) but no JSON deltas shown, no tools', async () => {
     const { ai } = await bootOR();
     mockFetch(() => orText('{"title":"T","tags":[]}'));
-    await ai.run('writing', { purpose: 'x', prompt: 'p', schema: Post, schemaName: 'social post!', onDelta: () => {} });
+    const onDelta = vi.fn();
+    await ai.run('writing', { purpose: 'x', prompt: 'p', schema: Post, schemaName: 'social post!', onDelta });
     const b = calls[0].body;
-    expect(b.stream).toBeUndefined();
+    expect(b.stream).toBe(true); // every OpenRouter text call streams so the 45 s idle timeout covers it
+    expect(onDelta).not.toHaveBeenCalled();
     expect(b.tools).toBeUndefined();
     expect(b.provider).toEqual({ require_parameters: true });
     expect(b.response_format.type).toBe('json_schema');
