@@ -146,7 +146,7 @@ export function DailyBrief() {
       if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); const n = order[Math.min(order.length - 1, idx + 1)]; n && setSel(n.id); }
       else if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); const n = order[Math.max(0, idx - 1)]; n && setSel(n.id); }
       else if (e.key === 'c' && it && day === today && isLive(it)) act.copy(it);
-      else if (e.key === 's' && it && day === today && it.st !== 'posted' && it.st !== 'skipped' && it.st !== 'expired') act.skip(it);
+      else if (e.key === 's' && it && day === today && it.st !== 'posted' && it.st !== 'skipped' && it.st !== 'expired' && it.st !== 'scheduled') act.skip(it);
     };
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [sel, order.map(i => i.id + i.st).join(), sheet, scan, day, overlay]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -396,7 +396,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       {!postDirect && !replyDirect && it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
       {!postDirect && it.st === 'copied' && <><Btn kind="primary" icon="check" onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" onClick={() => act.copy(it)}>Copy again</Btn></>}
       {it.st === 'posted' && <Status tone="ok">{postedL(pub)}</Status>}
-      {it.st === 'posted' && pub?.direct && <Btn size="sm" kind="ghost" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}>{`View on ${ppl}`}</Btn>}
+      {it.st === 'posted' && pub?.direct && <Btn size="sm" kind="ghost" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={pub.platform}>{`View on ${ppl}`}</LogoLabel></Btn>}
       {it.st === 'skipped' && <span className="small sub">Skipped</span>}
       {live && <span style={{ position: 'relative' }} ref={anchor}><Btn kind="ghost" icon="wand" disabled={busy} onClick={() => setMenu(!menu)} aria-haspopup="menu">Rewrite</Btn>
         <Popover anchor={anchor} open={menu} onClose={() => setMenu(false)} style={{ width: 260 }}>
