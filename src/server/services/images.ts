@@ -123,11 +123,15 @@ export async function generatePhoto(r: ImageReq): Promise<Buffer> {
   return c.toBuffer('image/png');
 }
 
-/** Render or generate a visual and store it. Returns a public URL. */
-export async function renderImage(r: ImageReq): Promise<string> {
+/** Render or generate a visual and store it. Returns the public URL plus the stored file's size and type (social posting
+ *  checks them against each platform's limits without fetching the file). */
+export async function renderImageFile(r: ImageReq): Promise<{ url: string; bytes: number; type: string }> {
   let png: Buffer;
   if (MODEL_STYLES.includes(r.style) && imageModelConfigured()) {
     try { png = await generatePhoto(r); } catch (e: any) { console.error('[images] generation failed, using template', e.message); png = renderTemplatePng(r); }
   } else png = renderTemplatePng(r);
-  return putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');
+  const url = await putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');
+  return { url, bytes: png.length, type: 'image/png' };
 }
+/** Render or generate a visual and store it. Returns a public URL. */
+export async function renderImage(r: ImageReq): Promise<string> { return (await renderImageFile(r)).url; }
