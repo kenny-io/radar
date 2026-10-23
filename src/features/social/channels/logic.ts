@@ -53,6 +53,11 @@ export function chipLabel(it: SocialItem) {
   return `${PLAT_L[it.k]} · ${st} · ${it.name}${it.acctLabel ? ' · ' + it.acctLabel : ''}${draggable ? ' · drag to another day' : ''}`;
 }
 
+/** "As …" on a posted panel: the account's current label, else the label saved when it went out ('' = omit the line, e.g. after a disconnect). */
+export const postedAs = (pub: Pick<Pub, 'acct' | 'acctLabel'>, accts: SocialAccount[]) => {
+  const a = accts.find(x => x.id === pub.acct); return a ? acctLabel(a) : pub.acctLabel || '';
+};
+
 /* ── Dashboard → Needs attention ── */
 export interface SocialIssue { id: string; tone: 'bad' | 'warn'; label: string; head: string; body: string; open?: SocialItem; reconnect?: SocialAccount }
 /** "A post didn’t go out" (Fix and retry opens the first failed post) and one "Reconnect {channel}" per expired account. */

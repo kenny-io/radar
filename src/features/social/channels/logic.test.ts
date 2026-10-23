@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COPY, dueAtIso, socialItems } from '@/lib/socialPublish';
 import type { BriefItem, Pub, SocialAccount, SocialPack, Workspace } from '@/lib/types';
-import { chipLabel, dropKind, findPub, planMove, scheduleAllRows, socialIssues, withPub } from './logic';
+import { chipLabel, dropKind, postedAs, findPub, planMove, scheduleAllRows, socialIssues, withPub } from './logic';
 
 const TZ = 'America/New_York'; const TODAY = '2026-10-23';
 const NOW = Date.parse('2026-10-23T15:00:00Z'); // 11:00 AM ET
@@ -91,6 +91,17 @@ describe('calendar chip label', () => {
     const [posted, sched] = socialItems(B, NOW);
     expect(chipLabel(sched)).toBe('LinkedIn · Scheduled 9:00 AM · Pack p1 · Fieldnote · Page · drag to another day');
     expect(chipLabel(posted)).toBe('X · Posted · Pack p1 · @fieldnoteapp');
+  });
+});
+
+describe('posted panel after a disconnect', () => {
+  it('keeps "Posted" with the account label, the saved label, or no "As" line', async () => {
+    const { packPanelState } = await import('@/lib/socialPublish');
+    const p = pub({ platform: 'x', date: TODAY, time: '07:10', status: 'posted', acct: 'gone', acctLabel: '@oldhandle', url: 'https://x.com/a/status/1' });
+    expect(packPanelState('x', { pub: p }, [], null, NOW)).toBe('posted');
+    expect(postedAs({ ...p, acct: X.id }, [X])).toBe('@fieldnoteapp');
+    expect(postedAs(p, [X])).toBe('@oldhandle');
+    expect(postedAs({ ...p, acctLabel: undefined }, [])).toBe('');
   });
 });
 

@@ -11,7 +11,7 @@ import type { Platform, Pub, SocialAccount, SocialChannel, SocialPack, SocialPos
 import { ConnectSocial } from './ConnectSocial';
 import { LogoLabel } from './LogoLabel';
 import { ScheduleModal } from './ScheduleModal';
-import { repub, withPub } from './logic';
+import { postedAs, repub, withPub } from './logic';
 import { useNowMs } from './useSocial';
 
 /** Preflight problems: amber dot + text, with a one-click fix where there is one. */
@@ -87,9 +87,10 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
     <span className="xs sub" style={{ textAlign: 'center' }}>Connect once to post or schedule from Radar.</span>
     {secondary}{modals}
   </div>;
+  const as = pub ? postedAs(pub, all) : '';
   if (state === 'posted' && pub) return <div className="col" style={{ gap: 12 }}>
     <Status tone="ok">{`Posted ${at(pub)}`}</Status>
-    <span className="small sub" style={{ marginTop: -6 }}>{`As ${pub.acctLabel || label}`}</span>
+    {as && <span className="small sub" style={{ marginTop: -6 }}>{`As ${as}`}</span>}
     <Btn className="btn-block" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={k}>{`View on ${pl}`}</LogoLabel></Btn>
     {secondary}
   </div>;
