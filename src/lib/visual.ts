@@ -9,16 +9,46 @@ export const onColor = (hex: string) => (lum(hex) > .4 ? '#17181C' : '#FFFFFF');
 function wrapText(ctx: any, text: string, maxW: number) { const words = String(text).split(' '); const lines: string[] = []; let l = ''; words.forEach(w => { const t = l ? l + ' ' + w : w; if (ctx.measureText(t).width > maxW && l) { lines.push(l); l = w; } else l = t; }); if (l) lines.push(l); return lines; }
 export function mulberry(a: number) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
+/** Number of "Branded graphic" compositions (the seed picks one). */
+export const BRANDED_LAYOUTS = 5;
 export function drawVisual(ctx: any, { w, h, style, brand, headline, seed = 1, name, fontFamily }: VisualOpts) {
   const R = mulberry(seed * 9973); const P = brand.primary, S = brand.secondary; const F = fontFamily || '"Geist", system-ui, sans-serif';
   ctx.clearRect(0, 0, w, h); const u = Math.min(w, h) / 100;
   const text = (t: string, x: number, y: number, size: number, color: string, maxW: number, weight = 600, lh = 1.08) => { ctx.font = `${weight} ${size}px ${F}`; ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; const ls = wrapText(ctx, t, maxW).slice(0, 4); ls.forEach((l, i) => ctx.fillText(l, x, y + i * size * lh)); return ls.length * size * lh; };
   if (style === 'branded') {
-    ctx.fillStyle = P; ctx.fillRect(0, 0, w, h); const oc = onColor(P);
-    ctx.fillStyle = S; ctx.beginPath(); ctx.arc(w * (.78 + R() * .1), h * (.2 + R() * .1), u * (16 + R() * 10), 0, 7); ctx.fill();
-    ctx.fillStyle = S; ctx.fillRect(u * 7, u * 8, u * 10, u * 1.4);
-    ctx.font = `500 ${u * 3.6}px ${F}`; ctx.fillStyle = oc; ctx.globalAlpha = .8; ctx.fillText(name || '', u * 7, h - u * 7); ctx.globalAlpha = 1;
-    ctx.font = `600 ${u * 8}px ${F}`; const ls = wrapText(ctx, headline, w - u * 16).slice(0, 4); const top = h - u * 14 - ls.length * u * 8.6; text(headline, u * 7, top + u * 8, u * 8, oc, w - u * 16);
+    // Five compositions; the seed picks one (Regenerate steps the seed by 11, so every regenerate shows a new layout),
+    // and every other cycle swaps the brand colors. Shapes are decorative; the headline always sits on a solid fill.
+    const L = BRANDED_LAYOUTS, n = Math.floor(Math.abs(seed)), layout = n % L;
+    const swap = Math.floor(n / L) % 2 === 1 && lum(S) < .4; // only swap to a background that keeps white text readable
+    const bg = swap ? S : P, fg = swap ? P : S, oc = onColor(bg);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+    const sizeH = u * 8, maxW = w - u * 16;
+    const lines = () => { ctx.font = `600 ${sizeH}px ${F}`; return wrapText(ctx, headline, maxW).slice(0, 4).length; };
+    const bottomHead = () => { const top = h - u * 14 - lines() * u * 8.6; text(headline, u * 7, top + u * 8, sizeH, oc, maxW); };
+    const topHead = (y0 = u * 20) => text(headline, u * 7, y0, sizeH, oc, maxW);
+    ctx.fillStyle = fg;
+    if (layout === 0) { // sun: one disc top-right, rule top-left, headline bottom-left
+      ctx.beginPath(); ctx.arc(w * (.78 + R() * .1), h * (.2 + R() * .1), u * (16 + R() * 10), 0, 7); ctx.fill();
+      ctx.fillRect(u * 7, u * 8, u * 10, u * 1.4); bottomHead();
+    } else if (layout === 1) { // rings: concentric arcs from the bottom-right corner, headline top-left
+      ctx.strokeStyle = fg; ctx.lineWidth = u * (1.6 + R()); const r0 = u * (18 + R() * 8);
+      for (let i = 0; i < 5; i++) { ctx.globalAlpha = 1 - i * .16; ctx.beginPath(); ctx.arc(w, h, r0 + i * u * 9, Math.PI, Math.PI * 1.5); ctx.stroke(); }
+      ctx.globalAlpha = 1; ctx.fillRect(u * 7, u * 8, u * 4, u * 4); topHead(u * 24);
+    } else if (layout === 2) { // band: a diagonal stripe across the top half, headline bottom-left
+      const y = h * (.08 + R() * .06), t = u * (6 + R() * 3); // left edge stays above the headline
+      ctx.beginPath(); ctx.moveTo(0, y + t * 2); ctx.lineTo(w, y - t); ctx.lineTo(w, y + t); ctx.lineTo(0, y + t * 4); ctx.closePath(); ctx.fill();
+      bottomHead();
+    } else if (layout === 3) { // dots: a grid of dots on the right, headline top-left
+      const cols = 6, gap = u * (6 + R() * 2), r = u * (1.2 + R() * .8), x0 = w - u * 8 - (cols - 1) * gap, y0 = h - u * 8 - (cols - 1) * gap;
+      for (let i = 0; i < cols; i++) for (let j = 0; j < cols; j++) { if (i + j < cols - 2) continue; ctx.beginPath(); ctx.arc(x0 + i * gap, y0 + j * gap, r, 0, 7); ctx.fill(); }
+      ctx.fillRect(u * 7, u * 8, u * 10, u * 1.4); topHead(u * 22);
+    } else { // blocks: overlapping squares top-right, headline bottom-left
+      const s = u * (20 + R() * 8), x = w - u * 8 - s, y = u * 8;
+      ctx.globalAlpha = .45; ctx.fillRect(x - s * .35, y + s * .35, s, s); ctx.globalAlpha = 1; ctx.fillRect(x, y, s, s);
+      bottomHead();
+    }
+    ctx.font = `500 ${u * 3.6}px ${F}`; ctx.fillStyle = oc; ctx.globalAlpha = .8;
+    ctx.fillText(name || '', u * 7, h - u * 7); ctx.globalAlpha = 1;
   } else if (style === 'infographic') {
     ctx.fillStyle = '#FAF8F3'; ctx.fillRect(0, 0, w, h); const m = (headline.match(/\d+[%x]?/) || ['3x'])[0];
     ctx.font = `600 ${u * 26}px ${F}`; ctx.fillStyle = P; ctx.fillText(m, u * 7, u * 32);
