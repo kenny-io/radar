@@ -1,7 +1,7 @@
 # Launch checklist — running Radar as a live product
 
 Everything you need to create, configure and provide. Env var names match `.env.example`.
-`{APP_URL}` = your production URL, e.g. `https://app.radar.yourdomain.com`.
+`{APP_URL}` = your production URL. Radar's production URL is **`https://radar.thally.io`** (set `APP_URL` to exactly this on web and worker), so e.g. the X callback is `https://radar.thally.io/api/oauth/x/callback`.
 
 ---
 

@@ -8,6 +8,8 @@ Researched and written 2026-10-23 from the official docs (links in §8). These p
 
 ---
 
+> **Radar's production URL is `https://radar.thally.io`** (owner, 2026-10-23). Callbacks: X `https://radar.thally.io/api/oauth/x/callback`, LinkedIn profile `https://radar.thally.io/api/oauth/linkedin/callback`, LinkedIn page `https://radar.thally.io/api/oauth/linkedin_page/callback`. `APP_URL` must be `https://radar.thally.io` on web and worker. The apps are created under Thally's accounts for now; the X app is the existing Thally app, renamed "Radar".
+
 ## 1. Read this first
 
 1. **X "Reply now" will almost always be refused.** Since 23 Feb 2026, on every self-serve plan (pay-per-use and the legacy Free, Basic and Pro), an API reply is allowed only when the author of the original post @mentioned your account or quoted one of your posts. Otherwise X rejects it with a 403 error. Daily Brief replies go to strangers' threads, so most will fail. Only Enterprise access lifts this rule.
