@@ -12,7 +12,14 @@
 | Migrate + seed | `npm run db:migrate`, `npx tsx scripts/dev-seed.ts` | pass |
 
 ## Feature checks
-(none yet)
+### Integrated revision dcba6fcc (PM)
+| Check | Command | Result |
+|---|---|---|
+| Typecheck | `npm run typecheck` | pass |
+| Tests | `DATABASE_URL=…/radar npm test` | 249/250 (baseline openrouter.qa snapshot only). Includes 35 backend tests (DB-backed `publish.test.ts` needs `DATABASE_URL`, else it skips), 18 frontend logic tests, 42 shared-helper tests |
+| Production build | `npm run build` | pass |
+| Migrate | `npm run db:migrate` on radar, radar_qa, a throwaway fresh DB (backend engineer) | pass |
+| Engineer evidence | backend HTTP smoke on 3101 (scheduled send by worker, failure, retry, expire/held/reconnect, other-account refused, disconnect counts, flag off); frontend flag-off pixel diff 35/36 identical (1 = animation timing), 30 flag-on flows against a temporary local shim | reported by engineers, see handbacks |
 
 ## Not run / blocked
 - Live X OAuth + posting and live LinkedIn OAuth + posting (profile and page) are blocked: no developer apps or credentials, and LinkedIn page scopes need approval.
