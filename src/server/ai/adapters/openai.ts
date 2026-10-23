@@ -14,19 +14,28 @@ function collect(res: any): ProviderResult {
   return { text, citations, inputTokens: res.usage?.input_tokens, outputTokens: res.usage?.output_tokens };
 }
 
+/** A model that rejects the reasoning setting is retried once without it (the setting is a speed hint, never required). */
 export async function openaiRun(c: ProviderCall, cfg: { base: string; key: string }): Promise<ProviderResult> {
+  try { return await openaiRunOnce(c, cfg); } catch (e: any) {
+    if (c.effort && e?.status === 400 && /reasoning|effort/i.test(String(e?.message))) return openaiRunOnce({ ...c, effort: undefined }, cfg);
+    throw e;
+  }
+}
+async function openaiRunOnce(c: ProviderCall, cfg: { base: string; key: string }): Promise<ProviderResult> {
   const headers = { 'content-type': 'application/json', authorization: `Bearer ${cfg.key}` };
   const input: any[] = [];
   if (c.system) input.push({ role: 'system', content: c.system });
   input.push({ role: 'user', content: c.prompt });
   // temperature: only xAI accepts it; OpenAI's GPT-6 models reject it ("Unsupported parameter: 'temperature'").
   const body: any = { model: c.apiModel, input, max_output_tokens: c.maxTokens, ...(c.temperature != null && cfg.base.includes('x.ai') ? { temperature: c.temperature } : {}) };
+  // Reasoning effort: xAI only (documented for Grok on the Responses API; GPT-6 support isn't verified).
+  if (c.effort && cfg.base.includes('x.ai')) body.reasoning = { effort: c.effort };
   if (c.webSearch && c.jsonSchema) {
     // Two passes, as in the Anthropic adapter: research with web search in free text, then structure the findings.
     // A single search+schema call can return an empty structure after searching (seen with Grok).
     const researched = collect(await fetchJson(`${cfg.base}/responses`, { method: 'POST', headers, body: JSON.stringify({ ...body, tools: [{ type: 'web_search' }], input: [...input.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }), timeoutMs: c.timeoutMs }));
     const prompt = `${c.prompt}\n\nResearch findings to use:\n${researched.text}\n\nSources found:\n${researched.citations.map(x => '- ' + x.url).join('\n')}`;
-    const out = await openaiRun({ ...c, webSearch: false, prompt }, cfg);
+    const out = await openaiRunOnce({ ...c, webSearch: false, prompt }, cfg);
     out.citations = [...researched.citations, ...out.citations];
     out.inputTokens = (out.inputTokens || 0) + (researched.inputTokens || 0); out.outputTokens = (out.outputTokens || 0) + (researched.outputTokens || 0);
     return out;

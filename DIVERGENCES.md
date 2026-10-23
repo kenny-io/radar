@@ -361,3 +361,9 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 - **Before:** the Branded graphic was one fixed composition, and the seed only nudged the disc a few pixels, so Regenerate looked like it reloaded the same image.
 - **Now:** five compositions (sun, rings, band, dots, blocks), picked by the seed. Regenerate steps the seed by 11, so every press shows a different one. Brand colors swap on alternate cycles, but only when the secondary color is dark enough to keep white text readable.
 - Branded graphic is still a brand template rendered on the server, not an AI image. AI images come from the Illustration and Photography styles.
+
+## 2026-10-23 · Short copy asks reasoning models to think less
+- Grok 4.7 defaults to `reasoning.effort: "high"`. Regenerating a 280-character X post spent about 15k reasoning tokens and 2.5 minutes per try, and the post writer can try up to 3 times.
+- `ai.run` now takes `effort`. Social posts and the Daily Brief replies, rewrites and posts send `effort: 'low'` to Grok, both direct (xAI Responses API) and through OpenRouter (`reasoning.effort`).
+- Measured on production with the same prompt: high took 20.0s and 2,421 output tokens; low took 2.3s and 140.
+- If a model rejects the setting, the call is retried once without it. OpenAI isn't sent the setting, because GPT-6 support isn't verified. Claude isn't affected, because it doesn't reason unless extended thinking is on.

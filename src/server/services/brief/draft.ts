@@ -61,7 +61,7 @@ ${profileContext(p)}`;
     `Engagement: ${s.eng || 'unknown'}.`, s.asks ? 'They explicitly ask for a tool or recommendation.' : 'They are not asking for a tool.',
     s.promoBanned ? 'This community forbids self-promotion: make the "mention" variant identical to "help".' : `The "mention" variant must name ${name}.`,
   ].filter(Boolean).join('\n');
-  const out = await ai.run('writing', { purpose: 'brief.reply', system, prompt, schema: ReplyDraft, schemaName: 'reply', maxTokens: 1500, stubContext: { profile: p, cand: s, replyTo } }, { businessId: bid });
+  const out = await ai.run('writing', { purpose: 'brief.reply', effort: 'low', system, prompt, schema: ReplyDraft, schemaName: 'reply', maxTokens: 1500, stubContext: { profile: p, cand: s, replyTo } }, { businessId: bid });
   const d = out.json!;
   const ctx = { plat: s.plat, name, domain: p.domain };
   const help = cleanReply(d.help, 'help', ctx);
@@ -107,7 +107,7 @@ ${profileContext(p)}`;
     replyTo ? `You are replying to ${replyTo.who}: ${replyTo.text}` : '',
     `Engagement: ${s.eng || 'unknown'}.`, s.asks ? 'They explicitly ask for a tool or recommendation.' : 'They are not asking for a tool; add something useful the company can speak to.',
   ].filter(Boolean).join('\n');
-  const out = await ai.run('writing', { purpose: 'brief.brand', system, prompt, schema: BrandDraft, schemaName: 'reply', maxTokens: 1000, stubContext: { profile: p, cand: s, replyTo } }, { businessId: bid });
+  const out = await ai.run('writing', { purpose: 'brief.brand', effort: 'low', system, prompt, schema: BrandDraft, schemaName: 'reply', maxTokens: 1000, stubContext: { profile: p, cand: s, replyTo } }, { businessId: bid });
   const d = out.json!;
   const allowed = coAllowed(p, `${s.title}\n${s.body || ''}\n${replyTo?.text || ''}`);
   const brand = cleanBrand(d.brand, { plat: s.plat, name, domain: p.domain }, allowed);
@@ -201,7 +201,7 @@ ${profileContext(p)}`;
 Evidence: ${t.threads.length} thread(s) in the last two days, ${t.comments} comments in total${t.recurring ? '' : ' (one thread)'}.
 Threads: ${t.threads.slice(0, 5).map(x => `"${clip(x.title, 140)}" (${BPLAT[x.plat]}, ${x.eng || 'no count'})`).join('; ')}
 Platforms: ${platsFor(t).join(', ')}`).join('\n\n');
-  const out = await ai.run('writing', { purpose: 'brief.posts', system, prompt, schema: PostsSchema, schemaName: 'posts', maxTokens: 2500, stubContext: { profile: p, acct, themes: themes.map(t => ({ ...t, plats: platsFor(t) })) } }, { businessId: bid });
+  const out = await ai.run('writing', { purpose: 'brief.posts', effort: 'low', system, prompt, schema: PostsSchema, schemaName: 'posts', maxTokens: 2500, stubContext: { profile: p, acct, themes: themes.map(t => ({ ...t, plats: platsFor(t) })) } }, { businessId: bid });
   const items: BriefItem[] = [];
   (out.json?.posts || []).slice(0, themes.length).forEach((po, i) => {
     const t = themes[i]; const plats = platsFor(t);
@@ -237,7 +237,7 @@ export async function rewriteItem(p: Profile, it: BriefItem, text: string, instr
   const ctx = reply
     ? `Platform: ${BPLAT[plat]} (${it.where})\nThread: ${it.title}\n${it.body || ''}\n${it.replyTo ? `Replying to ${it.replyTo.who}: ${it.replyTo.text}` : ''}`
     : `Platform: ${BPLAT[plat]}\nTopic: ${it.title}`;
-  const out = await ai.run('writing', { purpose: 'brief.rewrite', system, prompt: `${ctx}\n\nCurrent draft:\n${text}\n\nWhat to change: ${instruction}`, maxTokens: 900, stubContext: { profile: p, item: it, text, instruction } }, { businessId: bid, retries: 1 });
+  const out = await ai.run('writing', { purpose: 'brief.rewrite', effort: 'low', system, prompt: `${ctx}\n\nCurrent draft:\n${text}\n\nWhat to change: ${instruction}`, maxTokens: 900, stubContext: { profile: p, item: it, text, instruction } }, { businessId: bid, retries: 1 });
   const raw = String(out.text || '').trim().replace(/^"|"$/g, '');
   if (!raw) throw new Error('empty rewrite');
   const rctx = { plat, name: n, domain: p.domain };
