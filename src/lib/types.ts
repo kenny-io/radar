@@ -106,7 +106,7 @@ export interface SocialAccount {
 export interface MediaMeta { bytes: number; type: string }
 export type PubStatus = 'scheduled' | 'sending' | 'posted' | 'failed';
 /** Why a pub failed (drives copy; `unknown` must not say "Nothing was published"). */
-export type PubErrCode = 'rejected' | 'duplicate' | 'too_long' | 'media' | 'rate_limit' | 'unavailable' | 'auth' | 'reply_restricted' | 'unknown' | 'stale';
+export type PubErrCode = 'rejected' | 'duplicate' | 'too_long' | 'media' | 'rate_limit' | 'unavailable' | 'auth' | 'quota' | 'unknown' | 'stale';
 /** A post Radar scheduled or sent (handoff §1 `Pub`, plus server-computed fields). */
 export interface Pub {
   status: PubStatus;

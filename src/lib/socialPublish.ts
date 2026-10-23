@@ -71,18 +71,29 @@ export const IMAGE_TYPES: Record<PostPlatform, string[]> = { x: ['image/jpeg', '
 /** LinkedIn Images API: fewer than 36,152,320 pixels (checked on the server, where dimensions are known). */
 export const LINKEDIN_MAX_PIXELS = 36_152_320;
 const X_URL_LEN = 23;
-const URL_RE = /https?:\/\/[^\s<>"]+/gi;
-// twitter-text v3: these code point ranges weigh 1, everything else 2 (CJK, emoji…). Max weighted length 280.
+// URLs as X counts them: with a scheme, or a bare domain on a known TLD (twitter-text links "radar.app" too). Not emails or @/#/$ tokens.
+const X_TLDS = 'com|net|org|io|app|ai|co|dev|xyz|me|us|uk|de|fr|ca|au|in|info|biz|tv|so|gg|ly|sh|to|fm|news|blog|shop|store|site|online|tech|cloud|page|link|today|world|live|life|design|studio|agency|ventures|capital|finance|money|email|digital|network|solutions|group|media|services|company|inc|llc|ng|ke|za|ae|eu|es|it|nl|se|no|fi|dk|pl|ch|at|be|pt|br|mx|jp|cn|kr|sg|hk|nz|ie';
+const URL_RE = new RegExp(`https?:\\/\\/[^\\s<>"]+|(?<![\\w@.$#/-])(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+(?:${X_TLDS})(?![a-z0-9-])(?:[/?#][^\\s<>"]*)?`, 'gi');
+// twitter-text v3: these code point ranges weigh 1, everything else 2 (CJK…); every emoji sequence (ZWJ families, skin tones,
+// flags, ❤️) counts 2 as a whole. Max weighted length 280.
 const X_LIGHT: [number, number][] = [[0, 4351], [8192, 8205], [8208, 8223], [8242, 8247]];
+const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+const graphemes = (t: string): string[] => typeof Intl !== 'undefined' && 'Segmenter' in Intl
+  ? Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(t), g => g.segment) : [...t];
 
-/** Characters as each platform counts them: X uses weighted length (every URL = 23), LinkedIn code points. */
+/** Characters as each platform counts them: X uses weighted length (every URL = 23, emoji = 2), LinkedIn code points. */
 export function charCount(k: PostPlatform, text: string): number {
   if (k === 'linkedin') return [...text].length;
   let n = 0;
   const rest = text.replace(URL_RE, () => { n += X_URL_LEN; return ''; });
-  for (const ch of rest) { const cp = ch.codePointAt(0)!; n += X_LIGHT.some(([a, b]) => cp >= a && cp <= b) ? 1 : 2; }
+  for (const g of graphemes(rest)) {
+    if (EMOJI_RE.test(g)) { n += 2; continue; }
+    for (const ch of g) { const cp = ch.codePointAt(0)!; n += X_LIGHT.some(([a, b]) => cp >= a && cp <= b) ? 1 : 2; }
+  }
   return n;
 }
+/** Does the text carry a link as X sees it (scheme or bare domain)? Drives the link price. */
+export const hasLink = (text: string) => new RegExp(URL_RE.source, 'i').test(text);
 
 export type ProblemCode = 'empty' | 'too_long' | 'too_many_images' | 'images_pending' | 'image_too_big' | 'image_format';
 export interface Problem { code: ProblemCode; msg: string; fix?: { l: string; action: 'compress' } }
@@ -226,7 +237,7 @@ export function errCopy(code: PubErrCode, k: PostPlatform): string {
     case 'rate_limit': return `${pl} is limiting posts right now. Try again later.`;
     case 'unavailable': return `${pl} didn’t respond.`;
     case 'auth': return `${pl} refused Radar’s access. Reconnect and try again.`;
-    case 'reply_restricted': return 'X only lets apps reply when the post mentions you. Reply in X’s own box instead.';
+    case 'quota': return `${pl} isn’t accepting posts from Radar right now. Try again later.`;
     case 'unknown': return `Radar couldn’t confirm the post went out. Check ${pl} before trying again.`;
     case 'stale': return 'It couldn’t go out on time, so Radar held it back.';
     default: return `${pl} rejected the post.`;
@@ -257,9 +268,10 @@ export function xReplyMode(it: Pick<BriefItem, 'kind' | 'plat' | 'url'>): 'inten
 }
 
 /* ── Estimated platform cost per publish (X pay-per-use, Oct 2026; LinkedIn is free). Logged in event props, never shown. ── */
-export const X_COST_USD = { post: 0.015, postWithLink: 0.2, reply: 0.01 } as const;
-export const publishCostUsd = (k: PostPlatform, kind: 'post' | 'reply', text: string) =>
-  k !== 'x' ? 0 : kind === 'reply' ? X_COST_USD.reply : new RegExp(URL_RE.source, 'i').test(text) ? X_COST_USD.postWithLink : X_COST_USD.post;
+export const X_COST_USD = { post: 0.015, postWithLink: 0.2 } as const;
+/** Radar never posts replies (X's reply box is used), so only posts are priced. */
+export const publishCostUsd = (k: PostPlatform, _kind: 'post', text: string) =>
+  k !== 'x' ? 0 : hasLink(text) ? X_COST_USD.postWithLink : X_COST_USD.post;
 
 /* ── Account expiry (LinkedIn tokens that can't be renewed in the background) ── */
 /** True when the account's access ends before this send time: the post will be held until the user reconnects. */
