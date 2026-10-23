@@ -124,3 +124,48 @@ Not defects:
 - No blocker or major defect was found.
 - Fix D1 before enabling the flag for users. D2 is optional.
 - Live X and LinkedIn behaviour is unverified until developer apps exist.
+
+## QA retest (T5b)
+Retested by factory-qa on 2026-10-23, 12:20–12:45 PM ET.
+
+**Tested revision:** `7e8e6238` (it includes sc-client `691f6518` and `ffd4e7c0`). The tree was clean at the start apart from this file. Product changes since `42eb9318` are limited to DailyBrief, SocialMarketing, PublishBox, ScheduleModal, SocialChip, `channels/logic.ts` and `send.ts`, plus their tests.
+
+**Environment:** same as T5. radar_qa was reset and seeded, the app ran on port 3100 with stubs and the flag set to `all`.
+
+**Evidence:** in `…/scratchpad/qa-t5/`:
+- `retest/` holds `typecheck.log`, `test.log` and `dev.log`;
+- the screenshots are `shots/r01…r12-*.png`;
+- the scenarios are `s-r-*.mjs`.
+
+| Check | Command | Result |
+|---|---|---|
+| Typecheck | `npm run typecheck` | pass |
+| Tests | `DATABASE_URL=…/radar_qa npm test` | 253/254. The one failure is the known `openrouter.qa.test.ts` parity snapshot |
+
+| Defect | Steps | Expected | Actual | Result |
+|---|---|---|---|---|
+| D1, pack | Browser pane: X expired with a pack post scheduled Sat 24 at 12:30 → Reschedule → Tue 27 | Time locked; moves by day | Time select disabled at 12:30. Toast "Scheduled for Tue, Oct 27 at 12:30 PM ET". Panel still "on hold" with Tue 27. DB updated, one `social.rescheduled` event | **Pass** |
+| D1, Brief | Browser pane: a held Brief X post (Sat 24, 5:00 PM) → Reschedule → Mon 26 | Same | Time disabled at 17:00. Toast and scheduled line show Mon, Oct 26 at 5:00 PM ET | **Pass** |
+| D1, chip | Playwright, 390×844 with touch: tap the held This week chip → Move post → Mon 26 | Same | "Move X post" opens with the time disabled. Toast "Moved to Mon, Oct 26 at 12:30 PM ET". After a reload it's still on Mon 26 and still "On hold" (r01) | **Pass** |
+| D2, pack | Scheduled X post edited to 299 weighted characters | Reschedule disabled | Post now and Reschedule are disabled; Unschedule stays enabled. Both re-enable once the text is fixed (r03) | **Pass** |
+| D2, Brief | A scheduled Brief X post's draft set over the limit in SQL. Its text box is read-only while scheduled, so the state can't be reached in the UI | Reschedule disabled | "367/280", "Shorten to 280… It’s 367 now.", Reschedule disabled, Unschedule enabled (r04) | **Pass** |
+| D3 | A scheduled `[[radar:reject]]` X post with the Dashboard open | "An X post didn’t go out." | Live toast "An X post didn’t go out." with an Open button. The Dashboard heading is the same (r05, r06) | **Pass** |
+| D5 | Auto set to Schedule posts with accounts connected, then all accounts expired, then all disconnected | Line reflects whether scheduling is possible | "· scheduled to connected accounts", then "· saved to your library", then "· saved to your library" with "Connect X or LinkedIn" (r10–r12) | **Pass** |
+| D6 | Stale meta (6 MB recorded, real file 28 KB) → Compress images | No false "compressed" | Toast "Images are already small enough." The stale "Image 1 is 5.7 MB" problem stays because the meta isn't refreshed from the real file. Only reachable with edited meta (r07) | **Pass** (residual note R1) |
+
+**Regression (flag on)**
+- A first-time pack Schedule has an enabled time select: 9:00 changed to 10:00, saved.
+- A normal Reschedule to a new time works: 10:00 → 11:30. A new day and a new time works: Thu 29 at 2:00 PM.
+- An unchanged save is a no-op, with no event.
+- Calendar drag: "LinkedIn post moved to Fri, Oct 30 at 2:00 PM ET", which survives a reload. A drag to a past day is refused with "Pick today or a later day." (r08).
+- Brief Schedule defaults to 5:00 PM with the time enabled, and the to-do count drops 11 → 10. Brief Post now confirms the account ("Fieldnote · Page") and shows "Posted to LinkedIn as Fieldnote · Page" (r09).
+- A Reconnect toast lists the released held posts.
+- The dev log has no server errors and no tokens.
+
+**Flag off:** not re-run in the browser. Every changed path is behind `pubOn`, `B.social.publishing`, or a projected `st:'scheduled'` that doesn't exist with the flag off.
+
+**Residual and new notes (minor, not blocking)**
+- **R1 (cosmetic):** `social.compress` with 0 changes doesn't refresh stale meta from the real file, so the size problem stays next to "Images are already small enough." Only reachable with edited meta.
+- **R2 (minor):** a scheduled Brief post whose account is expired shows only "Scheduled · …", with no "on hold" line or Reconnect hint. The pack panel shows "X needs reconnecting / …on hold", and the chip shows On hold. This existed in T5; it was not caused by the fix.
+
+**Recommendation:** D1, D2, D3, D5 and D6 are fixed, and no regression was found. **Pass**, behind the default-off flag. Live X and LinkedIn are still not run (blocked: no developer apps).
