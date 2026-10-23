@@ -54,7 +54,8 @@ export const env = {
   // page (Community Management only) — no fallback between them. X_BEARER_TOKEN above stays the Brief's search token.
   /** Also accepts XAPP_CLIENT_ID / XAPP_CLIENT_SECRET (the names used in Railway). */
   xClientId: e.X_CLIENT_ID || e.XAPP_CLIENT_ID || '', xClientSecret: e.X_CLIENT_SECRET || e.XAPP_CLIENT_SECRET || '',
-  linkedinClientId: e.LINKEDIN_CLIENT_ID || '', linkedinClientSecret: e.LINKEDIN_CLIENT_SECRET || '',
+  /** LinkedIn profile app. Also accepts LINKEDINAPP_CLIENT_ID / LINKEDINAPP_CLIENT_SECRET (the names used in Railway). */
+  linkedinClientId: e.LINKEDIN_CLIENT_ID || e.LINKEDINAPP_CLIENT_ID || '', linkedinClientSecret: e.LINKEDIN_CLIENT_SECRET || e.LINKEDINAPP_CLIENT_SECRET || '',
   linkedinPageClientId: e.LINKEDIN_PAGE_CLIENT_ID || '', linkedinPageClientSecret: e.LINKEDIN_PAGE_CLIENT_SECRET || '',
   linkedinApiVersion: e.LINKEDIN_API_VERSION || '202610',
   /** Allow blog connectors to reach private/internal hosts (self-hosted setups). Off by default (SSRF guard). */
