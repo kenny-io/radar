@@ -19,6 +19,11 @@ import { LI_AUTHORIZE, LI_PAGE_SCOPES, LI_PROFILE_SCOPES, liCreds, liExchange, l
 import { stubIdentity, stubTokens } from './stubs';
 
 const UNAVAILABLE = 'This connection isn’t available right now. Try again later.';
+/** Shown when the user unticked a permission on the consent screen (§21 P6). Nothing is saved. */
+export const SCOPE_ERROR = 'Radar needs permission to post. Try again and allow all permissions.';
+const REQUIRED: Record<SocialChannel, string[]> = { x: X_SCOPES.split(' '), li_profile: LI_PROFILE_SCOPES.split(' '), li_page: ['w_organization_social', 'rw_organization_admin'] };
+/** Every required scope was granted. A token response without a scope list is accepted (the API calls will tell). */
+export const scopesOk = (ch: SocialChannel, granted: string | null | undefined) => !granted || REQUIRED[ch].every(x => granted.split(/[\s,]+/).includes(x));
 const q = (o: Record<string, string>) => new URLSearchParams(o).toString();
 const isStub = (ctx: OAuthCallbackCtx) => env.devStubs && ctx.params.get('code') === 'stub-code';
 const b64url = (b: Buffer) => b.toString('base64url');
@@ -46,7 +51,11 @@ async function callbackFor(ctx: OAuthCallbackCtx, ch: SocialChannel, real: () =>
     const b = await getBiz(ctx.bid);
     return finish(ctx, ch, stubTokens(ch), stubIdentity(ch, { businessName: (b.profile as Profile)?.business?.name || b.domain, userName: ctx.user.name, userId: ctx.user.id, as: ctx.params.get('stub_as') }));
   }
-  try { const r = await real(); return finish(ctx, ch, r.tokens, r.id); }
+  try {
+    const r = await real();
+    if (!scopesOk(ch, r.tokens.scope)) { console.warn(`[social.oauth] ${ch} missing scopes for ${ctx.bid}`); return { ok: false, error: SCOPE_ERROR }; }
+    return finish(ctx, ch, r.tokens, r.id);
+  }
   catch (e: any) { console.error(`[social.oauth] ${ch} exchange failed: ${String(e?.message || e).slice(0, 300)}`); return { ok: false, error: 'exchange_failed' }; }
 }
 

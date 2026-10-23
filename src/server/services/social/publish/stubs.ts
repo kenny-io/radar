@@ -5,6 +5,7 @@
 //   [[radar:down]]      unavailable before anything was sent → retried (transient), then failed / unavailable
 //   [[radar:timeout]]   unknown outcome at the create stage  → X reads back and finds nothing; LinkedIn can't → failed / unknown
 //   [[radar:lost]]      published, but the response was lost → X reads it back → posted; LinkedIn → failed / unknown
+//   [[radar:quota]]     X credits depleted / usage cap (402) → failed / quota, never retried
 import { slugify } from '@/lib/format';
 import { normForMatch } from '@/lib/socialPublish';
 import type { SocialChannel, SocialPage } from '@/lib/types';
@@ -55,6 +56,7 @@ export function stubAdapter(ch: SocialChannel): Adapter {
       if (m === 'reject') throw new SendError('definitive', 'rejected', 'stub 400 rejected');
       if (m === 'ratelimit') throw new SendError('transient', 'rate_limit', 'stub 429');
       if (m === 'down') throw new SendError('transient', 'unavailable', 'stub network ECONNREFUSED');
+      if (m === 'quota') throw new SendError('definitive', 'quota', 'stub 402 usage-capped');
       if (m === 'timeout') throw new SendError('unknown', 'unknown', 'stub network timeout');
       stubState.creates++;
       const id = next();

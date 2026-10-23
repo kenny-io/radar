@@ -43,12 +43,14 @@ export async function liMe(token: string): Promise<Identity> {
   if (r.status !== 200 || !r.json?.id) throw new Error(excerpt(r, 'linkedin me'));
   return { remoteId: String(r.json.id), name: [r.json.localizedFirstName, r.json.localizedLastName].filter(Boolean).join(' ') || 'LinkedIn member' };
 }
+export const PAGE_ROLES = ['ADMINISTRATOR', 'CONTENT_ADMINISTRATOR'];
 const orgId = (urn: string) => /urn:li:organization:(\d+)/.exec(urn || '')?.[1] || null;
 /** Pages the member administers. One organization lookup per page (Development tier forbids batch gets); followers best effort. */
 export async function liPages(token: string): Promise<SocialPage[]> {
-  const r = await call(`${REST}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&count=100`, { headers: rest(token, false) });
+  // Administrators and content administrators can both post as the page (no role filter, then filter here).
+  const r = await call(`${REST}/organizationAcls?q=roleAssignee&state=APPROVED&count=100`, { headers: rest(token, false) });
   if (r.status !== 200) throw new Error(excerpt(r, 'linkedin organizationAcls'));
-  const ids = [...new Set<string>((r.json?.elements || []).map((e: any) => orgId(e.organization || e.organizationTarget)).filter(Boolean))];
+  const ids = [...new Set<string>((r.json?.elements || []).filter((e: any) => PAGE_ROLES.includes(e.role) && (!e.state || e.state === 'APPROVED')).map((e: any) => orgId(e.organization || e.organizationTarget)).filter(Boolean))];
   const out: SocialPage[] = [];
   for (const id of ids) {
     const o = await call(`${REST}/organizations/${id}`, { headers: rest(token, false) });
@@ -71,8 +73,20 @@ export function liCreateError(r: Res): SendError {
   // An image still processing: retry the post (a w_member_social token can't poll /rest/images).
   if (r.status >= 400 && r.status < 500 && /process|not (yet )?ready|WAITING_UPLOAD/i.test(b) && /image|media/i.test(b)) return new SendError('transient', 'unavailable', d);
   if (r.status === 403) return new SendError('definitive', 'auth', d);
-  return mapCommon(r, 'create', 'linkedin posts');
+  return liError(r, 'create', 'linkedin posts');
 }
+/** 426 NONEXISTENT_VERSION: LinkedIn retired LINKEDIN_API_VERSION (about 12 months after release). Not retried: an operator fix. */
+export function liError(r: Res, stage: 'media' | 'create', where: string): SendError {
+  if (r.status === 426 || /NONEXISTENT_VERSION/.test(r.text)) {
+    console.error(`[social] LinkedIn API version ${env.linkedinApiVersion} retired (426). Set LINKEDIN_API_VERSION to a current version (see docs/LAUNCH.md).`);
+    return new SendError('definitive', 'unavailable', excerpt(r, where));
+  }
+  return mapCommon(r, stage, where);
+}
+/** Image processing before the post is created (§21 P1). A profile token can't read /rest/images, so it waits a fixed time;
+ *  a page polls until AVAILABLE (falling back to the fixed wait on a 403). Still processing after the cap → `media`. */
+export const LI_MEDIA = { profileWaitMs: 15_000, pollMs: 2_000, capMs: 30_000 };
+const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export function liAdapter(app: LiApp): Adapter {
   return {
@@ -92,10 +106,27 @@ export function liAdapter(app: LiApp): Adapter {
     async upload(a, m) {
       const init = await call(`${REST}/images?action=initializeUpload`, { method: 'POST', headers: rest(a.token), body: JSON.stringify({ initializeUploadRequest: { owner: authorUrn(a.ch, a.remoteId) } }) }, 'media');
       const v = init.json?.value;
-      if (init.status !== 200 || !v?.uploadUrl || !v?.image) throw mapCommon(init, 'media', 'linkedin images');
+      if (init.status !== 200 || !v?.uploadUrl || !v?.image) throw liError(init, 'media', 'linkedin images');
       const put = await call(v.uploadUrl, { method: 'PUT', headers: { authorization: `Bearer ${a.token}`, 'content-type': m.type }, body: new Uint8Array(m.bytes) }, 'media');
-      if (put.status < 200 || put.status >= 300) throw mapCommon(put, 'media', 'linkedin upload');
+      if (put.status < 200 || put.status >= 300) throw liError(put, 'media', 'linkedin upload');
       return String(v.image);
+    },
+    async awaitMedia(a, ids) {
+      if (!ids.length) return;
+      if (a.ch !== 'li_page') { await sleep(LI_MEDIA.profileWaitMs); return; }
+      const end = Date.now() + LI_MEDIA.capMs;
+      for (const id of ids) {
+        for (;;) {
+          const r = await call(`${REST}/images/${encodeURIComponent(id)}`, { headers: rest(a.token, false) }, 'media');
+          if (r.status === 403) { await sleep(LI_MEDIA.profileWaitMs); return; } // page scopes may not allow reading images
+          const st = String(r.json?.status || '');
+          if (r.status === 200 && st === 'AVAILABLE') break;
+          if (r.status === 200 && /FAILED/.test(st)) throw new SendError('definitive', 'media', `linkedin image ${st}`);
+          if (r.status !== 200 && r.status !== 404) throw liError(r, 'media', 'linkedin images get');
+          if (Date.now() > end) throw new SendError('definitive', 'media', `linkedin image still ${st || r.status} after ${LI_MEDIA.capMs / 1000}s`);
+          await sleep(LI_MEDIA.pollMs);
+        }
+      }
     },
     async create(a, p) {
       const body: any = {

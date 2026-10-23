@@ -56,11 +56,32 @@ const mine = (r: PubRow) => and(eq(P.id, r.id), eq(P.attemptKey, r.attemptKey!),
 const packHref = (r: PubRow, platform: string) => { const m = /^s:(.+):(x|linkedin)$/.exec(r.sid); return m ? `/social?pack=${encodeURIComponent(m[1])}&plat=${platform}` : '/brief'; };
 const sidDay = (sid: string) => (sid.startsWith('b:') ? { day: sid.slice(2, 12), itemId: sid.slice(13) } : null);
 
+/** Tests only: side effects after a post is live (P2 — they may fail, and must never cause a resend). */
+export const sendHooks = { afterPosted: afterPostedDefault };
+
+/** Success. The `posted` write comes first and is retried in process; everything after it only logs on failure, so nothing
+ *  that happens once a post is live can lead to a retry, a verify or a second create (architecture.md §21 P2). */
 async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, manual: boolean, userId: string | null, text: string): Promise<PubRow | null> {
-  const b = await getBiz(r.businessId); const now = Date.now(); const { date, time } = localParts(now, b.timezone);
-  const [u] = await db.update(P).set({ status: 'posted', remoteId: c.remoteId, remoteUrl: c.url, postedAt: new Date(now), date, time, stage: null, retryAt: null, err: null, errCode: null, errDetail: null, updatedAt: new Date() }).where(mine(r)).returning();
-  if (!u) return null;
+  let u: PubRow | undefined;
+  for (let i = 0; i < 3 && !u; i++) {
+    try {
+      const tz = (await db.select({ tz: schema.businesses.timezone }).from(schema.businesses).where(eq(schema.businesses.id, r.businessId)).limit(1))[0]?.tz || 'America/New_York';
+      const now = Date.now(); const { date, time } = localParts(now, tz);
+      const [x] = await db.update(P).set({ status: 'posted', remoteId: c.remoteId, remoteUrl: c.url, postedAt: new Date(now), date, time, stage: null, retryAt: null, err: null, errCode: null, errDetail: null, updatedAt: new Date() }).where(mine(r)).returning();
+      if (!x) return null; // another attempt owns the row
+      u = x;
+    } catch (e: any) {
+      console.error(`[social.send] pub ${r.id} ${r.sid}: posted as ${c.remoteId} but saving failed (try ${i + 1}): ${e?.message || e}`);
+      if (i < 2) await new Promise(res => setTimeout(res, 500 * (i + 1)));
+    }
+  }
+  if (!u) { console.error(`[social.send] pub ${r.id} ${r.sid}: LIVE as ${c.remoteId} (${c.url}) but not saved; left 'sending' for verify`); return null; }
   log(r, `posted (attempt ${r.attempts}${manual ? ', now' : ''})`);
+  try { await sendHooks.afterPosted(r, c, manual, userId, text); }
+  catch (e: any) { console.error(`[social.send] pub ${r.id} ${r.sid}: posted; follow-up failed: ${e?.message || e}`); }
+  return u;
+}
+async function afterPostedDefault(r: PubRow, c: { remoteId: string; url: string }, manual: boolean, userId: string | null, text: string) {
   const bd = sidDay(r.sid);
   if (bd) {
     // A Brief item posted directly is "posted" for good, exactly like "I posted it"; impact metrics keep counting it.
@@ -72,13 +93,12 @@ async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, man
     });
     if (it) await track(it.kind === 'post' ? 'brief.post_posted' : 'brief.reply_posted', { bid: r.businessId, uid: userId, ref: it.id, props: { date: bd.day, kind: it.kind, acct: acctOf(it), plat: it.kind === 'post' ? it.pl : it.plat, edited: Object.keys(it.edits || {}).length > 0, where: it.where, url: it.url, title: it.title, direct: true } });
   }
-  await track('social.posted', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, remoteId: c.remoteId, url: c.url, scheduled: !manual, attempt: r.attempts, direct: r.src === 'brief', costUsd: publishCostUsd(r.platform, r.kind, text) } });
+  await track('social.posted', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, remoteId: c.remoteId, url: c.url, scheduled: !manual, attempt: r.attempts, direct: r.src === 'brief', costUsd: publishCostUsd(r.platform, 'post', text) } });
   await bump(r.businessId);
-  return u;
 }
 
-async function finishFailed(r: PubRow, code: PubErrCode, detail: string, manual: boolean, userId: string | null): Promise<PubRow | null> {
-  const [u] = await db.update(P).set({ status: 'failed', err: errCopy(code, r.platform), errCode: code, errDetail: detail.slice(0, 500), stage: null, retryAt: null, updatedAt: new Date() }).where(mine(r)).returning();
+async function finishFailed(r: PubRow, code: PubErrCode, detail: string, manual: boolean, userId: string | null, userMsg?: string | null): Promise<PubRow | null> {
+  const [u] = await db.update(P).set({ status: 'failed', err: userMsg || errCopy(code, r.platform), errCode: code, errDetail: detail.slice(0, 500), stage: null, retryAt: null, updatedAt: new Date() }).where(mine(r)).returning();
   if (!u) return null;
   log(r, `failed ${code} after ${r.attempts} attempt(s): ${detail.slice(0, 200)}`);
   if (detail !== CONTENT_MISSING) {
@@ -158,6 +178,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
       try { return await fn(); } catch (e2: any) { if (e2 instanceof SendError && e2.kind === 'auth') throw new SendError('definitive', 'auth', e2.detail); throw e2; }
     }
   };
+  let created: { remoteId: string; url: string };
   try {
     const ids: string[] = [];
     for (const img of t.images) {
@@ -167,25 +188,26 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
       if (bad) throw new SendError('definitive', 'media', `image ${bad}`); // never auto-compress at send time
       ids.push(await authed(() => ad.upload(a, f)));
     }
+    if (ad.awaitMedia && ids.length) await ad.awaitMedia(a, ids);
     const go = await db.update(P).set({ stage: 'create', updatedAt: new Date() }).where(mine(r)).returning({ id: P.id });
     if (!go.length) return null;
-    let created;
-    try { created = await authed(() => ad.create(a, { text: t!.text, mediaIds: ids })); }
+    try { created = await authed(() => ad.create(a, { text: t!.text, mediaIds: ids, aiMedia: !!t!.aiMedia })); }
     catch (e: any) {
       if (e instanceof SendError && e.kind === 'unknown') return verifyOrFail(r, ad, a, t.text, manual, userId, e.detail);
       if (e instanceof SendError || e instanceof AccountExpired) throw e;
       return verifyOrFail(r, ad, a, t.text, manual, userId, `create: ${e?.message || e}`); // a crash mid-request: unknown
     }
-    return finishPosted(r, created, manual, userId, t.text);
   } catch (e: any) {
     if (e instanceof AccountExpired) return hold(r, manual, userId);
     if (e instanceof SendError) {
       if (e.kind === 'transient') return transient(r, e, manual, userId);
       if (e.kind === 'unknown') return verifyOrFail(r, ad, a, t.text, manual, userId, e.detail);
-      return finishFailed(r, e.code, e.detail, manual, userId);
+      return finishFailed(r, e.code, e.detail, manual, userId, e.userMsg);
     }
     return transient(r, new SendError('transient', 'unavailable', String(e?.message || e)), manual, userId);
   }
+  // Live: outside every retry/verify path (P2).
+  return finishPosted(r, created, manual, userId, t.text);
 }
 
 /** A `sending` row left behind by a dead process. Re-key it (the old attempt can no longer write), then: create stage →

@@ -35,13 +35,25 @@ export async function xMe(token: string): Promise<Identity> {
 const statusUrl = (handle: string | null, id: string) => (handle ? `https://x.com/${handle.replace(/^@/, '')}/status/${id}` : `https://x.com/i/web/status/${id}`);
 const resetAt = (r: Res) => { const s = Number(r.headers.get('x-rate-limit-reset')); return Number.isFinite(s) && s > 0 ? s * 1000 : null; };
 
-/** X-specific bodies first, then the common mapping. */
-export function xCreateError(r: Res): SendError {
-  const d = excerpt(r, 'x tweets');
-  if (r.status === 403 && /duplicate/i.test(r.text)) return new SendError('definitive', 'duplicate', d);
-  if (r.status === 403) return new SendError('definitive', 'auth', d); // app permission / account restricted
-  if (r.status === 400 && /too long|length|characters/i.test(r.text)) return new SendError('definitive', 'too_long', d);
-  return mapCommon(r, 'create', 'x tweets', resetAt(r));
+/** A short, readable reason from X itself (shown for content refusals X explains better than we can). */
+const xReason = (r: Res): string | null => {
+  const m = String(r.json?.detail || r.json?.errors?.[0]?.message || r.json?.title || '').replace(/\s+/g, ' ').trim();
+  return m && m.length <= 160 && !/[{}<>]/.test(m) ? m.replace(/\.?$/, '.') : null;
+};
+/** X errors: the response text first (X reuses status codes), then the status (architecture.md §9.4, §21 P3/P9). */
+export function xError(r: Res, stage: 'media' | 'create', where: string): SendError {
+  const d = excerpt(r, where); const b = r.text;
+  if (r.status === 402 || /usage-capped|credits? (are )?depleted|CreditsDepleted|UsageCapExceeded/i.test(b)) {
+    console.error(`[social] X quota: X refused a ${stage} call for credits or usage cap (${r.status}). Top up credits or raise the spending limit in the X console.`);
+    return new SendError('definitive', 'quota', d);
+  }
+  if (/duplicate content|duplicate-rules|duplicate/i.test(b) && r.status < 500) return new SendError('definitive', 'duplicate', d);
+  if (/user-suspended|suspended|temporarily locked|account is locked/i.test(b)) return new SendError('definitive', 'auth', d);
+  if (/media ids? (are|is) invalid|invalid media/i.test(b)) return new SendError('definitive', 'media', d);
+  if (/cashtag|crypto(currency)? address|invalid url/i.test(b)) return new SendError('definitive', 'rejected', d, null, xReason(r));
+  if (r.status === 403 && stage === 'create') return new SendError('definitive', 'auth', d); // app permission / account restricted
+  if (r.status === 400 && stage === 'create' && /too long|length|characters/i.test(b)) return new SendError('definitive', 'too_long', d);
+  return mapCommon(r, stage, where, resetAt(r));
 }
 
 export const xAdapter: Adapter = {
@@ -64,15 +76,16 @@ export const xAdapter: Adapter = {
     const r = await call(`${API}/media/upload`, { method: 'POST', headers: bearer(a.token), body: fd }, 'media');
     const id = r.json?.data?.id || r.json?.media_id_string;
     if (r.status >= 200 && r.status < 300 && id) return String(id);
-    throw mapCommon(r, 'media', 'x media/upload', resetAt(r));
+    throw xError(r, 'media', 'x media/upload');
   },
   async create(a, p) {
     const body: any = { text: p.text };
     if (p.mediaIds.length) body.media = { media_ids: p.mediaIds };
+    if (p.mediaIds.length && p.aiMedia) body.made_with_ai = true; // discloses AI-generated media
     const r = await call(`${API}/tweets`, { method: 'POST', headers: { ...bearer(a.token), 'content-type': 'application/json' }, body: JSON.stringify(body) }, 'create');
     const id = r.json?.data?.id;
     if (r.status >= 200 && r.status < 300 && id) return { remoteId: String(id), url: statusUrl(a.handle, String(id)) };
-    throw xCreateError(r);
+    throw xError(r, 'create', 'x tweets');
   },
   async verify(a, p) {
     const q = new URLSearchParams({ max_results: '10', start_time: new Date(p.sinceMs).toISOString(), 'tweet.fields': 'created_at' });

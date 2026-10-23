@@ -9,6 +9,7 @@ import { textOf } from '@/features/brief/model';
 import type { BriefItem, MediaMeta, Profile, Pub, PubErrCode, SocialAccount } from '@/lib/types';
 import type { BizRow } from '../../../workspace';
 import { metaOf } from './media';
+import { MODEL_STYLES, imageModelConfigured } from '../../images';
 
 export type PubRow = typeof schema.socialPubs.$inferSelect;
 export const P = schema.socialPubs;
@@ -52,6 +53,8 @@ export interface Target {
   text: string; images: Img[]; imagesPending: boolean;
   pack?: StoredPack; packId?: string;
   day?: string; item?: BriefItem; company?: boolean;
+  /** The images came from the image model (X `made_with_ai`), not a canvas template. */
+  aiMedia?: boolean;
   /** Pack post with no rendered file yet (imageUrl null): rendered on the server before it's checked or sent. */
   needsRender?: boolean;
 }
@@ -61,7 +64,7 @@ export async function loadTarget(bid: string, sid: string): Promise<Target | nul
   if (s.src === 'pack') {
     const pack = await getPack(bid, s.packId); const post = pack?.posts[s.platform];
     if (!pack || !post) return null;
-    return { sid, src: 'pack', platform: s.platform, kind: 'post', text: post.text || '', images: post.imageUrl ? [{ url: post.imageUrl, meta: post.imageMeta ?? null }] : [], imagesPending: false, pack, packId: pack.id, needsRender: !post.imageUrl };
+    return { sid, src: 'pack', platform: s.platform, kind: 'post', text: post.text || '', images: post.imageUrl ? [{ url: post.imageUrl, meta: post.imageMeta ?? null }] : [], imagesPending: false, pack, packId: pack.id, needsRender: !post.imageUrl, aiMedia: !!(post as { photo?: boolean }).photo };
   }
   const day = await getDay(bid, s.day);
   const item = (day?.items as BriefItem[] | undefined)?.find(i => i.id === s.itemId);
@@ -70,7 +73,7 @@ export async function loadTarget(bid: string, sid: string): Promise<Target | nul
   if (item.kind === 'post' ? !canPost(k) : !canReply(k)) return null;
   const imgs: Img[] = [];
   if (item.kind === 'post' && item.img) item.img.urls.forEach((u, i) => { if (u) imgs.push({ url: u, meta: item.img!.meta?.[i] ?? null, i }); });
-  return { sid, src: 'brief', platform: k as PostPlatform, kind: item.kind, text: textOf(item), images: k === 'x' ? imgs.slice(0, LIMITS.x.imgs) : imgs, imagesPending: item.kind === 'post' && item.img?.status === 'generating', day: s.day, item, company: (item.acct || 'founder') === 'company' };
+  return { sid, src: 'brief', platform: k as PostPlatform, kind: item.kind, text: textOf(item), images: k === 'x' ? imgs.slice(0, LIMITS.x.imgs) : imgs, imagesPending: item.kind === 'post' && item.img?.status === 'generating', day: s.day, item, company: (item.acct || 'founder') === 'company', aiMedia: !!item.img && MODEL_STYLES.includes(item.img.style) && imageModelConfigured() };
 }
 export const preflightInput = (t: Target): PreflightInput => ({ text: t.text, images: t.images.map(i => i.meta), imagesPending: t.imagesPending });
 
@@ -82,7 +85,7 @@ export async function ensureImages(biz: BizRow, t: Target): Promise<Target> {
     const post = t.pack.posts[t.platform]!; const p = { ...(biz.profile as Profile), domain: biz.domain };
     const r = await renderPostImage(bid, p, t.platform, post, t.pack.headline || t.pack.source.label, t.pack.custom);
     await updatePack(bid, t.pack.id, x => { const cur = x.posts[t.platform]; return cur && !cur.imageUrl ? { ...x, posts: { ...x.posts, [t.platform]: { ...cur, imageUrl: r.url, imageMeta: r.meta, photo: r.photo } } } : x; });
-    t.images = [{ url: r.url, meta: r.meta }]; t.needsRender = false;
+    t.images = [{ url: r.url, meta: r.meta }]; t.needsRender = false; t.aiMedia = r.photo;
   }
   const unknown = t.images.filter(i => !i.meta);
   if (!unknown.length) return t;

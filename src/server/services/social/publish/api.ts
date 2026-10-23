@@ -23,7 +23,9 @@ export interface Created { remoteId: string; url: string }
  * `detail` is the provider status/body excerpt for logs and `err_detail` only.
  */
 export class SendError extends Error {
-  constructor(public kind: 'transient' | 'definitive' | 'unknown' | 'auth', public code: PubErrCode, public detail: string, public retryAt: number | null = null) { super(`${kind}/${code}: ${detail}`); }
+  constructor(public kind: 'transient' | 'definitive' | 'unknown' | 'auth', public code: PubErrCode, public detail: string, public retryAt: number | null = null,
+    /** The platform's own short, readable reason, shown instead of errCopy (X cashtag / crypto / invalid URL refusals). */
+    public userMsg: string | null = null) { super(`${kind}/${code}: ${detail}`); }
 }
 /** A token refresh failed. `definitive` (400 invalid_grant/invalid_request, 401, no usable refresh token) marks the account expired. */
 export class TokenError extends Error { constructor(public definitive: boolean, public detail: string) { super(detail); } }
@@ -32,7 +34,10 @@ export interface Adapter {
   refresh(t: Tokens): Promise<Tokens>;
   revoke(t: Tokens): Promise<void>;
   upload(a: AcctCtx, m: Media): Promise<string>;
-  create(a: AcctCtx, p: { text: string; mediaIds: string[] }): Promise<Created>;
+  /** After uploads, before create: wait until the platform has processed the images (LinkedIn). Throws SendError 'media'. */
+  awaitMedia?(a: AcctCtx, mediaIds: string[]): Promise<void>;
+  /** `aiMedia`: the images came from the image model (X `made_with_ai`). */
+  create(a: AcctCtx, p: { text: string; mediaIds: string[]; aiMedia?: boolean }): Promise<Created>;
   /** Read the account's recent posts back after an unknown outcome (X only). null = not found. Absent = can't verify (LinkedIn). */
   verify?(a: AcctCtx, p: { text: string; sinceMs: number }): Promise<Created | null>;
   /** How long to wait before reading back (X indexes new posts within seconds). */
