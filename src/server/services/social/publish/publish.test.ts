@@ -10,7 +10,7 @@ vi.hoisted(() => {
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { and, eq, inArray, like } from 'drizzle-orm';
+import { and, eq, inArray, like, sql } from 'drizzle-orm';
 import { db, schema } from '../../../db';
 import { ACTIONS } from '../../../actions';
 import { requireRole } from '../../../access';
@@ -363,6 +363,36 @@ describe.skipIf(!ON)('social channels (database)', () => {
     expect(await refusal(act('social.postNow', { sid: packSid(PACK, 'x') }))).toBe(COPY.alreadyPosted);
     await clearPubs();
     await connect('x'); await connect('li_page', { pageId: 'stub-pg1' });
+  });
+
+  it('a Brief post sent directly is posted for good, like "I posted it", and keeps counting in impact events', async () => {
+    const sid = briefSid(today, 'feed1');
+    const r = await act('social.postNow', { sid });
+    expect(r.pub).toMatchObject({ status: 'posted', platform: 'linkedin', direct: true });
+    const it = (await loadWorkspace(bid, owner.id, 'Owner')).brief.days[today].items.find(i => i.id === 'feed1')!;
+    expect(it.st).toBe('posted');
+    expect(await refusal(act('brief.item', { date: today, id: 'feed1', st: 'open' }))).toBe(COPY.alreadyPosted); // no Undo
+    const ev = await db.select().from(S.events).where(and(eq(S.events.businessId, bid), eq(S.events.kind, 'brief.post_posted')));
+    expect(ev.at(-1)!.props).toMatchObject({ direct: true, plat: 'linkedin' });
+    await clearPubs();
+    await db.update(S.briefDays).set({ items: sql`jsonb_set(items, '{0,st}', '"open"')` }).where(and(eq(S.briefDays.businessId, bid), eq(S.briefDays.date, today)));
+  });
+
+  it('an image LinkedIn can’t take blocks scheduling until Compress images re-encodes it', async () => {
+    const { createCanvas } = await import('@napi-rs/canvas');
+    const { putObject, objectKey } = await import('../../storage');
+    const c = createCanvas(400, 300); c.getContext('2d').fillRect(0, 0, 200, 150);
+    const url = await putObject(objectKey(bid, 'social', 'webp'), c.toBuffer('image/webp'), 'image/webp');
+    const { updatePack } = await import('../generate');
+    await updatePack(bid, PACK, x => ({ ...x, posts: { ...x.posts, linkedin: { ...x.posts.linkedin!, text: 'Fine text.', imageUrl: url, imageMeta: null } } }));
+    const sl = packSid(PACK, 'linkedin');
+    expect(await refusal(act('social.schedule', { sid: sl, ...tomorrow9() }))).toBe('Image 1 is a WEBP file, which LinkedIn doesn’t accept.');
+    expect(await act('social.compress', { sid: sl })).toEqual({ compressed: 1 });
+    const post = (await db.select().from(S.socialPacks).where(eq(S.socialPacks.id, PACK)))[0].data.posts.linkedin;
+    expect(post).toMatchObject({ compressed: true, imageMeta: { type: 'image/jpeg' } });
+    expect((await act('social.schedule', { sid: sl, ...tomorrow9() })).pub.status).toBe('scheduled');
+    expect(await act('social.compress', { sid: sl })).toEqual({ compressed: 0 });
+    await clearPubs();
   });
 
   it('time zone change keeps the wall-clock time and moves due_at', async () => {
