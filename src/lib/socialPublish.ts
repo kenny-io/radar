@@ -297,9 +297,9 @@ export type PanelState = 'copy_only' | 'not_connected' | 'posted' | 'sending' | 
 /** Which §3 state a pack post's panel shows (same order as the prototype's PublishBox). */
 export function packPanelState(k: string, post: Pick<SocialPost, 'pub'>, accts: SocialAccount[], cur: SocialAccount | null, nowMs: number): PanelState {
   if (!canPost(k)) return 'copy_only';
-  if (!accountsFor(accts, k).length) return 'not_connected';
   const pub = post.pub || null;
-  if (pub?.status === 'posted') return 'posted';
+  if (pub?.status === 'posted') return 'posted'; // a published post stays a fact even after its account is disconnected
+  if (!accountsFor(accts, k).length) return 'not_connected';
   if (isLocked(pub, nowMs)) return 'sending';
   if (cur?.expired) return 'expired';
   if (pub?.status === 'scheduled') return 'scheduled';

@@ -205,6 +205,7 @@ describe('panel state and Schedule all', () => {
   it('walks the §3 states in prototype order', () => {
     expect(packPanelState('reddit', post(null), [X], null, T0)).toBe('copy_only');
     expect(packPanelState('x', post(null), [PROF], null, T0)).toBe('not_connected');
+    expect(packPanelState('x', post({ status: 'posted' } as any), [], null, T0)).toBe('posted');
     expect(packPanelState('x', post(null), [X], X, T0)).toBe('ready');
     expect(packPanelState('x', post({}), [X], X, T0)).toBe('scheduled');
     expect(packPanelState('x', post({}), [X], X, Date.parse(pub().dueAt) - 60_000)).toBe('sending');
