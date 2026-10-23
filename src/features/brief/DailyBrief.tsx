@@ -1,5 +1,6 @@
 'use client';
-// Daily Brief — port of prototype/radar-brief.jsx on real data (01-screens §4, 02-system §9).
+// Daily Brief — port of prototype/radar-brief.jsx on real data (01-screens §4, 02-system §9). With social publishing on
+// (B.social.publishing): Post now / Schedule for X and LinkedIn posts, and Reply now (X's own reply box) for X replies.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { AutoText, Btn, Empty, Field, Icon, Modal, PageHead, Popover, Seg, Sheet, Status, copyText, downloadBlob, sleep } from '@/components/ui';
@@ -7,12 +8,23 @@ import { Visual, visualBlob } from '@/components/Visual';
 import { IMG_DEFAULT, STYLES, imgSeed, styleK, styleL, type ImgRange, type StyleKey } from '@/lib/imageOptions';
 import { PlatLogo } from '@/components/brand';
 import { BMENTION, BPLAT, BRIEF_DEFAULT, PLAT, PORDER } from '@/lib/constants';
-import { ageFromIso, ageL, fmtD, fmtTime } from '@/lib/format';
+import { ageFromIso, ageL, fmtD, fmtDW, fmtTime } from '@/lib/format';
 import type { BriefAccount, BriefDay, BriefItem, BriefPlatform, BriefSettings, BriefState, JobSummary, Workspace } from '@/lib/types';
 import { BriefScan } from './BriefScan';
 import { accountsOf, acctOf, isLive, platsFor, textOf, variantOf, type BriefScanProgress, type BriefScanResult } from './model';
+import { PLAT_L, accountsOf as socialAccountsOf, acctLabel, atTz, briefPreflightInput, briefPublish, briefSid, charCount, chOf, defaultSlot, failedLine, isLocked, preflight, xReplyIntentUrl, xStatusId } from '@/lib/socialPublish';
+import type { Pub, SocialChannel } from '@/lib/types';
+import { LogoLabel } from '@/features/social/channels/LogoLabel';
+import { ScheduleModal } from '@/features/social/channels/ScheduleModal';
+import { failToast } from '@/features/social/channels/PublishBox';
+import { repub, withPub } from '@/features/social/channels/logic';
+import { useNowMs } from '@/features/social/channels/useSocial';
 
-type Act = { copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void };
+type Act = { copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
+  /** Reply now opened X's reply box: mark it copied (then "I posted it"), carrying any unsaved edit, without touching the clipboard. */
+  opened: (it: BriefItem) => void;
+  /** Posted or scheduled from Radar: move on to the next item. */
+  direct: (it: BriefItem) => void };
 type Patch = Partial<Pick<BriefItem, 'st' | 'mention' | 'pl'>>;
 interface ScanState { jobId: string | null; kind: 'first' | 'again'; platforms: BriefPlatform[]; busy?: boolean }
 type ScanJob = (JobSummary & { result?: BriefScanResult | null }) | null;
@@ -121,6 +133,8 @@ export function DailyBrief() {
       toast(it.kind === 'reply' ? `Copied. Paste it under the ${it.plat === 'reddit' ? 'thread' : 'post'}.` : `Copied. Paste it into ${BPLAT[it.pl as BriefPlatform]}.`, { action: it.url ? { label: 'Open', fn: () => window.open(it.url, '_blank', 'noopener') } : null });
     },
     posted: it => { setItem(it.id, { st: 'posted' }); advance(it.id); },
+    opened: it => { const pend = takePending(it.id); setItem(it.id, { st: 'copied' }, pend ? { edit: pend } : {}); if (pend) setTimeout(() => clearOverlay(it.id, pend.v, pend.text), 400); },
+    direct: it => advance(it.id),
     skip: it => { const prev = it.st as 'open' | 'copied'; setItem(it.id, { st: 'skipped' }); advance(it.id); toast('Skipped', { action: { label: 'Undo', fn: () => { setItem(it.id, { st: prev }); setSel(it.id); } } }); },
     undo: it => setItem(it.id, { st: 'open' }),
   };
@@ -132,7 +146,7 @@ export function DailyBrief() {
       if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); const n = order[Math.min(order.length - 1, idx + 1)]; n && setSel(n.id); }
       else if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); const n = order[Math.max(0, idx - 1)]; n && setSel(n.id); }
       else if (e.key === 'c' && it && day === today && isLive(it)) act.copy(it);
-      else if (e.key === 's' && it && day === today && it.st !== 'posted' && it.st !== 'skipped' && it.st !== 'expired') act.skip(it);
+      else if (e.key === 's' && it && day === today && it.st !== 'posted' && it.st !== 'skipped' && it.st !== 'expired' && it.st !== 'scheduled') act.skip(it);
     };
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [sel, order.map(i => i.id + i.st).join(), sheet, scan, day, overlay]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -217,7 +231,7 @@ export function DailyBrief() {
       {narrow && allDone && !opened && <div className="brief-dw"><BriefDone items={items} settings={br.settings} acct={cur} name={name} other={accts.find(a => a !== cur && openOf(a) > 0)} otherN={accts.filter(a => a !== cur).reduce((n, a) => n + openOf(a), 0)} onSwitch={switchAcct} /></div>}
       {!(narrow && opened) && <nav className="brief-q" aria-label="Today’s recommendations">
         {groups.map(g => <div key={g.k} className="col">{g.k === 'post' ? <div className="brief-gh post"><span className="brief-ght">{g.l}</span><span className="brief-ghs">Original posts to publish, not replies</span></div> : <div className="brief-gh"><PlatLogo k={g.k} s={14} /><span>{g.l}</span></div>}
-          {g.items.map((x, j) => { const done = x.st === 'posted' || x.st === 'skipped' || x.st === 'expired'; const age = ageOf(x); return <button key={x.id} className={'brief-qi enter' + (sel === x.id ? ' on' : '') + (done ? ' done' : '')} style={{ animationDelay: j * 40 + 'ms' }} onClick={() => pick(x.id)} aria-current={sel === x.id}>
+          {g.items.map((x, j) => { const done = x.st === 'posted' || x.st === 'skipped' || x.st === 'expired' || x.st === 'scheduled'; const age = ageOf(x); return <button key={x.id} className={'brief-qi enter' + (sel === x.id ? ' on' : '') + (done ? ' done' : '')} style={{ animationDelay: j * 40 + 'ms' }} onClick={() => pick(x.id)} aria-current={sel === x.id}>
             <span className="brief-qt">{x.title}</span>
             <span className="row xs sub" style={{ gap: 6, minWidth: 0 }}>{x.kind === 'post' ? (x.plats || []).map(p => <PlatLogo key={p} k={p} s={13} />) : <span className="trunc">{x.where}{isToday && age != null ? ' · ' + ageL(age) : ''}</span>}{x.fresh && <span style={{ color: 'var(--signal-ink)', flex: 'none' }}>New</span>}<span className="grow" />{x.st === 'posted' ? <Status tone="ok" style={{ fontSize: 12 }}>Posted</Status> : x.st === 'skipped' ? <span>Skipped</span> : x.st === 'expired' ? <span>Expired</span> : x.st === 'copied' ? <Status tone="signal" style={{ fontSize: 12 }}>Copied</Status> : null}</span>
           </button>; })}
@@ -292,6 +306,46 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     toast(vn > 1 ? `Downloaded ${vn} images` : 'Downloaded image');
   };
   const visInitial: { style: StyleKey; range: ImgRange } = im ? { style: styleK(im.style), range: im.range || 'few' } : { style: styleK((B.social.img || IMG_DEFAULT).style), range: (B.social.img || IMG_DEFAULT).range || 'few' };
+  /* ── Social channels (publishing on): Post now / Schedule / Reply now ── */
+  const now = useNowMs(); const pubOn = !!B.social.publishing;
+  const bp = pubOn ? briefPublish(socialAccountsOf(B), it) : null;
+  const k = bp?.platform || null; const sa = bp?.acct || null; const pub = it.pub || null;
+  const postDirect = !!bp?.direct && it.kind === 'post' && !!sa; const replyDirect = !!bp?.direct && it.kind === 'reply' && bp.replyMode === 'intent';
+  const pl = k ? PLAT_L[k] : ''; const ppl = pub ? PLAT_L[pub.platform] : pl; const sid = briefSid(day, it.id);
+  const label = acctLabel(sa) || pub?.acctLabel || '';
+  const problems = postDirect && k ? preflight(k, briefPreflightInput(it, k, text)) : replyDirect ? preflight('x', { text, images: [] }) : [];
+  const locked = isLocked(pub, now);
+  const [cf, setCf] = useState(false); const [sc, setSc] = useState(false); const [pBusy, setPBusy] = useState(false); const [fixing, setFixing] = useState(false);
+  const flushEdit = async () => { const pend = takePending(); if (pend) { await app.act('brief.item', { date: day, id: it.id, edit: pend }); clearOverlay(pend.v, pend.text); } };
+  const postNow = async () => {
+    setCf(false); setPBusy(true);
+    try {
+      await flushEdit();
+      const r = await app.act<{ pub: Pub }>('social.postNow', { sid });
+      if (r.pub?.status === 'posted') { toast(`Posted to ${pl} as ${label}`, { tone: 'ok' }); act.direct(it); }
+      else if (r.pub?.status === 'failed') toast(failToast(r.pub), { tone: 'bad' });
+    } catch { /* toasted */ }
+    setPBusy(false);
+  };
+  // X's reply box opens straight from the click (popup blockers), then the item goes to "I posted it".
+  const replyNow = () => { const id = xStatusId(it.url); if (!id) return; window.open(xReplyIntentUrl(id, text), '_blank', 'noopener'); act.opened(it); };
+  const schedule = async ({ date, time }: { date: string; time: string }) => {
+    setSc(false);
+    try {
+      await flushEdit();
+      const base: Pub = pub || { status: 'scheduled', platform: k!, date, time, dueAt: '', acct: sa?.id || null, acctLabel: label, direct: true };
+      await app.act('social.schedule', { sid, date, time }, { optimistic: b => withPub(b, sid, { ...repub(base, date, time, B.tz), status: 'scheduled', err: null, code: null }) });
+      toast(`Scheduled for ${fmtDW(date)} at ${atTz(B.tz, date, time)}`, { tone: 'ok' });
+      if (it.st !== 'scheduled') act.direct(it);
+    } catch { /* toasted */ }
+  };
+  const unschedule = () => { app.act('social.unschedule', { sid }, { optimistic: b => withPub(b, sid, null) }).then(() => toast('Unscheduled')).catch(() => {}); };
+  const compress = async () => { setFixing(true); try { await app.act('social.compress', { sid }); toast('Images compressed', { tone: 'ok' }); } catch { /* toasted */ } setFixing(false); };
+  const hintCh: SocialChannel | null = k === 'x' ? 'x' : k === 'linkedin' ? (co ? 'li_page' : 'li_profile') : null;
+  const showHint = pubOn && !past && live && it.kind === 'post' && !!bp?.can && !postDirect && !!hintCh && (B.social.channels || ['x', 'li_profile', 'li_page']).includes(hintCh);
+  const scheduledLine = pub && <><span className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${fmtDW(pub.date)} at ${atTz(B.tz, pub.date, pub.time)}`}</Status><span className="xs sub">{`As ${label}`}</span></span>
+    <Btn size="sm" icon="calendar" disabled={locked} onClick={() => setSc(true)}>Reschedule</Btn><Btn size="sm" kind="ghost" disabled={locked} onClick={unschedule}>Unschedule</Btn></>;
+  const postedL = (p: Pub | null) => (p?.direct ? `${it.kind === 'reply' ? 'Replied on' : 'Posted to'} ${ppl}` : 'Posted');
   return <article className="brief-d enter">
     {it.kind === 'reply' ? <>
       <div className="row xs sub" style={{ gap: 8, flexWrap: 'wrap' }}><PlatLogo k={it.plat!} s={16} /><span>{it.where}{!past && age != null ? ' · ' + ageL(age) : ''}{it.eng ? ' · ' + it.eng : ''}</span><span className="grow" />{it.url && <a className="small row" style={{ gap: 5, textDecoration: 'none', color: 'var(--ink2)' }} href={it.url} target="_blank" rel="noopener">Open thread<Icon n="ext" s={13} /></a>}</div>
@@ -311,7 +365,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       </div>
       <AutoText className="input-bare brief-text" value={text} readOnly={!live} onChange={e => setText(e.target.value)} style={{ opacity: busy ? .35 : 1 }} aria-label={it.kind === 'reply' ? 'Reply text' : 'Post text'} />
       <div className="row xs sub" style={{ gap: 12, minHeight: 18 }}>
-        {plat === 'x' && <span className="num" style={{ color: text.length > 280 ? 'var(--bad)' : undefined }}>{text.length}/280</span>}
+        {plat === 'x' && (() => { const n = pubOn ? charCount('x', text) : text.length; return <span className="num" style={{ color: n > 280 ? 'var(--bad)' : undefined }}>{n}/280</span>; })()}
         {edited && live && <><span>Edited</span><Btn kind="link" className="xs" onClick={restore}>Restore draft</Btn></>}
         {busy && <span className="row" style={{ gap: 6 }}><span className="spin" style={{ width: 11, height: 11, color: 'var(--signal)' }} />Rewriting…</span>}
       </div>
@@ -331,11 +385,18 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       <span className="xs sub">{vBusy ? `Creating ${vn > 1 ? vn + ' images' : 'image'} · ${styleL(im.style)}` : `${styleL(im.style)}${vn > 1 ? ' · ' + vn + ' images' : ''}`}</span>
       </>}
     </div>}
-    {past ? <div className="row brief-acts">{it.st === 'posted' ? <Status tone="ok">Posted</Status> : <span className="small sub">{it.st === 'expired' ? 'Expired. Replies this late rarely get seen.' : 'Skipped'}</span>}<span className="grow" /><Btn size="sm" kind="ghost" icon="copy" onClick={() => { copyText(text); toast('Copied'); }}>Copy</Btn></div>
+    {pubOn && live && pub?.status === 'failed' && <div className="col" style={{ gap: 2, marginTop: 18 }}><Status tone="bad">{`Didn’t post ${fmtDW(pub.date)} at ${atTz(B.tz, pub.date, pub.time)}`}</Status><span className="xs sub">{failedLine(pub)}</span></div>}
+    {past ? <div className="row brief-acts">{it.st === 'scheduled' && pub ? scheduledLine : it.st === 'posted' ? <Status tone="ok">{postedL(pub)}</Status> : <span className="small sub">{it.st === 'expired' ? 'Expired. Replies this late rarely get seen.' : 'Skipped'}</span>}<span className="grow" /><Btn size="sm" kind="ghost" icon="copy" onClick={() => { copyText(text); toast('Copied'); }}>Copy</Btn></div>
     : <div className="row brief-acts">
-      {it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
-      {it.st === 'copied' && <><Btn kind="primary" icon="check" onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" onClick={() => act.copy(it)}>Copy again</Btn></>}
-      {it.st === 'posted' && <Status tone="ok">Posted</Status>}
+      {postDirect && live && <><Btn kind="primary" loading={pBusy} disabled={busy || problems.length > 0} onClick={() => setCf(true)}><LogoLabel k={k!}>{pub?.status === 'failed' ? 'Try again' : 'Post now'}</LogoLabel></Btn>
+        <Btn icon="calendar" disabled={busy || pBusy || problems.length > 0} onClick={() => setSc(true)}>Schedule</Btn>
+        <Btn kind="ghost" icon="copy" aria-label="Copy post" title="Copy post" onClick={() => act.copy(it)} /></>}
+      {replyDirect && it.st === 'open' && <><Btn kind="primary" disabled={busy || problems.length > 0} onClick={replyNow}><LogoLabel k="x">Reply now</LogoLabel></Btn><Btn kind="ghost" icon="copy" aria-label="Copy reply" title="Copy reply" onClick={() => act.copy(it)} /></>}
+      {it.st === 'scheduled' && scheduledLine}
+      {!postDirect && !replyDirect && it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
+      {!postDirect && it.st === 'copied' && <><Btn kind="primary" icon="check" onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" onClick={() => act.copy(it)}>Copy again</Btn></>}
+      {it.st === 'posted' && <Status tone="ok">{postedL(pub)}</Status>}
+      {it.st === 'posted' && pub?.direct && <Btn size="sm" kind="ghost" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={pub.platform}>{`View on ${ppl}`}</LogoLabel></Btn>}
       {it.st === 'skipped' && <span className="small sub">Skipped</span>}
       {live && <span style={{ position: 'relative' }} ref={anchor}><Btn kind="ghost" icon="wand" disabled={busy} onClick={() => setMenu(!menu)} aria-haspopup="menu">Rewrite</Btn>
         <Popover anchor={anchor} open={menu} onClose={() => setMenu(false)} style={{ width: 260 }}>
@@ -346,9 +407,19 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       <span className="grow" />
       {it.kind === 'post' && live && !im && <Btn kind="link" className="small" onClick={() => setVis(true)}>Add visuals</Btn>}
       {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={() => act.skip(it)}>Skip</Btn>}
-      {!live && <Btn kind="link" className="small" onClick={() => act.undo(it)}>Undo</Btn>}
+      {!live && it.st !== 'scheduled' && !pub?.direct && <Btn kind="link" className="small" onClick={() => act.undo(it)}>Undo</Btn>}
     </div>}
     {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{co ? `Post from the ${name} account. Help first, product second.` : it.noMention ? `${it.where} doesn’t allow self-promotion, so this reply stays purely helpful.` : it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.${it.mention && it.rulesUnknown ? ` Check ${it.where}’s rules on self-promotion before posting this version.` : ''}` : it.mention ? `Plugs ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Plug ${name}” if it fits.`}</p>}
+    {showHint && <p className="xs sub" style={{ marginTop: 10 }}>{sa?.expired ? <>{`${chOf(sa.ch).l} needs reconnecting to post from here. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Reconnect</a></> : <>{`Connect ${k === 'x' ? 'X' : co ? 'your LinkedIn page' : 'your LinkedIn profile'} to post or schedule from Radar. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Connect</a></>}</p>}
+    {!past && live && (postDirect || (replyDirect && it.st === 'open')) && problems.length > 0 && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{problems[0].msg}</span>{problems[0].fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{problems[0].fix.l}</Btn>}</p>}
+    {postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${pl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa}
+      initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('brief', k!, B.today)} onSave={schedule} />}
+    {it.st === 'scheduled' && pub && !postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${ppl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa} initial={{ date: pub.date, time: pub.time }} onSave={schedule} />}
+    {postDirect && <Modal open={cf} onClose={() => setCf(false)} width={440} label="Post now"><div className="col" style={{ padding: 30, gap: 16 }}>
+      <h2 className="h2">{`Post to ${pl} now?`}</h2>
+      <p className="sub">It goes live as <span style={{ color: 'var(--ink)' }}>{label}</span>{vn > 0 ? ` with ${vn} image${vn > 1 ? 's' : ''}` : ''}. You can delete it on {pl} afterwards.</p>
+      <div className="row" style={{ justifyContent: 'flex-end', marginTop: 6 }}><Btn kind="ghost" onClick={() => setCf(false)}>Cancel</Btn><Btn kind="primary" onClick={postNow}><LogoLabel k={k!}>Post now</LogoLabel></Btn></div>
+    </div></Modal>}
     {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} initial={visInitial} onCreate={createVis} />}
   </article>;
 }

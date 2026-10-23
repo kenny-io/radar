@@ -8,6 +8,7 @@ import { api } from '@/client/api';
 import { Btn, PageHead, Section, Seg, Status } from '@/components/ui';
 import { GscConnect } from '@/features/gsc/GscConnect';
 import { PublishingSettings } from '@/features/publishing/PublishingSettings';
+import { SocialAccounts } from '@/features/social/channels/SocialAccounts';
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
 import type { CalendarSettings, Member, Role, Workspace, Appearance } from '@/lib/types';
@@ -50,14 +51,14 @@ export function AISettings() {
 
 export function SettingsPage() {
   const app = useApp(); const { B, act, toast, route } = app;
-  const gscRef = useRef<HTMLDivElement>(null); const pubRef = useRef<HTMLDivElement>(null);
+  const gscRef = useRef<HTMLDivElement>(null); const pubRef = useRef<HTMLDivElement>(null); const socRef = useRef<HTMLDivElement>(null);
   const [tzList] = useState(() => timezones());
   const [langList] = useState(() => langs());
-  // ?gsc=1 / ?publishing=1 scroll the relevant section into view.
+  // ?gsc=1 / ?publishing=1 / ?social=1 scroll the relevant section into view.
   useEffect(() => {
-    const el = route.params?.gsc ? gscRef.current : route.params?.publishing ? pubRef.current : null;
+    const el = route.params?.gsc ? gscRef.current : route.params?.publishing ? pubRef.current : route.params?.social ? socRef.current : null;
     if (el) { const t = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); return () => clearTimeout(t); }
-  }, [route.params?.gsc, route.params?.publishing, !!B]);
+  }, [route.params?.gsc, route.params?.publishing, route.params?.social, !!B]);
   if (!B) return null;
   const g = B.gsc; const bl = B.blog; const cs = B.calendar.settings;
   const setCs = (p: Partial<CalendarSettings>) => act('settings.calendarDefaults', p, { optimistic: b => ({ ...b, calendar: { ...b.calendar, settings: { ...b.calendar.settings, ...p } } }) });
@@ -78,6 +79,7 @@ export function SettingsPage() {
       <PublishingSettings />
       <Row t="Schedule"><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><input type="time" className="input" style={{ width: 130 }} value={bl.time} onChange={e => { const time = e.target.value; if (/^\d{2}:\d{2}$/.test(time)) app.actLater('blog.schedule', 'blog.schedule', { time }, { optimistic: sched({ time }) }); }} aria-label="Publish time" /><select className="input" style={{ width: 220 }} value={bl.tz} onChange={e => act('blog.schedule', { tz: e.target.value }, { optimistic: sched({ tz: e.target.value }) }).catch(() => {})} aria-label="Timezone">{tzs.map(t => <option key={t}>{t}</option>)}</select></div></Row>
     </Section></div>
+    {B.social.publishing && <div ref={socRef} style={{ scrollMarginTop: 24 }}><Section title="Social accounts" sub="Post and schedule from Radar. Nothing posts unless you post or schedule it."><SocialAccounts /></Section></div>}
     <Section title="Calendar defaults">
       <Row t="Market & language"><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><select className="input" style={{ width: 200 }} value={cs.market} onChange={e => setCs({ market: e.target.value }).catch(() => {})} aria-label="Market">{markets.map(m => <option key={m}>{m}</option>)}</select><select className="input" style={{ width: 200 }} value={cs.language} onChange={e => setCs({ language: e.target.value }).catch(() => {})} aria-label="Language">{languages.map(m => <option key={m}>{m}</option>)}</select></div></Row>
       <Row t="Frequency" d="Used for your next generated calendar."><FreqSetting cs={cs} set={p => { setCs(p).catch(() => {}); toast('Frequency saved · ' + cadenceLabel({ ...cs, ...p })); }} /></Row>

@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api, actCall, ApiError } from './api';
+import { LaterQueue } from './laterQueue';
 import { useToast, type ToastOpts } from '@/components/ui';
 import type { JobSummary, Me, Workspace } from '@/lib/types';
 
@@ -24,6 +25,8 @@ export interface AppCtx {
   act: <T = any>(action: string, input?: any, opts?: ActOpts) => Promise<T>;
   /** Debounced act for text fields: last call per key wins after `ms`. */
   actLater: (key: string, action: string, input: any, opts?: ActOpts & { ms?: number }) => void;
+  /** Send pending `actLater` saves now; resolves when they have finished (never rejects). Call before social.postNow / schedule / scheduleAll. */
+  flushLater: () => Promise<void>;
   setB: (fn: (B: Workspace) => Workspace) => void;
   refresh: () => Promise<void>;
   refreshMe: () => Promise<Me>;
@@ -82,7 +85,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
       es.addEventListener('rev', (ev: MessageEvent) => {
         const { rev } = JSON.parse(ev.data);
         if (revRef.current >= rev) return; // already have it (e.g. our own write)
-        if (Object.keys(timers.current).length || inflight.current > 0) { staleRef.current = true; return; } // don't clobber typing
+        if (later.current.size || inflight.current > 0) { staleRef.current = true; return; } // don't clobber typing
         refresh();
       });
       es.addEventListener('job', (ev: MessageEvent) => { const j = JSON.parse(ev.data); setJobs(m => ({ ...m, [j.id]: j })); });
@@ -96,7 +99,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
     return () => { stopped = true; clearTimeout(retry); es?.close(); };
   }, [bid, refresh, toast, router]);
 
-  const timers = useRef<Record<string, any>>({});
+  const later = useRef(new LaterQueue());
   const revRef = useRef(0); revRef.current = B?.rev || 0;
   const inflight = useRef(0); const latestWs = useRef<Workspace | null>(null); const staleRef = useRef(false);
   const setB = useCallback((fn: (B: Workspace) => Workspace) => setBState(b => (b ? fn(b) : b)), []);
@@ -110,7 +113,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
       if (r.workspace && bidRef.current === id) {
         // Only the last in-flight write replaces local state; earlier responses must not clobber newer optimistic edits.
         if (!latestWs.current || r.workspace.rev >= latestWs.current.rev) latestWs.current = r.workspace;
-        if (inflight.current === 1 && !Object.keys(timers.current).length) {
+        if (inflight.current === 1 && !later.current.size) {
           const ws = latestWs.current; latestWs.current = null;
           if (!opts.keepLocal) setBState(ws); else setBState(b => (b ? { ...b, rev: ws.rev } : b));
         }
@@ -122,15 +125,15 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
       throw e;
     } finally {
       inflight.current--;
-      if (inflight.current === 0 && !Object.keys(timers.current).length && staleRef.current) { staleRef.current = false; refresh(); }
+      if (inflight.current === 0 && !later.current.size && staleRef.current) { staleRef.current = false; refresh(); }
     }
   }, [refresh, toast]);
 
   const actLater = useCallback((key: string, action: string, input: any, opts: ActOpts & { ms?: number } = {}) => {
     if (opts.optimistic) setBState(b => (b ? opts.optimistic!(b) : b));
-    clearTimeout(timers.current[key]);
-    timers.current[key] = setTimeout(() => { delete timers.current[key]; act(action, input, { ...opts, optimistic: undefined, keepLocal: true }).catch(() => {}); }, opts.ms ?? 600);
+    later.current.schedule(key, opts.ms ?? 600, () => act(action, input, { ...opts, optimistic: undefined, keepLocal: true }));
   }, [act]);
+  const flushLater = useCallback(() => later.current.flush(), []);
 
   const switchBusiness = useCallback(async (id: string) => {
     await api('/api/b/current', { body: { id } });
@@ -145,7 +148,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
   }, [jobs, B]);
 
   const value: AppCtx = {
-    me, user: me.user, B, bid, route, go, toast, act, actLater, setB, refresh, refreshMe, switchBusiness, jobs, jobFor,
+    me, user: me.user, B, bid, route, go, toast, act, actLater, flushLater, setB, refresh, refreshMe, switchBusiness, jobs, jobFor,
     onboarding: { open: onb || !me.currentId, start: () => setOnb(true), close: () => setOnb(false) },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -8,6 +8,10 @@ import { RadarField, type Blip } from '@/components/RadarField';
 import { DOT_COLOR, ENTRY_TYPES, MARKETS, cadenceLabel, langs, platLabel, tzShort } from '@/lib/constants';
 import { addDays, fmtD, fmtDW, fmtN, fmtTime } from '@/lib/format';
 import type { CalendarEntry, CalendarSettings, EntryType, Workspace } from '@/lib/types';
+import { socialItems, type SocialItem } from '@/lib/socialPublish';
+import { SocialChip } from '@/features/social/channels/SocialChip';
+import { dropKind } from '@/features/social/channels/logic';
+import { moveSocial, openSocial, useNowMs } from '@/features/social/channels/useSocial';
 
 type Entries = CalendarEntry[];
 const LOCKED = ['published', 'scheduled'];
@@ -46,7 +50,7 @@ export function ContentCalendar() {
   const [open, setOpen] = useState<string | null>(params.open || null);
   const [regen, setRegen] = useState(false); const [filter, setFilter] = useState<string>(params.filter || 'all');
   useEffect(() => { if (params.open) setOpen(params.open); }, [route.params]); // eslint-disable-line react-hooks/exhaustive-deps
-  const research = useResearch(app);
+  const research = useResearch(app); const now = useNowMs();
   const generate = async (settings: CalendarSettings, keep?: boolean) => {
     setSetup(false); setRegen(false); research.setStarting({ keep: !!keep });
     try { await app.act('calendar.generate', { settings, keep: !!keep }, { optimistic: b => ({ ...b, calendar: { ...b.calendar, settings } }) }); }
@@ -71,6 +75,7 @@ export function ContentCalendar() {
     toast(`${n} topics scheduled. Radar drafts each one the day before it publishes.`, { tone: 'ok' });
   };
   const move = (id: string, date: string) => {
+    if (B.social.publishing && dropKind(id) === 'social') { moveSocial(app, id, date); return; }
     const me = entries.find(e => e.id === id); if (!me || me.date === date) return;
     const others = entries.filter(e => e.date === date && e.id !== id && !LOCKED.includes(e.status) && e.status !== 'publishing');
     app.act('calendar.move', { entryId: id, date }, { optimistic: b => withEntries(b, es => es.map(e => (e.id === id ? { ...e, date } : others.some(o => o.id === e.id) ? { ...e, date: me.date } : e))) }).catch(() => {});
@@ -83,7 +88,7 @@ export function ContentCalendar() {
       {counts.proposed > 0 && <Btn kind="primary" icon="check" title="Radar drafts each one the day before it publishes" onClick={approveAll}>Approve all {counts.proposed}</Btn>}
     </PageHead>
     <PublishLine app={app} />
-    {view === 'calendar' ? <MonthGrid entries={entries} today={B.today} onOpen={setOpen} onMove={move} />
+    {view === 'calendar' ? <MonthGrid entries={entries} today={B.today} onOpen={setOpen} onMove={move} social={B.social.publishing ? socialItems(B, now) : undefined} onOpenSocial={it => openSocial(app.go, it)} />
       : <CalList entries={entries} filter={filter} setFilter={setFilter} onOpen={setOpen} />}
     <EntrySheet app={app} entry={entry} onClose={() => setOpen(null)} upd={upd} />
     <Modal open={regen} onClose={() => setRegen(false)} width={480}><div className="col" style={{ padding: 30, gap: 16 }}>
@@ -145,23 +150,25 @@ export function PublishLine({ app }: { app: AppCtx }) {
   </div>;
 }
 
-function MonthGrid({ entries, today, onOpen, onMove }: { entries: Entries; today: string; onOpen: (id: string) => void; onMove: (id: string, date: string) => void }) {
+function MonthGrid({ entries, today, onOpen, onMove, social, onOpenSocial }: { entries: Entries; today: string; onOpen: (id: string) => void; onMove: (id: string, date: string) => void; social?: SocialItem[]; onOpenSocial?: (it: SocialItem) => void }) {
   const [over, setOver] = useState<string | null>(null);
   const first = new Date(entries[0].date + 'T12:00'); const startD = addDays(entries[0].date, -((first.getDay() + 6) % 7));
   const last = entries[entries.length - 1].date; const days: string[] = []; let d = startD; while (d <= last || days.length % 7) { days.push(d); d = addDays(d, 1); }
   const by: Record<string, Entries> = {}; entries.forEach(e => { (by[e.date] = by[e.date] || []).push(e); });
+  // Social posts (publishing on) show after the day's articles, as compact chips.
+  const sb: Record<string, SocialItem[]> = {}; (social || []).forEach(x => { (sb[x.date] = sb[x.date] || []).push(x); });
   return <div className="cal-grid" style={{ border: '1px solid var(--line)', borderRadius: 18, overflow: 'hidden', background: 'var(--surface)' }}>
     <style>{`.cal-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}@media(max-width:1180px){.cal-kw{display:none!important}.cal-t{-webkit-line-clamp:3!important;font-size:12px!important}}@media(max-width:760px){.cal-days{grid-template-columns:1fr}.cal-wk{display:none!important}.cal-empty{display:none!important}.cal-cell{min-height:0!important;flex-direction:row!important;align-items:flex-start;gap:12px!important;padding:10px 12px!important;border-right:0!important}.cal-d{width:58px;flex:none;padding:7px 0 0!important;line-height:1.35}.cal-wd{display:block!important}.cal-es{flex:1;min-width:0}.cal-t{-webkit-line-clamp:3!important;font-size:13px!important}}`}</style>
     <div className="cal-days cal-wk" style={{ borderBottom: '1px solid var(--line)' }}>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => <span key={w} className="xs sub" style={{ padding: '10px 12px' }}>{w}</span>)}</div>
     <div className="cal-days">{days.map((day, i) => {
       const es = by[day] || []; const dt = new Date(day + 'T12:00'); const firstOfMonth = dt.getDate() === 1 || i === 0;
       return <div key={day} onDragOver={e => { e.preventDefault(); setOver(day); }} onDragLeave={() => setOver(o => (o === day ? null : o))} onDrop={e => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData('text'); if (id) onMove(id, day); }}
-        className={'cal-cell ' + (over === day ? 'drop-target ' : '') + (es.length ? '' : 'cal-empty')} style={{ minHeight: 118, padding: 8, borderRight: (i % 7 !== 6) ? '1px solid var(--line2)' : 0, borderBottom: '1px solid var(--line2)', display: 'flex', flexDirection: 'column', gap: 6, background: day < today ? 'var(--paper)' : 'transparent' }}>
+        className={'cal-cell ' + (over === day ? 'drop-target ' : '') + (es.length || sb[day] ? '' : 'cal-empty')} style={{ minHeight: 118, padding: 8, borderRight: (i % 7 !== 6) ? '1px solid var(--line2)' : 0, borderBottom: '1px solid var(--line2)', display: 'flex', flexDirection: 'column', gap: 6, background: day < today ? 'var(--paper)' : 'transparent' }}>
         <span className="xs num cal-d" style={{ color: day === today ? 'var(--signal-ink)' : 'var(--mute)', fontWeight: day === today ? 600 : 400, padding: '0 4px' }}><span className="cal-wd" style={{ display: 'none' }}>{day === today ? 'Today' : dt.toLocaleDateString('en-US', { weekday: 'short' })}</span>{firstOfMonth ? fmtD(day) : dt.getDate()}<span className="hide-sm">{day === today && ' · Today'}</span></span>
         <div className="cal-es col" style={{ gap: 6 }}>{es.map(e => <button key={e.id} draggable={!['published', 'scheduled', 'publishing'].includes(e.status)} onDragStart={ev => { ev.dataTransfer.setData('text', e.id); ev.dataTransfer.effectAllowed = 'move'; }} onClick={() => onOpen(e.id)} className="tap enter" style={{ textAlign: 'left', border: 0, background: e.status === 'proposed' ? 'transparent' : 'var(--fill)', boxShadow: e.status === 'proposed' ? 'inset 0 0 0 1px var(--line)' : 'none', borderRadius: 9, padding: '7px 8px', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', animationDelay: (i % 30) * 12 + 'ms' }}>
           <span className="small cal-t" style={{ lineHeight: 1.3, fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{e.title}</span>
           <span className="row cal-kw" style={{ gap: 6 }}><i className="dot" style={{ background: DOT_COLOR[e.status], width: 6, height: 6 }} /><span className="xs sub trunc">{e.mode === 'refresh' ? 'Refresh · ' : ''}{e.kw}</span></span>
-        </button>)}</div>
+        </button>)}{sb[day] && <div className="cal-soc">{sb[day].map(x => <SocialChip key={x.id} it={x} onOpen={onOpenSocial!} compact />)}</div>}</div>
       </div>;
     })}</div>
   </div>;
