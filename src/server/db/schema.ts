@@ -321,3 +321,62 @@ export const events = pgTable('events', {
   props: jsonb('props').$type<Record<string, any>>().notNull().default({}),
   createdAt: created(),
 }, t => [index('events_kind_at').on(t.kind, t.createdAt), index('events_biz_at').on(t.businessId, t.createdAt)]);
+
+/** Social channels (architecture.md §3): one connected account per channel per business. Tokens are encrypted
+ *  ({access_token, refresh_token?, expires_at, refresh_expires_at?, scope, stub?}) and never leave the server. */
+export const socialAccounts = pgTable('social_accounts', {
+  id: id(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  ch: text('ch').$type<'x' | 'li_profile' | 'li_page'>().notNull(),
+  /** X user id | LinkedIn person id (the profile app's OIDC sub) | LinkedIn organization id */
+  remoteId: text('remote_id').notNull(),
+  name: text('name').notNull(),
+  handle: text('handle'),
+  tokensEnc: text('tokens_enc').notNull(),
+  /** Access token expiry (plain, for the refresh sweep). */
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  expired: boolean('expired').notNull().default(false),
+  expiredAt: timestamp('expired_at', { withTimezone: true }),
+  connectedBy: uuid('connected_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: created(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [uniqueIndex('social_accounts_biz_ch_uq').on(t.businessId, t.ch)]);
+
+/** A post Radar scheduled or sent, keyed by its stable id (sid = 's:{packId}:{platform}' | 'b:{day}:{itemId}'). One row per sid
+ *  for life; every write after a claim is conditional on attempt_key, so a post is never sent twice. */
+export const socialPubs = pgTable('social_pubs', {
+  id: id(),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  sid: text('sid').notNull(),
+  src: text('src').$type<'pack' | 'brief'>().notNull(),
+  platform: text('platform').$type<'x' | 'linkedin'>().notNull(),
+  kind: text('kind').$type<'post' | 'reply'>().notNull().default('post'),
+  acctId: uuid('acct_id').references(() => socialAccounts.id, { onDelete: 'set null' }),
+  ch: text('ch').$type<'x' | 'li_profile' | 'li_page'>().notNull(),
+  acctLabel: text('acct_label').notNull(),
+  status: text('status').$type<'scheduled' | 'sending' | 'posted' | 'failed'>().notNull(),
+  /** Wall clock in businesses.timezone; due_at is derived from it. */
+  date: date('date').notNull(),
+  time: text('time').notNull(),
+  dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  attemptKey: uuid('attempt_key'),
+  /** 'media' | 'create' while sending (only 'create' failures have an unknown outcome) */
+  stage: text('stage').$type<'media' | 'create'>(),
+  claimedAt: timestamp('claimed_at', { withTimezone: true }),
+  retryAt: timestamp('retry_at', { withTimezone: true }),
+  /** Snapshot at claim: { text, media: [{ url, bytes, type }], manual } (for verify) */
+  payload: jsonb('payload').$type<any>(),
+  remoteId: text('remote_id'),
+  remoteUrl: text('remote_url'),
+  postedAt: timestamp('posted_at', { withTimezone: true }),
+  err: text('err'),
+  errCode: text('err_code'),
+  /** Provider status/body excerpt: logs only, never shown, never in events. */
+  errDetail: text('err_detail'),
+  auto: boolean('auto').notNull().default(false),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: created(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [uniqueIndex('social_pubs_biz_sid_uq').on(t.businessId, t.sid), index('social_pubs_due').on(t.status, t.dueAt), index('social_pubs_acct').on(t.acctId, t.status)]);
