@@ -66,7 +66,7 @@ export function socialIssues(B: Pick<Workspace, 'social' | 'brief'>, nowMs: numb
   const sf = items.filter(i => i.status === 'failed');
   if (sf.length) {
     const f = sf[0]; const pl = PLAT_L[f.k];
-    out.push({ id: 'socfail', tone: 'bad', label: sf.length > 1 ? `${sf.length} posts didn’t go out` : 'A post didn’t go out', head: `A ${pl} post didn’t go out.`, body: `“${f.name}” on ${pl}: ${failedLine({ err: f.err, code: f.code, platform: f.k })}`, open: f });
+    out.push({ id: 'socfail', tone: 'bad', label: sf.length > 1 ? `${sf.length} posts didn’t go out` : 'A post didn’t go out', head: `${pl === 'X' ? 'An' : 'A'} ${pl} post didn’t go out.`, body: `“${f.name}” on ${pl}: ${failedLine({ err: f.err, code: f.code, platform: f.k })}`, open: f });
   }
   for (const a of B.social.accounts || []) {
     if (!a.expired) continue;

@@ -227,7 +227,7 @@ describe.skipIf(!ON)('social channels (database)', () => {
       else expect(r).toMatchObject({ status: 'failed', errCode: 'rate_limit', err: errCopy('rate_limit', 'x') });
     }
     expect(failedLine({ err: (await pub(sx)).err, code: 'rate_limit', platform: 'x' })).toBe('X is limiting posts right now. Try again later. Nothing was published.');
-    expect((await db.select().from(S.notifications).where(eq(S.notifications.businessId, bid))).some(n => n.payload.msg === 'A X post didn’t go out.')).toBe(true);
+    expect((await db.select().from(S.notifications).where(eq(S.notifications.businessId, bid))).some(n => n.payload.msg === 'An X post didn’t go out.')).toBe(true);
     // Try again (Post now) on the failed row reuses it; a manual transient failure fails at once.
     const again = await act('social.postNow', { sid: sx });
     expect(again.pub).toMatchObject({ status: 'failed', code: 'rate_limit' });

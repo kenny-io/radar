@@ -103,7 +103,7 @@ async function finishFailed(r: PubRow, code: PubErrCode, detail: string, manual:
   log(r, `failed ${code} after ${r.attempts} attempt(s): ${detail.slice(0, 200)}`);
   if (detail !== CONTENT_MISSING) {
     await track('social.failed', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, code, attempts: r.attempts, scheduled: !manual } });
-    if (!manual) await notify(r.businessId, `A ${PLAT_L[r.platform]} post didn’t go out.`, { tone: 'bad', action: { label: 'Open', href: packHref(r, r.platform) } });
+    if (!manual) await notify(r.businessId, `${r.platform === 'x' ? 'An' : 'A'} ${PLAT_L[r.platform]} post didn’t go out.`, { tone: 'bad', action: { label: 'Open', href: packHref(r, r.platform) } });
   }
   await bump(r.businessId);
   return u;
@@ -233,7 +233,7 @@ export async function failStale(r: PubRow): Promise<boolean> {
   if (!u) return false;
   log(r, 'failed stale');
   await track('social.failed', { bid: r.businessId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, code: 'stale', attempts: r.attempts, scheduled: true } });
-  await notify(r.businessId, `A ${PLAT_L[r.platform]} post didn’t go out.`, { tone: 'bad', action: { label: 'Open', href: packHref(r, r.platform) } });
+  await notify(r.businessId, `${r.platform === 'x' ? 'An' : 'A'} ${PLAT_L[r.platform]} post didn’t go out.`, { tone: 'bad', action: { label: 'Open', href: packHref(r, r.platform) } });
   await bump(r.businessId);
   return true;
 }
