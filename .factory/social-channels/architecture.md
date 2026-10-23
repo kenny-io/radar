@@ -548,7 +548,7 @@ The prototype's London label is "UK" / "UK time". Production uses GMT or BST wit
 7. **Daily Brief.**
    - `briefPublish(accounts, item)` decides what shows:
      - posts: Post now (confirm), Schedule (default today 5:00 PM) and the icon-only Copy, when `direct`;
-     - X replies: Reply now opens X's box and marks the item copied, with **no** Radar confirmation window. Only `'api'` mode uses the "Reply on X now?" confirmation.
+     - X replies: Reply now opens X's box and marks the item copied, with **no** Radar confirmation window.
    - Scheduled items: the line plus Reschedule and Unschedule, shown dimmed in the queue.
    - "Posted to {Platform}" or "Replied on {Platform}" plus View on.
    - The prototype's Connect or Reconnect hint when `can && !direct` (posts and X replies).
