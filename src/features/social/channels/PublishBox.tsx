@@ -11,7 +11,7 @@ import type { Platform, Pub, SocialAccount, SocialChannel, SocialPack, SocialPos
 import { ConnectSocial } from './ConnectSocial';
 import { LogoLabel } from './LogoLabel';
 import { ScheduleModal } from './ScheduleModal';
-import { compressToast, postedAs, repub, rescheduleAction, withPub } from './logic';
+import { compressToast, heldLines, postedAs, repub, rescheduleAction, withPub } from './logic';
 import { useNowMs } from './useSocial';
 
 /** Preflight problems: amber dot + text, with a one-click fix where there is one. */
@@ -105,7 +105,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
   </div>;
   const expired = state === 'expired'; const scheduled = pub?.status === 'scheduled';
   return <div className="col" style={{ gap: 12 }}>
-    {expired && cur ? <div className="col" style={{ gap: 2 }}><Status tone="warn">{`${chOf(cur.ch).l} needs reconnecting`}</Status><span className="small sub">{scheduled ? `Scheduled for ${at(pub!)}, on hold until you reconnect.` : `${pl} access for ${acctLabel(cur)} expired.`}</span></div>
+    {expired && cur ? <div className="col" style={{ gap: 2 }}><Status tone="warn">{`${chOf(cur.ch).l} needs reconnecting`}</Status><span className="small sub">{heldLines(pub, cur, tz)?.body ?? `${pl} access for ${acctLabel(cur)} expired.`}</span></div>
       : state === 'scheduled' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${at(pub)}`}</Status><span className="small sub">{`As ${label} · edits are included until it posts`}</span></div>
         : state === 'failed' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="bad">{`Didn’t post ${at(pub)}`}</Status><span className="small sub">{failedLine(pub)}</span></div>
           : <div className="row" style={{ gap: 12 }}><span className="small grow">Post as</span>{accts.length > 1 ? <select className="input" style={{ width: 200, height: 34, fontSize: 13 }} value={cur?.id} onChange={e => setChosen(e.target.value)} aria-label="Post as">{accts.map(a => <option key={a.id} value={a.id}>{acctLabel(a) + (a.expired ? ' (reconnect)' : '')}</option>)}</select> : <span className="small sub">{label}</span>}</div>}

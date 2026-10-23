@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COPY, dueAtIso, socialItems } from '@/lib/socialPublish';
 import type { BriefItem, Pub, SocialAccount, SocialPack, Workspace } from '@/lib/types';
-import { autoSchedules, chipLabel, compressToast, dropKind, postedAs, rescheduleAction, findPub, planMove, scheduleAllRows, socialIssues, withPub } from './logic';
+import { autoSchedules, chipLabel, compressToast, dropKind, heldLines, postedAs, rescheduleAction, findPub, planMove, scheduleAllRows, socialIssues, withPub } from './logic';
 
 const TZ = 'America/New_York'; const TODAY = '2026-10-23';
 const NOW = Date.parse('2026-10-23T15:00:00Z'); // 11:00 AM ET
@@ -116,6 +116,19 @@ describe('Reschedule / Move post routing (QA D1)', () => {
     expect(rescheduleAction(p, '2026-10-25', '12:30')).toBe('none');
     expect(rescheduleAction(null, '2026-10-25', '12:30')).toBe('schedule');
     expect(rescheduleAction({ ...p, status: 'failed' }, '2026-10-25', '12:30')).toBe('schedule');
+  });
+});
+
+describe('On hold lines (QA R2: pack panel and Daily Brief)', () => {
+  const p = pub({ platform: 'x', date: '2026-10-25', time: '12:30', acct: X.id });
+  it('a scheduled post on an expired account is on hold, with the pack panel copy', () => {
+    expect(heldLines({ ...p, held: true }, { ...X, expired: true }, TZ)).toEqual({ head: 'X needs reconnecting', body: 'Scheduled for Sun, Oct 25 at 12:30 PM ET, on hold until you reconnect.' });
+    expect(heldLines(p, { ...LP, expired: true }, TZ)?.head).toBe('LinkedIn profile needs reconnecting'); // expired account even before the projection says held
+  });
+  it('is not on hold when the account is live, the post isn’t scheduled, or there is no account', () => {
+    expect(heldLines(p, X, TZ)).toBeNull();
+    expect(heldLines({ ...p, status: 'posted' }, { ...X, expired: true }, TZ)).toBeNull();
+    expect(heldLines({ ...p, held: true }, null, TZ)).toBeNull();
   });
 });
 

@@ -17,7 +17,8 @@ import type { Pub, SocialChannel } from '@/lib/types';
 import { LogoLabel } from '@/features/social/channels/LogoLabel';
 import { ScheduleModal } from '@/features/social/channels/ScheduleModal';
 import { failToast } from '@/features/social/channels/PublishBox';
-import { compressToast, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
+import { compressToast, heldLines, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
+import { ConnectSocial } from '@/features/social/channels/ConnectSocial';
 import { useNowMs } from '@/features/social/channels/useSocial';
 
 type Act = { copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
@@ -315,7 +316,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const label = acctLabel(sa) || pub?.acctLabel || '';
   const problems = (postDirect || (pubOn && it.kind === 'post' && it.st === 'scheduled')) && k ? preflight(k, briefPreflightInput(it, k, text)) : replyDirect ? preflight('x', { text, images: [] }) : [];
   const locked = isLocked(pub, now);
-  const [cf, setCf] = useState(false); const [sc, setSc] = useState(false); const [pBusy, setPBusy] = useState(false); const [fixing, setFixing] = useState(false);
+  const [cf, setCf] = useState(false); const [sc, setSc] = useState(false); const [pBusy, setPBusy] = useState(false); const [fixing, setFixing] = useState(false); const [recon, setRecon] = useState(false);
   const flushEdit = async () => { const pend = takePending(); if (pend) { await app.act('brief.item', { date: day, id: it.id, edit: pend }); clearOverlay(pend.v, pend.text); } };
   const postNow = async () => {
     setCf(false); setPBusy(true);
@@ -348,8 +349,12 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const compress = async () => { setFixing(true); try { const r = await app.act<{ compressed: number }>('social.compress', { sid }); toast(compressToast(r?.compressed), { tone: r?.compressed ? 'ok' : null }); } catch { /* toasted */ } setFixing(false); };
   const hintCh: SocialChannel | null = k === 'x' ? 'x' : k === 'linkedin' ? (co ? 'li_page' : 'li_profile') : null;
   const showHint = pubOn && !past && live && it.kind === 'post' && !!bp?.can && !postDirect && !!hintCh && (B.social.channels || ['x', 'li_profile', 'li_page']).includes(hintCh);
-  const scheduledLine = pub && <><span className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${fmtDW(pub.date)} at ${atTz(B.tz, pub.date, pub.time)}`}</Status><span className="xs sub">{`As ${label}`}</span></span>
-    <Btn size="sm" icon="calendar" disabled={locked || problems.length > 0} onClick={() => setSc(true)}>Reschedule</Btn><Btn size="sm" kind="ghost" disabled={locked} onClick={unschedule}>Unschedule</Btn></>;
+  // On hold (its account is expired): the pack panel's lines, plus Reconnect. Reschedule (time locked) and Unschedule stay.
+  const pubAcct = pub ? socialAccountsOf(B).find(a => a.id === pub.acct) || sa : null; const held = heldLines(pub, pubAcct, B.tz);
+  const scheduledLine = pub && <>{held ? <span className="col" style={{ gap: 2 }}><Status tone="warn">{held.head}</Status><span className="xs sub">{held.body}</span></span>
+      : <span className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${fmtDW(pub.date)} at ${atTz(B.tz, pub.date, pub.time)}`}</Status><span className="xs sub">{`As ${label}`}</span></span>}
+    <Btn size="sm" icon="calendar" disabled={locked || problems.length > 0} onClick={() => setSc(true)}>Reschedule</Btn><Btn size="sm" kind="ghost" disabled={locked} onClick={unschedule}>Unschedule</Btn>
+    {held && pubAcct && <Btn size="sm" kind="primary" onClick={() => setRecon(true)}><LogoLabel k={pub.platform}>{`Reconnect ${chOf(pubAcct.ch).l}`}</LogoLabel></Btn>}</>;
   const postedL = (p: Pub | null) => (p?.direct ? `${it.kind === 'reply' ? 'Replied on' : 'Posted to'} ${ppl}` : 'Posted');
   return <article className="brief-d enter">
     {it.kind === 'reply' ? <>
@@ -425,6 +430,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       <p className="sub">It goes live as <span style={{ color: 'var(--ink)' }}>{label}</span>{vn > 0 ? ` with ${vn} image${vn > 1 ? 's' : ''}` : ''}. You can delete it on {pl} afterwards.</p>
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 6 }}><Btn kind="ghost" onClick={() => setCf(false)}>Cancel</Btn><Btn kind="primary" onClick={postNow}><LogoLabel k={k!}>Post now</LogoLabel></Btn></div>
     </div></Modal>}
+    {held && pubAcct && <ConnectSocial ch={recon ? pubAcct.ch : null} reconnect={pubAcct} open={recon} onClose={() => setRecon(false)} />}
     {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} initial={visInitial} onCreate={createVis} />}
   </article>;
 }

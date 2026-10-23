@@ -65,6 +65,11 @@ export function rescheduleAction(pub: Pick<Pub, 'status' | 'date' | 'time'> | nu
   if (pub.time === time) return pub.date === date ? 'none' : 'move';
   return 'schedule';
 }
+/** On hold: a scheduled post whose account is expired (pack panel and Daily Brief share these lines). null = not on hold. */
+export function heldLines(pub: Pick<Pub, 'status' | 'held' | 'date' | 'time'> | null | undefined, acct: SocialAccount | null | undefined, tz: string): { head: string; body: string } | null {
+  if (!pub || pub.status !== 'scheduled' || !acct || !(pub.held || acct.expired)) return null;
+  return { head: `${chOf(acct.ch).l} needs reconnecting`, body: `Scheduled for ${fmtDW(pub.date)} at ${atTz(tz, pub.date, pub.time)}, on hold until you reconnect.` };
+}
 /** Toast after Compress images: only claim a change when Radar re-encoded something (divergence: neutral copy for 0). */
 export const compressToast = (changed: number | null | undefined) => (changed ? 'Images compressed' : 'Images are already small enough.');
 /** The Social status line says "scheduled to connected accounts" only while automatic posts can really be scheduled:
