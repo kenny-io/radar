@@ -169,3 +169,26 @@ Retested by factory-qa on 2026-10-23, 12:20–12:45 PM ET.
 - **R2 (minor):** a scheduled Brief post whose account is expired shows only "Scheduled · …", with no "on hold" line or Reconnect hint. The pack panel shows "X needs reconnecting / …on hold", and the chip shows On hold. This existed in T5; it was not caused by the fix.
 
 **Recommendation:** D1, D2, D3, D5 and D6 are fixed, and no regression was found. **Pass**, behind the default-off flag. Live X and LinkedIn are still not run (blocked: no developer apps).
+
+## QA recheck (T5c)
+Rechecked by factory-qa on 2026-10-23, about 12:40–12:50 PM ET.
+
+**Tested revision:** `fd1956dd`. It includes the R2 fix (`fd1956dd`) and the X env alias (`5e510589`, server env only, not exercised live).
+
+**Environment:** same as T5. radar_qa was reset and seeded, the app ran on port 3100 with stubs and the flag set to `all`.
+
+**Evidence:** in `…/scratchpad/qa-t5/`:
+- `recheck/` holds `typecheck.log`, `test.log` and `dev.log`;
+- the screenshots are `shots/c01…c05-*.png`;
+- the scenario is `s-c-r2.mjs`.
+
+| Check | Result |
+|---|---|
+| `npm run typecheck` | pass |
+| `DATABASE_URL=…/radar_qa npm test` | 258/259. The one failure is the known `openrouter.qa.test.ts` parity snapshot |
+| R2: held Brief post (X expired, scheduled Sat 24 at 5:00 PM), in the browser pane and in Playwright | **Pass.** Shows "X needs reconnecting", "Scheduled for Sat, Oct 24 at 5:00 PM ET, on hold until you reconnect.", Reschedule, Unschedule and "Reconnect X" (with the logo). The Reschedule window has the time disabled at 17:00. Reconnect X opens the "access expired" window and toasts "X reconnected. 2 held posts will go out as scheduled.". The item returns to "Scheduled · Sat, Oct 24 at 5:00 PM ET / As @fieldnoteapp" (c02, c03) |
+| Pack panel held state (shared helper) | **Pass.** Same copy as before: "X needs reconnecting / Scheduled for Sat, Oct 24 at 12:30 PM ET, on hold until you reconnect." with Reconnect X, Reschedule and Unschedule. It shows "Scheduled · …" again after the reconnect (c01, c05) |
+| Brief regression on live accounts | **Pass.** The LinkedIn profile post shows "Scheduled · Sun, Oct 25 at 5:00 PM ET / As Maya Chen", and Unschedule toasts "Unscheduled" and returns it to Post now / Schedule. Company post Post now asks "It goes live as Fieldnote · Page", toasts "Posted to LinkedIn as Fieldnote · Page", and then shows "Posted to LinkedIn" + View on LinkedIn (c04) |
+| Dev log | No server errors, no tokens |
+
+**Result:** R2 is fixed, and no regression was found. **Pass**, behind the default-off flag. Live X and LinkedIn are still not run (blocked: no developer apps).
