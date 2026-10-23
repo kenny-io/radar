@@ -411,3 +411,14 @@ Everything here is behind `RADAR_SOCIAL_PUBLISHING`, which is off by default. Wi
 | Prototype phone hunks | The update's prototype also carries mobile Brief sheet, `.mob-bar` 56px, bottom-sheet modals and other layout hunks | Not ported: they're outside this update's text and would change flag-off rendering | Scope | Yes | Open (owner to decide) |
 | Live providers | — | Built against X API v2 and LinkedIn REST (`LinkedIn-Version` 202610). **Not verified live**: no developer apps yet. See LAUNCH.md §7b | Owner setup pending | — | Open |
 | X link cost | — | X charges $0.20 for a post with a link vs $0.015; links are kept | Owner decision 2 | No | Owner decision |
+
+## Design update 2026-10-23b (Settings sidebar, quieter Disconnect, A–Z connectors)
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| Settings sidebar | Category sidebar, one section at a time, saved in `localStorage['radar.settings.tab']` | As designed. Links into Settings (`?section=<key>`, and the older `?gsc=1` / `?publishing=1` / `?social=1`) open their section, save it as the last one, then drop the query from the URL, so a reload keeps whatever the user picks next | Existing links into Settings must keep landing on the right section | Yes | Matches design |
+| Social accounts item | Always listed | Hidden while `RADAR_SOCIAL_PUBLISHING` is off for the business (a saved `social` falls back to Search Console) | The section doesn't exist with the flag off | Only with the flag off | Logged |
+| Reconnect toasts | Linked to Settings | Link to `/settings?section=social` | Lands on the right section | Yes | Logged |
+| Disconnect while working | — | The `.unlink` action is dimmed and disabled while a disconnect is in flight | Prevents double clicks | Barely | Logged |
+| Blog connectors A–Z | Sort by label | Already sorted A–Z in the build (since the first port) | — | No | Matches design |
+| Phone sidebar | Sideways row | As designed; like the prototype, the selected item isn't scrolled into view on load | Faithful to the prototype | Minor | Logged |

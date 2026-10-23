@@ -3,7 +3,8 @@
 // TeamSettings + FeatureRequest (radar-extras.jsx). Max-width 1080; a category sidebar and one section at a time (2026-10-23b).
 import { BrandIcon } from '@/components/brand';
 import React, { useEffect, useRef, useState } from 'react';
-import { useApp } from '@/client/app';
+import { useRouter } from 'next/navigation';
+import { routeToUrl, useApp } from '@/client/app';
 import { api } from '@/client/api';
 import { Btn, PageHead, Section, Seg, Status } from '@/components/ui';
 import { GscConnect } from '@/features/gsc/GscConnect';
@@ -59,7 +60,7 @@ const SET_NAV: [string, [SetKey, string][]][] = [
 ];
 
 export function SettingsPage() {
-  const app = useApp(); const { B, act, toast, route } = app;
+  const app = useApp(); const { B, act, toast, route } = app; const router = useRouter();
   const [tzList] = useState(() => timezones());
   const [langList] = useState(() => langs());
   // One section at a time. ?section=<key> (and the older ?gsc=1 / ?publishing=1 / ?social=1 links) opens a section;
@@ -68,11 +69,18 @@ export function SettingsPage() {
   const keys = nav.flatMap(([, items]) => items.map(([k]) => k));
   const p = route.params || {};
   const deep: string | null = p.section || (p.gsc ? 'gsc' : p.publishing ? 'publishing' : p.social ? 'social' : null);
-  const [saved, setSaved] = useState<string>(() => { try { return localStorage.getItem(SET_KEY) || 'gsc'; } catch { return 'gsc'; } });
-  const setTab = (k: SetKey) => { setSaved(k); try { localStorage.setItem(SET_KEY, k); } catch {} };
-  useEffect(() => { if (deep && (keys as string[]).includes(deep)) setTab(deep as SetKey); }, [deep, !!B]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stored = () => { try { return localStorage.getItem(SET_KEY); } catch { return null; } };
+  const [sel, setSel] = useState<string>(() => deep || stored() || 'gsc');
+  const setTab = (k: string) => { setSel(k); try { localStorage.setItem(SET_KEY, k); } catch {} };
+  // A link opens its section once: it is saved as the last section, then dropped from the URL, so a reload keeps whatever
+  // the user picks next and a later link to the same section still applies.
+  useEffect(() => {
+    if (!deep || !B) return;
+    if ((keys as string[]).includes(deep)) setTab(deep); else setSel(stored() || 'gsc');
+    router.replace(routeToUrl('settings'), { scroll: false });
+  }, [deep, !!B]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!B) return null;
-  const tab: SetKey = (keys as string[]).includes(saved) ? saved as SetKey : 'gsc';
+  const tab: SetKey = (keys as string[]).includes(sel) ? sel as SetKey : 'gsc';
   const g = B.gsc; const bl = B.blog; const cs = B.calendar.settings;
   const setCs = (p: Partial<CalendarSettings>) => act('settings.calendarDefaults', p, { optimistic: b => ({ ...b, calendar: { ...b.calendar, settings: { ...b.calendar.settings, ...p } } }) });
   const markets = MARKETS.includes(cs.market) ? MARKETS : [cs.market, ...MARKETS];
