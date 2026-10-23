@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   acctLabel, atTz, briefAccount, liCommentary, normForMatch, xReplyIntentUrl, xReplyMode, publishCostUsd, expiresBefore, expiryNote, briefPreflightInput, briefPublish, briefSid, charCount, dayOptions, defaultSlot, dueAtIso, errCopy, failedLine,
   isLocked, isPastSlot, localParts, mentions, moveCheck, packPanelState, packSid, parseSid, pickAccount, preflight, scheduleAllWhy, scheduledCount,
-  shortTime, showScheduleAll, socialItems, TIME_SLOTS, tzLabel, tzNote, xReplyAllowed, xStatusId, zonedTimeToUtc, COPY, LOCK_MS, MAX_IMAGE_BYTES,
+  shortTime, showScheduleAll, socialItems, TIME_SLOTS, tzLabel, tzNote, xStatusId, zonedTimeToUtc, COPY, LOCK_MS, MAX_IMAGE_BYTES,
 } from './socialPublish';
 import type { BriefItem, Pub, SocialAccount, Workspace } from './types';
 
@@ -223,21 +223,17 @@ describe('X replies', () => {
     expect(mentions('hey @fieldnoteapp2', '@fieldnoteapp')).toBe(false);
     expect(mentions('mail me@fieldnoteapp', '@fieldnoteapp')).toBe(false);
   });
-  it('offers Reply now only when the thread mentions the connected account', () => {
-    expect(xReplyAllowed(reply(), X)).toBe(true);
-    expect(xReplyAllowed(reply({ title: 'Any tips for scoping work?' }), X)).toBe(false);
-    expect(xReplyAllowed(reply({ url: 'https://x.com/someone' }), X)).toBe(false);
-    expect(xReplyAllowed(reply(), null)).toBe(false);
+  it('Reply now always opens X\'s reply box, connected or not, when the thread has a status id', () => {
     expect(briefPublish([X], reply({ title: 'no mention' }))).toMatchObject({ platform: 'x', can: true, direct: true, replyMode: 'intent' });
-    expect(briefPublish([X], reply())).toMatchObject({ direct: true, replyMode: 'api' });
+    expect(briefPublish([X], reply())).toMatchObject({ direct: true, replyMode: 'intent' });
+    expect(briefPublish([], reply())).toMatchObject({ direct: true, replyMode: 'intent' });
+    expect(briefPublish([{ ...X, expired: true }], reply())).toMatchObject({ direct: true, replyMode: 'intent' });
     expect(briefPublish([X], reply({ url: 'https://x.com/someone' }))).toMatchObject({ direct: false, replyMode: null });
-    expect(briefPublish([{ ...X, expired: true }], reply())).toMatchObject({ direct: false, replyMode: null });
-    expect(briefPublish([], reply())).toMatchObject({ direct: false, replyMode: null });
+    expect(xReplyMode(reply())).toBe('intent');
+    expect(xReplyMode(reply({ plat: 'reddit' }))).toBeNull();
   });
-  it('builds the X reply-box fallback URL', () => {
+  it('builds the X reply-box URL', () => {
     expect(xReplyIntentUrl('1843', 'Try a change log & a weekly review?')).toBe('https://x.com/intent/tweet?in_reply_to=1843&text=Try%20a%20change%20log%20%26%20a%20weekly%20review%3F');
-    expect(xReplyMode(reply({ title: 'no mention' }), X)).toBe('intent');
-    expect(xReplyMode(reply(), X)).toBe('api');
   });
   it('routes brief posts and refuses non-postable platforms', () => {
     expect(briefPublish([X, PROF, PAGE], { kind: 'post', pl: 'linkedin', acct: 'company', title: '' })).toMatchObject({ platform: 'linkedin', direct: true });

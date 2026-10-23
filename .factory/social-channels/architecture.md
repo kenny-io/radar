@@ -461,21 +461,15 @@ The prototype's London label is "UK" / "UK time". Production uses GMT or BST wit
 
 ## 14. X replies
 
-- **Never scheduled.** Replies go out only from an explicit **Reply now** (AC-22). Radar never schedules or auto-sends a reply.
-- **X's rule.** Since 23 Feb 2026, self-serve plans (pay-per-use and the legacy Free, Basic and Pro) accept `POST /2/tweets` replies only when the original author @mentioned or quoted the replying account. Otherwise X returns 403. Enterprise is exempt.
-  - Sources: PM research in `developer-apps-guide.md` §1 and its appendix, and secondary reports.
-  - Also, X's guidelines require prior approval for AI-generated replies.
-- **Default: X's own reply box.** `briefPublish(...).replyMode`, through `xReplyMode`, decides what Reply now does when the X account is connected and not expired:
-  - **`'intent'` (default).** The click synchronously runs `window.open(xReplyIntentUrl(statusId, text), '_blank', 'noopener')`, so popup blockers allow it.
-    - It then calls `act('brief.item', { st: 'copied' })`, and the item shows today's **I posted it** / Copy again.
-    - There is no Radar confirmation window, because X's box is the confirmation. That is a divergence from the prototype's "Reply on X now?".
-    - No pub is created. "I posted it" fires the existing `brief.reply_posted`.
-  - **`'api'` (the thread text @mentions the connected handle).** It uses the confirmation window and `social.postNow`, and the pub becomes `posted` ("Replied on X").
-  - **`null`** (no status id in `item.url`). Only today's Copy flow is shown.
-- **When the API refuses.** An X 403 reply restriction makes the pub `failed`/`reply_restricted` with `errCopy` ("X only lets apps reply when the post mentions you. Reply in X’s own box instead.").
-  - The toast carries the action **Reply on X**, which opens the intent URL as a user gesture. The item stays live.
-  - The server also refuses `social.postNow` for replies where `xReplyAllowed` is false, with `COPY.replyNotAllowed`.
-- **API details.** `POST /2/tweets {text, reply:{in_reply_to_tweet_id}}`, with the id taken from `xStatusId(item.url)`.
+**Superseded (PM decision 2026-10-23, owner request):** the API reply path is dropped.
+- **Reply now always opens X's own reply box.** `xReplyIntentUrl(statusId, draft)` is opened in a new tab from the click, so popup blockers allow it. X shows the original post with the draft already in the reply field, and the user presses Reply.
+- **No connected X account is needed.** The user's own X session posts the reply.
+- **What Radar does.** The item then calls `brief.item { st: 'copied' }`, and the existing **I posted it** / Copy again flow continues.
+- **No Radar window.** There is no confirmation window and no pub.
+- **When no status id can be found** in `item.url`, today's Copy flow is shown.
+- **Never scheduled.** Replies are never scheduled or sent automatically (AC-22).
+- **The server refuses replies.** `social.postNow` refuses replies with `COPY.replyNotAllowed`. There is no `reply_restricted` path, no `[[radar:noreply]]` stub marker, and no reply cost.
+- **Why.** Self-serve X plans refuse API replies unless the author mentioned the account (Feb 2026), and X's guidelines require prior approval for AI-generated replies. See `developer-apps-guide.md`.
 
 ## 15. File ownership
 

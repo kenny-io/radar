@@ -247,16 +247,13 @@ export const mentions = (text: string, handle: string | null | undefined) => {
   const h = (handle || '').replace(/^@/, ''); if (!h) return false;
   return new RegExp(`(^|[^A-Za-z0-9_@])@${h.replace(/[^A-Za-z0-9_]/g, '')}(?![A-Za-z0-9_])`, 'i').test(text);
 };
-/** The API reply is allowed: an X thread Radar can address whose text @mentions the connected X account. */
-export const xReplyAllowed = (it: Pick<BriefItem, 'kind' | 'plat' | 'url' | 'title' | 'body' | 'replyTo'>, acct: SocialAccount | null | undefined) =>
-  it.kind === 'reply' && it.plat === 'x' && !!acct && !!xStatusId(it.url) && mentions([it.title, it.body || '', it.replyTo?.text || ''].join('\n'), acct.handle);
-/** X's own reply box, prefilled (free, no reply restriction). Opened in a new tab from the click; the item then goes to "I posted it". */
+/** X's own reply box, prefilled. Reply now always uses it: self-serve X API plans refuse replies unless the author mentioned the
+ *  account (Feb 2026), so Radar never posts replies itself. Opened in a new tab from the click; the user presses Reply on X and the
+ *  item then goes to "I posted it". Needs no connected account (the user's own X session posts it). */
 export const xReplyIntentUrl = (statusId: string, text: string) => `https://x.com/intent/tweet?in_reply_to=${encodeURIComponent(statusId)}&text=${encodeURIComponent(text)}`;
-/** How Reply now works for an X reply: 'api' (Radar posts it; the thread mentions the account), 'intent' (X's reply box — the default),
- *  or null (no status id in the thread URL: Copy flow only). */
-export function xReplyMode(it: Pick<BriefItem, 'kind' | 'plat' | 'url' | 'title' | 'body' | 'replyTo'>, acct: SocialAccount | null | undefined): 'api' | 'intent' | null {
-  if (it.kind !== 'reply' || it.plat !== 'x' || !xStatusId(it.url)) return null;
-  return xReplyAllowed(it, acct) ? 'api' : 'intent';
+/** How Reply now works for an X reply: 'intent' (X's reply box) or null (no status id in the thread URL: Copy flow only). */
+export function xReplyMode(it: Pick<BriefItem, 'kind' | 'plat' | 'url'>): 'intent' | null {
+  return it.kind === 'reply' && it.plat === 'x' && xStatusId(it.url) ? 'intent' : null;
 }
 
 /* ── Estimated platform cost per publish (X pay-per-use, Oct 2026; LinkedIn is free). Logged in event props, never shown. ── */
@@ -298,14 +295,14 @@ export function packPanelState(k: string, post: Pick<SocialPost, 'pub'>, accts: 
   return 'ready';
 }
 
-/** Daily Brief: where an item would go and whether Post now / Reply now / Schedule are offered. Replies: `replyMode`
- *  'api' → social.postNow; 'intent' → open xReplyIntentUrl in a new tab, then mark the item copied ("I posted it"). */
+/** Daily Brief: where an item would go and whether Post now / Reply now / Schedule are offered. X replies: `replyMode`
+ *  'intent' → open xReplyIntentUrl in a new tab, then mark the item copied ("I posted it"); no account needed, never social.postNow. */
 export function briefPublish(accts: SocialAccount[], it: Pick<BriefItem, 'kind' | 'plat' | 'pl' | 'acct' | 'url' | 'title' | 'body' | 'replyTo'>) {
   const k = it.kind === 'post' ? it.pl : it.plat;
   const can = it.kind === 'post' ? canPost(k) : canReply(k);
   const acct = can ? briefAccount(accts, k, (it.acct || 'founder') === 'company') : null;
-  const replyMode = it.kind === 'reply' && can ? xReplyMode(it, acct) : null;
-  const direct = !!(can && acct && !acct.expired && (it.kind === 'post' || replyMode));
+  const replyMode = it.kind === 'reply' && can ? xReplyMode(it) : null;
+  const direct = it.kind === 'reply' ? !!replyMode : !!(can && acct && !acct.expired);
   return { platform: can ? (k as PostPlatform) : null, can, acct, direct, replyMode: direct ? replyMode : null };
 }
 

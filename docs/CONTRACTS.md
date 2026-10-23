@@ -83,9 +83,8 @@ Everything in this section is behind the business-level flag `RADAR_SOCIAL_PUBLI
   - A reconnect keeps the account id and refuses a different remote account.
 - `social.disconnect` `{ acctId }` → `{ ch, unscheduled: number }`
 - `social.postNow` `{ sid, acctId? }` → `{ pub: Pub }` (`posted` or `failed`)
-  - Use it for pack posts, Brief posts, **Try again**, and X **Reply now** when `briefPublish(...).replyMode === 'api'` (the thread mentions the account).
-  - With `replyMode === 'intent'` (the default), the client opens `xReplyIntentUrl(id, text)` in a new tab and calls `brief.item { st: 'copied' }`. No pub is created.
-  - A failed X reply has `pub.code === 'reply_restricted'`, and its toast offers "Reply on X", which opens the intent URL.
+  - Use it for pack posts, Brief posts, **Try again**. Never for replies: the server refuses `social.postNow` on a reply with `COPY.replyNotAllowed`.
+  - X **Reply now** always uses X's own reply box: `replyMode === 'intent'` whenever the thread URL has a status id, connected or not. The client opens `xReplyIntentUrl(id, text)` in a new tab from the click and calls `brief.item { st: 'copied' }`. No pub is created.
 - `social.schedule` `{ sid, date, time, acctId? }` → `{ pub }`
   - Use it for Schedule, Reschedule and the Move post window. Replies are refused.
 - `social.move` `{ sid, date }` → `{ pub }`
