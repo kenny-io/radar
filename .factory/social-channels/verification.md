@@ -192,3 +192,11 @@ Rechecked by factory-qa on 2026-10-23, about 12:40–12:50 PM ET.
 | Dev log | No server errors, no tokens |
 
 **Result:** R2 is fixed, and no regression was found. **Pass**, behind the default-off flag. Live X and LinkedIn are still not run (blocked: no developer apps).
+
+## Release (PM, 2026-10-23)
+| Check | Result |
+|---|---|
+| Merged revision | PR #1 head `2b2fc733` (QA'd product code at `fd1956dd` + env-alias change with unit tests; full suite 260/261, baseline only) → merge commit `7ce3992e` on `main` |
+| Railway deploy | GitHub deployment "radar / production" for `7ce3992e`: `radar - web` success (radar.thally.io), `radar - worker` success. Pre-deploy runs `npm run db:migrate` (0006) |
+| Live probe (signed out) | `/signin` 200, `/privacy` 200; `/api/oauth/x/start` → "Sign in to continue." popup result; `POST /api/b/…/act social.schedule` → 401 `unauthorized` |
+| Not run | Signed-in production checks (flag-off UI, connect X) — no production credentials used by the PM; owner to run after setting env. Live X/LinkedIn posting still unverified |

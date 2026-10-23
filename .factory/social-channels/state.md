@@ -2,7 +2,7 @@
 
 Feature branch: `kenny-dev/software-factory-feature-5a68c1` (worktree `.claude/worktrees/software-factory-feature-5a68c1`). Base: `main` @ `867e75c8`.
 Delivery target: a PR to `main` on `kenny-io/radar`, with the flag off. Merging needs the owner's go-ahead, because `main` deploys to Railway.
-Last integrated revision: `fd1956dd` — QA passed (T5, T5b, T5c). Typecheck clean; 258/259 tests (baseline failure only); build passes. **Release-ready behind the default-off flag**; live X/LinkedIn not verified.
+Last integrated revision: `2b2fc733` (adds LINKEDINAPP_/XAPP_ env aliases after QA; 260/261 tests). **Released:** PR kenny-io/radar#1 merged to `main` as `7ce3992e` (owner go-ahead, 2026-10-23); Railway production deploy of web + worker succeeded. Flag `RADAR_SOCIAL_PUBLISHING` is off unless the owner sets it.
 
 | ID | Task | Owner | Depends on | Owns (files/modules) | Status | AC covered |
 |---|---|---|---|---|---|---|
@@ -17,7 +17,7 @@ Last integrated revision: `fd1956dd` — QA passed (T5, T5b, T5c). Typecheck cle
 - Live X/LinkedIn verification needs developer apps (owner). This doesn't block the build.
 
 ## Next action
-PR to main with the flag off; merge and deploy need the owner's go-ahead. Then: owner sets env on Railway, flag = owner's business, live checklist in developer-apps-guide.md §6.
+Owner: set `XAPP_CLIENT_ID/SECRET`, `LINKEDINAPP_CLIENT_ID/SECRET`, `APP_URL=https://radar.thally.io` on web + worker; set `RADAR_SOCIAL_PUBLISHING` to the owner's business id or email; run the live checklist in developer-apps-guide.md §6. LinkedIn page app: waiting on Page verification and Community Management approval.
 
 ## Known, accepted
 - R1 (cosmetic): a stale "Image is N MB" warning can linger after Compress changes nothing (only reachable by editing stored sizes).

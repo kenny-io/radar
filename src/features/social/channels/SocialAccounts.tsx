@@ -30,7 +30,7 @@ export function SocialAccounts() {
         <PlatLogo k={c.plat} s={28} />
         <span className="col grow" style={{ minWidth: 180, gap: 2 }}><span className="small" style={{ fontWeight: 500 }}>{c.l}</span><span className="xs sub">{a ? (a.expired ? `${acctLabel(a)} · access expired, scheduled posts are on hold` : acctLabel(a)) : c.d}</span></span>
         {a && a.expired ? <><Status tone="warn">Reconnect needed</Status><Btn size="sm" onClick={() => { setRe(a); setCh(c.k); }}><LogoLabel k={c.plat}>Reconnect</LogoLabel></Btn></>
-          : a ? <><Status tone="ok">Connected</Status><Btn size="sm" kind="ghost" loading={busy === a.id} onClick={() => disconnect(a)}>Disconnect</Btn></>
+          : a ? <><Status tone="ok">Connected</Status><button type="button" className="unlink" disabled={busy === a.id} aria-busy={busy === a.id} onClick={() => disconnect(a)}>Disconnect</button></>
             : avail.includes(c.k) ? <Btn size="sm" onClick={() => { setRe(null); setCh(c.k); }}><LogoLabel k={c.plat}>Connect</LogoLabel></Btn>
               : <span className="small sub">Not available yet</span>}
       </div>;

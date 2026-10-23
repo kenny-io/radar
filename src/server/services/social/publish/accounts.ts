@@ -90,7 +90,7 @@ async function emitExpired(row: AcctRow) {
   console.warn(`[social.tokens] account ${row.id} (${row.ch}) expired; ${n} scheduled post(s) held`);
   await track('social.expired', { bid: row.businessId, ref: row.id, props: { ch: row.ch, acct: row.id, held: n } });
   // §21 P10: tell members, with the count on hold.
-  if (n > 0) await notify(row.businessId, `${COPY.expired(row.ch)} ${n === 1 ? '1 scheduled post is' : `${n} scheduled posts are`} on hold.`, { tone: 'warn', action: { label: 'Reconnect', href: '/settings' } }).catch(() => {});
+  if (n > 0) await notify(row.businessId, `${COPY.expired(row.ch)} ${n === 1 ? '1 scheduled post is' : `${n} scheduled posts are`} on hold.`, { tone: 'warn', action: { label: 'Reconnect', href: '/settings?section=social' } }).catch(() => {});
   await bump(row.businessId).catch(() => {});
 }
 
@@ -146,7 +146,7 @@ export async function tokensTick(now: Date) {
     if (a.ch === 'li_profile' && a.expiresAt && a.expiresAt.getTime() > now.getTime() && a.expiresAt.getTime() - now.getTime() <= WARN_MS && (await once(`social.expiring:${a.id}:${a.expiresAt.toISOString().slice(0, 10)}`))) {
       const tz = (await db.select({ tz: schema.businesses.timezone }).from(schema.businesses).where(eq(schema.businesses.id, a.businessId)).limit(1))[0]?.tz || 'America/New_York';
       const d = new Date(localParts(a.expiresAt.getTime(), tz).date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      await notify(a.businessId, `${chOf(a.ch).l} access for ${acctLabel(acctPublic(a))} ends ${d}. Reconnect it to keep posting.`, { tone: 'warn', action: { label: 'Reconnect', href: '/settings' } }).catch(() => {});
+      await notify(a.businessId, `${chOf(a.ch).l} access for ${acctLabel(acctPublic(a))} ends ${d}. Reconnect it to keep posting.`, { tone: 'warn', action: { label: 'Reconnect', href: '/settings?section=social' } }).catch(() => {});
     }
     try {
       if (!canRefresh(t, now.getTime())) { if (!t || (a.expiresAt && a.expiresAt <= now)) await ensureToken(a.id); continue; }

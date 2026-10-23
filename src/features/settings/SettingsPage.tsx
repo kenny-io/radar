@@ -1,9 +1,10 @@
 'use client';
 // Settings — port of SettingsPage + FreqSetting (prototype/radar-app.jsx), AISettings/ModelSelect (radar-models.jsx),
-// TeamSettings + FeatureRequest (radar-extras.jsx). Max-width 860; sections in the designed order.
+// TeamSettings + FeatureRequest (radar-extras.jsx). Max-width 1080; a category sidebar and one section at a time (2026-10-23b).
 import { BrandIcon } from '@/components/brand';
 import React, { useEffect, useRef, useState } from 'react';
-import { useApp } from '@/client/app';
+import { useRouter } from 'next/navigation';
+import { routeToUrl, useApp } from '@/client/app';
 import { api } from '@/client/api';
 import { Btn, PageHead, Section, Seg, Status } from '@/components/ui';
 import { GscConnect } from '@/features/gsc/GscConnect';
@@ -49,48 +50,83 @@ export function AISettings() {
   </div>)}</>;
 }
 
+const SET_KEY = 'radar.settings.tab';
+type SetKey = 'gsc' | 'publishing' | 'social' | 'ai' | 'calendar' | 'team' | 'account' | 'feedback';
+const SET_NAV: [string, [SetKey, string][]][] = [
+  ['Connections', [['gsc', 'Search Console'], ['publishing', 'Publishing'], ['social', 'Social accounts']]],
+  ['Content', [['ai', 'AI models'], ['calendar', 'Calendar']]],
+  ['Workspace', [['team', 'Team'], ['account', 'Account']]],
+  ['Support', [['feedback', 'Request a feature']]],
+];
+
 export function SettingsPage() {
-  const app = useApp(); const { B, act, toast, route } = app;
-  const gscRef = useRef<HTMLDivElement>(null); const pubRef = useRef<HTMLDivElement>(null); const socRef = useRef<HTMLDivElement>(null);
+  const app = useApp(); const { B, act, toast, route } = app; const router = useRouter();
   const [tzList] = useState(() => timezones());
   const [langList] = useState(() => langs());
-  // ?gsc=1 / ?publishing=1 / ?social=1 scroll the relevant section into view.
+  // One section at a time. ?section=<key> (and the older ?gsc=1 / ?publishing=1 / ?social=1 links) opens a section;
+  // otherwise the last one opened (localStorage), else Search Console.
+  const nav = SET_NAV.map(([g, items]) => [g, items.filter(([k]) => k !== 'social' || !!B?.social.publishing)] as const);
+  const keys = nav.flatMap(([, items]) => items.map(([k]) => k));
+  const p = route.params || {};
+  const deep: string | null = p.section || (p.gsc ? 'gsc' : p.publishing ? 'publishing' : p.social ? 'social' : null);
+  const stored = () => { try { return localStorage.getItem(SET_KEY); } catch { return null; } };
+  const [sel, setSel] = useState<string>(() => deep || stored() || 'gsc');
+  const setTab = (k: string) => { setSel(k); try { localStorage.setItem(SET_KEY, k); } catch {} };
+  // A link opens its section once: it is saved as the last section, then dropped from the URL, so a reload keeps whatever
+  // the user picks next and a later link to the same section still applies.
   useEffect(() => {
-    const el = route.params?.gsc ? gscRef.current : route.params?.publishing ? pubRef.current : route.params?.social ? socRef.current : null;
-    if (el) { const t = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); return () => clearTimeout(t); }
-  }, [route.params?.gsc, route.params?.publishing, route.params?.social, !!B]);
+    if (!deep || !B) return;
+    if ((keys as string[]).includes(deep)) setTab(deep); else setSel(stored() || 'gsc');
+    router.replace(routeToUrl('settings'), { scroll: false });
+  }, [deep, !!B]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!B) return null;
+  const tab: SetKey = (keys as string[]).includes(sel) ? sel as SetKey : 'gsc';
   const g = B.gsc; const bl = B.blog; const cs = B.calendar.settings;
   const setCs = (p: Partial<CalendarSettings>) => act('settings.calendarDefaults', p, { optimistic: b => ({ ...b, calendar: { ...b.calendar, settings: { ...b.calendar.settings, ...p } } }) });
   const markets = MARKETS.includes(cs.market) ? MARKETS : [cs.market, ...MARKETS];
   const languages = langList.includes(cs.language) ? langList : [cs.language, ...langList];
   const tzs = tzList.includes(bl.tz) ? tzList : [bl.tz, ...tzList];
   const sched = (p: { time?: string; tz?: string }) => (b: Workspace): Workspace => ({ ...b, tz: p.tz || b.tz, blog: { ...b.blog, ...p } });
-  return <div className="page" style={{ maxWidth: 860 }}>
-    <PageHead title="Settings" />
-    <div ref={gscRef} style={{ scrollMarginTop: 24 }}><Section title="Search Console" style={{ marginTop: 0 }}>
+  const pane: Record<SetKey, React.ReactNode> = {
+    gsc: <Section title="Search Console" style={{ marginTop: 0 }}>
       <Row t="Connection" d="Read-only access to search performance.">
-        {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <><div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{g.status === 'connected' ? <Status tone="ok">Connected</Status> : g.status === 'syncing' ? <Status tone="signal" pulse>Syncing · {Math.round(g.progress)}%</Status> : <Status tone="bad">Sync paused</Status>}<span className="row" style={{ gap: 8 }}><BrandIcon k="gsc" s={16} /><span className="mono sub">{g.property}</span></span></div><div className="row">{g.status === 'error' && <Btn size="sm" icon="refresh" onClick={() => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {})}>Resume sync</Btn>}<Btn size="sm" kind="ghost" onClick={() => act('gsc.disconnect', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'skipped', property: null, progress: 0 } }) }).then(() => toast('Search Console disconnected')).catch(() => {})}>Disconnect</Btn></div></>
+        {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <div className="row" style={{ gap: 14, flexWrap: 'wrap' }}>
+          <span className="row grow" style={{ gap: 8, minWidth: 0 }}><BrandIcon k="gsc" s={16} /><span className="mono trunc" style={{ fontSize: 13 }}>{g.property}</span></span>
+          {g.status === 'connected' ? <Status tone="ok">Connected</Status> : g.status === 'syncing' ? <Status tone="signal" pulse>Syncing · {Math.round(g.progress)}%</Status> : <Status tone="bad">Sync paused</Status>}
+          {g.status === 'error' && <button className="unlink" style={{ color: 'var(--ink)' }} onClick={() => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {})}>Resume</button>}
+          <button className="unlink" onClick={() => act('gsc.disconnect', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'skipped', property: null, progress: 0 } }) }).then(() => toast('Search Console disconnected')).catch(() => {})}>Disconnect</button>
+        </div>
           : <GscConnect bid={app.bid!} domain={B.profile.domain} compact onConnected={() => toast('Connected. Syncing in the background.', { tone: 'ok' })} />}
       </Row>
-    </Section></div>
-    <Section title="AI models" sub="Choose the model behind each part of Radar."><AISettings /></Section>
-    <div ref={pubRef} style={{ scrollMarginTop: 24 }}><Section title="Publishing">
+    </Section>,
+    ai: <Section title="AI models" sub="Choose the model behind each part of Radar." style={{ marginTop: 0 }}><AISettings /></Section>,
+    publishing: <Section title="Publishing" style={{ marginTop: 0 }}>
       <PublishingSettings />
       <Row t="Schedule"><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><input type="time" className="input" style={{ width: 130 }} value={bl.time} onChange={e => { const time = e.target.value; if (/^\d{2}:\d{2}$/.test(time)) app.actLater('blog.schedule', 'blog.schedule', { time }, { optimistic: sched({ time }) }); }} aria-label="Publish time" /><select className="input" style={{ width: 220 }} value={bl.tz} onChange={e => act('blog.schedule', { tz: e.target.value }, { optimistic: sched({ tz: e.target.value }) }).catch(() => {})} aria-label="Timezone">{tzs.map(t => <option key={t}>{t}</option>)}</select></div></Row>
-    </Section></div>
-    {B.social.publishing && <div ref={socRef} style={{ scrollMarginTop: 24 }}><Section title="Social accounts" sub="Post and schedule from Radar. Nothing posts unless you post or schedule it."><SocialAccounts /></Section></div>}
-    <Section title="Calendar defaults">
+    </Section>,
+    social: <Section title="Social accounts" sub="Nothing posts unless you post or schedule it." style={{ marginTop: 0 }}><SocialAccounts /></Section>,
+    calendar: <Section title="Calendar defaults" style={{ marginTop: 0 }}>
       <Row t="Market & language"><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><select className="input" style={{ width: 200 }} value={cs.market} onChange={e => setCs({ market: e.target.value }).catch(() => {})} aria-label="Market">{markets.map(m => <option key={m}>{m}</option>)}</select><select className="input" style={{ width: 200 }} value={cs.language} onChange={e => setCs({ language: e.target.value }).catch(() => {})} aria-label="Language">{languages.map(m => <option key={m}>{m}</option>)}</select></div></Row>
       <Row t="Frequency" d="Used for your next generated calendar."><FreqSetting cs={cs} set={p => { setCs(p).catch(() => {}); toast('Frequency saved · ' + cadenceLabel({ ...cs, ...p })); }} /></Row>
-    </Section>
-    <Section title="Team"><TeamSettings /></Section>
-    <Section title="Account">
+    </Section>,
+    team: <Section title="Team" style={{ marginTop: 0 }}><TeamSettings /></Section>,
+    account: <Section title="Account" style={{ marginTop: 0 }}>
       <Row t="Name"><AccountName /></Row>
       <Row t="Email"><span className="small">{app.user.email}</span></Row>
       <Row t="Appearance" d="System follows your device."><AppearanceSetting /></Row>
-    </Section>
-    <Section title="Request a feature"><FeatureRequest /></Section>
+    </Section>,
+    feedback: <Section title="Request a feature" style={{ marginTop: 0 }}><FeatureRequest /></Section>,
+  };
+  return <div className="page" style={{ maxWidth: 1080 }}>
+    <PageHead title="Settings" />
+    <div className="set-wrap">
+      <nav className="set-nav" aria-label="Settings">
+        {nav.map(([grp, items]) => <div key={grp} className="set-grp"><span className="set-gl">{grp}</span>
+          {items.map(([k, l]) => <button key={k} type="button" className={'set-i' + (tab === k ? ' on' : '')} aria-current={tab === k ? 'page' : undefined} onClick={() => setTab(k)}>{l}</button>)}
+        </div>)}
+      </nav>
+      <div className="set-pane" key={tab}>{pane[tab]}</div>
+    </div>
   </div>;
 }
 
