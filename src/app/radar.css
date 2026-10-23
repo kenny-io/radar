@@ -187,3 +187,15 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
   .h-display{font-size:clamp(30px,8.4vw,40px)}
   .sheet{top:8px;right:8px;bottom:8px;max-width:calc(100vw - 16px)}
 }
+/* Settings sidebar + quiet text actions (update 2026-10-23b) */
+.unlink{background:none;border:0;padding:4px 2px;font:inherit;font-size:13px;font-weight:500;color:var(--mute);cursor:pointer;border-radius:4px;transition:color .15s}.unlink:hover:not(:disabled){color:var(--bad)}.unlink:focus-visible{outline:2px solid var(--signal);outline-offset:2px}.unlink:disabled{opacity:.5;cursor:default}
+.set-wrap{display:grid;grid-template-columns:200px minmax(0,1fr);gap:56px;align-items:start}
+.set-nav{position:sticky;top:24px;display:flex;flex-direction:column;gap:22px}
+.set-grp{display:flex;flex-direction:column;gap:1px}
+.set-gl{font-size:12px;color:var(--mute);padding:0 10px 6px}
+.set-i{text-align:left;background:none;border:0;font:inherit;font-size:14px;color:var(--ink2);padding:7px 10px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s}
+.set-i:hover{color:var(--ink)}.set-i.on{background:var(--fill);color:var(--ink);font-weight:500}
+.set-i:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+.set-pane{min-width:0;animation:setIn .25s ease both}@keyframes setIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(max-width:760px){.set-wrap{grid-template-columns:1fr;gap:24px}.set-nav{position:static;flex-direction:row;gap:2px;overflow-x:auto;padding-bottom:6px;border-bottom:1px solid var(--line2)}.set-grp{flex-direction:row}.set-gl{display:none}.set-i{white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){.set-pane{animation:none}}
