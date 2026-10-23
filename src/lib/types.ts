@@ -68,18 +68,78 @@ export interface BlogState { conns: ConnectionPublic[]; defaultId: string | null
 
 export type Platform = 'linkedin' | 'x' | 'facebook' | 'reddit' | 'quora';
 export type PackStyle = ImageStyle | 'custom';
-export interface SocialPost { text: string; style: PackStyle; seed: number; imageUrl: string | null; copiedAt: number | null; v: number }
+export interface SocialPost {
+  text: string; style: PackStyle; seed: number; imageUrl: string | null; copiedAt: number | null; v: number;
+  /** Size and type of the file at `imageUrl`, recorded when Radar renders it (social channels). Absent on older posts: the server checks the real file. */
+  imageMeta?: MediaMeta | null;
+  /** Radar re-encoded the image to fit the platform's limits (Compress images). */
+  compressed?: boolean;
+  /** Publishing state from Radar (projected from `social_pubs` when `social.publishing`). Absent/null = never scheduled or posted by Radar. */
+  pub?: Pub | null;
+}
 export interface SocialPack {
   id: string; name: string; source: { kind: 'idea' | 'url' | 'article' | 'suggest'; label: string; ref?: string | null };
   created: string; style: PackStyle; custom?: string; voice?: string; auto: boolean; posts: Partial<Record<Platform, SocialPost>>;
 }
-export interface SocialAuto { on: boolean; freq: 'daily' | 'custom'; days: string[]; platforms: Platform[]; style: ImageStyle; time: string }
+export interface SocialAuto {
+  on: boolean; freq: 'daily' | 'custom'; days: string[]; platforms: Platform[]; style: ImageStyle; time: string;
+  /** When a pack is ready: 'library' (default, also when absent) or 'schedule' (X and LinkedIn posts for the next day at `time`). Coerced to 'library' while publishing is off. */
+  post?: 'library' | 'schedule';
+}
+
+/* ── Social channels (UPDATE-2026-10-23-social-channels; .factory/social-channels/architecture.md) ── */
+/** A connectable account slot. One account per channel per business. */
+export type SocialChannel = 'x' | 'li_profile' | 'li_page';
+/** Connected account as the client sees it. Tokens never leave the server. */
+export interface SocialAccount {
+  id: string; ch: SocialChannel;
+  /** X: display name. LinkedIn profile: member name. LinkedIn page: page name. */
+  name: string;
+  /** '@handle' (X only). */
+  handle?: string | null;
+  /** Token refresh failed, or (LinkedIn profile: no refresh token) the 60-day token reached its expiry: posts are held until the user reconnects. */
+  expired?: boolean;
+  /** When access ends without a reconnect (ISO). Set for LinkedIn profiles (60-day token, no refresh) and pages (365-day refresh token); absent for X (auto-refreshed). */
+  expiresAt?: string | null;
+}
+/** Size and MIME type of an image file Radar would upload. */
+export interface MediaMeta { bytes: number; type: string }
+export type PubStatus = 'scheduled' | 'sending' | 'posted' | 'failed';
+/** Why a pub failed (drives copy; `unknown` must not say "Nothing was published"). */
+export type PubErrCode = 'rejected' | 'duplicate' | 'too_long' | 'media' | 'rate_limit' | 'unavailable' | 'auth' | 'reply_restricted' | 'unknown' | 'stale';
+/** A post Radar scheduled or sent (handoff §1 `Pub`, plus server-computed fields). */
+export interface Pub {
+  status: PubStatus;
+  /** Where it goes. Packs: the post's platform key. Brief: the item's platform when it was scheduled/posted (pinned; `pl` can't change while scheduled). */
+  platform: 'x' | 'linkedin';
+  /** YYYY-MM-DD and HH:MM in the business time zone (B.tz). Scheduled/sending: when it goes out. Posted: when it went out. Failed: when it was meant to go out. */
+  date: string; time: string;
+  /** The absolute instant of date+time in B.tz (ISO). Lock and past checks use this, never local clocks. */
+  dueAt: string;
+  /** SocialAccount.id; null after that account was disconnected (history only). */
+  acct: string | null;
+  /** Account label at send/schedule time ("@fieldnote", "Maya Chen", "Fieldnote · Page"), for history after a disconnect. */
+  acctLabel?: string;
+  /** User-facing error (failed only). One sentence, no trailing "Nothing was published." */
+  err?: string | null;
+  code?: PubErrCode | null;
+  /** Posted: epoch ms. */
+  at?: number | null;
+  /** Posted: the live post URL (View on {Platform}). */
+  url?: string | null;
+  /** Daily Brief items only: posted or scheduled by Radar (not "I posted it"). */
+  direct?: boolean;
+  /** Server-computed: scheduled and its account is expired, so it is on hold. Never locked while held. */
+  held?: boolean;
+}
+export interface SocialPage { id: string; name: string; followers: number | null }
 
 export type BriefPlatform = 'reddit' | 'x' | 'linkedin' | 'hn' | 'quora';
 /** Who a brief item is drafted for: the founder's personal account, or the company account (shown by business name). */
 export type BriefAccount = 'founder' | 'company';
 export interface BriefSettings { platforms: BriefPlatform[]; time: string; mention: 'asked' | 'relevant' | 'never'; /** Default both. */ accounts?: BriefAccount[] }
-export type BriefItemState = 'open' | 'copied' | 'posted' | 'skipped' | 'expired';
+/** 'scheduled' is projected on read (never stored): the item has a scheduled or sending `pub`. It leaves the to-do list and counts.briefOpen. */
+export type BriefItemState = 'open' | 'copied' | 'posted' | 'skipped' | 'expired' | 'scheduled';
 export interface BriefItem {
   id: string; kind: 'reply' | 'post';
   /** Missing = 'founder' (items from before company drafting). */
@@ -95,11 +155,15 @@ export interface BriefItem {
   drafts: Record<string, string>; edits: Record<string, string>; mention: boolean; st: BriefItemState;
   /** Posts only: images Radar made for the post (Add visuals). null/absent = text only. */
   img?: BriefImages | null;
+  /** Posted/scheduled by Radar (projected from `social_pubs` when `social.publishing`; always `direct: true`). */
+  pub?: Pub | null;
 }
 export interface BriefImages {
   style: import('./imageOptions').StyleKey; range: import('./imageOptions').ImgRange; seed: number; n: number;
   /** One per image, filled in as each one finishes; null while generating or if it failed. */
   urls: (string | null)[]; status: 'generating' | 'ready' | 'failed';
+  /** Parallel to `urls`: size/type recorded when each image is rendered (absent on older items). */
+  meta?: (MediaMeta | null)[];
 }
 export interface BriefDay { date: string; scannedAt: string; items: BriefItem[]; stats?: Partial<Record<BriefPlatform, { read: number }>> }
 export interface BriefState { setup: boolean; settings: BriefSettings; days: Record<string, BriefDay> }
@@ -131,12 +195,22 @@ export interface Workspace {
   id: string; rev: number; role: Role; status: 'onboarding' | 'active';
   /** "today" in the business timezone, YYYY-MM-DD */
   today: string; tz: string;
+  /** Server time when this workspace was built (ISO). Clients may use it to correct clock skew for lock/past checks. */
+  now?: string;
   profile: Profile; edited: Edited;
   gsc: GscState;
   calendar: CalendarState;
   articles: Record<string, Article>;
   blog: BlogState;
-  social: { packs: SocialPack[]; auto: SocialAuto; /** Last image setting used for social posts (Daily Brief included); the next default. */ img: import('./imageOptions').ImageSettings | null };
+  social: {
+    packs: SocialPack[]; auto: SocialAuto; /** Last image setting used for social posts (Daily Brief included); the next default. */ img: import('./imageOptions').ImageSettings | null;
+    /** Feature flag RADAR_SOCIAL_PUBLISHING for this business. Absent/false: no accounts, no pubs, and the UI is exactly as before this update. */
+    publishing?: boolean;
+    /** Connected accounts, at most one per channel (publishing only). */
+    accounts?: SocialAccount[];
+    /** Channels this deployment can connect: its OAuth app is configured (all three with RADAR_DEV_STUBS=1). */
+    channels?: SocialChannel[];
+  };
   brief: BriefState;
   backlinks: BacklinksState;
   ai: AiPrefs;
