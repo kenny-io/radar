@@ -315,7 +315,7 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 | Company only | Not designed | With "You" off in Draft for, Radar only reads X and LinkedIn, and the scan step reads "Drafting for {name}" / "Company angles for the brand" | No point reading Reddit or Hacker News for the company | Yes | Needs approval |
 | Done state button | Secondary button under the copy | Centered under the copy (the prototype's global `.col>.btn` rule pins it left) | Matches the centered done state | Yes (alignment) | Logged |
 | Impact tracking | — | Brief events record `acct`; company replies count as plugged | Reporting | No | Logged |
-| Connecting company accounts | Still open in the update | Unchanged: posting stays copy-and-paste for both accounts | — | — | Open |
+| Connecting company accounts | Still open in the update | Built in the 2026-10-23 social channels update (below), behind `RADAR_SOCIAL_PUBLISHING` | — | — | Closed by 2026-10-23 |
 
 ## Design update 2026-10-21 (logo, sign-up on the radar, input focus)
 
@@ -370,3 +370,41 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 - The drawn versions of Editorial, Flat, Render 3D and Hand-drawn changed less than 7% of their pixels between regenerates, so they looked identical. These are the previews, and the fallback when no image model answers. The seed now picks one of 4 variants: mirrored or not, and brand colors swapped or not. Both the +11 step (social) and the +1 step (articles) always land on a new variant.
 - Measured with a pixel diff at seed vs. seed+11: Branded 15–25%, Infographic 7–11% (the chart area is a new chart type), Editorial 9–46%, Flat 15–17%, Render 3D 7–14%, Hand-drawn 5–16% (mirror and colour swap), Photography 9–15%, Illustration 14–24%.
 - AI-generated styles (Illustration and Photography on social posts and articles, and all styles in the Daily Brief) ask the image model for a new variation on every regenerate.
+
+## Design update 2026-10-23 (connected social accounts: post now, schedule, calendar)
+
+Everything here is behind `RADAR_SOCIAL_PUBLISHING`, which is off by default. With it off, every screen renders exactly as before (checked with a pixel diff of 36 screens). Values: `all`, or a comma-separated list of business ids and owner emails. Design: `architecture.md`, provider facts: `developer-apps-guide.md`, lessons from Postiz: `postiz-lessons.md` (all in `.factory/social-channels/`).
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| X Reply now (Daily Brief) | "Reply on X now?" confirmation, then Radar posts the reply | Reply now opens X's own reply box (`x.com/intent/tweet?in_reply_to=…&text=…`) in a new tab, with the draft filled in; the user presses Reply, then "I posted it". No Radar confirmation window, and it works without a connected X account. Radar never posts replies through the API | Owner decision. Since Feb 2026, self-serve X plans refuse API replies unless the author mentioned the account, and X requires approval for AI-generated replies | Yes | Owner decision |
+| LinkedIn apps | One LinkedIn connection flow | Two LinkedIn developer apps: profile (`openid profile w_member_social`) and page (`w_organization_social rw_organization_admin r_basicprofile`) | Community Management must be the only product on its app | No | Logged |
+| LinkedIn profile expiry | Reconnect only when a refresh fails | Self-serve LinkedIn gives profile tokens for 60 days with no refresh, so the profile shows "Reconnect needed" when the token ends, and its posts are held. About 7 days before: toast "LinkedIn profile access for {name} ends {Day, Mon D}. Reconnect it to keep posting." The Schedule window warns when a send time is past the expiry | Platform limit | Yes | Needs approval (owner decision 3) |
+| Time zone labels | 4-zone table (ET, CT, PT, "UK") | Any IANA zone, labelled with `Intl` (e.g. GMT/BST, CET/CEST, GST) | Radar supports the full zone list | Yes | Needs approval |
+| Time slots | Up to 10:30 PM in the prototype code | 6:00 AM to 10:00 PM, as the handoff text says | Handoff text | Minor | Logged |
+| X character count | `text.length` / 280 | Weighted, as X counts it: links (also bare domains like radar.app) = 23, emoji = 2, CJK = 2 | Matches what X enforces | Yes | Logged |
+| Unavailable channel | Always Connect | Muted "Not available yet" when that platform's app isn't configured on this deployment | Deployments without X or LinkedIn apps | Yes | Needs approval |
+| Page picker | — | Empty state: "You don’t manage any LinkedIn pages. Ask a page admin to add you, then try again." Content admins count as admins. Errors: "Pick a page to connect." / "That page wasn’t found." / "LinkedIn didn’t respond. Nothing changed — try again." | Real accounts | Yes | Needs approval |
+| Permissions | — | If the user unticks a permission on the platform's screen: "Radar needs permission to post. Try again and allow all permissions." Nothing is saved | Real OAuth | Yes | Needs approval |
+| Reconnect as someone else | Not covered | Refused (the account keeps its posts); a page is matched by its organization | Posts stay with the account that was scheduled | Yes | Needs approval |
+| Expired with held posts | Needs attention item | Also a toast: "X needs reconnecting. 1 scheduled post is on hold." | Background event | Yes | Needs approval |
+| Unknown outcome | Failed copy ends "Nothing was published." | When Radar can't confirm a send: "Radar couldn’t confirm the post went out. Check {Platform} before trying again." (no "Nothing was published."). X is read back first; LinkedIn can't be | Radar can't claim nothing was published | Yes | Needs approval |
+| Late posts | — | A post more than 24 h late (e.g. held, then reconnected) fails as "It couldn’t go out on time, so Radar held it back." and is never sent | Don't publish stale content | Yes | Needs approval |
+| X credits / LinkedIn version | — | X out of credits: "X isn’t accepting posts from Radar right now. Try again later." (not retried, operator log). A retired LinkedIn API version shows "LinkedIn didn’t respond." (not retried, operator log naming `LINKEDIN_API_VERSION`) | Postiz's most common outages | Yes | Needs approval |
+| Failed Brief posts | Not shown | Shown on the Calendar, This week and Needs attention; the Brief item shows "Didn’t post {date} at {time}" with the error and Try again | Errors must be readable | Yes | Needs approval |
+| Brief while scheduled | — | Changing a scheduled Brief post's platform, status or images is refused: "Unschedule it first." A directly posted item refuses any status change: "This post is already live." | A scheduled post must not change under the worker | Toast | Needs approval |
+| Post now failures | Try again | A Post now that fails shows the failure at once and isn't retried in the background (scheduled posts retry 3 times: 1, 5, 15 min) | The user is watching | Yes | Logged |
+| Posted history | Not covered | A post that already went out keeps "● Posted …", "As {account}" and View on after its account is disconnected | It's still live | Yes | Logged |
+| Move post | Reschedules day and time | Same time → move (also works while held); a new time → reschedule | An expired account can't take new schedules | Minor | Logged |
+| Calendar / This week drop | Prototype only moves pack posts | Pack and Daily Brief posts both move | Prototype bug | Yes | Logged |
+| Calendar range | Grid spans the article dates | Unchanged; social posts outside that range show in This week, not on the Calendar | Faithful to the prototype | Yes | Needs approval |
+| Schedule all toast | "N posts scheduled" | Pluralised ("1 post scheduled") | Grammar | Minor | Logged |
+| Copy-only panel | "Download image" | As designed with the flag on; flag-off keeps today's "Download visual" | Flag-off must not change | Yes | Logged |
+| AI disclosure on X | — | X posts with images from the image model are sent with X's `made_with_ai` flag | X's labelling | No (X shows a label) | Logged |
+| LinkedIn images | Post at once | After uploading, Radar waits for LinkedIn to process images (profile about 15 s, page polled up to 30 s), so Post now to LinkedIn with images takes a few seconds longer | Posts fail otherwise | Barely | Logged |
+| Sending | Background job with retries | Minute cron + job, a database claim per attempt so a post can never go out twice, X read-back on an unknown outcome, posted state saved before anything else | §9 production rules | No | Logged |
+| Audit / metrics | Audit log | `events` rows (ids only, never text, estimated X cost per post). `/api/admin/metrics` reports scheduled-post success rate, expiries, reconnects and X quota failures | §9.7, §9.9 | No | Logged |
+| Dev stubs | — | Stub OAuth connects fake accounts; markers `[[radar:reject|ratelimit|down|timeout|lost|quota]]` in post text and `social.devSimulate` (expire/lapse) reach every state. Dev only | QA without live apps | No | Logged |
+| Prototype phone hunks | The update's prototype also carries mobile Brief sheet, `.mob-bar` 56px, bottom-sheet modals and other layout hunks | Not ported: they're outside this update's text and would change flag-off rendering | Scope | Yes | Open (owner to decide) |
+| Live providers | — | Built against X API v2 and LinkedIn REST (`LinkedIn-Version` 202610). **Not verified live**: no developer apps yet. See LAUNCH.md §7b | Owner setup pending | — | Open |
+| X link cost | — | X charges $0.20 for a post with a link vs $0.015; links are kept | Owner decision 2 | No | Owner decision |
