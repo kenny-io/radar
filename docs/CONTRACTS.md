@@ -108,7 +108,10 @@ Everything in this section is behind the business-level flag `RADAR_SOCIAL_PUBLI
 - `SocialAccounts()` is the Settings section body.
 - `ConnectSocial({ ch: SocialChannel | null, open: boolean, onClose(): void, onConnected?(a: SocialAccount): void, reconnect?: SocialAccount | null })`
 - `PublishBox({ pack: SocialPack, k: Platform, post: SocialPost, nImg: number, onCopy(): void, onDownload(): void })`
-- `ScheduleModal({ open, onClose, title: string, sub?: string, initial: { date, time }, onSave(v: { date, time }): void, extra?: ReactNode })`
+- `ScheduleModal({ open, onClose, title: string, sub?: string, initial: { date, time }, onSave(v: { date, time }): void, extra?: ReactNode, acct?: SocialAccount | null })`. With `acct`, shows `expiryNote(acct, B.tz)` as a warn Status when `expiresBefore(acct, dueMs)`.
+- `src/client/laterQueue.ts`: the pure queue behind `actLater` / `flushLater()` on `useApp()`. `flushLater` covers `actLater` only; the Daily Brief sends its own pending edit (`brief.item {edit}`) before `social.postNow` / `social.schedule`.
+- Settings accepts `?social=1` (scrolls to Social accounts); Connect/Reconnect links elsewhere use it.
+- `packPanelState`: `posted` wins over `not_connected`, so a published post keeps its history ("As {account}", View on) after a disconnect. The panel must render it when the account is gone (use `pub.acctLabel` when the account is gone; omit the "As …" line if that is empty too).
 - `ScheduleAll({ pack: SocialPack })` renders nothing unless `showScheduleAll`.
 - `SocialChip({ it: SocialItem, onOpen(it: SocialItem): void, compact?: boolean })`. The drag payload is `it.id` (the sid). A tap on `pointer: coarse` opens Move post.
 - `WeekStrip()` is the Dashboard "This week" body.

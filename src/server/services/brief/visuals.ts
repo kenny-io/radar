@@ -3,7 +3,7 @@
 // to a prompt template), else the brand template renderer.
 import { defineJob, enqueue, type JobCtx } from '@/server/jobs/queue';
 import { bump, getBiz } from '@/server/workspace';
-import { renderImage } from '@/server/services/images';
+import { renderImageFile } from '@/server/services/images';
 import { imgSeed } from '@/lib/imageOptions';
 import type { BriefItem, Profile } from '@/lib/types';
 import { withDay } from './store';
@@ -23,15 +23,17 @@ defineJob<VisualsPayload>({ kind: 'brief.visuals', maxAttempts: 1, timeoutMs: 15
   const prompt = `${it.title}. The post says: ${clip(text.replace(/\s+/g, ' '), 400)}`;
   let ok = 0;
   for (let i = 0; i < it.img.n; i++) {
-    let url: string | null = null;
-    try { url = await renderImage({ bid, kind: 'brief', style: it.img.style, brand: p.brand, headline: i ? '' : it.title, name: p.business.name, seed: imgSeed(seed, i), prompt, w: BRIEF_IMG_W, h: BRIEF_IMG_H }); ok++; }
+    let url: string | null = null; let meta: { bytes: number; type: string } | null = null;
+    try { const f = await renderImageFile({ bid, kind: 'brief', style: it.img.style, brand: p.brand, headline: i ? '' : it.title, name: p.business.name, seed: imgSeed(seed, i), prompt, w: BRIEF_IMG_W, h: BRIEF_IMG_H }); url = f.url; meta = { bytes: f.bytes, type: f.type }; ok++; }
     catch (e: any) { console.error('[brief.visuals] image failed', i, e?.message); }
     const last = i === it.img.n - 1;
     const still = await withDay(bid, date, row => {
       const items = row.items as BriefItem[]; const k = items.findIndex(x => x.id === id);
       const cur = k >= 0 ? items[k] : null; if (!cur?.img || cur.img.seed !== seed) return { ret: false };
       const urls = [...cur.img.urls]; urls[i] = url;
-      const next = [...items]; next[k] = { ...cur, img: { ...cur.img, urls, status: last ? (ok ? 'ready' : 'failed') : 'generating' } };
+      // Size/type of each file, for the posting checks (social channels).
+      const metas = cur.img.urls.map((_, j) => cur.img!.meta?.[j] ?? null); metas[i] = meta;
+      const next = [...items]; next[k] = { ...cur, img: { ...cur.img, urls, meta: metas, status: last ? (ok ? 'ready' : 'failed') : 'generating' } };
       return { items: next, ret: true };
     });
     await bump(bid);

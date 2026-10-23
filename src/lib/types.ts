@@ -83,7 +83,7 @@ export interface SocialPack {
 }
 export interface SocialAuto {
   on: boolean; freq: 'daily' | 'custom'; days: string[]; platforms: Platform[]; style: ImageStyle; time: string;
-  /** When a pack is ready: 'library' (default, also when absent) or 'schedule' (X and LinkedIn posts for the next day at `time`). Coerced to 'library' while publishing is off. */
+  /** When a pack is ready: 'library' (default, also when absent) or 'schedule' (X and LinkedIn posts for the next day at `time`). Omitted from the workspace while publishing is off (absent = 'library'), and never acted on. */
   post?: 'library' | 'schedule';
 }
 

@@ -14,6 +14,7 @@ import { PublishError, statusLine } from '../services/publishing/http';
 import { newWebhookSecret, maskSecret } from '../services/publishing/connectors/webhook';
 import { parseRepo } from '../services/publishing/connectors/nextjs';
 import { shopDomain } from '../services/publishing/connectors/shopify';
+import { retimePubs } from '../services/social/publish/pubs';
 import { bizInfo, connCreds, connRow, connSecret, ctxOf, deletePending, readPending, savePending, splitFields } from '../services/publishing/store';
 
 const TYPES = ['wordpress', 'ghost', 'webflow', 'notion', 'wix', 'shopify', 'wpcom', 'webhook', 'framer', 'nextjs'] as const;
@@ -84,7 +85,12 @@ async function applyMode(ctx: ActCtx, m: { mode: 'review' | 'autopilot'; ack?: b
     autopilotAckAt: m.mode === 'autopilot' ? (cur.mode === 'autopilot' && cur.autopilotAckAt ? cur.autopilotAckAt : new Date().toISOString()) : null,
     ...(m.time ? { time: m.time } : {}),
   });
-  if (m.tz) await db.update(schema.businesses).set({ timezone: m.tz }).where(eq(schema.businesses.id, ctx.bid));
+  if (m.tz) await setTz(ctx, m.tz);
+}
+/** Business time zone. Scheduled social posts keep their wall-clock time, so their send instants move (architecture.md A14). */
+async function setTz(ctx: ActCtx, tz: string) {
+  await db.update(schema.businesses).set({ timezone: tz }).where(eq(schema.businesses.id, ctx.bid));
+  if (tz !== ctx.biz.timezone) await retimePubs(ctx.bid, tz);
 }
 
 async function conns(bid: string) { return db.select().from(schema.connections).where(eq(schema.connections.businessId, bid)).orderBy(schema.connections.createdAt); }
@@ -183,7 +189,7 @@ export const actions: ActionMap = {
   /** Settings → Publishing → Schedule */
   'blog.schedule': action({ input: z.object({ time: HM.nullish(), tz: TZ.nullish() }), run: async (ctx, { time, tz }) => {
     if (time) await setBlog(ctx.bid, { time });
-    if (tz) await db.update(schema.businesses).set({ timezone: tz }).where(eq(schema.businesses.id, ctx.bid));
+    if (tz) await setTz(ctx, tz);
     return { ok: true };
   } }),
 
