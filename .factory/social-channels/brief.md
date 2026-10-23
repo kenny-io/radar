@@ -110,11 +110,11 @@ IDs are stable. Handoff check numbers are in brackets.
 - **AC-18** The worker sends due posts at date+time in the business time zone, and always uses the latest text and images.
   - Retries back off. Each attempt has a unique key, and a database claim guarantees one post is never sent twice, even after a timeout or a worker restart.
   - When retries run out, the status is `failed` with an error the user can read. Rate limits read "Try again later". Nothing fails silently.
-- **AC-19** X sign-in uses OAuth 2.0 + PKCE (`tweet.write users.read media.write offline.access`). LinkedIn uses `w_member_social` (profile) and `w_organization_social r_organization_admin` (page).
-  - Tokens are encrypted at rest and refreshed automatically. `expired` is set only when a refresh fails.
+- **AC-19** X sign-in uses OAuth 2.0 + PKCE (`tweet.read tweet.write users.read media.write offline.access`). LinkedIn uses two apps (Community Management must be the only product on its app): the profile app has `openid profile w_member_social`, and the page app has `w_organization_social rw_organization_admin r_basicprofile`. Source: `developer-apps-guide.md`.
+  - Tokens are encrypted at rest and refreshed automatically where the platform allows it. X refresh tokens are single-use and rotate, so refresh is serialized per account. `expired` is set only when a refresh fails, or for LinkedIn profiles (no refresh token, 60-day tokens) when the token reaches its expiry.
 - **AC-20** Images go through each platform's media upload, with size and format checked before sending. Every style a pack can carry (including server-rendered brand templates) produces a real file to upload.
 - **AC-21** Every publish and schedule change is recorded with the user, account, platform, post id and time.
-- **AC-22** X replies are sent only when the user clicks Reply now.
+- **AC-22** X replies are sent only when the user clicks Reply now. Self-serve X plans refuse API replies unless the original author mentioned or quoted the account (since Feb 2026). When X refuses, Radar shows readable copy and falls back to X's own reply box (web intent), then continues to "I posted it".
 - **AC-23** A feature flag is off by default. With it off, the UI and behaviour match today exactly.
   - An opt-in group can be enabled.
   - The admin metrics report the share of scheduled posts sent successfully and how often accounts need reconnecting.
