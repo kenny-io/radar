@@ -52,6 +52,8 @@ type Call = { url: string; method: string; body: any; headers: Record<string, st
 let calls: Call[] = [];
 let logs: string[] = [];
 let backoffs: number[] = [];
+/** Per-test timer shrinking (e.g. { 45000: 60 } makes the 45 s stream idle cutoff 60 ms). */
+let shrink: Record<number, number> = {};
 function mockFetch(handler: (url: string, body: any, init: any) => Response | Promise<Response>) {
   calls = [];
   vi.stubGlobal('fetch', vi.fn(async (url: any, init: any = {}) => {
@@ -62,10 +64,11 @@ function mockFetch(handler: (url: string, body: any, init: any) => Response | Pr
 }
 const realSetTimeout = globalThis.setTimeout;
 beforeEach(() => {
-  H.inserted.length = 0; H.stored.length = 0; H.aiChoice = {}; logs = []; backoffs = []; calls = [];
+  H.inserted.length = 0; H.stored.length = 0; H.aiChoice = {}; logs = []; backoffs = []; calls = []; shrink = {};
   // Retry backoff (800ms · 2^n) runs instantly but is recorded; every other timer (request timeouts) is untouched.
   vi.stubGlobal('setTimeout', ((fn: any, ms?: number, ...a: any[]) => {
     if (ms === 800 || ms === 1600 || ms === 3200) { backoffs.push(ms); ms = 0; }
+    else if (ms != null && shrink[ms] != null) ms = shrink[ms];
     return realSetTimeout(fn, ms, ...a);
   }) as any);
   for (const m of ['warn', 'error', 'log', 'info'] as const) vi.spyOn(console, m).mockImplementation((...a: any[]) => { logs.push(`${m}: ${a.map(x => (x instanceof Error ? x.message : typeof x === 'string' ? x : JSON.stringify(x))).join(' ')}`); });
@@ -683,6 +686,231 @@ describe('the OpenRouter key never leaks', () => {
     expect(H.inserted[0]).toMatchObject({ provider: 'openrouter', ok: false, model: 'gpt-6-sol' });
     expect(H.inserted[0].error).toMatch(/^HTTP 401: /);
     expect(H.inserted[0].error).not.toMatch(/Bearer|authorization/i);
+  });
+});
+
+/* ════════════════════════════ 8. Retest: streaming everywhere, idle cutoff, circuit breaker ════════════════════════════ */
+
+const enc = new TextEncoder();
+const sseLine = (v: any) => (typeof v === 'string' ? v : `data: ${JSON.stringify(v)}\n\n`);
+/** A stream fed step by step (strings are written, numbers are pauses in ms). Errors the body when the request is
+ *  aborted (as undici does). `close: false` leaves it hanging after the last step. */
+function slowStream(steps: Array<string | number | object>, signal: AbortSignal, opts: { close?: boolean } = {}) {
+  return new Response(new ReadableStream({
+    async start(c) {
+      let dead = false;
+      signal?.addEventListener('abort', () => { dead = true; try { c.error(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })); } catch { /* */ } });
+      for (const s of steps) {
+        if (dead) return;
+        if (typeof s === 'number') await new Promise(r => realSetTimeout(r, s)); else c.enqueue(enc.encode(sseLine(s)));
+      }
+      if (opts.close !== false && !dead) c.close();
+    },
+  }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+}
+const hang = (signal: AbortSignal) => new Promise<Response>((_, rej) => signal.addEventListener('abort', () => rej(Object.assign(new Error('This operation was aborted'), { name: 'AbortError' }))));
+const chunk = (content: string, extra: any = {}) => ({ id: 'gen-x', choices: [{ index: 0, delta: { content }, ...extra }] });
+const done = [{ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 3, completion_tokens: 4, cost: 0.001 } }, 'data: [DONE]\n\n'];
+const sleep = (ms: number) => new Promise(r => realSetTimeout(r, ms));
+
+describe('retest: OpenRouter streaming for every text call', () => {
+  it('JSON split at arbitrary byte boundaries (inside the data: line and inside UTF-8 characters) reassembles exactly', async () => {
+    const { ai } = await bootOR();
+    const answer = JSON.stringify({ title: 'Café — ✓ fast invoices 🧾', tags: ['naïve', 'ünïcode'] });
+    const pieces = [answer.slice(0, 7), answer.slice(7, 19), answer.slice(19)];
+    const full = enc.encode([': OPENROUTER PROCESSING\n\n', ...pieces.map(p => sseLine(chunk(p))), ...done.map(sseLine)].join(''));
+    for (const size of [1, 2, 3, 5, 7, 64]) {
+      mockFetch(() => new Response(new ReadableStream({ start(c) { for (let i = 0; i < full.length; i += size) c.enqueue(full.slice(i, i + size)); c.close(); } }), { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+      const r = await ai.run('writing', { purpose: 'split', prompt: 'p', schema: Post });
+      expect(r.provider).toBe('openrouter');
+      expect(r.json).toEqual(JSON.parse(answer));
+    }
+    expect(H.inserted.every(x => x.ok && x.costUsd === 0.001 && x.inputTokens === 3)).toBe(true);
+  });
+  it('plain-text (no onDelta) and visibility calls now send stream:true and parse the reassembled answer', async () => {
+    const { ai, vis } = await bootOR();
+    mockFetch((_u, _b, init) => slowStream([chunk('Hello '), chunk('world', { delta: { content: 'world', annotations: [{ type: 'url_citation', url_citation: { url: 'https://a.example' } }] } }), ...done], init.signal));
+    const r = await ai.run('research', { purpose: 'x', prompt: 'p', webSearch: true });
+    expect(calls[0].body.stream).toBe(true);
+    expect(r).toMatchObject({ text: 'Hello world', provider: 'openrouter' });
+    const a = await vis.askEngine('ChatGPT', 'q', visCtx);
+    expect(calls[1].body).toMatchObject({ stream: true, model: 'openai/gpt-6-sol', tools: [{ type: 'openrouter:web_search' }] });
+    expect(a.text).toBe('Hello world');
+  });
+  it('stream that ends with finish_reason but no [DONE] → accepted', async () => {
+    const { ai } = await bootOR();
+    mockFetch(() => sse([chunk('ok'), { choices: [{ delta: {}, finish_reason: 'stop' }] }]));
+    expect((await ai.run('writing', { purpose: 'x', prompt: 'p' })).text).toBe('ok');
+  });
+  it.fails('BUG (low): a stream that closes mid-answer (no finish_reason, no [DONE]) is accepted as a complete answer', async () => {
+    const { ai, vis } = await bootOR();
+    mockFetch(u => (isOR(u) ? sse([chunk('The best tools are Acme, Fo')]) : oaText('complete direct answer')));
+    const r = await ai.run('writing', { purpose: 'x', prompt: 'p' });
+    expect(r.provider).toBe('OpenAI'); // actual: openrouter, text 'The best tools are Acme, Fo'
+    mockFetch(u => (isOR(u) ? sse([chunk('Acme is one opt')]) : json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'direct' }] }] })));
+    expect((await vis.askEngine('ChatGPT', 'q', visCtx)).text).toBe('direct');
+  });
+  it('error chunk in the middle of a JSON answer → partial JSON discarded, falls back, counts as one transient strike', async () => {
+    const { ai } = await bootOR();
+    mockFetch(u => (isOR(u) ? sse([chunk('{"title":"Half'), { error: { code: 502, message: 'Provider returned error' }, choices: [{ delta: {}, finish_reason: 'error' }] }]) : oaText('{"title":"D","tags":[]}')));
+    const r = await ai.run('writing', { purpose: 'x', prompt: 'p', schema: Post });
+    expect(r).toMatchObject({ provider: 'OpenAI', json: { title: 'D', tags: [] } });
+    expect(H.inserted[0]).toMatchObject({ provider: 'openrouter', ok: false });
+    expect(H.inserted[0].error).toMatch(/Stream error: 502 Provider returned error/);
+    expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('openrouter'); // one strike, breaker still closed
+  });
+});
+
+describe('retest: idle cutoff and timers', () => {
+  it('idle and total timers are cleared after success / HTTP error / JSON body: nothing aborts later, breaker stays closed', async () => {
+    const { ai } = await bootOR();
+    shrink = { 45000: 40 };
+    const signals: AbortSignal[] = [];
+    for (const make of [() => sse([chunk('ok'), ...done]), () => orText('ok'), () => err(500, 'x')]) {
+      mockFetch((u, _b, init) => { if (isOR(u)) signals.push(init.signal); return isOR(u) ? make() : oaText('direct'); });
+      await ai.run('writing', { purpose: 'x', prompt: 'p', timeoutMs: 120 });
+    }
+    await sleep(250); // well past both the 40 ms idle and the 120 ms total
+    expect(signals).toHaveLength(3);
+    expect(signals.map(s => s.aborted)).toEqual([false, false, false]);
+    expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('openrouter');
+    expect(logs.join('\n')).not.toMatch(/timing out/);
+  });
+  it('keep-alive comments count as activity: a slow-but-alive stream is not cut', async () => {
+    const { ai } = await bootOR();
+    shrink = { 45000: 60 };
+    mockFetch((_u, _b, init) => slowStream([': OPENROUTER PROCESSING\n\n', 35, ': OPENROUTER PROCESSING\n\n', 35, ': OPENROUTER PROCESSING\n\n', 35, chunk('alive'), 35, ...done], init.signal));
+    const r = await ai.run('writing', { purpose: 'x', prompt: 'p', timeoutMs: 100_000 });
+    expect(r).toMatchObject({ provider: 'openrouter', text: 'alive' });
+  });
+  it('stalled stream after partial text → idle cutoff, partial discarded via onReset, direct answer, breaker opens', async () => {
+    const { ai } = await bootOR();
+    shrink = { 45000: 50 };
+    mockFetch((u, _b, init) => (isOR(u) ? slowStream([chunk('PARTIAL ')], init.signal, { close: false })
+      : sse([{ type: 'response.output_text.delta', delta: 'clean' }, { type: 'response.completed', response: { usage: {} } }])));
+    let shown = '';
+    const t0 = Date.now();
+    const r = await ai.run('writing', { purpose: 'x', prompt: 'p', timeoutMs: 100_000, onDelta: d => { shown += d; }, onReset: () => { shown = ''; } });
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(r.provider).toBe('OpenAI');
+    expect(shown).toBe('clean');
+    expect(H.inserted[0].error).toMatch(/OpenRouter stream idle/);
+    calls.length = 0;
+    await ai.run('writing', { purpose: 'x', prompt: 'p', onDelta: () => {} });
+    expect(calls.some(c => isOR(c.url))).toBe(false); // breaker open: direct only
+  });
+  it('hang before response headers → idle cutoff also applies', async () => {
+    const { ai } = await bootOR();
+    shrink = { 45000: 50 };
+    mockFetch((u, _b, init) => (isOR(u) ? hang(init.signal) : oaText('direct')));
+    const t0 = Date.now();
+    expect((await ai.run('writing', { purpose: 'x', prompt: 'p', timeoutMs: 100_000 })).provider).toBe('OpenAI');
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+});
+
+describe('retest: circuit breaker', () => {
+  const orFailThenDirect = (orRes: () => Response | Promise<Response>) => (u: string) => (isOR(u) ? orRes() : oaText('direct'));
+  it('3 consecutive 5xx open it; a success in between resets the count; it closes after 2 minutes', async () => {
+    const { ai } = await bootOR();
+    const once = async (orRes: () => Response) => { calls.length = 0; mockFetch(orFailThenDirect(orRes)); return ai.run('writing', { purpose: 'x', prompt: 'p' }); };
+    await once(() => err(500, 'a')); await once(() => err(502, 'b'));
+    await once(() => orText('ok')); // reset
+    await once(() => err(503, 'c')); await once(() => err(500, 'd'));
+    await once(() => orText('ok'));
+    expect(calls.map(tag)).toEqual(['or:openai/gpt-6-sol']); // still closed after 2 + reset + 2
+    await once(() => err(500, 'e')); await once(() => err(500, 'f')); await once(() => err(500, 'g'));
+    await once(() => orText('ok'));
+    expect(calls.map(tag)).toEqual([OA]); // open
+    const now = Date.now(); vi.spyOn(Date, 'now').mockReturnValue(now + 2 * 60_000 + 1);
+    await once(() => orText('ok'));
+    expect(calls.map(tag)).toEqual(['or:openai/gpt-6-sol']);
+  });
+  it('4xx answers (rate limit, schema, moderation) do not count as strikes', async () => {
+    const { ai } = await bootOR();
+    for (let i = 0; i < 4; i++) { mockFetch(orFailThenDirect(() => err(429, 'Rate limit exceeded'))); await ai.run('writing', { purpose: 'x', prompt: 'p' }); }
+    expect(ai.routes('writing', 'gpt-6-sol')[0].via).toBe('openrouter');
+  });
+  it('does not block OpenRouter-only setups: text, images and visibility still use OpenRouter while it is open', async () => {
+    const { ai, images, vis } = await bootOR({ OPENAI_API_KEY: undefined, ANTHROPIC_API_KEY: undefined, XAI_API_KEY: undefined, GEMINI_API_KEY: undefined });
+    shrink = { 45000: 40 };
+    mockFetch((_u, _b, init) => hang(init.signal));
+    await caught(ai.run('writing', { purpose: 'x', prompt: 'p', timeoutMs: 100_000 }, { retries: 0 }));
+    expect((await orMod()).openrouterTripped()).toBe(true);
+    const b64 = pngB64();
+    mockFetch(u => (u === OR_IMG ? json({ data: [{ b64_json: b64 }] }) : orText('still served')));
+    expect((await ai.run('writing', { purpose: 'x', prompt: 'p' })).provider).toBe('openrouter');
+    await images.generatePhoto(imgReq(1200, 628) as any);
+    expect((await vis.askEngine('Gemini', 'q', visCtx)).text).toBe('still served');
+    expect(calls.map(c => c.url)).toEqual([OR_CHAT, OR_IMG, OR_CHAT]);
+  });
+  it('while open, it is skipped per model only where that model has a direct route', async () => {
+    const { ai } = await bootOR({ OPENAI_API_KEY: undefined });
+    (await orMod()).noteOpenrouterOutcome(Object.assign(new Error('t'), { timeout: true }));
+    mockFetch(u => (isOR(u) ? err(500, 'down') : anText('claude direct')));
+    const r = await ai.run('writing', { purpose: 'x', prompt: 'p' });
+    // gpt-6-sol has no direct key → OpenRouter still tried for it; claude-sonnet has one → OpenRouter skipped.
+    expect(calls.map(tag)).toEqual(['or:openai/gpt-6-sol', 'or:openai/gpt-6-sol', 'or:openai/gpt-6-sol', AN]);
+    expect(r.provider).toBe('Anthropic');
+  });
+  it('an image timeout (60 s total) falls back to OpenAI and opens the breaker for text', async () => {
+    const { ai, images } = await bootOR();
+    shrink = { 60000: 50 };
+    const b64 = pngB64();
+    mockFetch((u, _b, init) => (u === OR_IMG ? hang(init.signal) : json({ data: [{ b64_json: b64 }] })));
+    const t0 = Date.now();
+    await images.generatePhoto(imgReq(1200, 628) as any);
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(calls.map(c => c.url)).toEqual([OR_IMG, 'https://api.openai.com/v1/images/generations']);
+    expect(ai.routes('writing', 'gpt-6-sol').every(r => r.via === 'direct')).toBe(true);
+    calls.length = 0;
+    await images.generatePhoto(imgReq(1200, 628) as any);
+    expect(calls.map(c => c.url)).toEqual(['https://api.openai.com/v1/images/generations']);
+  });
+  it('visibility: idle cutoff falls back to the official API and opens the breaker', async () => {
+    const { vis } = await bootOR();
+    shrink = { 45000: 40 };
+    mockFetch((u, _b, init) => (isOR(u) ? slowStream([': OPENROUTER PROCESSING\n\n'], init.signal, { close: false }) : json({ choices: [{ message: { content: 'pp direct' } }], citations: [] })));
+    expect((await vis.askEngine('Perplexity', 'q', visCtx)).text).toBe('pp direct');
+    calls.length = 0;
+    await vis.askEngine('Perplexity', 'q', visCtx);
+    expect(calls.map(c => c.url)).toEqual(['https://api.perplexity.ai/chat/completions']);
+  });
+  it('non-credit 403 (e.g. region block) skips only that model, no global cooldown', async () => {
+    const { ai } = await bootOR();
+    mockFetch((u, b) => (isOR(u) && b.model === 'openai/gpt-6-sol' ? err(403, 'This model is not available in your region') : isOR(u) ? orText('or') : oaText('direct')));
+    expect((await ai.run('writing', { purpose: 'x', prompt: 'p' })).provider).toBe('OpenAI');
+    const r = ai.routes('writing', 'gpt-6-sol');
+    expect(r[0]).toEqual({ modelId: 'gpt-6-sol', via: 'direct' });
+    expect(r).toContainEqual({ modelId: 'claude-sonnet-5.5', via: 'openrouter' });
+  });
+});
+
+describe('retest: concurrent calls', () => {
+  it('6 concurrent calls hitting a 402: each tries OpenRouter at most once, none tries it for a second model, all succeed direct', async () => {
+    const { ai } = await bootOR();
+    mockFetch(async u => { await sleep(5); return isOR(u) ? err(402, 'Insufficient credits') : u === OA ? err(500, 'oa down') : anText('claude'); });
+    const rs = await Promise.all(Array.from({ length: 6 }, (_, i) => ai.run('writing', { purpose: 'c' + i, prompt: 'p' }, { retries: 0 })));
+    expect(rs.every(r => r.provider === 'Anthropic')).toBe(true);
+    const orCalls = calls.filter(c => isOR(c.url));
+    expect(orCalls.length).toBeLessThanOrEqual(6);
+    expect(orCalls.every(c => c.body.model === 'openai/gpt-6-sol')).toBe(true);
+    calls.length = 0;
+    await ai.run('writing', { purpose: 'after', prompt: 'p' }, { retries: 0 });
+    expect(calls.some(c => isOR(c.url))).toBe(false);
+  });
+  it('3 concurrent calls into a hung OpenRouter each wait one idle cutoff, then go direct; the 4th skips OpenRouter', async () => {
+    const { ai } = await bootOR();
+    shrink = { 45000: 60 };
+    mockFetch((u, _b, init) => (isOR(u) ? hang(init.signal) : oaText('direct')));
+    const t0 = Date.now();
+    const rs = await Promise.all([0, 1, 2].map(i => ai.run('writing', { purpose: 'h' + i, prompt: 'p', timeoutMs: 100_000 })));
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(rs.map(r => r.provider)).toEqual(['OpenAI', 'OpenAI', 'OpenAI']);
+    expect(calls.filter(c => isOR(c.url))).toHaveLength(3);
+    calls.length = 0;
+    await ai.run('writing', { purpose: 'h4', prompt: 'p' });
+    expect(calls.map(tag)).toEqual([OA]);
   });
 });
 
