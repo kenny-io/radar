@@ -395,7 +395,10 @@ Everything here is behind `RADAR_SOCIAL_PUBLISHING`, which is off by default. Wi
 | Brief while scheduled | — | Changing a scheduled Brief post's platform, status or images is refused: "Unschedule it first." A directly posted item refuses any status change: "This post is already live." | A scheduled post must not change under the worker | Toast | Needs approval |
 | Post now failures | Try again | A Post now that fails shows the failure at once and isn't retried in the background (scheduled posts retry 3 times: 1, 5, 15 min) | The user is watching | Yes | Logged |
 | Posted history | Not covered | A post that already went out keeps "● Posted …", "As {account}" and View on after its account is disconnected | It's still live | Yes | Logged |
-| Move post | Reschedules day and time | Same time → move (also works while held); a new time → reschedule | An expired account can't take new schedules | Minor | Logged |
+| Move post / Reschedule | Reschedules day and time | Same time → move (also works while held); a new time → reschedule. While the account is expired the time select is locked, so a held post can only move by day | An expired account can't take new schedules | Minor | Logged |
+| Social status line | "· scheduled to connected accounts" whenever auto is Schedule posts | Shown only while a connected, non-expired account exists; otherwise "· saved to your library" | Matches what the server will do | Yes | Logged |
+| Compress images toast | "Images compressed" | "Images are already small enough." when nothing needed compressing | Don't claim a change that didn't happen | Yes | Logged |
+| Needs attention heading | "A {Platform} post didn’t go out." | "An X post …" / "A LinkedIn post …" (same in the toast) | Grammar | Yes | Logged |
 | Calendar / This week drop | Prototype only moves pack posts | Pack and Daily Brief posts both move | Prototype bug | Yes | Logged |
 | Calendar range | Grid spans the article dates | Unchanged; social posts outside that range show in This week, not on the Calendar | Faithful to the prototype | Yes | Needs approval |
 | Schedule all toast | "N posts scheduled" | Pluralised ("1 post scheduled") | Grammar | Minor | Logged |
