@@ -11,6 +11,8 @@ export function mulberry(a: number) { return () => { a |= 0; a = a + 0x6D2B79F5 
 
 /** Number of "Branded graphic" compositions (the seed picks one). */
 export const BRANDED_LAYOUTS = 5;
+/** Number of "Infographic" compositions (the seed picks one). */
+export const INFOGRAPHIC_LAYOUTS = 5;
 export function drawVisual(ctx: any, { w, h, style, brand, headline, seed = 1, name, fontFamily }: VisualOpts) {
   const R = mulberry(seed * 9973); const P = brand.primary, S = brand.secondary; const F = fontFamily || '"Geist", system-ui, sans-serif';
   ctx.clearRect(0, 0, w, h); const u = Math.min(w, h) / 100;
@@ -50,11 +52,38 @@ export function drawVisual(ctx: any, { w, h, style, brand, headline, seed = 1, n
     ctx.font = `500 ${u * 3.6}px ${F}`; ctx.fillStyle = oc; ctx.globalAlpha = .8;
     ctx.fillText(name || '', u * 7, h - u * 7); ctx.globalAlpha = 1;
   } else if (style === 'infographic') {
-    ctx.fillStyle = '#FAF8F3'; ctx.fillRect(0, 0, w, h); const m = (headline.match(/\d+[%x]?/) || ['3x'])[0];
-    ctx.font = `600 ${u * 26}px ${F}`; ctx.fillStyle = P; ctx.fillText(m, u * 7, u * 32);
-    text(headline, u * 7, u * 44, u * 5.2, '#17181C', w * .55, 500, 1.2);
-    const bars = 5; for (let i = 0; i < bars; i++) { const bh = (.25 + R() * .6) * h * .45; const bw = (w * .34) / bars; ctx.fillStyle = i === bars - 1 ? P : S; ctx.globalAlpha = i === bars - 1 ? 1 : .55; ctx.fillRect(w * .6 + i * bw * 1.1, h - u * 10 - bh, bw * .8, bh); } ctx.globalAlpha = 1;
-    ctx.fillStyle = '#17181C'; ctx.fillRect(w * .58, h - u * 10, w * .38, 1.5); ctx.font = `500 ${u * 3.2}px ${F}`; ctx.fillStyle = '#6B6E78'; ctx.fillText(name || '', u * 7, h - u * 7);
+    // Five chart compositions picked by the seed (Regenerate steps the seed by 11 → a new one each time). A big number
+    // is shown only when the headline really contains one: the template never invents a statistic.
+    ctx.fillStyle = '#FAF8F3'; ctx.fillRect(0, 0, w, h);
+    const n = Math.floor(Math.abs(seed)), layout = n % INFOGRAPHIC_LAYOUTS;
+    const stat = (headline.match(/\b\d+(?:[.,]\d+)?\s?(?:%|x|×)?/i) || [null])[0]?.trim() || null;
+    if (stat) { ctx.font = `600 ${u * 26}px ${F}`; ctx.fillStyle = P; ctx.fillText(stat, u * 7, u * 32); text(headline, u * 7, u * 44, u * 5.2, '#17181C', w * .55, 500, 1.2); }
+    else { ctx.fillStyle = P; ctx.fillRect(u * 7, u * 8, u * 10, u * 1.4); text(headline, u * 7, u * 22, u * 7, '#17181C', w * .52, 600, 1.12); }
+    const gx = w * .6, gw = w * .34, base = h - u * 10, top = h * .3;
+    if (layout === 0) { // bars
+      const bars = 5; for (let i = 0; i < bars; i++) { const bh = (.25 + R() * .6) * (base - top); const bw = gw / bars; ctx.fillStyle = i === bars - 1 ? P : S; ctx.globalAlpha = i === bars - 1 ? 1 : .55; ctx.fillRect(gx + i * bw * 1.1, base - bh, bw * .8, bh); } ctx.globalAlpha = 1;
+      ctx.fillStyle = '#17181C'; ctx.fillRect(gx - w * .02, base, gw + w * .04, 1.5);
+    } else if (layout === 1) { // ring with one highlighted share
+      const cx = gx + gw / 2, cy = (top + base) / 2, r = Math.min(gw, base - top) * .4, lw = r * .32, a0 = -Math.PI / 2, a1 = a0 + (.25 + R() * .45) * Math.PI * 2;
+      ctx.lineWidth = lw; ctx.strokeStyle = S; ctx.globalAlpha = .55; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = P; ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.stroke();
+    } else if (layout === 2) { // three-step flow
+      const cy = (top + base) / 2 + (R() - .5) * u * 6, rr = Math.min(gw / 9, u * 7), xs = [gx + rr, gx + gw / 2, gx + gw - rr];
+      ctx.strokeStyle = '#17181C'; ctx.lineWidth = Math.max(1.5, u * .5);
+      for (let i = 0; i < 2; i++) { const x1 = xs[i] + rr + u * 1.5, x2 = xs[i + 1] - rr - u * 1.5; ctx.beginPath(); ctx.moveTo(x1, cy); ctx.lineTo(x2, cy); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x2, cy); ctx.lineTo(x2 - u * 2, cy - u * 1.5); ctx.lineTo(x2 - u * 2, cy + u * 1.5); ctx.closePath(); ctx.fillStyle = '#17181C'; ctx.fill(); }
+      xs.forEach((x, i) => { ctx.fillStyle = i === 2 ? P : S; ctx.globalAlpha = i === 2 ? 1 : .7; ctx.beginPath(); ctx.arc(x, cy, rr, 0, 7); ctx.fill(); }); ctx.globalAlpha = 1;
+    } else if (layout === 3) { // waffle grid
+      const k = 5, cell = Math.min(gw, base - top) / k, x0 = gx + (gw - cell * k) / 2, y0 = base - cell * k, on = 4 + Math.floor(R() * 14);
+      for (let i = 0; i < k * k; i++) { const c = i % k, rI = Math.floor(i / k); ctx.fillStyle = i < on ? P : S; ctx.globalAlpha = i < on ? 1 : .5; ctx.fillRect(x0 + c * cell + cell * .08, y0 + (k - 1 - rI) * cell + cell * .08, cell * .84, cell * .84); } ctx.globalAlpha = 1;
+    } else { // rising line
+      const pts = 6, ys: number[] = []; let v = .15 + R() * .15; for (let i = 0; i < pts; i++) { ys.push(base - v * (base - top)); v = Math.min(.95, v + .06 + R() * .16); }
+      const xAt = (i: number) => gx + (gw * i) / (pts - 1);
+      ctx.fillStyle = S; ctx.globalAlpha = .35; ctx.beginPath(); ctx.moveTo(xAt(0), base); ys.forEach((y, i) => ctx.lineTo(xAt(i), y)); ctx.lineTo(xAt(pts - 1), base); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = P; ctx.lineWidth = Math.max(2, u * .8); ctx.beginPath(); ys.forEach((y, i) => (i ? ctx.lineTo(xAt(i), y) : ctx.moveTo(xAt(i), y))); ctx.stroke();
+      ys.forEach((y, i) => { ctx.fillStyle = i === pts - 1 ? P : '#FAF8F3'; ctx.beginPath(); ctx.arc(xAt(i), y, u * 1.4, 0, 7); ctx.fill(); ctx.strokeStyle = P; ctx.lineWidth = Math.max(1.5, u * .4); ctx.stroke(); });
+      ctx.fillStyle = '#17181C'; ctx.fillRect(gx - w * .02, base, gw + w * .04, 1.5);
+    }
+    ctx.font = `500 ${u * 3.2}px ${F}`; ctx.fillStyle = '#6B6E78'; ctx.fillText(name || '', u * 7, h - u * 7);
   // New styles (UPDATE-2026-10-21-image-options): instant previews and the fallback when no image model is configured.
   } else if (style === 'editorial'||style==='flat'||style==='render3d'||style==='handdrawn'){
         const W2=w,H2=h,m=Math.min(w,h),cx=w*(.5+(R()-.5)*.12),cy=h*.5;

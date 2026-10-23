@@ -361,3 +361,7 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 - **Before:** the Branded graphic was one fixed composition, and the seed only nudged the disc a few pixels, so Regenerate looked like it reloaded the same image.
 - **Now:** five compositions (sun, rings, band, dots, blocks), picked by the seed. Regenerate steps the seed by 11, so every press shows a different one. Brand colors swap on alternate cycles, but only when the secondary color is dark enough to keep white text readable.
 - Branded graphic is still a brand template rendered on the server, not an AI image. AI images come from the Illustration and Photography styles.
+
+## 2026-10-23 · "Infographic" Regenerate shows a new chart, and no invented numbers
+- **Before:** the Infographic was one fixed bar chart that barely changed with the seed. When the headline had no number, it showed a big **"3x"** that came from nowhere.
+- **Now:** five chart compositions (bars, ring, three-step flow, waffle grid, rising line), picked by the seed, so Regenerate shows a new one each time. The big number appears only when the headline actually contains one, such as "40%". Otherwise the headline is the hero. The charts are decorative and have no axis values.
