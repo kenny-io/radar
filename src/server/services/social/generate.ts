@@ -5,11 +5,11 @@ import { and, eq } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { ai, profileContext } from '../../ai';
 import { getBiz, bizToday } from '../../workspace';
-import { renderImage, imageModelConfigured } from '../images';
+import { renderImageFile, imageModelConfigured } from '../images';
 import { randomToken } from '../../crypto';
 import { IMG_SIZES, plat } from '@/lib/constants';
 import { shortHead } from '@/lib/format';
-import type { ImageStyle, PackStyle, Platform, Profile, SocialPack, SocialPost } from '@/lib/types';
+import type { ImageStyle, MediaMeta, PackStyle, Platform, Profile, SocialPack, SocialPost } from '@/lib/types';
 import { check, enforce, rulesFor } from './rules';
 import { readArticle, readUrl, type Grounding } from './source';
 import './stubs';
@@ -76,11 +76,12 @@ export async function writePost(bid: string, p: Profile, k: Platform, o: { kind:
 /** Image style actually rendered: "Custom direction" renders as an illustration guided by the custom text. */
 export const renderStyle = (s: PackStyle): ImageStyle => (s === 'custom' ? 'illustration' : s);
 
-export async function renderPostImage(bid: string, p: Profile, k: Platform, post: Pick<SocialPost, 'style' | 'seed'>, headline: string, custom?: string): Promise<{ url: string; photo: boolean }> {
+/** Renders the post's visual to a real file. `meta` (size, type) is stored as the post's imageMeta for the posting checks. */
+export async function renderPostImage(bid: string, p: Profile, k: Platform, post: Pick<SocialPost, 'style' | 'seed'>, headline: string, custom?: string): Promise<{ url: string; photo: boolean; meta: MediaMeta }> {
   const [w, h] = IMG_SIZES[k];
   const style = renderStyle(post.style);
-  const url = await renderImage({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: custom?.trim() ? `${custom.trim()}. Topic: ${headline}` : headline, w, h });
-  return { url, photo: (style === 'photography' || style === 'illustration') && imageModelConfigured() };
+  const { url, bytes, type } = await renderImageFile({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: custom?.trim() ? `${custom.trim()}. Topic: ${headline}` : headline, w, h });
+  return { url, photo: (style === 'photography' || style === 'illustration') && imageModelConfigured(), meta: { bytes, type } };
 }
 
 /** Build and save a pack. `onProgress(done)` fires after each platform finishes (copy + visual). */
@@ -95,7 +96,7 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   for (const k of input.platforms) {
     const text = await writePost(bid, p, k, { kind: input.source.kind, label: input.source.label, g, voice: input.voice, v: seed0 + i });
     const post: SocialPost & { photo?: boolean } = { text, style, seed: seed0 * 7 + i, imageUrl: null, copiedAt: null, v: 0 };
-    try { const r = await renderPostImage(bid, p, k, post, headline, input.custom); post.imageUrl = r.url; post.photo = r.photo; }
+    try { const r = await renderPostImage(bid, p, k, post, headline, input.custom); post.imageUrl = r.url; post.photo = r.photo; post.imageMeta = r.meta; }
     catch (e: any) { console.error('[social] image render failed', e?.message); } // the live template shows while imageUrl is missing
     posts[k] = post; i++;
     await onProgress?.(i);

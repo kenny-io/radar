@@ -5,6 +5,10 @@ import React, { useEffect, useState } from 'react';
 import { useApp, type AppCtx } from '@/client/app';
 import { Btn, EntryStatus, Icon, Metric, Section, Skel, Spark, Status } from '@/components/ui';
 import { PackThumb } from '@/features/social/PackThumb';
+import { WeekStrip } from '@/features/social/channels/WeekStrip';
+import { socialIssues } from '@/features/social/channels/logic';
+import { openSocial, useNowMs } from '@/features/social/channels/useSocial';
+import { socialItems } from '@/lib/socialPublish';
 import { platLabel } from '@/lib/constants';
 import { fmtD, fmtDW, fmtN } from '@/lib/format';
 import type { Brand, Workspace } from '@/lib/types';
@@ -17,14 +21,15 @@ interface Summary { cur: { clicks: number; impr: number; ctr: number; pos: numbe
 
 export function Dashboard() {
   const app = useApp(); const { B, go } = app;
-  const top = useTopSuggestion(app);
+  const top = useTopSuggestion(app); const now = useNowMs();
   if (!B) return null;
+  const pubOn = !!B.social.publishing;
   const cal = B.calendar.entries; const packs = B.social.packs;
   const first = (app.user.name || '').split(' ')[0];
   if (!cal.length && !packs.length) return <DashEmpty first={first} />;
   const review = cal.filter(e => e.status === 'review');
   const upcoming = cal.filter(e => e.date >= B.today && ['approved', 'scheduled', 'draft', 'proposed'].includes(e.status)).slice(0, 5);
-  const issues = dashIssues(app, B, top);
+  const issues = dashIssues(app, B, top, now);
   let head: React.ReactNode, act: React.ReactNode;
   if (review.length) { head = `${review.length} article${review.length > 1 ? 's are' : ' is'} ready for your review.`; act = <Btn kind="primary" size="lg" iconR="arrow" onClick={() => go('article', review[0].id)}>Review “{review[0].title.length > 34 ? review[0].title.slice(0, 32) + '…' : review[0].title}”</Btn>; }
   else if (issues.some(i => i.tone !== 'signal')) { const i0 = issues.find(i => i.tone !== 'signal')!; head = i0.head; act = i0.btn; }
@@ -42,7 +47,16 @@ export function Dashboard() {
     </div>
     <PerfSummary />
     {issues.length > 0 && <Section title="Needs attention"><div>{issues.map(i => <div key={i.id} className="list-row" style={{ flexWrap: 'wrap' }}><Status tone={i.tone} pulse={i.tone === 'bad'}>{i.label}</Status><span className="grow small sub" style={{ minWidth: 200 }}>{i.body}</span>{i.btnSmall}</div>)}</div></Section>}
-    <div className="grid-2" style={{ columnGap: 48, rowGap: 8 }}>
+    {pubOn ? <>
+      <Section title="This week" action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('calendar')}>Calendar</Btn>}>
+        <WeekStrip />
+        {socialItems(B, now).some(i => i.status === 'scheduled') && <p className="xs sub" style={{ marginTop: 10 }}>Drag a scheduled post to another day to reschedule it.</p>}
+      </Section>
+      <Section title="Awaiting review">
+        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
+          <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
+      </Section>
+    </> :<div className="grid-2" style={{ columnGap: 48, rowGap: 8 }}>
       <Section title="Upcoming articles" style={{ minWidth: 0 }} action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('calendar')}>Calendar</Btn>}>
         {upcoming.length ? <div>{upcoming.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('calendar', { open: e.id })}>
           <span className="mono sub" style={{ width: 52, flex: 'none' }}>{fmtD(e.date)}</span><span className="grow trunc up-t">{e.title}</span><EntryStatus s={e.status} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>Nothing scheduled. <a href="#" onClick={e => { e.preventDefault(); go('calendar'); }}>Open the calendar</a></p>}
@@ -51,7 +65,7 @@ export function Dashboard() {
         {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
           <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
       </Section>
-    </div>
+    </div>}
     <Section title="Recent social packs" action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('social')}>All packs</Btn>}>
       {packs.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16 }}>{packs.slice(0, 4).map(p => <PackThumb key={p.id} p={p} brand={B.profile.brand} onClick={() => go('social', { pack: p.id })} />)}</div>
         : <div className="row" style={{ padding: '12px 0', gap: 16, flexWrap: 'wrap' }}><p className="sub small grow">No packs yet. Turn an idea or article into posts for every platform.</p><Btn icon="social" onClick={() => go('social', { generate: true })}>Create social posts</Btn></div>}
@@ -98,7 +112,7 @@ function suggestionIssue(app: AppCtx, n: number, sg: { top: Suggestion | null; h
   return { id: 'sug', tone: 'signal', label: `${n} high-priority suggestion${n === 1 ? '' : 's'}`, head, body, btn: <Btn kind="primary" size="lg" iconR="arrow" onClick={() => go('performance')}>See suggestions</Btn>, btnSmall: <Btn size="sm" onClick={() => go('performance')}>Review</Btn> };
 }
 
-function dashIssues(app: AppCtx, B: Workspace, sg: { top: Suggestion | null; highs: Suggestion[] } | null): Issue[] {
+function dashIssues(app: AppCtx, B: Workspace, sg: { top: Suggestion | null; highs: Suggestion[] } | null, now: number): Issue[] {
   const { go, act } = app; const out: Issue[] = [];
   const resumeGsc = () => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {});
   if (B.gsc.status === 'error') out.push({ id: 'gsc', tone: 'bad', label: 'Search Console sync paused', head: 'Search Console stopped syncing.', body: 'Google returned a temporary error.' + (B.gsc.lastSyncedThrough ? ` Data up to ${fmtD(B.gsc.lastSyncedThrough)} is safe.` : ''), btn: <Btn kind="primary" size="lg" icon="refresh" onClick={resumeGsc}>Resume sync</Btn>, btnSmall: <Btn size="sm" icon="refresh" onClick={resumeGsc}>Resume</Btn> });
@@ -108,6 +122,11 @@ function dashIssues(app: AppCtx, B: Workspace, sg: { top: Suggestion | null; hig
     const platform = failed.publishError?.platform || platLabel(conn?.type);
     const http = failed.publishError?.http;
     out.push({ id: 'pub', tone: 'bad', label: 'Publishing failed', head: 'An article didn’t publish.', body: `“${failed.title}” — ${platform} rejected the request${http ? ` (${http})` : ''}.`, btn: <Btn kind="primary" size="lg" onClick={() => go('article', failed.id)}>Fix and retry</Btn>, btnSmall: <Btn size="sm" onClick={() => go('article', failed.id)}>Fix</Btn> });
+  }
+  // Social channels (publishing on): a post that didn't go out, and accounts that need reconnecting.
+  if (B.social.publishing) for (const x of socialIssues(B, now)) {
+    const fn = x.open ? () => openSocial(go, x.open!) : () => go('settings', { social: true });
+    out.push({ id: x.id, tone: x.tone, label: x.label, head: x.head, body: x.body, btn: <Btn kind="primary" size="lg" onClick={fn}>{x.open ? 'Fix and retry' : 'Reconnect'}</Btn>, btnSmall: <Btn size="sm" onClick={fn}>{x.open ? 'Fix' : 'Reconnect'}</Btn> });
   }
   const resumePub = () => act('blog.pause', { paused: false }, { optimistic: b => ({ ...b, blog: { ...b.blog, paused: false } }) }).catch(() => {});
   if (B.blog.paused) out.push({ id: 'pause', tone: 'warn', label: 'Publishing paused', head: 'Publishing is paused.', body: 'Scheduled articles will wait until you resume.', btn: <Btn kind="primary" size="lg" icon="play" onClick={resumePub}>Resume publishing</Btn>, btnSmall: <Btn size="sm" icon="play" onClick={resumePub}>Resume</Btn> });

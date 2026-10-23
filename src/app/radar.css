@@ -155,6 +155,15 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .gsi{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:40px;padding:0 12px;border-radius:20px;border:1px solid var(--gsi-bd);background:var(--gsi-bg);color:var(--gsi-fg);font-family:"Roboto",arial,sans-serif;font-weight:500;font-size:14px;letter-spacing:.25px;cursor:pointer;position:relative;overflow:hidden;transition:box-shadow .2s}
 .gsi:after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .2s}.gsi:hover:not(:disabled){box-shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15)}.gsi:hover:not(:disabled):after{opacity:.08}.gsi:active:not(:disabled):after{opacity:.12}.gsi:disabled{opacity:.6;cursor:default}.gsi:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 
+/* Social channels (UPDATE-2026-10-23): This week strip, calendar chips, the post panel below the preview. Only rendered with B.social.publishing. */
+.wk-wrap{container-type:inline-size}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.soc-chip:hover{box-shadow:inset 0 0 0 1px var(--line)!important}
+.cal-soc{display:flex;flex-direction:column;gap:6px;min-width:0}
+@container (max-width:860px){.wk{grid-template-columns:minmax(0,1fr)}.wk-d{min-height:0!important;flex-direction:row!important;border-right:0!important;border-bottom:1px solid var(--line2);padding:10px 14px!important;gap:14px!important}.wk-d:last-child{border-bottom:0}.wk-d:not(:has(.wk-items>*)) .wk-h{padding-top:2px!important}.wk-h{width:64px;flex:none;padding-top:7px!important}.wk-items{flex:1;flex-direction:row!important;flex-wrap:wrap}.wk-items>button{flex:0 1 auto}.wk-items>button:first-child:not(.soc-chip){flex:1 1 260px}}
+@media (max-width:760px){.wk-d:not(:has(.wk-items>*)){display:none!important}.cal-soc{flex-direction:row;flex-wrap:wrap}.cal-soc>.soc-chip{flex:0 1 auto}}
+@media (max-width:1100px){.pack-side{position:static!important;width:100%;max-width:400px}}
+
 /* Reduced motion: honor the OS setting everywhere (03-design-system.md · Motion) */
 @media (prefers-reduced-motion: reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}.dot.pulse{animation:none!important}}
 .show-sm{display:none}

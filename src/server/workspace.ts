@@ -7,6 +7,8 @@ import { imageSettingsOf } from '@/lib/imageOptions';
 import { addDays, todayIn } from '@/lib/format';
 import { kwMeasured } from './services/gsc/metrics';
 import { decrypt } from './crypto';
+import { socialOn } from './flags';
+import { applySocial, extraBriefDays, socialProjection, stripSocial } from './services/social/publish/project';
 import type { Article, BacklinksState, BlogState, BriefDay, BriefState, CalendarEntry, CalendarSettings, ConnectionPublic, GscState, JobSummary, Member, Profile, Proposal, Role, SocialAuto, SocialPack, Workspace, LiveLink } from '@/lib/types';
 
 export type BizRow = typeof schema.businesses.$inferSelect;
@@ -84,8 +86,11 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
   const g = gscRow[0];
   const gsc: GscState = g ? { status: g.status, property: g.property, progress: g.progress, lastSyncedThrough: g.lastSyncedThrough ? String(g.lastSyncedThrough) : null, error: g.error } : { status: 'none', property: null, progress: 0, lastSyncedThrough: null, error: null };
   const connsPub = conns.map(connPublic);
+  const publishing = await socialOn(b);
+  const proj = publishing ? await socialProjection(bid) : null;
   const briefDaysMap: Record<string, BriefDay> = {};
-  for (const d of days) {
+  const extra = proj ? await extraBriefDays(bid, proj, Object.fromEntries(days.map(d => [String(d.date), true as any]))) : [];
+  for (const d of [...extra, ...days].sort((x, y) => (String(x.date) < String(y.date) ? -1 : 1))) {
     const date = String(d.date);
     const past = date < today;
     briefDaysMap[date] = { date, scannedAt: d.scannedAt, stats: (d.stats || {}) as BriefDay['stats'], items: (d.items || []).map((i: any) => (past && (i.st === 'open' || i.st === 'copied') ? { ...i, st: 'expired' } : i)) };
@@ -93,6 +98,9 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
   const brief: BriefState = { setup: b.briefSetup, settings: briefSettingsOf(b) as any, days: briefDaysMap };
   const proposals = props.map(proposalFromRow);
   const backlinks: BacklinksState = { joined: !!(b.backlinks || {}).joined, prefs: (b.backlinks || {}).prefs || {}, inbound: proposals.filter(p => p.direction === 'in'), outbound: proposals.filter(p => p.direction === 'out'), live: live.map(liveFromRow) };
+  const socialPacks = packs.map(p => ({ ...(p.data as SocialPack), id: p.id }));
+  const auto = socialAutoOf(b);
+  if (proj) applySocial(socialPacks, briefDaysMap, proj); else stripSocial(socialPacks, briefDaysMap, auto);
   const articles: Record<string, Article> = {};
   for (const a of arts) articles[a.entryId] = a.data as Article;
   const calEntries = entries.map(entryFromRow);
@@ -102,13 +110,13 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
   const members: Member[] = team.map(({ m, name }) => ({ id: m.id, userId: m.userId, name: name || null, email: m.email, role: m.role, status: m.status, you: m.userId === userId }));
   const jobs: JobSummary[] = jobRows.map(j => ({ id: j.id, kind: j.kind, status: j.status, progress: j.progress, error: j.error, createdAt: j.createdAt.toISOString(), ref: j.ref }));
   return {
-    id: b.id, rev: b.rev, role, status: b.status, today, tz: b.timezone,
+    id: b.id, rev: b.rev, role, status: b.status, today, tz: b.timezone, ...(proj ? { now: new Date().toISOString() } : {}),
     profile: { ...(b.profile as Profile), domain: b.domain }, edited: b.edited || {},
     gsc,
     calendar: { entries: calEntries, settings: calendarSettingsOf(b), generatedAt: b.calendarGeneratedAt ? b.calendarGeneratedAt.toISOString() : null },
     articles,
     blog: blogOf(b, connsPub),
-    social: { packs: packs.map(p => ({ ...(p.data as SocialPack), id: p.id })), auto: socialAutoOf(b), img: b.socialImg ? imageSettingsOf(b.socialImg) : null },
+    social: { packs: socialPacks, auto, img: b.socialImg ? imageSettingsOf(b.socialImg) : null, ...(proj ? { publishing: true, accounts: proj.accounts, channels: proj.channels } : {}) },
     brief, backlinks, ai: aiPrefsOf(b), team: members,
     site: { pages: b.site?.pages ?? null, articles: b.site?.articles ?? null, ranking: b.site?.ranking ?? null, analyzedAt: b.site?.analyzedAt ?? null },
     jobs, measured, kwSuggestions: (b.kwSuggestions || []) as any,

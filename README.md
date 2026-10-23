@@ -40,6 +40,7 @@ Then add credentials for the integrations you want — every one is optional and
 - **DataForSEO** (keyword volume/difficulty/related/competitor gaps), **YouTube Data API**, **OpenPageRank** (authority)
 - **Reddit** app + **X API** bearer token (Daily Brief)
 - Blog connector OAuth apps: **Webflow, Notion, Wix, Shopify, WordPress.com, GitHub** (WordPress, Ghost, Webhook and Framer use per-connection credentials)
+- **X** and **LinkedIn** (profile + page) apps for connected social accounts: post now and scheduling, behind `RADAR_SOCIAL_PUBLISHING` (off by default; see `docs/LAUNCH.md` §7b)
 - **Resend** (email), optional **S3**-compatible storage
 
 Run `npm run db:migrate` on deploy.

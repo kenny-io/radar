@@ -22,6 +22,18 @@ export async function readLocal(key: string): Promise<{ body: Buffer; type: stri
   const full = path.join(process.cwd(), env.storageDir, safe);
   try { return { body: await fs.readFile(full), type: await fs.readFile(full + '.type', 'utf8').catch(() => 'application/octet-stream') }; } catch { return null; }
 }
+/** The bytes behind a URL Radar stored (local `/api/files/…` or the bucket's public URL). Social posting reads images back to
+ *  check and upload them. null when the file can't be read. */
+export async function readObjectBytes(url: string, timeoutMs = 30_000): Promise<{ body: Buffer; type: string } | null> {
+  if (url.startsWith('/api/files/')) return readLocal(decodeURIComponent(url.slice('/api/files/'.length)));
+  if (!/^https?:\/\//i.test(url)) return null;
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) return null;
+    return { body: Buffer.from(await r.arrayBuffer()), type: r.headers.get('content-type') || 'application/octet-stream' };
+  } catch { return null; } finally { clearTimeout(t); }
+}
 export const objectKey = (bid: string, kind: string, ext: string) => `${bid}/${kind}/${Date.now()}-${randomToken(6)}.${ext}`;
 
 /** Accepts a data: URL (logo upload) and stores it. */

@@ -1,7 +1,7 @@
 # Launch checklist — running Radar as a live product
 
 Everything you need to create, configure and provide. Env var names match `.env.example`.
-`{APP_URL}` = your production URL, e.g. `https://app.radar.yourdomain.com`.
+`{APP_URL}` = your production URL. Radar's production URL is **`https://radar.thally.io`** (set `APP_URL` to exactly this on web and worker), so e.g. the X callback is `https://radar.thally.io/api/oauth/x/callback`.
 
 ---
 
@@ -73,6 +73,29 @@ WordPress (self-hosted), Ghost, Webhook and Framer need nothing from you — use
 | Next.js blog (GitHub) | GitHub → Developer settings → OAuth App | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
 
 Public Shopify and Wix apps go through store/marketplace review before arbitrary merchants can install them.
+
+## 7b. Social channels — post to X and LinkedIn (optional, behind a flag)
+
+Full owner walkthrough: `.factory/social-channels/developer-apps-guide.md`. Design: `.factory/social-channels/architecture.md`.
+
+- [ ] **Flag.** `RADAR_SOCIAL_PUBLISHING` — empty/`off` (default): nothing changes anywhere. `all`: on for every business. Otherwise a comma-separated list of business ids and/or owner emails (the opt-in group). Set the same value on **web and worker**. Turning it off stops all sends at once (scheduled posts stay in the database and resume when it is turned back on; anything more than 24 h late fails as "couldn’t go out on time").
+- [ ] **Same `APP_URL` and `RADAR_SECRET_KEY` on web and worker** — the worker decrypts the stored tokens.
+
+| App | Where | Redirect URI | Scopes | Env |
+|---|---|---|---|---|
+| X ("Radar"; plus a separate "Radar Dev" app for local work) | console.x.com → app → User authentication: **Web App** (confidential client), Read and write | `{APP_URL}/api/oauth/x/callback` | `tweet.read tweet.write users.read media.write offline.access` | `X_CLIENT_ID`, `X_CLIENT_SECRET` (or `XAPP_CLIENT_ID`, `XAPP_CLIENT_SECRET`) |
+| LinkedIn profile ("Radar", App 1) | linkedin.com/developers → Products: **Share on LinkedIn** + **Sign In with LinkedIn using OpenID Connect** | `{APP_URL}/api/oauth/linkedin/callback` | `openid profile w_member_social` | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` (or `LINKEDINAPP_CLIENT_ID`, `LINKEDINAPP_CLIENT_SECRET`) |
+| LinkedIn page ("Radar for Pages", App 2) | A **new** app with **Community Management API only** (needs LinkedIn approval: Development tier, then Standard tier) | `{APP_URL}/api/oauth/linkedin_page/callback` | `w_organization_social rw_organization_admin r_basicprofile` | `LINKEDIN_PAGE_CLIENT_ID`, `LINKEDIN_PAGE_CLIENT_SECRET` |
+
+- A channel whose app isn’t configured shows "Not available yet" in Settings → Social accounts. There is no fallback between the two LinkedIn apps.
+- **LinkedIn page approval takes longest — apply first.** Until Standard tier is approved, only connect your own pages (Development tier: 500 calls/app/day, 100/member/day). Page admins and content admins can both connect a page.
+- **LinkedIn profile connections last 60 days** (no refresh token for self-serve apps). Radar warns about 7 days before, then shows "Reconnect needed" and holds that account’s scheduled posts until the user reconnects. Page connections refresh for 365 days, then need a reconnect too.
+- **`LINKEDIN_API_VERSION`** (default `202610`). LinkedIn retires each version about 12 months after release; a retired version fails every LinkedIn post ("LinkedIn didn’t respond.") and logs `[social] LinkedIn API version … retired (426)`. **Bump it at least every 11 months** (next: before Oct 2027) and redeploy web + worker.
+- **X is pay-per-use** (prepaid credits): about $0.015 per post and $0.20 per post with a link. Set a **spending limit** and consider auto-recharge in the X console. When credits run out, X posts fail with "X isn’t accepting posts from Radar right now." (code `quota`, never retried) and the logs show `[social] X quota`; `/api/admin/metrics` → `derived.social.quotaFailures` counts them.
+- **X replies are never posted by Radar.** Self-serve X plans refuse API replies unless the original author mentioned the account (since Feb 2026), so Reply now opens X’s own prefilled reply box. Before launch, send X one Policy Support request about AI-drafted posts that a person reviews and sends.
+- **Local X testing:** X wants `http://127.0.0.1` callbacks, so run with `APP_URL=http://127.0.0.1:3000` and the Radar Dev app’s credentials in `.env.local` only.
+- **Metrics:** `/api/admin/metrics` → `derived.social` reports `scheduledSuccessRate`, `expiries`, `reconnects`, `accountsConnected` and `expiriesPerAccount`.
+- [ ] Live checks (not possible with dev stubs): the checklist in `developer-apps-guide.md` §6 for X, the LinkedIn profile and the LinkedIn page.
 
 ## 8. Email
 
