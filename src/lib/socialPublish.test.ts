@@ -65,6 +65,17 @@ describe('preflight', () => {
     expect(charCount('x', '日本')).toBe(4);
     expect(charCount('x', '👍')).toBe(2);
     expect(charCount('linkedin', '👍')).toBe(1);
+  });
+  it('counts emoji sequences as 2 and bare domains as URLs, like X', () => {
+    expect(charCount('x', '❤️')).toBe(2);
+    expect(charCount('x', '👍🏽')).toBe(2);
+    expect(charCount('x', '🇳🇬')).toBe(2);
+    expect(charCount('x', '👨‍👩‍👧‍👦')).toBe(2);
+    expect(charCount('x', 'try radar.app')).toBe(4 + 23);
+    expect(charCount('x', 'see www.fieldnote.io/blog?x=1 now')).toBe(4 + 23 + 4);
+    expect(charCount('x', 'mail me@fieldnote.app')).toBe('mail me@fieldnote.app'.length);
+    expect(charCount('x', 'built with Node.js, e.g. today')).toBe('built with Node.js, e.g. today'.length);
+    expect(charCount('x', '#radar.app $TSLA')).toBe('#radar.app $TSLA'.length);
     expect(preflight('x', { text: 'x'.repeat(250) + ' https://fieldnote.app/' + 'p'.repeat(60), images: [] })).toEqual([]);
   });
   it('limits image count (X 4, LinkedIn 9)', () => {
@@ -258,7 +269,7 @@ describe('cost and expiry', () => {
   it('estimates X cost per publish (links cost more) and LinkedIn as free', () => {
     expect(publishCostUsd('x', 'post', 'plain post')).toBe(0.015);
     expect(publishCostUsd('x', 'post', 'read https://fieldnote.app/blog')).toBe(0.2);
-    expect(publishCostUsd('x', 'reply', 'https://a.b')).toBe(0.01);
+    expect(publishCostUsd('x', 'post', 'details at fieldnote.app/pricing')).toBe(0.2);
     expect(publishCostUsd('linkedin', 'post', 'https://a.b')).toBe(0);
   });
   it('flags posts due after a LinkedIn token ends', () => {

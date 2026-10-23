@@ -51,7 +51,7 @@ Neither engineer changes these without asking the PM.
 | A13 | **Two LinkedIn apps, two providers.** The profile app (OpenID Connect + Share on LinkedIn) uses `LINKEDIN_CLIENT_ID/SECRET`. The page app (Community Management only) uses `LINKEDIN_PAGE_CLIENT_ID/SECRET`. There is no fallback between them | Community Management must be the only product on its app. Also, a different scope set on the same app cancels earlier tokens for that member |
 | A14 | Wall-clock `date`+`time` is the user's intent. `due_at` is derived and recomputed when the business time zone changes | "Times are in {zone}" means the zone setting governs |
 | A15 | Time zone labels come from `Intl` for any zone (`tzLabel`). The rule is US generic, then alphabetic short, then en-GB alphabetic, then the offset | D1. Verified on Node 22.18 / ICU 77.1 (§13) |
-| A16 | X **Reply now** defaults to X's own reply box: `xReplyIntentUrl` opens in a new tab, then the item continues to "I posted it". The API reply (`social.postNow`) runs only when the thread @mentions the connected account. An X 403 maps to `reply_restricted` copy and offers the reply box | Self-serve X plans reject API replies (403) unless the author mentioned or quoted you, since 23 Feb 2026. Enterprise is exempt. **The owner decides on Enterprise (§20 Q1)** |
+| A16 | X **Reply now** always opens X's own prefilled reply box (`xReplyIntentUrl`) in a new tab, then the item continues to "I posted it". Radar never posts replies (see §14). | Self-serve X refuses API replies unless mentioned; AI-reply approval |
 | A17 | The flag applies to businesses, not viewers (business id, or the owner's email) | All members see the same state, and the worker has no user |
 | A18 | "This week" (replacing "Upcoming articles") is flag-gated, along with every other UI change | AC-23 says the UI must be "exactly as today" |
 | A19 | Disconnect deletes the account row and its `scheduled` and `failed` pubs. `posted` pubs keep history (`acct_id → NULL` plus `acct_label`). `sending` pubs finish | History shows "As {account}" and View on X. A failed post can't be retried on a gone account |
@@ -269,7 +269,6 @@ The rules below apply to every action in the table:
     | `[[radar:ratelimit]]` | 429 → `rate_limit` |
     | `[[radar:down]]` | unavailable before send (transient) |
     | `[[radar:timeout]]` | unknown outcome at the create stage (X verify finds nothing, giving `unknown`) |
-    | `[[radar:noreply]]` | `reply_restricted` |
 
   - **Expiry:** `social.devSimulate {what:'expire'}` covers a failed refresh. `{what:'lapse'}` covers the LinkedIn 60-day path. Stub LinkedIn profile accounts are created with `expires_at = now + 60 days` and no refresh token, like the real app.
   - **Dev seed:** `scripts/dev-seed.ts` connects the three stub accounts (the X one non-expired) only when the flag is on for the seed business.
@@ -365,7 +364,6 @@ The rules below apply to every action in the table:
 | 429 (`x-rate-limit-reset` / LinkedIn 429) | `rate_limit` | yes (backoff; `retry_at` ≥ the reset time when given) |
 | 503, network error before send, token refresh 5xx | `unavailable` | yes |
 | X 403 "duplicate content" / LinkedIn 422 duplicate | `duplicate` | no |
-| X 403 on a reply (the reply restriction) | `reply_restricted` (the toast offers "Reply on X", which opens the intent) | no |
 | X 400 / LinkedIn 422 text length | `too_long` | no |
 | media upload 4xx | `media` | no |
 | LinkedIn create refused because an image is still processing | `unavailable` (retry; profile tokens can't poll `/rest/images`) | yes |
@@ -521,7 +519,7 @@ The prototype's London label is "UK" / "UK time". Production uses GMT or BST wit
     - unknown outcome on X (verify found and not found) and on LinkedIn;
     - refresh: transient vs definitive, the concurrent-refresh lock and atomic pair save (a rotated X token is never lost);
     - LinkedIn profile: `social.tokens` sets `expired` once `expires_at` passes, with no refresh call, and posts due later are held;
-    - X replies: `social.postNow` on a non-mentioning thread is refused (`COPY.replyNotAllowed`), and a stub 403 (`[[radar:noreply]]`) gives `failed`/`reply_restricted` with the item still live;
+    - X replies: `social.postNow` on any reply is refused (`COPY.replyNotAllowed`);
     - disconnect and reconnect counts, and a reconnect as a different account refused;
     - routing, lock refusals on edit and move, past-time refusal, the stale rule;
     - the flag-off path (no projection, actions 404, scheduler skips, auto coerced);
@@ -550,11 +548,11 @@ The prototype's London label is "UK" / "UK time". Production uses GMT or BST wit
 7. **Daily Brief.**
    - `briefPublish(accounts, item)` decides what shows:
      - posts: Post now (confirm), Schedule (default today 5:00 PM) and the icon-only Copy, when `direct`;
-     - X replies: Reply now, when `direct`, which follows `replyMode`. In `'intent'` mode it opens X's box and marks the item copied, with **no** Radar confirmation window. Only `'api'` mode uses the "Reply on X now?" confirmation.
+     - X replies: Reply now opens X's box and marks the item copied, with **no** Radar confirmation window. Only `'api'` mode uses the "Reply on X now?" confirmation.
    - Scheduled items: the line plus Reschedule and Unschedule, shown dimmed in the queue.
    - "Posted to {Platform}" or "Replied on {Platform}" plus View on.
    - The prototype's Connect or Reconnect hint when `can && !direct` (posts and X replies).
-   - On X replies, Reply now follows `replyMode` (§14): `'intent'` opens X's reply box and marks the item copied, and `'api'` uses the confirmation and `social.postNow`. The not-connected and expired hints are the prototype's.
+   - On X replies, Reply now always opens X's reply box (§14), connected or not, with no Radar confirmation.
    - The Schedule window shows `expiryNote(acct, B.tz)` as a warn Status when `expiresBefore(acct, dueMs)` (A23). PublishBox does the same.
    - AC-15.
 8. **AutoModal** "When a pack is ready", with the prototype copy, and Save disabled with no live account. SocialMarketing status line, subtitle and "Connect X or LinkedIn". PackThumb `scheduledCount`. ACs: AC-16, AC-17.
@@ -649,3 +647,22 @@ Not owner decisions, but logged for T4 (DIVERGENCES):
 - LinkedIn organization ACLs (roles; the page scope is `rw_organization_admin` per Increasing access, see developer-apps-guide.md): https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/organization-access-control-by-role
 - LinkedIn Images API (initializeUpload; JPG, GIF, PNG; < 36,152,320 px): https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api
 - LinkedIn little text format (reserved characters in `commentary`): https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/little-text-format
+
+
+## 21. Postiz lessons applied (PM, 2026-10-23)
+
+Source: `postiz-lessons.md`. These override anything above that conflicts.
+
+| # | Change | Owner |
+|---|---|---|
+| P1 | **LinkedIn media wait.** After uploading images, a profile waits about 15 s before the post is created. A page polls `GET /rest/images/{urn}` until `AVAILABLE` (about 30 s cap), falling back to the fixed wait on a 403. This applies to manual and scheduled sends. A send still `processing` after the cap fails as `media`. | Backend `publish/linkedin.ts`, `send.ts` |
+| P2 | **Persist `posted` first.** After the create call returns 2xx, the conditional `posted` write (with `remote_id` and url) runs first and is retried in process. The Brief write, events and notify run after it and only log on failure. Nothing after a successful create may cause a resend. Add a test that throws after the create and asserts there is no second create. | Backend `send.ts` |
+| P3 | **X 402 / `usage-capped` / credits depleted → `quota`** (new `PubErrCode`, copy in `errCopy`). Never retried. Logs an operator error (`console.error` with a `[social] X quota` tag) and records the event. | Backend `x.ts`, `send.ts`; shared done |
+| P4 | **LinkedIn 426 `NONEXISTENT_VERSION` → `unavailable`**, with an operator error log naming `LINKEDIN_API_VERSION`. `docs/LAUNCH.md` gets a note to bump the version each year (LinkedIn sunsets versions after about 12 months). | Backend |
+| P5 | **Weighted X count.** `charCount` counts by grapheme (an emoji sequence counts 2). Bare domains on common TLDs count as 23. The same detector drives `hasLink` and the link price. No new dependency. | Shared (done) |
+| P6 | **OAuth.** No `prompt=none`. On the callback, check the granted `scope` covers the required set; if not, return readable copy ("Radar needs permission to post. Try again and allow all permissions.") and save nothing. | Backend `oauth.ts` |
+| P7 | **Pages.** List pages and check reconnects for both `ADMINISTRATOR` and `CONTENT_ADMINISTRATOR` roles. | Backend |
+| P8 | **`made_with_ai: true`** on X posts whose images came from the image model (Illustration and Photography styles and Brief AI images). | Backend `x.ts` |
+| P9 | **X error text matching**, on top of the status code: duplicate (both wordings) → `duplicate`; suspended or locked account → `auth`; invalid media ids → `media`; cashtag, crypto-address and invalid-URL rejections → `rejected`, keeping X's own message as `err` when it's short and readable. | Backend `x.ts` |
+| P10 | **Notify on expiry.** When an account becomes expired with held posts, send a toast to members (existing `notify`). About 7 days before a LinkedIn profile's `expiresAt`, notify once (`once()` key) that it needs reconnecting soon. | Backend `accounts.ts`, cron |
+| P11 | **No prompt-less refresh, and no single shared LinkedIn app.** Confirms A10 and A13. No change. | — |
