@@ -21,9 +21,9 @@ export function DayPick({ d, setD }: { d: string; setD: (d: string) => void }) {
 }
 
 /** 6:00 AM–10:00 PM in 30-minute steps (a stored time off the grid stays selectable). */
-export function TimeSel({ v, set, label = 'Time', w = 140 }: { v: string; set: (v: string) => void; label?: string; w?: number }) {
+export function TimeSel({ v, set, label = 'Time', w = 140, disabled }: { v: string; set: (v: string) => void; label?: string; w?: number; disabled?: boolean }) {
   const opts = TIME_SLOTS.includes(v) ? TIME_SLOTS : [...TIME_SLOTS, v].sort();
-  return <select className="input" style={{ width: w, height: 36, fontSize: 13 }} value={v} onChange={e => set(e.target.value)} aria-label={label}>{opts.map(o => <option key={o} value={o}>{fmtTime(o)}</option>)}</select>;
+  return <select className="input" style={{ width: w, height: 36, fontSize: 13 }} value={v} disabled={disabled} onChange={e => set(e.target.value)} aria-label={label}>{opts.map(o => <option key={o} value={o}>{fmtTime(o)}</option>)}</select>;
 }
 
 /** "Times are in Eastern Time (ET). Change it in Settings → Publishing." */
@@ -32,10 +32,12 @@ export function TzNote() {
   return <p className="xs sub" style={{ margin: 0 }}>{tzNote(B!.tz, now)}</p>;
 }
 
-export function ScheduleModal({ open, onClose, title, sub, initial, onSave, extra, acct }: {
+export function ScheduleModal({ open, onClose, title, sub, initial, onSave, extra, acct, lockTime }: {
   open: boolean; onClose: () => void; title: string; sub?: string; initial: { date: string; time: string }; onSave: (v: { date: string; time: string }) => void; extra?: React.ReactNode;
   /** The account it will post as: shows `expiryNote` when its access ends before the chosen time (the post would be held). */
   acct?: SocialAccount | null;
+  /** Keep the time fixed (a held post: its account is expired, so only a move to another day at the same time is possible). */
+  lockTime?: boolean;
 }) {
   const { B } = useApp(); const tz = B!.tz; const now = useNowMs();
   const [d, setD] = useState(initial.date); const [tm, setTm] = useState(initial.time);
@@ -46,7 +48,7 @@ export function ScheduleModal({ open, onClose, title, sub, initial, onSave, extr
   return <Modal open={open} onClose={onClose} width={480} label={title}><div className="col" style={{ padding: 30, gap: 20 }}>
     <div className="col" style={{ gap: 6 }}><h2 className="h2">{title}</h2>{sub && <p className="sub small">{sub}</p>}</div>
     <DayPick d={d} setD={setD} />
-    <div className="col" style={{ gap: 8 }}><div className="row" style={{ gap: 12 }}><span className="small grow">Time</span><TimeSel v={tm} set={setTm} /><span className="small sub" style={{ minWidth: 22 }}>{tzLabel(tz, due).abbr}</span></div><TzNote /></div>
+    <div className="col" style={{ gap: 8 }}><div className="row" style={{ gap: 12 }}><span className="small grow">Time</span><TimeSel v={tm} set={setTm} disabled={lockTime} /><span className="small sub" style={{ minWidth: 22 }}>{tzLabel(tz, due).abbr}</span></div><TzNote /></div>
     {past && <Status tone="warn">That time has passed. Pick a later time.</Status>}
     {ends && <Status tone="warn" style={{ whiteSpace: 'normal', alignItems: 'baseline' }}>{expiryNote(acct!, tz)}</Status>}
     <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>{extra}<span className="grow" /><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="calendar" disabled={past} onClick={() => onSave({ date: d, time: tm })}>{`Schedule for ${fmtDW(d)}`}</Btn></div>

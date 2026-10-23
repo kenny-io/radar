@@ -11,7 +11,7 @@ import type { Platform, Pub, SocialAccount, SocialChannel, SocialPack, SocialPos
 import { ConnectSocial } from './ConnectSocial';
 import { LogoLabel } from './LogoLabel';
 import { ScheduleModal } from './ScheduleModal';
-import { postedAs, repub, withPub } from './logic';
+import { compressToast, postedAs, repub, rescheduleAction, withPub } from './logic';
 import { useNowMs } from './useSocial';
 
 /** Preflight problems: amber dot + text, with a one-click fix where there is one. */
@@ -49,24 +49,28 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
   };
   const schedule = async ({ date, time }: { date: string; time: string }) => {
     setSch(false);
+    const how = rescheduleAction(pub, date, time); if (how === 'none') return;
     await app.flushLater();
+    const done = () => toast(`Scheduled for ${fmtDW(date)} at ${atTz(tz, date, time)}`, { tone: 'ok' });
+    // Same time, new day: social.move (works while the account is on hold). A new time: social.schedule.
+    if (how === 'move' && pub) { app.act('social.move', { sid, date }, { optimistic: b => withPub(b, sid, repub(pub, date, time, tz)) }).then(done).catch(() => {}); return; }
     const base: Pub = pub || { status: 'scheduled', platform: k as 'x' | 'linkedin', date, time, dueAt: '', acct: cur?.id || null, acctLabel: label };
     app.act('social.schedule', { sid, date, time, acctId: cur?.id }, { optimistic: b => withPub(b, sid, { ...repub(base, date, time, tz), status: 'scheduled', acct: cur?.id || null, err: null, code: null }) })
-      .then(() => toast(`Scheduled for ${fmtDW(date)} at ${atTz(tz, date, time)}`, { tone: 'ok' })).catch(() => {});
+      .then(done).catch(() => {});
   };
   const unschedule = () => {
     app.act('social.unschedule', { sid }, { optimistic: b => withPub(b, sid, null) }).then(() => toast('Unscheduled. The post is still in your library.')).catch(() => {});
   };
   const fix = async () => {
     setFixing(true);
-    try { await app.act('social.compress', { sid }); toast('Images compressed', { tone: 'ok' }); } catch { /* toasted */ }
+    try { const r = await app.act<{ compressed: number }>('social.compress', { sid }); toast(compressToast(r?.compressed), { tone: r?.compressed ? 'ok' : null }); } catch { /* toasted */ }
     setFixing(false);
   };
 
   const secondary = <div className="row" style={{ gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}><Btn size="sm" kind="ghost" icon="copy" onClick={onCopy}>Copy text</Btn>{nImg > 0 && <Btn size="sm" kind="ghost" icon="download" onClick={onDownload}>{nImg > 1 ? `${nImg} images` : 'Image'}</Btn>}</div>;
   const modals = canPost(k) && <>
     <ConnectSocial ch={conn} reconnect={re} open={!!conn} onClose={() => { setConn(null); setRe(null); }} onConnected={a => setChosen(a.id)} />
-    <ScheduleModal open={sch} onClose={() => setSch(false)} title={`Schedule ${pl} post`} sub="You can drag it to another day on the calendar later." acct={cur}
+    <ScheduleModal open={sch} onClose={() => setSch(false)} title={`Schedule ${pl} post`} sub="You can drag it to another day on the calendar later." acct={cur} lockTime={!!cur?.expired && pub?.status === 'scheduled'}
       initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('pack', k, B.today)} onSave={schedule} />
     <Modal open={confirm} onClose={() => setConfirm(false)} width={440} label="Post now"><div className="col" style={{ padding: 30, gap: 16 }}>
       <h2 className="h2">{`Post to ${pl} now?`}</h2>
@@ -108,7 +112,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
     <Issues list={issues} onFix={fix} busy={fixing} />
     {expired && cur ? <Btn kind="primary" className="btn-block" onClick={() => { setRe(cur); setConn(cur.ch); }}><LogoLabel k={k}>{`Reconnect ${chOf(cur.ch).l}`}</LogoLabel></Btn>
       : <Btn kind="primary" className="btn-block" loading={busy} disabled={blocked} onClick={() => setConfirm(true)}><LogoLabel k={k}>{state === 'failed' ? 'Try again' : 'Post now'}</LogoLabel></Btn>}
-    {scheduled ? <div className="row" style={{ gap: 8 }}><Btn className="grow" icon="calendar" disabled={busy} onClick={() => setSch(true)}>Reschedule</Btn><Btn kind="ghost" disabled={busy} onClick={unschedule}>Unschedule</Btn></div>
+    {scheduled ? <div className="row" style={{ gap: 8 }}><Btn className="grow" icon="calendar" disabled={busy || blocked} onClick={() => setSch(true)}>Reschedule</Btn><Btn kind="ghost" disabled={busy} onClick={unschedule}>Unschedule</Btn></div>
       : !expired && <Btn className="btn-block" icon="calendar" disabled={blocked || busy} onClick={() => setSch(true)}>Schedule</Btn>}
     {secondary}{modals}
   </div>;

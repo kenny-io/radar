@@ -17,7 +17,7 @@ import type { Pub, SocialChannel } from '@/lib/types';
 import { LogoLabel } from '@/features/social/channels/LogoLabel';
 import { ScheduleModal } from '@/features/social/channels/ScheduleModal';
 import { failToast } from '@/features/social/channels/PublishBox';
-import { repub, withPub } from '@/features/social/channels/logic';
+import { compressToast, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
 import { useNowMs } from '@/features/social/channels/useSocial';
 
 type Act = { copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
@@ -313,7 +313,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const postDirect = !!bp?.direct && it.kind === 'post' && !!sa; const replyDirect = !!bp?.direct && it.kind === 'reply' && bp.replyMode === 'intent';
   const pl = k ? PLAT_L[k] : ''; const ppl = pub ? PLAT_L[pub.platform] : pl; const sid = briefSid(day, it.id);
   const label = acctLabel(sa) || pub?.acctLabel || '';
-  const problems = postDirect && k ? preflight(k, briefPreflightInput(it, k, text)) : replyDirect ? preflight('x', { text, images: [] }) : [];
+  const problems = (postDirect || (pubOn && it.kind === 'post' && it.st === 'scheduled')) && k ? preflight(k, briefPreflightInput(it, k, text)) : replyDirect ? preflight('x', { text, images: [] }) : [];
   const locked = isLocked(pub, now);
   const [cf, setCf] = useState(false); const [sc, setSc] = useState(false); const [pBusy, setPBusy] = useState(false); const [fixing, setFixing] = useState(false);
   const flushEdit = async () => { const pend = takePending(); if (pend) { await app.act('brief.item', { date: day, id: it.id, edit: pend }); clearOverlay(pend.v, pend.text); } };
@@ -331,8 +331,13 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const replyNow = () => { const id = xStatusId(it.url); if (!id) return; window.open(xReplyIntentUrl(id, text), '_blank', 'noopener'); act.opened(it); };
   const schedule = async ({ date, time }: { date: string; time: string }) => {
     setSc(false);
+    const how = rescheduleAction(pub, date, time); if (how === 'none') return;
     try {
       await flushEdit();
+      if (how === 'move' && pub) { // same time, new day: works while the account is on hold
+        await app.act('social.move', { sid, date }, { optimistic: b => withPub(b, sid, repub(pub, date, time, B.tz)) });
+        toast(`Scheduled for ${fmtDW(date)} at ${atTz(B.tz, date, time)}`, { tone: 'ok' }); return;
+      }
       const base: Pub = pub || { status: 'scheduled', platform: k!, date, time, dueAt: '', acct: sa?.id || null, acctLabel: label, direct: true };
       await app.act('social.schedule', { sid, date, time }, { optimistic: b => withPub(b, sid, { ...repub(base, date, time, B.tz), status: 'scheduled', err: null, code: null }) });
       toast(`Scheduled for ${fmtDW(date)} at ${atTz(B.tz, date, time)}`, { tone: 'ok' });
@@ -340,11 +345,11 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     } catch { /* toasted */ }
   };
   const unschedule = () => { app.act('social.unschedule', { sid }, { optimistic: b => withPub(b, sid, null) }).then(() => toast('Unscheduled')).catch(() => {}); };
-  const compress = async () => { setFixing(true); try { await app.act('social.compress', { sid }); toast('Images compressed', { tone: 'ok' }); } catch { /* toasted */ } setFixing(false); };
+  const compress = async () => { setFixing(true); try { const r = await app.act<{ compressed: number }>('social.compress', { sid }); toast(compressToast(r?.compressed), { tone: r?.compressed ? 'ok' : null }); } catch { /* toasted */ } setFixing(false); };
   const hintCh: SocialChannel | null = k === 'x' ? 'x' : k === 'linkedin' ? (co ? 'li_page' : 'li_profile') : null;
   const showHint = pubOn && !past && live && it.kind === 'post' && !!bp?.can && !postDirect && !!hintCh && (B.social.channels || ['x', 'li_profile', 'li_page']).includes(hintCh);
   const scheduledLine = pub && <><span className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${fmtDW(pub.date)} at ${atTz(B.tz, pub.date, pub.time)}`}</Status><span className="xs sub">{`As ${label}`}</span></span>
-    <Btn size="sm" icon="calendar" disabled={locked} onClick={() => setSc(true)}>Reschedule</Btn><Btn size="sm" kind="ghost" disabled={locked} onClick={unschedule}>Unschedule</Btn></>;
+    <Btn size="sm" icon="calendar" disabled={locked || problems.length > 0} onClick={() => setSc(true)}>Reschedule</Btn><Btn size="sm" kind="ghost" disabled={locked} onClick={unschedule}>Unschedule</Btn></>;
   const postedL = (p: Pub | null) => (p?.direct ? `${it.kind === 'reply' ? 'Replied on' : 'Posted to'} ${ppl}` : 'Posted');
   return <article className="brief-d enter">
     {it.kind === 'reply' ? <>
@@ -411,10 +416,10 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     </div>}
     {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{co ? `Post from the ${name} account. Help first, product second.` : it.noMention ? `${it.where} doesn’t allow self-promotion, so this reply stays purely helpful.` : it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.${it.mention && it.rulesUnknown ? ` Check ${it.where}’s rules on self-promotion before posting this version.` : ''}` : it.mention ? `Plugs ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Plug ${name}” if it fits.`}</p>}
     {showHint && <p className="xs sub" style={{ marginTop: 10 }}>{sa?.expired ? <>{`${chOf(sa.ch).l} needs reconnecting to post from here. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Reconnect</a></> : <>{`Connect ${k === 'x' ? 'X' : co ? 'your LinkedIn page' : 'your LinkedIn profile'} to post or schedule from Radar. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Connect</a></>}</p>}
-    {!past && live && (postDirect || (replyDirect && it.st === 'open')) && problems.length > 0 && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{problems[0].msg}</span>{problems[0].fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{problems[0].fix.l}</Btn>}</p>}
+    {((!past && live && (postDirect || (replyDirect && it.st === 'open'))) || it.st === 'scheduled') && problems.length > 0 && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{problems[0].msg}</span>{problems[0].fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{problems[0].fix.l}</Btn>}</p>}
     {postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${pl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa}
       initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('brief', k!, B.today)} onSave={schedule} />}
-    {it.st === 'scheduled' && pub && !postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${ppl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa} initial={{ date: pub.date, time: pub.time }} onSave={schedule} />}
+    {it.st === 'scheduled' && pub && !postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${ppl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa} lockTime={!!sa?.expired} initial={{ date: pub.date, time: pub.time }} onSave={schedule} />}
     {postDirect && <Modal open={cf} onClose={() => setCf(false)} width={440} label="Post now"><div className="col" style={{ padding: 30, gap: 16 }}>
       <h2 className="h2">{`Post to ${pl} now?`}</h2>
       <p className="sub">It goes live as <span style={{ color: 'var(--ink)' }}>{label}</span>{vn > 0 ? ` with ${vn} image${vn > 1 ? 's' : ''}` : ''}. You can delete it on {pl} afterwards.</p>

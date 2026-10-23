@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COPY, dueAtIso, socialItems } from '@/lib/socialPublish';
 import type { BriefItem, Pub, SocialAccount, SocialPack, Workspace } from '@/lib/types';
-import { chipLabel, dropKind, postedAs, findPub, planMove, scheduleAllRows, socialIssues, withPub } from './logic';
+import { autoSchedules, chipLabel, compressToast, dropKind, postedAs, rescheduleAction, findPub, planMove, scheduleAllRows, socialIssues, withPub } from './logic';
 
 const TZ = 'America/New_York'; const TODAY = '2026-10-23';
 const NOW = Date.parse('2026-10-23T15:00:00Z'); // 11:00 AM ET
@@ -102,6 +102,39 @@ describe('posted panel after a disconnect', () => {
     expect(postedAs({ ...p, acct: X.id }, [X])).toBe('@fieldnoteapp');
     expect(postedAs(p, [X])).toBe('@oldhandle');
     expect(postedAs({ ...p, acctLabel: undefined }, [])).toBe('');
+  });
+});
+
+describe('Reschedule / Move post routing (QA D1)', () => {
+  const p = pub({ platform: 'x', date: '2026-10-25', time: '12:30', acct: X.id, held: true });
+  it('a new day at the same time is social.move, which works while the account is on hold', () => {
+    expect(rescheduleAction(p, '2026-10-27', '12:30')).toBe('move');
+  });
+  it('a new time is social.schedule; nothing changed is a no-op; a first schedule is social.schedule', () => {
+    expect(rescheduleAction(p, '2026-10-27', '15:00')).toBe('schedule');
+    expect(rescheduleAction(p, '2026-10-25', '15:00')).toBe('schedule');
+    expect(rescheduleAction(p, '2026-10-25', '12:30')).toBe('none');
+    expect(rescheduleAction(null, '2026-10-25', '12:30')).toBe('schedule');
+    expect(rescheduleAction({ ...p, status: 'failed' }, '2026-10-25', '12:30')).toBe('schedule');
+  });
+});
+
+describe('Social status line (QA D5)', () => {
+  const on = (post: 'library' | 'schedule' | undefined, accounts: SocialAccount[], publishing = true) => ({ social: { packs: [], img: null, auto: { post } as any, publishing, accounts } }) as unknown as Pick<Workspace, 'social'>;
+  it('says scheduled only with Schedule posts and a live account', () => {
+    expect(autoSchedules(on('schedule', [X]))).toBe(true);
+    expect(autoSchedules(on('schedule', []))).toBe(false); // every account disconnected
+    expect(autoSchedules(on('schedule', [{ ...X, expired: true }]))).toBe(false);
+    expect(autoSchedules(on('library', [X]))).toBe(false);
+    expect(autoSchedules(on('schedule', [X], false))).toBe(false); // flag off
+  });
+});
+
+describe('Compress images toast (QA D6)', () => {
+  it('claims a change only when files were re-encoded', () => {
+    expect(compressToast(2)).toBe('Images compressed');
+    expect(compressToast(0)).toBe('Images are already small enough.');
+    expect(compressToast(undefined)).toBe('Images are already small enough.');
   });
 });
 

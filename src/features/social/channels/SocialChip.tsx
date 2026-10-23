@@ -8,7 +8,7 @@ import { Btn } from '@/components/ui';
 import { PLAT_L, atTz, shortTime, type SocialItem } from '@/lib/socialPublish';
 import { fmtDW } from '@/lib/format';
 import { ScheduleModal } from './ScheduleModal';
-import { chipLabel, findPub, repub, withPub } from './logic';
+import { chipLabel, findPub, repub, rescheduleAction, withPub } from './logic';
 
 export function SocialChip({ it, onOpen, compact }: { it: SocialItem; onOpen: (it: SocialItem) => void; compact?: boolean }) {
   const app = useApp(); const B = app.B!; const [mv, setMv] = useState(false);
@@ -20,9 +20,9 @@ export function SocialChip({ it, onOpen, compact }: { it: SocialItem; onOpen: (i
   const save = ({ date, time }: { date: string; time: string }) => {
     setMv(false);
     const pub = findPub(B, it.id)?.pub; const toast = () => app.toast(`Moved to ${fmtDW(date)} at ${atTz(B.tz, date, time)}`);
-    if (date === it.date && time === it.time) return;
+    const how = rescheduleAction(pub || { status: it.status, date: it.date, time: it.time }, date, time); if (how === 'none') return;
     const opt = pub ? { optimistic: (b: typeof B) => withPub(b, it.id, repub(pub, date, time, B.tz)) } : {};
-    (time === it.time ? app.act('social.move', { sid: it.id, date }, opt) : app.act('social.schedule', { sid: it.id, date, time }, opt)).then(toast).catch(() => {});
+    (how === 'move' ? app.act('social.move', { sid: it.id, date }, opt) : app.act('social.schedule', { sid: it.id, date, time }, opt)).then(toast).catch(() => {});
   };
   return <>
     <button type="button" draggable={draggable} onDragStart={ev => { ev.dataTransfer.setData('text', it.id); ev.dataTransfer.effectAllowed = 'move'; }} onClick={click} className="tap soc-chip" aria-label={label} title={label}
@@ -32,6 +32,6 @@ export function SocialChip({ it, onOpen, compact }: { it: SocialItem; onOpen: (i
       {!compact && <span className="xs trunc" style={{ minWidth: 0 }}>{it.name}</span>}
     </button>
     {draggable && <ScheduleModal open={mv} onClose={() => setMv(false)} title={`Move ${PLAT_L[it.k]} post`} sub={it.name} initial={{ date: it.date, time: it.time }}
-      extra={<Btn kind="ghost" onClick={() => { setMv(false); onOpen(it); }}>Open post</Btn>} onSave={save} />}
+      extra={<Btn kind="ghost" onClick={() => { setMv(false); onOpen(it); }}>Open post</Btn>} onSave={save} lockTime={it.held} />}
   </>;
 }

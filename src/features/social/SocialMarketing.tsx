@@ -9,6 +9,7 @@ import { Btn, Empty, PageHead, Status } from '@/components/ui';
 import { plat } from '@/lib/constants';
 import { fmtTime } from '@/lib/format';
 import { accountsOf } from '@/lib/socialPublish';
+import { autoSchedules } from './channels/logic';
 import { PackThumb } from './PackThumb';
 import { SocialFlow } from './SocialFlow';
 import { PackView } from './PackView';
@@ -27,7 +28,7 @@ export function SocialMarketing() {
       <Btn kind="primary" icon="plus" onClick={() => setFlow(true)}>Generate social posts</Btn>
     </PageHead>
     <div className="row small" style={{ gap: 14, margin: '-14px 0 30px', flexWrap: 'wrap' }}>
-      {a.on ? <><Status tone="ok">Auto-generating {a.freq === 'daily' ? 'daily' : a.days.join(', ')} at {fmtTime(a.time)}</Status><span className="sub"><span style={{ display: 'inline-flex', gap: 12, verticalAlign: 'middle', marginRight: 6 }}>{a.platforms.map(k => <PlatName key={k} k={k} l={plat(k).l} s={14} gap={6} />)}</span>{pubOn && a.post === 'schedule' ? '· scheduled to connected accounts' : '· saved to your library'}</span></> : <span className="sub">Automatic generation is off.</span>}
+      {a.on ? <><Status tone="ok">Auto-generating {a.freq === 'daily' ? 'daily' : a.days.join(', ')} at {fmtTime(a.time)}</Status><span className="sub"><span style={{ display: 'inline-flex', gap: 12, verticalAlign: 'middle', marginRight: 6 }}>{a.platforms.map(k => <PlatName key={k} k={k} l={plat(k).l} s={14} gap={6} />)}</span>{autoSchedules(B) ? '· scheduled to connected accounts' : '· saved to your library'}</span></> : <span className="sub">Automatic generation is off.</span>}
       <Btn kind="link" className="small" onClick={() => setAuto(true)}>{a.on ? 'Edit' : 'Set up'}</Btn>{pubOn && !accountsOf(B).length && <Btn kind="link" className="small" onClick={() => go('settings', { social: true })}>Connect X or LinkedIn</Btn>}
     </div>
     {packs.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 18 }}>{packs.map(p => <PackThumb key={p.id} p={p} brand={B.profile.brand} onClick={() => go('social', { pack: p.id })} />)}</div>

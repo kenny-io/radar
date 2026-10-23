@@ -58,6 +58,20 @@ export const postedAs = (pub: Pick<Pub, 'acct' | 'acctLabel'>, accts: SocialAcco
   const a = accts.find(x => x.id === pub.acct); return a ? acctLabel(a) : pub.acctLabel || '';
 };
 
+/** Which action a Reschedule / Move post save needs. The same time on a new day is `social.move`, which also works while
+ *  the account is on hold (held posts can't be scheduled, A4). A new time is `social.schedule`. Nothing changed is a no-op. */
+export function rescheduleAction(pub: Pick<Pub, 'status' | 'date' | 'time'> | null | undefined, date: string, time: string): 'none' | 'move' | 'schedule' {
+  if (!pub || pub.status !== 'scheduled') return 'schedule';
+  if (pub.time === time) return pub.date === date ? 'none' : 'move';
+  return 'schedule';
+}
+/** Toast after Compress images: only claim a change when Radar re-encoded something (divergence: neutral copy for 0). */
+export const compressToast = (changed: number | null | undefined) => (changed ? 'Images compressed' : 'Images are already small enough.');
+/** The Social status line says "scheduled to connected accounts" only while automatic posts can really be scheduled:
+ *  publishing on, auto set to Schedule posts, and at least one connected X or LinkedIn account that isn't expired. */
+export const autoSchedules = (B: Pick<Workspace, 'social'>) =>
+  !!B.social.publishing && B.social.auto.post === 'schedule' && (B.social.accounts || []).some(a => !a.expired);
+
 /* ── Dashboard → Needs attention ── */
 export interface SocialIssue { id: string; tone: 'bad' | 'warn'; label: string; head: string; body: string; open?: SocialItem; reconnect?: SocialAccount }
 /** "A post didn’t go out" (Fix and retry opens the first failed post) and one "Reconnect {channel}" per expired account. */
