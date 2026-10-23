@@ -3,9 +3,11 @@
 import { sql } from 'drizzle-orm';
 import { db } from '../../../db';
 import { RadarError, notFound } from '../../../errors';
-import { bizToday, type BizRow } from '../../../workspace';
+import { bizToday, getBiz, socialAutoOf, type BizRow } from '../../../workspace';
+import { socialOn } from '../../../flags';
+import { track } from '../../../events';
 import { addDays } from '@/lib/format';
-import { COPY, LOCK_MS, MAX_AHEAD_DAYS, accountsFor, acctLabel, briefAccount, isLocked, pickAccount, preflight, zonedTimeToUtc } from '@/lib/socialPublish';
+import { COPY, LOCK_MS, packSid, type PostPlatform, MAX_AHEAD_DAYS, accountsFor, acctLabel, briefAccount, isLocked, pickAccount, preflight, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { Pub, SocialAccount, SocialChannel } from '@/lib/types';
 import { acctPublic, accountRows, type AcctRow } from './accounts';
 import { P, ensureImages, loadTarget, preflightInput, pubOf, pubRow, type PubRow, type Target } from './pubs';
@@ -89,4 +91,23 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
       setWhere: sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`,
     }).returning();
   return row || null;
+}
+
+/** Automatic generation, "When a pack is ready → Schedule posts" (AC-16): the new pack's X and LinkedIn posts go out tomorrow at
+ *  auto.time to the connected accounts. A platform with no live account or a preflight problem stays in the library. */
+export async function autoSchedule(bid: string, packId: string): Promise<number> {
+  const biz = await getBiz(bid);
+  if (!(await socialOn(biz)) || socialAutoOf(biz).post !== 'schedule') return 0;
+  const date = addDays(bizToday(biz), 1); const time = socialAutoOf(biz).time || '08:00'; let n = 0;
+  for (const k of ['x', 'linkedin'] as PostPlatform[]) {
+    try {
+      const r = await resolve(bid, packSid(packId, k));
+      await scheduleChecks(biz, r, date, time, Date.now());
+      const row = await writeScheduled(db, { biz, r, date, time, userId: null, auto: true });
+      if (!row) continue;
+      n++;
+      await track('social.scheduled', { bid, ref: row.sid, props: { sid: row.sid, src: row.src, platform: row.platform, acct: row.acctId, ch: row.ch, date, time, dueAt: row.dueAt.toISOString(), auto: true } });
+    } catch (e: any) { if (!(e instanceof RadarError)) throw e; console.log(`[social] auto: ${k} stays in the library for ${packId}: ${e.code}`); }
+  }
+  return n;
 }

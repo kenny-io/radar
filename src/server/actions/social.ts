@@ -1,5 +1,6 @@
-// Actions for Social Marketing (01-screens §7, 02-system §8). Radar never posts to social platforms (README §2.5 #1):
-// these only generate, edit and track copies of packs stored in the library.
+// Actions for Social Marketing (01-screens §7, 02-system §8): generate, edit and track copies of packs stored in the library.
+// Posting to connected X / LinkedIn accounts lives in ./socialPublish (behind RADAR_SOCIAL_PUBLISHING); here it only adds
+// the edit lock near a post's send time and the image meta the posting checks use.
 import { z } from 'zod';
 import { and, eq, ne } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
@@ -11,6 +12,10 @@ import { getPack, renderPostImage, updatePack, writePost, type StoredPack } from
 import { suggestIdeas } from '../services/social/ideas';
 import { DAYS } from '../services/social/auto';
 import type { Platform, Profile } from '@/lib/types';
+import { COPY, canPost, packSid } from '@/lib/socialPublish';
+import { socialOn } from '../flags';
+import { assertEditable } from '../services/social/publish/guards';
+import { accountRows } from '../services/social/publish/accounts';
 
 const PlatformZ = z.enum(['linkedin', 'x', 'facebook', 'reddit', 'quora']);
 const ImageStyleZ = z.enum(['branded', 'illustration', 'photography', 'infographic']);
@@ -20,6 +25,8 @@ const profileOf = (biz: any): Profile => ({ ...(biz.profile as Profile), domain:
 
 async function packOr404(bid: string, id: string) { const p = await getPack(bid, id); if (!p) throw notFound('Pack'); return p; }
 const postOr404 = (p: StoredPack, k: Platform) => { const q = p.posts[k]; if (!q) throw notFound('Post'); return q; };
+/** Social channels: a post that sends within 5 minutes can't be changed (COPY.lockedEdit, 409). No-op with the flag off. */
+const editable = (ctx: { biz: any }, packId: string, k: Platform) => (canPost(k) ? assertEditable(ctx.biz, packSid(packId, k)) : Promise.resolve());
 const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any>) =>
   updatePack(bid, id, p => ({ ...p, posts: { ...p.posts, [k]: { ...postOr404(p, k), ...patch } } })).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
 
@@ -65,7 +72,7 @@ export const actions: ActionMap = {
   /** Autosave edited post text. */
   'social.text': action({
     input: z.object({ packId: z.string().max(64), platform: PlatformZ, text: z.string().max(20000) }),
-    run: async (ctx, i) => { await setPost(ctx.bid, i.packId, i.platform, { text: i.text }); return null; },
+    run: async (ctx, i) => { await editable(ctx, i.packId, i.platform); await setPost(ctx.bid, i.packId, i.platform, { text: i.text }); return null; },
   }),
 
   /** Copy text: tracked as copied only — "not tracked as published". Viewers can copy too. */
@@ -78,6 +85,7 @@ export const actions: ActionMap = {
   'social.regenText': action({
     input: z.object({ packId: z.string().max(64), platform: PlatformZ }),
     run: async (ctx, i) => {
+      await editable(ctx, i.packId, i.platform);
       const p = await packOr404(ctx.bid, i.packId); const q = postOr404(p, i.platform); const v = (q.v || 0) + 1;
       const g = { headline: p.headline || p.source.label, brief: p.grounding?.brief || `Idea from the user: ${p.source.label}`, link: p.grounding?.link ?? null };
       const text = await writePost(ctx.bid, profileOf(ctx.biz), i.platform, { kind: p.source.kind, label: p.source.label, g, voice: p.voice, v: v + (q.seed || 0), previous: q.text });
@@ -90,10 +98,11 @@ export const actions: ActionMap = {
   'social.regenImage': action({
     input: z.object({ packId: z.string().max(64), platform: PlatformZ }),
     run: async (ctx, i) => {
+      await editable(ctx, i.packId, i.platform);
       const p = await packOr404(ctx.bid, i.packId); const q = postOr404(p, i.platform); const seed = (q.seed || 1) + 11;
-      let imageUrl: string | null = null; let photo = false;
-      try { const r = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style: q.style, seed }, p.headline || p.source.label, p.custom); imageUrl = r.url; photo = r.photo; } catch (e: any) { console.error('[social] render failed', e?.message); }
-      await setPost(ctx.bid, i.packId, i.platform, { seed, imageUrl, photo });
+      let imageUrl: string | null = null; let photo = false; let imageMeta = null;
+      try { const r = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style: q.style, seed }, p.headline || p.source.label, p.custom); imageUrl = r.url; photo = r.photo; imageMeta = r.meta; } catch (e: any) { console.error('[social] render failed', e?.message); }
+      await setPost(ctx.bid, i.packId, i.platform, { seed, imageUrl, photo, imageMeta, compressed: false });
       return { seed, imageUrl };
     },
   }),
@@ -102,13 +111,14 @@ export const actions: ActionMap = {
   'social.style': action({
     input: z.object({ packId: z.string().max(64), platform: PlatformZ, style: ImageStyleZ }),
     run: async (ctx, i) => {
+      await editable(ctx, i.packId, i.platform);
       const p = await packOr404(ctx.bid, i.packId); const q = postOr404(p, i.platform);
-      await setPost(ctx.bid, i.packId, i.platform, { style: i.style, imageUrl: null, photo: false });
+      await setPost(ctx.bid, i.packId, i.platform, { style: i.style, imageUrl: null, photo: false, imageMeta: null, compressed: false });
       await bump(ctx.bid);
-      let imageUrl: string | null = null; let photo = false;
-      try { const r = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style: i.style, seed: q.seed }, p.headline || p.source.label, p.custom); imageUrl = r.url; photo = r.photo; } catch (e: any) { console.error('[social] render failed', e?.message); }
+      let imageUrl: string | null = null; let photo = false; let imageMeta = null;
+      try { const r = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style: i.style, seed: q.seed }, p.headline || p.source.label, p.custom); imageUrl = r.url; photo = r.photo; imageMeta = r.meta; } catch (e: any) { console.error('[social] render failed', e?.message); }
       // Only store if the style wasn't changed again meanwhile.
-      await updatePack(ctx.bid, i.packId, x => { const cur = x.posts[i.platform]; return cur && cur.style === i.style ? { ...x, posts: { ...x.posts, [i.platform]: { ...cur, imageUrl, photo } } } : x; });
+      await updatePack(ctx.bid, i.packId, x => { const cur = x.posts[i.platform]; return cur && cur.style === i.style ? { ...x, posts: { ...x.posts, [i.platform]: { ...cur, imageUrl, photo, imageMeta } } } : x; });
       return { imageUrl };
     },
   }),
@@ -116,10 +126,14 @@ export const actions: ActionMap = {
   /** Automatic generation settings (AutoModal). */
   'social.auto': action({
     role: 'Editor',
-    input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(5), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/) }) }),
+    input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(5), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), post: z.enum(['library', 'schedule']).optional() }) }),
     run: async (ctx, { auto }) => {
       if (auto.on && !auto.platforms.length) throw new RadarError('Pick at least one platform.');
-      const a = { ...auto, days: DAYS.filter(d => auto.days.includes(d)), platforms: (['linkedin', 'x', 'facebook', 'reddit', 'quora'] as Platform[]).filter(k => auto.platforms.includes(k)) };
+      // When a pack is ready → Schedule posts needs a live account; with publishing off it is always Save to library.
+      const publishing = await socialOn(ctx.biz);
+      const post = !publishing ? (auto.post ? 'library' as const : undefined) : auto.post;
+      if (publishing && auto.on && post === 'schedule' && !(await accountRows(ctx.bid)).some(r => !r.expired)) throw new RadarError(COPY.noAccountForAuto, 400, 'no_account');
+      const a = { ...auto, ...(post ? { post } : {}), days: DAYS.filter(d => auto.days.includes(d)), platforms: (['linkedin', 'x', 'facebook', 'reddit', 'quora'] as Platform[]).filter(k => auto.platforms.includes(k)) };
       await db.update(schema.businesses).set({ socialAuto: a }).where(eq(schema.businesses.id, ctx.bid));
       return a;
     },

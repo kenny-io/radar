@@ -31,12 +31,12 @@ export function applySocial(packs: SocialPack[], days: Record<string, BriefDay>,
     return { ...it, pub, st: pub.status === 'scheduled' || pub.status === 'sending' ? 'scheduled' : it.st };
   });
 }
-/** Flag off: hide what this feature added to the jsonb (image meta, compressed, auto.post 'schedule'). */
+/** Flag off: hide what this feature added to the jsonb (image meta, compressed, auto.post). */
 export function stripSocial(packs: SocialPack[], days: Record<string, BriefDay>, auto: SocialAuto) {
   for (const p of packs) for (const k of Object.keys(p.posts || {})) {
     const q = p.posts[k as keyof typeof p.posts]; if (!q || (!('imageMeta' in q) && !('compressed' in q) && !('pub' in q))) continue;
     const { imageMeta: _m, compressed: _c, pub: _p, ...rest } = q; p.posts[k as keyof typeof p.posts] = rest as any;
   }
   for (const d of Object.values(days)) d.items = d.items.map(it => { if (!it.img || !('meta' in it.img)) return it; const { meta: _m, ...img } = it.img; return { ...it, img }; });
-  if (auto.post) auto.post = 'library';
+  delete auto.post; // absent = Save to library, as before this feature
 }
