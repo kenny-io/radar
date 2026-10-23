@@ -83,7 +83,7 @@ Full owner walkthrough: `.factory/social-channels/developer-apps-guide.md`. Desi
 
 | App | Where | Redirect URI | Scopes | Env |
 |---|---|---|---|---|
-| X ("Radar"; plus a separate "Radar Dev" app for local work) | console.x.com → app → User authentication: **Web App** (confidential client), Read and write | `{APP_URL}/api/oauth/x/callback` | `tweet.read tweet.write users.read media.write offline.access` | `X_CLIENT_ID`, `X_CLIENT_SECRET` |
+| X ("Radar"; plus a separate "Radar Dev" app for local work) | console.x.com → app → User authentication: **Web App** (confidential client), Read and write | `{APP_URL}/api/oauth/x/callback` | `tweet.read tweet.write users.read media.write offline.access` | `X_CLIENT_ID`, `X_CLIENT_SECRET` (or `XAPP_CLIENT_ID`, `XAPP_CLIENT_SECRET`) |
 | LinkedIn profile ("Radar", App 1) | linkedin.com/developers → Products: **Share on LinkedIn** + **Sign In with LinkedIn using OpenID Connect** | `{APP_URL}/api/oauth/linkedin/callback` | `openid profile w_member_social` | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` |
 | LinkedIn page ("Radar for Pages", App 2) | A **new** app with **Community Management API only** (needs LinkedIn approval: Development tier, then Standard tier) | `{APP_URL}/api/oauth/linkedin_page/callback` | `w_organization_social rw_organization_admin r_basicprofile` | `LINKEDIN_PAGE_CLIENT_ID`, `LINKEDIN_PAGE_CLIENT_SECRET` |
 
