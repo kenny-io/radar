@@ -14,7 +14,7 @@ export const BRANDED_LAYOUTS = 5;
 /** Number of "Infographic" compositions (the seed picks one). */
 export const INFOGRAPHIC_LAYOUTS = 5;
 export function drawVisual(ctx: any, { w, h, style, brand, headline, seed = 1, name, fontFamily }: VisualOpts) {
-  const R = mulberry(seed * 9973); const P = brand.primary, S = brand.secondary; const F = fontFamily || '"Geist", system-ui, sans-serif';
+  const R = mulberry(seed * 9973); let P = brand.primary, S = brand.secondary; const F = fontFamily || '"Geist", system-ui, sans-serif';
   ctx.clearRect(0, 0, w, h); const u = Math.min(w, h) / 100;
   const text = (t: string, x: number, y: number, size: number, color: string, maxW: number, weight = 600, lh = 1.08) => { ctx.font = `${weight} ${size}px ${F}`; ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; const ls = wrapText(ctx, t, maxW).slice(0, 4); ls.forEach((l, i) => ctx.fillText(l, x, y + i * size * lh)); return ls.length * size * lh; };
   if (style === 'branded') {
@@ -86,6 +86,9 @@ export function drawVisual(ctx: any, { w, h, style, brand, headline, seed = 1, n
     ctx.font = `500 ${u * 3.2}px ${F}`; ctx.fillStyle = '#6B6E78'; ctx.fillText(name || '', u * 7, h - u * 7);
   // New styles (UPDATE-2026-10-21-image-options): instant previews and the fallback when no image model is configured.
   } else if (style === 'editorial'||style==='flat'||style==='render3d'||style==='handdrawn'){
+    // Regenerate steps the seed by 11: across 4 variants that is always a new one (mirrored and/or brand colors swapped).
+    const nv = Math.floor(Math.abs(seed)) % 4; if (nv & 2) [P, S] = [S, P];
+    ctx.save(); if (nv & 1) { ctx.translate(w, 0); ctx.scale(-1, 1); }
         const W2=w,H2=h,m=Math.min(w,h),cx=w*(.5+(R()-.5)*.12),cy=h*.5;
     if(style==='editorial'){
       ctx.fillStyle='#EEE7DA';ctx.fillRect(0,0,W2,H2);
@@ -121,6 +124,7 @@ export function drawVisual(ctx: any, { w, h, style, brand, headline, seed = 1, n
       ctx.lineWidth=u*.45;for(let i=0;i<9;i++){const o=i*u*2.2;ctx.beginPath();ctx.moveTo(ccx-cr*.2+o,ccy+cr*.9);ctx.lineTo(ccx+cr*.9,ccy-cr*.2+o*.1+(R()-.5)*u);ctx.stroke()}
       for(let k=0;k<2;k++){ctx.lineWidth=u*(.7+k*.2);ctx.beginPath();for(let x=0;x<=W2;x+=u*2){const y=H2*(.72+k*.08)+Math.sin(x/(u*14)+k)*u*3+(R()-.5)*u*.8;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke()}
     }
+    ctx.restore();
   } else if (style === 'photography') {
     const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#D9CBB8'); g.addColorStop(.55, '#A89582'); g.addColorStop(1, '#5E5248'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     for (let i = 0; i < 6; i++) { const rg = ctx.createRadialGradient(R() * w, R() * h, 0, R() * w, R() * h, u * (20 + R() * 40)); rg.addColorStop(0, `rgba(255,240,220,${.25 + R() * .3})`); rg.addColorStop(1, 'rgba(255,240,220,0)'); ctx.fillStyle = rg; ctx.fillRect(0, 0, w, h); }

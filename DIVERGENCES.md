@@ -365,3 +365,8 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 ## 2026-10-23 · "Infographic" Regenerate shows a new chart, and no invented numbers
 - **Before:** the Infographic was one fixed bar chart that barely changed with the seed. When the headline had no number, it showed a big **"3x"** that came from nowhere.
 - **Now:** five chart compositions (bars, ring, three-step flow, waffle grid, rising line), picked by the seed, so Regenerate shows a new one each time. The big number appears only when the headline actually contains one, such as "40%". Otherwise the headline is the hero. The charts are decorative and have no axis values.
+
+## 2026-10-23 · Every visual style changes on Regenerate
+- The drawn versions of Editorial, Flat, Render 3D and Hand-drawn changed less than 7% of their pixels between regenerates, so they looked identical. These are the previews, and the fallback when no image model answers. The seed now picks one of 4 variants: mirrored or not, and brand colors swapped or not. Both the +11 step (social) and the +1 step (articles) always land on a new variant.
+- Measured with a pixel diff at seed vs. seed+11: Branded 15–25%, Infographic 7–11% (the chart area is a new chart type), Editorial 9–46%, Flat 15–17%, Render 3D 7–14%, Hand-drawn 5–16% (mirror and colour swap), Photography 9–15%, Illustration 14–24%.
+- AI-generated styles (Illustration and Photography on social posts and articles, and all styles in the Daily Brief) ask the image model for a new variation on every regenerate.
