@@ -496,7 +496,7 @@ describe('every OpenRouter text call streams (PM 2026-10-23)', () => {
   });
   it('the schema-400 plain-JSON retry streams as well', async () => {
     let n = 0;
-    mockFetch(() => (++n === 1 ? json({ error: { code: 400, message: 'Invalid schema for response_format' } }, 400) : sseRaw(sseData([{ choices: [{ delta: { content: '{"title":"t","tags":[]}' } }] }]))));
+    mockFetch(() => (++n === 1 ? json({ error: { code: 400, message: 'Invalid schema for response_format' } }, 400) : sseRaw(sseData([{ choices: [{ delta: { content: '{"title":"t","tags":[]}' }, finish_reason: 'stop' }] }]))));
     const out = await run('writing', { purpose: 't.r400', prompt: 'p', schema: S });
     expect(out.json).toEqual({ title: 't', tags: [] });
     expect(calls.map(c => [c.body.stream, !!c.body.response_format])).toEqual([[true, true], [true, false]]);
@@ -521,5 +521,19 @@ describe('every OpenRouter text call streams (PM 2026-10-23)', () => {
     expect(a.text).toBe('Acme leads.');
     expect(a.cites).toEqual(['https://p.example/1', 'https://p.example/2']);
     expect(a.raw).toMatchObject({ id: 'g', model: 'perplexity/sonar-pro', choices: [{ message: { content: 'Acme leads.' }, finish_reason: 'stop' }] });
+  });
+});
+
+import { describe as d2, it as i2, expect as e2 } from 'vitest';
+d2('env alias', () => {
+  i2('OPEN_ROUTER_API_KEY is accepted as the OpenRouter key', async () => {
+    const prev = { a: process.env.OPENROUTER_API_KEY, b: process.env.OPEN_ROUTER_API_KEY };
+    delete process.env.OPENROUTER_API_KEY; process.env.OPEN_ROUTER_API_KEY = 'or-test';
+    const { vi } = await import('vitest'); vi.resetModules();
+    const { env } = await import('../env');
+    e2(env.openrouterKey).toBe('or-test');
+    if (prev.a !== undefined) process.env.OPENROUTER_API_KEY = prev.a; else delete process.env.OPENROUTER_API_KEY;
+    if (prev.b !== undefined) process.env.OPEN_ROUTER_API_KEY = prev.b; else delete process.env.OPEN_ROUTER_API_KEY;
+    vi.resetModules();
   });
 });

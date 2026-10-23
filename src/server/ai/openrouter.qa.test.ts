@@ -742,11 +742,11 @@ describe('retest: OpenRouter streaming for every text call', () => {
     mockFetch(() => sse([chunk('ok'), { choices: [{ delta: {}, finish_reason: 'stop' }] }]));
     expect((await ai.run('writing', { purpose: 'x', prompt: 'p' })).text).toBe('ok');
   });
-  it.fails('BUG (low): a stream that closes mid-answer (no finish_reason, no [DONE]) is accepted as a complete answer', async () => {
+  it('a stream that closes mid-answer (no finish_reason, no [DONE]) is treated as a failure and falls back direct', async () => {
     const { ai, vis } = await bootOR();
     mockFetch(u => (isOR(u) ? sse([chunk('The best tools are Acme, Fo')]) : oaText('complete direct answer')));
     const r = await ai.run('writing', { purpose: 'x', prompt: 'p' });
-    expect(r.provider).toBe('OpenAI'); // actual: openrouter, text 'The best tools are Acme, Fo'
+    expect(r.provider).toBe('OpenAI');
     mockFetch(u => (isOR(u) ? sse([chunk('Acme is one opt')]) : json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'direct' }] }] })));
     expect((await vis.askEngine('ChatGPT', 'q', visCtx)).text).toBe('direct');
   });

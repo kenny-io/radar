@@ -15,7 +15,8 @@ export const env = {
   xaiKey: e.XAI_API_KEY || '',
   // OpenRouter: when the key is set it is the first route for every AI call (text, images, AI Visibility);
   // the direct provider keys above stay as automatic fallback. Unset → behaviour is exactly as without OpenRouter.
-  openrouterKey: e.OPENROUTER_API_KEY || '',
+  /** Also accepts OPEN_ROUTER_API_KEY (the spelling first used in Railway). */
+  openrouterKey: e.OPENROUTER_API_KEY || e.OPEN_ROUTER_API_KEY || '',
   /** JSON: catalogue id → OpenRouter model id, merged over the built-in map ("" disables OpenRouter for that model). */
   openrouterModelMap: e.OPENROUTER_MODEL_MAP || '',
   /** OpenRouter image model for Photography / Illustration (default in ai/adapters/openrouter.ts). */

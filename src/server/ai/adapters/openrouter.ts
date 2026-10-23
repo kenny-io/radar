@@ -57,7 +57,7 @@ let strikes = 0;
 let breakerUntil = 0;
 export const openrouterTripped = () => breakerUntil > Date.now();
 export function isOpenrouterTransient(e: any): boolean {
-  if (e?.timeout || e?.name === 'AbortError' || e?.name === 'TimeoutError') return true;
+  if (e?.timeout || e?.transient || e?.name === 'AbortError' || e?.name === 'TimeoutError') return true;
   const st = statusOf(e);
   if (st >= 500) return true;
   return !st && (e instanceof TypeError || /fetch failed|network|socket|ECONN|ETIMEDOUT|EAI_AGAIN|aborted|terminated/i.test(String(e?.message || '')));
@@ -77,7 +77,7 @@ export function noteOpenrouterOutcome(e?: any) {
 export function resetOpenrouterState() { downUntil = 0; modelSkip.clear(); strikes = 0; breakerUntil = 0; }
 
 const statusOf = (e: any) => Number(e?.status) || Number(String(e?.message || '').match(/^HTTP (\d{3})/)?.[1]) || 0;
-const ACCOUNT_WORDING = /quota|credit|billing|insufficient|spend limit|payment|key limit|limit exceeded|api key|key (is )?(disabled|revoked|invalid)|account|suspend|banned/i;
+const ACCOUNT_WORDING = /quota|credit|billing|insufficient|spend limit|payment|key limit|limit exceeded|api key|key (is )?(disabled|revoked|invalid)|account (is )?(suspended|disabled|banned|deactivated)|suspend|banned/i;
 const isModeration = (msg: string) => /moderation|flagged/i.test(msg);
 /** Billing / auth failure on the OpenRouter account. A 403 is an account error only with key/credit wording: a moderation
  *  flag is about the request, and other 403s (e.g. a model blocked in a region) are about that model. */
@@ -187,10 +187,10 @@ export async function openrouterChat(body: any, opts: { timeoutMs: number; onDel
     touch();
     if (!r.ok) { const txt = await readAll(r, touch); const e: any = new Error(`HTTP ${r.status}: ${txt.slice(0, 400)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
     if (/application\/json/i.test(r.headers.get('content-type') || '')) { const txt = await readAll(r, touch); return txt ? JSON.parse(txt) : {}; }
-    let text = ''; let id: any, model: any, usage: any, finish: any, citations: any, searchResults: any;
+    let text = ''; let id: any, model: any, usage: any, finish: any, citations: any, searchResults: any; let done = false;
     const annotations: any[] = [];
     for await (const ev of sseEvents(r, touch)) {
-      if (ev.data === '[DONE]') break;
+      if (ev.data === '[DONE]') { done = true; break; }
       let d: any; try { d = JSON.parse(ev.data); } catch { continue; }
       // Errors after the 200 arrive as a chunk with `error` (and finish_reason "error"): fail so the call fails over.
       if (d.error) throw bodyError(d.error, 'Stream error');
@@ -205,6 +205,8 @@ export async function openrouterChat(body: any, opts: { timeoutMs: number; onDel
       if (ch?.finish_reason) finish = ch.finish_reason;
       if (d.usage) usage = d.usage;
     }
+    // A stream that closes without [DONE] or a finish_reason was cut off mid-answer: never save a truncated answer.
+    if (!done && !finish) throw Object.assign(new Error('OpenRouter stream ended before the answer finished'), { transient: true });
     return {
       id, model, object: 'chat.completion',
       choices: [{ index: 0, message: { role: 'assistant', content: text, ...(annotations.length ? { annotations } : {}) }, finish_reason: finish ?? null }],
