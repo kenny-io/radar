@@ -15,6 +15,8 @@ import { imgN, type ImageSettings } from '@/lib/imageOptions';
 import '../services/brief/stubs';
 import { acctOf, isLive, variantOf } from '@/features/brief/model';
 import type { BriefItem, Profile } from '@/lib/types';
+import { COPY, briefSid } from '@/lib/socialPublish';
+import { lockedError, pubState } from '../services/social/publish/guards';
 
 const Plat = z.enum(['reddit', 'x', 'linkedin', 'hn', 'quora']);
 const Time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -79,6 +81,14 @@ export const actions: ActionMap = {
     }),
     run: async (ctx, input) => {
       if (input.date < bizToday(ctx.biz)) throw new RadarError(PAST_ERROR, 400, 'read_only');
+      // Social channels: a scheduled post keeps its state and platform until it's unscheduled; a direct post stays posted.
+      const ps = await pubState(ctx.biz, briefSid(input.date, input.id));
+      if (ps) {
+        const live = ps.pub.status === 'scheduled' || ps.pub.status === 'sending';
+        if (live && (input.st || input.pl)) throw new RadarError(COPY.unscheduleFirst, 409, 'scheduled');
+        if (ps.pub.status === 'posted' && input.st) throw new RadarError(COPY.alreadyPosted, 409, 'posted');
+        if (ps.locked && (input.edit || input.mention != null)) throw lockedError();
+      }
       const ok = await withDay(ctx.bid, input.date, row => {
         const items = row.items as BriefItem[];
         const i = items.findIndex(x => x.id === input.id);
@@ -111,6 +121,10 @@ export const actions: ActionMap = {
     input: z.object({ date: Date_, id: z.string().min(1).max(40), style: z.enum(['editorial', 'flat', 'render3d', 'handdrawn', 'photography']).nullable(), range: z.enum(['few', 'many']).optional() }),
     run: async (ctx, input) => {
       if (input.date < bizToday(ctx.biz)) throw new RadarError(PAST_ERROR, 400, 'read_only');
+      // New images would change a scheduled post.
+      const ps = await pubState(ctx.biz, briefSid(input.date, input.id));
+      if (ps?.locked) throw lockedError();
+      if (ps && ps.pub.status === 'scheduled') throw new RadarError(COPY.unscheduleFirst, 409, 'scheduled');
       const seed = Math.floor(Math.random() * 500) + 1; const range = input.range || 'few';
       const ok = await withDay(ctx.bid, input.date, row => {
         const items = row.items as BriefItem[]; const i = items.findIndex(x => x.id === input.id);
@@ -136,6 +150,7 @@ export const actions: ActionMap = {
     input: z.object({ date: Date_, id: z.string().min(1).max(40), v: z.string().min(1).max(20), text: z.string().max(20000), instruction: z.string().min(1).max(500) }),
     run: async (ctx, input) => {
       if (input.date < bizToday(ctx.biz)) throw new RadarError(PAST_ERROR, 400, 'read_only');
+      if ((await pubState(ctx.biz, briefSid(input.date, input.id)))?.locked) throw lockedError();
       const row = (await db.select().from(schema.briefDays).where(and(eq(schema.briefDays.businessId, ctx.bid), eq(schema.briefDays.date, input.date))).limit(1))[0];
       const it = (row?.items as BriefItem[] | undefined)?.find(x => x.id === input.id);
       if (!it || !isLive(it)) throw new RadarError(REWRITE_ERROR, 400, 'rewrite_failed');

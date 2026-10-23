@@ -6,6 +6,7 @@ import '../services/calendar/jobs';
 import '../services/drafting/jobs';
 import '../services/publishing/jobs';
 import '../services/social/jobs';
+import '../services/social/publish/jobs';
 import '../services/brief/jobs';
 import '../services/brief/visuals';
 import '../services/visibility/jobs';

@@ -1,5 +1,6 @@
 // Automatic generation (02-system.md §8.2): per business at auto.time (business timezone) on the selected days.
-// Idempotent per business per day. Creates a pack (auto:true) and saves it to the library. It NEVER posts.
+// Idempotent per business per day. Creates a pack (auto:true) and saves it to the library. With social publishing on and
+// auto.post 'schedule', its X and LinkedIn posts are also scheduled for the next day (never posted right away).
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { enqueue, once } from '../../jobs/queue';
@@ -8,6 +9,7 @@ import { addDays, nowHMIn, todayIn, weekday } from '@/lib/format';
 import type { SocialAuto, SocialPack } from '@/lib/types';
 import { createPack } from './generate';
 import { suggestIdeas } from './ideas';
+import { autoSchedule } from './publish/schedule';
 
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const dayName = (d: string) => DAYS[(weekday(d) + 6) % 7];
@@ -45,10 +47,12 @@ export async function autoRun(bid: string): Promise<string | null> {
   const art = entries.filter(e => !usedArticles.has(e.id) && (e.status === 'published' || String(e.date) <= addDays(today, 7)))
     .sort((x, y) => rank(x.status) - rank(y.status) || (String(x.date) < String(y.date) ? 1 : -1))[0];
   const base = { platforms: a.platforms, style: a.style, auto: true } as const;
-  if (art) return createPack(bid, { ...base, source: { kind: 'article', label: art.title, ref: art.id } });
+  // With publishing on and "Schedule posts" chosen, the pack's X and LinkedIn posts are scheduled for tomorrow (AC-16).
+  const ready = async (id: string) => { try { await autoSchedule(bid, id); } catch (e: any) { console.error('[social] auto schedule failed', e?.message || e); } return id; };
+  if (art) return ready(await createPack(bid, { ...base, source: { kind: 'article', label: art.title, ref: art.id } }));
   const { ideas } = await suggestIdeas(bid);
   const idea = ideas.find(i => !usedLabels.has(i.t.toLowerCase()));
-  if (idea) return createPack(bid, { ...base, source: { kind: 'suggest', label: idea.t }, idea: { metric: idea.metric, why: idea.why, tie: idea.tie, page: idea.page, q: idea.q } });
+  if (idea) return ready(await createPack(bid, { ...base, source: { kind: 'suggest', label: idea.t }, idea: { metric: idea.metric, why: idea.why, tie: idea.tie, page: idea.page, q: idea.q } }));
   console.log(`[social] auto: nothing new to generate for ${bid}`);
   return null;
 }
