@@ -219,25 +219,18 @@ export async function openrouterChat(body: any, opts: { timeoutMs: number; onDel
 }
 
 export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
-  try { return await openrouterRunOnce(c); } catch (e: any) {
-    if (c.effort && e?.status === 400 && /reasoning|effort/i.test(String(e?.message))) return openrouterRunOnce({ ...c, effort: undefined });
-    throw e;
-  }
-}
-async function openrouterRunOnce(c: ProviderCall): Promise<ProviderResult> {
   const messages: any[] = [];
   if (c.system) messages.push({ role: 'system', content: c.system });
   messages.push({ role: 'user', content: c.prompt });
   // temperature: only for Grok, as with the direct adapters (GPT-6 and Claude 5.x reject it).
   const base: any = { model: c.apiModel, messages, max_tokens: c.maxTokens, ...(c.temperature != null && c.apiModel.startsWith('x-ai/') ? { temperature: c.temperature } : {}) };
-  if (c.effort && c.apiModel.startsWith('x-ai/')) base.reasoning = { effort: c.effort };
   const send = (body: any, onDelta?: (d: string) => void) => openrouterChat(body, { timeoutMs: c.timeoutMs, onDelta });
 
   if (c.webSearch && c.jsonSchema) {
     // Two passes, as in the direct adapters: research with web search in free text, then structure the findings.
     const researched = collect(await send({ ...base, tools: [WEB_SEARCH_TOOL], messages: [...messages.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }));
     const prompt = `${c.prompt}\n\nResearch findings to use:\n${researched.text}\n\nSources found:\n${researched.citations.map(x => '- ' + x.url).join('\n')}`;
-    const out = await openrouterRunOnce({ ...c, webSearch: false, prompt });
+    const out = await openrouterRun({ ...c, webSearch: false, prompt });
     out.citations = [...researched.citations, ...out.citations];
     addUsage(out, researched);
     return out;

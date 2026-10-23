@@ -29,14 +29,11 @@ export interface AiInput<T = any> {
   /** Called before each new attempt (retry or provider failover) so streamed text from a failed attempt is discarded. */
   onReset?: () => void;
   timeoutMs?: number;
-  /** How hard a reasoning model should think. Short copy (a post, a reply) uses 'low': Grok 4.7 defaults to 'high' and
-   *  spent minutes reasoning over a 280-character post. Sent to Grok (direct and via OpenRouter); other models ignore it. */
-  effort?: 'low' | 'medium' | 'high';
   /** Stub-only: context passed to the dev stub generator. */
   stubContext?: any;
 }
 export interface AiOutput<T = any> { text: string; json: T | null; citations: { url: string; title?: string }[]; model: string; provider: string }
-export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; effort?: 'low' | 'medium' | 'high'; onDelta?: (d: string) => void; timeoutMs: number }
+export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; onDelta?: (d: string) => void; timeoutMs: number }
 export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number }
 
 /** Catalogue id → provider API id. Labels in Settings are unchanged; ids verified against provider docs (DIVERGENCES #4). Override with AI_MODEL_MAP='{"gpt-6-sol":"..."}'. */
@@ -186,7 +183,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
     const directNext = plan[ri + 1]?.modelId === modelId && plan[ri + 1]?.via === 'direct';
     // Re-check at each step: an account error, unknown model or open breaker earlier in THIS call also applies here.
     if (viaOr && !force && !orUsable(orModel, directNext)) continue;
-    const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, effort: input.effort, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
+    const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
     // OpenRouter gets one attempt when the same model's direct provider is next in line (failing over is faster than
     // retrying, and OpenRouter already retries across its own hosts); otherwise the usual retries.
     const tries = viaOr && directNext ? 0 : retries;

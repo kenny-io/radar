@@ -64,7 +64,7 @@ export async function writePost(bid: string, p: Profile, k: Platform, o: { kind:
   let text = ''; let feedback: string[] = [];
   for (let attempt = 0; attempt < 3; attempt++) {
     const prompt = feedback.length ? `${base}\n\nYour previous draft broke these rules — fix them:\n- ${feedback.join('\n- ')}\n\nPrevious draft:\n"""${text}"""` : base;
-    const r = await ai.run('writing', { purpose: 'social.post', effort: 'low', system, prompt, schema: PostSchema, schemaName: 'post', maxTokens: 1200, temperature: 0.8, stubContext: { platform: k, topic: o.g.headline || o.label, profile: p, v: o.v + attempt } }, { businessId: bid });
+    const r = await ai.run('writing', { purpose: 'social.post', system, prompt, schema: PostSchema, schemaName: 'post', maxTokens: 1200, temperature: 0.8, stubContext: { platform: k, topic: o.g.headline || o.label, profile: p, v: o.v + attempt } }, { businessId: bid });
     text = r.json!.text.trim();
     const c = check(k, text, p, { sourceLabel: o.label + ' ' + o.g.headline });
     if (c.ok) break;
