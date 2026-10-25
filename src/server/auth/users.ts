@@ -6,6 +6,11 @@ import { accessSummary } from '../billing/access';
 import type { BusinessSummary, Me } from '@/lib/types';
 
 export const BIZ_COOKIE = 'radar_biz';
+/** Make `bid` the business the app opens (getMe prefers it while it's usable). Route handlers only: it sets a cookie.
+ *  Server components send the browser through GET /api/b/current instead (openBusinessUrl in billing/guard.ts). */
+export async function setCurrentBusiness(bid: string) {
+  (await cookies()).set(BIZ_COOKIE, bid, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 365 * 864e2 });
+}
 
 /** Link pending invites addressed to this email to the user (invites by signed link are accepted in /api/invites/[token]). */
 export async function attachInvites(userId: string, email: string) {

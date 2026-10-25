@@ -6,9 +6,15 @@ import type { OnboardingStageProps, PendingProfile, TrialPageProps } from '@/lib
 import { accessSummary, ownAccess } from './access';
 import { commitDraft, draftOf, toDraftSummary } from './draft';
 import { billingState } from './state';
-import { openInvoiceCents } from './provider';
+import { restartDueCents } from './provider';
 
 export type Entry = { redirect: string } | { render: true; committed?: string };
+
+/** Where a just-committed profile opens. */
+export const SAVED_DASHBOARD = '/dashboard?saved=profile';
+/** A server component can't set cookies, so it sends the browser through GET /api/b/current, which makes `bid` current
+ *  and continues to `next` (D2: a committed profile opens on itself, not on the account's oldest business). */
+export const openBusinessUrl = (bid: string, next = '/dashboard') => `/api/b/current?id=${encodeURIComponent(bid)}&next=${encodeURIComponent(next)}`;
 
 /** Where a signed-in user belongs: (app)/layout.tsx, the auth endpoints and the Google callback. Self-heals a saved draft
  *  for a user with access (a claim by a user who already pays, or a webhook that ran before the draft was saved). */
@@ -40,9 +46,9 @@ export async function trialGuard(): Promise<{ redirect: string } | { props: Tria
   if (await ownAccess(u)) {
     const d = await draftOf(u.id);
     const committed = d?.onboarding?.savedAt ? await commitDraft(d.id) : null;
-    return { redirect: committed ? '/dashboard?saved=profile' : '/dashboard' };
+    return { redirect: committed ? openBusinessUrl(committed, SAVED_DASHBOARD) : '/dashboard' };
   }
-  return { props: { state: await billingState(u, { openInvoiceCents }), publishableKey: env.stripePublishableKey || null } };
+  return { props: { state: await billingState(u, { restartDueCents }), publishableKey: env.stripePublishableKey || null } };
 }
 
 /** /start (anonymous onboarding): a real user goes to /onboarding; otherwise the guest's draft (or none yet). */
@@ -75,12 +81,15 @@ export async function signupContext(): Promise<{ pending: PendingProfile | null 
 const APP_PATH = /^\/(dashboard|calendar|article|performance|profile|settings|social|brief|backlinks)(\/|\?|#|$)/;
 export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/\\') ? n : null;
 
-/** After signup, signin or Google: invites first, then resolveEntry (claim already ran). */
-export async function destinationAfterAuth(u: SessionUser, next?: string | null): Promise<string> {
+/** After signup, signin or Google: invites first, then resolveEntry (claim already ran). `committed` is the business the
+ *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */
+export async function entryAfterAuth(u: SessionUser, next?: string | null): Promise<{ next: string; committed: string | null }> {
   const n = safeNext(next);
-  if (n?.startsWith('/api/invites/')) return n;
+  if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);
-  if ('redirect' in e) return e.redirect;
+  if ('redirect' in e) return { next: e.redirect, committed: null };
   const to = n && APP_PATH.test(n) ? n : '/dashboard';
-  return e.committed ? to + (to.includes('?') ? '&' : '?') + 'saved=profile' : to;
+  if (!e.committed) return { next: to, committed: null };
+  return { next: to + (to.includes('?') ? '&' : '?') + 'saved=profile', committed: e.committed };
 }
+export const destinationAfterAuth = async (u: SessionUser, next?: string | null) => (await entryAfterAuth(u, next)).next;

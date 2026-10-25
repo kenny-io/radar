@@ -2,14 +2,13 @@
 // Never a 2xx without access: the trial page shows success on any 2xx, so a not-yet-active account gets 409
 // payment_not_succeeded, which the client retries and then polls GET /api/billing/state.
 import { z } from 'zod';
-import { cookies } from 'next/headers';
 import { requireUser } from '@/server/access';
-import { BIZ_COOKIE } from '@/server/auth/users';
+import { setCurrentBusiness } from '@/server/auth/users';
 import { handle, json } from '@/server/http/handle';
 import { businessToOpen, confirmSubscription, confirmTrial } from '@/server/billing/confirm';
 import { BillingError } from '@/server/billing/errors';
 import { billingState } from '@/server/billing/state';
-import { openInvoiceCents } from '@/server/billing/provider';
+import { restartDueCents } from '@/server/billing/provider';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,9 +21,9 @@ export const POST = handle(async (req: Request) => {
   let committed: string | null = null;
   if (b.paymentIntentId) committed = await confirmTrial(u, b.paymentIntentId);
   else await confirmSubscription(u, b.subscriptionId!);
-  const state = await billingState(u, { openInvoiceCents });
+  const state = await billingState(u, { restartDueCents });
   if (!state.access) throw BillingError.notSucceeded();
   const bid = await businessToOpen(u.id, committed);
-  if (bid) (await cookies()).set(BIZ_COOKIE, bid, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 365 * 864e2 });
+  if (bid) await setCurrentBusiness(bid);
   return json({ ok: true, state });
 });

@@ -11,6 +11,7 @@ import { encrypt, randomToken } from '../crypto';
 import { Fixtures, uniq, type TUser } from '../testing/fixtures';
 import { GUEST_COOKIE, SESSION_COOKIE, hashPassword } from './session';
 import { claimGuest } from './claim';
+import { BIZ_COOKIE, getMe } from './users';
 import { POST as SIGNUP } from '@/app/api/auth/signup/route';
 import { POST as SIGNIN } from '@/app/api/auth/signin/route';
 import { GET as GOOGLE } from '@/app/api/auth/google/callback/route';
@@ -61,6 +62,7 @@ describe.skipIf(!ON)('claim (database)', () => {
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);
     expect(j).toEqual({ ok: true, next: '/start-trial' });
     await expectClaimed(d.id, g, u.id, email);
+    expect(H.jar.has(BIZ_COOKIE)).toBe(false);          // not committed yet: /api/billing/confirm makes it current at activation
     expect((await db.select().from(S.businesses).where(eq(S.businesses.id, d.id)))[0].status).toBe('onboarding');
   });
 
@@ -76,6 +78,35 @@ describe.skipIf(!ON)('claim (database)', () => {
     expect((await db.select().from(S.businesses).where(eq(S.businesses.id, d.id)))[0].status).toBe('active');
     expect(await db.select().from(S.businesses).where(eq(S.businesses.id, old.id))).toHaveLength(0);
     expect((await db.select().from(S.events).where(and(eq(S.events.userId, u.id), eq(S.events.kind, 'onboarding.draft_replaced'))))).toHaveLength(1);
+  });
+
+  it('D2: a signin claim that commits opens the claimed profile (radar_biz), not the account’s oldest business, billing on and off', async () => {
+    for (const flag of ['on', null]) {
+      if (flag) process.env.RADAR_BILLING = flag; else delete process.env.RADAR_BILLING;
+      H.jar.clear();
+      const u = await F.user({ password: await hashPassword('longenough1') });
+      if (flag) await F.account(u.id, { status: 'active' });
+      const older = await F.biz(u, { status: 'active', createdAt: new Date(Date.now() - 864e5) });
+      expect((await getMe(u)).currentId).toBe(older.id);
+      const { d } = await guestWithDraft({ saved: true });
+      const r = await post(SIGNIN, { email: u.email, password: 'longenough1' });
+      expect(await r.json()).toEqual({ ok: true, next: '/dashboard?saved=profile' });
+      expect(H.jar.get(BIZ_COOKIE)).toBe(d.id);
+      expect((await getMe(u)).currentId).toBe(d.id);
+    }
+  });
+
+  it('D2: Google sign-in into an existing account with a business opens the claimed profile too', async () => {
+    const u = await F.user();
+    await F.biz(u, { status: 'active', createdAt: new Date(Date.now() - 864e5) });
+    const { d } = await guestWithDraft({ saved: true });
+    const state = randomToken(8);
+    await db.insert(S.oauthStates).values({ state, provider: 'google-signin', data: { next: '/' } });
+    const r = await GOOGLE(new Request(`http://t/api/auth/google/callback?state=${state}&code=${encodeURIComponent('dev:' + u.email)}`));
+    const to = new URL(r.headers.get('location')!);
+    expect(to.pathname + to.search).toBe('/dashboard?saved=profile');
+    expect(H.jar.get(BIZ_COOKIE)).toBe(d.id);
+    expect((await getMe(u)).currentId).toBe(d.id);
   });
 
   it('Google sign-up claims it too (dev stub identity), and redirects to the server destination', async () => {

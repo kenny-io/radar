@@ -6,8 +6,9 @@ import { db, schema } from '../db';
 import { decrypt } from '../crypto';
 import { track } from '../events';
 import { revoke, type GscTokens } from '../services/gsc/client';
-import { destinationAfterAuth } from '../billing/guard';
+import { entryAfterAuth } from '../billing/guard';
 import { clearGuestCookie, createSession, currentGuest, type SessionUser } from './session';
+import { setCurrentBusiness } from './users';
 
 export interface ClaimResult { claimed: string | null; replaced: string[] }
 
@@ -45,11 +46,14 @@ export async function claimGuest(guestId: string, user: { id: string; email: str
 }
 
 /** The end of every sign-in path (route handlers only: sets cookies). Claims this browser's guest, clears radar_guest,
- *  starts the session and returns where to go (AuthResult.next). */
+ *  starts the session, makes a profile committed here the current business (radar_biz) and returns where to go
+ *  (AuthResult.next). A claimed draft that waits for payment is made current by /api/billing/confirm instead. */
 export async function finishAuth(user: SessionUser, next?: string | null): Promise<{ next: string; claimed: string | null }> {
   const g = await currentGuest();
   const r = g ? await claimGuest(g.id, user) : { claimed: null };
   await clearGuestCookie();
   await createSession(user.id);
-  return { next: await destinationAfterAuth(user, next), claimed: r.claimed };
+  const e = await entryAfterAuth(user, next);
+  if (e.committed) await setCurrentBusiness(e.committed);
+  return { next: e.next, claimed: r.claimed };
 }

@@ -96,6 +96,15 @@ describe('stripeRequest', () => {
     expect((await stripeProvider.listSubscriptions('cus_1'))[0]).toMatchObject({ id: 'sub_1', metadata: { radar_pi: 'pi_1' }, current_period_end: null });
     expect(calls[2].url).toBe('https://api.stripe.com/v1/subscriptions?customer=cus_1&status=all&limit=20');
   });
+  it('voiding an invoice is a keyed POST; the customer balance is read from GET /customers (credit negative, deleted → null)', async () => {
+    replies.push(reply(200, { id: 'in_3', status: 'void' }), reply(200, { id: 'cus_1', object: 'customer', balance: -100 }), reply(200, { id: 'cus_1', object: 'customer' }), reply(200, { id: 'cus_2', deleted: true }));
+    await stripeProvider.voidInvoice('in_3', 'radar:void:in_3');
+    expect([calls[0].init.method, calls[0].url, headers(calls[0])['Idempotency-Key'], body(calls[0])]).toEqual(['POST', 'https://api.stripe.com/v1/invoices/in_3/void', 'radar:void:in_3', '']);
+    expect(await stripeProvider.getCustomerBalance('cus_1')).toBe(-100);
+    expect([calls[1].init.method, calls[1].url]).toEqual(['GET', 'https://api.stripe.com/v1/customers/cus_1']);
+    expect(await stripeProvider.getCustomerBalance('cus_1')).toBe(0);         // no balance field: nothing owed either way
+    expect(await stripeProvider.getCustomerBalance('cus_2')).toBeNull();
+  });
   it('without STRIPE_SECRET_KEY nothing is sent', async () => {
     setStripeDepsForTests({ secretKey: () => '' });
     await expect(stripeProvider.getPrice('price_1')).rejects.toMatchObject({ status: 503 });

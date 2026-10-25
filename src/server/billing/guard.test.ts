@@ -8,7 +8,10 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { Fixtures } from '../testing/fixtures';
 import type { OnboardingState } from '@/lib/types';
-import { cleanAutoDomain, destinationAfterAuth, onboardingGuard, resolveEntry, signupContext, startGuard, trialGuard } from './guard';
+import { cleanAutoDomain, destinationAfterAuth, onboardingGuard, openBusinessUrl, resolveEntry, signupContext, startGuard, trialGuard } from './guard';
+import { BIZ_COOKIE, getMe } from '../auth/users';
+import { env } from '../env';
+import { GET as CURRENT } from '@/app/api/b/current/route';
 
 const ON = !!process.env.DATABASE_URL;
 const F = new Fixtures();
@@ -110,7 +113,40 @@ describe.skipIf(!ON)('resolveEntry and guards (database)', () => {
     expect(r.props.state).toMatchObject({ enforced: true, provider: 'stub', access: false, status: 'none', mode: 'trial', needsRestart: false, trialEndIsPreview: true, dueTodayCents: 100, priceCents: 5000, trialDays: 3, hasDraft: true, draft: { id: d.id } });
     expect(Math.abs(new Date(r.props.state.trialEnd).getTime() - (Date.now() + 72 * 3600e3))).toBeLessThan(5000);
     await F.account(u.id, { status: 'trialing' });
-    expect(await trialGuard()).toEqual({ redirect: '/dashboard?saved=profile' });
+    const older = await F.biz(u, { status: 'active', createdAt: new Date(Date.now() - 864e5) });
+    // D2: the commit goes through the cookie-setting hop, which opens the committed profile, not the older business.
+    const go: any = await trialGuard();
+    expect(go).toEqual({ redirect: `/api/b/current?id=${d.id}&next=${encodeURIComponent('/dashboard?saved=profile')}` });
+    expect((await status(d.id)).status).toBe('active');
+    expect((await getMe(u)).currentId).toBe(older.id);
+    const hop = await CURRENT(new Request('http://t' + go.redirect));
+    expect([hop.status, hop.headers.get('location')]).toEqual([303, `${env.appUrl}/dashboard?saved=profile`]);
+    expect(H.jar.get(BIZ_COOKIE)).toBe(d.id);
+    expect((await getMe(u)).currentId).toBe(d.id);
     expect(await trialGuard()).toEqual({ redirect: '/dashboard' });
+  });
+
+  it('GET /api/b/current: a member’s business becomes current, then a 303 to a safe page; non-member 404; locked 402; unsafe next → /dashboard', async () => {
+    const u = await F.user(); await F.signIn(u, H.jar);
+    const b = await F.biz(u);
+    const theirs = await F.biz(await F.user());
+    const go = (q: string) => CURRENT(new Request(`http://t/api/b/current?${q}`));
+    expect((await go(`id=${theirs.id}&next=/settings`)).status).toBe(404);
+    expect((await go('id=not-a-uuid')).status).toBe(404);
+    expect(H.jar.has(BIZ_COOKIE)).toBe(false);
+    for (const bad of ['//evil.example', 'https://evil.example', '/\\evil.example', '/\t/evil.example', '/api/auth/signout', 'dashboard', '']) {
+      const r = await go(`id=${b.id}&next=${encodeURIComponent(bad)}`);
+      expect([bad, r.status, r.headers.get('location')]).toEqual([bad, 303, `${env.appUrl}/dashboard`]);
+    }
+    const ok = await go(`id=${b.id}&next=${encodeURIComponent('/settings?tab=team')}`);
+    expect(ok.headers.get('location')).toBe(`${env.appUrl}/settings?tab=team`);
+    expect(H.jar.get(BIZ_COOKIE)).toBe(b.id);
+    expect(openBusinessUrl(b.id)).toBe(`/api/b/current?id=${b.id}&next=%2Fdashboard`);
+    process.env.RADAR_BILLING = 'on';                                         // an owner without access: locked, never made current
+    H.jar.delete(BIZ_COOKIE);
+    expect((await go(`id=${b.id}`)).status).toBe(402);
+    expect(H.jar.has(BIZ_COOKIE)).toBe(false);
+    H.jar.clear();
+    expect((await go(`id=${b.id}`)).status).toBe(401);
   });
 });

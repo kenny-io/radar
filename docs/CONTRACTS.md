@@ -137,13 +137,14 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 - `resolveEntry(user)` — used by `(app)/layout.tsx`: renders, or redirects to `/onboarding` (no business, or a draft not saved) or `/start-trial` (saved draft or owned business without access). A guest on an app route goes to `/signup`.
 
 ### Auth endpoints
-- `POST /api/auth/signup` `{ name, email, password, next? }` and `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }`. Navigate to `next`. Both claim this browser's guest draft first.
+- `POST /api/auth/signup` `{ name, email, password, next? }` and `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }`. Navigate to `next`. Both claim this browser's guest draft first. When the claimed profile is committed there (the account already has access), they also set `radar_biz` to it, so `/dashboard?saved=profile` opens that profile.
 - Google: the callback redirects to the same destination. Dev stub (not production): `/api/auth/google/start?dev_as=<email>` signs in as that email.
 - `POST /api/auth/signout` clears the session and the guest cookie.
 
 ### Business endpoints
 - `POST /api/b` `{ domain, turnstileToken? }` → `{ ok, id, guest }` — creates a guest when nobody is signed in (429 `rate_limited`, 403 `human_check_failed`). Same domain as the draft: reset, keep Search Console; another domain: also clears GSC, crawl pages and `onboarding`.
 - `/api/b/:bid/act`, `/workspace`, `/events`: + **402 `subscription_required`** (owner without access, billing on; the client goes to `/start-trial`) and 404 for a guest outside its own draft. A guest's draft accepts only `onboarding.analyze|step|save|finish`, `profile.update`, `job.get`, `gsc.properties`, `gsc.connect` (else 402).
+- `GET /api/b/current?id=<bid>&next=<path>` → 303 to `next` (a same-site page path; otherwise `/dashboard`) after making `bid` current. Server components that commit a profile (`trialGuard`, the `(app)` layout's self-heal) redirect through it, because they can't set cookies. 401 / 404 (not a member) / 402 (locked) as `POST /api/b/current`.
 - `BusinessSummary.access` (`false` = hidden from the switcher, never current) and `Workspace.onboarding` are always set by the server; clients treat an absent `access` as `true`.
 
 ### Billing endpoints (`src/app/api/billing/**`; errors are `{ ok: false, error, code }` with user copy)
@@ -157,6 +158,7 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 
 - The client always passes `payment_method` to `confirmCardPayment` (a restart against an open invoice doesn't use the subscription default).
 - `trialEnd` comes from the server (now + 72 h, to the second) and never changes after start; show `state.trialEnd` after confirm.
+- `state.dueTodayCents` in restart mode is what the restart will charge: the open invoice's `amount_due` (`past_due`, `unpaid`, an unpaid restart), else $50 less any unused credit ($49 when the trial was canceled before its first invoice). Show it on the button and timeline.
 - Events: `trial.started`, `trial.payment_failed`, `sub.status_changed`, `onboarding.claimed`, `onboarding.draft_replaced`, `business.onboarded` (from `commitDraft`, the only path to an active business). They carry ids and enum props only.
 
 ### Stub provider (`RADAR_DEV_STUBS=1`, no `STRIPE_SECRET_KEY`, never production; `state.provider === 'stub'`)

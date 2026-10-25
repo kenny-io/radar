@@ -11,7 +11,9 @@ export const pendingFresh = (a: { pendingTrialEnd: Date | null; pendingSetAt: Da
 /** now + 72h, to the second. */
 export const trialEndFrom = (now = Date.now()) => new Date(Math.floor(now / 1000) * 1000 + TRIAL_DAYS * 24 * HOUR);
 
-export async function billingState(u: { id: string }, o: { openInvoiceCents?: (subId: string) => Promise<number | null> } = {}): Promise<BillingState> {
+type RestartLookup = (a: { stripeCustomerId: string | null; stripeSubscriptionId: string | null; status: string }) => Promise<number | null>;
+/** `restartDueCents` (provider.ts) is passed in by the routes and guards, so this module never loads a provider itself. */
+export async function billingState(u: { id: string }, o: { restartDueCents?: RestartLookup } = {}): Promise<BillingState> {
   const s = await accessSummary(u.id);
   const a = s.account;
   const mode: BillingState['mode'] = s.own ? 'none' : a?.everSubscribed ? 'restart' : 'trial';
@@ -20,8 +22,9 @@ export async function billingState(u: { id: string }, o: { openInvoiceCents?: (s
   else if (pendingFresh(a)) trialEnd = a!.pendingTrialEnd!;
   else { trialEnd = trialEndFrom(); preview = true; }
   let due = mode === 'trial' ? FEE_CENTS : mode === 'restart' ? PRICE_CENTS : 0;
-  if (mode === 'restart' && a?.stripeSubscriptionId && (a.status === 'past_due' || a.status === 'unpaid') && o.openInvoiceCents) {
-    try { const c = await o.openInvoiceCents(a.stripeSubscriptionId); if (c != null) due = c; } catch (e: any) { console.warn('[billing] open invoice lookup failed', e?.message || e); }
+  // Restart: what the provider will actually charge (an open invoice, or the price less an unused credit). Trial mode stays cheap.
+  if (mode === 'restart' && a && o.restartDueCents) {
+    try { const c = await o.restartDueCents(a); if (c != null) due = c; } catch (e: any) { console.warn('[billing] restart amount lookup failed', e?.message || e); }
   }
   return {
     enforced: s.enforced, provider: providerName(), access: s.own, status: s.status, mode, needsRestart: mode === 'restart',

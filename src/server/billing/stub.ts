@@ -13,7 +13,7 @@ if (env.isProd) throw new Error('The billing stub must never be loaded in produc
 
 interface Cus { id: string; email: string; name: string; uid: string; defaultPm: string | null; balance: number }
 interface SPI extends PaymentIntent { invoice: string | null; setup_future_usage: string | null }
-interface SInv extends Invoice { customer: string; subscription: string | null; pi: string | null }
+interface SInv extends Invoice { customer: string; subscription: string | null; pi: string | null; applied: number }
 interface SSub extends Subscription { seq: number }
 interface Credit { customer: string; amount: number; description: string; key: string }
 interface State {
@@ -71,7 +71,7 @@ const pubPI = (x: SPI): PaymentIntent => { const { invoice: _i, setup_future_usa
 function invoiceFor(s: SSub, pm: string | null): SInv {
   const c = cus(s.customer);
   const applied = Math.min(PRICE_CENTS, Math.max(0, -c.balance)); c.balance += applied;
-  const i: SInv = { id: nid('in'), status: 'open', amount_due: PRICE_CENTS - applied, client_secret: null, customer: s.customer, subscription: s.id, pi: null };
+  const i: SInv = { id: nid('in'), status: 'open', amount_due: PRICE_CENTS - applied, client_secret: null, customer: s.customer, subscription: s.id, pi: null, applied };
   if (i.amount_due === 0) i.status = 'paid';
   else {
     const p: SPI = { id: nid('pi'), status: 'requires_payment_method', amount: i.amount_due, currency: 'usd', customer: s.customer, payment_method: pm, client_secret: null, metadata: {}, last_payment_error: null, invoice: i.id, setup_future_usage: null };
@@ -120,7 +120,7 @@ export const stubProvider: BillingProvider = {
       let clientSecret: string | null = null;
       if (p.trialEnd) {
         x.status = 'trialing'; x.trial_end = p.trialEnd; x.current_period_end = p.trialEnd;
-        const i: SInv = { id: nid('in'), status: 'paid', amount_due: 0, client_secret: null, customer: x.customer, subscription: x.id, pi: null };
+        const i: SInv = { id: nid('in'), status: 'paid', amount_due: 0, client_secret: null, customer: x.customer, subscription: x.id, pi: null, applied: 0 };
         S().invoices.set(i.id, i); x.latest_invoice = i.id;
       } else if (p.incomplete) {
         const i = invoiceFor(x, p.defaultPaymentMethod);
@@ -134,7 +134,19 @@ export const stubProvider: BillingProvider = {
     idem('setSubscriptionPaymentMethod', key, { id, pm }, () => { pmOf(pm); sub(id).default_payment_method = pm; return null; });
   },
   async cancelSubscription(id) { log('cancelSubscription'); const x = sub(id); x.status = 'canceled'; x.cancel_at_period_end = false; },
-  async getInvoice(id) { log('getInvoice'); const { customer: _c, subscription: _s, pi: _p, ...i } = inv(id); return copy(i); },
+  async getInvoice(id) { log('getInvoice'); const { customer: _c, subscription: _s, pi: _p, applied: _a, ...i } = inv(id); return copy(i); },
+  async voidInvoice(id, key) {
+    idem('voidInvoice', key, { id }, () => {
+      const i = inv(id);
+      if (i.status !== 'open') throw new ProviderError(`You can only void an open invoice; this one is ${i.status}.`, 400, 'invalid_request_error');
+      i.status = 'void';
+      cus(i.customer).balance -= i.applied; i.applied = 0;                 // the credit it used goes back, as on Stripe
+      const x = i.pi ? S().pis.get(i.pi) : undefined;
+      if (x && x.status !== 'succeeded') x.status = 'canceled';
+      return null;
+    });
+  },
+  async getCustomerBalance(customer) { log('getCustomerBalance'); return cus(customer).balance; },
   async creditBalance(customer, cents, description, key) {
     idem('creditBalance', key, { customer, cents, description }, () => { cus(customer).balance -= cents; S().credits.push({ customer, amount: -cents, description, key }); return null; });
   },

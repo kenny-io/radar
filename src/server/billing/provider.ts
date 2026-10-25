@@ -1,5 +1,6 @@
 // The payment provider interface (architecture §7). stripe.ts implements it over REST; stub.ts in memory for dev and tests.
 // Only the subset of each Stripe object Radar reads. The stub is imported dynamically, so production never loads it.
+import { PRICE_CENTS } from '@/lib/billing';
 import type { SubStatus } from '@/lib/types';
 import { providerName } from './config';
 
@@ -51,6 +52,10 @@ export interface BillingProvider {
   cancelSubscription(id: string): Promise<void>;
   /** With the confirmation secret expanded (`client_secret`). */
   getInvoice(id: string): Promise<Invoice>;
+  /** Void an open invoice: it can't be paid any more and any customer balance it used goes back to the customer. */
+  voidInvoice(id: string, key: string): Promise<void>;
+  /** The customer's invoice balance in cents (negative is a credit the next finalized invoice uses first); null if deleted. */
+  getCustomerBalance(customer: string): Promise<number | null>;
   /** A negative customer balance transaction: credited to the next invoice. */
   creditBalance(customer: string, cents: number, description: string, key: string): Promise<void>;
   getPrice(id: string): Promise<Price>;
@@ -71,4 +76,20 @@ export async function openInvoiceCents(subId: string): Promise<number | null> {
   if (!s.latest_invoice) return null;
   const inv = await p.getInvoice(s.latest_invoice);
   return inv.status === 'open' ? inv.amount_due : null;
+}
+
+/** Statuses whose latest invoice is the one a restart pays (restart.ts reuses it, or voids it and the credit comes back). */
+const INVOICED = ['past_due', 'unpaid', 'incomplete'];
+/** What a restart charges today, for /start-trial (D1): the open invoice's amount_due when there is one; otherwise a new
+ *  month at the price less the customer's balance, which Stripe applies to the next invoice (an unused $1 credit makes
+ *  it $49). Null when the provider can't say; the state then shows the price. */
+export async function restartDueCents(a: { stripeCustomerId: string | null; stripeSubscriptionId: string | null; status: string }): Promise<number | null> {
+  if (a.stripeSubscriptionId && INVOICED.includes(a.status)) {
+    const open = await openInvoiceCents(a.stripeSubscriptionId);
+    if (open != null) return open;
+  }
+  const p = a.stripeCustomerId ? await getProvider() : null;
+  if (!p) return null;
+  const balance = await p.getCustomerBalance(a.stripeCustomerId!);
+  return balance == null ? null : Math.max(0, PRICE_CENTS + balance);
 }
