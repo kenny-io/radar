@@ -1,6 +1,6 @@
 // Test-only: drive the real /api/billing/* route handlers with the stub provider. Callers mock next/headers with their
 // cookie jar (see jar.ts) and set RADAR_DEV_STUBS=1 in vi.hoisted. No app code imports this.
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { POST as START } from '@/app/api/billing/start/route';
 import { POST as RESTART } from '@/app/api/billing/restart/route';
@@ -36,7 +36,8 @@ export class Deliveries {
 }
 
 export const account = async (uid: string) => (await db.select().from(schema.billingAccounts).where(eq(schema.billingAccounts.userId, uid)))[0];
-export const eventsOf = async (uid: string, kind: string) => (await db.select().from(schema.events).where(and(eq(schema.events.userId, uid), eq(schema.events.kind, kind))));
+/** A user's events of one kind, oldest first (heap order is not insertion order once other tests delete rows). */
+export const eventsOf = async (uid: string, kind: string) => (await db.select().from(schema.events).where(and(eq(schema.events.userId, uid), eq(schema.events.kind, kind))).orderBy(asc(schema.events.createdAt)));
 export const stubSubsOf = (customer: string | null | undefined) => [...stubState().subs.values()].filter(s => s.customer === customer);
 export const stubCalls = (method: string) => stubState().calls.filter(c => c.method === method).length;
 /** A stub card nobody has trialed: `pm_stub_<scenario>_<last4>` with a random last4 in [lo, hi) (one range per test file,
