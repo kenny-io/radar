@@ -41,6 +41,8 @@ export function failCopy(type: string, e: PublishError): string {
   // An OAuth platform's 404 means the site/database was unshared or deleted, not a bad credential.
   if (P.oauth && e.http === 404) return `Radar can’t see that ${P.pick?.toLowerCase() || 'site'} anymore. Reconnect and share it again.`;
   if (e.http >= 300 && e.http < 400) return `${statusLine(e.http)} — check the URL`;
+  // A credential platform's 404 means the URL isn't the blog's API (wrong address, or the REST API is off), not a bad password.
+  if (!P.oauth && e.http === 404) return `${statusLine(e.http)} — check the URL`;
   return `${statusLine(e.http)} — check the credentials`;
 }
 

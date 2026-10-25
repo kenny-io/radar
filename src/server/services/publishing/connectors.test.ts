@@ -186,3 +186,15 @@ describe('article failed banner copy', () => {
     expect(publishFailParts({ http: 404, platform: 'wpcom' }, null)).toEqual({ platform: 'WordPress.com', detail: '404' });
   });
 });
+
+describe('test-connection copy points at the real fix', () => {
+  const e = (http: number) => new PublishError(http, 'x');
+  it('a 404 on WordPress, Ghost or a webhook says to check the URL; 401/403 still say credentials', () => {
+    for (const t of ['wordpress', 'ghost', 'webhook']) expect(failCopy(t, e(404))).toBe('404 Not Found — check the URL');
+    expect(failCopy('wordpress', e(401))).toBe('401 Unauthorized — check the credentials');
+    expect(failCopy('ghost', e(403))).toBe('403 Forbidden — check the credentials');
+  });
+  it('a 404 on an OAuth platform says the site or database is no longer shared', () => {
+    expect(failCopy('notion', e(404))).toBe('Radar can’t see that database anymore. Reconnect and share it again.');
+  });
+});

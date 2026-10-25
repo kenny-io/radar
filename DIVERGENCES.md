@@ -152,9 +152,9 @@ Nothing marked *Needs approval* removes designed UI; these are additions for sta
 | Wix | — | Uses Wix's install flow (`installer/install?appId=…`), then client-credentials tokens with the site `instanceId`. The legacy "close-window" redirect after install isn't sent (the shared OAuth popup closes itself). HTML → Ricos via the Ricos conversion API; author = first site member. | Platform requirements | No | Logged |
 | Shopify | — | Admin GraphQL version from `SHOPIFY_API_VERSION` (default `2026-07`). Callback HMAC and shop domain are verified. | Shopify versions rotate quarterly | No | Logged |
 | GitHub | "via the GitHub App" (02-system §12) | GitHub **OAuth app** with `repo` scope (per assignment). | Simpler setup; a GitHub App can replace it later | No | Logged |
-| Notion | — | API version `2022-06-28`; "deleted" test page = archived. A Status/select property is set to "Published" (or the closest Publish/Live/Done option) when present; Slug/Description/Date properties filled when present. | Platform behavior | No | Logged |
+| Notion | — | API version `2026-03-11` (was `2022-06-28`; updated in blog connectors tranche 1 — pages are created under a data source); "deleted" test page = trashed (`in_trash`). A Status/select property is set to "Published" (or the closest Publish/Live/Done option) when present; Slug/Description/Date properties filled when present. | Platform behavior | No | Logged |
 | Connectors → SSRF | — | In production every connector request must resolve to a public IP (`RADAR_ALLOW_PRIVATE_HOSTS=1` to allow private hosts for self-hosted setups). | User-supplied URLs are fetched server-side | No | Logged |
-| Dev stubs | — | `RADAR_DEV_STUBS=1`: every connector is stubbed. A field or credential containing "fail" → 401 Unauthorized (test, targets and publish); a field containing "unavailable" → 503 on publish (exercises retries). OAuth start redirects straight to the callback with fake targets from the prototype (Blog Posts / Resources / Changelog, …). | Development and automated tests only | No | Logged |
+| Dev stubs | — | `RADAR_DEV_STUBS=1`: every connector is stubbed, except those listed in `RADAR_REAL_CONNECTORS` (dev only, credential platforms; see tranche 1 below). A field or credential containing "fail" → 401 Unauthorized (test, targets and publish); a field containing "unavailable" → 503 on publish (exercises retries). OAuth start redirects straight to the callback with fake targets from the prototype (Blog Posts / Resources / Changelog, …). | Development and automated tests only | No | Logged |
 
 
 ## Social Marketing
@@ -422,3 +422,29 @@ Everything here is behind `RADAR_SOCIAL_PUBLISHING`, which is off by default. Wi
 | Disconnect while working | — | The `.unlink` action is dimmed and disabled while a disconnect is in flight | Prevents double clicks | Barely | Logged |
 | Blog connectors A–Z | Sort by label | Already sorted A–Z in the build (since the first port) | — | No | Matches design |
 | Phone sidebar | Sideways row | As designed; like the prototype, the selected item isn't scrolled into view on load | Faithful to the prototype | Minor | Logged |
+
+## Blog connectors tranche 1 (2026-10-25): Webhook, WordPress, Ghost, WordPress.com, Notion proven
+
+WordPress (6.9), Ghost (5.130) and the webhook were run against real software in a local harness (`scripts/connectors/`). WordPress.com and Notion were checked against their current docs with mocked-HTTP tests; their live checks are owner steps in `docs/LAUNCH.md` §7.3.
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| Redirects on write (all ten connectors) | Not specified | A publish or test request that gets a 301/302/303, or a 307/308 to another host, fails with "{status} — check the URL"; same-host 307/308 are followed; reads follow redirects as before | fetch replays a POST as a GET after a 301/302, which stored phantom post ids | Yes (new copy) | Needs approval |
+| Test-connection copy for 404 | "404 Not Found — check the credentials" | WordPress, Ghost and Webhook: "404 Not Found — check the URL". OAuth platforms: "Radar can’t see that {site/database} anymore. Reconnect and share it again." 401/403 still say credentials | Points at the real fix | Yes | Needs approval |
+| WordPress → videos | youtube-nocookie iframe | Sent as WordPress's core Embed block (WordPress renders its own YouTube player via oEmbed, with the credit caption) | WordPress strips iframes for Author-role accounts | Yes (player, not privacy-enhanced mode) | Needs approval |
+| WordPress → refresh by a low-role account | — | Refreshing a post the account can't edit is refused (403) instead of creating a duplicate; it reads "Needs reconnecting" though the fix is an Editor or Administrator account | No duplicates | Yes | Needs approval |
+| Refresh lookups (WordPress, Ghost, WordPress.com, Notion) | — | Only a real "not found" creates a new post; any other lookup error retries | A brief outage used to create a duplicate post | No | Logged |
+| SEO title | Editable in Article → SEO | Sent as Ghost `meta_title` (and the page `<title>`); WordPress core has no field for it; the webhook payload is unchanged | Platform fields | Yes | Logged |
+| Article failed banner | "{platform} returned {status}" | As designed (it said "WordPress returned 503 503 …" for every platform) | Bug fix | Yes | Closed |
+| Ghost → newsletters | — | Publishing never emails members (Radar never sends `newsletter`) | Not designed | No | Logged |
+| Ghost → outbound links | — | Ghost's default outbound-link tagging adds `?ref={site}`; backlinks verification ignores query strings | Ghost setting | Yes (on the live page) | Logged |
+| WordPress.com → hero image | Featured image | The image is uploaded to the site's media library (with alt text) and set as the featured image (it was sent as a URL and never appeared) | Bug fix | Yes | Closed |
+| WordPress.com → API | — | REST v1.1 (documented, not deprecated) with the `global` scope, so Radar can list every site the account manages | wp/v2 would be a rewrite; a narrow scope gives a single-blog token | No | Logged |
+| WordPress.com → auto-sharing | — | Radar leaves Jetpack Social's `publicize` as the site has it, so a site that auto-shares new posts will share Radar's too | Don't override the owner's site setting | Possibly (a post could be shared by both Jetpack and Radar's social channels) | Owner decision |
+| WordPress.com → expired token | — | No refresh token in the code flow; a token that stops working shows "Needs reconnecting". A 400 `invalid_token` is treated as 401 (defensive, to confirm live) | Platform | Rare | Logged |
+| Notion → refresh | — | Updates the existing page in place (found by its notion.so URL or the Slug property): properties and cover are updated, new content appended, then old blocks deleted (child pages kept) | It used to create a new page every time | Yes | Logged |
+| Notion → size limits | — | Rich text split at 2,000 characters, at most 100 blocks per request (the rest appended in batches); a failed append trashes the half-built page so a retry never duplicates | Notion limits | No | Logged |
+| Notion → cover and "View post" | — | The hero image is the page cover only when its URL is public https (no alt text in Notion). View post opens the page's public URL when it's shared to the web, otherwise its notion.so URL (workspace members only) | Notion | Yes | Needs approval |
+| Notion → outbound links | — | Approved outbound links are applied to HTML only, so Notion pages don't get them | Blocks, not HTML | Yes | Logged |
+| Dev | — | `RADAR_REAL_CONNECTORS=wordpress,ghost,webhook` (read only with `RADAR_DEV_STUBS=1`) runs those connectors for real locally; `scripts/connectors/` starts real WordPress, Ghost and a webhook receiver | Testing against real software | No | Logged |
+| Not verified live | — | WordPress.com and Notion consent screens, posting, covers and token expiry (no apps yet) | Owner setup pending | — | Open |
