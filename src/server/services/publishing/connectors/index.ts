@@ -55,8 +55,12 @@ function stub(type: ConnType): Connector {
   };
 }
 
+/** DEV ONLY: with dev stubs on, RADAR_REAL_CONNECTORS lists the types that run for real (e.g. against local Docker instances).
+ * Without dev stubs every connector is real anyway, so the switch has no effect in production. */
+export const stubbed = (type: ConnType) => env.devStubs && !env.realConnectors.includes(type);
+
 export function connectorFor(type: ConnType): Connector {
   const real = REAL[type];
   if (!real) throw new PublishError(400, 'Unknown platform', '', 'config');
-  return env.devStubs ? stub(type) : real;
+  return stubbed(type) ? stub(type) : real;
 }
