@@ -149,7 +149,9 @@ describe('publish failures', () => {
     wf({ publish: () => reply(202, { publishedItemIds: [], errors: ['Staging item ID new1 not found.'] }) });
     const e = await err(webflow.publish(C, P(), { id: 'new1' }));
     expect(e).toMatchObject({ http: 422 });
-    expect(e.detail).toContain('Staging item ID new1 not found.');
+    expect(e.hint).toBe('Webflow didn’t publish the item: Staging item ID new1 not found. Try again, or publish it in Webflow.');
+    wf({ publish: () => reply(202, { publishedItemIds: [], errors: [] }) });
+    expect((await err(webflow.publish(C, P(), { id: 'new1' }))).hint).toBe('Webflow didn’t publish the item. Try again, or publish it in Webflow.');
   });
 });
 

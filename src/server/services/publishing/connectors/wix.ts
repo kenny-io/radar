@@ -157,15 +157,15 @@ export const wix: Connector = {
     const draftPost = { ...(await body(c, p)), seoSlug: slug };
     if (mine) {
       await wx(c, `/blog/v3/draft-posts/${mine}`, { method: 'PATCH', ...jsonBody({ draftPost: { id: mine, ...draftPost }, action: 'UPDATE' }) });
-      return { id: mine };
+      return { id: mine, extra: { slug } };
     }
     const r = await wx<{ draftPost: { id: string } }>(c, '/blog/v3/draft-posts', post({ draftPost: { ...draftPost, memberId: member } }));
-    return { id: r.draftPost.id };
+    return { id: r.draftPost.id, extra: { slug } };
   },
   async publish(c, p, d) {
     const r = await wx<{ postId: string }>(c, `/blog/v3/draft-posts/${d.id}/publish`, post({}));
     const got = await wx<{ post: { url?: { base: string; path: string } } }>(c, `/blog/v3/posts/${r.postId || d.id}?fieldsets=URL`).catch(() => null);
     const u = got?.post?.url;
-    return { url: u ? u.base.replace(/\/$/, '') + u.path : `https://${c.target || c.domain}/post/${p.slug}` };
+    return { url: u ? u.base.replace(/\/$/, '') + u.path : `https://${c.target || c.domain}/post/${d.extra?.slug || slugOf(p.refreshUrl || '') || p.slug}` };
   },
 };

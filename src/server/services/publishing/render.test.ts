@@ -23,6 +23,8 @@ describe('escMd (prose that must not break an MDX build)', () => {
   });
   it('leaves ordinary text alone', () => {
     expect(escMd('Rent, software & insurance — 20% of 1,200.')).toBe('Rent, software & insurance — 20% of 1,200.');
+    // Literal "&copy;" / "&amp;" stay text (MDX and Markdown would decode them); the import/export reference is still decoded.
+    expect(escMd('Write &copy; or &#169; literally.')).toBe('Write \\&copy; or &\\#169; literally.');
     expect(escMd('In 2026. Prices rose')).toBe('In 2026. Prices rose');
   });
 });

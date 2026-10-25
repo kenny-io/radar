@@ -30,7 +30,7 @@ afterAll(() => { Object.assign(env, ENV); });
 
 const C = (creds: Record<string, any> = {}): ConnCtx => ({ type: 'shopify', fields: { store: 'fieldnote.myshopify.com' }, creds: { access_token: 'shpat_x', shop: 'fieldnote.myshopify.com', ...creds }, target: 'News', targetId: BLOG, bid: 'b1', domain: 'fieldnote.app', businessName: 'Fieldnote' });
 const P = (o: Partial<PublishPayload> = {}): PublishPayload => ({
-  entryId: 'e1', title: 'Billing tips', slug: 'billing-tips', html: '<h2>Why</h2><p>Because.</p>', markdown: '', blocks: [], meta: 'How to bill <fast>.', keyword: 'billing', date: '2026-10-25',
+  entryId: 'e1', title: 'Billing tips', slug: 'billing-tips', html: '<h2>Why</h2><p>Because.</p>', markdown: '', blocks: [], meta: 'How to bill <fast> & right.', keyword: 'billing', date: '2026-10-25',
   image: { url: 'https://cdn.example.com/hero.png', alt: 'A ledger on a desk', bytes: async () => ({ buf: Buffer.from(''), type: 'image/png', name: 'x.png' }) },
   canonical: null, mode: 'new', refreshUrl: null, sources: [], videos: [], author: 'Fieldnote', ...o,
 });
@@ -80,7 +80,7 @@ describe('createDraft + publish (new article)', () => {
     const d = await shopify.createDraft(C(), P());
     expect(json(calls[0]).variables).toEqual({ q: 'handle:"billing-tips" blog_id:241253187' });
     expect(json(calls[1]).variables.article).toEqual({
-      blogId: BLOG, handle: 'billing-tips', title: 'Billing tips', body: '<h2>Why</h2><p>Because.</p>', summary: '<p>How to bill fast.</p>',
+      blogId: BLOG, handle: 'billing-tips', title: 'Billing tips', body: '<h2>Why</h2><p>Because.</p>', summary: '<p>How to bill &lt;fast&gt; &amp; right.</p>',
       author: { name: 'Fieldnote' }, image: { url: 'https://cdn.example.com/hero.png', altText: 'A ledger on a desk' }, isPublished: false,
     });
     expect(json(calls[1]).query).toContain('userErrors { code field message }');
@@ -120,6 +120,7 @@ describe('createDraft + publish (new article)', () => {
     expect(e).toMatchObject({ http: 422 });
     expect(e.message).toContain('Title is too long');
     expect(e.retryable).toBe(false);
+    expect(e.hint).toBe('Shopify refused the article: Title is too long.');
   });
   it('every handle taken: a readable config error, nothing written', async () => {
     mockFetch((_u, init) => { const q = JSON.parse(String(init.body)).variables.q.match(/"(.+)"/)[1]; return ok({ articles: { nodes: [art({ handle: q, isPublished: true, title: 'Other' })] } }); });

@@ -69,7 +69,7 @@ async function gql<T = any>(c: ConnCtx, query: string, variables: any = {}, retr
   return r.data as T;
 }
 type UErr = { code?: string; field?: string[] | null; message: string };
-const userErr = (e: UErr[] | undefined) => { if (e?.length) throw new PublishError(422, e.map(x => x.message).join('; '), 'shopify'); };
+const userErr = (e: UErr[] | undefined) => { if (e?.length) throw new PublishError(422, 'Shopify refused the article: ' + e.map(x => x.message.replace(/\.$/, '')).join('; ') + '.', 'shopify', 'config'); };
 
 const ART = `article { id handle title isPublished blog { id handle } }`;
 const CREATE = `mutation($article: ArticleCreateInput!) { articleCreate(article: $article) { ${ART} userErrors { code field message } } }`;
@@ -89,7 +89,7 @@ const taken = (e: UErr[]) => e.some(x => x.code === 'TAKEN' && (!x.field || x.fi
 
 function articleInput(c: ConnCtx, p: PublishPayload) {
   return {
-    title: p.title, body: p.html, summary: `<p>${p.meta.replace(/[<>&]/g, '')}</p>`, author: { name: p.author || c.businessName || 'Radar' },
+    title: p.title, body: p.html, summary: `<p>${p.meta.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`, author: { name: p.author || c.businessName || 'Radar' },
     ...(p.image && /^https:/.test(p.image.url) ? { image: { url: p.image.url, altText: p.image.alt } } : {}),
   };
 }

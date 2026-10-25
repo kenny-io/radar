@@ -163,7 +163,7 @@ describe('createDraft + publish (new post)', () => {
       seoData: { tags: [{ type: 'title', children: 'Billing tips for freelancers' }, { type: 'meta', props: { name: 'description', content: 'How to bill.' } }] },
       media: { wixMedia: { image: { id: 'media-1' } }, displayed: true, custom: true, altText: 'A ledger on a desk' },
     });
-    expect(d).toEqual({ id: 'draft-1' });
+    expect(d).toEqual({ id: 'draft-1', extra: { slug: 'billing-tips' } });
     const r = await wix.publish(C, P(), d);
     expect(apiCalls().slice(-2).map(req)).toEqual([['POST', '/blog/v3/draft-posts/draft-1/publish'], ['GET', '/blog/v3/posts/draft-1?fieldsets=URL']]);
     expect(r.url).toBe('https://www.fieldnote.app/post/billing-tips');
@@ -186,10 +186,15 @@ describe('createDraft + publish (new post)', () => {
     expect(json(apiCalls().find(c => c.url.endsWith('/blog/v3/draft-posts'))!).draftPost.seoSlug).toBe('billing-tips-2');
     expect(calls.some(c => c.url.includes('/draft-posts/other'))).toBe(false);
   });
+  it('when the post URL can’t be read after publishing, View post falls back to the slug actually used (-2)', async () => {
+    wx({ 'GET /blog/v3/posts/draft-1': () => reply(503, 'busy') });
+    const r = await wix.publish(C, P(), { id: 'draft-1', extra: { slug: 'billing-tips-2' } });
+    expect(r.url).toBe('https://fieldnote.app/post/billing-tips-2');
+  });
   it('a retry after a lost create response updates our own unpublished draft instead of creating a second one', async () => {
     wx({ 'POST /blog/v3/draft-posts/query': () => reply(200, { draftPosts: [{ id: 'owner-draft', seoSlug: 'something-else' }, { id: 'draft-1', seoSlug: 'billing-tips' }] }) });
     const d = await wix.createDraft(C, P());
-    expect(d).toEqual({ id: 'draft-1' });
+    expect(d).toEqual({ id: 'draft-1', extra: { slug: 'billing-tips' } });
     expect(calls.some(c => c.url.endsWith('/blog/v3/draft-posts') && c.init.method === 'POST')).toBe(false);
     const patch = calls.find(c => c.init.method === 'PATCH')!;
     expect(req(patch)).toEqual(['PATCH', '/blog/v3/draft-posts/draft-1']);

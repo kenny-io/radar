@@ -50,7 +50,7 @@ export function blocksToHtml(blocks: Block[], opts: RenderOpts = {}): string {
  * become a list, heading, quote, code block, thematic break or — MDX only — an ESM `import`/`export` statement (the first
  * letter becomes a character reference, which both Markdown and MDX decode back to the letter).
  */
-export const escMd = (s: string) => String(s ?? '').replace(/([\\`*_[\]{}<>#|~])/g, '\\$1')
+export const escMd = (s: string) => String(s ?? '').replace(/([\\`*_[\]{}<>#|~])/g, '\\$1').replace(/&(?=#?\w+;)/g, '\\&')
   .replace(/^[ \t]+/gm, '').replace(/^(\d+)([.)])/gm, '$1\\$2').replace(/^([-+=])/gm, '\\$1')
   .replace(/^(import|export)(?=\s|$)/gm, w => `&#${w.charCodeAt(0)};${w.slice(1)}`);
 /** A link destination that can't end the link early or open JSX/an expression in MDX. */

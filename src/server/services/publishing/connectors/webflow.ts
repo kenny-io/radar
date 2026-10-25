@@ -118,7 +118,7 @@ export const webflow: Connector = {
       if (e instanceof PublishError && e.http === 400 && /not (been )?published|never (been )?published|unpublished site|publish the site/i.test(e.detail)) throw new PublishError(422, 'Publish your Webflow site once in the Designer, then try again. Webflow can’t publish single items on a site that has never been published.', HOST, 'config');
       throw e;
     }
-    if (r.publishedItemIds && !r.publishedItemIds.includes(d.id)) throw new PublishError(422, 'Webflow didn’t publish the item: ' + (r.errors || []).join('; ').slice(0, 200), HOST, 'config');
+    if (r.publishedItemIds && !r.publishedItemIds.includes(d.id)) throw new PublishError(422, `Webflow didn’t publish the item${r.errors?.length ? ': ' + r.errors.join('; ').slice(0, 200).replace(/\.$/, '') : ''}. Try again, or publish it in Webflow.`, HOST, 'config');
     const host = await siteHost(c, site);
     return { url: `https://${host}/${d.extra?.colSlug || 'blog'}/${d.extra?.slug || p.slug}` };
   },
