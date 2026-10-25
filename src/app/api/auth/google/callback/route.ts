@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { track } from '@/server/events';
-import { eq, or } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import { decodeJwt } from 'jose';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
-import { createSession } from '@/server/auth/session';
 import { attachInvites } from '@/server/auth/users';
+import { finishAuth } from '@/server/auth/claim';
 
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
@@ -24,12 +24,12 @@ export async function GET(req: Request) {
     if (claims.aud !== env.googleClientId || !claims.email_verified) return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
     sub = claims.sub; email = String(claims.email).toLowerCase(); name = claims.name || email.split('@')[0];
   }
-  const found = (await db.select().from(schema.users).where(or(eq(schema.users.googleSub, sub), eq(schema.users.email, email))).limit(1))[0];
-  let userId: string;
-  if (found) { userId = found.id; if (!found.googleSub) await db.update(schema.users).set({ googleSub: sub }).where(eq(schema.users.id, found.id)); }
-  else { const [u] = await db.insert(schema.users).values({ name, email, googleSub: sub }).returning(); userId = u.id; await track('user.signed_up', { uid: u.id, props: { method: 'google' } }); }
-  await attachInvites(userId, email);
-  await createSession(userId);
-  const next = (st.data as any)?.next || '/';
-  return NextResponse.redirect(`${env.appUrl}${next.startsWith('/') && !next.startsWith('//') ? next : '/'}`);
+  const found = (await db.select().from(schema.users).where(and(or(eq(schema.users.googleSub, sub), eq(schema.users.email, email)), eq(schema.users.guest, false))).limit(1))[0];
+  let user: typeof schema.users.$inferSelect;
+  if (found) { user = found; if (!found.googleSub) await db.update(schema.users).set({ googleSub: sub }).where(eq(schema.users.id, found.id)); }
+  else { [user] = await db.insert(schema.users).values({ name, email, googleSub: sub }).returning(); await track('user.signed_up', { uid: user.id, props: { method: 'google' } }); }
+  await attachInvites(user.id, email);
+  // The Lax radar_guest cookie arrives on this top-level redirect, so the guest draft is claimed here too (AC-G5).
+  const r = await finishAuth({ id: user.id, name: user.name, email: user.email, appearance: user.appearance }, (st.data as any)?.next);
+  return NextResponse.redirect(`${env.appUrl}${r.next}`);
 }

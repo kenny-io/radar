@@ -126,5 +126,6 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
       backlinksPending: backlinks.joined ? backlinks.inbound.filter(p => !p.decision).length : 0,
       highSuggestions: suggs.filter(s => (s.data as any)?.prio === 'High').length,
     },
+    onboarding: b.onboarding || {},
   };
 }

@@ -80,11 +80,9 @@ export const env = {
   stripePriceId: e.STRIPE_PRICE_ID || '',
   /** Pinned Stripe-Version header. Code reads items.data[0].current_period_end, which needs Basil (2025-03-31) or later. */
   stripeApiVersion: e.STRIPE_API_VERSION || '2026-05-27.dahlia',
-  // Abuse limits for anonymous onboarding (§8)
+  // Abuse limits for anonymous onboarding (§8). RADAR_ANALYSIS_GLOBAL_PER_HOUR is read at call time (abuse/rateLimit.ts).
   /** X-Forwarded-For entries added by trusted proxies; the client IP is this many entries from the right. */
   trustedProxyHops: Math.max(1, Number(e.RADAR_TRUSTED_PROXY_HOPS) || 1),
-  /** Circuit breaker: analyses per hour across all actors without own access. */
-  get analysisGlobalPerHour() { return Math.max(1, Number(e.RADAR_ANALYSIS_GLOBAL_PER_HOUR) || 300); },
   /** Cloudflare Turnstile secret. Unset → the human check passes (seam only; no widget is shipped). */
   turnstileSecretKey: e.TURNSTILE_SECRET_KEY || '',
 };

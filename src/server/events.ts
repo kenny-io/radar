@@ -38,8 +38,8 @@ export const IMPACT = {
 export type ImpactKind = keyof typeof IMPACT;
 
 /** Write actions whose success is itself an outcome. */
+/** ('business.onboarded' is tracked by commitDraft, the only path to an active business.) */
 export const ACTION_OUTCOME: Record<string, ImpactKind> = {
-  'onboarding.finish': 'business.onboarded',
   'gsc.connect': 'gsc.connected',
   'calendar.approve': 'calendar.approved',
   'calendar.approveAll': 'calendar.approved',
@@ -63,7 +63,9 @@ export const jobProducedOutcome = (kind: string, result: any) =>
 
 export interface TrackOpts { bid?: string | null; uid?: string | null; ref?: string | null; props?: Record<string, unknown>; /** Backfill only */ at?: Date }
 
-export async function track(kind: ImpactKind | `action.${string}` | `job.${string}` | `system.${string}` | `social.${string}`, o: TrackOpts = {}): Promise<void> {
+/** Trial billing and onboarding kinds (architecture §12) carry only uid, bid, a Stripe object id as ref, and enum props. */
+export type TrackKind = ImpactKind | `action.${string}` | `job.${string}` | `system.${string}` | `social.${string}` | `trial.${string}` | `sub.${string}` | `onboarding.${string}`;
+export async function track(kind: TrackKind, o: TrackOpts = {}): Promise<void> {
   try {
     await db.insert(schema.events).values({ kind, businessId: o.bid || null, userId: o.uid || null, ref: o.ref ? String(o.ref).slice(0, 200) : null, props: summarize(o.props || {}) as Record<string, any>, ...(o.at ? { createdAt: o.at } : {}) });
   } catch (e: any) {
