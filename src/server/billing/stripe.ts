@@ -98,6 +98,12 @@ export const stripeProvider: BillingProvider = {
   async setSubscriptionPaymentMethod(id, pm, key) { await stripeRequest('POST', `/subscriptions/${seg(id)}`, { params: { default_payment_method: pm }, key }); },
   async cancelSubscription(id) { await stripeRequest('DELETE', `/subscriptions/${seg(id)}`); },
   async getInvoice(id) { return toInvoice(await stripeRequest('GET', `/invoices/${seg(id)}`, { params: { expand: ['confirmation_secret'] } })); },
+  // Voiding returns any applied customer balance to the customer (https://docs.stripe.com/changelog/2019-12-03/customer-balances-returned-voided-invoices).
+  async voidInvoice(id, key) { await stripeRequest('POST', `/invoices/${seg(id)}/void`, { key }); },
+  async getCustomerBalance(customer) {
+    const c = await stripeRequest('GET', `/customers/${seg(customer)}`);
+    return c?.deleted ? null : typeof c?.balance === 'number' ? c.balance : 0;
+  },
   async creditBalance(customer, cents, description, key) {
     // A negative amount is a credit, applied to the customer's next invoice (https://docs.stripe.com/billing/customer/balance).
     await stripeRequest('POST', `/customers/${seg(customer)}/balance_transactions`, { params: { amount: -Math.abs(cents), currency: 'usd', description }, key });

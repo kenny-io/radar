@@ -8,7 +8,7 @@ import { SUB_STATUSES } from '@/lib/billing';
 import { accountOf } from '@/server/billing/access';
 import { providerName } from '@/server/billing/config';
 import { BillingError } from '@/server/billing/errors';
-import { openInvoiceCents, ProviderError } from '@/server/billing/provider';
+import { ProviderError, restartDueCents } from '@/server/billing/provider';
 import { billingState } from '@/server/billing/state';
 import { processEvent } from '@/server/billing/webhook';
 
@@ -27,5 +27,5 @@ export const POST = handle(async (req: Request) => {
   try { sub = stub.stubSetStatus(acct.stripeSubscriptionId, status); }
   catch (e) { if (e instanceof ProviderError) throw BillingError.noSubscription(); throw e; }
   await processEvent(stub.stubEvent(status === 'canceled' ? 'customer.subscription.deleted' : 'customer.subscription.updated', sub));
-  return json({ ok: true, state: await billingState(u, { openInvoiceCents }) });
+  return json({ ok: true, state: await billingState(u, { restartDueCents }) });
 });
