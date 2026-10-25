@@ -1,6 +1,7 @@
 'use client';
 // Port of Onboarding / StepRail / ReviewStep / GscStep / SaveStep (prototype/radar-onboarding.jsx).
 // Works against the ONBOARDING business (POST /api/b), not app.bid: its own workspace, job progress and saves.
+// Rendered standalone on /start (guest) and /onboarding (signed in) over OnboardingStage, and in-app for "Add a business".
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { api, actCall } from '@/client/api';
@@ -11,7 +12,7 @@ import { ProfileGroup, type GroupKey } from '@/features/profile/ProfileGroup';
 import { kwList } from '@/features/profile/KeywordList';
 import { inferredLeft } from '@/lib/constants';
 import { cleanDomain, DOMAIN_RE } from '@/lib/format';
-import type { Profile, Workspace } from '@/lib/types';
+import type { OnboardingStageProps, Profile, Workspace } from '@/lib/types';
 
 const ANALYSIS = [
   { k: 'site', l: 'Reading your website' },
@@ -81,28 +82,48 @@ function useOnboardingBiz(initialId: string | null) {
   return { id, setId, W, setW, jobs, setJobs, load, act, edit, flush };
 }
 
-export function Onboarding() {
+export interface OnboardingProps extends Pick<OnboardingStageProps, 'actor' | 'draft' | 'saveCommits' | 'autoDomain'> {
+  /** The in-app "Add a business" modal: a commit refreshes the app instead of navigating. */
+  inApp?: boolean;
+}
+
+export function Onboarding({ actor, draft, saveCommits, autoDomain, inApp }: OnboardingProps) {
   const app = useApp();
-  const pending = app.me.businesses.find(b => b.status === 'onboarding') || null;
-  const ob = useOnboardingBiz(pending?.id || null);
-  const [ready, setReady] = useState(!pending);
+  const ob = useOnboardingBiz(draft?.id || null);
+  const [ready, setReady] = useState(!draft && !autoDomain);
   const [step, setStep] = useState<Step>('domain');
-  const [domain, setDomain] = useState(pending?.domain || ''); const [dErr, setDErr] = useState('');
+  const [domain, setDomain] = useState(draft?.domain || autoDomain || ''); const [dErr, setDErr] = useState('');
   const [jobId, setJobId] = useState<string | null>(null);
   const [blips, setBlips] = useState<Blip[]>([]);
   const [starting, setStarting] = useState(false);
+  const persisted = useRef<Step | null>(null);
+  const booted = useRef(false);
 
-  // Resume after a reload: running analysis → Analyzing; analyzed profile → Review; otherwise the domain step.
+  // Resume (AC-G9): running analysis → Analyzing; analyzed → the saved step (or Review); otherwise the domain step.
+  // Auto-run (AC-G1): a ?domain= that isn't this draft's starts the analysis with no click; the same domain resumes
+  // without a new crawl. The ref keeps StrictMode's double effect from starting two analyses.
   useEffect(() => {
-    if (!pending) return;
-    ob.load(pending.id).then(w => {
+    if (booted.current) return; booted.current = true;
+    const auto = autoDomain ? cleanDomain(autoDomain) : null;
+    const strip = () => { if (!auto) return; const u = new URL(window.location.href); u.searchParams.delete('domain'); window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash); };
+    if (!draft) { if (auto) { strip(); setStep('analyzing'); begin(auto); } setReady(true); return; }
+    ob.load(draft.id).then(w => {
       if (!w) return;
+      if (auto && w.profile.domain !== auto) { setDomain(auto); setStep('analyzing'); begin(auto); return; }
       const j = w.jobs.filter(x => x.kind === 'analysis.site').sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
       setDomain(w.profile.domain);
       if (j && (j.status === 'queued' || j.status === 'running' || j.status === 'failed')) { setJobId(j.id); ob.setJobs(m => ({ ...m, [j.id]: j as JobLive })); setStep('analyzing'); }
-      else if (w.site.analyzedAt) setStep('review');
-    }).catch(() => {}).finally(() => setReady(true));
+      else if (w.site.analyzedAt) { const s = w.onboarding?.step || 'review'; persisted.current = s; setStep(s); }
+      else if (auto) run(false, draft.id); // same domain, never analyzed and nothing queued
+    }).catch(() => { if (auto) { setStep('analyzing'); begin(auto); } }).finally(() => { strip(); setReady(true); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Remember the step on the draft, for resume and the Back links (onboarding.step).
+  useEffect(() => {
+    if (!ob.id || (step !== 'review' && step !== 'gsc' && step !== 'save') || persisted.current === step) return;
+    persisted.current = step;
+    actCall(ob.id, 'onboarding.step', { step }).catch(() => {});
+  }, [step, ob.id]);
 
   const job: JobLive | null = jobId ? ob.jobs[jobId] || null : null;
   // Polling fallback when SSE is slow or unavailable.
@@ -134,15 +155,37 @@ export function Onboarding() {
     await ob.flush().catch(() => {});
     setStep('analyzing'); setBlips([]); seenPhase.current = 0; setJobId(null);
     try { const r = await ob.act<{ jobId: string }>('onboarding.analyze', { keepEdits }, bid); ob.setJobs(m => { const n = { ...m }; delete n[r.jobId]; return n; }); setLoaded(null); setJobId(r.jobId); }
-    catch (e: any) { app.toast(e?.message || GENERIC, { tone: 'bad' }); setStep(keepEdits ? 'review' : 'domain'); }
+    catch (e: any) {
+      // Re-analyze reports in a toast; the first analysis (rate limits, a busy Radar) reports under the domain field.
+      if (keepEdits) { app.toast(e?.message || GENERIC, { tone: 'bad' }); setStep('review'); }
+      else { setDErr(e?.message || GENERIC); setStep('domain'); }
+    }
   };
-  const start = async (e?: React.FormEvent) => {
-    e && e.preventDefault(); const d = cleanDomain(domain);
-    if (!DOMAIN_RE.test(d)) { setDErr('Enter a domain like yourcompany.com'); return; }
+  const begin = async (raw: string) => {
+    const d = cleanDomain(raw);
+    if (!DOMAIN_RE.test(d)) { setDErr('Enter a domain like yourcompany.com'); setStep('domain'); return; }
     setDErr(''); setDomain(d); setStarting(true);
-    try { const r = await api<{ id: string }>('/api/b', { body: { domain: d } }); ob.setId(r.id); ob.setW(null); await run(false, r.id); }
-    catch (x: any) { setDErr(x?.message || GENERIC); }
+    try { const r = await api<{ id: string }>('/api/b', { body: { domain: d } }); persisted.current = null; ob.setId(r.id); ob.setW(null); await run(false, r.id); }
+    catch (x: any) { setDErr(x?.message || GENERIC); setStep('domain'); }
     finally { setStarting(false); }
+  };
+  const start = (e?: React.FormEvent) => { e && e.preventDefault(); begin(domain); };
+  const save = async () => {
+    await ob.flush();
+    let tz: string | undefined; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* */ }
+    // The server decides: committed (the actor has access) → dashboard; otherwise signup (guest) or the trial page.
+    const r = await ob.act<{ committed: boolean; next: string }>('onboarding.save', { tz });
+    if (r?.committed) {
+      if (inApp) {
+        await api('/api/b/current', { body: { id: ob.id } });
+        await app.refreshMe();
+        app.onboarding.close(); app.go('dashboard');
+        app.toast('Business Profile saved', { tone: 'ok' });
+      } else {
+        if (actor === 'user') await api('/api/b/current', { body: { id: ob.id } }).catch(() => {});
+        window.location.assign('/dashboard?saved=profile');
+      }
+    } else window.location.assign(r?.next || (actor === 'user' ? '/start-trial' : '/signup'));
   };
   const obDomain = ob.W?.profile.domain || domain;
   const energy = step === 'analyzing' ? (done ? .35 : .95) : .3;
@@ -159,16 +202,16 @@ export function Onboarding() {
         {ready && step === 'domain' && <form className="col enter" style={{ gap: 22, maxWidth: 600 }} onSubmit={start}>
           <div className="col" style={{ gap: 10 }}><h1 className="h1" style={{ fontSize: 32 }}>Let’s get to know your business.</h1><p className="sub" style={{ fontSize: 16 }}>Paste your website. Radar reads it to learn what you offer, who buys it, and how your brand sounds — you’ll review everything before it’s saved.</p></div>
           <div className="col" style={{ gap: 8 }}><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <div className="grow row" style={{ minWidth: 240, height: 54, border: '1px solid ' + (dErr ? 'var(--bad)' : 'var(--line)'), borderRadius: 14, padding: '0 16px', gap: 4, background: 'var(--surface)' }}><span className="sub mono" style={{ fontSize: 14 }}>https://</span><input autoFocus className="input-bare" style={{ fontSize: 17 }} placeholder="yourcompany.com" value={domain} onChange={e => { setDomain(e.target.value); setDErr(''); }} aria-label="Website domain" /></div>
+            <div className="grow row" style={{ minWidth: 240, height: 54, border: '1px solid ' + (dErr ? 'var(--bad)' : 'var(--line)'), borderRadius: 14, padding: '0 16px', gap: 4, background: 'var(--surface)' }}><span className="sub mono" style={{ fontSize: 14 }}>https://</span><input autoFocus className="input-bare" style={{ fontSize: 17 }} placeholder="yourcompany.com" value={domain} onChange={e => { setDomain(e.target.value); setDErr(''); }} aria-label="Website domain" aria-invalid={!!dErr || undefined} aria-describedby={dErr ? 'ob-derr' : undefined} /></div>
             <Btn kind="primary" size="lg" type="submit" loading={starting} style={{ height: 54, borderRadius: 14 }} iconR="arrow">Analyze website</Btn>
-          </div>{dErr && <span className="small" style={{ color: 'var(--bad)' }}>{dErr}</span>}</div>
+          </div>{dErr && <span id="ob-derr" className="small" role="alert" style={{ color: 'var(--bad)' }}>{dErr}</span>}</div>
         </form>}
         {step === 'analyzing' && <div className="col" style={{ gap: 0, maxWidth: 640 }}>
           {ANALYSIS.map((a, i) => {
             const st = i < phase ? 'done' : i === phase ? (fail ? 'fail' : 'run') : 'wait'; const brandErr = a.k === 'brand' && !!prog.logoMissing;
-            return <div key={a.k} className="row ob-row" style={{ height: 52, borderTop: i ? '1px solid var(--line2)' : 0, opacity: st === 'wait' ? .4 : 1, transition: 'opacity .4s' }}>
+            return <div key={a.k} className="row ob-an ob-row" style={{ minHeight: 52, padding: '8px 0', gap: '4px 14px', flexWrap: 'wrap', borderTop: i ? '1px solid var(--line2)' : 0, opacity: st === 'wait' ? .4 : 1, transition: 'opacity .4s' }}>
               <span style={{ width: 20, display: 'grid', placeItems: 'center' }}>{st === 'done' ? <Icon n="check" s={15} w={2} style={{ color: brandErr ? 'var(--warn)' : 'var(--ok)' }} /> : st === 'run' ? <span className="spin" style={{ color: 'var(--signal)' }} /> : st === 'fail' ? <i className="dot" style={{ background: 'var(--bad)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span>
-              <span className="grow ob-l" style={{ fontWeight: st === 'run' ? 500 : 400 }}>{a.l}</span>
+              <span className="grow ob-l" style={{ fontWeight: st === 'run' ? 500 : 400, minWidth: 0 }}>{a.l}</span>
               {st === 'done' && <span className="small enter ob-d" style={{ color: brandErr ? 'var(--warn)' : 'var(--ink2)' }}>{prog.results?.[a.k]}</span>}
               {st === 'done' && a.k === 'brand' && !brandErr && prog.colors && <span className="row enter" style={{ gap: 4 }}><i style={{ width: 14, height: 14, borderRadius: 4, background: prog.colors[0] }} /><i style={{ width: 14, height: 14, borderRadius: 4, background: prog.colors[1] }} /></span>}
             </div>;
@@ -178,15 +221,7 @@ export function Onboarding() {
         </div>}
         {step === 'review' && ob.W && <ReviewStep W={ob.W} onChange={ob.edit} next={async () => { await ob.flush().catch(() => {}); setStep('gsc'); }} reanalyze={() => run(true)} />}
         {step === 'gsc' && ob.W && ob.id && <GscStep W={ob.W} bid={ob.id} back={() => setStep('review')} next={() => setStep('save')} reload={() => ob.load()} />}
-        {step === 'save' && ob.W && ob.id && <SaveStep W={ob.W} back={() => setStep('gsc')} save={async () => {
-          await ob.flush();
-          let tz: string | undefined; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* */ }
-          await ob.act('onboarding.finish', { tz });
-          await api('/api/b/current', { body: { id: ob.id } });
-          await app.refreshMe();
-          app.onboarding.close(); app.go('dashboard');
-          app.toast('Business Profile saved', { tone: 'ok' });
-        }} />}
+        {step === 'save' && ob.W && ob.id && <SaveStep W={ob.W} commits={saveCommits} back={() => setStep('gsc')} save={save} />}
       </div>
     </div>
   </Modal>;
@@ -231,7 +266,7 @@ function GscStep({ W, bid, back, next, reload }: { W: Workspace; bid: string; ba
   </div>;
 }
 
-function SaveStep({ W, back, save }: { W: Workspace; back: () => void; save: () => Promise<void> }) {
+function SaveStep({ W, commits, back, save }: { W: Workspace; commits: boolean; back: () => void; save: () => Promise<void> }) {
   const app = useApp();
   const [busy, setBusy] = useState(false); const p = W.profile;
   const onSave = async () => { setBusy(true); try { await save(); } catch (e: any) { setBusy(false); app.toast(e?.message || GENERIC, { tone: 'bad' }); } };
@@ -254,6 +289,6 @@ function SaveStep({ W, back, save }: { W: Workspace; back: () => void; save: () 
       {rows.map(([k, v]) => <div key={k} className="row" style={{ padding: '13px 0', borderBottom: '1px solid var(--line2)', alignItems: 'baseline' }}><span className="label sum-l" style={{ width: 130, flex: 'none' }}>{k}</span><span className="grow small" style={{ minWidth: 0 }}>{v}</span></div>)}
     </div>
     <span className="grow" />
-    <div className="row" style={{ flexWrap: 'wrap' }}><Btn kind="ghost" icon="back" onClick={back}>Back</Btn><span className="grow" /><Btn kind="primary" size="lg" loading={busy} onClick={onSave}>Save profile &amp; open dashboard</Btn></div>
+    <div className="row" style={{ flexWrap: 'wrap' }}><Btn kind="ghost" icon="back" onClick={back}>Back</Btn><span className="grow" /><Btn kind="primary" size="lg" iconR="arrow" loading={busy} onClick={onSave}>{commits ? <>Save profile &amp; open dashboard</> : 'Save profile & continue'}</Btn></div>
   </div>;
 }
