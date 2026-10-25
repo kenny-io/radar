@@ -957,3 +957,27 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
 - The 300s timestamp tolerance used by the official libraries.
 - That Stripe saves no idempotent result for a request rejected as concurrent.
 - Railway's `X-Forwarded-For` shape.
+
+## 21. Owner decisions and PM rulings (2026-10-25). These override the sections above where they differ.
+
+1. **Rollout: `RADAR_BILLING` is off at merge.**
+   - Turn it on only after Stripe is configured.
+   - §11 stays as written.
+2. **Existing accounts: grandfathered by a data migration.**
+   - Add a custom migration with `npx drizzle-kit generate --custom --name grandfather`, numbered after 0007.
+   - It inserts `billing_accounts(user_id, comp = true, comp_reason = 'grandfather')` for every `DISTINCT owner_id` of a business with `status = 'active'` at migration time, with `ON CONFLICT (user_id) DO UPDATE SET comp = true`.
+   - Keep the lazy `RADAR_BILLING_GRANDFATHER_BEFORE` check in `ownAccess` (B18 step 5) as an **optional** extension, so the owner can also comp accounts that join while the flag is off. Unset means only the migration's rows count.
+   - **Drop the batch backfill job.** The lazy check upserts on first use.
+3. **The $1 is credited to month one.**
+   - There is **no `RADAR_TRIAL_FEE_MODE`**: always `credit`. That is `POST /v1/customers/{cus}/balance_transactions {amount: -100, currency: usd, description: "Card confirmation credit"}`, with key `radar:credit:{pi}`, after activation, idempotent.
+   - The stub records the credit.
+   - The first invoice is $49. The copy is unchanged; this is a DIVERGENCES row (Needs approval).
+4. **Stripe:** stubs only for now. Live Stripe test-mode checks are recorded as **not run** until the owner supplies keys.
+5. **§13.5 accepted.** Skip queued jobs and crons for an `active` business whose owner has no access. It is a no-op while billing is off.
+6. **§13.6.** Refuse a card that has already had a trial, with the §10 copy (not designed).
+7. **§13.7.** `docs/LAUNCH.md` recommends "cancel the subscription after all retries".
+8. **§13.8, D5 kept.** Split Card Elements, to preserve the designed fields. DIVERGENCES notes that Stripe recommends the Payment Element and that a later migration is possible.
+9. **Contracts.** `src/lib/billing.ts` and the `src/lib/types.ts` additions are committed by the PM, together with this section.
+   - `BusinessSummary.access` and `Workspace.onboarding` are **optional** fields, so the tree compiles before T3 lands. The server always sets them.
+   - Clients treat an absent `access` as `true`.
+   - `FEE_CENTS` comments carry decision 3.
