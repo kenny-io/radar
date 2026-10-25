@@ -87,10 +87,10 @@ export const platLabel = (k?: string | null) => platOf(k).l;
  * `publishError.platform` as the label ("Ghost") and `message` as the full status line ("503 Service Unavailable",
  * "no response from host"), so neither is re-mapped or prefixed with the code again.
  */
-export function publishFailParts(err: { http?: number; message?: string; platform?: string } | null | undefined, destType?: string | null) {
+export function publishFailParts(err: { http?: number; message?: string; platform?: string; hint?: string } | null | undefined, destType?: string | null) {
   const p = err?.platform || '';
   const platform = p ? (PLATFORMS.find(x => x.k === p)?.l || p) : destType ? platLabel(destType) : 'The platform';
-  return { platform, detail: err?.message || (err?.http ? String(err.http) : 'an error') };
+  return { platform, detail: err?.message || (err?.http ? String(err.http) : 'an error'), ...(err?.hint ? { hint: err.hint } : {}) };
 }
 /** Fields that are secrets: stored encrypted, never sent back to the client. */
 export const SECRET_FIELDS = ['pass', 'key'];

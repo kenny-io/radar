@@ -21,6 +21,8 @@ export class PublishError extends Error {
   get line() { return this.http ? statusLine(this.http) : this.host ? `no response from ${this.host}` : 'no response'; }
   /** Retry only transient failures (network, timeouts, rate limits, 5xx). 4xx won't fix themselves. */
   get retryable() { return this.kind === 'network' || this.http === 0 || this.http === 408 || this.http === 409 || this.http === 429 || this.http >= 500; }
+  /** A setup problem the connector explains in a sentence (a required field, a taken slug, Blog not installed, no push access). */
+  get hint() { return this.kind === 'config' && (this.http === 422 || this.http === 403) && this.detail ? this.detail : null; }
 }
 
 /** Throw a PublishError for a non-2xx response (with a short, secret-free detail for logs). */

@@ -38,7 +38,7 @@ async function getRef(c: ConnCtx, repo: string, branch: string): Promise<{ objec
   try { return await gh(`${API}/repos/${repo}/git/ref/heads/${encPath(branch)}`, { headers: h(c) }); }
   catch (e) {
     if (notFound(e)) return null;
-    if (e instanceof PublishError && e.http === 409) throw new PublishError(422, 'The repository is empty', e.host, 'config');
+    if (e instanceof PublishError && e.http === 409) throw new PublishError(422, 'The repository is empty. Push a first commit to it, then try again.', e.host, 'config');
     throw e;
   }
 }
@@ -46,7 +46,7 @@ async function getRef(c: ConnCtx, repo: string, branch: string): Promise<{ objec
 async function base(c: ConnCtx) {
   const repo = repoOf(c);
   const r = await gh<{ default_branch: string; permissions?: { push?: boolean } }>(`${API}/repos/${repo}`, { headers: h(c) });
-  if (r.permissions && r.permissions.push === false) throw new PublishError(403, 'No push access', 'api.github.com', 'config');
+  if (r.permissions && r.permissions.push === false) throw new PublishError(403, 'Your GitHub account can’t push to that repository. Reconnect with an account that can.', 'api.github.com', 'config');
   const ref = await getRef(c, repo, r.default_branch);
   if (!ref) throw new PublishError(404, `Default branch ${r.default_branch} not found`, 'api.github.com');
   return { repo, branch: r.default_branch, sha: ref.object.sha };
@@ -67,7 +67,7 @@ async function target(c: ConnCtx, repo: string, ref: string, p: PublishPayload):
     const slug = i ? `${p.slug}-${i + 1}` : p.slug;
     if (!(await getFile(c, repo, `${dir}/${slug}.mdx`, ref)) && !(await getFile(c, repo, `${dir}/${slug}.md`, ref))) return { path: `${dir}/${slug}.mdx`, slug, ...(i ? { taken: true } : {}) };
   }
-  throw new PublishError(422, `Slug "${p.slug}" and its next 19 variants are taken in ${dir}`, 'api.github.com', 'config');
+  throw new PublishError(422, `Every slug from “${p.slug}” to “${p.slug}-20” is taken in ${dir}. Change the article’s slug and try again.`, 'api.github.com', 'config');
 }
 
 export function mdxFile(p: PublishPayload): string {

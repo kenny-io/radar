@@ -104,7 +104,7 @@ describe('test connection', () => {
   it('no push access is a readable 403, before any write', async () => {
     repo.permissions = { push: false, pull: true };
     const e = await err(nextjs.test(C));
-    expect([e.http, e.detail, e.retryable]).toEqual([403, 'No push access', false]);
+    expect([e.http, e.detail, e.retryable]).toEqual([403, 'Your GitHub account can’t push to that repository. Reconnect with an account that can.', false]);
     expect(writes()).toHaveLength(0);
   });
   it('a private repo the token can\'t see is GitHub\'s 404 (the "can\'t see that" copy), not retried', async () => {
@@ -125,7 +125,7 @@ describe('test connection', () => {
   it('an empty repository (409 on the ref) fails readably instead of retrying', async () => {
     override = (m, u) => (u.includes('/git/ref/') ? reply(409, { message: 'Git Repository is empty.' }) : null);
     const e = await err(nextjs.test(C));
-    expect([e.http, e.detail, e.retryable]).toEqual([422, 'The repository is empty', false]);
+    expect([e.http, e.detail, e.retryable]).toEqual([422, 'The repository is empty. Push a first commit to it, then try again.', false]);
   });
   it('a 5xx is retried', async () => {
     override = () => reply(502, 'Bad Gateway');

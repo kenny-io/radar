@@ -65,7 +65,7 @@ async function collection(f: Framer, c: ConnCtx): Promise<Collection> {
 }
 async function bodyMapping(col: Collection) {
   const m = await mapping(col);
-  if (!m.content) throw new PublishError(422, 'The collection has no formatted text field for the article body', HOST, 'config');
+  if (!m.content) throw new PublishError(422, 'The Framer collection has no Formatted Text field for the article body. Add one, then try again.', HOST, 'config');
   return m;
 }
 const bySlug = (items: CollectionItem[], slug: string) => items.find(i => i.slug === slug) || null;
@@ -99,7 +99,7 @@ async function newItem(col: Collection, m: Mapping, p: PublishPayload): Promise<
     if (!it) throw new PublishError(502, 'Item was not created', HOST);
     return { id: it.id, slug };
   }
-  throw new PublishError(422, `Slug "${p.slug}" and its next 19 variants are taken`, HOST, 'config');
+  throw new PublishError(422, `Every slug from “${p.slug}” to “${p.slug}-20” is taken in this collection. Change the article’s slug and try again.`, HOST, 'config');
 }
 
 /** The live URL: the collection's detail page (e.g. /blog/:slug) on the deployed custom domain, else the published default one. */

@@ -82,7 +82,7 @@ export async function connectionFor(b: BizRow, dest: string | null): Promise<Con
   return rows.find(r => r.id === dest) || rows.find(r => r.id === bl.defaultId) || rows[0];
 }
 
-export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: { http: number; message: string; platform: string } } | { status: 'skipped'; reason: string } | { status: 'retry' };
+export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: { http: number; message: string; platform: string; hint?: string } } | { status: 'skipped'; reason: string } | { status: 'retry' };
 
 /**
  * Publish one entry. Throws only for a transient failure that should be retried (the job queue backs off);
@@ -98,7 +98,7 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   const conn = await connectionFor(b, e.dest);
   const setEntry = async (v: Partial<typeof schema.calendarEntries.$inferInsert>) => { await db.update(schema.calendarEntries).set(v).where(eq(schema.calendarEntries.id, entryId)); await bump(b.id); };
   const fail = async (err: PublishError, type: string | null) => {
-    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '' };
+    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}) };
     await setEntry({ status: 'failed', publishError: error, publishAttempts: o.attempt });
     if (conn && (err.http === 401 || err.http === 403)) await db.update(schema.connections).set({ status: 'error', lastError: err.line }).where(eq(schema.connections.id, conn.id));
     console.error(`[publish] ${entryId} failed on ${type}:`, err.message);

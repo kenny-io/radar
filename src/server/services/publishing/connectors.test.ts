@@ -196,5 +196,18 @@ describe('test-connection copy points at the real fix', () => {
   });
   it('a 404 on an OAuth platform says the site or database is no longer shared', () => {
     expect(failCopy('notion', e(404))).toBe('Radar can’t see that database anymore. Reconnect and share it again.');
+    expect(failCopy('nextjs', e(404))).toBe('Radar can’t see that repository anymore. Reconnect and share it again.');
+  });
+  it('a setup problem (config 422/403) shows the connector’s sentence, in the test copy and on the article banner', () => {
+    const s = 'Publish your Webflow site once in the Designer, then try again.';
+    const x = new PublishError(422, s, 'api.webflow.com', 'config');
+    expect(x.hint).toBe(s);
+    expect(failCopy('webflow', x)).toBe(s);
+    expect(failCopy('nextjs', new PublishError(403, 'Your GitHub account can’t push to that repository.', 'api.github.com', 'config'))).toBe('Your GitHub account can’t push to that repository.');
+    expect(publishFailParts({ http: 422, message: '422 Unprocessable Entity', platform: 'Webflow', hint: s }, 'webflow')).toEqual({ platform: 'Webflow', detail: '422 Unprocessable Entity', hint: s });
+    // Other config errors (redirects, a missing target) and plain 422s keep the approved status copy.
+    expect(new PublishError(422, 'x').hint).toBeNull();
+    expect(new PublishError(308, 'redirected to …', 'h', 'config').hint).toBeNull();
+    expect(failCopy('webflow', new PublishError(404, 'No CMS collection chosen', '', 'config'))).toBe('Radar can’t see that cms collection anymore. Reconnect and share it again.');
   });
 });
