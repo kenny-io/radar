@@ -45,17 +45,26 @@ export function blocksToHtml(blocks: Block[], opts: RenderOpts = {}): string {
   return out.join('\n');
 }
 
-/** Markdown-safe text (also safe inside MDX: escapes JSX/expression openers). */
-export const escMd = (s: string) => String(s ?? '').replace(/([\\`*_[\]{}<>#|])/g, '\\$1').replace(/^(\d+)\. /, '$1\\. ').replace(/^([-+]) /, '\\$1 ');
+/**
+ * Markdown-safe text, also safe in MDX: JSX/expression openers (`<`, `{`) are escaped, and so is every line start that would
+ * become a list, heading, quote, code block, thematic break or — MDX only — an ESM `import`/`export` statement (the first
+ * letter becomes a character reference, which both Markdown and MDX decode back to the letter).
+ */
+export const escMd = (s: string) => String(s ?? '').replace(/([\\`*_[\]{}<>#|~])/g, '\\$1')
+  .replace(/^[ \t]+/gm, '').replace(/^(\d+)([.)])/gm, '$1\\$2').replace(/^([-+=])/gm, '\\$1')
+  .replace(/^(import|export)(?=\s|$)/gm, w => `&#${w.charCodeAt(0)};${w.slice(1)}`);
+/** A link destination that can't end the link early or open JSX/an expression in MDX. */
+const mdUrl = (u: string) => safeUrl(u).replace(/[\s()<>{}\\]/g, ch => '%' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'));
 
-/** Plain Markdown/MDX body. Videos become JSX-compatible iframes (valid in MDX and in most Markdown renderers that allow HTML). */
+/** Plain Markdown/MDX body. Videos become JSX-compatible iframes (valid in MDX and in most Markdown renderers that allow HTML);
+ *  the iframe title has no double quotes, so no &quot; reference is needed inside the JSX attribute. */
 export function blocksToMarkdown(blocks: Block[], opts: RenderOpts = {}): string {
   const out: string[] = [];
   const vids = opts.videos || [];
   const anchor = videoAnchor(blocks);
   const vmd = (v: { id: string; title?: string; channel?: string }) => {
     const id = ytId(v.id); const credit = [v.title, 'YouTube', v.channel].filter(Boolean).join(' · ');
-    return `<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/${id}" title="${escHtml(v.title || 'YouTube video')}" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>\n\n*${escMd(credit)}* — [Watch on YouTube](https://www.youtube.com/watch?v=${id})`;
+    return `<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/${id}" title="${escHtml((v.title || 'YouTube video').replace(/"/g, "'"))}" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>\n\n*${escMd(credit)}* — [Watch on YouTube](https://www.youtube.com/watch?v=${id})`;
   };
   blocks.forEach((b, i) => {
     if (b[0] === 'ul') out.push((b[1] as string[]).map(li => `- ${escMd(li)}`).join('\n'));
@@ -65,7 +74,7 @@ export function blocksToMarkdown(blocks: Block[], opts: RenderOpts = {}): string
     if (i === anchor) vids.forEach(v => out.push(vmd(v)));
   });
   const src = sourcesList(opts.sources);
-  if (src.length) out.push(`## ${opts.sourcesHeading || 'Sources'}\n\n` + src.map((s, i) => `${i + 1}. [${escMd(s.title || s.url)}](${safeUrl(s.url)})`).join('\n'));
+  if (src.length) out.push(`## ${opts.sourcesHeading || 'Sources'}\n\n` + src.map((s, i) => `${i + 1}. [${escMd(s.title || s.url)}](${mdUrl(s.url)})`).join('\n'));
   return out.join('\n\n') + '\n';
 }
 
