@@ -38,10 +38,13 @@ export async function wixToken(instanceId: string, fresh = false): Promise<strin
 }
 /** A Wix API call as the app on this site. A 401 mints a fresh token once; a second 401 means reconnect. */
 async function wx<T = any>(c: ConnCtx, path: string, init: RequestInit = {}, again = false): Promise<T> {
-  const inst = c.creds.instanceId; if (!inst) throw new PublishError(401, 'Missing site instance', '', 'auth-expired');
-  const authorization = await wixToken(inst, again);
+  // TEST SEAM (wix.live.test.ts only): a site-owner API key + wix-site-id header instead of the app's token. Radar's UI never
+  // stores these fields (dev.wix.com/docs/api-reference/articles/authentication/rest-api-authentication#api-key-admin).
+  const key = c.creds.apiKey && c.creds.siteId ? { authorization: String(c.creds.apiKey), 'wix-site-id': String(c.creds.siteId) } : null;
+  const inst = c.creds.instanceId; if (!inst && !key) throw new PublishError(401, 'Missing site instance', '', 'auth-expired');
+  const auth = key || { authorization: await wixToken(inst, again) };
   try {
-    return await reqJson<T>(`${API}${path}`, { ...init, headers: { ...((init.headers as Record<string, string>) || {}), authorization } });
+    return await reqJson<T>(`${API}${path}`, { ...init, headers: { ...((init.headers as Record<string, string>) || {}), ...auth } });
   } catch (e) {
     if (e instanceof PublishError && e.http === 401) {
       if (!again) return wx(c, path, init, true);

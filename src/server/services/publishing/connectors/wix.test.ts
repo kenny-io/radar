@@ -91,6 +91,12 @@ describe('access tokens', () => {
     wx({ 'GET /apps/v1/instance': () => reply(401, { message: 'no' }) });
     expect(await err(wix.targets!(C))).toMatchObject({ http: 401, kind: 'auth-expired' });
   });
+  it('live-test seam: an API key + site id is sent as Authorization + wix-site-id, with no token minted', async () => {
+    wx();
+    await wix.targets!({ ...C, creds: { apiKey: 'IST.key', siteId: 'site-1' } });
+    expect(calls.map(req)).toEqual([['GET', '/apps/v1/instance']]);
+    expect([hdr(calls[0], 'authorization'), hdr(calls[0], 'wix-site-id')]).toEqual(['IST.key', 'site-1']);
+  });
   it('no instance on the connection needs reconnecting, without a request', async () => {
     wx();
     expect(await err(wix.targets!({ ...C, creds: {} }))).toMatchObject({ http: 401, kind: 'auth-expired' });
