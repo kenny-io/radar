@@ -33,9 +33,9 @@ This is the design record for `brief.md` (AC-G1…G10, AC-P1…P8, AC-S1…S2, A
 - Then they delete the guest and clear the cookie.
 
 **Access**
-- `ownAccess(user)` is true when any of these holds:
+- `ownAccess(actor)` is **always false for a guest**, whatever the flag says. For a real user it is true when any of these holds:
   - billing is not enforced for the user;
-  - the user has a `comp` row;
+  - the user is comp: a `comp` row, or lazily, an owner of an active business created before the grandfather cutoff;
   - the subscription status is `trialing` or `active`.
 - `hasAccess(user, business)` = the user is an active member of the business **and** `ownAccess(owner)`.
 - Members ride on the owner's subscription (D6).
@@ -61,8 +61,8 @@ This is the design record for `brief.md` (AC-G1…G10, AC-P1…P8, AC-S1…S2, A
 - An hourly cleanup of guests with no live session after 24h or more.
 
 **Rollout**
-- `RADAR_BILLING` is off by default. While off: no gate, `/start` works, and Save always commits.
-- Existing owners are grandfathered with `comp` rows by an idempotent, `once()`-guarded step that runs while billing is on, using a cutoff timestamp.
+- `RADAR_BILLING` is off by default. While off: no gate for signed-in users, `/start` works, and Save commits for signed-in users. A guest's Save always goes to `/signup`.
+- Existing owners are grandfathered lazily inside `ownAccess`: an owner of an active business created before `RADAR_BILLING_GRANDFATHER_BEFORE` counts as comp, and a `comp` row is upserted on first use. An idempotent batch backfill also runs.
 - Rollback = flag off.
 
 ## 2. Decisions
@@ -85,8 +85,8 @@ This is the design record for `brief.md` (AC-G1…G10, AC-P1…P8, AC-S1…S2, A
 | B14 | Repeat trials are blocked by `card.fingerprint` in `trial_fingerprints`, checked before the $1 charge and recorded at activation | AC-P8. A race between two accounts using one card at the same moment is accepted |
 | B15 | Rate limits use a Postgres fixed-window table. They apply to analysis by **any actor without own access**, not only guests | Applying them only to guests would let a free signup bypass them. No Redis in the stack |
 | B16 | Onboarding moves to standalone routes `/start` (guest) and `/onboarding` (user), drawn over a static, `inert` shell backdrop. The in-app modal stays only for "Add a business" | Guests can't enter `(app)`. The prototype shows onboarding over the shell. Layouts don't receive the pathname, so this needs separate routes |
-| B17 | Billing off means no gate anywhere. Routing (`/onboarding`, `/start`) is the same with the flag on or off | One code path to test. The flag only changes `ownAccess()` |
-| B18 | Grandfathering is a `once()`-guarded idempotent step, `billing.grandfather`, run while billing is on. It gives `comp` to owners of active businesses created before `RADAR_BILLING_GRANDFATHER_BEFORE` | A data insert inside migration 0007 would miss owners who sign up between deploy and the flag flip, and would mean hand-editing a generated migration (AC-R2) |
+| B17 | Billing off means no gate for signed-in users. Routing (`/onboarding`, `/start`) is the same with the flag on or off. A guest never has own access, so the draft allowlist, the analysis rate limits and "Save → /signup" apply to guests in every flag state | One code path to test. The flag changes only `ownAccess()` for real users. If a guest could commit, the business would become `active` under the guest, and claim (which moves only `onboarding` drafts) would lose it |
+| B18 | Grandfathering is lazy, inside `ownAccess`: a user who owns an active business with `created_at < RADAR_BILLING_GRANDFATHER_BEFORE` is comp, and a `comp` row is upserted on first use. A batch backfill (`billing.grandfather`, idempotent, no `once()`) runs at worker start and hourly | The web process enforces billing the moment the flag flips. A worker-only insert would lock grandfathered owners out until it ran. A data insert in migration 0007 would miss owners who sign up between deploy and the flip, and would mean hand-editing a generated migration (AC-R2) |
 | B19 | If `RADAR_BILLING` is on but no provider is configured (no key, no stub), billing fails **open** (treated as off), with a `console.error` on every guard call | Locking every new user out over a missing secret is worse than a short free window. The LAUNCH checklist step catches it |
 | B20 | Auth endpoints return `{ok, next}`, computed server-side by `resolveEntry()`. The Google callback redirects to the same place | One function decides where a user lands, for the guard, for auth and after a claim |
 
@@ -227,6 +227,16 @@ async function onboardingGuard(domain?: string): Promise<…>
 async function signupContext(): Promise<{ pending: PendingProfile | null }>
 //   guest whose draft has savedAt → pending variant data; else null
 ```
+
+**`ownAccess(actor)`**:
+1. `actor.guest` → false.
+2. Billing not enforced for the user → true.
+3. `billing_accounts.comp` → true.
+4. Status `trialing` or `active` → true.
+5. Otherwise, if `RADAR_BILLING_GRANDFATHER_BEFORE` is set and the user owns an active business with `created_at` before it: upsert `billing_accounts(comp = true, comp_reason = 'grandfather')` and return true.
+6. Otherwise false.
+
+`bizAccess(biz)` = `ownAccess(owner)`, where the owner is never a guest, because guests only own onboarding drafts.
 
 `accessSummary(uid)` costs one query when billing is enforced and none when it isn't. It returns:
 
@@ -443,15 +453,22 @@ export interface AuthResult { ok: true; next: string }
 - Headers: `Authorization: Bearer ${STRIPE_SECRET_KEY}`, `Stripe-Version: ${STRIPE_API_VERSION}`, `Idempotency-Key` on every POST.
 - Keys are prefixed `radar:` and are deterministic, so a retry within 24h replays the first response.
 
-**`start(user, pmId)`**, run under `pg_advisory_xact_lock(hashtext('billing:' || uid))`:
+**One lock per request.** `withBillingLock(uid, tx => …)` opens a transaction and takes `pg_advisory_xact_lock(hashtext('billing:' || uid))`. Each request (start, restart, confirm, a webhook delivery) enters it **once**.
+- `activate(tx, …)`, `restartIn(tx, …)` and `syncSubscription(tx, …)` receive the `tx`. They never open another transaction or take the lock again.
+- Advisory locks are re-entrant only within one connection, so nesting across pooled connections would wait on itself.
 
-1. **Gates and limits**
-   - Gates: `enforced`, `!own` (409 `already_active`), `!everSubscribed` (409 `restart_required`).
-   - Rate limits `billing:user:{uid}` 5/h and `billing:ip:{ip}` 10/h.
+**`ensureCustomer(user)`** runs **before** the lock.
+1. If `stripe_customer_id` is set, return it.
+2. Otherwise `POST /v1/customers {email, name, metadata[radar_user_id]}` with key `radar:cus:{uid}`, which replays the same customer within 24h.
+3. Then `INSERT … ON CONFLICT (user_id) DO UPDATE SET stripe_customer_id = COALESCE(billing_accounts.stripe_customer_id, EXCLUDED.stripe_customer_id)`.
+
+**`start(user, pmId)`**: rate limits `billing:user:{uid}` 5/h and `billing:ip:{ip}` 10/h, then `ensureCustomer`, then `withBillingLock`:
+
+1. **Gates:** `enforced`, `!own` (409 `already_active`), `!everSubscribed` (409 `restart_required`).
 2. **Previous PaymentIntent.** If `trialPaymentIntentId` is set, `GET /v1/payment_intents/{id}`:
-   - `succeeded` → `activate(id)`, return `{activated: true}`. This prevents a second $1.
+   - `succeeded` → `activate(tx, id)`, return `{activated: true}`. This prevents a second $1.
    - `requires_payment_method`, `requires_confirmation` or `requires_action` → `POST /v1/payment_intents/{id}/cancel` (best effort).
-3. **Customer.** Ensure it exists: `POST /v1/customers {email, name, metadata[radar_user_id]}`, key `radar:cus:{uid}`. Persist `stripe_customer_id` immediately, in its own short write.
+3. *(The customer already exists: see `ensureCustomer`.)*
 4. **PaymentMethod.** `GET /v1/payment_methods/{pm}`:
    - require `type = card` and `customer` null or ours, else 400;
    - `fp = card.fingerprint`.
@@ -463,16 +480,17 @@ export interface AuthResult { ok: true; next: string }
    - Persist `trialPaymentIntentId`.
 8. Return `{clientSecret, paymentIntentId, trialEnd: metadata.trial_end of the returned PI}`. The client secret is never logged.
 
-**`activate(piId, via: 'confirm' | 'webhook')`**, the single path to a trial subscription:
+**`activate(tx, piId, via: 'confirm' | 'webhook')`**, the single path to a trial subscription. The confirm route and the webhook call `withBillingLock(uid, tx => activate(tx, …))`; `start` passes its own `tx`.
 
-1. **Load and verify.** `pi = GET /v1/payment_intents/{piId}`. Require `metadata.purpose = trial_check`, `status = succeeded`, `amount = 100`, `currency = usd`. Set `uid = metadata.radar_user_id`.
+1. **Load and verify.** `pi = GET /v1/payment_intents/{piId}`. The callers fetch it before taking the lock, because the lock key needs `uid`. Require `metadata.purpose = trial_check`, `status = succeeded`, `amount = 100`, `currency = usd`. Set `uid = metadata.radar_user_id`.
    - On `confirm`, also require `uid = session user` and `pi.customer = acct.stripe_customer_id`; otherwise 403 `not_yours`.
-2. **Serialize.** In a transaction, take `pg_advisory_xact_lock(hashtext('billing:' || uid))` and `SELECT billing_accounts FOR UPDATE`.
+2. **Serialize.** Already inside `withBillingLock`. `SELECT billing_accounts FOR UPDATE`.
 3. **Already done?** If `acct.trialPaymentIntentId = pi.id` and `acct.stripeSubscriptionId` is set, skip to step 7.
 4. **Adopt.** `GET /v1/subscriptions?customer={cus}&status=all&limit=20`. A subscription with `metadata.radar_pi = pi.id` is adopted. This covers a crash after creation and keys older than 24h.
 5. **Create.** Otherwise `POST /v1/subscriptions`:
-   - Parameters: `customer`, `items[0][price]=STRIPE_PRICE_ID`, `trial_end=metadata.trial_end` (if that is less than an hour away, use `now + 72h`; edge case), `default_payment_method=pi.payment_method`, `trial_settings[end_behavior][missing_payment_method]=cancel`, `metadata[radar_user_id]`, `metadata[radar_pi]=pi.id`.
-   - Key `radar:sub:{pi.id}`.
+   - Parameters: `customer`, `items[0][price]=STRIPE_PRICE_ID`, `trial_end=T`, `default_payment_method=pi.payment_method`, `trial_settings[end_behavior][missing_payment_method]=cancel`, `metadata[radar_user_id]`, `metadata[radar_pi]=pi.id`.
+   - `T` is `metadata.trial_end`. In the late edge case, where that is less than an hour away (for example a webhook retried days later), `T = now + 72h`.
+   - Key `radar:sub:{pi.id}:{T}`. With `T` in the key, a recomputed `T` never reuses a key with different parameters. The adopt step before it prevents a duplicate.
    - On HTTP 409 (key in flight), wait 1s and retry up to 3 times, then go back to step 4.
 6. **Customer default.** `POST /v1/customers/{cus} {invoice_settings[default_payment_method]=pm}`, key `radar:cusdpm:{pi.id}`.
 7. **Write the account.**
@@ -487,9 +505,9 @@ export interface AuthResult { ok: true; next: string }
 
 Holding a transaction across Stripe calls holds one pool connection for about 1–2s, once per user, which is acceptable at this scale (pool max 10). Stripe's idempotency is the second line of defense if the lock is ever bypassed.
 
-**`restart(user, pmId)`**, under the same lock:
+**`restart(user, pmId)`**: the same rate limits, then `ensureCustomer`, then `withBillingLock` with the steps below:
 
-1. **Gates.** `everSubscribed` (else 409 `not_lapsed`), `!own`, same rate limits.
+1. **Gates.** `everSubscribed` (else 409 `not_lapsed`), `!own`.
 2. **Card setup.** `POST /v1/payment_methods/{pm}/attach {customer}` (key `radar:attach:{pm}`), then set `invoice_settings[default_payment_method]` on the customer.
 3. **`past_due` or `unpaid` with an open invoice.** Retrieve `latest_invoice` and check `status = open`.
    1. `POST /v1/subscriptions/{sub} {default_payment_method: pm}`.
@@ -526,9 +544,11 @@ Holding a transaction across Stripe calls holds one pool connection for about 1�
 | `customer.subscription.created`, `.updated`, `.deleted` | `syncSubscription(object.id)` |
 | `invoice.paid`, `invoice.payment_failed` | Account by `object.customer`, then `syncSubscription(acct.stripe_subscription_id)`. Invoice→subscription fields are deliberately not read (Basil moved them) |
 
-**`syncSubscription(id)`**
+**`syncSubscription(tx, id)`**
 1. `s = GET /v1/subscriptions/{id}`.
 2. Find the account by `s.customer`; if none, return.
+   - The webhook and confirm callers do steps 1–2 before taking the lock, then call `withBillingLock(acct.user_id, tx => …)` for steps 3–5.
+   - `restart` passes its own `tx`.
 3. If `s.id ≠ acct.stripe_subscription_id`:
    - `s` is terminal → ignore it (an old subscription);
    - the account has none → adopt `s`.
@@ -604,7 +624,8 @@ Holding a transaction across Stripe calls holds one pool connection for about 1�
 - **Known gap.** Logo files are orphaned because storage has no delete helper. Logged, not fixed.
 
 **Grandfather** (`src/server/billing/grandfather.ts`)
-- Runs when billing is enforced and `RADAR_BILLING_GRANDFATHER_BEFORE` is set. It is called at worker start and from the cleanup cron, under `once('billing.grandfather:' + cutoff)`.
+- The source of truth is the lazy check in `ownAccess` (§4.3), so nobody depends on this job having run.
+- The batch backfill runs when billing is enforced and `RADAR_BILLING_GRANDFATHER_BEFORE` is set. It is called at worker start and from the hourly cleanup cron, with no `once()`, so a cutoff set later is still applied.
 - It runs `INSERT INTO billing_accounts (user_id, comp, comp_reason) SELECT DISTINCT owner_id, true, 'grandfather' FROM businesses WHERE status = 'active' AND created_at < $cutoff ON CONFLICT (user_id) DO UPDATE SET comp = true, comp_reason = COALESCE(billing_accounts.comp_reason, 'grandfather')`.
 
 ## 9. Frontend structure (T4)
@@ -773,6 +794,8 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
 
 4. **`access.test.ts`**
    - `ownAccess` matrix: flag off, on and list; `comp`; every `SubStatus`.
+   - **A guest is false in every flag state.**
+   - Lazy grandfather: an owner of an active business created before the cutoff is true, and a `comp` row now exists. After the cutoff: false.
    - A member rides on the owner.
    - `getMe` never picks a locked business as `currentId`.
    - **`currentUser()` returns null with only a guest cookie, and for a user row with `guest = true`.**
@@ -788,6 +811,7 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
    - A guest on its own draft: each `DRAFT_ACTIONS` entry passes; a non-allowlisted action (for example `profile.reanalyze`) gets 402.
    - A guest on another guest's draft gets 404. A guest on an active business gets 404 on act, workspace and events.
    - **A signed-up user without access calling a non-allowlisted action on their own draft gets 402.**
+   - **With the flag off, a guest is still held to the allowlist (402).**
    - A user without access on an active business gets 402 on act, workspace and events.
    - A member of a paid business passes.
 7. **`claim.test.ts`**
@@ -799,6 +823,7 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
    - An invite `next` is honored.
 8. **`onboarding.test.ts`**
    - `save` without access: not committed, `next` `/signup` (guest) or `/start-trial` (user).
+   - **A guest's `save` with the flag off: `committed: false`, `next: '/signup'`. After signup, the claim plus `resolveEntry` commits it.**
    - With access: committed, and `business.onboarded` tracked exactly once.
    - The `finish` alias.
    - `POST /api/b` with the same domain keeps GSC; another domain clears GSC, crawl_pages and `onboarding`.
@@ -807,6 +832,7 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
    - Window boundaries.
    - Per-IP hour and day limits and the per-domain limit on `onboarding.analyze` for a guest **and** for a user without access.
    - A user with access is not limited.
+   - **A guest is limited with the flag off too.**
    - The global limit gets 503.
    - Guest creation is limited.
 10. **`billingFlow.test.ts`** (stub)
@@ -819,6 +845,8 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
     - A previous PaymentIntent that succeeded activates with no new charge.
     - Refund and credit modes each call the stub exactly once.
     - Confirm with another user's PaymentIntent gets 403.
+    - **`start` when the previous PaymentIntent succeeded completes without hanging, because the lock is taken once.**
+    - Late activation (`metadata.trial_end` less than an hour away) uses the recomputed `T` and is safe to retry.
 11. **`webhookSync.test.ts`** (stub)
     - `past_due` → no access; `invoice.paid` → `active`; deleted → `canceled`.
     - A replayed event id is a no-op.
@@ -827,7 +855,7 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
     - An event for an old subscription doesn't regress a restarted account.
 12. `restart.test.ts` (stub): `past_due` takes the open-invoice path; `canceled` takes the new-subscription path with no trial; access after the subscription's confirm.
 13. `guestCleanup.test.ts`: an expired guest older than 24h is deleted with its business; a live guest is kept; a guest under 24h is kept; `rate_limits` are pruned.
-14. `grandfather.test.ts`: before the cutoff → `comp`; after it → nothing; idempotent.
+14. `grandfather.test.ts`: the backfill gives `comp` before the cutoff, nothing after it, and is idempotent. Changing the cutoff later re-applies it.
 
 **T4 tests**
 - `dates.test.ts`: `fmtD` and `fmtDW` for fixed ISO strings, in `TZ = America/Los_Angeles` and `Pacific/Auckland`.
@@ -850,8 +878,8 @@ T2 owns marketing: `src/app/page.tsx`, `/login`, `src/app/features/**`, marketin
 | Repeat card | A second account with the same stub card → `trial_used` copy |
 | Lapsed | `dev/simulate past_due` → app routes go to `/start-trial` worded "Restart your subscription"; paying restores access. `canceled` → new subscription, no trial |
 | Abuse | A 6th guest analysis from one IP in an hour → inline copy. An 11th for one domain in a day → domain copy |
-| Flag off | No gate; `/start` works; Save commits; the trial page redirects to `/dashboard` |
-| Grandfather | An existing owner with billing on and the cutoff set → dashboard, no trial page |
+| Flag off | No gate for signed-in users. Signed-in Save commits. A guest's Save → `/signup`, and the draft is committed after signup. The trial page redirects to `/dashboard` |
+| Grandfather | Flip the flag with the cutoff set and before the worker runs: an existing owner → dashboard immediately, no trial page |
 
 ## 18. Migration, compatibility, rollback
 
