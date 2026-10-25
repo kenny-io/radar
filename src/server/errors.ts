@@ -6,3 +6,5 @@ export const notFound = (what = 'That') => new RadarError(`${what} wasn’t foun
 export const forbidden = () => new RadarError('You don’t have permission to do that.', 403, 'forbidden');
 export const unauthorized = () => new RadarError('Sign in to continue.', 401, 'unauthorized');
 export const GENERIC_AI_ERROR = 'Radar couldn’t finish this. Try again.';
+/** 402: an active business whose owner has no trialing/active subscription (billing on). The client goes to /start-trial. */
+export const subscriptionRequired = () => new RadarError('Your Radar subscription isn’t active. Start your free trial to continue.', 402, 'subscription_required');

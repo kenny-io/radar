@@ -6,6 +6,10 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 ## Actions (POST /api/b/:bid/act — `app.act(name, input)`)
 
 ### onboarding area
+- `onboarding.analyze` `{ keepEdits? }` → `{ jobId }` — job `analysis.site` (ref = businessId). Rate-limited (429 `rate_limited`, 503 `busy`) for guests and accounts without access; copy in `src/server/abuse/rateLimit.ts` → `COPY`.
+- `onboarding.step` `{ step: 'review'|'gsc'|'save' }` (Owner) → `{}` — remembered for resume and Back links (`Workspace.onboarding.step`).
+- `onboarding.save` `{ tz? }` (Owner) → `{ committed: boolean, next: '/dashboard'|'/signup'|'/start-trial', id }` — sets `savedAt`, `tz` (ignored unless a valid IANA zone) and step `save`; commits the draft only when a signed-in actor has access. Already active → `{ committed: false, next: '/dashboard' }`.
+- `onboarding.finish` `{ tz? }` — deprecated alias of `onboarding.save` (open tabs).
 - `profile.update` `{ profile: Profile, editedKeys: string[] }` — saves the profile, marks keys edited (e.g. `'business.positioning'`, `'keywords.list'`, `'brand.logo'`), enqueues `keywords.estimate` if any keyword has null vol/kd. Logo data URLs are uploaded to storage.
 - `profile.reanalyze` `{}` → `{ jobId }` — re-runs analysis keeping edited fields.
 - Job kind `keywords.estimate` payload `{}` (businessId set) — fills `vol`/`kd` for profile keywords that are null (and intent when missing). Any area may enqueue it: `enqueue('keywords.estimate', {}, { businessId, singletonKey: 'kw-est:' + bid })`.
@@ -121,3 +125,49 @@ Everything in this section is behind the business-level flag `RADAR_SOCIAL_PUBLI
   - `moveSocial(app, sid, date)` runs a client-side `moveCheck`, toasts, then calls `social.move`.
   - `openSocial(go, it)` routes to the pack (`go('social', { pack, plat })`) or the Brief (`go('brief')`).
 - `useApp().flushLater(): Promise<void>` sends pending autosaves now. Call it before `postNow`, `schedule` or `scheduleAll`.
+
+## Gating, anonymous onboarding and billing (`.factory/marketing-trial-gating/architecture.md`)
+
+Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `DraftSummary`, `PendingProfile`, `BillingState`, `TrialPageProps`, `OnboardingStageProps`, `AuthResult`) and constants in `src/lib/billing.ts`. `RADAR_BILLING` off reproduces the old behavior for signed-in users.
+
+### Server guards (pages call only these; `src/server/billing/guard.ts`)
+- `trialGuard()` → `{ redirect }` | `{ props: TrialPageProps }` — no user → `/signup`; access → `/dashboard` (`?saved=profile` when it committed a saved draft).
+- `startGuard(domain?)` / `onboardingGuard(domain?)` → `{ redirect }` | `{ props: OnboardingStageProps }` — `/start` is for guests (a real user goes to `/onboarding`); `/onboarding` without a user goes to `/start` (guest cookie) or `/signup`.
+- `signupContext()` → `{ pending: PendingProfile | null }` — the Signup pending variant when this browser's guest has a **saved** draft.
+- `resolveEntry(user)` — used by `(app)/layout.tsx`: renders, or redirects to `/onboarding` (no business, or a draft not saved) or `/start-trial` (saved draft or owned business without access). A guest on an app route goes to `/signup`.
+
+### Auth endpoints
+- `POST /api/auth/signup` `{ name, email, password, next? }` and `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }`. Navigate to `next`. Both claim this browser's guest draft first. When the claimed profile is committed there (the account already has access), they also set `radar_biz` to it, so `/dashboard?saved=profile` opens that profile.
+- Google: the callback redirects to the same destination. Dev stub (not production): `/api/auth/google/start?dev_as=<email>` signs in as that email.
+- `POST /api/auth/signout` clears the session and the guest cookie.
+
+### Business endpoints
+- `POST /api/b` `{ domain, turnstileToken? }` → `{ ok, id, guest }` — creates a guest when nobody is signed in (429 `rate_limited`, 403 `human_check_failed`). Same domain as the draft: reset, keep Search Console; another domain: also clears GSC, crawl pages and `onboarding`.
+- `/api/b/:bid/act`, `/workspace`, `/events`: + **402 `subscription_required`** (owner without access, billing on; the client goes to `/start-trial`) and 404 for a guest outside its own draft. A guest's draft accepts only `onboarding.analyze|step|save|finish`, `profile.update`, `job.get`, `gsc.properties`, `gsc.connect` (else 402).
+- `GET /api/b/current?id=<bid>&next=<path>` → 303 to `next` (a same-site page path; otherwise `/dashboard`) after making `bid` current. Server components that commit a profile (`trialGuard`, the `(app)` layout's self-heal) redirect through it, because they can't set cookies. 401 / 404 (not a member) / 402 (locked) as `POST /api/b/current`.
+- `BusinessSummary.access` (`false` = hidden from the switcher, never current) and `Workspace.onboarding` are always set by the server; clients treat an absent `access` as `true`.
+
+### Billing endpoints (`src/app/api/billing/**`; errors are `{ ok: false, error, code }` with user copy)
+| Call | Success | Error codes |
+|---|---|---|
+| `GET /api/billing/state` | `BillingState` (bare, no `ok`) | 401 |
+| `POST /api/billing/start` `{ paymentMethodId }` | `{ ok, clientSecret, paymentIntentId, trialEnd }`, or `{ ok, activated: true, state }` when an earlier $1 already succeeded | `already_active`, `restart_required`, `trial_used`, `payment_processing` (409); `invalid_payment_method` (400); `rate_limited` (429); `billing_unavailable` (503) |
+| `POST /api/billing/restart` `{ paymentMethodId }` | `{ ok, clientSecret, subscriptionId }`, or `{ ok, activated: true, state }` | `already_active`, `not_lapsed` (409); 400; 429; 503 |
+| `POST /api/billing/confirm` `{ paymentIntentId }` \| `{ subscriptionId }` | `{ ok, state }` with `state.access === true`; sets `radar_biz` to the business just committed | `not_yours` (403); `payment_not_succeeded` (409: not active yet; retry, then poll state); `activation_failed` (502) |
+| `POST /api/billing/webhook` | Stripe only (signature) | 400 bad signature or no secret; 500 handler failure |
+
+- The client always passes `payment_method` to `confirmCardPayment` (a restart against an open invoice doesn't use the subscription default).
+- `trialEnd` comes from the server (now + 72 h, to the second) and never changes after start; show `state.trialEnd` after confirm.
+- `state.dueTodayCents` in restart mode is what the restart will charge: the open invoice's `amount_due` (`past_due`, `unpaid`, an unpaid restart), else $50 less any unused credit ($49 when the trial was canceled before its first invoice). Show it on the button and timeline.
+- Events: `trial.started`, `trial.payment_failed`, `sub.status_changed`, `onboarding.claimed`, `onboarding.draft_replaced`, `business.onboarded` (from `commitDraft`, the only path to an active business). They carry ids and enum props only.
+
+### Stub provider (`RADAR_DEV_STUBS=1`, no `STRIPE_SECRET_KEY`, never production; `state.provider === 'stub'`)
+- PaymentMethod ids are minted by the client stub: `pm_stub_<succeed|decline|3ds>_<last4>`; the fingerprint is `fp_stub_<last4>`, so **one trial per card number per database** (use another Luhn-valid number for the next account, or get `trial_used`).
+- `POST /api/billing/dev/confirm-intent` `{ paymentIntentId, outcome: 'succeed'|'decline'|'auth_fail', webhook?: boolean }` → stripe-js `{ paymentIntent: { id, status } }` | `{ error: { type, code, decline_code?, message, payment_intent } }` (HTTP 200). The PaymentIntent id is `clientSecret.split('_secret_')[0]`. `decline` (or a `decline` card) → `type: 'card_error', code: 'card_declined'`; `auth_fail` → `code: 'payment_intent_authentication_failure'`. `webhook: true` also delivers the events Stripe would send, through the real handlers (the "tab closed after paying" path).
+- `POST /api/billing/dev/simulate` `{ status }` → `{ ok, state }` — moves the account's subscription (`past_due`/`unpaid` open a $49 invoice: $50 less the $1 credit; `active`; `canceled`) and runs the webhook path. Stub state is in memory: a dev server restart forgets subscriptions (`simulate` then answers 409 `no_subscription`).
+- Both dev endpoints answer 404 unless the stub is the provider.
+
+### Server helpers other areas may call
+- `ownAccess(user)`, `bizAccess({ ownerId })`, `accessSummary(uid)` — `src/server/billing/access.ts`. A guest never has access.
+- `commitDraft(bid, q?, later?)`, `draftOf(ownerId)` — `src/server/billing/draft.ts`.
+- Background jobs for an active business whose owner has no access finish as `{ skipped: 'no_access' }` (`src/server/jobs/queue.ts`); `social.send` is exempt.

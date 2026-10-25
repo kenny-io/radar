@@ -2,7 +2,7 @@
 // The client "app" object — the real-data equivalent of the prototype's `app` ({B, go, route, toast, ...}).
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { api, actCall, ApiError } from './api';
+import { api, actCall, ApiError, isSubscriptionRequired } from './api';
 import { LaterQueue } from './laterQueue';
 import { useToast, type ToastOpts } from '@/components/ui';
 import type { JobSummary, Me, Workspace } from '@/lib/types';
@@ -61,7 +61,8 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
   const [me, setMe] = useState<Me>(initialMe);
   const [B, setBState] = useState<Workspace | null>(null);
   const [jobs, setJobs] = useState<Record<string, any>>({});
-  const [onb, setOnb] = useState<boolean>(!initialMe.currentId);
+  // Opens only from "Add a business": the server guard guarantees a current business (no auto-open without one).
+  const [onb, setOnb] = useState(false);
   const bid = me.currentId;
   const bidRef = useRef(bid); bidRef.current = bid;
   const route = useMemo(() => urlToRoute(pathname || '/dashboard', new URLSearchParams(sp?.toString() || '')), [pathname, sp]);
@@ -71,7 +72,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
   const refresh = useCallback(async () => {
     const id = bidRef.current; if (!id) { setBState(null); return; }
     try { const w = await api<Workspace>(`/api/b/${id}/workspace`); if (bidRef.current === id) setBState(w); }
-    catch (e) { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; }
+    catch (e) { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); }
   }, []);
   const refreshMe = useCallback(async () => { const m = await api<Me>('/api/me'); setMe(m); return m; }, []);
   useEffect(() => { setBState(null); setJobs({}); refresh(); }, [bid, refresh]);
@@ -93,11 +94,28 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
         const t = JSON.parse(ev.data);
         toast(t.msg, { tone: t.tone || null, action: t.action ? { label: t.action.label, fn: () => router.push(t.action.href) } : null });
       });
-      es.onerror = () => { es?.close(); if (!stopped) retry = setTimeout(open, 3000); };
+      es.onerror = () => {
+        es?.close(); if (stopped) return;
+        // EventSource can't read the status, so a business that lost access (402) or a lost session (401) would retry
+        // forever: ask the workspace once (leave on 401/402, ignore anything else; state is not touched), then reconnect.
+        api(`/api/b/${bid}/workspace`).catch(e => { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); });
+        retry = setTimeout(open, 3000);
+      };
     };
     open();
     return () => { stopped = true; clearTimeout(retry); es?.close(); };
   }, [bid, refresh, toast, router]);
+
+  // One-shot toasts after a full navigation to the dashboard (architecture §5.3), then the query is dropped.
+  // Read from window.location and cleaned synchronously, so StrictMode's second effect run finds nothing to show.
+  useEffect(() => {
+    const u = new URL(window.location.href); const msgs: string[] = [];
+    if (u.searchParams.get('started') === 'trial') { msgs.push('Your free trial has started.'); u.searchParams.delete('started'); }
+    if (u.searchParams.get('saved') === 'profile') { msgs.push('Business Profile saved'); u.searchParams.delete('saved'); }
+    if (!msgs.length) return;
+    window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash);
+    msgs.forEach(m => toast(m, { tone: 'ok' }));
+  }, [toast]);
 
   const later = useRef(new LaterQueue());
   const revRef = useRef(0); revRef.current = B?.rev || 0;
@@ -120,6 +138,8 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
       }
       return r.data as T;
     } catch (e: any) {
+      // The business is locked (no trialing/active subscription): the trial page is the only way forward.
+      if (isSubscriptionRequired(e)) { window.location.assign('/start-trial'); throw e; }
       if (opts.optimistic) refresh();
       if (!opts.silent) toast(e?.message || 'Radar couldn’t finish this. Try again.', { tone: 'bad' });
       throw e;
@@ -149,7 +169,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
 
   const value: AppCtx = {
     me, user: me.user, B, bid, route, go, toast, act, actLater, flushLater, setB, refresh, refreshMe, switchBusiness, jobs, jobFor,
-    onboarding: { open: onb || !me.currentId, start: () => setOnb(true), close: () => setOnb(false) },
+    onboarding: { open: onb, start: () => setOnb(true), close: () => setOnb(false) },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
-import { currentUser } from '@/server/auth/session';
+import { currentActor } from '@/server/auth/session';
 import { oauthRedirect } from '@/server/env';
 import { oauthProvider } from '@/server/oauth/registry';
 import '@/server/oauth/providers';
@@ -17,8 +17,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   const p = oauthProvider(provider);
   if (!p) return popupResult(provider, { ok: false, error: 'unknown_provider' });
   try {
-    const u = await currentUser();
-    if (!u || u.id !== st.userId) return popupResult(provider, { ok: false, error: 'session' });
+    const u = await currentActor();   // a guest connects Search Console on its own draft (start checked it)
+    if (!u || u.id !== st.userId || (u.guest && provider !== 'gsc')) return popupResult(provider, { ok: false, error: 'session' });
     const r = await p.callback({ user: u, bid: st.businessId, data: st.data, redirectUri: oauthRedirect(provider), params: q });
     return popupResult(provider, r);
   } catch (e: any) {

@@ -147,6 +147,38 @@ Full owner walkthrough: `.factory/social-channels/developer-apps-guide.md`. Desi
 - **Metrics:** `/api/admin/metrics` → `derived.social` reports `scheduledSuccessRate`, `expiries`, `reconnects`, `accountsConnected` and `expiriesPerAccount`.
 - [ ] Live checks (not possible with dev stubs): the checklist in `developer-apps-guide.md` §6 for X, the LinkedIn profile and the LinkedIn page.
 
+## 7c. Billing — $1 card check, 3-day trial, $50/month (behind a flag)
+
+Design: `.factory/marketing-trial-gating/architecture.md` (§7 Stripe, §8 limits, §21 owner decisions). Until the owner supplies keys, only the in-memory stub has been exercised; every live Stripe check below is **not run** yet.
+
+- [ ] **Migrations.** `npm run db:migrate` applies `0007_trial_gating` (additive tables and columns) and `0008_grandfather`, a data migration that gives every account owning an active business at that moment a complimentary account (`billing_accounts.comp`, reason `grandfather`), so nobody using Radar today meets the trial page. Deploy with `RADAR_BILLING=off`.
+- [ ] **Stripe, test mode first.**
+  - A product "Radar" with one **recurring price, $50.00 USD per month** → `STRIPE_PRICE_ID`. The first billing call per process checks it and logs `[billing] STRIPE_PRICE_ID … the pages show 5000 usd/month` on a mismatch.
+  - API keys → `STRIPE_SECRET_KEY` (a restricted key: write Customers including balance transactions, PaymentIntents, PaymentMethods, Subscriptions and Invoices (an unpaid restart's invoice is voided when another card replaces it); read Prices) and `STRIPE_PUBLISHABLE_KEY`.
+  - `STRIPE_API_VERSION`: keep the pinned `2026-05-27.dahlia` (later Dahlia versions are additive). Stripe's newest major line is Endive (`2026-09-30.endive`, possibly breaking); read its changelog before moving the pin. The code reads `items.data[0].current_period_end` and the invoice `confirmation_secret`, which need Basil (2025-03-31) or later.
+- [ ] **Webhook endpoint** `{APP_URL}/api/billing/webhook` (`https://radar.thally.io/api/billing/webhook`) with exactly these seven events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Its signing secret → `STRIPE_WEBHOOK_SECRET` (unset = every delivery refused with 400). Don't add `customer.subscription.trial_will_end`: no email is designed. Deliveries are deduplicated by event id (`billing_events`); a handler failure answers 500 so Stripe retries, and `billing_events.last_error` keeps the message (never the payload).
+- [ ] **Failed payments:** in the Stripe Dashboard's subscription retry settings (Billing → Revenue recovery → Retries; the menu path may move), set "If all retries for a payment fail" to **Cancel the subscription** (owner decision). Either way the account loses access while `past_due` and the app shows "Restart your subscription"; paying the open invoice restores it.
+- [ ] **The $1** is charged once per account to confirm the card, then credited back to the customer balance ("Card confirmation credit", −$1.00), so the first $50 invoice is **$49**. Nothing to configure.
+- [ ] **Test-mode run** (each needs real Stripe; the stub can't prove them):
+  - `4242 4242 4242 4242` → trial page success. In the Dashboard: a $1.00 payment succeeded, the customer has a −$1.00 balance, a `trialing` subscription whose trial end matches the date the page showed, and seven webhook deliveries answered 200.
+  - `4000 0000 0000 0002` → the decline copy, no subscription. `4000 0027 6000 3184` → Stripe's 3-D Secure modal; Complete → success, Fail → the decline copy.
+  - The same card on a second account → "This card has already been used for a free trial. Try a different card."
+  - Close the tab right after paying: the webhook alone starts the trial and commits the Business Profile.
+  - Advance a test clock past the trial end: the $49 invoice is paid → `active`. With `4000 0000 0000 0341` as the default card instead → `past_due` → "Restart your subscription" → paying restores access.
+  - Cancel the subscription in the Dashboard → `canceled` → the restart charges today, with no trial: $50, or $49 if it was canceled during the trial (the unused −$1 credit applies to the new invoice). The page's "Today" amount must equal the charge.
+- [ ] **Go live:** replace the secret key, publishable key, price id and webhook secret with live-mode values (the live endpoint has its own `whsec_…`), then redeploy web and worker.
+- [ ] **Decide who joined in between — required before `RADAR_BILLING=on`.** `0008` comps only owners who had an active business when the migration ran (the merge deploy). Owners who finish onboarding after that, while the flag is still off, use Radar free and have no comp row, so at the flip they would be sent to `/start-trial`. Choose one and record it:
+  - **(a) Recommended, matches the owner decision to grandfather existing accounts:** set `RADAR_BILLING_GRANDFATHER_BEFORE` to the flip time (ISO, e.g. `2026-11-02T09:00:00Z`) on web and worker. Owners of active businesses created before it get a comp row on first use (`[billing] grandfathered N account(s)` is logged); everyone who starts after the flip gets the trial.
+  - **(b)** Leave it unset: only the migration's rows are comp, and the in-between owners are asked to start a trial (the $1 card check, then $50/month).
+- [ ] **Flip `RADAR_BILLING`** (read at call time; same value on web and worker; restart both):
+  1. Your own account first: `RADAR_BILLING=you@yourdomain.com`. Only listed accounts are gated.
+  2. Everyone: `RADAR_BILLING=on`, only after the step above. With `on` but no `STRIPE_SECRET_KEY`, billing stays off and `[billing] RADAR_BILLING is on but no payment provider is configured` is logged.
+  3. Rollback: `RADAR_BILLING=off`. Stripe keeps billing existing subscribers; everyone gets in again.
+- [ ] **Lapsed accounts do no background work** (owner decision): queued jobs for an active business whose owner has no access finish as `{skipped: 'no_access'}` (crawls, AI-visibility queries, drafts, syncs); posts the user already scheduled still go out. No effect while the flag is off.
+- [ ] **Abuse limits** on anonymous onboarding (Postgres, no extra infrastructure): analyses by guests and accounts without access, 5 per IP per hour, 20 per IP per day, 10 per domain per day; new guests 10 per IP per hour; billing calls 5 per account and 10 per IP per hour; `RADAR_ANALYSIS_GLOBAL_PER_HOUR` (default 300) answers "Radar is busy right now" past it. `TURNSTILE_SECRET_KEY` is a seam only (no widget ships): leave it unset.
+- [ ] **Verify `X-Forwarded-For` on Railway** at the first deploy. The first proxied request in production logs `[abuse] x-forwarded-for has N entries; using 1 from the right` (counts only, never addresses). Behind Railway's edge alone `RADAR_TRUSTED_PROXY_HOPS=1` is right; with a CDN such as Cloudflare in front, the CDN adds an entry: set `2`. Too few hops makes every visitor share one limit; too many lets clients choose their own IP.
+- [ ] **Guest cleanup** runs in the worker hourly (minute 17): guests older than 24 h with no live session are deleted with their drafts (Search Console tokens revoked), rate-limit windows older than two days and processed webhook events older than 30 days are pruned. Known gap: a deleted draft's uploaded logo stays in storage.
+
 ## 8. Email
 
 - [ ] **Resend** account, verify your sending domain (SPF/DKIM) → `RESEND_API_KEY`, `MAIL_FROM`
@@ -164,7 +196,7 @@ Full owner walkthrough: `.factory/social-channels/developer-apps-guide.md`. Desi
 
 - [ ] Approve or change the 82 "Needs approval" items — especially: LinkedIn/Quora via web search, no sign-out button, invite-link policy, Next.js "published = PR opened", source-removal styling.
 - [ ] Brand assets: replace platform logos with each brand's official kit if required.
-- [ ] Billing/credits (not designed — AI costs are logged per business in `ai_calls`).
+- [ ] Billing: the $1-then-trial flow is built behind `RADAR_BILLING` (§7c). Usage credits are not designed (AI costs are logged per business in `ai_calls`).
 
 ## 11. Go-live checks
 
