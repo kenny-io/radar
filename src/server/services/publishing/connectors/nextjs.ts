@@ -54,7 +54,7 @@ async function base(c: ConnCtx) {
 const makeBranch = (c: ConnCtx, repo: string, name: string, sha: string) => gh(`${API}/repos/${repo}/git/refs`, { method: 'POST', ...jsonBody({ ref: `refs/heads/${name}`, sha }, h(c)) });
 
 /** One branch per article (slug + entry id): a retry finds and reuses it, and two articles with the same slug never share one. */
-export const branchOf = (p: PublishPayload) => `radar/${p.slug}-${p.entryId.replace(/^e_/, '')}`.replace(/[^A-Za-z0-9._/-]/g, '-').replace(/\.{2,}/g, '.').slice(0, 200).replace(/[./]+$/, '');
+export const branchOf = (p: PublishPayload) => `radar/${p.slug.slice(0, 120).replace(/-+$/, '')}-${p.entryId.replace(/^e_/, '').slice(0, 60)}`.replace(/[^A-Za-z0-9._/-]/g, '-').replace(/\.{2,}/g, '.').replace(/[./]+$/, '');
 
 /** Where the post goes: the refreshed post's own file, else {slug}.mdx — or slug-2, -3… when another post already has it. */
 async function target(c: ConnCtx, repo: string, ref: string, p: PublishPayload): Promise<{ path: string; slug: string; taken?: boolean }> {

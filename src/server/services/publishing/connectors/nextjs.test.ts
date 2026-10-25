@@ -261,5 +261,9 @@ describe('branch names', () => {
   it('are valid git refs built from the slug and entry id', () => {
     expect(branchOf(P())).toBe(BR);
     expect(branchOf(P({ entryId: 'e_a..b.' }))).toBe('radar/billing-tips-a.b');
+    // A long slug is cut, never the entry id: two long-slug articles still get different branches.
+    const long = 'a'.repeat(300);
+    expect(branchOf(P({ slug: long }))).toBe(`radar/${'a'.repeat(120)}-Ab3-x_9Q`);
+    expect(branchOf(P({ slug: long }))).not.toBe(branchOf(P({ slug: long, entryId: 'e_zzz' })));
   });
 });

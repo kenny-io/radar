@@ -1,6 +1,7 @@
 // blocksToMarkdown is the Next.js MDX body (and the webhook's `markdown`). Escaping follows CommonMark (spec.commonmark.org/0.31.2:
 // backslash escapes for ASCII punctuation, character references, list/heading/quote/fence/thematic-break line starts) and MDX
-// (mdxjs.com/docs/what-is-mdx: `<` opens JSX, `{` opens an expression, a line starting with `import`/`export` is ESM).
+// (mdxjs.com/docs/what-is-mdx: unescaped `<` and `{` "have to be escaped" (\< \{), no autolinks, no indented code;
+// github.com/micromark/micromark-extension-mdxjs-esm: lowercase `export`/`import` followed by a space starts ESM).
 import { describe, expect, it } from 'vitest';
 import { blocksToHtml, blocksToMarkdown, escMd } from './render';
 
@@ -32,7 +33,7 @@ describe('blocksToMarkdown', () => {
       { videos: [{ id: 'dQw4w9WgXcQ', title: 'A "video"', channel: 'Chan' }], sources: [{ title: 'Survey [2026]', url: 'https://example.org/a b_(c)', use: '' }] });
     expect(md).toBe([
       'Intro \\{x\\}',
-      '<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" title="A &quot;video&quot;" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>\n\n*A "video" · YouTube · Chan* — [Watch on YouTube](https://www.youtube.com/watch?v=dQw4w9WgXcQ)',
+      '<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" title="A \'video\'" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>\n\n*A "video" · YouTube · Chan* — [Watch on YouTube](https://www.youtube.com/watch?v=dQw4w9WgXcQ)',
       '## Why \\<it\\> works',
       '- &#101;xport one\n- \\{two\\}',
       'Done.',
