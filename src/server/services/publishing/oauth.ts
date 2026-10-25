@@ -7,7 +7,7 @@ import { defineOAuth, type OAuthCallbackCtx, type OAuthStartCtx } from '@/server
 import { env } from '@/server/env';
 import { RadarError } from '@/server/errors';
 import { savePending } from './store';
-import { shopDomain } from './connectors/shopify';
+import { shopDomain, shopifyTokens } from './connectors/shopify';
 import { NOTION_VERSION } from './connectors/notion';
 import { reqJson } from './http';
 
@@ -21,16 +21,18 @@ const isStub = (ctx: OAuthCallbackCtx) => env.devStubs && ctx.params.get('code')
 const done = async (ctx: OAuthCallbackCtx, type: string, creds: Record<string, any>) => ({ ok: true, result: { oauthRef: await savePending(ctx.bid, ctx.user?.id || null, type, creds) } });
 const need = (id: string, secret: string) => { if (!id || !secret) throw new RadarError(UNAVAILABLE, 503, 'oauth_unconfigured'); };
 
-/* Webflow — Data API v2 scopes */
+/* Webflow — Data API v2 (developers.webflow.com/data/reference/oauth-app). Radar reads sites (sites:read) and collections
+   (cms:read) and writes and publishes items (cms:write); it never publishes the whole site, so no sites:write. */
 defineOAuth('webflow', {
   async start(ctx) {
     if (env.devStubs) return stubStart(ctx);
     need(env.webflowClientId, env.webflowClientSecret);
-    return { url: `https://webflow.com/oauth/authorize?${q({ response_type: 'code', client_id: env.webflowClientId, redirect_uri: ctx.redirectUri, scope: 'sites:read sites:write cms:read cms:write', state: ctx.state })}` };
+    return { url: `https://webflow.com/oauth/authorize?${q({ response_type: 'code', client_id: env.webflowClientId, redirect_uri: ctx.redirectUri, scope: 'sites:read cms:read cms:write', state: ctx.state })}` };
   },
   async callback(ctx) {
     if (isStub(ctx)) return done(ctx, 'webflow', { access_token: 'stub-webflow-token' });
     const t = await reqJson<{ access_token: string }>('https://api.webflow.com/oauth/access_token', { method: 'POST', body: q({ client_id: env.webflowClientId, client_secret: env.webflowClientSecret, code: ctx.params.get('code') || '', grant_type: 'authorization_code', redirect_uri: ctx.redirectUri }), headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' } });
+    if (!t.access_token) return { ok: false, error: 'denied' };
     return done(ctx, 'webflow', { access_token: t.access_token });
   },
 });
@@ -50,36 +52,51 @@ defineOAuth('notion', {
   },
 });
 
-/* Wix — app install flow; API calls use client credentials + the site's instanceId */
+/* Wix — external install flow (dev.wix.com/docs/build-apps/launch-your-app/app-distribution/install-your-app/
+   about-the-external-install-flow). Wix installs the app on the site the user picks, then redirects to postInstallationUrl
+   (our callback, with our state kept) adding appId, tenantId, instanceId and signedInstance. There is no code to exchange:
+   API calls mint tokens from the app's client credentials + instanceId (connectors/wix.ts). The legacy installer/install +
+   oauth/access code flow is "custom authentication (legacy)", no longer available to new apps. */
+/** signedInstance = base64url(HMAC-SHA256(app secret, data)) + "." + data, where data is base64url JSON with the instanceId
+ *  (dev.wix.com/docs/build-apps/develop-your-app/auth/app-instances/parse-the-app-instance-query-parameter). */
+export function wixInstanceOk(signed: string, instanceId: string): boolean {
+  const [sig, data] = String(signed || '').split('.');
+  if (!sig || !data || !env.wixClientSecret) return false;
+  const want = crypto.createHmac('sha256', env.wixClientSecret).update(data).digest();
+  const got = Buffer.from(sig, 'base64url');
+  if (got.length !== want.length || !crypto.timingSafeEqual(got, want)) return false;
+  try {
+    const j = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    return j.instanceId === instanceId && (!j.appDefId || j.appDefId === env.wixClientId);
+  } catch { return false; }
+}
 defineOAuth('wix', {
   async start(ctx) {
     if (env.devStubs) return stubStart(ctx, { instanceId: 'stub-instance' });
     need(env.wixClientId, env.wixClientSecret);
-    return { url: `https://www.wix.com/installer/install?${q({ appId: env.wixClientId, redirectUrl: ctx.redirectUri, state: ctx.state })}` };
+    const back = `${ctx.redirectUri}?${q({ state: ctx.state })}`;
+    return { url: `https://www.wix.com/app-installer?${q({ appId: env.wixClientId, ...(env.wixShareUrlId ? { shareUrlId: env.wixShareUrlId } : {}), postInstallationUrl: back })}` };
   },
   async callback(ctx) {
     if (isStub(ctx)) return done(ctx, 'wix', { instanceId: 'stub-instance' });
-    let instanceId = ctx.params.get('instanceId') || '';
-    let refresh: string | null = null;
-    const code = ctx.params.get('code');
-    if (code) {
-      const t = await reqJson<{ access_token: string; refresh_token: string }>('https://www.wixapis.com/oauth/access', { method: 'POST', body: JSON.stringify({ grant_type: 'authorization_code', client_id: env.wixClientId, client_secret: env.wixClientSecret, code }), headers: { 'content-type': 'application/json' } }).catch(() => null);
-      refresh = t?.refresh_token || null;
-      if (!instanceId && t?.access_token) {
-        const inst = await reqJson<{ instance?: { instanceId: string } }>('https://www.wixapis.com/apps/v1/instance', { headers: { authorization: t.access_token } }).catch(() => null);
-        instanceId = inst?.instance?.instanceId || '';
-      }
-    }
-    if (!instanceId) return { ok: false, error: 'no_instance' };
-    return done(ctx, 'wix', { instanceId, refresh_token: refresh });
+    const instanceId = ctx.params.get('instanceId') || '';
+    const appId = ctx.params.get('appId');
+    // Query parameters can be forged: only a valid signedInstance proves this install (and this site) is ours.
+    if (!instanceId || (appId && appId !== env.wixClientId) || !wixInstanceOk(ctx.params.get('signedInstance') || '', instanceId)) return { ok: false, error: 'no_instance' };
+    return done(ctx, 'wix', { instanceId });
   },
 });
 
-/* Shopify — needs ?shop= (the store field) */
-function shopifyHmacOk(params: URLSearchParams): boolean {
+/* Shopify — needs ?shop= (the store field). Authorization code grant with expiring offline tokens
+   (shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant): the callback is checked
+   for state (the registry's callback route), hmac and shop; the code is exchanged form-encoded with expiring=1, and the
+   access token (1 h), rotating refresh token (90 days) and their expiries are stored. */
+/** Shopify's callback hmac: HMAC-SHA256 (client secret, hex) over the decoded params minus hmac, sorted by key and joined
+ *  "k=v&…". Sorted by code unit (byte order for ASCII keys), not localeCompare, which orders case and punctuation differently. */
+export function shopifyHmacOk(params: URLSearchParams, secret = env.shopifyClientSecret): boolean {
   const hmac = params.get('hmac') || '';
-  const msg = [...params.entries()].filter(([k]) => k !== 'hmac' && k !== 'signature').sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join('&');
-  const dig = crypto.createHmac('sha256', env.shopifyClientSecret).update(msg).digest('hex');
+  const msg = [...params.entries()].filter(([k]) => k !== 'hmac' && k !== 'signature').sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, v]) => `${k}=${v}`).join('&');
+  const dig = crypto.createHmac('sha256', secret).update(msg).digest('hex');
   return hmac.length === dig.length && crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(dig));
 }
 const SHOP_RE = /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/;
@@ -95,8 +112,11 @@ defineOAuth('shopify', {
     const shop = shopDomain(ctx.params.get('shop') || '');
     if (isStub(ctx)) return done(ctx, 'shopify', { access_token: 'stub-shopify-token', shop: shop || ctx.data?.shop });
     if (!SHOP_RE.test(shop) || shop !== ctx.data?.shop || !shopifyHmacOk(ctx.params)) return { ok: false, error: 'invalid_shop' };
-    const t = await reqJson<{ access_token: string; scope: string }>(`https://${shop}/admin/oauth/access_token`, { method: 'POST', body: JSON.stringify({ client_id: env.shopifyClientId, client_secret: env.shopifyClientSecret, code: ctx.params.get('code') }), headers: { 'content-type': 'application/json', accept: 'application/json' } });
-    return done(ctx, 'shopify', { access_token: t.access_token, shop });
+    const t = await reqJson<{ access_token: string; scope?: string; expires_in?: number; refresh_token?: string; refresh_token_expires_in?: number }>(`https://${shop}/admin/oauth/access_token`, { method: 'POST', body: q({ client_id: env.shopifyClientId, client_secret: env.shopifyClientSecret, code: ctx.params.get('code') || '', expiring: '1' }), headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' } });
+    if (!t.access_token) return { ok: false, error: 'denied' };
+    // Merchants can't deselect scopes, but check what was granted before storing a token that can't publish.
+    if (t.scope && !t.scope.split(',').includes('write_content')) return { ok: false, error: 'scope' };
+    return done(ctx, 'shopify', { ...shopifyTokens(t), shop });
   },
 });
 
@@ -116,7 +136,8 @@ defineOAuth('wpcom', {
   },
 });
 
-/* GitHub (Next.js blog) — OAuth app, scope "repo" */
+/* GitHub (Next.js blog) — OAuth app, scope "repo" (docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
+   Token errors (bad_verification_code, redirect_uri_mismatch, incorrect_client_credentials) come back as 200 with `error`. */
 defineOAuth('github', {
   async start(ctx) {
     if (env.devStubs) return stubStart(ctx);
