@@ -18,6 +18,11 @@ export const INVALID_CARD = 'Radar couldn’t use this card. Try a different car
 export const PAYMENT_PROCESSING = 'Your card is still being confirmed. Try again in a minute.';
 export const BILLING_UNAVAILABLE = 'Payments aren’t available right now. Try again in a few minutes.';
 
+const TRIAL_H1 = 'Start your free trial';
+const RESTART_H1 = 'Restart your subscription';
+/** The tab title, from the same heading the page shows, so screen readers and the tab announce the right mode. */
+export const trialPageTitle = (s: Pick<BillingState, 'mode'>) => `${s.mode === 'restart' ? RESTART_H1 : TRIAL_H1} · Radar`;
+
 /** `D(iso, weekday?)` renders a date ("Oct 28" / "Wed, Oct 28"). */
 export type DateNode = (iso: string | null, weekday?: boolean) => ReactNode;
 export interface TrialCopy {
@@ -39,7 +44,7 @@ export function trialCopy(s: BillingState, D: DateNode, now: () => string): Tria
     const keepsPeriod = (s.status === 'past_due' || s.status === 'unpaid') && !!s.currentPeriodEnd && Date.parse(s.currentPeriodEnd) > Date.now();
     const next = keepsPeriod ? s.currentPeriodEnd : now();
     return {
-      h1: 'Restart your subscription', sub: `${price}/month. Every feature included.`,
+      h1: RESTART_H1, sub: `${price}/month. Every feature included.`,
       steps: [['var(--signal)', [`Today · ${due}`], 'Your subscription restarts.'], ['var(--faint)', [D(next), ` · ${price}/month`], 'Then every month.']],
       button: `Pay ${due} and restart`, busy, fine: null,
       doneH1: 'Your subscription has restarted.',
@@ -49,7 +54,7 @@ export function trialCopy(s: BillingState, D: DateNode, now: () => string): Tria
   }
   const fee = money(s.dueTodayCents || FEE_CENTS);
   return {
-    h1: 'Start your free trial', sub: `${s.trialDays} days free, then ${price}/month. Every feature included.`,
+    h1: TRIAL_H1, sub: `${s.trialDays} days free, then ${price}/month. Every feature included.`,
     steps: [
       ['var(--signal)', [`Today · ${fee}`], `A ${fee} payment confirms your card works.`],
       ['var(--ok)', [`Days 1–${s.trialDays} · Free`], 'Every feature, with your Business Profile.'],
