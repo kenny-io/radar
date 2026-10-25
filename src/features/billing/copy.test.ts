@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BillingState } from '@/lib/types';
-import { billingErrorOutcome, cardErrorMessage, DECLINE, money, trialCopy } from './copy';
+import { billingErrorOutcome, cardErrorMessage, DECLINE, money, trialCopy, trialPageTitle } from './copy';
 
 const base: BillingState = {
   enforced: true, provider: 'stub', access: false, status: 'none', mode: 'trial', needsRestart: false,
@@ -79,5 +79,16 @@ describe('failure copy (architecture §10)', () => {
     expect(billingErrorOutcome({ status: 400, code: 'invalid_payment_method' })).toEqual({ message: 'Radar couldn’t use this card. Try a different card.' });
     expect(billingErrorOutcome({ status: 409, code: 'payment_processing' })).toEqual({ message: 'Your card is still being confirmed. Try again in a minute.' });
     expect(billingErrorOutcome({ status: 500, code: 'internal' })).toEqual({ message: 'Radar couldn’t confirm your card. Try again.' });
+  });
+});
+
+describe('trial page title (D3)', () => {
+  it('names the mode the page shows, so the tab and screen readers match the heading', () => {
+    const restart: BillingState = { ...base, mode: 'restart', needsRestart: true, status: 'canceled', dueTodayCents: 5000 };
+    expect(trialPageTitle(restart)).toBe('Restart your subscription · Radar');
+    const pastDue: BillingState = { ...restart, status: 'past_due' };
+    expect(trialPageTitle(pastDue)).toBe('Restart your subscription · Radar');
+    expect(trialPageTitle(base)).toBe('Start your free trial · Radar');
+    for (const s of [base, restart]) expect(trialPageTitle(s)).toBe(`${trialCopy(s, D, () => 'x').h1} · Radar`);
   });
 });
