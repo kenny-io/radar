@@ -69,7 +69,10 @@ export function BackLink({ href }: { href: string }) {
 /** The Signup shell, shared with the trial page (handoff §4): full-bleed radar, art column (hidden on small screens), form column. */
 export function AuthShell({ energy, art, children }: { energy: number; art?: React.ReactNode; children: React.ReactNode }) {
   const dark = useResolvedDark();
-  return <div style={{ position: 'relative', minHeight: '100vh', color: 'var(--ink)', overflowX: 'hidden' }}>
+  // overflow-x: clip, not hidden: `hidden` makes this a scroll container, and focusing a card field after an error
+  // scrolled it sideways by the scrim's overhang. `hidden` stays as the fallback where clip isn't supported.
+  return <div className="auth-shell" style={{ position: 'relative', minHeight: '100vh', color: 'var(--ink)' }}>
+    <style>{`.auth-shell{overflow-x:hidden;overflow-x:clip}`}</style>
     {/* Full-bleed radar behind the page (UPDATE-2026-10-21 §2); it follows the resolved theme and re-mounts when it changes. */}
     {dark != null && <RadarField key={dark ? 'n' : 'p'} theme={dark ? 'night' : 'paper'} energy={energy} center={[.34, .46]} scale={1.5} style={{ position: 'fixed', inset: 0 }} />}
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,1fr)', minHeight: '100vh', position: 'relative' }} className="signup">
