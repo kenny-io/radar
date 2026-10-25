@@ -17,6 +17,8 @@ export interface Subscription {
 }
 export interface Invoice { id: string; status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void'; amount_due: number; client_secret: string | null }
 export interface Price { id: string; unit_amount: number | null; currency: string; interval: string | null }
+/** The stub's monthly price, used when STRIPE_PRICE_ID is unset and the provider is the stub. */
+export const STUB_PRICE_ID = 'price_stub_monthly';
 
 /** A provider error, mapped from Stripe's `{error: {type, code, decline_code}}`. Messages never include secrets. */
 export class ProviderError extends Error {
