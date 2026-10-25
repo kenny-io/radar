@@ -1,5 +1,6 @@
 import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { OnboardingState, SubStatus } from '@/lib/types';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
 const created = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -12,8 +13,10 @@ export const users = pgTable('users', {
   googleSub: text('google_sub'),
   /** Settings → Account → Appearance */
   appearance: text('appearance').$type<'system' | 'light' | 'dark'>().notNull().default('system'),
+  /** Anonymous onboarding visitor (architecture B1): synthetic `guest+<uuid>@guest.radar.invalid` email, empty name, own cookie. */
+  guest: boolean('guest').notNull().default(false),
   createdAt: created(),
-}, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub)]);
+}, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub), index('users_guest_created_idx').on(t.createdAt).where(sql`guest`)]);
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(), // sha256 of the cookie token
@@ -42,6 +45,8 @@ export const businesses = pgTable('businesses', {
   briefSettings: jsonb('brief_settings').$type<any>().notNull().default({}),
   briefSetup: boolean('brief_setup').notNull().default(false),
   backlinks: jsonb('backlinks').$type<any>().notNull().default({}),
+  /** Onboarding draft state {step, savedAt, tz, committedAt} (architecture B3). */
+  onboarding: jsonb('onboarding').$type<OnboardingState>().notNull().default({}),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -380,3 +385,59 @@ export const socialPubs = pgTable('social_pubs', {
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => [uniqueIndex('social_pubs_biz_sid_uq').on(t.businessId, t.sid), index('social_pubs_due').on(t.status, t.dueAt), index('social_pubs_acct').on(t.acctId, t.status)]);
+
+/** Trial billing, one row per account (architecture §3; billing is per account, D6). Webhooks never touch `comp`. */
+export const billingAccounts = pgTable('billing_accounts', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  stripeCustomerId: text('stripe_customer_id').unique(),
+  /** Current subscription (a restart replaces it). */
+  stripeSubscriptionId: text('stripe_subscription_id').unique(),
+  status: text('status').$type<SubStatus>().notNull().default('none'),
+  trialEnd: timestamp('trial_end', { withTimezone: true }),
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  comp: boolean('comp').notNull().default(false),
+  /** 'grandfather' | 'manual' */
+  compReason: text('comp_reason'),
+  /** Set when any subscription is created; drives trial vs restart. */
+  everSubscribed: boolean('ever_subscribed').notNull().default(false),
+  /** Latest $1 card-confirmation PaymentIntent. */
+  trialPaymentIntentId: text('trial_payment_intent_id'),
+  pendingTrialEnd: timestamp('pending_trial_end', { withTimezone: true }),
+  pendingPaymentMethodId: text('pending_payment_method_id'),
+  pendingSetAt: timestamp('pending_set_at', { withTimezone: true }),
+  /** Set once; guards trial.started tracking and the draft commit. */
+  trialStartedAt: timestamp('trial_started_at', { withTimezone: true }),
+  /** The $1 credited to month one (§21.3); set once the balance credit succeeds. */
+  trialCreditedAt: timestamp('trial_credited_at', { withTimezone: true }),
+  createdAt: created(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Cards that have had a trial (AC-P8). Recorded at activation, checked before the $1. */
+export const trialFingerprints = pgTable('trial_fingerprints', {
+  fingerprint: text('fingerprint').primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  paymentIntentId: text('payment_intent_id').notNull(),
+  createdAt: created(),
+});
+
+/** Webhook dedupe and audit. Never stores the payload. */
+export const billingEvents = pgTable('billing_events', {
+  /** Stripe event id */
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  /** null until a handler succeeds */
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+  attempts: integer('attempts').notNull().default(0),
+  /** short message, never the payload */
+  lastError: text('last_error'),
+});
+
+/** Fixed-window rate limits (architecture §8). */
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  count: integer('count').notNull().default(0),
+}, t => [primaryKey({ columns: [t.key, t.windowStart] }), index('rate_limits_window_idx').on(t.windowStart)]);

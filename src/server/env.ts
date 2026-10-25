@@ -70,5 +70,22 @@ export const env = {
   storageDir: e.STORAGE_DIR || '.data/uploads',
   s3Bucket: e.S3_BUCKET || '', s3Region: e.S3_REGION || 'us-east-1', s3Endpoint: e.S3_ENDPOINT || '', s3PublicUrl: e.S3_PUBLIC_URL || '',
   crawlerUserAgent: e.CRAWLER_USER_AGENT || 'RadarBot/1.0 (+https://radar.app/bot)',
+  // Trial billing (Stripe over REST, .factory/marketing-trial-gating/architecture.md §7, §11). RADAR_BILLING and
+  // RADAR_BILLING_GRANDFATHER_BEFORE are read at call time (src/server/flags.ts), not frozen here.
+  stripeSecretKey: e.STRIPE_SECRET_KEY || '',
+  /** Read on the server and passed to /start-trial as a prop (not NEXT_PUBLIC_*, which would be inlined at build time). */
+  stripePublishableKey: e.STRIPE_PUBLISHABLE_KEY || '',
+  stripeWebhookSecret: e.STRIPE_WEBHOOK_SECRET || '',
+  /** The $50/month recurring USD price. */
+  stripePriceId: e.STRIPE_PRICE_ID || '',
+  /** Pinned Stripe-Version header. Code reads items.data[0].current_period_end, which needs Basil (2025-03-31) or later. */
+  stripeApiVersion: e.STRIPE_API_VERSION || '2026-05-27.dahlia',
+  // Abuse limits for anonymous onboarding (§8)
+  /** X-Forwarded-For entries added by trusted proxies; the client IP is this many entries from the right. */
+  trustedProxyHops: Math.max(1, Number(e.RADAR_TRUSTED_PROXY_HOPS) || 1),
+  /** Circuit breaker: analyses per hour across all actors without own access. */
+  get analysisGlobalPerHour() { return Math.max(1, Number(e.RADAR_ANALYSIS_GLOBAL_PER_HOUR) || 300); },
+  /** Cloudflare Turnstile secret. Unset → the human check passes (seam only; no widget is shipped). */
+  turnstileSecretKey: e.TURNSTILE_SECRET_KEY || '',
 };
 export const oauthRedirect = (provider: string) => `${env.appUrl}/api/oauth/${provider}/callback`;
