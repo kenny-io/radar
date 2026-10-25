@@ -38,7 +38,8 @@ export async function claimGuest(guestId: string, user: { id: string; email: str
     await tx.delete(schema.users).where(eq(schema.users.id, guestId));   // cascades the guest's sessions
   });
   for (const t of revokeLater) await revoke(t);
-  for (const bid of out.replaced) await track('onboarding.draft_replaced', { uid: user.id, bid });
+  // The replaced draft is gone (events.business_id is a foreign key), so its id travels as the ref.
+  for (const old of out.replaced) await track('onboarding.draft_replaced', { uid: user.id, ref: old, props: { by: out.claimed } });
   if (out.claimed) await track('onboarding.claimed', { uid: user.id, bid: out.claimed });
   return out;
 }
