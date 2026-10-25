@@ -68,7 +68,7 @@ Defects 1–5 are fixed, with regression tests. Results:
 - QA's `mdx-check.mts` against the PM worktree: 25 of 25 pass.
 - QA re-verification on d2013b1b: defects 1–5 fixed, no new problems. Typecheck clean; publishing suite 203 passed, 50 skipped; MDX 25 of 25; the banner and Test connection sentences read correctly. Defect 6 is accepted as logged.
 
-Release status: release-ready once the PR's CI passes. Not merged and not deployed. Live platform checks remain owner steps (LAUNCH §7.9).
+Release status: release-ready (no CI checks are configured on the repo). Live platform checks remain owner steps (LAUNCH §7.9).
 
 ## GitHub live check (Next.js connector), 2026-10-25
 The owner approved it via the parent session: "Create kenny-io/radar-connector-test (private) for the Next.js connector's live check."
@@ -100,4 +100,21 @@ Run 2 covered:
 - PRs #1–#8 are closed.
 - `main` holds only the README and the seed post.
 - The repo is kept, as the owner asked.
+
+## Release, 2026-10-25
+**Before merging**
+- Synced with `main` @ `caf979d8` (#5). The only conflict was `DIVERGENCES.md`; both sections were kept.
+- On `fd50811c`: typecheck clean; tests 517 passed, 144 skipped, 1 failed (the baseline snapshot); build passes.
+
+**Merge and deploy**
+
+| Step | Result |
+|---|---|
+| Merge | `c8410f97` on `main` |
+| GitHub deployment "radar / production" | `success` at 07:54:57Z |
+| `radar - web` | Success (radar.thally.io) |
+| `radar - worker` | Success |
+| Smoke check | `https://radar.thally.io/` returns 200; `/login` returns 307 |
+
+The new connectors stay hidden in the picker until their env vars are set, so this release changes nothing users can see yet.
 
