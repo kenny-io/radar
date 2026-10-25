@@ -57,7 +57,7 @@ export function TrialPage({ state, publishableKey }: TrialPageProps) {
   return <AuthShell energy={done ? .9 : .4} art={draft && <>
     <LogoTile brand={draft.brand} s={52} />
     <span style={{ marginTop: 22, fontSize: 'clamp(32px,4.4vw,56px)', lineHeight: 1.02, fontWeight: 600, letterSpacing: '-0.045em', textWrap: 'balance' } as React.CSSProperties}>{draft.name} is ready to be found.</span>
-    <span style={{ color: 'var(--ink2)', marginTop: 14, fontSize: 15 }}>Your Business Profile is saved to your account. Start your trial to open the dashboard.</span>
+    <span style={{ color: 'var(--ink2)', marginTop: 14, fontSize: 15 }}>Your Business Profile is saved to your account. {state.mode === 'restart' ? 'Restart your subscription' : 'Start your trial'} to open the dashboard.</span>
   </>}>
     {!done ? <form className="col enter" style={{ gap: 18, maxWidth: 400, width: '100%', margin: '0 auto', position: 'relative' }} onSubmit={pay} noValidate>
       {state.hasDraft && <BackLink href="/onboarding" />}

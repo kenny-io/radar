@@ -11,6 +11,164 @@
 - D2 loses no data: the profile is saved and listed in the switcher. Fix it soon, either before merge or right after.
 - Fix D1 and settle observation O1 before flipping the flag on.
 
+> **Superseded by the re-verification on `b9a21266`.** D1, D2 and D3 are fixed there, and O1 is resolved in the docs. The sections after it record the original run on `876329bc`.
+
+## PM change after re-verification
+- **N1 fixed by the PM** in `src/features/billing/TrialPage.tsx`, one line. The art panel now says "Restart your subscription to open the dashboard" in restart mode, and still says "Start your trial…" in trial mode.
+- It uses the same `state.mode === 'restart'` test as the list's `aria-label`, which QA checked in restart mode.
+- Checked with typecheck and `src/features/billing` tests (32/32). Not re-run in a browser.
+- Nothing else in the product changed after `b9a21266`; the remaining commits are records only.
+
+## Re-verification on `b9a21266` (fix round)
+**Status: done.**
+- 27 checks (V1–V25, with V6a and V6b counted separately): 27 pass, 0 fail.
+- 1 blocked (real Stripe), 4 not run, 1 not applicable (Turnstile).
+- 1 new cosmetic defect (N1). It isn't a regression: per the code, it was already present on `876329bc`.
+- No regressions found.
+
+**Recommendation:** releasable to `main` with `RADAR_BILLING` off.
+- Before the flip:
+  - run the LAUNCH §7c Stripe test-mode list (it now includes the $49 canceled-in-trial restart and the Invoices write permission);
+  - make the required grandfather choice;
+  - decide O2 (members whose owner lapses; still "Needs approval").
+- N1 is optional copy work.
+
+**Tested revision**
+- `b9a21266b4e8e91ed98fb6bb60aa4495b40b8404`, a detached HEAD in `.claude/worktrees/mtg-qa`.
+- The feature worktree is at `5f18aaf5`, which differs only in `state.md`.
+
+**Setup**
+- `npm ci`; `rm -rf .next`; `npm run db:migrate` with `DATABASE_URL` exported. It reported "Migrations applied"; no new migration ran.
+- Two dev servers on :3600, both with the stub provider:
+  1. `RADAR_BILLING=on`: `rv/logs/dev-on-rv.log`.
+  2. Flag off: `rv/logs/dev-off-rv.log`.
+- Browsers:
+  - the Claude built-in browser (Chromium, 1024x768);
+  - headless Playwright Chromium for the Google and Search Console claim, the marketing smoke, and the signed-in app sweep.
+
+**Evidence root:** `<ev>/rv/`, where `<ev>` is the scratch path under Environment below.
+
+**Accounts**
+- The earlier accounts were used wherever they could be: seed, `qa-a1`, `qa-b1`, `qa-member1`, `qa-off-1`, `qa-g1`.
+- New for the billing flows: `qa-r1` (journey A) and `qa-r2` (journey B), on `@radar.test`.
+  - Restarting the server reset the stub's in-memory state, so the old accounts' subscriptions no longer exist in the stub.
+  - Each new trial also needed a card whose fingerprint hadn't been used.
+- The shared password is in `<ev>/test-accounts.txt`.
+
+### Build and tests
+| # | Check | Evidence | Result |
+|---|---|---|---|
+| V1 | Typecheck | `rv/logs/typecheck.log` | pass |
+| V2 | `npx vitest run` against `radar_mtg_qa_tests` | `rv/logs/vitest.log` | pass on baseline: 469 passed, 1 failed (the known `openrouter.qa.test.ts` parity snapshot), 44 skipped (the `*.live` files). Matches the PM's numbers. |
+| V3 | `npm run build` (`next build`) | `rv/logs/build.log` | pass. "Compiled successfully"; types valid; `/api/b/current` and `/start-trial` are dynamic routes. Not run in the first round. |
+| V4 | `db:migrate`; no schema change | `rv/logs/migrate.log`; `git diff --name-only 876329bc..b9a21266 -- drizzle src/server/db` (0 files) | pass. No new migration was applied, and no schema or migration file changed. I didn't run drizzle's own schema check. |
+
+### Original defects
+| # | Check | How | Result |
+|---|---|---|---|
+| V5 | **D1**: the restart amount shown equals the amount charged | **Browser, `qa-r1`:** trial → `simulate canceled` → `/start-trial` shows "Today · $49" and "Pay $49 and restart". `GET /api/billing/state` gives `dueTodayCents` 4900. After the restart call, the open invoice is 4900.<br>**Harness:** `rv/stub-amounts.ts` → `rv/stub-amounts.txt` gives shown 4900 = charged 4900. | **pass (fixed)** |
+| V6 | **D2**: the claimed profile becomes the current business | **Browser, email sign-in:** a guest edits and saves `rv-d2-signin.test`, then signs in as `qa-b1` (who has access and 4 other businesses; the browser already held another `radar_biz`). Result: `/dashboard`, toast "Business Profile saved", switcher "Rv D2 Signin", `currentId` = the claimed business.<br>**Google (Playwright, `qa-off-1`):** `rv/pw/out/claim-google-rv.txt`, `.png`. The current business is `rv-d2-google.test`.<br>**Flag off (curl, fresh jars):** `rv/curl/d2-off.txt`. `current_is_claimed: true` for both email (`qa-b1`) and Google (`qa-off-1`).<br>**Both server-component hops, in the browser:** see V6a and V6b below. | **pass (fixed)** |
+| V6a | `trialGuard` commit through the hop | **Browser, `qa-r2`:** canceled → new draft `rv-heal-guard.test` saved without access → restart paid → reload `/start-trial`. The server chain is `GET /start-trial 307` → `GET /api/b/current?id=…&next=%2Fdashboard%3Fsaved%3Dprofile 303` → `/dashboard?saved=profile`. Toast "Business Profile saved"; the current business is the committed one. | pass |
+| V6b | `(app)` layout self-heal through the hop | Same setup with `rv-heal-layout.test`, but "Open dashboard" instead of the reload. The chain is `GET /dashboard 307` → hop `303` → `/dashboard?saved=profile`. Toast shown; the current business is `rv-heal-layout.test`. | pass |
+| V7 | **D3**: tab title | Browser. Restart mode (`canceled`, and `past_due` via a direct `/performance` visit): "Restart your subscription · Radar". Trial mode (`qa-r1`, `qa-r2` before paying): "Start your free trial · Radar". | **pass (fixed)** |
+
+### The two new D1 paths
+| # | Check | How | Result |
+|---|---|---|---|
+| V8 | Restart abandoned, then replaced by another card. The amount shown equals the charge, and the abandoned intent can't be paid. | Browser, `qa-r1` (canceled during the trial), two tabs:<br>1. **Tab 1:** the 3DS card shows the 3DS panel (sub A); abandoned there. State shows `dueTodayCents` 4900.<br>2. **Tab 2:** decline card `0002`. A new sub B (A's invoice voided) is declined; state still shows 4900 (B's open invoice).<br>3. **Tab 1:** "Complete" on A's 3DS returns `payment_intent_unexpected_state` ("This PaymentIntent's status is canceled"). The UI alert reads "Radar couldn't confirm your card. Try again."; the account stays `incomplete` with no access.<br>4. **Tab 2:** card `…2499` creates sub C, which is paid → `active`. "Your next payment of $50 is on Tue, Nov 24".<br>5. **Direct confirm-intent** on the PaymentIntents of A and B: both return `payment_intent_unexpected_state` (canceled).<br>6. **Stale tab 1:** "Pay $49" with another card gets `POST /api/billing/restart` **409**; the client goes to `/dashboard`. The DB subscription stays C.<br>**Harness** (`stub-amounts.txt` `voidPath`): shown = charged = 4900 at A, B and C. Voiding A returns the credit (balance −100). Only one PaymentIntent succeeds, for 4900; final balance 0. | pass |
+| V9 | Credit used, then canceled, shows and charges $50 | Browser, `qa-r2`:<br>1. Trial → `past_due`: "Today · $49" (open invoice) → paid → `active`.<br>2. → `canceled`: "Today · $50", "Pay $50 and restart" → paid → "Your next payment of $50…".<br>The harness `creditUsedPath` gives shown 5000 = charged 5000. In the browser I couldn't pause this restart on 3DS (see N2), so the charged amount rests on the harness. | pass |
+
+### The hop's guards (`GET /api/b/current`; `rv/curl/hop.txt`, plus a browser fetch for 402)
+| # | Check | Result |
+|---|---|---|
+| V10 | Guards | pass.<br>- No session → **401**; guest session → **401**.<br>- Not a member, unknown uuid, malformed id, empty id, or another guest's draft → **404**.<br>- Owner without access (`qa-r1` after cancel) → **402** `subscription_required`.<br>- Viewer member of an active business → **303** and sets `radar_biz` (HttpOnly, SameSite=Lax, 1 year).<br>- `POST /api/b/current` unchanged (200 for own, 404 for not a member). |
+| V11 | `next` sanitising | pass.<br>- These all go to `/dashboard`: `//evil.example` (encoded and raw), `https://evil.example`, `/\evil.example`, `/api/x`, `/api/billing/state`, an injected CR/LF `Set-Cookie`, `/<TAB>/evil.example`, `javascript:alert(1)`, and a missing `next`.<br>- `/performance` and `/dashboard?saved=profile` are kept.<br>- `Location` is always absolute on `APP_URL`. So `/%2F%2Fevil.example` and `/@evil.example` become paths on localhost (a 404 page), not another host. No open redirect. |
+
+### Regressions
+| # | Check | How | Result |
+|---|---|---|---|
+| V12 | G1 journey A | Browser, `qa-r1`. | pass. See the walkthrough below the table. |
+| V13 | G2 journey B | Browser, `qa-r2`: signup → `/onboarding` → … → Save "Save profile & continue" → `/start-trial` → "Back to your profile" (Save step intact) → Save → pay → dashboard | pass. A single toast "Your free trial has started." |
+| V14 | G5 claim, email signup | V12 (`qa-r1`) | pass. Edit kept; the claimed business opens after paying. |
+| V15 | G5 claim, email sign-in | V6 (`qa-b1`, who has access) | pass. `edited` kept; opened as current. |
+| V16 | G5 claim, Google | `rv/pw/claim-google-rv.mjs` (`qa-off-1`) | pass. "Edited" badge; real popup to `/api/oauth/gsc/callback`; property picked. DB: owner `qa-off-1`, `edited` kept, `gsc_connections` `connected` on the claimed business. Cookies afterwards are `radar_session` and `radar_biz` (the guest cookie is cleared). No console errors. |
+| V17 | G6 returning sign-in | `rv/curl/g3.txt`; browser | pass.<br>- With access (seed comp, `qa-a1`, `qa-member1`, `qa-r1` active, `qa-r2`) → `/dashboard`.<br>- Without access (`qa-r1` canceled, email) → `/start-trial`.<br>- `qa-g1` (never paid, Google) → `/start-trial`. |
+| V18 | G7 second business while subscribed | Browser, `qa-b1`, run twice | pass. "Save profile & open dashboard"; one toast "Business Profile saved" (captured with a MutationObserver); the new business is current. |
+| V19 | G3 guards on direct URLs | `rv/curl/g3.txt` (fresh jars, 7 actors × 8 pages); browser `/dashboard` and `/performance` for owners without access | pass. Results below the table. |
+| V20 | P3 decline and 3DS | Browser | pass. Decline `0002` in trial and restart modes shows the `role=alert` copy. The 3DS stub panel (Complete/Fail) with the busy label "Confirming your card…" appears in restart mode. Trial-mode 3DS wasn't repeated: card `3155`'s fingerprint was already used for a trial, and the trial code is unchanged since `876329bc`. |
+| V21 | P6 dates | Browser vs API vs DB | pass.<br>- `qa-r1`: `trialEnd` 2026-10-28T05:29:14Z = DB `trial_end` = page "Wed, Oct 28". Restart `currentPeriodEnd` 2026-11-24 = success "Tue, Nov 24".<br>- `qa-r2`: `trialEnd` 05:33:35Z.<br>- "Nov 25" before paying vs "Nov 24" after is O3 (stub only, unchanged). |
+| V22 | R1, flag off | Browser plus `rv/curl/d2-off.txt` | pass. Results below the table. |
+| V23 | Smoke: `/` and `/features/organic-search` | `rv/pw/smoke.mjs` → `rv/pw/out/smoke-{on,off}.txt` and PNGs | pass at 1440 and 375, flag on and off: 200, correct h1 and title, no horizontal scroll, no console errors (only headless WebGL "GPU stall" warnings), no third-party requests. |
+| V24 | Signed-in app sweep (seed) | `pw/regress.mjs` → `pw/out/regress-rv-{on,off}-seed.txt` | pass. 8 app pages, 0 console errors, 0 page errors, 0 HTTP ≥400, flag on and off. |
+| V25 | O1 docs | diff `876329bc..b9a21266` | pass.<br>- LAUNCH §7c has a required step: "Decide who joined in between — required before `RADAR_BILLING=on`".<br>- `.env.example` repeats it.<br>- The restricted key now needs Invoices write.<br>- DIVERGENCES rows updated: Existing accounts, Team members (O2 described, still Needs approval), Lapsed accounts.<br>- The cutoff variable's runtime behavior wasn't exercised; that code is unchanged. |
+
+**V12, journey A:**
+1. `/start?domain=HTTPS://www.RV-Journey-A.test/path?x=1` is cleaned to `rv-journey-a.test`, the analysis starts by itself, and the query is stripped.
+2. Description edited ("Edited" badge).
+3. GSC skipped (the built-in browser closes the tab on the GSC popup; GSC is covered in V16). Reopening `/start` resumed at the GSC step.
+4. Save → pending `/signup` → signup → `/start-trial` (trial title, art, Back link).
+5. Decline `0002` shows the alert. Card `…2127` succeeds.
+6. "Open dashboard" → `/dashboard`, toast "Your free trial has started.", `scrollY` 0.
+7. DB: `edited {"business.description":true}`, `trialing`, fingerprint `…2127`.
+
+**V19, guard results:**
+- No session → `/signup`.
+- Guest → `/signup`, except `/onboarding` → `/start`.
+- With access → 200, and `/start-trial` → `/dashboard`.
+- Member → 200, and `/start-trial` 200 (O5).
+- Without access → `/start-trial`, and `/onboarding` 200.
+
+**V22, flag off:**
+- In the browser, `qa-r1` (DB status `canceled`) signs in and lands on `/dashboard`, not gated. "Add a business" → "Save profile & open dashboard" → toast → the new business is current.
+- curl: `qa-r1` and `qa-g1` get 200 on `/dashboard` and `/performance`; `/start-trial` → `/dashboard`.
+- `billing/state` reports `enforced:false`.
+
+### New findings
+- **N1, cosmetic. Tested revision `b9a21266`.** In restart mode with a newly saved profile, the trial page's art copy contradicts the page.
+  - Not a regression, per the code: `TrialPage.tsx` isn't in the `876329bc..b9a21266` diff. I didn't observe it on `876329bc`.
+  - Restart copy isn't designed: DIVERGENCES "Lapsed accounts", "Not designed".
+  - **Repro:**
+    1. An active owner → `POST /api/billing/dev/simulate {"status":"canceled"}`.
+    2. `/onboarding` → new domain → Save "Save profile & continue".
+    3. `/start-trial`.
+  - **Expected:** art copy that fits restart mode.
+  - **Actual:** "Rv Heal Guard is ready to be found. Your Business Profile is saved to your account. **Start your trial** to open the dashboard." The page beside it says "Restart your subscription" and "Pay $50 and restart".
+  - **Source:** `src/features/billing/TrialPage.tsx:60`.
+  - Seen in the browser on `qa-r2`.
+- **N2, stub only, not a product defect.** Stub PaymentMethod ids come from the card number (`pm_stub_<scenario>_<last4>`). A test card already attached to another stub customer is refused on restart with "Radar couldn't use this card. Try a different card." Real Stripe creates a new PaymentMethod for each entry. This only limits dev testing (it's why V9 couldn't pause on 3DS).
+- **Hop observations (not defects):**
+  - For an owner without access, the hop accepts their own unsaved or onboarding draft: 303, and `radar_biz` is set to the draft. `getMe` ignores it, so nothing changes.
+  - The hop is a GET with a side effect: a cross-site link can switch the signed-in user's current business, but only among businesses they can already open (SameSite=Lax). Low impact.
+- **Stub fidelity note:** `stubSetStatus('canceled')` voids an open `past_due` invoice without returning its credit. Shown and charged still agree ($50, harness `pastDueThenCanceledUnpaid`). `restartDueCents` reads the live customer balance, so either Stripe behavior keeps them equal.
+
+### Not run or blocked (this round)
+- **Blocked:** real Stripe (no keys), including the void-invoice call and customer balance on real invoices.
+- **Not run:**
+  - Safari, Firefox and devices.
+  - Live Google OAuth.
+  - Trial-mode 3DS (see V20).
+  - `RADAR_BILLING_GRANDFATHER_BEFORE` at runtime.
+  - The restart branch that returns `activated` (the provider is already active but the DB hasn't synced). My stale-tab test got 409 already-active instead, because `/api/billing/confirm` had already synced the DB. The branch is only covered by reading the code and by the engineer's tests.
+- **Not applicable:** Turnstile (only a seam).
+
+### Data and housekeeping (this round)
+- **New in `radar_mtg_qa`:**
+  - `qa-r1`: `rv-journey-a.test`, `rv-flag-off.test`; left `canceled` (no access when billing is on).
+  - `qa-r2`: `rv-journey-b.test`, `rv-heal-guard.test`, `rv-heal-layout.test`; `active`.
+  - `qa-b1`: `rv-d2-signin.test`, `rv-second-biz.test`, `rv-third-biz.test`, `rv-d2-off-signin.test`.
+  - `qa-off-1`: `rv-d2-google.test` with Search Console connected, `rv-d2-off-google.test`.
+  - `qa-g1`'s saved draft `claim-google-qa.com` was committed by the flag-off sign-in (expected R1 behavior).
+  - Guest drafts `hop-guest-qa.test` and `g3-guest-qa.test`.
+- **`rate_limits` deletes** (logged in `rv/logs/db-resets.txt`):
+  - `analysis:ip:::1@%` (3 rows), after the browser hit 5 analyses per hour;
+  - `billing:%` (5 rows), after the browser IP hit 10 billing calls per hour. No provider call had run; the limit check comes first.
+- **Cleanup:**
+  - `.env.local` restored (sha1 `efe95a0b…` matches; no `RADAR_BILLING` line). The backup is deleted.
+  - Both servers stopped; ports 3600, 8813 and 8814 are free.
+  - The `.next` from the build was removed; the `mtg-qa` checkout is clean at `b9a21266`.
+  - All 24 curl cookie jars (this round and the first) are deleted.
+  - The built-in browser profile may still hold a local `qa-r1` session for localhost:3600.
+
 ## Environment
 **Tested revision**
 - `876329bce6d61742b055bb3a3f4b796029e141cc`, a detached HEAD in `.claude/worktrees/mtg-qa`.
