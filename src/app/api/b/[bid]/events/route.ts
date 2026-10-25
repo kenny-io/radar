@@ -1,14 +1,15 @@
 // Server-sent events: workspace revisions, job progress and toasts for one business.
 import { and, eq, gt, inArray, or, gte } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
-import { requireRole, requireUser } from '@/server/access';
+import { gateBusiness, requireActor, requireRole } from '@/server/access';
 import { handle } from '@/server/http/handle';
 
 export const dynamic = 'force-dynamic';
 export const GET = handle(async (req: Request, { params }: { params: Promise<{ bid: string }> }) => {
   const { bid } = await params;
-  const u = await requireUser();
+  const u = await requireActor();
   await requireRole(bid, u.id, 'Viewer');
+  await gateBusiness(u, bid);   // checked at open only, not on every tick
   const enc = new TextEncoder();
   let closed = false;
   const stream = new ReadableStream({
