@@ -39,7 +39,7 @@ export interface CalendarEntry {
   id: string; title: string; kw: string; type: EntryType; vol: number | null; kd: number | null; date: string;
   mode: 'new' | 'refresh'; url: string | null; measured: Measured | null;
   audience: string; relevance: string; dest: string | null; status: EntryStatus;
-  publishError: { http: number; message: string; platform?: string } | null; publishedUrl: string | null;
+  publishError: { http: number; message: string; platform?: string; hint?: string } | null; publishedUrl: string | null;
 }
 export interface CalendarState { entries: CalendarEntry[]; settings: CalendarSettings; generatedAt: string | null }
 

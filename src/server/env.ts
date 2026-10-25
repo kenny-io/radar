@@ -48,11 +48,11 @@ export const env = {
   // Blog connectors (OAuth apps)
   webflowClientId: e.WEBFLOW_CLIENT_ID || '', webflowClientSecret: e.WEBFLOW_CLIENT_SECRET || '',
   notionClientId: e.NOTION_CLIENT_ID || '', notionClientSecret: e.NOTION_CLIENT_SECRET || '',
-  wixClientId: e.WIX_CLIENT_ID || '', wixClientSecret: e.WIX_CLIENT_SECRET || '',
+  wixClientId: e.WIX_CLIENT_ID || '', wixClientSecret: e.WIX_CLIENT_SECRET || '', wixShareUrlId: e.WIX_SHARE_URL_ID || '',
   shopifyClientId: e.SHOPIFY_CLIENT_ID || '', shopifyClientSecret: e.SHOPIFY_CLIENT_SECRET || '',
   wpcomClientId: e.WPCOM_CLIENT_ID || '', wpcomClientSecret: e.WPCOM_CLIENT_SECRET || '',
   githubClientId: e.GITHUB_CLIENT_ID || '', githubClientSecret: e.GITHUB_CLIENT_SECRET || '',
-  shopifyApiVersion: e.SHOPIFY_API_VERSION || '2026-07',
+  shopifyApiVersion: e.SHOPIFY_API_VERSION || '2026-10',
   // Social channels (connected X / LinkedIn accounts). Two LinkedIn apps: profile (Share on LinkedIn + OpenID Connect) and
   // page (Community Management only) — no fallback between them. X_BEARER_TOKEN above stays the Brief's search token.
   /** Also accepts XAPP_CLIENT_ID / XAPP_CLIENT_SECRET (the names used in Railway). */

@@ -51,5 +51,6 @@ export function ctxOf(b: BizRow, x: { type: ConnType; fields: Record<string, str
   return { type: x.type, fields: x.fields, creds: x.creds, target: x.target ?? null, targetId: x.targetId ?? null, secret: x.secret ?? null, bid: b.id, ...bizInfo(b) };
 }
 export function ctxFromRow(b: BizRow, r: ConnRow): ConnCtx {
-  return ctxOf(b, { type: r.type as ConnType, fields: r.fields || {}, creds: connCreds(r), target: r.target, targetId: r.targetId, secret: connSecret(r) });
+  const c = ctxOf(b, { type: r.type as ConnType, fields: r.fields || {}, creds: connCreds(r), target: r.target, targetId: r.targetId, secret: connSecret(r) });
+  return { ...c, saveCreds: async creds => { await db.update(schema.connections).set({ credentialsEnc: encrypt(creds) }).where(eq(schema.connections.id, r.id)); } };
 }

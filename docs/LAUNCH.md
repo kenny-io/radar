@@ -65,14 +65,24 @@ WordPress (self-hosted), Ghost, Webhook and Framer need nothing from you — use
 
 | Platform | Where | Redirect provider | Scopes / permissions | Env |
 |---|---|---|---|---|
-| Webflow | Webflow workspace → Apps & integrations → create Data client app | `webflow` | `sites:read sites:write cms:read cms:write` | `WEBFLOW_CLIENT_ID/SECRET` |
+| Webflow | Workspace settings → Apps & Integrations → create a Data Client app (steps in §7.6) | `webflow` | `sites:read cms:read cms:write` | `WEBFLOW_CLIENT_ID/SECRET` |
 | Notion | Notion Developer portal → new **public** connection (steps in §7.2) | `notion` | Read, Update and Insert content; no comments; no user information | `NOTION_CLIENT_ID`, `NOTION_CLIENT_SECRET` |
-| Wix | Wix Dev Center → new app with Blog permissions (manage blog/draft posts) | `wix` | Wix Blog | `WIX_CLIENT_ID/SECRET` |
-| Shopify | Shopify Partners → app (public or custom distribution) | `shopify` | `read_content,write_content` | `SHOPIFY_CLIENT_ID/SECRET`, `SHOPIFY_API_VERSION` |
+| Wix | dev.wix.com → new app (steps in §7.7) | `wix` | Blog, Members, Media, Ricos, site owner email | `WIX_CLIENT_ID/SECRET`, optional `WIX_SHARE_URL_ID` |
+| Shopify | Shopify Dev Dashboard (dev.shopify.com/dashboard; steps in §7.5) | `shopify` | `read_content,write_content` | `SHOPIFY_CLIENT_ID/SECRET`, `SHOPIFY_API_VERSION` (default `2026-10`) |
 | WordPress.com | developer.wordpress.com/apps → Create New Application (steps in §7.1) | `wpcom` | `global` (Radar sends it; nothing to tick in the app) | `WPCOM_CLIENT_ID`, `WPCOM_CLIENT_SECRET` |
-| Next.js blog (GitHub) | GitHub → Developer settings → OAuth App | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
+| Next.js blog (GitHub) | GitHub → Developer settings → OAuth App (steps in §7.4) | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
 
-Public Shopify and Wix apps go through store/marketplace review before arbitrary merchants can install them.
+Framer has no OAuth app and no callback: users paste a project URL and API key (§7.8).
+
+Reviews and what works without them:
+
+| Platform | Without review | Review needed for |
+|---|---|---|
+| GitHub | Works immediately for any user. An organization with OAuth app restrictions must approve Radar first | Nothing |
+| Webflow | Any workspace user can install the Data Client app | An optional Webflow Marketplace listing |
+| Wix | An unlisted app installs from its share link (`WIX_SHARE_URL_ID`) | A Wix App Market listing |
+| Shopify | Dev stores, and custom distribution (one store, or the stores of one Plus organization) | An App Store listing, which Radar's current install flow can't pass (see §7.5) |
+| WordPress.com, Notion | Work immediately | An optional Notion Marketplace listing |
 
 A platform whose app isn't configured is hidden from the "Add a blog connection" picker, so nothing shows until its env vars are set on **web and worker**. The callback only matches when `APP_URL` is exactly `https://radar.thally.io`.
 
@@ -123,6 +133,101 @@ Use a throwaway WordPress.com site and a throwaway Notion workspace. Record each
 5. A **refresh** entry whose URL ends in a page's Slug (or a notion.so URL) updates that page in place, with no new page.
 6. Remove Radar under the workspace's Settings → Connections, then **Test connection**. Expect the expired-authorization copy. Remove only the database's access and expect a 404 message.
 7. Note whether Notion returned a `refresh_token` (it is stored), and whether tokens expired over the following weeks.
+
+### 7.4 Next.js blog (GitHub)
+
+- [ ] github.com/settings/developers → **OAuth Apps** → **New OAuth App**.
+  - **Application name:** Radar. **Homepage URL:** `https://radar.thally.io`.
+  - **Authorization callback URL:** `https://radar.thally.io/api/oauth/github/callback`.
+  - Leave **Enable Device Flow** off.
+- [ ] **Generate a new client secret.** Set **Client ID** → `GITHUB_CLIENT_ID` and the secret → `GITHUB_CLIENT_SECRET` on web and worker, then redeploy.
+- Radar asks for the `repo` scope, which covers every repository the user can reach, private ones included. A GitHub App installed on chosen repositories (Contents and Pull requests: write) would be least privilege, but it needs a different flow. That's a product decision (DIVERGENCES, GitHub).
+- An organization with OAuth app access restrictions must approve Radar (org settings → Third-party access) before its repositories show up. Until then they return 404.
+- Each article opens a pull request from a branch `radar/{slug}-{id}` with `{folder}/{slug}.mdx`. **Published** means the PR is open (DIVERGENCES #10).
+
+### 7.5 Shopify
+
+- [ ] Sign in to the **Dev Dashboard** (dev.shopify.com/dashboard) and **Create app**. Admin-created custom apps were retired on 1 January 2026.
+  - **App URL:** `https://radar.thally.io`. Leave **Embed app in Shopify admin** off.
+  - **Redirect URLs:** `https://radar.thally.io/api/oauth/shopify/callback`.
+  - **Access scopes:** `read_content,write_content`.
+  - Release the version.
+- [ ] Copy **Client ID** → `SHOPIFY_CLIENT_ID` and **Client secret** → `SHOPIFY_CLIENT_SECRET`. Set `SHOPIFY_API_VERSION=2026-10` (2026-07 also works until July 2027). Set these on web and worker, then redeploy.
+- Tokens are expiring offline tokens: 1-hour access, plus a 90-day refresh token that Radar rotates and saves. A store that publishes nothing for more than 90 days shows **Needs reconnecting**.
+- **Distribution.** Radar's flow starts in Radar: the merchant types `yourstore.myshopify.com` and is sent to Shopify to approve.
+  - That flow works on dev stores, and with **custom distribution** for one store or one Plus organization, with no review.
+  - **An App Store listing** needs an install that starts in Shopify and an embedded admin (App Bridge and session tokens, App Store requirements 1.1.1, 2.2 and 2.3.1). Radar doesn't have that yet. Decide before offering Shopify to arbitrary merchants (DIVERGENCES, Shopify → App Store).
+- Create a free **dev store** from the Dev Dashboard (same organization as the app) for the live checks.
+
+### 7.6 Webflow
+
+- [ ] In Webflow, go to **Workspace settings** → **Apps & Integrations** → **Develop** and create an app with a **Data Client** building block.
+  - **Redirect URI:** `https://radar.thally.io/api/oauth/webflow/callback`.
+  - **Scopes:** Sites read, CMS read, CMS write. These match `sites:read cms:read cms:write`, which Radar requests.
+- [ ] Copy **Client ID** → `WEBFLOW_CLIENT_ID` and **Client secret** → `WEBFLOW_CLIENT_SECRET`. Set both on web and worker, then redeploy.
+- Users can install it without Marketplace review. A listing is optional.
+- The user's site must have been published at least once, and its collection must have no required fields that Radar can't fill. Radar fills name, slug, body, summary and image. Otherwise Radar shows a sentence saying what to fix.
+- Items are created as drafts and go live only when Radar publishes them.
+
+### 7.7 Wix
+
+- [ ] At **dev.wix.com**, create a new app. In **OAuth**, set the redirect URL to `https://radar.thally.io/api/oauth/wix/callback`.
+- [ ] **Permissions.** Add these:
+  - Manage Blog, Read Blog
+  - Read Members
+  - Manage Media Manager
+  - Manage Ricos Document
+  - Manage Your App
+  - **Read Site Owner Email**
+
+  Without the last one, every connection fails with the "no member profile" message.
+- [ ] Copy the **App ID** → `WIX_CLIENT_ID` and the **App Secret** → `WIX_CLIENT_SECRET`. The secret also verifies the `signedInstance` that Wix sends after install. Set both on web and worker, then redeploy.
+- **Before App Market review:** make the app **unlisted**, create a share link, and set its id as `WIX_SHARE_URL_ID`. Installs then go through that link. Listing in the Wix App Market needs Wix's review.
+- The site needs the **Wix Blog** app. Posts are credited to the site owner's member profile, so the owner must have signed in to their live site once. Radar never creates a member.
+
+### 7.8 Framer (no app to create)
+
+Users connect with their own project credentials. Nothing is needed from you.
+- **Project URL:** copy it from the browser with the project open (`https://framer.com/projects/<name>--<id>`).
+- **API key:** Site Settings → General → **API Keys**. It acts as the user who created it and only works for that project.
+- The Framer Server API is free during its open beta. Framer doesn't document which plans can create keys, so check in a free project before offering Framer.
+- **The CMS collection** must be user-managed (not synced by a plugin) and must have a **Formatted Text** field for the body. Radar also fills a Title/Name text field, a Summary/Description text field, an Image field and a Date field when the collection has them. A CMS detail page (e.g. `/blog/:slug`) makes **View post** point at the post.
+- **Publishing a post publishes the whole Framer site**, including any unpublished changes in the editor (DIVERGENCES, Framer → site-wide publish).
+
+### 7.9 Live checks for tranche 2
+
+Record each result in `.factory/blog-connectors-2/verification.md`.
+
+**Data calls (no OAuth review needed).** Each suite cleans up after itself; `RADAR_IT_IMAGE_URL` (a public https image) is optional for Shopify, Webflow and Wix.
+
+| Platform | What you need | Command |
+|---|---|---|
+| GitHub | A throwaway repo with a `content/posts` folder, plus a token with push access. Passed 7/7 on 2026-10-25 against `kenny-io/radar-connector-test` (private, kept for re-runs; `RADAR_IT_GITHUB_REFRESH_URL=https://example.com/blog/hello-radar` uses its seed post) | `RADAR_IT_GITHUB_REPO=owner/repo RADAR_IT_GITHUB_TOKEN=… npx vitest run src/server/services/publishing/connectors/nextjs.live.test.ts` |
+| Framer | A throwaway project's URL and API key | `RADAR_IT_FRAMER_URL=… RADAR_IT_FRAMER_KEY=… npx vitest run src/server/services/publishing/connectors/framer.live.test.ts` |
+| Shopify | A dev store with the app installed, and the app's client credentials or an Admin token | `RADAR_IT_SHOPIFY_STORE=x.myshopify.com RADAR_IT_SHOPIFY_CLIENT_ID=… RADAR_IT_SHOPIFY_CLIENT_SECRET=… npx vitest run src/server/services/publishing/connectors/shopify.live.test.ts` |
+| Webflow | A free site published once, with a Blog Posts collection, and a site API token (Site settings → Apps & integrations → API access: CMS read/write, Sites read) | `RADAR_IT_WEBFLOW_TOKEN=… RADAR_IT_WEBFLOW_COLLECTION=siteId:collectionId npx vitest run src/server/services/publishing/connectors/webflow.live.test.ts` |
+| Wix | A free site with Wix Blog, an account API key with Blog, Media, Ricos and Members permissions, and the owner's member id (`GET https://www.wixapis.com/members/v1/members` with the key and `wix-site-id`) | `RADAR_IT_WIX_API_KEY=… RADAR_IT_WIX_SITE_ID=… RADAR_IT_WIX_MEMBER_ID=… npx vitest run src/server/services/publishing/connectors/wix.live.test.ts` |
+
+Optional settings:
+- **GitHub:** `RADAR_IT_GITHUB_PATH`, and `RADAR_IT_GITHUB_REFRESH_URL` (enables the refresh case).
+- **Framer:** `RADAR_IT_FRAMER_COLLECTION`, and `RADAR_IT_FRAMER_PUBLISH=1`, which publishes the whole site. The test post stays on the live site until the next publish.
+- **Shopify:** `RADAR_IT_SHOPIFY_TOKEN` instead of the client credentials, and `RADAR_IT_SHOPIFY_BLOG`.
+
+**In the app (once each OAuth app exists).** For GitHub, Shopify, Webflow and Wix:
+1. **Connect.** The consent or install screen appears, the popup closes, and the picker lists your repositories, blogs, collections or site.
+2. **Test connection** succeeds and leaves nothing behind.
+3. **Publish now:**
+   - The title, slug, summary, headings, lists, links, the YouTube video and the Sources list all appear.
+   - The hero image appears, with alt text where the platform supports it. Shopify, Webflow and Wix all do.
+   - **View post** opens the live URL (for GitHub, the PR).
+4. **A second article with the same slug** gets `-2`.
+5. **A refresh entry** for an existing post updates it in place.
+6. **Revoke the app** (uninstall it on Wix or Shopify; revoke it on GitHub or Webflow), then run **Test connection**. Expect the expired-authorization copy; a scheduled publish then shows **Needs reconnecting**.
+7. **Note what each platform did with the embedded YouTube iframe** (kept, stripped, or converted).
+
+The docs don't say, so this hasn't been verified:
+- **Wix:** a reconnect to a site that already has the app returns to Radar.
+- **Shopify:** a token is refreshed after an hour idle.
 
 ## 7b. Social channels — post to X and LinkedIn (optional, behind a flag)
 
