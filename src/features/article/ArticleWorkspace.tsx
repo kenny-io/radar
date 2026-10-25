@@ -91,8 +91,8 @@ export function ArticleWorkspace() {
     </div>
     {st === 'failed' && <div className="row enter" style={{ padding: '14px clamp(16px,3vw,32px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}><Status tone="bad">Publishing failed</Status><span className="small grow" style={{ minWidth: 220 }}>{fail.platform} returned <span className="mono">{fail.detail}</span>.{fail.hint && <> {fail.hint}</>} Your article is safe — nothing was posted.</span><Btn size="sm" onClick={() => setConn({ type: destConn?.type || 'wordpress', id: destConn?.id })}>Reconnect</Btn><Btn size="sm" kind="primary" icon="refresh" onClick={() => publishNow(true)}>Retry</Btn></div>}
     <div className="art-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', minHeight: 'calc(100vh - 62px)' }}>
-      <style>{`@media(max-width:1100px){.art-grid{grid-template-columns:1fr!important}.art-side{border-left:0!important;border-top:1px solid var(--line)}}@media(max-width:900px){.art-wrap{margin-top:-28px!important}.art-bar{top:61px!important;gap:10px!important}}@media(max-width:640px){.art-wrap{margin-left:-16px!important;margin-right:-16px!important}.art-h1{font-size:30px!important}.art-side{padding:20px 20px 60px!important}}`}</style>
-      <div style={{ padding: '48px clamp(20px,5vw,72px) 120px' }}>
+      <style>{`@media(max-width:1100px){.art-grid{grid-template-columns:minmax(0,1fr)!important}.art-side{border-left:0!important;border-top:1px solid var(--line)}}@media(max-width:900px){.art-wrap{margin-top:-28px!important}.art-bar{top:61px!important;gap:10px!important}}@media(max-width:640px){.art-wrap{margin-left:-16px!important;margin-right:-16px!important}.art-h1{font-size:30px!important}.art-side{padding:20px 20px 60px!important}}`}</style>
+      <div className="art-main" style={{ padding: '48px clamp(20px,5vw,72px) 120px' }}>
         <article style={{ maxWidth: 700, margin: '0 auto' }}>
           {!A.generated && !gen ? <div className="col enter" style={{ gap: 22, paddingTop: 24 }}>
             <span className="eyebrow">{e.mode === 'refresh' ? 'Refresh · ' + e.url : e.type} · {fmtDW(e.date)}</span>

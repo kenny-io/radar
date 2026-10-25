@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useApp, type Page } from '@/client/app';
 import { Btn, Icon, LogoTile, Mark, Popover, Skel, type IconName } from '@/components/ui';
 import { Onboarding } from '@/features/onboarding/Onboarding';
+import type { BusinessSummary, DraftSummary } from '@/lib/types';
 
 const NAV: [Page, string, IconName][] = [['dashboard', 'Dashboard', 'home'], ['brief', 'Daily Brief', 'brief'], ['calendar', 'Content Calendar', 'calendar'], ['social', 'Social Marketing', 'social'], ['performance', 'Performance', 'chart'], ['backlinks', 'Backlinks', 'link']];
 
@@ -22,21 +23,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="mob-bar"><Btn kind="ghost" icon="menu" onClick={() => setSide(true)} aria-label="Menu" /><Mark s={20} /><span style={{ fontWeight: 600 }}>Radar</span></div>
       <main className="main" key={page + (B?.id || '')}>{body}</main>
     </div>
-    {onboarding.open && <Onboarding />}
+    {onboarding.open && <Onboarding actor="user" draft={draftOf(me.businesses)} saveCommits autoDomain={null} inApp />}
   </div>;
 }
 
-export function GhostDash({ name }: { name: string }) {
-  return <div className="page" style={{ opacity: .5 }}><div className="col" style={{ gap: 16 }}><span className="sub">Welcome, {name.split(' ')[0]}.</span><Skel w="55%" h={40} /><div className="grid-2" style={{ marginTop: 24 }}><Skel h={280} style={{ borderRadius: 20 }} /><Skel h={280} style={{ borderRadius: 20 }} /></div></div></div>;
+/** "Add a business" resumes the account's unfinished draft, if any; Onboarding reads its step from the workspace. */
+function draftOf(list: BusinessSummary[]): DraftSummary | null {
+  const b = list.find(x => x.status === 'onboarding');
+  return b ? { id: b.id, domain: b.domain, name: b.name, brand: b.brand, step: null, savedAt: null, analyzed: false } : null;
 }
 
-function Side({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** The dashboard placeholder behind onboarding. A guest has no name yet: "Welcome." */
+export function GhostDash({ name }: { name?: string | null }) {
+  return <div className="page" style={{ opacity: .5 }}><div className="col" style={{ gap: 16 }}><span className="sub">{name ? 'Welcome, ' + name.split(' ')[0] + '.' : 'Welcome.'}</span><Skel w="55%" h={40} /><div className="grid-2" style={{ marginTop: 24 }}><Skel h={280} style={{ borderRadius: 20 }} /><Skel h={280} style={{ borderRadius: 20 }} /></div></div></div>;
+}
+
+export function Side({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { B, me, go, route, switchBusiness, onboarding } = useApp();
   const [sw, setSw] = useState(false); const swRef = useRef<HTMLDivElement>(null); const page = route.page;
   const ct: Partial<Record<Page, number | null>> = { brief: B?.counts.briefOpen || null, calendar: B?.counts.review || null, backlinks: B?.counts.backlinksPending || null };
   const initials = (me.user.name || '?').split(' ').map(x => x[0]).join('').slice(0, 2);
   const nav = (p: Page) => { onClose(); go(p); };
-  const biz = me.businesses.filter(b => b.status === 'active');
+  // Locked businesses (the owner has no trialing/active subscription) are hidden; absent `access` means unlocked.
+  const biz = me.businesses.filter(b => b.status === 'active' && b.access !== false);
   return <aside className={'side' + (open ? ' open' : '')}>
     <div className="row" style={{ padding: '4px 8px 18px', gap: 9 }}><Mark s={22} /><span style={{ fontWeight: 600, fontSize: 16, letterSpacing: '-0.02em' }}>Radar</span></div>
     {B ? <div style={{ position: 'relative', marginBottom: 18 }} ref={swRef}>

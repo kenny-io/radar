@@ -223,11 +223,62 @@ export interface Workspace {
   kwSuggestions: KeywordSuggestion[];
   /** Server-computed counts for the sidebar and dashboard */
   counts: { briefOpen: number; review: number; backlinksPending: number; highSuggestions: number };
+  /** Onboarding draft state (step, saved). Present on every workspace; meaningful while status = 'onboarding'. */
+  onboarding?: OnboardingState;
 }
 
-export interface BusinessSummary { id: string; name: string; domain: string; brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>; status: 'onboarding' | 'active'; role: Role }
+/** `access: false` = the owner has no trialing/active subscription (billing on): hidden from the switcher, never current. Absent = true. */
+export interface BusinessSummary { id: string; name: string; domain: string; brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>; status: 'onboarding' | 'active'; role: Role; access?: boolean }
 
 export interface Me { user: User; businesses: BusinessSummary[]; currentId: string | null }
 
 /** RPC */
 export interface ActResponse<T = any> { ok: boolean; data?: T; workspace?: Workspace; error?: string; code?: string }
+
+// ── Gating, anonymous onboarding, trial billing (.factory/marketing-trial-gating/architecture.md §5) ──
+export type SubStatus = 'none' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'active' | 'past_due' | 'unpaid' | 'canceled' | 'paused';
+/** 'domain' / 'analyzing' are derived from jobs, as before. */
+export type DraftStep = 'review' | 'gsc' | 'save';
+export interface OnboardingState { step?: DraftStep; savedAt?: string; tz?: string; committedAt?: string }
+export interface DraftSummary {
+  id: string; domain: string; name: string;
+  brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>;
+  step: DraftStep | null; savedAt: string | null; analyzed: boolean;
+}
+/** Signup pending variant (AC-S2). */
+export type PendingProfile = Pick<DraftSummary, 'name' | 'domain' | 'brand'>;
+export interface BillingState {
+  /** false → billing off for this user; /start-trial redirects */
+  enforced: boolean;
+  provider: 'stripe' | 'stub' | 'none';
+  /** ownAccess */
+  access: boolean;
+  status: SubStatus | 'comp';
+  /** 'none' when access */
+  mode: 'trial' | 'restart' | 'none';
+  needsRestart: boolean;
+  /** ISO: the subscription's trial_end, else the pending one, else a server preview (now + 3 days) */
+  trialEnd: string | null;
+  trialEndIsPreview: boolean;
+  /** ISO, for the restart success copy */
+  currentPeriodEnd: string | null;
+  /** 100 for a trial; an open invoice's amount_due or PRICE_CENTS for a restart */
+  dueTodayCents: number;
+  priceCents: number; trialDays: number;
+  /** drives "Back to your profile" (AC-G8) */
+  hasDraft: boolean;
+  draft: DraftSummary | null;
+}
+/** The publishable key is read on the server and passed as a prop (not NEXT_PUBLIC_*). */
+export interface TrialPageProps { state: BillingState; publishableKey: string | null }
+export interface OnboardingStageProps {
+  /** 'none' = /start before the first POST /api/b */
+  actor: 'guest' | 'user' | 'none';
+  user: { name: string } | null;
+  draft: DraftSummary | null;
+  /** SaveStep label: true → "Save profile & open dashboard" */
+  saveCommits: boolean;
+  /** cleaned and validated ?domain= */
+  autoDomain: string | null;
+}
+export interface AuthResult { ok: true; next: string }

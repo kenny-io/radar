@@ -31,7 +31,7 @@ function LineChart({ data, k, fmt, height = 240 }: { data: Pt[]; k: MK; fmt: (v:
   const d = data.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[k]).toFixed(1)).join(' ');
   const [drawn, setDrawn] = useState(false); useEffect(() => { setDrawn(false); const t = setTimeout(() => setDrawn(true), 30); return () => clearTimeout(t); }, [k, data.length]);
   const ticks = [...new Set([0, Math.floor(data.length / 2), data.length - 1])];
-  return <div ref={wrap} style={{ position: 'relative' }} onMouseLeave={() => setHov(null)} onMouseMove={e => { const r = wrap.current!.getBoundingClientRect(); const i = Math.round((e.clientX - r.left) / r.width * (data.length - 1)); setHov(Math.max(0, Math.min(data.length - 1, i))); }}>
+  return <div ref={wrap} style={{ position: 'relative', width: '100%', minWidth: 0, overflow: 'hidden' }} onMouseLeave={() => setHov(null)} onMouseMove={e => { const r = wrap.current!.getBoundingClientRect(); const i = Math.round((e.clientX - r.left) / r.width * (data.length - 1)); setHov(Math.max(0, Math.min(data.length - 1, i))); }}>
     <svg width={w} height={H} style={{ display: 'block', overflow: 'visible' }}>
       {[0, .5, 1].map(t => <line key={t} x1={0} x2={w} y1={T + t * (Bm - T)} y2={T + t * (Bm - T)} stroke="var(--line2)" />)}
       <path d={d + ` L${x(data.length - 1)} ${Bm} L0 ${Bm}Z`} fill="oklch(0.66 0.19 42 / .07)" style={{ opacity: drawn ? 1 : 0, transition: 'opacity .8s .4s' }} />
@@ -104,7 +104,7 @@ function SearchTab() {
     {data.series.length > 0 && <LineChart data={data.series} k={m} fmt={mf.f} />}
     {suggs === null ? <Section title="What to improve" sub="Ranked by expected impact"><div className="col" style={{ gap: 12 }}><Skel h={18} w="60%" /><Skel h={18} w="40%" /></div></Section>
       : suggs.length > 0 && <Section title="What to improve" sub="Ranked by expected impact">
-        <div>{suggs.map((s, i) => { const h = handled(s); return <div key={s.id} className="row" style={{ padding: '18px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 18, alignItems: 'flex-start', flexWrap: 'wrap', opacity: h ? .5 : 1 }}>
+        <div>{suggs.map((s, i) => { const h = handled(s); return <div key={s.id} className="row perf-sg" style={{ padding: '18px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 18, alignItems: 'flex-start', flexWrap: 'wrap', opacity: h ? .5 : 1 }}>
           <span style={{ width: 84, flex: 'none', paddingTop: 2 }}><Status tone={s.prio === 'High' ? 'signal' : s.prio === 'Medium' ? 'ink' : 'mute'}>{s.prio}</Status></span>
           <span className="col grow" style={{ gap: 4, minWidth: 240 }}><span style={{ fontWeight: 500 }}>{s.title}</span><span className="small sub" style={{ maxWidth: 620 }}>{s.why}</span><span className="xs" style={{ color: 'var(--ink2)', marginTop: 2 }}>{s.impact}</span></span>
           {h ? <Status tone="ok">{h}</Status> : <Btn size="sm" onClick={() => setDiff(s)}>Review changes</Btn>}
