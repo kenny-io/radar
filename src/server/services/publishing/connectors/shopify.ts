@@ -110,7 +110,9 @@ export const shopify: Connector = {
     // A refresh updates the live article in place on publish (same id, handle and URL); nothing is written here.
     if (p.mode === 'refresh' && p.refreshUrl) {
       const ex = await byHandle(c, slugOf(p.refreshUrl));
-      if (ex) return { id: ex.id, extra: { refresh: true, handle: ex.handle, blog: ex.blog?.handle, article } };
+      // The byline stays whoever wrote the article (a staff member's post isn't re-attributed to the business).
+      const { author: _keep, ...content } = article;
+      if (ex) return { id: ex.id, extra: { refresh: true, handle: ex.handle, blog: ex.blog?.handle, article: content } };
     }
     // A taken handle never touches the other article: the next free "-2", "-3"… is used. An unpublished article with our
     // handle and title is our own earlier attempt whose response was lost, so it's reused rather than duplicated.

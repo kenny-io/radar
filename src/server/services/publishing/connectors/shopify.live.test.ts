@@ -47,6 +47,10 @@ describe.skipIf(!ON)('Shopify (live)', () => {
     const a = (await gql(`query($id: ID!) { article(id: $id) { isPublished title summary body image { altText } } }`, { id: d.id })).data.article;
     expect(a).toMatchObject({ isPublished: true, title: pl.title });
     expect(a.body).toContain('Work out your floor');
+    // How Shopify stores Radar's embeds: the YouTube iframe, the Sources list and an approved outbound link must survive.
+    expect(a.body, 'Shopify kept the YouTube embed').toContain('youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    expect(a.body, 'Shopify kept the Sources list').toContain('https://example.org/survey');
+    expect(a.body, 'Shopify kept the sponsored link').toContain('rel="sponsored"');
     if (IMG) expect(a.image?.altText).toBe('A designer’s desk with a pricing sheet');
     // Dev stores sit behind a storefront password, so the public page itself isn't fetched here.
   });

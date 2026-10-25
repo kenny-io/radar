@@ -46,6 +46,9 @@ describe.skipIf(!ON)('Webflow (live)', () => {
     const live = await page(url);
     expect(live.status).toBe(200);
     expect(live.html).toContain('Work out your floor');
+    // How Webflow rich text renders Radar's embeds on the public page: the YouTube iframe and the Sources list must survive.
+    expect(live.html, 'Webflow rich text kept the YouTube embed').toContain('youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    expect(live.html, 'Webflow rich text kept the Sources list').toContain('https://example.org/survey');
   });
 
   it('a refresh updates the same item in place; a taken slug gets "-2" and leaves the other item alone', async () => {

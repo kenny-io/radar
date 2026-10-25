@@ -37,7 +37,13 @@ describe.skipIf(!ON)('Wix (live, API key)', () => {
     const draft = (await api(`/blog/v3/draft-posts/${d.id}?fieldsets=RICH_CONTENT`)).body.draftPost;
     expect(draft).toMatchObject({ title: pl.title, seoSlug: slug, memberId: MEMBER, status: 'UNPUBLISHED' });
     expect(JSON.stringify(draft.richContent)).toContain('Work out your floor');
-    expect(draft.richContent.nodes.some((n: any) => n.type === 'HEADING')).toBe(true);
+    // How Ricos stores Radar's article: headings, the bullet list, links (Sources and the sponsored link) and the YouTube embed.
+    const types = new Set<string>(); const walk = (n: any) => { if (n?.type) types.add(n.type); (n?.nodes || []).forEach(walk); }; draft.richContent.nodes.forEach(walk);
+    const rc = JSON.stringify(draft.richContent);
+    expect(types.has('HEADING'), 'Ricos has headings').toBe(true);
+    expect(types.has('BULLETED_LIST'), 'Ricos has the bullet list').toBe(true);
+    expect(rc, 'Ricos kept the Sources links').toContain('https://example.org/survey');
+    expect(types.has('VIDEO') || types.has('HTML'), `Ricos kept the YouTube embed as a VIDEO or HTML node (got ${[...types].join(', ')})`).toBe(true);
     if (IMG) expect(draft.media?.wixMedia?.image).toBeTruthy();
     const { url } = await wix.publish(c, pl, d);
     expect(url).toMatch(new RegExp(`/${slug}$`));

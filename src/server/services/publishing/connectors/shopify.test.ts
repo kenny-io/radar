@@ -140,7 +140,7 @@ describe('createDraft + publish (new article)', () => {
 
 describe('refresh updates the existing article in place', () => {
   const R = P({ mode: 'refresh', refreshUrl: 'https://fieldnote.app/blogs/news/old-billing-tips?utm=x', slug: 'new-slug' });
-  it('finds the article by the URL handle, writes nothing until publish, then updates content without touching handle or visibility', async () => {
+  it('finds the article by the URL handle, writes nothing until publish, then updates content without touching handle, visibility or byline', async () => {
     mockFetch((_u, init) => {
       const q = JSON.parse(String(init.body)).query;
       if (/articles\(/.test(q)) return ok({ articles: { nodes: [art({ id: 'gid://shopify/Article/2', handle: 'old-billing-tips-2', isPublished: true }), art({ id: 'gid://shopify/Article/3', handle: 'old-billing-tips', isPublished: true })] } });
@@ -156,6 +156,7 @@ describe('refresh updates the existing article in place', () => {
     expect(upd.id).toBe('gid://shopify/Article/3');
     expect(upd.article).not.toHaveProperty('handle');
     expect(upd.article).not.toHaveProperty('isPublished');
+    expect(upd.article).not.toHaveProperty('author');
     expect(upd.article).toMatchObject({ title: 'Billing tips', body: '<h2>Why</h2><p>Because.</p>' });
     expect(r.url).toBe('https://fieldnote.app/blogs/news/old-billing-tips');
   });
