@@ -6,6 +6,8 @@ import { and, eq, inArray, lte, sql } from 'drizzle-orm';
 import { db, pool, schema } from '../db';
 import { RadarError } from '../errors';
 import { bump } from '../workspace';
+import { bizAccess } from '../billing/access';
+import { billingFlag, billingFlagNeedsEmail } from '../flags';
 
 export type JobRow = typeof schema.jobs.$inferSelect;
 export interface JobCtx<P = any> {
@@ -60,9 +62,25 @@ async function recoverStale() {
   await db.update(schema.jobs).set({ status: 'queued', lockedAt: null, lockedBy: null }).where(and(eq(schema.jobs.status, 'running'), lte(schema.jobs.lockedAt, new Date(Date.now() - STALE_MS))));
 }
 
+/** Jobs that still run for a lapsed business: sending a post the user already scheduled is theirs to finish. */
+const RUNS_WITHOUT_ACCESS = new Set(['social.send']);
+/** Architecture §21.5: an active business whose owner has no access does no background work (crawls, AI queries,
+ *  drafts). No database read while billing is off; drafts (onboarding) always run, so guests can be analyzed. */
+async function lapsed(job: JobRow): Promise<boolean> {
+  if (!job.businessId || RUNS_WITHOUT_ACCESS.has(job.kind)) return false;
+  if (!billingFlagNeedsEmail() && !billingFlag(null)) return false;
+  const b = (await db.select({ status: schema.businesses.status, ownerId: schema.businesses.ownerId }).from(schema.businesses).where(eq(schema.businesses.id, job.businessId)).limit(1))[0];
+  return !!b && b.status === 'active' && !(await bizAccess(b));
+}
+
 async function execute(job: JobRow, workerId: string) {
   const def = registry.get(job.kind);
   if (!def) { await db.update(schema.jobs).set({ status: 'failed', error: `Unknown job kind ${job.kind}`, finishedAt: new Date() }).where(eq(schema.jobs.id, job.id)); return; }
+  if (await lapsed(job).catch((e: any) => { console.error(`[job ${job.kind} ${job.id}] access check failed; running`, e?.message || e); return false; })) {
+    await db.update(schema.jobs).set({ status: 'done', result: { skipped: 'no_access' }, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
+    console.info(`[job ${job.kind} ${job.id}] skipped: the owner has no active subscription`);
+    return;
+  }
   let last = 0; let pending: any = undefined; let timer: NodeJS.Timeout | null = null; const started = Date.now();
   const flush = async () => { if (pending === undefined) return; const p = pending; pending = undefined; last = Date.now(); await db.update(schema.jobs).set({ progress: p }).where(eq(schema.jobs.id, job.id)); };
   const ctx: JobCtx = {
