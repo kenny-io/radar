@@ -422,3 +422,52 @@ Everything here is behind `RADAR_SOCIAL_PUBLISHING`, which is off by default. Wi
 | Disconnect while working | — | The `.unlink` action is dimmed and disabled while a disconnect is in flight | Prevents double clicks | Barely | Logged |
 | Blog connectors A–Z | Sort by label | Already sorted A–Z in the build (since the first port) | — | No | Matches design |
 | Phone sidebar | Sideways row | As designed; like the prototype, the selected item isn't scrolled into view on load | Faithful to the prototype | Minor | Logged |
+
+## Design update 2026-10-25 (marketing site, feature pages, signup gating, free trial)
+
+Details: `.factory/marketing-trial-gating/` (brief, architecture, verification). Billing is behind `RADAR_BILLING` (off by default). While it is off, both journeys behave as before, with no trial step, and the marketing pages are live.
+
+**Marketing site**
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| Logos (favicon row, assistant lists) | Hot-linked `google.com/s2/favicons` images | The repo's bundled brand marks (`BrandIcon`), grayscale to color on hover | No third-party requests | Slightly different drawings | Needs approval |
+| Fonts | Google Fonts Geist | Bundled `geist` package (same family and weights) | No third-party requests | No | Logged |
+| Testimonials | X-post masonry, marked as sample posts | **Hidden.** The section and its images aren't shipped | Handoff check: replace with real, permissioned posts or hide | Yes | Needs real posts |
+| Sign in route | `/login` | `/signin` (existing); `/login` redirects to `/signin` with the query kept | Existing links and invites use `/signin` | URL only | Logged |
+| `/` when signed in | Marketing home | Redirects to `/dashboard`, as before. The route guard takes over from there | Returning users keep landing in the app | Signed-in users only | Needs approval |
+| 375px layout | Single-column grids that overflowed (page 431px wide on home, 412px on feature pages) | Those grids use `minmax(0,1fr)`. The onboarding demo hides its `https://` prefix at ≤420px | No horizontal scroll at 375px | Yes (wrapping on phones) | Needs approval |
+| Page scrollbar | Native | Native on marketing pages. The app keeps its hidden scrollbars (the `radar.css` rule is scoped with `:has(.mk)`; browsers without `:has` hide them everywhere, as before) | Marketing pages are long and scroll | Windows/Linux classic scrollbars | Logged |
+| `color-scheme` | Not set | Forced light on marketing pages, whatever the user's Radar appearance | Native controls stay light on the light page | Form chrome only | Logged |
+| Reduced-motion demos | Some demos waited for scroll | Show their end state on mount | AC: demos show their end state | Reduced-motion users | Logged |
+| Accessibility additions | — | The AI panel stays quiet while auto-advancing. Tabs have ids and `aria-controls`. Demo regions are labeled groups. Replay isn't focusable until it shows. Logos are hidden from screen readers. The Backlinks demo moves focus to Undo and back | Keyboard and screen-reader use | AT/keyboard only | Logged |
+| Visual `bare` option | Hides placeholder labels for clean screenshots | Not ported | Production never draws the prototype's placeholder labels; the marketing pages use static screenshots | No | N/A |
+
+**Gating, anonymous onboarding**
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| Rollout | Gate always on | `RADAR_BILLING` off by default (owner decision). Off: no trial step, and Save commits for signed-in users. A guest's Save still goes to `/signup` | Stripe isn't configured yet; `main` deploys to production | Until the flag is on | Logged (owner decision) |
+| Existing accounts | — | Migration 0008 gives every owner of an active business a complimentary account (`comp`). The optional `RADAR_BILLING_GRANDFATHER_BEFORE` also comps owners who joined before a cutoff | Owner decision: grandfather | No | Logged (owner decision) |
+| Anonymous identity | Anonymous session | A guest user row with its own `radar_guest` cookie (72h, sliding). Its draft is claimed at email signup, email sign-in and Google sign-in, and moves with GSC, edits and Edited flags | Reuses ownership, roles and GSC storage unchanged | No | Logged |
+| Onboarding route | Onboarding over the app shell | `/start` (guest) and `/onboarding` (signed in) draw the same modal over an inert shell backdrop. "Add a business" keeps the in-app modal | Guests can't enter the app shell; the server guard needs real routes | No | Logged |
+| Draft commit | "Open dashboard" commits the profile | Committed on the server when the subscription is created (confirm call or webhook). "Open dashboard" only navigates | A closed tab after paying must not strand the profile | No | Logged |
+| Pending signup variant | Shown when a profile is pending | Shown when the guest's draft has been **saved**. A guest with an unsaved draft sees the default variant, and the draft is still claimed | The server derives "pending" from saved state | Rarely | Logged |
+| Returning user with an old draft | — | Signing up or in with a guest draft replaces the account's earlier unsaved draft | One draft per owner | Rarely | Not designed |
+| Team members | — | Members ride on the owner's subscription. A lapsed owner's businesses are hidden from the switcher for that user | Billing is per account | Yes | Needs approval |
+| Abuse limits | Rate limit plus bot protection | Postgres limits on analyses by anyone without access: per IP (5/hour, 20/day), per domain (10/day), global (300/hour), and guest creation (10/hour per IP). Inline copy (not designed). The bot check is a seam only (Turnstile, off until keyed) | No widget is designed | Only when a limit is hit | Needs approval |
+| Unpaid businesses | — | Background jobs for an active business whose owner has no access are skipped (`social.send` is exempt). Crons that work inline still run | Avoids ongoing cost for lapsed accounts | Lapsed accounts only | Logged |
+
+**Trial and payment**
+
+| Area | Design | Build | Why | User-visible | Status |
+|---|---|---|---|---|---|
+| Card fields | Raw inputs, grouped in fours, up to 16 digits | Stripe split Card Elements (number, expiry, CVC) plus our ZIP input. Grouping and length follow the brand (Amex 4-6-5). Messages are mapped from Element error codes. Stripe now recommends the Payment Element; moving later is possible | PCI: raw card numbers never touch Radar | Barely | Logged |
+| The $1 | Open question | Credited against the first month (owner decision): a −$1 customer balance credit, so the first invoice is $49. Copy unchanged | Owner decision | Yes (first invoice $49) | Needs approval (copy) |
+| Trial dates | Today + 3 days | The server's `trial_end` (now + 72h), shown in the browser's time zone | Stripe charges at that instant | Rarely (near midnight) | Logged |
+| Lapsed accounts | Suggested: "Restart your subscription", no trial | `past_due`/`unpaid`: pay the open invoice. `canceled`: new subscription at $50 now. Copy not designed (architecture §10) | No trial for a returning subscriber | Yes | Not designed |
+| Repeat trial | Suggested: dedupe by card fingerprint | Refused before the $1: "This card has already been used for a free trial. Try a different card." | Owner default | Yes | Not designed |
+| 3-D Secure | — | Stripe's own authentication modal | Required by banks | When the bank asks | Not designed |
+| Undesigned failure copy | — | Generic confirm failure, activation delay, billing rate limit, `payment_processing`, `billing_unavailable`, `invalid_payment_method` (architecture §10) | Real failures | Rarely | Not designed |
+| Webhook events | `invoice.paid`, `customer.subscription.updated/deleted`, `invoice.payment_failed` | Also `payment_intent.succeeded/payment_failed` and `customer.subscription.created` | The webhook is the fallback for the confirm call | No | Logged |
+| "Use a sample card" | Prototype link | Not shipped | Handoff: don't ship it | No | Matches design |
