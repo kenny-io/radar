@@ -63,6 +63,18 @@ describe('writes never follow redirects', () => {
     expect(e.message).toContain('redirected to ' + base + '/elsewhere');
     expect(seen.map(s => s.method)).toEqual(['POST']); // never followed
   });
+  it('a same-origin 307/308 on a write is still followed with its method, body and credentials', async () => {
+    handler = (r, b, res) => { if (r.url === '/old') { res.writeHead(308, { location: '/new' }); res.end(); } else json(res, 201, { method: r.method, body: b }); };
+    const r = await req(base + '/old', { method: 'POST', body: '{"a":1}', headers: { authorization: 'Basic x' } });
+    expect(await r.json()).toEqual({ method: 'POST', body: '{"a":1}' });
+    expect(seen.map(s => [s.method, s.url, s.auth])).toEqual([['POST', '/old', 'Basic x'], ['POST', '/new', 'Basic x']]);
+  });
+  it('a cross-origin 307 on a write fails instead of sending the body elsewhere without credentials', async () => {
+    handler = (_r, _b, res) => { res.writeHead(307, { location: 'http://localhost:1/x' }); res.end(); };
+    const e = await err(req(base + '/a', { method: 'PUT', body: '{}' }));
+    expect(e.http).toBe(307);
+    expect(seen).toHaveLength(1);
+  });
   it('GETs still follow redirects', async () => {
     handler = (r, _b, res) => { if (r.url === '/a') { res.writeHead(302, { location: '/b' }); res.end(); } else json(res, 200, { ok: r.url }); };
     expect(await (await req(base + '/a')).json()).toEqual({ ok: '/b' });

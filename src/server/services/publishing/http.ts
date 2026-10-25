@@ -54,12 +54,20 @@ export async function req(url: string, init: RequestInit & { timeoutMs?: number 
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), init.timeoutMs ?? 30000);
   try {
     await assertPublicHost(host);
-    // Writes never follow redirects: fetch would replay a POST as a GET (and drop Authorization across origins), so a
-    // site URL that redirects (http→https, www, a moved blog) would "create" a post by reading a list. Fail readably instead.
+    // Writes don't follow redirects blindly: on 301/302/303 fetch replays a POST as a GET (and drops Authorization across
+    // origins), so a site URL that redirects (http→https, www, a moved blog) would "create" a post by reading a list.
+    // Same-origin 307/308 keep the method, body and credentials, so those are still followed; anything else fails readably.
     const write = !['GET', 'HEAD'].includes(String(init.method || 'GET').toUpperCase());
-    const res = await fetch(url, { ...init, signal: ctl.signal, redirect: init.redirect ?? (write ? 'manual' : 'follow') });
-    if (res.status >= 300 && res.status < 400) throw new PublishError(res.status, `redirected to ${res.headers.get('location') || '?'}`, host, 'config');
-    return await ensureOk(res, host);
+    if (!write || init.redirect) return await ensureOk(await fetch(url, { ...init, signal: ctl.signal, redirect: init.redirect ?? 'follow' }), host);
+    let at = url;
+    for (let hop = 0; ; hop++) {
+      const res = await fetch(at, { ...init, signal: ctl.signal, redirect: 'manual' });
+      if (res.status < 300 || res.status >= 400) return await ensureOk(res, host);
+      const loc = res.headers.get('location');
+      const next = loc ? new URL(loc, at) : null;
+      if (!next || ![307, 308].includes(res.status) || next.origin !== new URL(at).origin || hop >= 3) throw new PublishError(res.status, `redirected to ${next?.href || '?'}`, host, 'config');
+      at = next.href;
+    }
   } catch (e: any) {
     if (e instanceof PublishError) throw e;
     throw new PublishError(0, e?.name === 'AbortError' ? 'timed out' : String(e?.cause?.code || e?.message || e), host, 'network');
