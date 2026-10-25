@@ -114,6 +114,19 @@ describe.skipIf(!ON)('WordPress (live)', () => {
     expect(e.line).toBe('no response from localhost:1');
   });
 
+  it.skipIf(!H.wpAuthor)('an Author refreshing a post they can\'t edit gets a 403 — never a second post', async () => {
+    const ac = ctx('wordpress', { url: H.wpUrl, user: H.wpAuthor }, { pass: H.wpAuthorPass });
+    const slug = `owner-post-${RUN}`;
+    const first = payload({ slug, withImage: false });
+    const { url } = await wordpress.publish(c, first, await wordpress.createDraft(c, first));
+    const again = payload({ slug: `author-copy-${RUN}`, mode: 'refresh', refreshUrl: url, canonical: url, withImage: false });
+    const d = await wordpress.createDraft(ac, again);
+    const e = await err(wordpress.publish(ac, again, d));
+    expect(e.http).toBe(403); // the account's role is too low (Editor or higher can refresh others' posts)
+    expect(await bySlug(`author-copy-${RUN}`)).toHaveLength(0);
+    expect(await bySlug(slug)).toHaveLength(1);
+  });
+
   it.skipIf(!H.wpAuthor)('an Author-role account (no unfiltered_html) still gets the video, headings, lists and sources', async () => {
     const ac = ctx('wordpress', { url: H.wpUrl, user: H.wpAuthor }, { pass: H.wpAuthorPass });
     const slug = `author-${RUN}`;

@@ -34,7 +34,11 @@ async function existingPostId(c: ConnCtx, p: PublishPayload): Promise<number | n
   if (!slug) return null;
   // Errors propagate (a failed lookup must not turn a refresh into a second post); only "no such slug" creates a new one.
   const r = await reqJson<any[]>(api(c) + `/posts?slug=${encodeURIComponent(slug)}&status=publish,draft,future,pending,private&context=edit`, { headers: auth(c) });
-  return Array.isArray(r) && r[0]?.id ? r[0].id : null;
+  if (Array.isArray(r) && r[0]?.id) return r[0].id;
+  // context=edit hides posts this account can't edit (an Author refreshing the owner's post). Look the live post up
+  // publicly too, so the update is attempted (and refused with 403) rather than quietly creating a second post.
+  const pub = await reqJson<any[]>(api(c) + `/posts?slug=${encodeURIComponent(slug)}`, { headers: auth(c) });
+  return Array.isArray(pub) && pub[0]?.id ? pub[0].id : null;
 }
 
 export const wordpress: Connector = {

@@ -118,6 +118,20 @@ describe('a refresh never turns into a second post when the lookup fails', () =>
     handler = (r, _b, res) => (r.method === 'GET' ? json(res, 200, []) : json(res, 201, { id: 99, link: base + '/new-slug/' }));
     expect(await wordpress.createDraft(ctx('wordpress', { url: base, user: 'u' }, { pass: 'p' }), refresh())).toEqual({ id: '99', url: base + '/new-slug/' });
   });
+  it('WordPress: a post this account can\'t edit (hidden from context=edit) is still found, so no second post is made', async () => {
+    let created = 0;
+    handler = (r, _b, res) => {
+      if (r.method === 'GET') return json(res, 200, r.url!.includes('context=edit') ? [] : [{ id: 42, link: base + '/old-post/' }]);
+      if (r.url!.endsWith('/posts')) created++;
+      json(res, 403, { code: 'rest_cannot_edit' });
+    };
+    const c = ctx('wordpress', { url: base, user: 'author' }, { pass: 'p' });
+    const d = await wordpress.createDraft(c, refresh());
+    expect(d).toMatchObject({ id: '42', extra: { refresh: true } });
+    const e = await err(wordpress.publish(c, refresh(), d));
+    expect(e.http).toBe(403);
+    expect(created).toBe(0);
+  });
   it('Ghost: a 503 on the slug lookup propagates and nothing is created', async () => {
     handler = (r, _b, res) => (r.method === 'GET' ? json(res, 503, { errors: [] }) : json(res, 201, { posts: [{ id: 'n', url: base + '/p/' }] }));
     const e = await err(ghost.createDraft(ctx('ghost', { url: base }, { key: GHOST_KEY }), refresh()));

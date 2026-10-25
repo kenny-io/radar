@@ -28,7 +28,7 @@ export interface PublishPayload {
   blocks: Block[];
   meta: string;
   /** The article's SEO title (Article → SEO), falling back to the title. Platforms with a meta-title field get it. */
-  seoTitle: string;
+  seoTitle?: string;
   keyword: string;
   /** The scheduled date (YYYY-MM-DD) */
   date: string;
