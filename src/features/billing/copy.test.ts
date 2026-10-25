@@ -45,6 +45,11 @@ describe('trial page copy (handoff §4)', () => {
     expect(text(c.doneBody({ ...s, currentPeriodEnd: '2026-11-25T10:00:00Z' }))).toBe('Your card is confirmed. Your next payment of $50 is on [DW:2026-11-25T10:00:00Z].');
     expect(c.doneHref).toBe('/dashboard');
   });
+  it('a subscription canceled mid-trial restarts a month from today, not at the old period end', () => {
+    const future = new Date(Date.now() + 3 * 864e5).toISOString();
+    const c = trialCopy({ ...base, mode: 'restart', needsRestart: true, status: 'canceled', dueTodayCents: 5000, currentPeriodEnd: future }, D, () => '2026-11-25T00:00:00Z');
+    expect(text(c.steps[1][1])).toBe('[D:2026-11-25T00:00:00Z] · $50/month');
+  });
   it('a past_due restart shows the open invoice amount and the current period end', () => {
     const future = new Date(Date.now() + 10 * 864e5).toISOString();
     const c = trialCopy({ ...base, mode: 'restart', needsRestart: true, status: 'past_due', dueTodayCents: 4950, currentPeriodEnd: future }, D, () => 'x');
@@ -69,6 +74,10 @@ describe('failure copy (architecture §10)', () => {
     expect(billingErrorOutcome({ status: 409, code: 'already_active' })).toEqual({ go: '/dashboard' });
     expect(billingErrorOutcome({ status: 409, code: 'restart_required' })).toEqual({ go: '/start-trial' });
     expect(billingErrorOutcome({ status: 401 })).toEqual({ go: '/signup' });
-    expect(billingErrorOutcome({ status: 503, code: 'billing_unavailable' })).toEqual({ message: 'Radar couldn’t confirm your card. Try again.' });
+    expect(billingErrorOutcome({ status: 503, code: 'billing_unavailable' })).toEqual({ message: 'Payments aren’t available right now. Try again in a few minutes.' });
+    // A card the server can't use (e.g. attached to another customer): don't tell them to retry the same card.
+    expect(billingErrorOutcome({ status: 400, code: 'invalid_payment_method' })).toEqual({ message: 'Radar couldn’t use this card. Try a different card.' });
+    expect(billingErrorOutcome({ status: 409, code: 'payment_processing' })).toEqual({ message: 'Your card is still being confirmed. Try again in a minute.' });
+    expect(billingErrorOutcome({ status: 500, code: 'internal' })).toEqual({ message: 'Radar couldn’t confirm your card. Try again.' });
   });
 });

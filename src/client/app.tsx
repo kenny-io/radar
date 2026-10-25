@@ -94,7 +94,13 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
         const t = JSON.parse(ev.data);
         toast(t.msg, { tone: t.tone || null, action: t.action ? { label: t.action.label, fn: () => router.push(t.action.href) } : null });
       });
-      es.onerror = () => { es?.close(); if (!stopped) retry = setTimeout(open, 3000); };
+      es.onerror = () => {
+        es?.close(); if (stopped) return;
+        // EventSource can't read the status, so a business that lost access (402) or a lost session (401) would retry
+        // forever: ask the workspace once (leave on 401/402, ignore anything else; state is not touched), then reconnect.
+        api(`/api/b/${bid}/workspace`).catch(e => { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); });
+        retry = setTimeout(open, 3000);
+      };
     };
     open();
     return () => { stopped = true; clearTimeout(retry); es?.close(); };

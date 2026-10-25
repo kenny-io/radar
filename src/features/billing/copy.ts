@@ -12,6 +12,11 @@ export const CONFIRM_FAILED = 'Radar couldn’t confirm your card. Try again.';
 export const TRIAL_USED = 'This card has already been used for a free trial. Try a different card.';
 export const ACTIVATION_DELAYED = 'Your card is confirmed, but your trial didn’t start yet. Try again in a minute. You won’t be charged twice.';
 export const BILLING_RATE_LIMITED = 'Too many attempts. Try again in an hour.';
+// Not in the §10 table; the server's copy for these codes (src/server/billing/errors.ts), so the person isn't told to retry a
+// card that can't work.
+export const INVALID_CARD = 'Radar couldn’t use this card. Try a different card.';
+export const PAYMENT_PROCESSING = 'Your card is still being confirmed. Try again in a minute.';
+export const BILLING_UNAVAILABLE = 'Payments aren’t available right now. Try again in a few minutes.';
 
 /** `D(iso, weekday?)` renders a date ("Oct 28" / "Wed, Oct 28"). */
 export type DateNode = (iso: string | null, weekday?: boolean) => ReactNode;
@@ -28,9 +33,11 @@ export function trialCopy(s: BillingState, D: DateNode, now: () => string): Tria
   const price = money(s.priceCents); const busy = 'Confirming your card…';
   if (s.mode === 'restart') {
     const due = money(s.dueTodayCents || s.priceCents);
-    // Not designed (architecture §10). Before payment the next charge is the current period end when it is still ahead
-    // (a past_due invoice), else a month from today (a canceled subscription starts over).
-    const next = s.currentPeriodEnd && Date.parse(s.currentPeriodEnd) > Date.now() ? s.currentPeriodEnd : now();
+    // Not designed (architecture §10). Before payment: past_due / unpaid pay the open invoice on the same subscription, so
+    // the next charge is its current period end (when still ahead). Anything else (canceled, expired, paused) starts a new
+    // subscription charged today, so a month from today, even when the old period end is still ahead (canceled mid-trial).
+    const keepsPeriod = (s.status === 'past_due' || s.status === 'unpaid') && !!s.currentPeriodEnd && Date.parse(s.currentPeriodEnd) > Date.now();
+    const next = keepsPeriod ? s.currentPeriodEnd : now();
     return {
       h1: 'Restart your subscription', sub: `${price}/month. Every feature included.`,
       steps: [['var(--signal)', [`Today · ${due}`], 'Your subscription restarts.'], ['var(--faint)', [D(next), ` · ${price}/month`], 'Then every month.']],
@@ -73,5 +80,8 @@ export function billingErrorOutcome(e: { status?: number; code?: string } | null
   if (code === 'trial_used') return { message: TRIAL_USED };
   if (code === 'activation_failed') return { message: ACTIVATION_DELAYED };
   if (code === 'rate_limited') return { message: BILLING_RATE_LIMITED };
+  if (code === 'invalid_payment_method') return { message: INVALID_CARD };
+  if (code === 'payment_processing') return { message: PAYMENT_PROCESSING };
+  if (code === 'billing_unavailable') return { message: BILLING_UNAVAILABLE };
   return { message: CONFIRM_FAILED };
 }
