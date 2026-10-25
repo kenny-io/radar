@@ -13,7 +13,8 @@ Feature branch: `kenny-dev/marketing-trial-gating` (worktree `.claude/worktrees/
 | T3 | Backend: guests, claim, gates, billing, Stripe/stub, limits, cron, docs | factory-engineer, worktree `../mtg-server`, branch `kenny-dev/mtg-server`, DB `radar_mtg_server` | T1b | architecture §14 T3 row | verified by engineer (967784cd, merged 19d2be4f) | G3–G5, G9–G10, P3–P8, R1–R2 (server) |
 | T4 | Frontend: /start, /onboarding, /start-trial, Signup, Onboarding, app shell | factory-engineer, worktree `../mtg-client`, branch `kenny-dev/mtg-client`, DB `radar_mtg_client` | T1b (T3 for integration) | architecture §14 T4 row | verified by engineer (578adcda, merged 1a4ed8d8) | G1–G2, G6–G9 (UI), P1–P3 (UI), S1–S2 |
 | T5 | Integration and DIVERGENCES | PM | T2–T4 | `DIVERGENCES.md`, merges | done: origin/main 2ddfed16 merged 9f5c9736; integrated revision 876329bc (typecheck, 461/462 tests with the known baseline, build, schema in sync) | R2 |
-| T6 | Independent QA (browser and regression) | factory-qa, worktree `../mtg-qa` (detached 876329bc), DB `radar_mtg_qa`, :3600 | T5 | read-only, plus `verification.md` | active | all |
+| T6 | Independent QA (browser and regression) | factory-qa, worktree `../mtg-qa`, DB `radar_mtg_qa`, :3600 | T5 | read-only, plus `verification.md` | 876329bc: 45/48 (D1–D3 minor/cosmetic, O1 rollout). Re-verification of b9a21266 active | all |
+| T7 | QA fix round | T3 (D1, D2, O1 docs: 77ab5f0b, bab0a8e3), T4 (D3: b05c8fd1), PM (DIVERGENCES 3ba58f48) | T6 | as T3/T4 | merged; integrated revision b9a21266 (typecheck, 469/470 with the known baseline, build, schema in sync) | P1, P7, G5, R1 |
 
 ## Owner decisions (answered 2026-10-25)
 - Existing accounts: **grandfather** (data migration).
@@ -32,5 +33,11 @@ Feature branch: `kenny-dev/marketing-trial-gating` (worktree `.claude/worktrees/
 ## Known pre-existing (not this feature)
 - Malformed JSON bodies return 500 `server` on every route (`src/server/http/handle.ts`). Left as is.
 
+## PM rulings in the fix round
+- Accepted T3's restart hardening: void an abandoned `incomplete` restart invoice before replacing it (no double charge, credit returns), and sync instead of cancel when already paid. The restricted key needs Invoices write (LAUNCH §7c).
+- `GET /api/b/current` changes the current business on a GET. Accepted: it only switches to a business the user already belongs to and has access to.
+- O2 (member caught mid-session by a lapsed owner goes to `/start-trial`) left as logged under Team members (Needs approval).
+- The stub provider keeps its objects in memory, so a dev server restart loses stub subscriptions. Dev only, by design.
+
 ## Next action
-T6 QA is running on 876329bc. Fix any failures, then open the PR (flag off). Merging waits for the owner.
+T6 re-verifies b9a21266. Then push and open the PR (flag off). Merging waits for the owner.
