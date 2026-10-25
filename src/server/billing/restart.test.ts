@@ -71,8 +71,8 @@ describe.skipIf(!ON)('restart (stub, database)', () => {
     expect(again.j).toEqual(r1.j);
     const r2 = await billing.restart(await card());
     expect(r2.j.subscriptionId).not.toBe(r1.j.subscriptionId);
-    expect(stubState().subs.get(r1.j.subscriptionId)!.status).toBe('canceled');
-    expect(invoiceOf(r1.j.subscriptionId).status).toBe('void');               // voided, so its credit came back…
+    expect(stubState().subs.get(r1.j.subscriptionId)!.status).toBe('incomplete_expired');   // its first invoice voided…
+    expect(invoiceOf(r1.j.subscriptionId).status).toBe('void');               // …so its credit came back…
     expect(charged(r2.j.clientSecret)).toBe(4900);                           // …and the replacement still charges $49
     expect(stubConfirmIntent(piOf(r1.j.clientSecret), 'succeed').result).toMatchObject({ error: { code: 'payment_intent_unexpected_state' } });   // the old tab can't pay
     const back = await billing.restart(pm);                                  // back to the first card: a new one, never a replay
@@ -109,6 +109,22 @@ describe.skipIf(!ON)('restart (stub, database)', () => {
     expect(stubState().subs.get(r1.j.subscriptionId)!.status).toBe('active');
     expect(await account(u.id)).toMatchObject({ stripeSubscriptionId: r1.j.subscriptionId, status: 'active' });
     expect(stubCalls('cancelSubscription')).toBe(0);
+  });
+
+  it('a failed void never blocks the restart: the unpaid one is canceled and replaced as before', async () => {
+    const { stubProvider } = await import('./stub');
+    const { ProviderError } = await import('./provider');
+    await lapsed('canceled');
+    const r1 = await billing.restart(await card());
+    const spy = vi.spyOn(stubProvider, 'voidInvoice').mockRejectedValueOnce(new ProviderError('The provided key does not have the required permissions.', 403, 'invalid_request_error'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const r2 = await billing.restart(await card());
+      expect(r2.status).toBe(200);
+      expect(r2.j.subscriptionId).not.toBe(r1.j.subscriptionId);
+      expect(stubState().subs.get(r1.j.subscriptionId)!.status).toBe('canceled');
+      expect(warn.mock.calls.some(c => String(c[0]).includes('restart continues'))).toBe(true);
+    } finally { spy.mockRestore(); warn.mockRestore(); }
   });
 
   it('gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403', async () => {

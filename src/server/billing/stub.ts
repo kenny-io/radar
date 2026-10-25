@@ -143,6 +143,8 @@ export const stubProvider: BillingProvider = {
       cus(i.customer).balance -= i.applied; i.applied = 0;                 // the credit it used goes back, as on Stripe
       const x = i.pi ? S().pis.get(i.pi) : undefined;
       if (x && x.status !== 'succeeded') x.status = 'canceled';
+      const sx = i.subscription ? S().subs.get(i.subscription) : undefined;
+      if (sx?.status === 'incomplete' && sx.latest_invoice === i.id) sx.status = 'incomplete_expired';   // Stripe: voided first invoice
       return null;
     });
   },

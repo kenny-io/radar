@@ -12,17 +12,22 @@ export type RestartResult = { clientSecret: string; subscriptionId: string } | {
 /** Setting a default card is naturally idempotent; the minute in the key lets a later switch back to a card apply again. */
 const minute = () => Math.floor(Date.now() / 60000);
 
-/** Before a subscription is replaced, its open invoice is voided: another tab can no longer pay it, and a credit it used
- *  returns to the customer, so the new invoice charges what /start-trial showed (restartDueCents). Returns the
- *  subscription instead when that invoice was paid in the meantime: access, nothing to replace. */
-async function voidOpenInvoice(p: BillingProvider, cur: Subscription): Promise<Subscription | null> {
-  if (!cur.latest_invoice) return null;
-  const inv = await p.getInvoice(cur.latest_invoice);
-  if (inv.status !== 'open') return null;
-  try { await p.voidInvoice(inv.id, `radar:void:${inv.id}`); return null; } catch (e) {
-    const now = await p.getSubscription(cur.id);
-    if (GRANTING.includes(now.status)) return now;
-    throw e;
+/** An unpaid restart (`incomplete`) that another card replaces: void its open first invoice, so another tab can no longer
+ *  pay it and a credit it used returns to the customer (the new invoice then charges what /start-trial showed). Stripe
+ *  expires an incomplete subscription when its first invoice is voided. Only `incomplete`: voiding a past_due invoice
+ *  can make Stripe mark the subscription active. Never fatal: if the void fails, the restart goes on as before (cancel,
+ *  new subscription), unless the subscription turned out to be paid, which then wins. */
+async function voidUnpaidRestart(p: BillingProvider, cur: Subscription): Promise<{ paid: Subscription | null }> {
+  if (cur.status !== 'incomplete' || !cur.latest_invoice) return { paid: null };
+  try {
+    const inv = await p.getInvoice(cur.latest_invoice);
+    if (inv.status === 'open') await p.voidInvoice(inv.id, `radar:void:${inv.id}`);
+    return { paid: null };
+  } catch (e: any) {
+    const now = await p.getSubscription(cur.id).catch(() => null);
+    if (now && GRANTING.includes(now.status)) return { paid: now };
+    console.warn(`[billing] void of ${cur.id}'s open invoice failed (restart continues): ${e?.message || e}`);
+    return { paid: null };
   }
 }
 
@@ -57,9 +62,10 @@ export async function restart(u: BillingUser, pmId: string, ip: string): Promise
       if (inv.status === 'open' && inv.client_secret) return { clientSecret: inv.client_secret, subscriptionId: cur.id };
     }
     if (cur && !TERMINAL.includes(cur.status)) {
-      const paid = await voidOpenInvoice(p, cur);
+      const { paid } = await voidUnpaidRestart(p, cur);
       if (paid) { await syncIn(tx, later, a, paid); return { activated: true }; }
-      await p.cancelSubscription(cur.id);
+      const now = cur.status === 'incomplete' ? await p.getSubscription(cur.id).catch(nullIfMissing) : cur;
+      if (now && !TERMINAL.includes(now.status)) await p.cancelSubscription(cur.id);   // a voided first invoice already expired it
     }
     // The key names the subscription being replaced, so switching back to an earlier card never replays a canceled one.
     const { sub, clientSecret } = await p.createSubscription({ customer, price, defaultPaymentMethod: pmId, incomplete: true, metadata: { radar_user_id: u.id, purpose: 'restart' } },
