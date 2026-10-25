@@ -3,8 +3,11 @@
 :root[data-theme="dark"] .logo-inv{filter:invert(1)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .logo-inv{filter:invert(1)}}
 :root[data-theme="dark"]{--paper:oklch(0.165 0.006 265);--surface:oklch(0.205 0.007 265);--raise:oklch(0.3 0.008 265);--ink:oklch(0.95 0.004 265);--ink-hover:oklch(0.86 0.005 265);--on-ink:oklch(0.17 0.008 265);--ink2:oklch(0.8 0.006 265);--mute:oklch(0.68 0.008 265);--faint:oklch(0.5 0.008 265);--line:oklch(0.3 0.008 265);--line2:oklch(0.255 0.007 265);--fill:oklch(0.245 0.007 265);--signal:oklch(0.7 0.17 45);--signal-ink:oklch(0.78 0.13 52);--signal-wash:oklch(0.28 0.05 45);--ok:oklch(0.74 0.14 155);--warn:oklch(0.8 0.13 78);--bad:oklch(0.7 0.17 25);--night:oklch(0.32 0.008 265);--knob:oklch(0.88 0.004 265);--hl:oklch(0.45 0.1 50);--serp:oklch(0.76 0.11 265);--sel:oklch(0.4 0.08 50);--gsi-bg:#131314;--gsi-bd:#8E918F;--gsi-fg:#E3E3E3;color-scheme:dark}
-*{box-sizing:border-box;scrollbar-width:none}
-*::-webkit-scrollbar{display:none;width:0;height:0}
+*{box-sizing:border-box}
+/* Hidden scrollbars everywhere in the app; the marketing pages (.mk) keep native ones, as in their prototype. */
+:root:not(:has(.mk)),:root:not(:has(.mk)) *{scrollbar-width:none}
+:root:not(:has(.mk))::-webkit-scrollbar,:root:not(:has(.mk)) *::-webkit-scrollbar{display:none;width:0;height:0}
+@supports not selector(:has(a)){*{scrollbar-width:none}*::-webkit-scrollbar{display:none;width:0;height:0}}
 html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}a:hover{text-decoration-color:var(--ink)}
 button,input,textarea,select{font:inherit;color:inherit}
