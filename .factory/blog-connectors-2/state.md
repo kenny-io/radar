@@ -13,5 +13,10 @@ Owner question open: which GitHub repo to use for the live check (asked via the 
 
 Owner decisions logged in DIVERGENCES: Shopify App Store install flow, GitHub OAuth `repo` scope vs a GitHub App, Framer site-wide publish, Next.js refresh replacing the whole file.
 
+## Released
+- **Merged:** PR kenny-io/radar#4 was merged into `main` as `c8410f97` (a merge of `fd50811c`) at 2026-10-25T07:52Z, on the owner's go-ahead.
+- **Deployed:** to Railway production. Both `radar - web` (radar.thally.io) and `radar - worker` succeeded.
+- **Not yet live for users:** each platform stays hidden until its app env vars are set.
+
 ## Next action
-PR to main is open; merging needs the owner's go-ahead. Then: the owner names a GitHub repo for `nextjs.live`, and creates each platform's app and test account per LAUNCH §7.4–7.9.
+The owner creates each platform's app and runs its live check (LAUNCH §7.4–7.9) before turning that platform on. GitHub's live check is already done.
