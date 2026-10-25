@@ -12,4 +12,4 @@ Branch `kenny-dev/blog-connectors-1` from `main` @ `ea70ecb2`. Delivery: a PR to
 Shared files: `publishing/types.ts` and `http.ts` belong to A. B asks the PM before changing them.
 
 ## Next action
-PR to main; merge needs the owner's go-ahead. Then the owner creates the WordPress.com and Notion apps (LAUNCH §7.1–7.3) for the live checks. Tranche 2: Framer, Next.js (GitHub), Shopify, Webflow, Wix.
+**Released:** PR kenny-io/radar#3 merged as `2ddfed16` (owner go-ahead, 2026-10-25); Railway web + worker deploy succeeded. Then the owner creates the WordPress.com and Notion apps (LAUNCH §7.1–7.3) for the live checks. Tranche 2: Framer, Next.js (GitHub), Shopify, Webflow, Wix.
