@@ -19,9 +19,7 @@ Contents: C1 and C2 merged; the setup-error `hint` (config 422/403) shown in Tes
 | `NEXT_DIST_DIR=.next-pm npx next build` | pass (it rewrites `tsconfig.json`; reverted, not committed) |
 
 ## Not run
-- No live suite has run against a real platform.
-  - GitHub is waiting on the owner to name a throwaway repository.
-  - Framer, Shopify, Webflow and Wix need owner accounts; see LAUNCH §7.9.
+- Live suites for Framer, Shopify, Webflow and Wix need owner accounts; see LAUNCH §7.9. GitHub ran live (below).
 - The OAuth consent and install screens for GitHub, Shopify, Webflow and Wix have not been checked, because no apps exist yet.
 
 ## QA (C4): independent verification on ff37259a
@@ -71,3 +69,35 @@ Defects 1–5 are fixed, with regression tests. Results:
 - QA re-verification on d2013b1b: defects 1–5 fixed, no new problems. Typecheck clean; publishing suite 203 passed, 50 skipped; MDX 25 of 25; the banner and Test connection sentences read correctly. Defect 6 is accepted as logged.
 
 Release status: release-ready once the PR's CI passes. Not merged and not deployed. Live platform checks remain owner steps (LAUNCH §7.9).
+
+## GitHub live check (Next.js connector), 2026-10-25
+The owner approved it via the parent session: "Create kenny-io/radar-connector-test (private) for the Next.js connector's live check."
+
+**Setup**
+- Created the private repo `kenny-io/radar-connector-test` (`main` with a README).
+- Seeded `content/posts/hello-radar.mdx` so the refresh and taken-slug cases have a post to find.
+- The token came from `gh auth token` at runtime. It was not written anywhere.
+- Command: `RADAR_IT_GITHUB_REPO=kenny-io/radar-connector-test RADAR_IT_GITHUB_TOKEN=… RADAR_IT_GITHUB_REFRESH_URL=https://example.com/blog/hello-radar npx vitest run src/server/services/publishing/connectors/nextjs.live.test.ts`
+
+**Results**
+
+| Run | Result |
+|---|---|
+| 1 | 4 passed, 3 failed. The 3 failures were vitest's default 5 s test timeout, a fault in the test file: each case makes about 8 GitHub calls. The calls still completed and were cleaned up. |
+| 2 | Suite timeout raised to 60 s (Framer, Shopify, Webflow and Wix live suites raised to 120 s). **7 of 7 passed** against real GitHub. |
+
+Run 2 covered:
+- Test connection leaves no branch.
+- Draft + publish opens a PR with the MDX on `radar/{slug}-{id}`.
+- A retry reuses the same branch and PR (exactly one PR).
+- A refresh modifies `content/posts/hello-radar.mdx` in place on a PR branch.
+- A taken slug becomes `hello-radar-2.mdx` and the existing file is untouched.
+- A bad token gives 401 `auth-expired`.
+- An unseen repo gives 404.
+
+**State afterwards**
+- 0 `radar/*` branches.
+- PRs #1–#8 are closed.
+- `main` holds only the README and the seed post.
+- The repo is kept, as the owner asked.
+

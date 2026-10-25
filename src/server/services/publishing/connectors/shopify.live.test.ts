@@ -19,7 +19,7 @@ const byHandle = async (handle: string) => ((await gql(`query($q: String!) { art
 const made = new Set<string>();
 const p = (o: Parameters<typeof payload>[0]) => payload({ ...o, ...(IMG ? { image: { url: IMG, alt: 'A designer’s desk with a pricing sheet', bytes: async () => { throw new Error('unused'); } } } : { withImage: false }) });
 
-describe.skipIf(!ON)('Shopify (live)', () => {
+describe.skipIf(!ON)('Shopify (live)', { timeout: 120_000 }, () => {
   beforeAll(async () => {
     if (!c.creds.access_token) {
       const r = await fetch(`https://${STORE}/admin/oauth/access_token`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'client_credentials', client_id: ID, client_secret: SECRET }) });

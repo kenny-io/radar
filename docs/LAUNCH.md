@@ -202,7 +202,7 @@ Record each result in `.factory/blog-connectors-2/verification.md`.
 
 | Platform | What you need | Command |
 |---|---|---|
-| GitHub | A throwaway repo with a `content/posts` folder, plus a token with push access | `RADAR_IT_GITHUB_REPO=owner/repo RADAR_IT_GITHUB_TOKEN=… npx vitest run src/server/services/publishing/connectors/nextjs.live.test.ts` |
+| GitHub | A throwaway repo with a `content/posts` folder, plus a token with push access. Passed 7/7 on 2026-10-25 against `kenny-io/radar-connector-test` (private, kept for re-runs; `RADAR_IT_GITHUB_REFRESH_URL=https://example.com/blog/hello-radar` uses its seed post) | `RADAR_IT_GITHUB_REPO=owner/repo RADAR_IT_GITHUB_TOKEN=… npx vitest run src/server/services/publishing/connectors/nextjs.live.test.ts` |
 | Framer | A throwaway project's URL and API key | `RADAR_IT_FRAMER_URL=… RADAR_IT_FRAMER_KEY=… npx vitest run src/server/services/publishing/connectors/framer.live.test.ts` |
 | Shopify | A dev store with the app installed, and the app's client credentials or an Admin token | `RADAR_IT_SHOPIFY_STORE=x.myshopify.com RADAR_IT_SHOPIFY_CLIENT_ID=… RADAR_IT_SHOPIFY_CLIENT_SECRET=… npx vitest run src/server/services/publishing/connectors/shopify.live.test.ts` |
 | Webflow | A free site published once, with a Blog Posts collection, and a site API token (Site settings → Apps & integrations → API access: CMS read/write, Sites read) | `RADAR_IT_WEBFLOW_TOKEN=… RADAR_IT_WEBFLOW_COLLECTION=siteId:collectionId npx vitest run src/server/services/publishing/connectors/webflow.live.test.ts` |

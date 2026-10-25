@@ -20,7 +20,7 @@ const api = async (path: string, init: RequestInit = {}) => {
 const made = new Set<string>();
 const p = (o: Parameters<typeof payload>[0]) => payload({ ...o, ...(IMG ? { image: { url: IMG, alt: 'A designer’s desk with a pricing sheet', bytes: async () => { throw new Error('unused'); } } } : { withImage: false }) });
 
-describe.skipIf(!ON)('Wix (live, API key)', () => {
+describe.skipIf(!ON)('Wix (live, API key)', { timeout: 120_000 }, () => {
   afterAll(async () => { for (const id of made) await api(`/blog/v3/draft-posts/${id}?permanent=true`, { method: 'DELETE' }); });
 
   it('Test connection creates a draft and deletes it permanently', async () => {

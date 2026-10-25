@@ -21,7 +21,7 @@ const bySlug = async (slug: string) => ((await api(`/collections/${COLL}/items?s
 const made = new Set<string>();
 const p = (o: Parameters<typeof payload>[0]) => payload({ ...o, ...(IMG ? { image: { url: IMG, alt: 'A designer’s desk with a pricing sheet', bytes: async () => { throw new Error('unused'); } } } : { withImage: false }) });
 
-describe.skipIf(!ON)('Webflow (live)', () => {
+describe.skipIf(!ON)('Webflow (live)', { timeout: 120_000 }, () => {
   afterAll(async () => {
     for (const id of made) { await api(`/collections/${COLL}/items/${id}/live`, { method: 'DELETE' }); await api(`/collections/${COLL}/items/${id}`, { method: 'DELETE' }); }
   });

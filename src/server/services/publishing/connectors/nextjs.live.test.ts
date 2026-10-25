@@ -20,7 +20,7 @@ const branches = new Set<string>(); const prs = new Set<number>();
 const track = (branch: string, url?: string) => { branches.add(branch); if (url) prs.add(Number(url.split('/').pop())); };
 const err = async (p: Promise<any>) => { try { await p; } catch (e) { return e as PublishError; } throw new Error('expected a PublishError'); };
 
-describe.skipIf(!ON)('Next.js via GitHub (live)', () => {
+describe.skipIf(!ON)('Next.js via GitHub (live)', { timeout: 60_000 }, () => {
   afterAll(async () => {
     for (const n of prs) await gh(`/pulls/${n}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed' }) });
     for (const b of branches) await gh(`/git/refs/heads/${b.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' });
@@ -67,6 +67,16 @@ describe.skipIf(!ON)('Next.js via GitHub (live)', () => {
     const { url } = await nextjs.publish(c, p, d); track(d.id, url);
     const files = (await gh(`/pulls/${url.split('/').pop()}/files`)).body;
     expect(files.map((f: any) => [f.filename, f.status])).toEqual([[d.extra.path, 'modified']]);
+  });
+
+  it.skipIf(!REFRESH)('a new article whose slug is taken on the default branch gets -2 and never touches the existing file', async () => {
+    const slug = REFRESH.replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop()!;
+    const p = payload({ slug, entryId: `e_itt${RUN}` });
+    const d = await nextjs.createDraft(c, p); track(d.id);
+    expect(d.extra).toMatchObject({ slug: `${slug}-2`, path: `${FOLDER}/${slug}-2.mdx`, taken: true });
+    const { url } = await nextjs.publish(c, p, d); track(d.id, url);
+    const files = (await gh(`/pulls/${url.split('/').pop()}/files`)).body;
+    expect(files.map((f: any) => [f.filename, f.status])).toEqual([[`${FOLDER}/${slug}-2.mdx`, 'added']]);
   });
 
   it('a bad token is a 401 auth-expired ("Needs reconnecting"), not retried', async () => {

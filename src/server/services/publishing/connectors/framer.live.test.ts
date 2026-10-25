@@ -21,7 +21,7 @@ async function items(): Promise<{ id: string; slug: string; draft: boolean }[]> 
 }
 const err = async (p: Promise<any>) => { try { await p; } catch (e) { return e as PublishError; } throw new Error('expected a PublishError'); };
 
-describe.skipIf(!ON)('Framer (live)', () => {
+describe.skipIf(!ON)('Framer (live)', { timeout: 120_000 }, () => {
   beforeAll(async () => {
     const t = await framer.targets!(c);
     const id = process.env.RADAR_IT_FRAMER_COLLECTION || t[0]?.id;
