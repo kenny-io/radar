@@ -8,9 +8,10 @@ ensure_net
 URL="http://localhost:$GHOST_PORT"
 
 if ! docker ps -a --format '{{.Names}}' | grep -qx "$GHOST"; then
-  # development mode: SQLite, no staff device verification e-mails; url must match the published port.
+  # development mode + SQLite; staff device verification off (it e-mails a code on every new sign-in and there is no
+  # mail transport); url must match the published port.
   docker run -d --name "$GHOST" --network "$NET" --restart unless-stopped -p "$GHOST_PORT:2368" \
-    -e NODE_ENV=development -e url="$URL" \
+    -e NODE_ENV=development -e url="$URL" -e security__staffDeviceVerification=false \
     -e database__client=sqlite3 -e database__connection__filename=/var/lib/ghost/content/data/ghost.db \
     ghost:5-alpine >/dev/null
 fi

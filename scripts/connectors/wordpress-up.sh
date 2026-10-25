@@ -50,6 +50,13 @@ wp rewrite flush >/dev/null
 # A fresh Application Password each run (only the hash is stored in WordPress).
 APP_PASS="$(wp user application-password create "$ADMIN_USER" "radar-$(date +%s)" --porcelain)"
 
+# An Author-role user too: Authors lack unfiltered_html, so WordPress filters their post HTML (kses) — the common
+# real-world case when a site owner gives Radar a non-admin account.
+wp user get radar-author >/dev/null 2>&1 || wp user create radar-author author@radar.local --role=author --user_pass="$(rand 16)" >/dev/null
+AUTHOR_PASS="$(wp user application-password create radar-author "radar-$(date +%s)" --porcelain)"
+set_env RADAR_IT_WP_AUTHOR_USER radar-author
+set_env RADAR_IT_WP_AUTHOR_PASS "$AUTHOR_PASS"
+
 set_env RADAR_IT_WP_URL "$URL"
 set_env RADAR_IT_WP_USER "$ADMIN_USER"
 set_env RADAR_IT_WP_PASS "$APP_PASS"

@@ -35,4 +35,6 @@ if (!integ) {
 }
 const key = (integ.api_keys || []).find(k => k.type === 'admin');
 if (!key) fail('Admin API key', { status: 0, body: integ });
-console.log(`KEY=${key.id}:${key.secret}`);
+// Ghost 5.x returns an admin key's `secret` already in the "{id}:{hex secret}" form the admin UI shows; older
+// versions return the hex secret alone.
+console.log(`KEY=${String(key.secret).includes(':') ? key.secret : `${key.id}:${key.secret}`}`);

@@ -4,6 +4,7 @@ import { env } from '@/server/env';
 // HTTP helpers shared by the blog connectors. Every remote failure becomes a PublishError carrying the real HTTP status,
 // which the UI shows verbatim ("401 Unauthorized — check the credentials", "{platform} returned 401 Unauthorized").
 const REASONS: Record<number, string> = {
+  301: 'Moved Permanently', 302: 'Found', 303: 'See Other', 307: 'Temporary Redirect', 308: 'Permanent Redirect',
   400: 'Bad Request', 401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed',
   408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 413: 'Payload Too Large', 415: 'Unsupported Media Type', 422: 'Unprocessable Entity',
   429: 'Too Many Requests', 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout',
@@ -53,7 +54,11 @@ export async function req(url: string, init: RequestInit & { timeoutMs?: number 
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), init.timeoutMs ?? 30000);
   try {
     await assertPublicHost(host);
-    const res = await fetch(url, { ...init, signal: ctl.signal, redirect: init.redirect ?? 'follow' });
+    // Writes never follow redirects: fetch would replay a POST as a GET (and drop Authorization across origins), so a
+    // site URL that redirects (http→https, www, a moved blog) would "create" a post by reading a list. Fail readably instead.
+    const write = !['GET', 'HEAD'].includes(String(init.method || 'GET').toUpperCase());
+    const res = await fetch(url, { ...init, signal: ctl.signal, redirect: init.redirect ?? (write ? 'manual' : 'follow') });
+    if (res.status >= 300 && res.status < 400) throw new PublishError(res.status, `redirected to ${res.headers.get('location') || '?'}`, host, 'config');
     return await ensureOk(res, host);
   } catch (e: any) {
     if (e instanceof PublishError) throw e;

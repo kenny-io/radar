@@ -59,7 +59,7 @@ export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Pro
   const canonical = e.mode === 'refresh' && e.url ? e.url : null;
   const html = await applyOutbound(b.id, e.url || null, blocksToHtml(a.body || [], opts));
   return {
-    entryId: e.id, title: e.title, slug, html, markdown: blocksToMarkdown(a.body || [], opts), blocks: a.body || [], meta: a.seo?.meta || '', keyword: e.kw, date: e.date,
+    entryId: e.id, title: e.title, slug, html, markdown: blocksToMarkdown(a.body || [], opts), blocks: a.body || [], meta: a.seo?.meta || '', seoTitle: a.seo?.title?.trim() || e.title, keyword: e.kw, date: e.date,
     image: imgUrl ? {
       url: abs(imgUrl), alt: a.img?.alt || e.title,
       bytes: async () => {
