@@ -497,3 +497,11 @@ Details: `.factory/marketing-trial-gating/` (brief, architecture, verification).
 | Undesigned failure copy | — | Generic confirm failure, activation delay, billing rate limit, `payment_processing`, `billing_unavailable`, `invalid_payment_method` (architecture §10) | Real failures | Rarely | Not designed |
 | Webhook events | `invoice.paid`, `customer.subscription.updated/deleted`, `invoice.payment_failed` | Also `payment_intent.succeeded/payment_failed` and `customer.subscription.created` | The webhook is the fallback for the confirm call | No | Logged |
 | "Use a sample card" | Prototype link | Not shipped | Handoff: don't ship it | No | Matches design |
+| SaveStep arrow | Arrow shown on both labels in the prototype; the brief mentions it on "continue" | Arrow on both labels, as in the prototype | Faithful to the prototype | Barely | Matches design |
+| Sign in with a pending profile | Not designed | Sign in shows "Back to your profile" but no business row | Sign in isn't designed (#5) | Yes | Needs approval |
+| Trial page at 375px | The prototype doesn't collapse | Uses the existing Signup phone layout: one column with a 200px art band | Same shell as Signup | Phones | Logged |
+| Card fields on theme change | — | Elements are restyled in place (`element.update`), so typed values are kept | Elements iframes can't read CSS variables | No | Logged |
+| Restart dates | Not designed | `past_due`/`unpaid`: the subscription's current period end while it is in the future. Other lapsed states: one calendar month from today. "Open dashboard" opens `/dashboard` with no toast | Not designed | Lapsed accounts | Not designed |
+| Success screen focus | — | "Open dashboard" is autofocused, as designed, so it shows a focus ring that the prototype screenshots don't | Keyboard users land on the next step | Yes (focus ring) | Logged |
+| Lost access with the dashboard open | — | The next action (402) goes to `/start-trial`. An idle dashboard follows within about 4 minutes, when the live stream reconnects | No design for mid-session lapse | Rarely | Logged |
+| Stub card form | — | With `RADAR_DEV_STUBS=1` and no Stripe key, raw inputs that look the same plus a simulated 3-D Secure panel (dev only, never in production) | Run every flow without keys | Dev only | Logged |
