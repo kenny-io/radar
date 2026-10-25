@@ -14,7 +14,12 @@ export async function GET(req: Request) {
   if (!st || st.provider !== 'google-signin' || !code) return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
   await db.delete(schema.oauthStates).where(eq(schema.oauthStates.state, state));
   let sub: string, email: string, name: string;
-  if (env.devStubs && !env.googleClientId) { sub = 'dev-google-user'; email = 'dev@radar.local'; name = 'Dev User'; }
+  if (env.devStubs && !env.googleClientId) {
+    // Dev stub: code=dev signs in as dev@radar.local; outside production, code=dev:<email> picks the account (QA, tests).
+    const as = !env.isProd && code.startsWith('dev:') ? code.slice(4).trim().toLowerCase() : '';
+    if (as && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(as) && !as.endsWith('@guest.radar.invalid')) { sub = 'dev-google-' + as; email = as; name = as.split('@')[0]; }
+    else { sub = 'dev-google-user'; email = 'dev@radar.local'; name = 'Dev User'; }
+  }
   else {
     const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ code, client_id: env.googleClientId, client_secret: env.googleClientSecret, redirect_uri: `${env.appUrl}/api/auth/google/callback`, grant_type: 'authorization_code' }) });
     if (!r.ok) return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
