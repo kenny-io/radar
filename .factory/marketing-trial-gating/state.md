@@ -40,14 +40,18 @@ Feature branch: `kenny-dev/marketing-trial-gating` (worktree `.claude/worktrees/
 - The stub provider keeps its objects in memory, so a dev server restart loses stub subscriptions. Dev only, by design.
 
 ## Delivery
-- **Status:** release-ready with `RADAR_BILLING` off. PR https://github.com/kenny-io/radar/pull/5 is open and mergeable (`main` has not moved). **Not merged, not deployed.**
-- **Pre-merge checks (PM):**
-  - The job skip is flag-aware: it never skips while billing is off.
-  - Railway `preDeployCommand` runs `db:migrate`.
-  - The 0007 columns are additive with constant defaults.
-  - Secret scan of the diff: clean.
-  - The repo has no CI.
-- **N1:** the restart-mode art note was fixed after re-verification. Checked by typecheck and unit tests only.
+- **Released (billing off).** PR https://github.com/kenny-io/radar/pull/5 was merged by the owner on 2026-10-25 07:43 UTC as merge commit `caf979d8`. The Railway production deployment of `caf979d8` succeeded at 07:47 UTC.
+- **Production smoke on https://radar.thally.io, read-only:**
+  - `/`, the three feature pages, `/signin`, `/signup`, `/start`, `/privacy` and `/terms` return 200.
+  - `/login?x=1` returns 307 to `/signin?x=1`.
+  - Signed out, `/dashboard` and `/start-trial` return 307 to `/signup`.
+  - The home and AI-visibility pages render in the browser with no console errors, only first-party requests, and no horizontal scroll.
+- **Not confirmed in production:**
+  - Whether `RADAR_BILLING` is set. The Railway CLI isn't logged in here; the variable is new in this release, so it's off unless someone added it.
+  - A signed-in existing user reaching their dashboard. This needs the owner's account.
+  - The worker service redeploy.
+- **Found after release (minor):** if the home page loads while the viewport height is 0, the dot-field's camera state becomes NaN and never recovers, so the labels stack at the top-left and the field doesn't draw until a reload. Seen in the browser pane on its first open; a normal load is fine. The fix is to guard `resize` and `frame` against a zero size in `src/features/marketing/field.ts`.
+- Pre-merge checks (PM): the job skip is flag-aware, Railway `preDeployCommand` runs `db:migrate`, 0007 is additive with constant defaults, the diff secret scan was clean, and the repo has no CI.
 
 ## Next action
-Owner go-ahead to merge (deploys to production). Before turning billing on, see LAUNCH §7c: Stripe keys, price and webhook; Invoices write on the restricted key; the grandfather choice; the test-mode run list.
+Before setting `RADAR_BILLING=on`, follow LAUNCH §7c: Stripe keys, price and webhook; Invoices write on the restricted key; the grandfather choice; the test-mode run list. The dot-field zero-viewport guard is optional.
