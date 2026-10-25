@@ -32,23 +32,28 @@ export const ghost: Connector = {
   async createDraft(c, p) {
     const feature = await uploadImage(c, p);
     const fields: any = {
-      title: p.title, html: p.html, custom_excerpt: p.meta.slice(0, 300), meta_description: p.meta.slice(0, 500), meta_title: p.title.slice(0, 300),
+      title: p.title, html: p.html, custom_excerpt: p.meta.slice(0, 300), meta_description: p.meta.slice(0, 500), meta_title: (p.seoTitle || p.title).slice(0, 300),
       ...(feature ? { feature_image: feature, feature_image_alt: (p.image?.alt || '').slice(0, 191) } : {}),
       ...(p.canonical ? { canonical_url: p.canonical } : {}),
     };
     if (p.mode === 'refresh' && p.refreshUrl) {
       const slug = p.refreshUrl.replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop();
-      const ex = slug ? await reqJson<{ posts: { id: string; updated_at: string }[] }>(api(c) + `/posts/slug/${encodeURIComponent(slug)}/`, { headers: await headers(c) }).catch(() => null) : null;
+      // Only "no such slug" (404) creates a new post; any other failure propagates so a refresh never duplicates.
+      const ex = slug ? await reqJson<{ posts: { id: string; updated_at: string }[] }>(api(c) + `/posts/slug/${encodeURIComponent(slug)}/`, { headers: await headers(c) })
+        .catch(e => { if (e instanceof PublishError && e.http === 404) return null; throw e; }) : null;
       const post = ex?.posts?.[0];
       if (post) { delete fields.canonical_url; return { id: post.id, extra: { refresh: true, fields } }; }
     }
     const r = await reqJson<{ posts: { id: string; url: string }[] }>(api(c) + '/posts/?source=html', { method: 'POST', ...jsonBody({ posts: [{ ...fields, slug: p.slug, status: 'draft' }] }, await headers(c)) });
-    return { id: r.posts[0].id, url: r.posts[0].url };
+    const post = r.posts?.[0];
+    if (!post?.id) throw new PublishError(502, 'No post id returned');
+    return { id: post.id, url: post.url };
   },
   async publish(c, p, d) {
     const cur = await reqJson<{ posts: { updated_at: string }[] }>(api(c) + `/posts/${d.id}/`, { headers: await headers(c) });
     const upd = d.extra?.refresh ? { ...d.extra.fields, updated_at: cur.posts[0].updated_at } : { status: 'published', updated_at: cur.posts[0].updated_at };
     const r = await reqJson<{ posts: { url: string }[] }>(api(c) + `/posts/${d.id}/?source=html`, { method: 'PUT', ...jsonBody({ posts: [upd] }, await headers(c)) });
+    if (!r.posts?.[0]?.url) throw new PublishError(502, 'No post URL returned');
     return { url: r.posts[0].url };
   },
 };
