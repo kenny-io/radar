@@ -38,6 +38,8 @@ function failCopy(type: string, e: PublishError): string {
   const P = platOf(type);
   if (e.kind === 'auth-expired' || (P.oauth && !P.fields && (e.http === 401 || e.http === 403))) return EXPIRED;
   if (!e.http) return `Couldn’t reach ${e.host || 'the site'} — check the URL`;
+  // An OAuth platform's 404 means the site/database was unshared or deleted, not a bad credential.
+  if (P.oauth && e.http === 404) return `Radar can’t see that ${P.pick?.toLowerCase() || 'site'} anymore. Reconnect and share it again.`;
   return `${statusLine(e.http)} — check the credentials`;
 }
 
