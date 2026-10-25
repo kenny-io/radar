@@ -8,6 +8,8 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
   if (!r.ok || (j && j.ok === false)) throw new ApiError(j?.error || 'Radar couldn’t finish this. Try again.', r.status, j?.code, j?.errors);
   return j as T;
 }
+/** 402 subscription_required: the business (or the account) has no trialing/active subscription. */
+export const isSubscriptionRequired = (e: unknown) => e instanceof ApiError && e.status === 402 && (!e.code || e.code === 'subscription_required');
 export const actCall = <T = any>(bid: string, action: string, input?: any) => api<ActResponse<T>>(`/api/b/${bid}/act`, { body: { action, input } });
 
 /** Open an OAuth popup and resolve with the callback's message. */
