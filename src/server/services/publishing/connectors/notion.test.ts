@@ -83,6 +83,12 @@ describe('test connection', () => {
     await notion.test({ ...C, targetId: 'db-old' });
     expect(json(calls[3]).parent).toEqual({ type: 'data_source_id', data_source_id: DS });
   });
+  it('a transient failure on the legacy database lookup is retried, not reported as 404', async () => {
+    mockFetch(url => (url.includes('/data_sources/') ? reply(404, { code: 'object_not_found', message: 'x' }) : reply(502, { code: 'bad_gateway', message: 'x' })));
+    const e = await err(notion.test({ ...C, targetId: 'db-old' }));
+    expect(e.http).toBe(502);
+    expect(e.retryable).toBe(true);
+  });
   it('a database that is no longer shared (404 everywhere) fails with 404, not retried', async () => {
     mockFetch(() => reply(404, { object: 'error', code: 'object_not_found', message: 'Could not find' }));
     const e = await err(notion.test(C));
@@ -173,13 +179,13 @@ describe('refresh updates the existing page in place', () => {
     expect(calls.map(req)).toEqual([
       ['PATCH', `${API}/pages/pg-old`],
       ['GET', `${API}/blocks/pg-old/children?page_size=100`],
+      ['PATCH', `${API}/blocks/pg-old/children`], // new content goes in before the old is removed: the page is never empty
       ['DELETE', `${API}/blocks/b1`], ['DELETE', `${API}/blocks/b3`],
-      ['PATCH', `${API}/blocks/pg-old/children`],
     ]);
     const upd = json(calls[0]);
     expect(Object.keys(upd.properties).sort()).toEqual(['Status', 'Summary', 'Title']); // slug and date are left as they were
     expect(upd.cover).toEqual({ type: 'external', external: { url: 'https://cdn.radar.example/hero.png' } });
-    expect(json(calls[4]).children).toHaveLength(3);
+    expect(json(calls[2]).children).toHaveLength(3);
     expect(r.url).toBe('https://fieldnote.app/blog/billing-tips/'); // same URL as before
   });
   it('a notion.so URL names the page directly', async () => {
@@ -207,12 +213,14 @@ describe('block conversion', () => {
     expect(out[7].heading_2.rich_text[0].text.content).toBe('Sources');
     expect(out[8].numbered_list_item.rich_text[0].text).toEqual({ content: 'Study', link: { url: 'https://example.org/study' } });
   });
-  it('splits text into ≤ 2000-character rich text items without breaking surrogate pairs', () => {
-    const s = '😀'.repeat(2500);
+  it('splits text into ≤ 2000-unit rich text items without breaking surrogate pairs', () => {
+    const s = 'a' + '😀'.repeat(2500);
     const [b] = toNotionBlocks([['p', s]], { videos: [], sources: [] });
-    const items = b.paragraph.rich_text.map((r: any) => r.text.content);
-    expect(items.map((x: string) => Array.from(x).length)).toEqual([2000, 500]);
+    const items: string[] = b.paragraph.rich_text.map((r: any) => r.text.content);
+    expect(items.every(x => x.length <= 2000)).toBe(true);
+    expect(items.every(x => !/^[\uDC00-\uDFFF]|[\uD800-\uDBFF]$/.test(x))).toBe(true);
     expect(items.join('')).toBe(s);
+    expect(items).toHaveLength(3);
   });
   it('a paragraph needing more than 100 rich text items becomes several paragraph blocks', () => {
     const out = toNotionBlocks([['p', 'x'.repeat(2000 * 101 + 5)]], { videos: [], sources: [] });

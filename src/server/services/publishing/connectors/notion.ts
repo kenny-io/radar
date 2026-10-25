@@ -20,13 +20,14 @@ const BATCH = 100;      // children per request
 const TEXT_MAX = 2000;  // characters per rich text item
 const RT_MAX = 100;     // rich text items per block
 
-/** Rich text items, split on code points so no item exceeds TEXT_MAX. A link is only kept when it's an http(s) URL ≤ 2000 chars. */
+/** Rich text items of at most TEXT_MAX UTF-16 units each (safe however Notion counts), never splitting a surrogate pair.
+ *  A link is only kept when it's an http(s) URL ≤ 2000 chars. */
 export function rt(s: string, link?: string): any[] {
-  const cps = Array.from(String(s ?? ''));
   const url = link && /^https?:\/\//i.test(link) && link.length <= TEXT_MAX ? link : null;
-  const out: any[] = [];
-  for (let i = 0; i < Math.max(1, cps.length); i += TEXT_MAX) out.push({ type: 'text', text: { content: cps.slice(i, i + TEXT_MAX).join(''), ...(url ? { link: { url } } : {}) } });
-  return out;
+  const parts: string[] = []; let cur = '';
+  for (const cp of String(s ?? '')) { if (cur.length + cp.length > TEXT_MAX) { parts.push(cur); cur = ''; } cur += cp; }
+  parts.push(cur);
+  return parts.map(content => ({ type: 'text', text: { content, ...(url ? { link: { url } } : {}) } }));
 }
 /** One or more text blocks of a type (a very long paragraph becomes several blocks so no rich_text array exceeds RT_MAX). */
 function textBlocks(type: string, s: string, link?: string): any[] {
@@ -71,7 +72,8 @@ async function schemaOf(c: ConnCtx) {
     ds = await reqJson(`${API}/data_sources/${c.targetId}`, { headers: h(c) });
   } catch (e) {
     if (!(e instanceof PublishError) || e.http !== 404) throw e;
-    const db = await reqJson<{ data_sources?: { id: string }[] }>(`${API}/databases/${c.targetId}`, { headers: h(c) }).catch(() => null);
+    const db = await reqJson<{ data_sources?: { id: string }[] }>(`${API}/databases/${c.targetId}`, { headers: h(c) })
+      .catch(e2 => { if (e2 instanceof PublishError && e2.http === 404) return null; throw e2; });
     const id = db?.data_sources?.[0]?.id;
     if (!id) throw e;
     ds = await reqJson(`${API}/data_sources/${id}`, { headers: h(c) });
@@ -121,15 +123,15 @@ async function existingPage(c: ConnCtx, pr: Schema, p: PublishPayload): Promise<
   return r.results?.[0]?.id || null;
 }
 
-/** Remove the page's current content (child pages and databases are left alone), so the new blocks replace it. */
-async function clearChildren(c: ConnCtx, id: string) {
+/** IDs of the page's current content blocks (child pages and databases are left alone). */
+async function childIds(c: ConnCtx, id: string): Promise<string[]> {
   const ids: string[] = []; let cursor: string | null = null;
   do {
     const r: { results: { id: string; type: string }[]; has_more: boolean; next_cursor: string | null } = await reqJson(`${API}/blocks/${id}/children?page_size=100${cursor ? '&start_cursor=' + encodeURIComponent(cursor) : ''}`, { headers: h(c) });
     for (const b of r.results || []) if (b.type !== 'child_page' && b.type !== 'child_database') ids.push(b.id);
     cursor = r.has_more ? r.next_cursor : null;
   } while (cursor);
-  for (const b of ids) await reqJson(`${API}/blocks/${b}`, { method: 'DELETE', headers: h(c) });
+  return ids;
 }
 
 export const notion: Connector = {
@@ -171,9 +173,11 @@ export const notion: Connector = {
     let page: { url?: string; public_url?: string | null } | null = null;
     if (d.extra?.refresh) {
       page = await reqJson(`${API}/pages/${d.id}`, { method: 'PATCH', ...jsonBody({ properties: { ...d.extra.props, ...statusProp(st) }, ...(d.extra.cover || {}) }, h(c)) });
-      // Safe to retry: whatever is on the page is cleared before the new content goes in.
-      await clearChildren(c, d.id);
+      // Append the new content first, then delete what was there before, so the live page is never left empty.
+      // Safe to retry: each attempt lists what's on the page (old content plus any partial copy), appends a full copy, deletes the listed blocks.
+      const old = await childIds(c, d.id);
       await append(c, d.id, toNotionBlocks(p.blocks, p));
+      for (const b of old) await reqJson(`${API}/blocks/${b}`, { method: 'DELETE', headers: h(c) });
     } else if (st) {
       page = await reqJson(`${API}/pages/${d.id}`, { method: 'PATCH', ...jsonBody({ properties: statusProp(st) }, h(c)) });
     } else {
