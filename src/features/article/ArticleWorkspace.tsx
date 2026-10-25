@@ -8,7 +8,7 @@ import { Visual, visualBlob } from '@/components/Visual';
 import { PublishIntro } from '@/features/publishing/PublishIntro';
 import { BlogConnect } from '@/features/publishing/BlogConnect';
 import { KwMembership } from '@/features/calendar/ContentCalendar';
-import { platLabel, tzShort } from '@/lib/constants';
+import { platLabel, publishFailParts, tzShort } from '@/lib/constants';
 import { addDays, fmtDW, fmtTime } from '@/lib/format';
 import { defaultArticle, parseBlocks } from './blocks';
 import { RewriteBar, VideoEmbed, VideoPicker } from './RewriteBar';
@@ -74,7 +74,7 @@ export function ArticleWorkspace() {
   const heroUrl = A.img.url && A.img.urlKey === `${A.img.style}:${A.img.seed}` ? A.img.url : null;
   const removedSrc = new Set(A.sources.map((s, i) => (s.removed ? i : -1)).filter(i => i >= 0));
   const flagged = (bi: number) => A.claims.filter(c => c.block === bi && removedSrc.has(c.source)).map(c => c.text);
-  const failPlat = e.publishError?.platform || destConn?.type || null;
+  const fail = publishFailParts(e.publishError, destConn?.type);
   const statusLine = st === 'scheduled' ? <Status tone={blog.paused ? 'warn' : 'ok'}>{blog.paused ? 'Paused · ' : 'Publishes '}{fmtDW(e.date)} · {fmtTime(blog.time)} {tzShort(blog.tz)}</Status> : st === 'publishing' ? <Status tone="signal" pulse>Publishing…</Status> : <EntryStatus s={st} />;
   const rewrite = async (m: string, selection: string, before: string, after: string) => (await app.act<{ text: string }>('article.rewrite', { entryId: id, mode: m, selection, before, after })).text;
   const embedded = (A.videoMeta || []).filter(v => A.videos.includes(v.id));
@@ -89,7 +89,7 @@ export function ArticleWorkspace() {
       {st === 'scheduled' && <div style={{ position: 'relative' }} ref={menuRef}><Btn kind="secondary" iconR="chevD" onClick={() => setMenu(!menu)}>Queued</Btn><Popover anchor={menuRef} open={menu} onClose={() => setMenu(false)} align="right"><button className="pop-i" onClick={() => publishNow()}><Icon n="send" s={16} />Publish now</button><button className="pop-i" onClick={() => { setMenu(false); app.act('article.unschedule', { entryId: id }, { optimistic: patchEntry(id, { status: 'review' }) }).catch(() => {}); toast('Unscheduled. The draft is kept.'); }}><Icon n="undo" s={16} />Unschedule</button></Popover></div>}
       {st === 'published' && <Btn kind="secondary" iconR="ext" onClick={() => window.open(e.publishedUrl || `https://${B.profile.domain}`, '_blank', 'noopener')}>View post</Btn>}
     </div>
-    {st === 'failed' && <div className="row enter" style={{ padding: '14px clamp(16px,3vw,32px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}><Status tone="bad">Publishing failed</Status><span className="small grow" style={{ minWidth: 220 }}>{platLabel(failPlat)} returned <span className="mono">{e.publishError ? `${e.publishError.http} ${e.publishError.message}` : 'an error'}</span>. Your article is safe — nothing was posted.</span><Btn size="sm" onClick={() => setConn({ type: destConn?.type || failPlat || 'wordpress', id: destConn?.id })}>Reconnect</Btn><Btn size="sm" kind="primary" icon="refresh" onClick={() => publishNow(true)}>Retry</Btn></div>}
+    {st === 'failed' && <div className="row enter" style={{ padding: '14px clamp(16px,3vw,32px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}><Status tone="bad">Publishing failed</Status><span className="small grow" style={{ minWidth: 220 }}>{fail.platform} returned <span className="mono">{fail.detail}</span>. Your article is safe — nothing was posted.</span><Btn size="sm" onClick={() => setConn({ type: destConn?.type || 'wordpress', id: destConn?.id })}>Reconnect</Btn><Btn size="sm" kind="primary" icon="refresh" onClick={() => publishNow(true)}>Retry</Btn></div>}
     <div className="art-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', minHeight: 'calc(100vh - 62px)' }}>
       <style>{`@media(max-width:1100px){.art-grid{grid-template-columns:minmax(0,1fr)!important}.art-side{border-left:0!important;border-top:1px solid var(--line)}}@media(max-width:900px){.art-wrap{margin-top:-28px!important}.art-bar{top:61px!important;gap:10px!important}}@media(max-width:640px){.art-wrap{margin-left:-16px!important;margin-right:-16px!important}.art-h1{font-size:30px!important}.art-side{padding:20px 20px 60px!important}}`}</style>
       <div className="art-main" style={{ padding: '48px clamp(20px,5vw,72px) 120px' }}>

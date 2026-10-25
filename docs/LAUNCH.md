@@ -66,13 +66,63 @@ WordPress (self-hosted), Ghost, Webhook and Framer need nothing from you — use
 | Platform | Where | Redirect provider | Scopes / permissions | Env |
 |---|---|---|---|---|
 | Webflow | Webflow workspace → Apps & integrations → create Data client app | `webflow` | `sites:read sites:write cms:read cms:write` | `WEBFLOW_CLIENT_ID/SECRET` |
-| Notion | notion.so/my-integrations → **public** integration (OAuth) | `notion` | Read/insert/update content | `NOTION_CLIENT_ID/SECRET` |
+| Notion | Notion Developer portal → new **public** connection (steps in §7.2) | `notion` | Read, Update and Insert content; no comments; no user information | `NOTION_CLIENT_ID`, `NOTION_CLIENT_SECRET` |
 | Wix | Wix Dev Center → new app with Blog permissions (manage blog/draft posts) | `wix` | Wix Blog | `WIX_CLIENT_ID/SECRET` |
 | Shopify | Shopify Partners → app (public or custom distribution) | `shopify` | `read_content,write_content` | `SHOPIFY_CLIENT_ID/SECRET`, `SHOPIFY_API_VERSION` |
-| WordPress.com | developer.wordpress.com/apps | `wpcom` | `global` | `WPCOM_CLIENT_ID/SECRET` |
+| WordPress.com | developer.wordpress.com/apps → Create New Application (steps in §7.1) | `wpcom` | `global` (Radar sends it; nothing to tick in the app) | `WPCOM_CLIENT_ID`, `WPCOM_CLIENT_SECRET` |
 | Next.js blog (GitHub) | GitHub → Developer settings → OAuth App | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
 
 Public Shopify and Wix apps go through store/marketplace review before arbitrary merchants can install them.
+
+A platform whose app isn't configured is hidden from the "Add a blog connection" picker, so nothing shows until its env vars are set on **web and worker**. The callback only matches when `APP_URL` is exactly `https://radar.thally.io`.
+
+### 7.1 WordPress.com
+
+- [ ] Sign in at **developer.wordpress.com/apps** with the WordPress.com account that will own the app, then choose **Create New Application**.
+  - **Name:** Radar. **Description:** "Publishes articles you approve in Radar to your WordPress.com site." **Website URL:** `https://radar.thally.io`.
+  - **Redirect URL:** `https://radar.thally.io/api/oauth/wpcom/callback` (exact match, https).
+  - **Type:** Web.
+- [ ] Open the app and copy **Client ID** → `WPCOM_CLIENT_ID` and **Client Secret** → `WPCOM_CLIENT_SECRET`. Set both on web and worker, then redeploy.
+- Radar requests the `global` scope so its site picker can list every site the account can publish to. WordPress.com's own docs advise least privilege; a narrower scope would give a single-site token chosen on WordPress.com's consent screen instead.
+- Tokens have no refresh token. If WordPress.com expires or revokes one, the connection shows **Needs reconnecting** and the user reconnects.
+- WordPress.com shares posts to the site's connected social accounts (Jetpack Social / Publicize) when they're published, as it does for posts published in its own editor.
+
+### 7.2 Notion
+
+- [ ] In the **Notion Developer portal** (app.notion.com/developers/connections, reachable from notion.so/profile/integrations), create a **new public connection**.
+  - **Installation scope:** **Any workspace**. This can't be changed later.
+  - **Basic information:** name Radar, logo, website `https://radar.thally.io`, plus the privacy policy, terms of use and support email the form asks for (see §9).
+  - **OAuth configuration → Redirect URIs:** `https://radar.thally.io/api/oauth/notion/callback`.
+  - **Capabilities:** **Read content**, **Update content** and **Insert content**. Leave the comment capabilities off and set user capabilities to **No user information**.
+  - No template is needed.
+- [ ] Open the **Configuration** tab and copy **OAuth Client ID** → `NOTION_CLIENT_ID` and **OAuth Client Secret** → `NOTION_CLIENT_SECRET`. Set both on web and worker, then redeploy.
+- Radar builds its own authorize URL, so it doesn't need the portal's "Authorization URL" field. Listing in the Notion Marketplace is optional and separate.
+- Users must choose the database in Notion's page picker during Connect; Radar only sees what they share. Radar finds the title property itself, and also fills a rich-text **Slug** property, a rich-text **Description/Summary/Excerpt/Meta** property and a **Date** property when the database has them. If it has a **Status** (or a select named Status), Radar sets it to **Published** (or the nearest option, such as Live or Done) when it publishes.
+- **View post** shows the page's public URL when the page is shared to the web. Otherwise it shows the `notion.so` URL, which only workspace members can open.
+- The hero image becomes the page cover, using Radar's public image URL. Notion covers have no alt text.
+- Radar uses Notion API version `2026-03-11`, where pages live in a database's *data source*.
+
+### 7.3 Live checks (run once the env is set; dev stubs can't cover these)
+
+Use a throwaway WordPress.com site and a throwaway Notion workspace. Record each result in `.factory/blog-connectors/verification.md`.
+
+**WordPress.com**
+1. Settings → Publishing → Add a blog connection → WordPress.com: the popup shows WordPress.com's consent screen, closes, and the site picker lists your sites.
+2. **Test connection** succeeds, and the site's Posts → Trash has no "Radar connection test" left behind.
+3. **Publish now** on an approved article. Check the post: title, slug, excerpt, headings, lists, links, the YouTube embed and the Sources list. Check the **featured image** and its **alt text** (Media library → the image).
+4. Publish a second article with the same slug. The new post gets `-2`, and **View post** opens that URL.
+5. A **refresh** entry for a post on that site updates the same post (same URL, no new post).
+6. Revoke Radar at wordpress.com/me/security/connected-applications, then **Test connection**. Expect "The authorization expired. Reconnect and try again." A scheduled publish should mark the connection **Needs reconnecting**. Note the HTTP status WordPress.com returned (logged as `[blog.test]`).
+7. Note in `verification.md` whether a connection still works after 2–3 weeks (whether code-flow tokens expire).
+
+**Notion**
+1. Add a blog connection → Notion. In the page picker, share one database. The Radar picker lists it by name.
+2. **Test connection** succeeds and leaves only a trashed "Radar connection test" page.
+3. **Publish now** on an article longer than 100 blocks. The page has the title, Slug, Description, Date and Status = Published, headings, bullets, the video, and Sources with links. The cover shows the hero image.
+4. **View post** opens the notion.so page. Then share the database to the web, publish another article, and confirm **View post** shows the public URL.
+5. A **refresh** entry whose URL ends in a page's Slug (or a notion.so URL) updates that page in place, with no new page.
+6. Remove Radar under the workspace's Settings → Connections, then **Test connection**. Expect the expired-authorization copy. Remove only the database's access and expect a 404 message.
+7. Note whether Notion returned a `refresh_token` (it is stored), and whether tokens expired over the following weeks.
 
 ## 7b. Social channels — post to X and LinkedIn (optional, behind a flag)
 

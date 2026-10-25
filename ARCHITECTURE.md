@@ -62,7 +62,10 @@ Structured output is validated with zod. Model names appear only in Settings →
 ## Integrations and dev stubs
 Each external integration reads its credentials from `src/server/env.ts`. When `RADAR_DEV_STUBS=1`, integrations
 use deterministic local stubs so every flow runs without keys (AI: `registerStub(purpose, fn)`). Stubs are for
-development and tests only and never run in production.
+development and tests only and never run in production. `RADAR_REAL_CONNECTORS=wordpress,ghost,webhook` (only read
+with dev stubs on) lets the listed blog connectors call the real platform while the rest stays stubbed; the local
+WordPress, Ghost and webhook-receiver harness lives in `scripts/connectors/` (see its README). It suits credential-based
+connectors only: OAuth start/callback stay stubbed, so an OAuth type listed there has no real token.
 
 ## Running locally
 ```

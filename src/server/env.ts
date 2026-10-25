@@ -5,6 +5,9 @@ export const env = {
   appUrl: (e.APP_URL || 'http://localhost:3000').replace(/\/$/, ''),
   secretKey: e.RADAR_SECRET_KEY || '',
   devStubs: e.RADAR_DEV_STUBS === '1',
+  /** DEV ONLY, with RADAR_DEV_STUBS=1: blog connector types that skip their stub and call the real platform, e.g.
+   * "wordpress,ghost,webhook" (local Docker instances, see scripts/connectors/). Ignored without dev stubs. */
+  realConnectors: (e.RADAR_REAL_CONNECTORS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
   isProd: e.NODE_ENV === 'production',
   // Auth
   googleClientId: e.GOOGLE_CLIENT_ID || '',

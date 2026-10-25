@@ -8,6 +8,7 @@ import { env } from '@/server/env';
 import { RadarError } from '@/server/errors';
 import { savePending } from './store';
 import { shopDomain } from './connectors/shopify';
+import { NOTION_VERSION } from './connectors/notion';
 import { reqJson } from './http';
 
 const UNAVAILABLE = 'This connection isn’t available right now. Try again later.';
@@ -34,7 +35,7 @@ defineOAuth('webflow', {
   },
 });
 
-/* Notion — public integration */
+/* Notion — public integration (developers.notion.com/docs/authorization) */
 defineOAuth('notion', {
   async start(ctx) {
     if (env.devStubs) return stubStart(ctx);
@@ -43,8 +44,9 @@ defineOAuth('notion', {
   },
   async callback(ctx) {
     if (isStub(ctx)) return done(ctx, 'notion', { access_token: 'stub-notion-token', workspace: 'Fieldnote' });
-    const t = await reqJson<{ access_token: string; workspace_name?: string; bot_id?: string }>('https://api.notion.com/v1/oauth/token', { method: 'POST', body: JSON.stringify({ grant_type: 'authorization_code', code: ctx.params.get('code'), redirect_uri: ctx.redirectUri }), headers: { authorization: 'Basic ' + Buffer.from(`${env.notionClientId}:${env.notionClientSecret}`).toString('base64'), 'content-type': 'application/json', 'notion-version': '2022-06-28' } });
-    return done(ctx, 'notion', { access_token: t.access_token, workspace: t.workspace_name || null, bot_id: t.bot_id || null });
+    // HTTP Basic client auth; redirect_uri is required because the authorize URL carried one.
+    const t = await reqJson<{ access_token: string; refresh_token?: string | null; workspace_name?: string; workspace_id?: string; bot_id?: string }>('https://api.notion.com/v1/oauth/token', { method: 'POST', body: JSON.stringify({ grant_type: 'authorization_code', code: ctx.params.get('code'), redirect_uri: ctx.redirectUri }), headers: { authorization: 'Basic ' + Buffer.from(`${env.notionClientId}:${env.notionClientSecret}`).toString('base64'), 'content-type': 'application/json', accept: 'application/json', 'notion-version': NOTION_VERSION } });
+    return done(ctx, 'notion', { access_token: t.access_token, refresh_token: t.refresh_token || null, workspace: t.workspace_name || null, workspace_id: t.workspace_id || null, bot_id: t.bot_id || null });
   },
 });
 
@@ -98,7 +100,9 @@ defineOAuth('shopify', {
   },
 });
 
-/* WordPress.com — scope "global" so Radar can list every site the account can publish to */
+/* WordPress.com — scope "global" so Radar can list every site the account can publish to (a narrower scope gives a
+   single-blog token chosen on WordPress.com's consent screen). Code-flow tokens come with no refresh token; when one stops
+   working the connection shows "Needs reconnecting". developer.wordpress.com/docs/api/oauth2/ */
 defineOAuth('wpcom', {
   async start(ctx) {
     if (env.devStubs) return stubStart(ctx);
