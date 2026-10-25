@@ -37,11 +37,12 @@
     ".next-onboarding/types/**/*.ts",
     ".next-performance/types/**/*.ts",
     ".next-platform/types/**/*.ts",
+    ".next-publishing-turbo/types/**/*.ts",
     ".next-publishing/types/**/*.ts",
     ".next-social/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-publishing-turbo/types/**/*.ts"
+    ".next-bc2-git/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
