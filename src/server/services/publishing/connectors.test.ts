@@ -11,6 +11,7 @@ import { webhook } from './connectors/webhook';
 import { notion } from './connectors/notion';
 import { PublishError, req } from './http';
 import { failCopy } from '@/server/actions/publishing';
+import { publishFailParts } from '@/lib/constants';
 import { blocksToHtml } from './render';
 import { ctx, payload } from './connectors/live-fixtures';
 
@@ -141,5 +142,21 @@ describe('WordPress video embeds', () => {
   it('leaves HTML without videos untouched', () => {
     const plain = blocksToHtml([['p', 'Intro'], ['ul', ['a', 'b']]], {});
     expect(wpContent(plain)).toBe(plain);
+  });
+});
+
+describe('article failed banner copy', () => {
+  // Regression: the banner ran the stored label ("Ghost") through platLabel(), which only knows type keys, so every
+  // failure read "WordPress returned …", and it prefixed the status line with the code again ("503 503 Service Unavailable").
+  it('names the real platform and shows the status line once', () => {
+    expect(publishFailParts({ http: 503, message: '503 Service Unavailable', platform: 'Ghost' }, 'ghost')).toEqual({ platform: 'Ghost', detail: '503 Service Unavailable' });
+    expect(publishFailParts({ http: 401, message: '401 Unauthorized', platform: 'Webhook' }, 'webhook')).toEqual({ platform: 'Webhook', detail: '401 Unauthorized' });
+  });
+  it('network failures read "no response from {host}"', () => {
+    expect(publishFailParts({ http: 0, message: 'no response from localhost:2381', platform: 'Ghost' }, 'ghost').detail).toBe('no response from localhost:2381');
+  });
+  it('falls back to the destination platform, and accepts a type key', () => {
+    expect(publishFailParts(null, 'ghost')).toEqual({ platform: 'Ghost', detail: 'an error' });
+    expect(publishFailParts({ http: 404, platform: 'wpcom' }, null)).toEqual({ platform: 'WordPress.com', detail: '404' });
   });
 });
