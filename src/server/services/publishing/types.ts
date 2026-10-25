@@ -12,6 +12,8 @@ export interface ConnCtx {
   bid: string;
   domain: string;
   businessName: string;
+  /** Persist rotated OAuth tokens on the saved connection (set for saved connections only; absent during setup). */
+  saveCreds?: (creds: Record<string, any>) => Promise<void>;
 }
 export interface Target { id: string; name: string; url?: string | null }
 
