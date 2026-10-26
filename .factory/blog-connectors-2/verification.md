@@ -68,7 +68,7 @@ Defects 1–5 are fixed, with regression tests. Results:
 - QA's `mdx-check.mts` against the PM worktree: 25 of 25 pass.
 - QA re-verification on d2013b1b: defects 1–5 fixed, no new problems. Typecheck clean; publishing suite 203 passed, 50 skipped; MDX 25 of 25; the banner and Test connection sentences read correctly. Defect 6 is accepted as logged.
 
-Release status: release-ready once the PR's CI passes. Not merged and not deployed. Live platform checks remain owner steps (LAUNCH §7.9).
+Release status: release-ready (no CI checks are configured on the repo). Live platform checks remain owner steps (LAUNCH §7.9).
 
 ## GitHub live check (Next.js connector), 2026-10-25
 The owner approved it via the parent session: "Create kenny-io/radar-connector-test (private) for the Next.js connector's live check."
@@ -101,3 +101,34 @@ Run 2 covered:
 - `main` holds only the README and the seed post.
 - The repo is kept, as the owner asked.
 
+## Release, 2026-10-25
+**Before merging**
+- Synced with `main` @ `caf979d8` (#5). The only conflict was `DIVERGENCES.md`; both sections were kept.
+- On `fd50811c`: typecheck clean; tests 517 passed, 144 skipped, 1 failed (the baseline snapshot); build passes.
+
+**Merge and deploy**
+
+| Step | Result |
+|---|---|
+| Merge | `c8410f97` on `main` |
+| GitHub deployment "radar / production" | `success` at 07:54:57Z |
+| `radar - web` | Success (radar.thally.io) |
+| `radar - worker` | Success |
+| Smoke check | `https://radar.thally.io/` returns 200; `/login` returns 307 |
+
+The new connectors stay hidden in the picker until their env vars are set, so this release changes nothing users can see yet.
+
+
+## Platform apps, 2026-10-26
+The owner asked for the apps to be created in their signed-in Chrome. Agents never typed passwords, solved CAPTCHAs or revealed secrets; the owner copied every secret into Railway.
+
+| Platform | App | Notes |
+|---|---|---|
+| GitHub | OAuth app "Radar" (already existed), client `Ov23liEm9niSJvBlTSjN` | Callback correct |
+| Webflow | Data Client "Radar", Ekene's Workspace | `sites:read cms:read cms:write` |
+| Notion | Public connection "Radar", Kenny's Workspace | Read, update, insert content; no user information |
+| Shopify | Dev Dashboard app "Radar", org "My Store", client `2ae0261c6a58f48a5975c971e41094a0` | Version radar-1 released; not embedded; `read_content,write_content`; callback set |
+| WordPress.com | App 151424 | The owner answered the form's CAPTCHA and clicked Create |
+| Wix | Custom app "Radar", App ID `7e8406c6-7fba-40a6-bfde-fc65e2274f8a`, v1.0 | The account was switched to Wix Studio by the owner. Seven permissions; share link `https://wix.to/Qzx7o3R` → shareUrlId `8441dc5b-77d1-483e-b98c-c44fd494168e` (per Wix's "Set Up the External Install Flow"). New apps have no redirect URL field, so LAUNCH §7.7 was corrected |
+
+The owner set `GITHUB_*`, `WEBFLOW_*`, `NOTION_*`, `SHOPIFY_*` (with `SHOPIFY_API_VERSION`), `WPCOM_*` and `WIX_*` (with `WIX_SHARE_URL_ID`) as Railway shared variables for web and worker. Not yet checked: the picker in production and each platform's consent/install screen (LAUNCH §7.9, "In the app").
