@@ -176,7 +176,8 @@ export function DailyBrief() {
   }, [scan?.jobId, jobDone]); // eslint-disable-line react-hooks/exhaustive-deps
   const scanDone = async (r: BriefScanResult) => {
     await app.refresh(); // the new day (and setup) must be in B before the scan view closes
-    if (r.mode === 'again' || r.mode === 'keep') {
+    // A click that joined a background rescan (or a Keep run) already got the server's toast (`notified`): show one only.
+    if ((r.mode === 'again' || r.mode === 'keep') && !r.notified) {
       const n = r.added || 0;
       toast(n ? `${n} new ${n === 1 ? 'conversation' : 'conversations'} since ${fmtTime(r.since)}` : 'Nothing new since this morning', { tone: n ? 'signal' : null });
     }

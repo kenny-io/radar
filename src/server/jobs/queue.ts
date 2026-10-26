@@ -27,8 +27,10 @@ export const jobDefs = () => registry;
 /** Errors that should not be retried. */
 export class PermanentJobError extends RadarError { constructor(msg: string) { super(msg, 400, 'permanent'); } }
 
-export async function enqueue(kind: string, payload: any = {}, opts: { businessId?: string | null; ref?: string | null; runAt?: Date; singletonKey?: string; maxAttempts?: number } = {}): Promise<string> {
-  const values = { kind, payload, businessId: opts.businessId ?? null, ref: opts.ref ?? null, runAt: opts.runAt ?? new Date(), singletonKey: opts.singletonKey ?? null, maxAttempts: opts.maxAttempts ?? registry.get(kind)?.maxAttempts ?? 3, progress: null };
+/** `progress` = the job's progress while it is still queued (e.g. `{ quiet: true }`, so the UI ignores a background job
+ *  before the worker picks it up). */
+export async function enqueue(kind: string, payload: any = {}, opts: { businessId?: string | null; ref?: string | null; runAt?: Date; singletonKey?: string; maxAttempts?: number; progress?: any } = {}): Promise<string> {
+  const values = { kind, payload, businessId: opts.businessId ?? null, ref: opts.ref ?? null, runAt: opts.runAt ?? new Date(), singletonKey: opts.singletonKey ?? null, maxAttempts: opts.maxAttempts ?? registry.get(kind)?.maxAttempts ?? 3, progress: opts.progress ?? null };
   if (opts.singletonKey) {
     const existing = await db.select({ id: schema.jobs.id }).from(schema.jobs).where(and(eq(schema.jobs.singletonKey, opts.singletonKey), inArray(schema.jobs.status, ['queued', 'running']))).limit(1);
     if (existing[0]) return existing[0].id;

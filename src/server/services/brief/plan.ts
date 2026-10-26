@@ -109,6 +109,16 @@ export function buildPlan(p: Profile): Plan {
   };
 }
 
+/** The `n` queries a source searches on scan `round` of the day (0 = the first scan): the first 3 (priority keywords)
+ *  every time, and the rest of the budget rotating through the remaining queries, so successive scans search different
+ *  terms. Round 0 is exactly `queries.slice(0, n)`. */
+export function queriesFor(queries: string[], n: number, round = 0): string[] {
+  const head = Math.min(3, n), k = n - head, rest = queries.slice(head);
+  if (queries.length <= n || k <= 0) return queries.slice(0, n);
+  const off = (Math.max(0, Math.floor(round || 0)) * k) % rest.length;
+  return [...queries.slice(0, head), ...Array.from({ length: k }, (_, i) => rest[(off + i) % rest.length])];
+}
+
 /** "214 comments" / "38 replies" */
 export const engLabel = (n: number, noun: 'comments' | 'replies' | 'answers') => `${n.toLocaleString('en-US')} ${n === 1 ? noun.replace(/ies$/, 'y').replace(/s$/, '') : noun}`;
 

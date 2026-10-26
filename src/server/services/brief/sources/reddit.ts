@@ -2,7 +2,7 @@
 // respect subreddit rules, store where = r/…
 import { env } from '@/server/env';
 import { fetchJson } from '@/server/ai/adapters/http';
-import { clip, engLabel, relevance, type Candidate } from '../plan';
+import { clip, engLabel, queriesFor, relevance, type Candidate } from '../plan';
 import { PROMO_RULE_RE } from '../rules';
 import { withRetry, type Source } from './types';
 
@@ -42,7 +42,7 @@ export const redditSource: Source = async (ctx) => {
   ctx.setSub(subs.map(s => 'r/' + s).join(', '));
 
   const out: Candidate[] = [];
-  const query = plan.queries.slice(0, 6).map(q => `"${q.replace(/"/g, '')}"`).join(' OR ');
+  const query = queriesFor(plan.queries, 6, ctx.round).map(q => `"${q.replace(/"/g, '')}"`).join(' OR ');
   for (const sub of subs) {
     // Rules: if self-promotion is forbidden (or rules can't be read), Radar never drafts a mention there.
     let promoBanned = true;

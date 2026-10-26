@@ -6,7 +6,7 @@ import { fetchJson } from '@/server/ai/adapters/http';
 import { BPLAT } from '@/lib/constants';
 import { listL } from '@/lib/format';
 import type { BriefPlatform } from '@/lib/types';
-import { clip, shortHash, type Candidate } from '../plan';
+import { clip, queriesFor, shortHash, type Candidate } from '../plan';
 import { HOSTS, PATHS, norm } from './web';
 import { SourceError, withRetry, type Source } from './types';
 
@@ -27,7 +27,7 @@ export function cleanTitle(t: string): string {
 export const searchSource = (plat: BriefPlatform): Source => async (ctx) => {
   const domain = DOMAIN[plat];
   if (!domain) return [];
-  const queries = ctx.plan.queries.slice(0, 5);
+  const queries = queriesFor(ctx.plan.queries, 5, ctx.round);
   if (!queries.length) return [];
   let j: any;
   try {

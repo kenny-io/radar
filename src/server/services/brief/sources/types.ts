@@ -4,6 +4,8 @@ import type { Candidate, Plan } from '../plan';
 
 export interface SourceCtx {
   plan: Plan; profile: Profile; bid: string; mode: ScanMode;
+  /** Scan round of the day (0 = the first scan): sources pick their queries with `queriesFor(plan.queries, n, round)`. */
+  round?: number;
   /** Only collect threads posted after this (epoch ms) — about 48h back. */
   sinceMs: number;
   /** Report threads/comments read (live counter). */

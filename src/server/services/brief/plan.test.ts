@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPlan } from './plan';
+import { buildPlan, queriesFor } from './plan';
 
 const profile: any = {
   business: { name: 'Thally', industry: 'Developer tools', description: 'Docs that stay in sync', offerings: ['Thally Track: impact analysis on your last five merged PRs'], differentiators: [] },
@@ -46,5 +46,37 @@ describe('plug variant', () => {
 describe('mergeStats', () => {
   it('sums reads per platform across scans', () => {
     expect(mergeStats({ hn: { read: 3 } }, { hn: { read: 2 }, x: { read: 0 } })).toEqual({ hn: { read: 5 }, x: { read: 0 } });
+  });
+});
+
+describe('queriesFor (query rotation across the day’s scans)', () => {
+  const q = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'k10'];
+  it('round 0 searches exactly what the first scan always searched', () => {
+    expect(queriesFor(q, 5)).toEqual(q.slice(0, 5));
+    expect(queriesFor(q, 6, 0)).toEqual(q.slice(0, 6));
+  });
+  it('keeps the top 3 every round and rotates the rest of the budget, wrapping without duplicates', () => {
+    expect(queriesFor(q, 5, 1)).toEqual(['k1', 'k2', 'k3', 'k6', 'k7']);
+    expect(queriesFor(q, 6, 1)).toEqual(['k1', 'k2', 'k3', 'k7', 'k8', 'k9']);
+    expect(queriesFor(q, 6, 2)).toEqual(['k1', 'k2', 'k3', 'k10', 'k4', 'k5']);
+    for (let r = 0; r < 12; r++) {
+      const got = queriesFor(q, 6, r);
+      expect(got).toHaveLength(6);
+      expect(new Set(got).size).toBe(6);
+      expect(got.slice(0, 3)).toEqual(['k1', 'k2', 'k3']);
+    }
+  });
+  it('over successive rounds every query gets searched', () => {
+    const all = new Set(Array.from({ length: 4 }, (_, r) => queriesFor(q, 5, r)).flat());
+    expect([...all].sort()).toEqual([...q].sort());
+  });
+  it('returns every query when there are no more than the budget, whatever the round', () => {
+    expect(queriesFor(['a', 'b', 'c', 'd'], 5, 3)).toEqual(['a', 'b', 'c', 'd']);
+    expect(queriesFor(['a', 'b', 'c', 'd', 'e'], 5, 7)).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(queriesFor([], 6, 2)).toEqual([]);
+  });
+  it('a budget of 3 or less is only the top queries', () => {
+    expect(queriesFor(q, 3, 5)).toEqual(['k1', 'k2', 'k3']);
+    expect(queriesFor(q, 2, 5)).toEqual(['k1', 'k2']);
   });
 });

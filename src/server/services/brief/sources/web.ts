@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { ai } from '@/server/ai';
 import { BPLAT } from '@/lib/constants';
 import type { BriefPlatform } from '@/lib/types';
-import { clip, engLabel, shortHash, type Candidate } from '../plan';
+import { clip, engLabel, queriesFor, shortHash, type Candidate } from '../plan';
 import { SourceError, type Source } from './types';
 
 export const HOSTS: Partial<Record<BriefPlatform, RegExp>> = {
@@ -32,7 +32,7 @@ export const webSource = (plat: BriefPlatform): Source => async (ctx) => {
   const days = Math.max(2, Math.round((Date.now() - sinceMs) / 864e5));
   const subs = plat === 'reddit' ? plan.subreddits.slice(0, 3) : [];
   const searches = [
-    ...plan.queries.slice(0, 6).map(q => `site:${site} ${q}`),
+    ...queriesFor(plan.queries, 6, ctx.round).map(q => `site:${site} ${q}`),
     ...subs.map((r, i) => `site:reddit.com/r/${r} ${plan.queries[i % Math.max(1, plan.queries.length)] || ''}`.trim()),
   ];
   const prompt = [
