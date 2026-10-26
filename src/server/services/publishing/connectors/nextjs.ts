@@ -21,9 +21,17 @@ const h = (c: ConnCtx) => ({ authorization: `Bearer ${c.creds.access_token}`, ac
 /** owner/repo (or a github.com URL to it). "." and ".." are never names: they would turn the API path into another endpoint. */
 export const parseRepo = (s: string) => { const m = /^(?:https?:\/\/github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec((s || '').trim()); return m && !/^\.+$/.test(m[1]) && !/^\.+$/.test(m[2]) ? { owner: m[1], repo: m[2] } : null; };
 const repoOf = (c: ConnCtx) => { const r = parseRepo(c.fields.repo); if (!r) throw new PublishError(404, 'Invalid repository', 'github.com', 'config'); return `${r.owner}/${r.repo}`; };
-/** The repo-relative content folder from what was typed or pasted: a github.com URL, "tree/main/…" or "/content/posts/". */
-export const normFolder = (s: string) => (s || '').trim().replace(/^(?:https?:\/\/)?(?:www\.)?github\.com\/[^/]+\/[^/]+(?:\/|$)/i, '').replace(/^\/+/, '').replace(/^(?:tree|blob)\/[^/]+(?:\/|$)/, '').replace(/^\/+|\/+$/g, '') || 'content/posts';
-const folder = (c: ConnCtx) => normFolder(c.fields.path);
+/** The repo-relative content folder from what was typed or pasted: a github.com URL, "tree/main/…" or "/content/posts/".
+ * Without a github.com URL, "tree/<branch>/" is only stripped when a folder follows it, so a real "tree/posts" folder stays. */
+export const normFolder = (s: string) => {
+  let v = (s || '').trim(); const url = /^(?:https?:\/\/)?(?:www\.)?github\.com\/[^/]+\/[^/]+(?:\/|$)/i;
+  if (url.test(v)) v = v.replace(url, '').replace(/^\/+/, '').replace(/^(?:tree|blob)\/[^/]+(?:\/|$)/, '');
+  else v = v.replace(/^\/+/, '').replace(/^(?:tree|blob)\/[^/]+\/(?=[^/])/, '');
+  return v.replace(/^\/+|\/+$/g, '') || 'content/posts';
+};
+/** "." and ".." segments would let the folder climb out of the repository's contents API into other endpoints or repos. */
+export const unsafeFolder = (s: string) => s.split('/').some(x => x === '.' || x === '..');
+const folder = (c: ConnCtx) => { const f = normFolder(c.fields.path); if (unsafeFolder(f)) throw new PublishError(422, 'The content folder can’t contain “.” or “..”. Edit the connection and choose a folder inside the repository.', 'api.github.com', 'config'); return f; };
 const encPath = (p: string) => p.split('/').map(encodeURIComponent).join('/');
 const slugOf = (url: string) => url.replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop() || '';
 const notFound = (e: unknown) => e instanceof PublishError && e.http === 404;
@@ -35,7 +43,7 @@ const orgIn = (detail: string) => { const m = /`([A-Za-z0-9-]+)`/.exec(detail); 
 async function gh<T = any>(url: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   try { return await reqJson<T>(url, init); } catch (e) {
     if (e instanceof PublishError && e.http === 401) throw new PublishError(401, e.detail, e.host, 'auth-expired');
-    if (e instanceof PublishError && e.http === 403 && /OAuth App access restrictions/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization hasn’t approved Radar on GitHub. An organization owner can grant access under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
+    if (e instanceof PublishError && e.http === 403 && /OAuth App access restrictions/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization hasn’t approved Radar on GitHub. Ask an organization owner to approve it, or request access under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
     if (e instanceof PublishError && e.http === 403 && /SAML enforcement/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization uses single sign-on. Authorize Radar for it under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
     if (e instanceof PublishError && e.http === 403 && /rate limit/i.test(e.detail)) throw new PublishError(429, e.detail, e.host);
     throw e;
@@ -92,18 +100,18 @@ export function mdxFile(p: PublishPayload): string {
   return fm.join('\n') + p.markdown;
 }
 
-/** Repositories the account can push to, most recently pushed first; any named after the business's domain lead (and are preselected). */
+/** Repositories the account can push to, most recently pushed first. Page 1 alone answers most accounts; a full page fetches
+ * pages 2–5 together (one listing of ~500 repos page by page took ~16 s). The likely site repo leads and is preselected. */
 async function repos(c: ConnCtx): Promise<Target[]> {
-  const all: { full_name: string; name: string; html_url: string; permissions?: { push?: boolean } }[] = [];
-  for (let page = 1; page <= 5; page++) {
-    const batch = await gh(`${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${page}`, { headers: h(c) });
-    if (!Array.isArray(batch)) break;
-    all.push(...batch);
-    if (batch.length < 100) break;
-  }
-  const label = (c.domain || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0];
-  const list = all.filter(r => r.permissions?.push && r.full_name).map(r => ({ id: r.full_name, name: r.full_name, url: r.html_url || null, hit: label.length > 1 && (r.name || r.full_name.split('/')[1] || '').toLowerCase().includes(label) }));
-  return [...list.filter(r => r.hit), ...list.filter(r => !r.hit)].map(({ hit: _, ...t }) => t);
+  type Row = { full_name: string; name: string; html_url: string; permissions?: { push?: boolean } };
+  const page = async (n: number): Promise<Row[]> => { const b = await gh(`${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${n}`, { headers: h(c) }); return Array.isArray(b) ? b : []; };
+  const all = await page(1);
+  if (all.length === 100) for (const b of await Promise.all([2, 3, 4, 5].map(page))) { all.push(...b); if (b.length < 100) break; }
+  const host = (c.domain || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, ''); const label = host.split('.')[0];
+  // 0: named for the site ("thally-website", "thally.io"), 1: exactly the label ("thally"), 2: contains it ("thallydocs"), 3: the rest.
+  const rank = (n: string) => !label || label.length < 2 ? 3 : n === host || /^(.+)[-_.](website|site|web|www|blog|homepage|landing|marketing)$/.exec(n)?.[1] === label ? 0 : n === label ? 1 : n.includes(label) ? 2 : 3;
+  const list = all.filter(r => r.permissions?.push && r.full_name).map(r => ({ t: { id: r.full_name, name: r.full_name, url: r.html_url || null }, r: rank((r.name || r.full_name.split('/')[1] || '').toLowerCase()) }));
+  return [0, 1, 2, 3].flatMap(k => list.filter(x => x.r === k).map(x => x.t));
 }
 
 export const nextjs: Connector = {

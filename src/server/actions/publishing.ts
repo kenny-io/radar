@@ -12,7 +12,7 @@ import type { ConnType } from '@/lib/types';
 import { connectorFor } from '../services/publishing/connectors';
 import { PublishError, statusLine } from '../services/publishing/http';
 import { newWebhookSecret, maskSecret } from '../services/publishing/connectors/webhook';
-import { normFolder, parseRepo } from '../services/publishing/connectors/nextjs';
+import { normFolder, parseRepo, unsafeFolder } from '../services/publishing/connectors/nextjs';
 import { shopDomain } from '../services/publishing/connectors/shopify';
 import { retimePubs } from '../services/social/publish/pubs';
 import { bizInfo, connCreds, connRow, connSecret, ctxOf, deletePending, readPending, savePending, splitFields } from '../services/publishing/store';
@@ -70,6 +70,7 @@ async function resolveConn(ctx: ActCtx, input: ConnInput) {
     if (!r) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
     fields.repo = target = targetId = `${r.owner}/${r.repo}`;
     fields.path = normFolder(fields.path);
+    if (unsafeFolder(fields.path)) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
   }
   if (type === 'shopify') fields.store = shopDomain(fields.store);
   let creds: Record<string, any> = { ...connCreds(existing) };

@@ -50,6 +50,10 @@ describe('Next.js connection (resolveConn)', () => {
     expect((await fail(test({ fields: { path: 'content/posts' }, oauthRef: 'pend_ok' }))).status).toBe(400);
     expect(M.seen).toHaveLength(0);
   });
+  it('rejects a content folder with "." or ".." segments (it would climb out of the repository)', async () => {
+    for (const path of ['content/../../../other/repo/contents/x', '../posts', 'content/./posts', 'tree/main/../x']) expect((await fail(test({ fields: { path }, targetId: 'acme/site', oauthRef: 'pend_ok' }))).status).toBe(400);
+    expect(M.seen).toHaveLength(0);
+  });
   it('still requires a content folder', async () => {
     expect((await fail(test({ fields: { path: '' }, targetId: 'acme/site', oauthRef: 'pend_ok' }))).status).toBe(400);
   });

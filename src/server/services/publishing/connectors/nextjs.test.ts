@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublishError } from '../http';
 import type { ConnCtx, PublishPayload } from '../types';
 import { failCopy } from '@/server/actions/publishing';
-import { branchOf, mdxFile, nextjs, normFolder } from './nextjs';
+import { branchOf, mdxFile, nextjs, normFolder, unsafeFolder } from './nextjs';
 
 const API = 'https://api.github.com';
 const R = `${API}/repos/fieldnote/site`;
@@ -278,13 +278,23 @@ describe('content folder', () => {
     expect(normFolder('https://github.com/o/r/tree/main/content/posts')).toBe('content/posts');
     expect(normFolder(' github.com/thallylabs/thally-website/tree/main/public/blog/ ')).toBe('public/blog');
     expect(normFolder('https://github.com/o/r')).toBe('content/posts');
-    expect(normFolder('tree/main')).toBe('content/posts');
+    expect(normFolder('https://github.com/o/r/tree/main')).toBe('content/posts');
+    // Typed without a URL, "tree/<x>/" is only a page path when a folder follows it: a real top-level "tree" folder stays.
+    expect(normFolder('tree/posts')).toBe('tree/posts');
+    expect(normFolder('tree/main')).toBe('tree/main');
     expect(normFolder('/')).toBe('content/posts');
     expect(normFolder('')).toBe('content/posts');
   });
   it('a stored folder pasted as "tree/main/…" is normalized before publishing writes to it', async () => {
     await nextjs.createDraft({ ...C, fields: { ...C.fields, path: 'tree/main/public/blog' } }, P());
     expect(calls.find(c => c.method === 'PUT')!.url).toBe(`${R}/contents/public/blog/billing-tips.mdx`);
+  });
+  it('"." and ".." segments are unsafe, and a stored one fails before any write instead of escaping the repository', async () => {
+    expect(['content/../x', '..', './posts', 'a/./b'].map(unsafeFolder)).toEqual([true, true, true, true]);
+    expect(['content/posts', '.github/posts', 'posts..old'].map(unsafeFolder)).toEqual([false, false, false]);
+    const e = await err(nextjs.createDraft({ ...C, fields: { ...C.fields, path: 'content/../../../other/repo/contents/x' } }, P()));
+    expect([e.http, e.kind, e.retryable]).toEqual([422, 'config', false]);
+    expect(calls.some(c => c.method === 'PUT')).toBe(false);
   });
 });
 
@@ -303,19 +313,26 @@ describe('repository picker (targets)', () => {
     expect(hdr(calls[0], 'authorization')).toBe('Bearer gho_tok');
     expect(t).toEqual([{ id: 'kenny/notes', name: 'kenny/notes', url: 'https://github.com/kenny/notes' }, { id: 'acme/site', name: 'acme/site', url: 'https://github.com/acme/site' }]);
   });
-  it('pages until a page has fewer than 100 repos, and stops after 5 pages', async () => {
+  it('one page answers a small account; a full first page fetches pages 2–5 together and keeps them up to the first short one', async () => {
     const page = (n: number, size: number) => Array.from({ length: size }, (_, i) => repoRow(`o/r${n}-${i}`));
+    listed([page(1, 40)]);
+    expect(await nextjs.targets!(C)).toHaveLength(40);
+    expect(calls).toHaveLength(1);
+    calls = [];
     listed([page(1, 100), page(2, 30), page(3, 100)]);
     expect(await nextjs.targets!(C)).toHaveLength(130);
-    expect(calls.map(c => new URL(c.url).searchParams.get('page'))).toEqual(['1', '2']);
+    expect(calls.map(c => new URL(c.url).searchParams.get('page'))).toEqual(['1', '2', '3', '4', '5']);
     calls = [];
     listed(Array.from({ length: 7 }, (_, i) => page(i + 1, 100)));
     expect(await nextjs.targets!(C)).toHaveLength(500);
     expect(calls).toHaveLength(5);
   });
-  it('moves repos named after the business domain to the front (preselected), keeping the order otherwise', async () => {
-    listed([[repoRow('fieldnote/infra'), repoRow('someone/notes'), repoRow('kenny/fieldnote-website'), repoRow('fieldnote/api'), repoRow('kenny/fieldnote-blog')]]);
-    expect((await nextjs.targets!({ ...C, domain: 'www.fieldnote.app' })).map(t => t.id)).toEqual(['kenny/fieldnote-website', 'kenny/fieldnote-blog', 'fieldnote/infra', 'someone/notes', 'fieldnote/api']);
+  it('puts the likely site repo first (preselected): named for the site, then exactly the label, then containing it; pushed order otherwise', async () => {
+    listed([[repoRow('thallylabs/thallydocs'), repoRow('thallylabs/thally-website'), repoRow('kenny/notes'), repoRow('thallylabs/thally'), repoRow('thallylabs/thally-mcp'), repoRow('kenny/thally.io')]]);
+    expect((await nextjs.targets!({ ...C, domain: 'www.thally.io' })).map(t => t.id)).toEqual(['thallylabs/thally-website', 'kenny/thally.io', 'thallylabs/thally', 'thallylabs/thallydocs', 'thallylabs/thally-mcp', 'kenny/notes']);
+    // Only the repo name counts: an owner named after the domain doesn't pull every one of its repos forward.
+    listed([[repoRow('fieldnote/infra'), repoRow('kenny/fieldnote-blog')]]);
+    expect((await nextjs.targets!(C)).map(t => t.id)).toEqual(['kenny/fieldnote-blog', 'fieldnote/infra']);
   });
   it('a revoked token while listing is a 401 auth-expired', async () => {
     override = () => reply(401, { message: 'Bad credentials' });
@@ -330,11 +347,11 @@ describe('organization access', () => {
     override = () => reply(403, RESTRICTED);
     const e = await err(nextjs.test(C));
     expect([e.http, e.kind, e.retryable]).toEqual([403, 'config', false]);
-    expect(failCopy('nextjs', e)).toBe('The thallylabs organization hasn’t approved Radar on GitHub. An organization owner can grant access under GitHub Settings → Applications → Radar, then test again.');
+    expect(failCopy('nextjs', e)).toBe('The thallylabs organization hasn’t approved Radar on GitHub. Ask an organization owner to approve it, or request access under GitHub Settings → Applications → Radar, then test again.');
   });
   it('without a named org it still explains the restriction', async () => {
     override = () => reply(403, { message: 'This organization has enabled OAuth App access restrictions.' });
-    expect(failCopy('nextjs', await err(nextjs.test(C)))).toBe('The repository’s organization hasn’t approved Radar on GitHub. An organization owner can grant access under GitHub Settings → Applications → Radar, then test again.');
+    expect(failCopy('nextjs', await err(nextjs.test(C)))).toBe('The repository’s organization hasn’t approved Radar on GitHub. Ask an organization owner to approve it, or request access under GitHub Settings → Applications → Radar, then test again.');
   });
   it('SAML single sign-on enforcement asks to authorize Radar for the org', async () => {
     override = () => reply(403, { message: 'Resource protected by organization SAML enforcement. You must grant your OAuth token access to this organization.' });
