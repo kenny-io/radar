@@ -6,7 +6,8 @@ import type { BriefItem } from '@/lib/types';
 
 export type DayRow = typeof schema.briefDays.$inferSelect;
 export type DayStats = Record<string, { read: number }>;
-export interface CandMark { id: string; plat: string; score?: number; theme?: string; reject?: string; at: string }
+/** `tk` = the thread key (plan.threadKey), so a later scan skips the same post found under another id. */
+export interface CandMark { id: string; plat: string; tk?: string; score?: number; theme?: string; reject?: string; at: string }
 
 export async function getDay(bid: string, date: string): Promise<DayRow | null> {
   const r = await db.select().from(schema.briefDays).where(and(eq(schema.briefDays.businessId, bid), eq(schema.briefDays.date, date))).limit(1);
