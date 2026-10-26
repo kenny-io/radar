@@ -6,6 +6,10 @@ import { withRetry, type Source } from './types';
 
 export const hasXApi = () => !!env.xBearer;
 
+/** `start_time` (epoch ms): the usual ~48h window or, on a background rescan, only posts since the previous scan that read
+ *  X; never older than the API's 7 days, nor later than a minute ago. */
+export const xStartMs = (sinceMs: number, newSinceMs?: number, now = Date.now()) => Math.min(now - 60e3, Math.max(sinceMs, newSinceMs ?? 0, now - 6.9 * 864e5));
+
 export const xSource: Source = async (ctx) => {
   const { plan } = ctx;
   // Basic tier: 512-char query limit.
@@ -17,7 +21,7 @@ export const xSource: Source = async (ctx) => {
   }
   if (!parts.length) return [];
   const query = `(${parts.join(' OR ')}) -is:retweet -is:reply lang:en`;
-  const start = new Date(Math.max(ctx.sinceMs, Date.now() - 6.9 * 864e5)).toISOString();
+  const start = new Date(xStartMs(ctx.sinceMs, ctx.newSinceMs)).toISOString();
   const qs = new URLSearchParams({ query, max_results: '100', start_time: start, 'tweet.fields': 'created_at,public_metrics,author_id,lang', expansions: 'author_id', 'user.fields': 'username,name' });
   const j = await withRetry(() => fetchJson(`https://api.x.com/2/tweets/search/recent?${qs}`, { headers: { authorization: `Bearer ${env.xBearer}` }, timeoutMs: 20000 }));
   const users = new Map<string, any>((j?.includes?.users || []).map((u: any) => [u.id, u]));

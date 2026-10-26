@@ -8,6 +8,9 @@ export interface SourceCtx {
   round?: number;
   /** Only collect threads posted after this (epoch ms) — about 48h back. */
   sinceMs: number;
+  /** Background rescans: only threads posted after the previous scan (real-time sources). Only the X API source uses it:
+   *  web search indexes posts late, and threads already seen today are dropped anyway. */
+  newSinceMs?: number;
   /** Report threads/comments read (live counter). */
   onRead: (n: number) => void;
   /** Replace this platform's step sub line with the sources actually being read. */

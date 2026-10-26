@@ -16,3 +16,14 @@ export function rescanDue(o: { hasDay: boolean; last: LastScan | null; now: Date
   if (o.last.status === 'queued' || o.last.status === 'running') return false;
   return o.now.getTime() - o.last.createdAt.getTime() >= RESCAN_EVERY_MS;
 }
+
+/** Margin before the previous scan when a background rescan asks a real-time source only for new threads. */
+export const NEW_SINCE_MARGIN_MS = 10 * 60e3;
+export interface EarlierScan { createdAt: Date; status: string; payload: any; result: any }
+/** Where a background rescan's real-time sources start reading (epoch ms): the newest earlier scan of the day that really
+ *  read `plat` (finished; not failed, skipped or a Keep run; the platform not skipped), minus 10 minutes. Undefined when
+ *  there is none, so the source reads its usual window. `earlier` = the day's scans created before this one, newest first. */
+export function newSinceFor(earlier: EarlierScan[], plat: string): number | undefined {
+  const s = earlier.find(j => j.status === 'done' && j.payload?.mode !== 'keep' && !j.result?.failed && !j.result?.skipped && !(j.result?.skippedPlats || []).includes(plat));
+  return s ? s.createdAt.getTime() - NEW_SINCE_MARGIN_MS : undefined;
+}

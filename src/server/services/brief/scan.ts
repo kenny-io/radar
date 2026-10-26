@@ -1,5 +1,5 @@
 // The Daily Brief research agent (02-system §9): discover → collect (per platform) → rank → select → draft → save.
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, lt } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { briefSettingsOf, bizToday, getBiz } from '@/server/workspace';
 import { notify } from '@/server/notify';
@@ -13,6 +13,7 @@ import { rankCandidates, selectReplies, type Scored } from './rank';
 import { draftCompanyReply, draftPosts, draftReply, feedThemes } from './draft';
 import { createDay, getDay, mergeStats, withDay, type CandMark, type DayStats } from './store';
 import { fitToCap, slotsLeft } from './cap';
+import { newSinceFor } from './rescan';
 import './stubs';
 
 export interface ScanPayload {
@@ -62,6 +63,9 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const seen = new Set<string>([...((existing?.candidates || []) as CandMark[]).map(c => c.id)]);
   let cands: Candidate[] = [];
   const skippedPlats: BriefPlatform[] = [];
+  // Background rescans: real-time sources (the X API) read only threads posted since the previous scan that read them.
+  const earlier = background ? await db.select({ createdAt: schema.jobs.createdAt, status: schema.jobs.status, payload: schema.jobs.payload, result: schema.jobs.result }).from(schema.jobs)
+    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'brief.scan'), eq(schema.jobs.ref, date), lt(schema.jobs.createdAt, ctx.job.createdAt))).orderBy(desc(schema.jobs.createdAt)) : [];
   if (mode === 'keep') {
     const from = ctx.payload.fromJob ? await getJob(ctx.payload.fromJob) : null;
     cands = ((from?.result as any)?.partialCands || []) as Candidate[];
@@ -70,7 +74,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
       step = p; stats[p] = stats[p] || { read: 0 }; await push();
       try {
         const got = await sourceFor(p)({
-          plan, profile, bid, mode, round, sinceMs: Date.now() - WINDOW_MS,
+          plan, profile, bid, mode, round, sinceMs: Date.now() - WINDOW_MS, newSinceMs: background ? newSinceFor(earlier, p) : undefined,
           onRead: n => { threadsRead += n; stats[p] = { read: (stats[p]?.read || 0) + n }; push().catch(() => {}); },
           setSub: s => { steps = steps.map(x => (x.k === p ? { ...x, sub: s } : x)); push().catch(() => {}); },
         });
