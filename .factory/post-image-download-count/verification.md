@@ -24,3 +24,10 @@
 - `storedKey` no longer decodes. Every segment must match `[A-Za-z0-9_-][A-Za-z0-9._+-]*` (the `objectKey` shape), the first must be the business id, and there must be more than one.
 - QA's isolated repro (`storedkey-repro.ts`): all four vectors now return `key: null`.
 - Unit tests added for `%252e%252e`, `..\`, `..%5C`, root escape, `.`, empty segment and bare bid. tsc pass; vitest 549 passed, 1 failed (known baseline).
+
+## Q2: QA retest on 893b14ec (factory-qa, new container, same setup)
+- PID-2: PASS. All D1 vectors (`%252e%252e`, `..\`, `..%5C`, root escape, the outsider's own-route variant) plus `%2e%2e`, `../`, `./`, bare id, and local-path variants → 404. The bucket log shows no traversal request arriving. Signed out 401; own bucket/local 200 with attachment + nosniff; other business, foreign host, look-alike host, non-member 404; active Viewer 200.
+- PID-1 cross-origin: PASS. Download 2 saved `91aca21c…` and `c7eb6e24…` = the bucket copies, via `/api/b/{bid}/media → 200`.
+- PID-3: PASS. Missing key → toast, nothing saved, media 404.
+- Regression: tsc pass; vitest 549 passed, 1 failed (known baseline).
+- Not verified: a real S3/R2 bucket; production images under an older bucket address.
