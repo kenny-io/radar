@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPlan, queriesFor } from './plan';
+import { buildPlan, queriesFor, seenOf, threadKey, uniqueCands, type Candidate } from './plan';
 
 const profile: any = {
   business: { name: 'Thally', industry: 'Developer tools', description: 'Docs that stay in sync', offerings: ['Thally Track: impact analysis on your last five merged PRs'], differentiators: [] },
@@ -78,5 +78,37 @@ describe('queriesFor (query rotation across the day’s scans)', () => {
   it('a budget of 3 or less is only the top queries', () => {
     expect(queriesFor(q, 3, 5)).toEqual(['k1', 'k2', 'k3']);
     expect(queriesFor(q, 2, 5)).toEqual(['k1', 'k2']);
+  });
+});
+
+describe('same post under another id (threadKey, uniqueCands)', () => {
+  const show = 'Show HN: ADRs for AI – Deliberation records for human–AI work, versioned in Git';
+  const c = (id: string, plat: Candidate['plat'], title: string, engN = 0, postedAt: string | null = null): Candidate => ({ id, plat, title, engN, postedAt, where: '', who: '', url: '', body: '', eng: '' });
+  const none = seenOf([], []);
+  it('keys titles by platform, ignoring case, punctuation and accents', () => {
+    expect(threadKey({ plat: 'hn', title: show })).toBe(threadKey({ plat: 'hn', title: 'show hn adrs for ai deliberation records for human ai work versioned in git' }));
+    expect(threadKey({ plat: 'reddit', title: 'Café owners: how do you keep your docs current?' })).toBe(threadKey({ plat: 'reddit', title: 'cafe owners how do you keep your docs current' }));
+    expect(threadKey({ plat: 'hn', title: show })).not.toBe(threadKey({ plat: 'reddit', title: show }));
+  });
+  it('gives generic titles no key, so they are never merged', () => {
+    expect(threadKey({ plat: 'x', title: 'Dan Kornas (@DanKornas) on X' })).toBeNull();
+    expect(threadKey({ plat: 'reddit', title: 'Docs question' })).toBeNull();
+    expect(threadKey({ title: show })).toBeNull();
+  });
+  it('keeps one of two new threads with the same title: the one with more engagement, then the newer', () => {
+    expect(uniqueCands([c('hn:1', 'hn', show, 3), c('hn:2', 'hn', show, 12)], none).map(x => x.id)).toEqual(['hn:2']);
+    expect(uniqueCands([c('hn:1', 'hn', show, 5, '2026-10-26T10:00:00Z'), c('hn:2', 'hn', show, 5, '2026-10-26T12:00:00Z')], none).map(x => x.id)).toEqual(['hn:2']);
+  });
+  it('keeps the same title on another platform, generic titles, and repeats of one id only once', () => {
+    expect(uniqueCands([c('hn:1', 'hn', show), c('reddit:1', 'reddit', show)], none)).toHaveLength(2);
+    expect(uniqueCands([c('x:1', 'x', 'Dan Kornas (@DanKornas) on X'), c('x:2', 'x', 'Dan Kornas (@DanKornas) on X')], none)).toHaveLength(2);
+    expect(uniqueCands([c('hn:1', 'hn', show, 1), c('hn:1', 'hn', show, 9)], none)).toHaveLength(1);
+  });
+  it('skips threads the day has seen: by id, by an earlier scan’s key, or by a reply already in the day', () => {
+    const earlier = seenOf([{ id: 'hn:1', tk: threadKey({ plat: 'hn', title: show })! }], []);
+    expect(uniqueCands([c('hn:1', 'hn', 'Something else entirely, with enough words'), c('hn:2', 'hn', show)], earlier)).toEqual([]);
+    // Days scanned before keys were stored: the replies' titles still count. Feed posts don't.
+    const fromItems = seenOf([{ id: 'hn:1' }], [{ kind: 'reply', plat: 'hn', title: show }, { kind: 'post', title: 'We moved our docs into Git and they are still stale' }]);
+    expect(uniqueCands([c('hn:2', 'hn', show), c('reddit:9', 'reddit', 'We moved our docs into Git and they are still stale')], fromItems).map(x => x.id)).toEqual(['reddit:9']);
   });
 });

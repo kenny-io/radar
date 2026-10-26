@@ -7,7 +7,7 @@ import { getJob, type JobCtx } from '@/server/jobs/queue';
 import { fmtTime, nowHMIn } from '@/lib/format';
 import type { BriefAccount, BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
 import { DRAFT_SUB, DRAFT_SUB_BOTH, DRAFT_SUB_CO, RANK_SUB, accountsOf, enabledInOrder, platsFor, type BriefScanProgress, type BriefScanResult, type ScanMode, type ScanStep, type ScanStepKey } from '@/features/brief/model';
-import { buildPlan, clip, relevance, type Candidate } from './plan';
+import { buildPlan, clip, relevance, seenOf, threadKey, uniqueCands, type Candidate } from './plan';
 import { sourceFor } from './sources';
 import { rankCandidates, selectReplies, type Scored } from './rank';
 import { draftCompanyReply, draftPosts, draftReply, feedThemes } from './draft';
@@ -60,7 +60,8 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   await push();
 
   // ── Collect ──
-  const seen = new Set<string>([...((existing?.candidates || []) as CandMark[]).map(c => c.id)]);
+  // Threads the day has seen, by id and by thread key: the same post found again under another id is not new.
+  const seen = seenOf((existing?.candidates || []) as CandMark[], (existing?.items || []) as BriefItem[]);
   let cands: Candidate[] = [];
   const skippedPlats: BriefPlatform[] = [];
   // Background rescans: real-time sources (the X API) read only threads posted since the previous scan that read them.
@@ -85,14 +86,14 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
         if (background) { skippedPlats.push(p); delete stats[p]; continue; }
         await push({ failed: p });
         // Partial results are kept only if the user chooses "Keep this morning’s brief" (only offered when a brief exists).
-        const partialCands = existing ? dedupe(cands).filter(c => !seen.has(c.id)).map(c => ({ c, r: relevance(c.title + ' ' + c.body, plan) })).sort((a, b2) => b2.r - a.r).slice(0, 40).map(x => slim(x.c)) : [];
+        const partialCands = existing ? uniqueCands(cands, seen).map(c => ({ c, r: relevance(c.title + ' ' + c.body, plan) })).sort((a, b2) => b2.r - a.r).slice(0, 40).map(x => slim(x.c)) : [];
         return { mode, failed: p, since, partial: partialCands.length, ...({ partialCands } as any) };
       }
     }
   }
   // Every platform failed: nothing was read, so the day (and its "Found at") is left alone; the next rescan tries again.
   if (background && plats.length && skippedPlats.length === plats.length) throw new Error('Every source failed (background rescan)');
-  const fresh = dedupe(cands).filter(c => !seen.has(c.id) && plats.includes(c.plat));
+  const fresh = uniqueCands(cands, seen).filter(c => plats.includes(c.plat));
 
   // ── Rank ──
   step = 'rank'; await push();
@@ -131,9 +132,10 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   // ── Save ──
   const scannedAt = nowHMIn(b.timezone || 'America/New_York');
   const at = new Date().toISOString();
-  const marks: CandMark[] = scored.map(s => ({ id: s.id, plat: s.plat, score: s.score, theme: s.theme, reject: s.reject, at }));
+  const tk = (c: Candidate) => { const k = threadKey(c); return k ? { tk: k } : {}; };
+  const marks: CandMark[] = scored.map(s => ({ id: s.id, plat: s.plat, ...tk(s), score: s.score, theme: s.theme, reject: s.reject, at }));
   // Candidates that never reached ranking (pre-filtered) are still "seen" for Scan again.
-  for (const c of fresh) if (!marks.find(m => m.id === c.id)) marks.push({ id: c.id, plat: c.plat, at });
+  for (const c of fresh) if (!marks.find(m => m.id === c.id)) marks.push({ id: c.id, plat: c.plat, ...tk(c), at });
   let addedIds: string[] = [];
   if (mode === 'first') {
     await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats);
@@ -153,10 +155,4 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const notified = (mode === 'keep' || background) && addedIds.length > 0;
   if (notified) await notify(bid, `${addedIds.length} new ${addedIds.length === 1 ? 'conversation' : 'conversations'} since ${fmtTime(since)}`, { tone: 'signal' });
   return { mode, added: addedIds.length, addedIds, since, ...(notified ? { notified } : {}), ...({ threadsRead, replies: replies.length, posts: posts.length, perPlat: stats, ...(background ? { background, round, skippedPlats } : {}) } as object) };
-}
-
-function dedupe(cs: Candidate[]): Candidate[] {
-  const m = new Map<string, Candidate>();
-  for (const c of cs) if (!m.has(c.id)) m.set(c.id, c);
-  return [...m.values()];
 }

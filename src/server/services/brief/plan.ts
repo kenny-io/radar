@@ -119,6 +119,35 @@ export function queriesFor(queries: string[], n: number, round = 0): string[] {
   return [...queries.slice(0, head), ...Array.from({ length: k }, (_, i) => rest[(off + i) % rest.length])];
 }
 
+/** The same post found twice (a Show HN posted again, a Reddit cross-post) has another id but the same title. The key is
+ *  the platform plus the title in lower case without punctuation or accents. Null when the title is too generic to tell
+ *  posts apart: under 5 words, or a search result titled only by its author ("Dan Kornas (@DanKornas) on X"). Scoped to
+ *  the platform: the same title elsewhere is another audience, and a generic question elsewhere is another conversation. */
+export function threadKey(t: { plat?: string; title: string }): string | null {
+  const k = (t.title || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!t.plat || k.split(' ').length < 5 || /\bon (x|twitter|linkedin|reddit|quora)$/.test(k)) return null;
+  return `${t.plat}:${k}`;
+}
+
+/** What the day has already seen: thread ids, and thread keys from earlier scans' candidates and today's replies. */
+export function seenOf(cands: { id: string; tk?: string }[], items: { kind: string; plat?: string; title: string }[]) {
+  return { ids: new Set(cands.map(c => c.id)), keys: new Set([...cands.map(c => c.tk), ...items.filter(i => i.kind === 'reply').map(threadKey)].filter(Boolean) as string[]) };
+}
+
+/** New candidates, one per thread: never a thread the day has seen (by id or thread key), and of two new threads with the
+ *  same key only the one with more engagement (then the newer) is kept. */
+export function uniqueCands(cs: Candidate[], seen: ReturnType<typeof seenOf>): Candidate[] {
+  const out = new Map<string, Candidate>();
+  const newer = (a: Candidate, b: Candidate) => Date.parse(a.postedAt || '') > Date.parse(b.postedAt || '');
+  for (const c of cs) {
+    const tk = threadKey(c);
+    if (seen.ids.has(c.id) || (tk && seen.keys.has(tk))) continue;
+    const k = tk || 'id:' + c.id; const cur = out.get(k);
+    if (!cur || (cur.id !== c.id && (c.engN > cur.engN || (c.engN === cur.engN && newer(c, cur))))) out.set(k, c);
+  }
+  return [...out.values()];
+}
+
 /** "214 comments" / "38 replies" */
 export const engLabel = (n: number, noun: 'comments' | 'replies' | 'answers') => `${n.toLocaleString('en-US')} ${n === 1 ? noun.replace(/ies$/, 'y').replace(/s$/, '') : noun}`;
 
