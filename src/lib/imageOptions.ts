@@ -1,4 +1,5 @@
-// Image options (UPDATE-2026-10-21-image-options §1): five visual styles, an images on/off choice, and a count range.
+// Image options (UPDATE-2026-10-21-image-options §1): five visual styles, an images on/off choice, and a count of 1–4
+// (owner request 2026-10-26: an exact count instead of the 1–3 / 3–5 ranges).
 // Isomorphic: used by the UI and the server.
 
 export type StyleKey = 'editorial' | 'flat' | 'render3d' | 'handdrawn' | 'photography';
@@ -14,19 +15,17 @@ const LEGACY: Record<string, StyleKey> = { branded: 'flat', infographic: 'flat',
 export const styleK = (k?: string | null): StyleKey => (STYLES.some(s => s.k === k) ? (k as StyleKey) : (k && LEGACY[k]) || 'editorial');
 export const styleL = (k?: string | null) => STYLES.find(s => s.k === styleK(k))!.l;
 
-export type ImgRange = 'few' | 'many';
-export interface ImageSettings { on: boolean; style: StyleKey; range: ImgRange }
-export const IMG_DEFAULT: ImageSettings = { on: true, style: 'editorial', range: 'few' };
-export const IMG_RANGES: { v: ImgRange; min: number; max: number }[] = [{ v: 'few', min: 1, max: 3 }, { v: 'many', min: 3, max: 5 }];
-/** Platform limits: X allows 4 images; LinkedIn, Facebook, Reddit, Quora and blog articles allow 5. */
-export const imgMax = (k?: string | null) => (k === 'x' ? 4 : 5);
-/** The exact count inside the range, seeded so the same seed always gives the same count. */
-export function imgN(range: ImgRange, k: string | null | undefined, seed: number): number {
-  const r = IMG_RANGES.find(x => x.v === range) || IMG_RANGES[0]; const max = Math.min(imgMax(k), r.max);
-  return r.min + Math.floor((((seed * 9301 + 49297) % 233280) / 233280) * (max - r.min + 1));
+export type ImgCount = 1 | 2 | 3 | 4;
+export const IMG_COUNTS: ImgCount[] = [1, 2, 3, 4];
+export interface ImageSettings { on: boolean; style: StyleKey; n: ImgCount }
+export const IMG_DEFAULT: ImageSettings = { on: true, style: 'editorial', n: 1 };
+/** A saved count, clamped to 1–4. Settings saved before counts had a range instead: 1–3 → 1, 3–5 → 3. */
+export function imgCount(n: unknown, range?: unknown): ImgCount {
+  if (typeof n === 'number' && Number.isFinite(n)) return Math.min(4, Math.max(1, Math.round(n))) as ImgCount;
+  return range === 'many' ? 3 : 1;
 }
 /** Seed for image i of a set. */
 export const imgSeed = (seed: number, i: number) => seed + i * 31;
 export function imageSettingsOf(v: any): ImageSettings {
-  return { on: v?.on !== false, style: styleK(v?.style), range: v?.range === 'many' ? 'many' : 'few' };
+  return { on: v?.on !== false, style: styleK(v?.style), n: imgCount(v?.n, v?.range) };
 }

@@ -4,7 +4,7 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Empty, EntryStatus, Field, Icon, ListEditor, Popover, Seg, Status, Tabs, downloadBlob } from '@/components/ui';
-import { Visual, visualBlob } from '@/components/Visual';
+import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
 import { PublishIntro } from '@/features/publishing/PublishIntro';
 import { BlogConnect } from '@/features/publishing/BlogConnect';
 import { KwMembership } from '@/features/calendar/ContentCalendar';
@@ -126,7 +126,7 @@ export function ArticleWorkspace() {
           <Field label="Style"><select className="input" value={A.img.style} onChange={ev => setA({ img: { style: ev.target.value as any } }, false)}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
           <Field label="Direction"><textarea className="input" rows={2} value={A.img.prompt} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
           <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
-          <div className="row"><Btn icon="refresh" loading={imgBusy} onClick={async () => { setImgBusy(true); try { await app.act('article.regenerateImage', { entryId: id }); } catch { /* toasted */ } setImgBusy(false); }}>Regenerate image</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); }}>Download</Btn></div>
+          <div className="row"><Btn icon="refresh" loading={imgBusy} onClick={async () => { setImgBusy(true); try { await app.act('article.regenerateImage', { entryId: id }); } catch { /* toasted */ } setImgBusy(false); }}>Regenerate image</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
           <span className="xs sub">Uses {B.profile.business.name}’s colors <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.primary, verticalAlign: -1 }} /> <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.secondary, verticalAlign: -1 }} /> from your Business Profile.</span>
           <VideoPicker vids={vids || []} loading={vidBusy} on={A.videos} onToggle={(v, has) => { setA({ videos: has ? A.videos.filter(x => x !== v.id) : [...A.videos, v.id] }, false); toast(has ? 'Video removed' : 'Video embedded after the first section'); }} />
         </div>}

@@ -21,8 +21,13 @@ export function Visual({ style, brand, headline, seed = 1, ratio = 1.91, name, r
 export function renderVisualBlob(opts: Omit<VisualOpts, 'w' | 'h'>, w = 1200, h = 628): Promise<Blob | null> {
   return new Promise(r => { const c = document.createElement('canvas'); c.width = w; c.height = h; drawVisual(c.getContext('2d'), { ...opts, w, h }); c.toBlob(r, 'image/png'); });
 }
-/** Download either the stored generated image or a client render of the template. */
-export async function visualBlob(url: string | null | undefined, opts: Omit<VisualOpts, 'w' | 'h'>, w: number, h: number): Promise<Blob | null> {
-  if (url) { try { const r = await fetch(url); if (r.ok) return await r.blob(); } catch { /* fall through */ } }
-  return renderVisualBlob(opts, w, h);
+export const DL_ERROR = 'Radar couldn’t download the image. Try again.';
+/** Download either the stored generated image or, when there is none, a client render of the template. A bucket URL (another
+ *  origin, no CORS headers) is read through the business's same-origin media route. null when the stored image can't be
+ *  read: never the template in its place. */
+export async function visualBlob(url: string | null | undefined, opts: Omit<VisualOpts, 'w' | 'h'>, w: number, h: number, bid: string | null): Promise<Blob | null> {
+  if (!url) return renderVisualBlob(opts, w, h);
+  const src = /^https?:\/\//i.test(url) && bid ? `/api/b/${bid}/media?url=${encodeURIComponent(url)}` : url;
+  try { const r = await fetch(src); if (r.ok) return await r.blob(); } catch { /* unreadable */ }
+  return null;
 }

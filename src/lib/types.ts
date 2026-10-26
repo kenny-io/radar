@@ -159,7 +159,9 @@ export interface BriefItem {
   pub?: Pub | null;
 }
 export interface BriefImages {
-  style: import('./imageOptions').StyleKey; range: import('./imageOptions').ImgRange; seed: number; n: number;
+  style: import('./imageOptions').StyleKey; seed: number;
+  /** How many images (1–4; posts from before exact counts may have up to 5). */
+  n: number;
   /** One per image, filled in as each one finishes; null while generating or if it failed. */
   urls: (string | null)[]; status: 'generating' | 'ready' | 'failed';
   /** Parallel to `urls`: size/type recorded when each image is rendered (absent on older items). */
