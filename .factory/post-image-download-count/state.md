@@ -21,3 +21,9 @@ PR kenny-io/radar#10 (no CI checks configured; mergeable). Owner review of the P
 ## Risks
 - No real S3/R2 bucket was used in QA (a local no-CORS stand-in).
 - Images stored under an older bucket address (before `S3_PUBLIC_URL` changed) still display, but Download now shows the error toast for them instead of silently saving the template.
+
+## Released (2026-10-26)
+- Merged: PR kenny-io/radar#10 → `main` as `1fcf699e`, on the owner's go-ahead.
+- Deployed: `radar - worker` success 19:45:05Z, `radar - web` success 19:46:30Z (GitHub deployment "radar / production" success 19:46:33Z).
+- Production smoke check: `https://radar.thally.io/` 200, `/signin` 200. `GET /api/b/{id}/media` signed out → 401 "Sign in to continue." (an unknown route → 404), so the new route is live.
+- Not checked in production: Download on a real Brief post (needs a signed-in session), and the bucket's CORS headers.
