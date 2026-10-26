@@ -43,8 +43,10 @@ export function storedKey(bid: string, url: string): string | null {
   const base = publicBase();
   const rest = url.startsWith('/api/files/') ? url.slice('/api/files/'.length) : base && url.startsWith(base + '/') ? url.slice(base.length + 1) : null;
   if (rest == null) return null;
-  let key: string; try { key = path.posix.normalize(decodeURIComponent(rest.split(/[?#]/)[0])); } catch { return null; }
-  return bid && key.startsWith(bid + '/') ? key : null;
+  // Keys are objectKey()'s `<bid>/<kind>/<time>-<token>.<ext>`: plain segments only, never decoded, so no encoded or
+  // backslashed `..` can leave the business's folder when the URL is rebuilt and fetched.
+  const key = rest.split(/[?#]/)[0]; const seg = key.split('/');
+  return bid && seg.length > 1 && seg[0] === bid && seg.every(x => /^[A-Za-z0-9_-][A-Za-z0-9._+-]*$/.test(x)) ? key : null;
 }
 /** A file Radar stored for business `bid`, read on the server (downloads: the page can't fetch the bucket, it sends no CORS
  *  headers). null when the URL isn't one of the business's files or can't be read. */

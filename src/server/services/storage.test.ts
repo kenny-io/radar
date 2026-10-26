@@ -18,6 +18,14 @@ describe('storedKey: only the business’s own stored files', () => {
     expect(storedKey(BID, `${BASE}/${OTHER}/brief/1-a.png`)).toBeNull();
     expect(storedKey(BID, `${BASE}/${BID}/../${OTHER}/brief/1-a.png`)).toBeNull();
     expect(storedKey(BID, `${BASE}/${BID}/%2e%2e/${OTHER}/1-a.png`)).toBeNull();
+    // Double-encoded and backslashed `..`: fetch's URL parser would resolve these outside the business's folder.
+    expect(storedKey(BID, `${BASE}/${BID}/%252e%252e/${OTHER}/brief/1-a.png`)).toBeNull();
+    expect(storedKey(BID, `${BASE}/${BID}/..\\${OTHER}/brief/1-a.png`)).toBeNull();
+    expect(storedKey(BID, `${BASE}/${BID}/..%5C${OTHER}/brief/1-a.png`)).toBeNull();
+    expect(storedKey(BID, `${BASE}/${BID}/%252e%252e/rootfile.txt`)).toBeNull();
+    expect(storedKey(BID, `${BASE}/${BID}/./brief/1-a.png`)).toBeNull();
+    expect(storedKey(BID, `${BASE}/${BID}//brief/1-a.png`)).toBeNull();
+    expect(storedKey(BID, `${BASE}/${BID}`)).toBeNull();
     expect(storedKey(BID, `/api/files/${BID}/../${OTHER}/1-a.png`)).toBeNull();
     expect(storedKey(BID, `https://evil.example/${BID}/brief/1-a.png`)).toBeNull();
     expect(storedKey(BID, `${BASE}.evil.example/${BID}/brief/1-a.png`)).toBeNull();
@@ -43,6 +51,7 @@ describe('readStored', () => {
     bucket(); const f = vi.fn(); vi.stubGlobal('fetch', f);
     expect(await readStored(BID, `https://evil.example/${BID}/a.png`)).toBeNull();
     expect(await readStored(BID, `${BASE}/${OTHER}/a.png`)).toBeNull();
+    expect(await readStored(BID, `${BASE}/${BID}/%252e%252e/${OTHER}/brief/1-a.png`)).toBeNull();
     expect(f).not.toHaveBeenCalled();
   });
 });
