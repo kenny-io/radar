@@ -1,4 +1,4 @@
-// Next.js blog — GitHub (OAuth, scope "repo"). Each article: its own branch → commit {folder}/{slug}.mdx with frontmatter → pull request.
+// GitHub (type "nextjs"; any site built from a repository, e.g. Next.js) — OAuth, scope "repo". Each article: its own branch → commit {folder}/{slug}.mdx with frontmatter → pull request.
 // "Published" = the pull request is opened (DIVERGENCES #10); publishedUrl is the PR.
 // Contract (docs.github.com/en/rest, API version 2022-11-28):
 //  - GET  /repos/{repo}: default_branch, permissions.push; a private repo the token can't see is a 404, not a 403
