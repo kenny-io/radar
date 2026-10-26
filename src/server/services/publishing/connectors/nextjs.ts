@@ -7,24 +7,44 @@
 //  - GET  /repos/{repo}/contents/{path}?ref=… → { sha }, 404 when absent; PUT { message, content (base64), branch, sha (to update) }
 //  - POST /repos/{repo}/pulls { title, head, base, body } (422 = validation, e.g. a PR for that head already exists);
 //    GET /repos/{repo}/pulls?head=owner:branch&state=open
-//  - 401 = bad credentials; rate limits are 403 or 429 ("API rate limit exceeded" / "secondary rate limit")
-import type { Connector, ConnCtx, PublishPayload } from '../types';
+//  - GET  /user/repos?affiliation=owner,collaborator,organization_member&sort=pushed&per_page=100&page=N → [{ full_name, html_url, permissions.push }]
+//    (repos of an org that restricts OAuth apps are left out of the list, not an error)
+//  - 401 = bad credentials; rate limits are 403 or 429 ("API rate limit exceeded" / "secondary rate limit");
+//    an org that restricts OAuth apps answers 403 "…the `org` organization has enabled OAuth App access restrictions…",
+//    and one with SAML single sign-on answers 403 "Resource protected by organization SAML enforcement…"
+import type { Connector, ConnCtx, PublishPayload, Target } from '../types';
 import { jsonBody, PublishError, reqJson } from '../http';
 import { yamlStr } from '../render';
 
 const API = 'https://api.github.com';
 const h = (c: ConnCtx) => ({ authorization: `Bearer ${c.creds.access_token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'Radar' });
-export const parseRepo = (s: string) => { const m = /^(?:https?:\/\/github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec((s || '').trim()); return m ? { owner: m[1], repo: m[2] } : null; };
+/** owner/repo (or a github.com URL to it). "." and ".." are never names: they would turn the API path into another endpoint. */
+export const parseRepo = (s: string) => { const m = /^(?:https?:\/\/github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec((s || '').trim()); return m && !/^\.+$/.test(m[1]) && !/^\.+$/.test(m[2]) ? { owner: m[1], repo: m[2] } : null; };
 const repoOf = (c: ConnCtx) => { const r = parseRepo(c.fields.repo); if (!r) throw new PublishError(404, 'Invalid repository', 'github.com', 'config'); return `${r.owner}/${r.repo}`; };
-const folder = (c: ConnCtx) => (c.fields.path || 'content/posts').trim().replace(/^\/+|\/+$/g, '');
+/** The repo-relative content folder from what was typed or pasted: a github.com URL, "tree/main/…" or "/content/posts/".
+ * Without a github.com URL, "tree/<branch>/" is only stripped when a folder follows it, so a real "tree/posts" folder stays. */
+export const normFolder = (s: string) => {
+  let v = (s || '').trim(); const url = /^(?:https?:\/\/)?(?:www\.)?github\.com\/[^/]+\/[^/]+(?:\/|$)/i;
+  if (url.test(v)) v = v.replace(url, '').replace(/^\/+/, '').replace(/^(?:tree|blob)\/[^/]+(?:\/|$)/, '');
+  else v = v.replace(/^\/+/, '').replace(/^(?:tree|blob)\/[^/]+\/(?=[^/])/, '');
+  return v.replace(/^\/+|\/+$/g, '') || 'content/posts';
+};
+/** "." and ".." segments would let the folder climb out of the repository's contents API into other endpoints or repos. */
+export const unsafeFolder = (s: string) => s.split('/').some(x => x === '.' || x === '..');
+const folder = (c: ConnCtx) => { const f = normFolder(c.fields.path); if (unsafeFolder(f)) throw new PublishError(422, 'The content folder can’t contain “.” or “..”. Edit the connection and choose a folder inside the repository.', 'api.github.com', 'config'); return f; };
 const encPath = (p: string) => p.split('/').map(encodeURIComponent).join('/');
 const slugOf = (url: string) => url.replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop() || '';
 const notFound = (e: unknown) => e instanceof PublishError && e.http === 404;
 
-/** A revoked token is "Needs reconnecting"; a rate-limited 403 is retried like a 429 instead of flagging the connection. */
+/** The org named in GitHub's 403 message (`thallylabs`), else a generic "repository’s". */
+const orgIn = (detail: string) => { const m = /`([A-Za-z0-9-]+)`/.exec(detail); return m ? m[1] : 'repository’s'; };
+/** A revoked token is "Needs reconnecting"; a rate-limited 403 is retried like a 429 instead of flagging the connection;
+ * an org that hasn't approved Radar (or needs SSO) is a setup problem explained in a sentence, not "check the credentials". */
 async function gh<T = any>(url: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   try { return await reqJson<T>(url, init); } catch (e) {
     if (e instanceof PublishError && e.http === 401) throw new PublishError(401, e.detail, e.host, 'auth-expired');
+    if (e instanceof PublishError && e.http === 403 && /OAuth App access restrictions/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization hasn’t approved Radar on GitHub. Ask an organization owner to approve it, or request access under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
+    if (e instanceof PublishError && e.http === 403 && /SAML enforcement/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization uses single sign-on. Authorize Radar for it under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
     if (e instanceof PublishError && e.http === 403 && /rate limit/i.test(e.detail)) throw new PublishError(429, e.detail, e.host);
     throw e;
   }
@@ -80,7 +100,22 @@ export function mdxFile(p: PublishPayload): string {
   return fm.join('\n') + p.markdown;
 }
 
+/** Repositories the account can push to, most recently pushed first. Page 1 alone answers most accounts; a full page fetches
+ * pages 2–5 together (one listing of ~500 repos page by page took ~16 s). The likely site repo leads and is preselected. */
+async function repos(c: ConnCtx): Promise<Target[]> {
+  type Row = { full_name: string; name: string; html_url: string; permissions?: { push?: boolean } };
+  const page = async (n: number): Promise<Row[]> => { const b = await gh(`${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${n}`, { headers: h(c) }); return Array.isArray(b) ? b : []; };
+  const all = await page(1);
+  if (all.length === 100) for (const b of await Promise.all([2, 3, 4, 5].map(page))) { all.push(...b); if (b.length < 100) break; }
+  const host = (c.domain || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, ''); const label = host.split('.')[0];
+  // 0: named for the site ("thally-website", "thally.io"), 1: exactly the label ("thally"), 2: contains it ("thallydocs"), 3: the rest.
+  const rank = (n: string) => !label || label.length < 2 ? 3 : n === host || /^(.+)[-_.](website|site|web|www|blog|homepage|landing|marketing)$/.exec(n)?.[1] === label ? 0 : n === label ? 1 : n.includes(label) ? 2 : 3;
+  const list = all.filter(r => r.permissions?.push && r.full_name).map(r => ({ t: { id: r.full_name, name: r.full_name, url: r.html_url || null }, r: rank((r.name || r.full_name.split('/')[1] || '').toLowerCase()) }));
+  return [0, 1, 2, 3].flatMap(k => list.filter(x => x.r === k).map(x => x.t));
+}
+
 export const nextjs: Connector = {
+  targets: repos,
   async test(c) {
     const b = await base(c);
     const n = `radar/connection-test-${Date.now().toString(36)}`;

@@ -43,12 +43,19 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     if (!t || !P) return;
     const g = ++gen.current;
     const init: Record<string, string> = {};
-    (P.fields || []).forEach(([k]) => { init[k] = k === 'url' && P.k !== 'framer' ? 'https://' + dom : ''; });
+    (P.fields || []).forEach(([k]) => { init[k] = k === 'url' && P.k !== 'framer' ? 'https://' + dom : k === 'path' ? 'content/posts' : ''; });
     if (editing) Object.assign(init, Object.fromEntries(Object.entries(editing.f || {}).filter(([k]) => !SECRET_FIELDS.includes(k))));
-    setF(init); setAuth(editing && P.oauth ? 'ok' : 'none'); setOauthRef(null); setPick(editing ? editing.targetId || null : null); setTest(editing ? 'ok' : 'idle'); setFailMsg('');
+    // A Next.js connection saved before the repository picker has no targetId: its fields.repo is the pick.
+    const cur = editing ? editing.targetId || (P.k === 'nextjs' && editing.f.repo ? editing.f.repo.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/(\.git)?\/*$/, '') : null) : null;
+    const curOpt = cur ? { id: cur, name: editing!.target || cur } : null;
+    setF(init); setAuth(editing && P.oauth ? 'ok' : 'none'); setOauthRef(null); setPick(cur); setTest(editing ? 'ok' : 'idle'); setFailMsg('');
     setStep(t.step || 'conn'); setMode(B.blog.mode); setAck(B.blog.mode === 'autopilot'); setTz(B.blog.tz); setTime(B.blog.time); setSaving(false); setShowSecret(false);
-    setSecret(null); setOpts(editing && editing.targetId ? [{ id: editing.targetId, name: editing.target || '' }] : null);
-    if (editing && P.pick && !t.step) loadTargets({ type: P.k, id: editing.id }, g).then(list => { if (list && editing.targetId && !list.some(x => x.id === editing.targetId)) setOpts([{ id: editing.targetId, name: editing.target || '' }, ...list]); });
+    setSecret(null); setOpts(curOpt ? [curOpt] : null);
+    if (editing && P.pick && !t.step) loadTargets({ type: P.k, id: editing.id }, g).then(list => {
+      if (!list || !curOpt) return;
+      const same = list.find(x => x.id.toLowerCase() === curOpt.id.toLowerCase());
+      if (same) setPick(same.id); else setOpts([curOpt, ...list]);
+    });
     if (!editing && P.secret) app.act<{ oauthRef: string; secret: string; masked: string }>('blog.newSecret', {}, { silent: true }).then(r => { if (g === gen.current) setSecret({ ref: r.oauthRef, secret: r.secret, masked: r.masked }); }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -105,15 +112,17 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     } catch { /* toast shown by act */ } finally { setSaving(false); }
   };
   const failCopy = failMsg || (P.oauth && !P.fields ? 'The authorization expired. Reconnect and try again.' : '401 Unauthorized — check the credentials');
+  const fieldsEl = (P.fields || []).map(([k, l, ph, ty, hint]) => <Field key={k} label={l} hint={hint}><input className={'input' + (['hook', 'repo', 'path', 'key'].includes(k) ? ' mono' : '')} style={['hook', 'repo', 'path', 'key'].includes(k) ? { fontSize: 13 } : undefined} type={ty || 'text'} placeholder={ph} value={f[k] || ''} autoComplete={ty === 'password' ? 'new-password' : 'off'} onChange={e => { setF({ ...f, [k]: e.target.value }); setTest('idle'); }} /></Field>);
   const secretValue = editing ? editing.secretHint || 'whsec_…' : secret ? (showSecret ? secret.secret : secret.masked) : '';
 
   return <Modal open onClose={onClose} width={560}><div className="col" style={{ padding: 32, gap: 22 }}>
     {step === 'conn' ? <>
       <div className="row" style={{ gap: 14 }}><PlatMark k={P.k} s={44} /><div className="col"><span className="eyebrow">{editing ? 'Edit connection' : 'New connection'}</span><h2 className="h1" style={{ fontSize: 24 }}>Connect {P.l}</h2></div></div>
-      {(P.fields || []).map(([k, l, ph, ty]) => <Field key={k} label={l}><input className={'input' + (['hook', 'repo', 'path', 'key'].includes(k) ? ' mono' : '')} style={['hook', 'repo', 'path', 'key'].includes(k) ? { fontSize: 13 } : undefined} type={ty || 'text'} placeholder={ph} value={f[k] || ''} autoComplete={ty === 'password' ? 'new-password' : 'off'} onChange={e => { setF({ ...f, [k]: e.target.value }); setTest('idle'); }} /></Field>)}
+      {!P.authFirst && fieldsEl}
       {P.secret && <Field label="Signing secret" hint="Use it to verify each request came from Radar."><input className="input mono" style={{ fontSize: 13 }} readOnly value={secretValue} onFocus={e => { if (secret && !editing) { setShowSecret(true); const el = e.currentTarget; setTimeout(() => el.select(), 0); } }} onBlur={() => setShowSecret(false)} /></Field>}
-      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary" disabled={(!!P.fields && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
-      {P.pick && (auth === 'ok' || !P.oauth) && <Field label={P.pick}><select className="input" value={pick || ''} onChange={e => { setPick(e.target.value); setTest('idle'); }}><option value="" disabled>Choose…</option>{(opts || []).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>}
+      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary" disabled={(!!P.fields && !P.authFirst && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
+      {P.pick && (auth === 'ok' || !P.oauth) && <Field label={P.pick} hint={P.k === 'nextjs' ? <>Don’t see your repository? Its organization may need to approve Radar in <a href="https://github.com/settings/applications" target="_blank" rel="noopener">GitHub Settings → Applications</a>.</> : undefined}><select className="input" value={pick || ''} onChange={e => { setPick(e.target.value); setTest('idle'); }}><option value="" disabled>Choose…</option>{(opts || []).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>}
+      {P.authFirst && auth === 'ok' && fieldsEl}
       {P.help && <span className="xs sub">{P.help}</span>}
       <div className="row" style={{ minHeight: 40, gap: 14, flexWrap: 'wrap' }}><Btn icon="refresh" loading={test === 'testing'} disabled={!ready} onClick={run}>Test connection</Btn>
         {test === 'ok' && <Status tone="ok">Connected · test draft created, then deleted</Status>}

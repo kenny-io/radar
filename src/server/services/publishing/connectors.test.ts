@@ -9,6 +9,7 @@ import { wordpress, wpContent } from './connectors/wordpress';
 import { ghost } from './connectors/ghost';
 import { webhook } from './connectors/webhook';
 import { notion } from './connectors/notion';
+import { parseRepo } from './connectors/nextjs';
 import { PublishError, req } from './http';
 import { failCopy } from '@/server/actions/publishing';
 import { publishFailParts } from '@/lib/constants';
@@ -46,6 +47,15 @@ describe('RADAR_REAL_CONNECTORS (dev-only switch)', () => {
     env.devStubs = true; env.realConnectors = [];
     expect(connectorFor('wordpress')).not.toBe(wordpress);
     expect(stubbed('ghost')).toBe(true);
+  });
+  it('the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo', async () => {
+    env.devStubs = true; env.realConnectors = [];
+    const c = { type: 'nextjs' as const, fields: { path: 'content/posts' }, creds: { access_token: 'stub-github-token', login: 'fieldnote' }, target: null, targetId: null, bid: 'b1', domain: 'www.acme.co', businessName: 'Acme' };
+    const t = await connectorFor('nextjs').targets!(c);
+    expect(t).toEqual([{ id: 'fieldnote/acme-website', name: 'fieldnote/acme-website', url: 'https://github.com/fieldnote/acme-website' }, { id: 'fieldnote/blog', name: 'fieldnote/blog', url: 'https://github.com/fieldnote/blog' }]);
+    expect(t.every(x => parseRepo(x.id))).toBe(true);
+    const r = await connectorFor('nextjs').publish({ ...c, fields: { ...c.fields, repo: t[0].id } }, payload({ slug: 'hello' }), { id: 'stub-x' });
+    expect(r.url).toMatch(/^https:\/\/github\.com\/fieldnote\/acme-website\/pull\/\d+$/);
   });
   it('without dev stubs (production) every connector is real, whatever the list says', () => {
     env.devStubs = false; env.realConnectors = [];
