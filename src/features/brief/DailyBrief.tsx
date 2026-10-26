@@ -169,7 +169,8 @@ export function DailyBrief() {
       let r: BriefScanResult | null = (live as any).result || null;
       if (!r && live!.status === 'done') { try { r = ((await app.act('job.get', { id: scan.jobId })) as any)?.result || null; } catch { /* */ } }
       if (!alive) return;
-      if (live!.status === 'failed' || r?.failed) { setResult(r || { mode: scan.kind, failed: 'source' }); return; }
+      // A job that threw (status failed, result { detail }) still needs `failed`, or the scan view is left without actions.
+      if (live!.status === 'failed' || r?.failed) { setResult({ ...(r || {}), mode: r?.mode || scan.kind, failed: r?.failed || 'source' }); return; }
       setTimeout(() => { if (alive) scanDone(r!); }, 350);
     })();
     return () => { alive = false; };
@@ -179,7 +180,7 @@ export function DailyBrief() {
     // A click that joined a background rescan (or a Keep run) already got the server's toast (`notified`): show one only.
     if ((r.mode === 'again' || r.mode === 'keep') && !r.notified) {
       const n = r.added || 0;
-      toast(n ? `${n} new ${n === 1 ? 'conversation' : 'conversations'} since ${fmtTime(r.since)}` : 'Nothing new since this morning', { tone: n ? 'signal' : null });
+      toast(n ? `${n} new ${n === 1 ? 'conversation' : 'conversations'} since ${fmtTime(r.since)}` : `Nothing new since ${r.since ? fmtTime(r.since) : 'this morning'}`, { tone: n ? 'signal' : null });
     }
     if (r.addedIds && r.addedIds.length) setPendingSel(r.addedIds[0]);
     setResult(null); setScan(null);
