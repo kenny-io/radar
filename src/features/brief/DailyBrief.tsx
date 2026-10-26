@@ -4,8 +4,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { AutoText, Btn, Empty, Field, Icon, Modal, PageHead, Popover, Seg, Sheet, Status, copyText, downloadBlob, sleep } from '@/components/ui';
-import { Visual, visualBlob } from '@/components/Visual';
-import { IMG_DEFAULT, STYLES, imgSeed, styleK, styleL, type ImgRange, type StyleKey } from '@/lib/imageOptions';
+import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
+import { IMG_COUNTS, IMG_DEFAULT, STYLES, imgCount, imgSeed, styleK, styleL, type ImgCount, type StyleKey } from '@/lib/imageOptions';
 import { PlatLogo } from '@/components/brand';
 import { BMENTION, BPLAT, BRIEF_DEFAULT, PLAT, PORDER } from '@/lib/constants';
 import { ageFromIso, ageL, fmtD, fmtDW, fmtTime } from '@/lib/format';
@@ -291,24 +291,26 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const vn = im ? Math.min(im.n, plat === 'x' ? 4 : 5) : 0; const vi = Math.min(vIx, Math.max(0, vn - 1));
   const vBusy = !!im && im.status === 'generating';
   const vUrl = im ? im.urls[vi] || null : null;
-  const createVis = (x: { style: StyleKey; range: ImgRange }) => {
+  const createVis = (x: { style: StyleKey; n: ImgCount }) => {
     setVis(false); setVIx(0);
-    app.act('brief.visuals', { date: day, id: it.id, style: x.style, range: x.range }, { optimistic: b => {
-      const nb = patchB(b, day, it.id, i => ({ ...i, img: { style: x.style, range: x.range, seed: -1, n: x.range === 'many' ? 3 : 1, urls: [], status: 'generating' } }));
-      return { ...nb, social: { ...nb.social, img: { on: true, style: x.style, range: x.range } } };
+    app.act('brief.visuals', { date: day, id: it.id, style: x.style, n: x.n }, { optimistic: b => {
+      const nb = patchB(b, day, it.id, i => ({ ...i, img: { style: x.style, seed: -1, n: x.n, urls: [], status: 'generating' } }));
+      return { ...nb, social: { ...nb.social, img: { on: true, style: x.style, n: x.n } } };
     } }).catch(() => {});
   };
   const removeVis = () => { app.act('brief.visuals', { date: day, id: it.id, style: null }, { optimistic: b => patchB(b, day, it.id, i => ({ ...i, img: null })) }).catch(() => {}); };
   const dlVis = async () => {
     if (!im) return;
+    let got = 0;
     for (let i = 0; i < vn; i++) {
       if (i) await sleep(200);
-      const blob = await visualBlob(im.urls[i], { style: im.style, brand, headline: i ? '' : it.title, seed: imgSeed(im.seed, i), name }, 1200, Math.round(1200 / ratio));
-      if (blob) downloadBlob(blob, 'post' + (vn > 1 ? '-' + (i + 1) : '') + '.png');
+      const blob = await visualBlob(im.urls[i], { style: im.style, brand, headline: i ? '' : it.title, seed: imgSeed(Math.max(1, im.seed), i), name }, 1200, Math.round(1200 / ratio), app.bid);
+      if (blob) { downloadBlob(blob, 'post' + (vn > 1 ? '-' + (i + 1) : '') + '.png'); got++; }
     }
-    toast(vn > 1 ? `Downloaded ${vn} images` : 'Downloaded image');
+    if (got < vn) toast(vn > 1 ? `Radar couldn’t download ${vn - got} of ${vn} images. Try again.` : DL_ERROR, { tone: 'bad' });
+    else toast(vn > 1 ? `Downloaded ${vn} images` : 'Downloaded image');
   };
-  const visInitial: { style: StyleKey; range: ImgRange } = im ? { style: styleK(im.style), range: im.range || 'few' } : { style: styleK((B.social.img || IMG_DEFAULT).style), range: (B.social.img || IMG_DEFAULT).range || 'few' };
+  const visInitial: { style: StyleKey; n: ImgCount } = im ? { style: styleK(im.style), n: imgCount(im.n) } : { style: styleK((B.social.img || IMG_DEFAULT).style), n: imgCount((B.social.img || IMG_DEFAULT).n) };
   /* ── Social channels (publishing on): Post now / Schedule / Reply now ── */
   const now = useNowMs(); const pubOn = !!B.social.publishing;
   const bp = pubOn ? briefPublish(socialAccountsOf(B), it) : null;
@@ -383,7 +385,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       </div>
     </div>
     {im && (vBusy || vn > 0 || im.status === 'failed') && <div className="col" style={{ gap: 10, marginTop: 18 }}>
-      {im.status === 'failed' && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>Radar couldn’t make these images.</span>{live && <Btn kind="link" className="small" onClick={() => createVis({ style: im.style, range: im.range })}>Try again</Btn>}{live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
+      {im.status === 'failed' && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>Radar couldn’t make these images.</span>{live && <Btn kind="link" className="small" onClick={() => createVis({ style: im.style, n: imgCount(im.n) })}>Try again</Btn>}{live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
       <Visual key={vi + ':' + (vUrl || '')} style={im.style} brand={brand} headline={vi ? '' : it.title} seed={imgSeed(Math.max(1, im.seed), vi)} ratio={ratio} name={name} radius={12} busy={vBusy && !vUrl} url={vUrl} />
       {!(vBusy && !vn) && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
         {vn > 1 && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }} role="tablist" aria-label="Images">{Array.from({ length: vn }, (_, i) => <button key={i} type="button" role="tab" aria-selected={i === vi} aria-label={'Image ' + (i + 1)} onClick={() => setVIx(i)} style={{ width: 56, padding: 2, border: 0, borderRadius: 9, background: 'none', cursor: 'pointer', boxShadow: i === vi ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', transition: 'box-shadow .2s' }}><Visual style={im.style} brand={brand} headline="" seed={imgSeed(Math.max(1, im.seed), i)} ratio={1} name="" radius={7} url={im.urls[i] || null} busy={vBusy && !im.urls[i]} /></button>)}</div>}
@@ -438,13 +440,13 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
 }
 
 /** Add visuals window: style tiles and the number of images. */
-function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; range: ImgRange }; onCreate: (x: { style: StyleKey; range: ImgRange }) => void }) {
+function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; n: ImgCount }; onCreate: (x: { style: StyleKey; n: ImgCount }) => void }) {
   const [im, setIm] = useState(initial); useEffect(() => { if (open) setIm(initial); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   return <Modal open={open} onClose={onClose} width={640} label="Add visuals to this post"><div className="col" style={{ padding: '32px clamp(20px,5vw,32px) 26px', gap: 22 }}>
     <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>Add visuals to this post</h2><p className="sub">Radar creates images to go with the post. You can regenerate, download or remove them.</p></div>
     <Field label="Visual style"><div role="radiogroup" aria-label="Visual style" className="vis-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(104px,1fr))', gap: 12 }}>{STYLES.map(st => { const on = im.style === st.k; return <button key={st.k} type="button" role="radio" aria-checked={on} onClick={() => setIm({ ...im, style: st.k })} className="col" style={{ gap: 6, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}><span style={{ borderRadius: 12, boxShadow: on ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', padding: 2, transition: 'box-shadow .2s' }}><Visual style={st.k} brand={brand} headline="" seed={5} name="" radius={9} ratio={1} /></span><span className="xs" style={{ fontWeight: on ? 500 : 400, color: on ? 'var(--ink)' : 'var(--ink2)', lineHeight: 1.3 }}>{st.l}</span></button>; })}</div>
       <span className="small sub" style={{ marginTop: 10, display: 'block' }}>{(STYLES.find(st => st.k === im.style) || STYLES[0]).d}</span></Field>
-    <Field label="Number of images" hint="Radar picks the exact number. X allows up to 4."><Seg value={im.range} onChange={v => setIm({ ...im, range: v })} options={[{ v: 'few' as ImgRange, l: <span className="row" style={{ gap: 7 }}>1–3<span style={{ color: 'var(--mute)', fontWeight: 400 }}>Recommended</span></span> }, { v: 'many' as ImgRange, l: '3–5' }]} /></Field>
+    <Field label="Number of images" hint="X allows up to 4."><Seg value={im.n} onChange={v => setIm({ ...im, n: v })} options={IMG_COUNTS} /></Field>
     <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" onClick={() => onCreate(im)}>Create images</Btn></div>
   </div></Modal>;
 }

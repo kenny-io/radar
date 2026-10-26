@@ -344,7 +344,7 @@ Handoff risks owned by this area: **#1 (LinkedIn), #2 (Quora), #3 (X), #7 (Rewri
 |---|---|---|---|---|---|
 | Add visuals window | `BriefVisualsModal`: five style tiles, 1–3 / 3–5, Cancel / Create images; opens with the post's setting or `social.img` | As designed. On phones the tiles sit three to a row so the buttons stay on screen | Fit at 390px | Yes (phones only) | Logged |
 | Images on the post | Placeholders that shimmer, thumbnails, Change / Download / Remove, caption | Real images: Create images starts a background job that makes each image with the image model (each style key maps to its own prompt template; no text in images) and they appear one by one. Without an image model (or if the model fails) Radar renders the style's brand template instead. If every image fails: "Radar couldn’t make these images." with Try again / Remove | Production images, not placeholders | Yes | Needs approval (failure copy) |
-| Image count | Seeded count in the range; X allows 4 | Count picked from the range against LinkedIn's limit (up to 5); the X version shows the first 4. Images are made at 16:9 and cropped to each platform's ratio | One set of images works for both platforms | Barely | Logged |
+| Image count | Seeded count in the range; X allows 4 | Count picked from the range against LinkedIn's limit (up to 5); the X version shows the first 4. Images are made at 16:9 and cropped to each platform's ratio | One set of images works for both platforms | Barely | Superseded 2026-10-26: exact count 1–4 (below) |
 | Saved choice | `social.img` | Stored per business (`businesses.social_img`, migration 0005) and returned as `social.img` | — | No | Logged |
 | Rest of the image-options update | §2 Generate social posts Images step, §3 per-post controls, §4 calendar/article images | Not built yet: owner asked for Daily Brief only. Social posts and articles still use the previous styles | Scope | Yes | Open |
 
@@ -542,3 +542,9 @@ Details: `.factory/marketing-trial-gating/` (brief, architecture, verification).
 | Item | Design | Built | Why | Visible | Status |
 |---|---|---|---|---|---|
 | Next.js blog → GitHub | "Next.js blog", Next.js mark | The platform is named **GitHub**, with the GitHub mark and the subtitle "Pull request". The connection type stays `nextjs`, so saved connections and stored errors are unchanged | Owner request: publishing by pull request works for any site built from a repository, not only Next.js | Yes | Approved by owner |
+
+## Daily Brief image count and Download (2026-10-26, owner request)
+| Item | Design | Built | Why | Visible | Status |
+|---|---|---|---|---|---|
+| Number of images | 1–3 (Recommended) / 3–5; Radar picks the exact count | A single choice of exactly 1, 2, 3 or 4 in the same segmented control, hint "X allows up to 4." Radar makes that many. Choices saved before map 1–3 → 1 and 3–5 → 3; older posts with 5 images open the window at 4 | Owner request | Yes | Approved by owner |
+| Download | Saves the post's images | Saves the stored images. Bucket images are read through a same-origin route for members of the business (`/api/b/{bid}/media`), since the bucket sends no CORS headers. Before, the failed read silently saved the style's brand template instead. If an image still can't be read: toast "Radar couldn’t download the image. Try again." and nothing is saved. Same for Social pack and article image downloads | Bug fix | Yes (failure toast) | Needs approval (failure copy) |

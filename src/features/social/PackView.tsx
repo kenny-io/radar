@@ -5,7 +5,7 @@ import { PlatName, PlatLogo } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/client/app';
 import { AutoText, Btn, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
-import { Visual, visualBlob } from '@/components/Visual';
+import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
 import { packKeys } from './PackThumb';
 import { PublishBox } from './channels/PublishBox';
 import { ScheduleAll } from './channels/ScheduleAll';
@@ -32,8 +32,8 @@ export function PackView({ pack }: { pack: SocialPack }) {
     setBusy(b => ({ ...b, [what]: false }));
   };
   const fname = (k: string) => `${pack.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-${k}`;
-  const dlOne = async (k: Platform) => { const q = pack.posts[k]!; const [w, h] = IMG_SIZES[k]; const blob = await visualBlob(q.imageUrl, { style: q.style === 'custom' ? 'illustration' : q.style, brand, headline, seed: q.seed, name: B.profile.business.name }, w, h); if (blob) downloadBlob(blob, fname(k) + '.png'); };
-  const dlAll = async () => { const txt = keys.map(k => `— ${plat(k).l} —\n\n${pack.posts[k]!.text}\n`).join('\n'); downloadBlob(new Blob([txt], { type: 'text/plain' }), fname('copy') + '.txt'); for (const k of keys) { await sleep(250); await dlOne(k); } toast(`Downloaded copy and ${keys.length} visuals. Nothing was posted.`); };
+  const dlOne = async (k: Platform) => { const q = pack.posts[k]!; const [w, h] = IMG_SIZES[k]; const blob = await visualBlob(q.imageUrl, { style: q.style === 'custom' ? 'illustration' : q.style, brand, headline, seed: q.seed, name: B.profile.business.name }, w, h, app.bid); if (blob) downloadBlob(blob, fname(k) + '.png'); else toast(DL_ERROR, { tone: 'bad' }); return !!blob; };
+  const dlAll = async () => { const txt = keys.map(k => `— ${plat(k).l} —\n\n${pack.posts[k]!.text}\n`).join('\n'); downloadBlob(new Blob([txt], { type: 'text/plain' }), fname('copy') + '.txt'); let got = 0; for (const k of keys) { await sleep(250); if (await dlOne(k)) got++; } if (got) toast(`Downloaded copy and ${got} visual${got > 1 ? 's' : ''}. Nothing was posted.`); };
   const len = p ? (pubOn ? charCount('x', p.text) : p.text.length) : 0;
   const locked = pubOn && !!p && isLocked(p.pub, now);
   return <div className="page">

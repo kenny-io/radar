@@ -4,12 +4,15 @@ import path from 'node:path';
 import { env } from '../env';
 import { randomToken } from '../crypto';
 
+/** The bucket's public base URL (no trailing slash), or null when files are on local disk. */
+const publicBase = () => (env.s3Bucket ? (env.s3PublicUrl || `https://${env.s3Bucket}.s3.${env.s3Region}.amazonaws.com`).replace(/\/$/, '') : null);
+
 export async function putObject(key: string, body: Buffer, contentType: string): Promise<string> {
   if (env.s3Bucket) {
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
     const s3 = new S3Client({ region: env.s3Region, ...(env.s3Endpoint ? { endpoint: env.s3Endpoint, forcePathStyle: true } : {}) });
     await s3.send(new PutObjectCommand({ Bucket: env.s3Bucket, Key: key, Body: body, ContentType: contentType, CacheControl: 'public, max-age=31536000, immutable' }));
-    return `${(env.s3PublicUrl || `https://${env.s3Bucket}.s3.${env.s3Region}.amazonaws.com`).replace(/\/$/, '')}/${key}`;
+    return `${publicBase()}/${key}`;
   }
   const full = path.join(process.cwd(), env.storageDir, key);
   await fs.mkdir(path.dirname(full), { recursive: true });
@@ -33,6 +36,23 @@ export async function readObjectBytes(url: string, timeoutMs = 30_000): Promise<
     if (!r.ok) return null;
     return { body: Buffer.from(await r.arrayBuffer()), type: r.headers.get('content-type') || 'application/octet-stream' };
   } catch { return null; } finally { clearTimeout(t); }
+}
+/** The key behind a URL Radar stored for business `bid` (local `/api/files/…` or the bucket's public URL). null for any
+ *  other host, another business's file, or a path that leaves the business's folder. */
+export function storedKey(bid: string, url: string): string | null {
+  const base = publicBase();
+  const rest = url.startsWith('/api/files/') ? url.slice('/api/files/'.length) : base && url.startsWith(base + '/') ? url.slice(base.length + 1) : null;
+  if (rest == null) return null;
+  // Keys are objectKey()'s `<bid>/<kind>/<time>-<token>.<ext>`: plain segments only, never decoded, so no encoded or
+  // backslashed `..` can leave the business's folder when the URL is rebuilt and fetched.
+  const key = rest.split(/[?#]/)[0]; const seg = key.split('/');
+  return bid && seg.length > 1 && seg[0] === bid && seg.every(x => /^[A-Za-z0-9_-][A-Za-z0-9._+-]*$/.test(x)) ? key : null;
+}
+/** A file Radar stored for business `bid`, read on the server (downloads: the page can't fetch the bucket, it sends no CORS
+ *  headers). null when the URL isn't one of the business's files or can't be read. */
+export async function readStored(bid: string, url: string): Promise<{ body: Buffer; type: string } | null> {
+  const key = storedKey(bid, url); if (!key) return null;
+  return url.startsWith('/api/files/') ? readLocal(key) : readObjectBytes(`${publicBase()}/${key}`);
 }
 export const objectKey = (bid: string, kind: string, ext: string) => `${bid}/${kind}/${Date.now()}-${randomToken(6)}.${ext}`;
 

@@ -1,4 +1,4 @@
-// Daily Brief → Add visuals (UPDATE-2026-10-21-image-options §5): Radar makes 1–5 images for a feed post, in the chosen
+// Daily Brief → Add visuals (UPDATE-2026-10-21-image-options §5): Radar makes 1–4 images for a feed post, in the chosen
 // visual style, one at a time so they appear as they finish. Uses the image model when configured (each style key maps
 // to a prompt template), else the brand template renderer.
 import { defineJob, enqueue, type JobCtx } from '@/server/jobs/queue';
