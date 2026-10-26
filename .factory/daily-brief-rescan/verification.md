@@ -58,3 +58,13 @@
 - **Branch status:** `origin/main` has not moved since base `3fe684ea`, so the PR has no conflicts. No CI checks are configured.
 - **Failed background jobs:** only the Daily Brief page reads `brief.scan` jobs, so a quiet failed rescan surfaces nowhere else. The Dashboard's failed item comes from calendar entries.
 - **Per-minute queries:** `brief.rescan` runs `hasDay` and `scansOf` once a minute for each business with a brief. They use the `brief_days` (business, date) key and the `jobs_biz` (business_id, created_at) index, filtered by kind and ref. With 14-day retention, each scan covers only a small set of rows.
+
+## Release
+- **Before merging:** `main` had moved on (PR #10 merged as `1fcf699e`, which also touches `DailyBrief.tsx` and `DIVERGENCES.md`). The app synced it into the branch as merge commit `030b63ca` with no conflicts.
+- **Checks on the combined tree:** `npm run typecheck` is clean. `npx vitest run` gives 665 passed, 1 failed, 65 skipped. The failure is the known openrouter parity snapshot.
+- **Merge:** the owner approved it on 2026-10-26. PR kenny-io/radar#11 merged at 19:46:07Z as merge commit `6db9492f` on `main`.
+- **Deploy:** GitHub deployment "radar / production" `7341878462` for `6db9492f` reached `success` at 19:48:34Z.
+- **Web check:** `https://radar.thally.io/` serves the new card copy, "Up to two conversations from each every morning."
+- **Worker check (`brief.rescan`):** not yet verified. The Railway CLI here is logged out, and the built-in browser isn't signed in to Railway or Radar. To confirm:
+  - **Worker logs:** the worker should be enqueuing `brief.scan` jobs with `background:true`. Errors would show as `[brief.rescan]`, and a skipped platform as `source failed (background rescan, skipped)`.
+  - **Thally's brief:** "Found at" should move to a time after the deploy, since the morning scan was more than 2 h earlier.

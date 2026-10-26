@@ -11,4 +11,4 @@ Base: `3fe684ea` (main), branch `kenny-dev/daily-brief-missing-posts-271f8b`.
 | R5 | Fix D1 (stuck scan view), "Nothing new since {time}" toast, B21/B22 and CONTRACTS notes | factory-engineer | `DailyBrief.tsx`, `DIVERGENCES.md`, `docs/CONTRACTS.md` | R3 | verified | 3, 9 |
 | R6 | QA recheck of D1, the toast, and regressions | factory-qa | none | R5 | verified (`147f012d`) | 3, 5, 7 |
 
-Last integrated revision: `147f012d`, verified and release-ready. Next action: the owner reviews the PR and approves the merge (merging deploys). After the deploy, check that the worker logs show `brief.rescan` enqueuing, and that Thally's brief gains rescans during the day.
+Released: PR kenny-io/radar#11 is merged as `6db9492f` (it includes `main` up to `1fcf699e` through merge commit `030b63ca`). The production deploy succeeded at 19:48:34Z on 2026-10-26, and the new web build is live. Next action: confirm in production that the worker runs `brief.rescan`, either from the worker logs or from Thally's "Found at" time.
