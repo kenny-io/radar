@@ -11,7 +11,7 @@ import { enqueueScan } from '../services/brief/jobs';
 import { withDay } from '../services/brief/store';
 import { rewriteItem } from '../services/brief/draft';
 import { enqueueVisuals } from '../services/brief/visuals';
-import { imgN, type ImageSettings } from '@/lib/imageOptions';
+import { imgCount, type ImageSettings } from '@/lib/imageOptions';
 import '../services/brief/stubs';
 import { acctOf, isLive, variantOf } from '@/features/brief/model';
 import type { BriefItem, Profile } from '@/lib/types';
@@ -118,26 +118,27 @@ export const actions: ActionMap = {
   /** Add visuals / Change (UPDATE-2026-10-21-image-options §5): set the post's images and make them (job brief.visuals,
    *  ref = date:id). style null = Remove. The choice also becomes the social default (businesses.social_img). */
   'brief.visuals': action({
-    input: z.object({ date: Date_, id: z.string().min(1).max(40), style: z.enum(['editorial', 'flat', 'render3d', 'handdrawn', 'photography']).nullable(), range: z.enum(['few', 'many']).optional() }),
+    input: z.object({ date: Date_, id: z.string().min(1).max(40), style: z.enum(['editorial', 'flat', 'render3d', 'handdrawn', 'photography']).nullable(), n: z.number().int().min(1).max(4).optional(), range: z.enum(['few', 'many']).optional() }),
     run: async (ctx, input) => {
       if (input.date < bizToday(ctx.biz)) throw new RadarError(PAST_ERROR, 400, 'read_only');
       // New images would change a scheduled post.
       const ps = await pubState(ctx.biz, briefSid(input.date, input.id));
       if (ps?.locked) throw lockedError();
       if (ps && ps.pub.status === 'scheduled') throw new RadarError(COPY.unscheduleFirst, 409, 'scheduled');
-      const seed = Math.floor(Math.random() * 500) + 1; const range = input.range || 'few';
+      // `range` (1–3 / 3–5) is what a page loaded before exact counts sends.
+      const seed = Math.floor(Math.random() * 500) + 1; const count = imgCount(input.n, input.range);
       const ok = await withDay(ctx.bid, input.date, row => {
         const items = row.items as BriefItem[]; const i = items.findIndex(x => x.id === input.id);
         if (i < 0 || items[i].kind !== 'post' || !isLive(items[i])) return null;
-        // Up to 5 (LinkedIn); the X version shows the first 4, X's limit.
-        const n = input.style ? imgN(range, 'linkedin', seed) : 0;
+        // 1–4, which fits both X (4) and LinkedIn.
+        const n = input.style ? count : 0;
         const next = [...items];
-        next[i] = { ...items[i], img: input.style ? { style: input.style, range, seed, n, urls: Array(n).fill(null), status: 'generating' } : null };
+        next[i] = { ...items[i], img: input.style ? { style: input.style, seed, n, urls: Array(n).fill(null), status: 'generating' } : null };
         return { items: next, ret: next[i] };
       });
       if (!ok) throw new RadarError('That post wasn’t found.', 404, 'not_found');
       if (!input.style) return { ok: true };
-      const img: ImageSettings = { on: true, style: input.style, range };
+      const img: ImageSettings = { on: true, style: input.style, n: count };
       await db.update(schema.businesses).set({ socialImg: img }).where(eq(schema.businesses.id, ctx.bid));
       const jobId = await enqueueVisuals(ctx.bid, input.date, input.id, seed);
       trackSoon('brief.visuals_added', { bid: ctx.bid, uid: ctx.user.id, ref: input.id, props: { date: input.date, style: input.style, n: ok.img?.n } });

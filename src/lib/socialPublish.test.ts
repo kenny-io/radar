@@ -96,7 +96,7 @@ describe('preflight', () => {
   });
   it('Brief posts: only finished images count, X takes the first 4, generating blocks', () => {
     const m = { bytes: 10, type: 'image/png' };
-    const it = { kind: 'post' as const, img: { style: 'flat' as any, range: 'many' as any, seed: 1, n: 5, urls: ['/a', '/b', null, '/d', '/e'], status: 'ready' as const, meta: [m, m, null, m, m] } };
+    const it = { kind: 'post' as const, img: { style: 'flat' as any, seed: 1, n: 5, urls: ['/a', '/b', null, '/d', '/e'], status: 'ready' as const, meta: [m, m, null, m, m] } };
     expect(briefPreflightInput(it, 'x', 'hi').images).toHaveLength(4);
     expect(briefPreflightInput(it, 'linkedin', 'hi').images).toHaveLength(4);
     expect(preflight('linkedin', briefPreflightInput({ ...it, img: { ...it.img, status: 'generating' } }, 'linkedin', 'hi')).map(p => p.code)).toEqual(['images_pending']);
