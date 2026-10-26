@@ -16,7 +16,7 @@ Branch `kenny-dev/post-image-download-size-5ca656` from `main` @ `3fe684ea`. Del
 - `src/features/social/PackView.tsx`, `src/features/article/ArticleWorkspace.tsx` (download error toast only)
 
 ## Next action
-Owner review of the PR; merging deploys. After deploy: Download on a Brief post in production saves the generated image.
+PR kenny-io/radar#10 (no CI checks configured; mergeable). Owner review of the PR; merging deploys. After deploy: Download on a Brief post in production saves the generated image.
 
 ## Risks
 - No real S3/R2 bucket was used in QA (a local no-CORS stand-in).
