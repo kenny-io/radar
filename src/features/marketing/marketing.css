@@ -536,3 +536,10 @@ html:root:has(.mk){-webkit-text-size-adjust:100%;scroll-padding-top:72px;color-s
    the page wider than a 375px phone (horizontal scroll). They are `minmax(0,1fr)` here; the demo's address row drops its
    https:// prefix on very narrow screens, as the real website field already does below 640px. */
 @media (max-width:420px){.mk .ob-f .pre{display:none}}
+/* Publishing additions (2026-10-26). The Content Calendar card's fine print sits under its description, not pinned above the
+   keyword demo. The platform row in "Paste your website" is the logo strip at card scale: left-aligned, smaller, quieter. */
+.mk .b-cal .btx .bfine{margin-top:0;padding-top:12px}
+.mk .st-logos{margin:16px 0 0;max-width:none;justify-content:flex-start;gap:10px 18px}
+.mk .st-logos li{gap:7px;font-size:13.5px;color:var(--mute);white-space:nowrap}
+.mk .st-logos svg{width:16px;height:16px}
+@media (max-width:640px){.mk .st-logos{gap:8px 14px}}
