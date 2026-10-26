@@ -67,7 +67,7 @@ WordPress (self-hosted), Ghost, Webhook and Framer need nothing from you — use
 |---|---|---|---|---|
 | Webflow | Workspace settings → Apps & Integrations → create a Data Client app (steps in §7.6) | `webflow` | `sites:read cms:read cms:write` | `WEBFLOW_CLIENT_ID/SECRET` |
 | Notion | Notion Developer portal → new **public** connection (steps in §7.2) | `notion` | Read, Update and Insert content; no comments; no user information | `NOTION_CLIENT_ID`, `NOTION_CLIENT_SECRET` |
-| Wix | dev.wix.com → new app (steps in §7.7) | `wix` | Blog, Members, Media, Ricos, site owner email | `WIX_CLIENT_ID/SECRET`, optional `WIX_SHARE_URL_ID` |
+| Wix | Wix Studio → Custom Apps → new app (steps in §7.7) | `wix` | Blog, Members, Media, Ricos, site owner email | `WIX_CLIENT_ID/SECRET`, `WIX_SHARE_URL_ID` (required while unlisted) |
 | Shopify | Shopify Dev Dashboard (dev.shopify.com/dashboard; steps in §7.5) | `shopify` | `read_content,write_content` | `SHOPIFY_CLIENT_ID/SECRET`, `SHOPIFY_API_VERSION` (default `2026-10`) |
 | WordPress.com | developer.wordpress.com/apps → Create New Application (steps in §7.1) | `wpcom` | `global` (Radar sends it; nothing to tick in the app) | `WPCOM_CLIENT_ID`, `WPCOM_CLIENT_SECRET` |
 | Next.js blog (GitHub) | GitHub → Developer settings → OAuth App (steps in §7.4) | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
@@ -171,7 +171,9 @@ Use a throwaway WordPress.com site and a throwaway Notion workspace. Record each
 
 ### 7.7 Wix
 
-- [ ] At **dev.wix.com**, create a new app. In **OAuth**, set the redirect URL to `https://radar.thally.io/api/oauth/wix/callback`.
+- [ ] Wix only lets **Wix Studio** accounts create apps. If manage.wix.com/account/custom-apps sends you to "Switch to Wix Studio", switching moves all your existing sites into a Studio workspace.
+- [ ] In **Custom Apps**, choose **Create New App** → **Start From Scratch** (no CLI, no template code) and name it **Radar**.
+- [ ] **Nothing to set in OAuth.** A new app's OAuth page shows only the App ID and App Secret; there is no redirect URL field. Radar passes `postInstallationUrl=https://radar.thally.io/api/oauth/wix/callback` to Wix's installer when the user connects.
 - [ ] **Permissions.** Add these:
   - Manage Blog, Read Blog
   - Read Members
@@ -181,8 +183,10 @@ Use a throwaway WordPress.com site and a throwaway Notion workspace. Record each
   - **Read Site Owner Email**
 
   Without the last one, every connection fails with the "no member profile" message.
-- [ ] Copy the **App ID** → `WIX_CLIENT_ID` and the **App Secret** → `WIX_CLIENT_SECRET`. The secret also verifies the `signedInstance` that Wix sends after install. Set both on web and worker, then redeploy.
-- **Before App Market review:** make the app **unlisted**, create a share link, and set its id as `WIX_SHARE_URL_ID`. Installs then go through that link. Listing in the Wix App Market needs Wix's review.
+- [ ] **Release a version**, then **Distribute → Share Install Link → Generate Link**. A link made before the permissions were saved installs without them, so release after adding them.
+- [ ] **`WIX_SHARE_URL_ID`** (required while the app is unlisted): open the share link (`https://wix.to/…`); it redirects to `https://www.wix.com/app-market/install/{id}`. That id is the value. Without it, Wix can't resolve the install for anyone outside your account.
+- [ ] Copy the **App ID** → `WIX_CLIENT_ID` and the **App Secret** → `WIX_CLIENT_SECRET`. The secret also verifies the `signedInstance` that Wix sends after install. Set all three on web and worker, then redeploy.
+- **App Info** (icon, teaser, features, description) is only needed for an App Market listing, which needs Wix's review. Listing text can't contain the word "Wix".
 - The site needs the **Wix Blog** app. Posts are credited to the site owner's member profile, so the owner must have signed in to their live site once. Radar never creates a member.
 
 ### 7.8 Framer (no app to create)

@@ -9,7 +9,7 @@ Branch `kenny-dev/blog-connectors-2` from `main` @ `2ddfed16`. Delivery: a PR to
 | C3 | Integrate; LAUNCH §7; DIVERGENCES | PM | merges, `types.ts`, `http.ts`, `connectors/index.ts`, `actions/publishing.ts` (copy), `docs/LAUNCH.md`, `DIVERGENCES.md` | done (ff37259a) | 11 |
 | C4 | Independent QA | factory-qa, worktree `../bc2-qa` @ ff37259a, re-verified d2013b1b | none | verified | 1–11 |
 
-Owner question open: which GitHub repo to use for the live check (asked via the parent session; no answer yet).
+GitHub live check: done on kenny-io/radar-connector-test (see verification).
 
 Owner decisions logged in DIVERGENCES: Shopify App Store install flow, GitHub OAuth `repo` scope vs a GitHub App, Framer site-wide publish, Next.js refresh replacing the whole file.
 
@@ -18,5 +18,8 @@ Owner decisions logged in DIVERGENCES: Shopify App Store install flow, GitHub OA
 - **Deployed:** to Railway production. Both `radar - web` (radar.thally.io) and `radar - worker` succeeded.
 - **Not yet live for users:** each platform stays hidden until its app env vars are set.
 
+## Apps and env (2026-10-26)
+All six OAuth apps exist and their env vars are set on web and worker (verification, "Platform apps").
+
 ## Next action
-The owner creates each platform's app and runs its live check (LAUNCH §7.4–7.9) before turning that platform on. GitHub's live check is already done.
+Confirm the picker in production, then connect one real account per platform (LAUNCH §7.9, "In the app").

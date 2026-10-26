@@ -118,3 +118,17 @@ Run 2 covered:
 
 The new connectors stay hidden in the picker until their env vars are set, so this release changes nothing users can see yet.
 
+
+## Platform apps, 2026-10-26
+The owner asked for the apps to be created in their signed-in Chrome. Agents never typed passwords, solved CAPTCHAs or revealed secrets; the owner copied every secret into Railway.
+
+| Platform | App | Notes |
+|---|---|---|
+| GitHub | OAuth app "Radar" (already existed), client `Ov23liEm9niSJvBlTSjN` | Callback correct |
+| Webflow | Data Client "Radar", Ekene's Workspace | `sites:read cms:read cms:write` |
+| Notion | Public connection "Radar", Kenny's Workspace | Read, update, insert content; no user information |
+| Shopify | Dev Dashboard app "Radar", org "My Store", client `2ae0261c6a58f48a5975c971e41094a0` | Version radar-1 released; not embedded; `read_content,write_content`; callback set |
+| WordPress.com | App 151424 | The owner answered the form's CAPTCHA and clicked Create |
+| Wix | Custom app "Radar", App ID `7e8406c6-7fba-40a6-bfde-fc65e2274f8a`, v1.0 | The account was switched to Wix Studio by the owner. Seven permissions; share link `https://wix.to/Qzx7o3R` → shareUrlId `8441dc5b-77d1-483e-b98c-c44fd494168e` (per Wix's "Set Up the External Install Flow"). New apps have no redirect URL field, so LAUNCH §7.7 was corrected |
+
+The owner set `GITHUB_*`, `WEBFLOW_*`, `NOTION_*`, `SHOPIFY_*` (with `SHOPIFY_API_VERSION`), `WPCOM_*` and `WIX_*` (with `WIX_SHARE_URL_ID`) as Railway shared variables for web and worker. Not yet checked: the picker in production and each platform's consent/install screen (LAUNCH §7.9, "In the app").
