@@ -136,7 +136,7 @@ defineOAuth('wpcom', {
   },
 });
 
-/* GitHub (Next.js blog) — OAuth app, scope "repo" (docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
+/* GitHub (connection type "nextjs", shown as GitHub) — OAuth app, scope "repo" (docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
    Token errors (bad_verification_code, redirect_uri_mismatch, incorrect_client_credentials) come back as 200 with `error`. */
 defineOAuth('github', {
   async start(ctx) {

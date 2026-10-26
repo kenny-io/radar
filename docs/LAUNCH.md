@@ -70,7 +70,7 @@ WordPress (self-hosted), Ghost, Webhook and Framer need nothing from you — use
 | Wix | Wix Studio → Custom Apps → new app (steps in §7.7) | `wix` | Blog, Members, Media, Ricos, site owner email | `WIX_CLIENT_ID/SECRET`, `WIX_SHARE_URL_ID` (required while unlisted) |
 | Shopify | Shopify Dev Dashboard (dev.shopify.com/dashboard; steps in §7.5) | `shopify` | `read_content,write_content` | `SHOPIFY_CLIENT_ID/SECRET`, `SHOPIFY_API_VERSION` (default `2026-10`) |
 | WordPress.com | developer.wordpress.com/apps → Create New Application (steps in §7.1) | `wpcom` | `global` (Radar sends it; nothing to tick in the app) | `WPCOM_CLIENT_ID`, `WPCOM_CLIENT_SECRET` |
-| Next.js blog (GitHub) | GitHub → Developer settings → OAuth App (steps in §7.4) | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
+| GitHub (connection type `nextjs`) | GitHub → Developer settings → OAuth App (steps in §7.4) | `github` | `repo` | `GITHUB_CLIENT_ID/SECRET` |
 
 Framer has no OAuth app and no callback: users paste a project URL and API key (§7.8).
 
@@ -134,7 +134,7 @@ Use a throwaway WordPress.com site and a throwaway Notion workspace. Record each
 6. Remove Radar under the workspace's Settings → Connections, then **Test connection**. Expect the expired-authorization copy. Remove only the database's access and expect a 404 message.
 7. Note whether Notion returned a `refresh_token` (it is stored), and whether tokens expired over the following weeks.
 
-### 7.4 Next.js blog (GitHub)
+### 7.4 GitHub (connection type `nextjs`)
 
 - [ ] github.com/settings/developers → **OAuth Apps** → **New OAuth App**.
   - **Application name:** Radar. **Homepage URL:** `https://radar.thally.io`.

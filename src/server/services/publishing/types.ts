@@ -15,7 +15,8 @@ export interface ConnCtx {
   /** Persist rotated OAuth tokens on the saved connection (set for saved connections only; absent during setup). */
   saveCreds?: (creds: Record<string, any>) => Promise<void>;
 }
-export interface Target { id: string; name: string; url?: string | null }
+/** suggested: the picker preselects it (GitHub only preselects a repo named after the business's site, never just the latest one). */
+export interface Target { id: string; name: string; url?: string | null; suggested?: boolean }
 
 export interface PublishImage { url: string; alt: string; bytes: () => Promise<{ buf: Buffer; type: string; name: string }> }
 export interface PublishPayload {

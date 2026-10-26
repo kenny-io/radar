@@ -334,6 +334,12 @@ describe('repository picker (targets)', () => {
     listed([[repoRow('fieldnote/infra'), repoRow('kenny/fieldnote-blog')]]);
     expect((await nextjs.targets!(C)).map(t => t.id)).toEqual(['kenny/fieldnote-blog', 'fieldnote/infra']);
   });
+  it('marks only site-named repos as suggested, so with no match nothing is preselected (not just the latest repo)', async () => {
+    listed([[repoRow('kenny-io/radar'), repoRow('thallylabs/thallydocs'), repoRow('thallylabs/thally-website')]]);
+    expect((await nextjs.targets!({ ...C, domain: 'thally.io' })).map(t => [t.id, !!t.suggested])).toEqual([['thallylabs/thally-website', true], ['thallylabs/thallydocs', true], ['kenny-io/radar', false]]);
+    listed([[repoRow('kenny-io/radar'), repoRow('kenny-io/radar-connector-test')]]);
+    expect((await nextjs.targets!({ ...C, domain: 'thally.io' })).some(t => t.suggested)).toBe(false);
+  });
   it('a revoked token while listing is a 401 auth-expired', async () => {
     override = () => reply(401, { message: 'Bad credentials' });
     expect((await err(nextjs.targets!(C))).kind).toBe('auth-expired');

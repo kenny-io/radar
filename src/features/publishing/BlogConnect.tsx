@@ -11,7 +11,7 @@ import { platOf, SECRET_FIELDS, timezones } from '@/lib/constants';
 import type { ConnectionPublic } from '@/lib/types';
 
 export interface BlogConnectProps { type: null | string | { type: string; id?: string | null; step?: 'mode' }; onClose: () => void; onSaved?: (c: ConnectionPublic) => void }
-interface Target { id: string; name: string }
+interface Target { id: string; name: string; suggested?: boolean }
 
 const GENERIC = 'Radar couldn’t finish this. Try again.';
 const providerOf = (k: string) => (k === 'nextjs' ? 'github' : k);
@@ -85,7 +85,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     if (g !== gen.current) return;
     if (!r.ok || !r.result?.oauthRef) { setAuth('none'); if (r.error && r.error !== 'closed') app.toast(GENERIC, { tone: 'bad' }); return; }
     setOauthRef(r.result.oauthRef); setTest('idle');
-    if (P.pick) { const list = await loadTargets({ type: P.k, oauthRef: r.result.oauthRef }, g); if (g !== gen.current) return; setAuth('ok'); if (list && list[0]) setPick(list[0].id); }
+    if (P.pick) { const list = await loadTargets({ type: P.k, oauthRef: r.result.oauthRef }, g); if (g !== gen.current) return; setAuth('ok'); if (list && list[0] && (P.k !== 'nextjs' || list[0].suggested)) setPick(list[0].id); }
     else setAuth('ok');
   };
   const payload = () => ({ type: P.k, id: editing?.id || null, fields: f, target: pickName, targetId: pick, oauthRef: P.k === 'webhook' ? secret?.ref || null : oauthRef });
@@ -125,7 +125,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
       {P.authFirst && auth === 'ok' && fieldsEl}
       {P.help && <span className="xs sub">{P.help}</span>}
       <div className="row" style={{ minHeight: 40, gap: 14, flexWrap: 'wrap' }}><Btn icon="refresh" loading={test === 'testing'} disabled={!ready} onClick={run}>Test connection</Btn>
-        {test === 'ok' && <Status tone="ok">Connected · test draft created, then deleted</Status>}
+        {test === 'ok' && <Status tone="ok">Connected · test {P.k === 'nextjs' ? 'branch' : 'draft'} created, then deleted</Status>}
         {test === 'fail' && <Status tone="bad">{failCopy}</Status>}</div>
       <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn>{first && !editing ? <Btn kind="primary" disabled={test !== 'ok'} iconR="arrow" onClick={() => setStep('mode')}>Continue</Btn> : <Btn kind="primary" disabled={test !== 'ok'} loading={saving} onClick={save}>{editing ? 'Save changes' : 'Add connection'}</Btn>}</div>
     </> : <>

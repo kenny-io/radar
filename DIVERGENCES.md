@@ -534,3 +534,8 @@ Details: `.factory/marketing-trial-gating/` (brief, architecture, verification).
 | Success screen focus | — | "Open dashboard" is autofocused, as designed, so it shows a focus ring that the prototype screenshots don't | Keyboard users land on the next step | Yes (focus ring) | Logged |
 | Lost access with the dashboard open | — | The next action (402) goes to `/start-trial`. An idle dashboard follows within about 4 minutes, when the live stream reconnects | No design for mid-session lapse | Rarely | Logged |
 | Stub card form | — | With `RADAR_DEV_STUBS=1` and no Stripe key, raw inputs that look the same plus a simulated 3-D Secure panel (dev only, never in production) | Run every flow without keys | Dev only | Logged |
+
+## GitHub platform name (2026-10-26)
+| Item | Design | Built | Why | Visible | Status |
+|---|---|---|---|---|---|
+| Next.js blog → GitHub | "Next.js blog", Next.js mark | The platform is named **GitHub**, with the GitHub mark and the subtitle "Pull request". The connection type stays `nextjs`, so saved connections and stored errors are unchanged | Owner request: publishing by pull request works for any site built from a repository, not only Next.js | Yes | Approved by owner |

@@ -67,7 +67,7 @@ export type ProfileGroupKey = keyof typeof PROFILE_FIELDS;
 export const inferredLeft = (edited: Record<string, true> | null | undefined, g: ProfileGroupKey) => PROFILE_FIELDS[g].filter(k => !(edited || {})[g + '.' + k]).length;
 
 /* ── Blog connectors (radar-publish.jsx) ── */
-/** authFirst: sign in before anything else; the picker and the fields appear once authorized (Next.js picks its repository). */
+/** authFirst: sign in before anything else; the picker and the fields appear once authorized (GitHub picks its repository). */
 export interface PlatformDef { k: ConnType; l: string; d?: string; mono: string; fields?: [key: string, label: string, placeholder: string, type?: string, hint?: string][]; oauth?: boolean; oauthLabel?: string; authFirst?: boolean; pick?: string; secret?: boolean; help?: string }
 export const PLATFORMS: PlatformDef[] = ([
   { k: 'wordpress', l: 'WordPress', d: 'Self-hosted', mono: 'W', fields: [['url', 'Site URL', 'https://yoursite.com'], ['user', 'Username', ''], ['pass', 'Application password', '', 'password']], help: 'Create one under Users → Profile → Application Passwords.' },
@@ -79,7 +79,7 @@ export const PLATFORMS: PlatformDef[] = ([
   { k: 'wpcom', l: 'WordPress.com', mono: 'W.', oauth: true, pick: 'Site' },
   { k: 'webhook', l: 'Webhook', mono: '{ }', fields: [['hook', 'Endpoint URL', 'https://api.yoursite.com/radar']], secret: true, help: 'Radar sends each article as signed JSON.' },
   { k: 'framer', l: 'Framer', mono: 'F', fields: [['url', 'Project URL', 'https://framer.com/projects/…'], ['key', 'API token', '', 'password']], pick: 'CMS collection' },
-  { k: 'nextjs', l: 'Next.js blog', mono: 'Nx', fields: [['path', 'Content folder', 'content/posts', 'text', 'Where your posts live in the repository.']], oauth: true, oauthLabel: 'GitHub', authFirst: true, pick: 'Repository', help: 'Radar opens a pull request with each article as MDX.' },
+  { k: 'nextjs', l: 'GitHub', d: 'Pull request', mono: 'GH', fields: [['path', 'Content folder', 'content/posts', 'text', 'Where your posts live in the repository.']], oauth: true, oauthLabel: 'GitHub', authFirst: true, pick: 'Repository', help: 'Radar opens a pull request with each article as MDX.' },
 ] as PlatformDef[]).sort((a, b) => a.l.localeCompare(b.l));
 export const platOf = (k?: string | null) => PLATFORMS.find(p => p.k === k) || PLATFORMS.find(p => p.k === 'wordpress')!;
 export const platLabel = (k?: string | null) => platOf(k).l;
