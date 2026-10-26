@@ -52,3 +52,9 @@
 - **Cosmetic, Low, accepted by the PM:** in a joined run where every platform fails, the skipped platforms show a check and the generic failure row sits on the last one. This follows from B21 and needs every platform to fail while the user watches.
 
 **Tested revision:** `147f012d`. This is the release candidate for the PR. The `.factory` records added after it change no product code.
+
+## PM pre-merge checks (PR kenny-io/radar#11)
+- **Job retention:** `maintenance.ts` prunes finished jobs only after 14 days. The rule that a day with no scan job is due therefore can't be triggered on a live day.
+- **Branch status:** `origin/main` has not moved since base `3fe684ea`, so the PR has no conflicts. No CI checks are configured.
+- **Failed background jobs:** only the Daily Brief page reads `brief.scan` jobs, so a quiet failed rescan surfaces nowhere else. The Dashboard's failed item comes from calendar entries.
+- **Per-minute queries:** `brief.rescan` runs `hasDay` and `scansOf` once a minute for each business with a brief. They use the `brief_days` (business, date) key and the `jobs_biz` (business_id, created_at) index, filtered by kind and ref. With 14-day retention, each scan covers only a small set of rows.
