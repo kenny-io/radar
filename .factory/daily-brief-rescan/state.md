@@ -11,4 +11,7 @@ Base: `3fe684ea` (main), branch `kenny-dev/daily-brief-missing-posts-271f8b`.
 | R5 | Fix D1 (stuck scan view), "Nothing new since {time}" toast, B21/B22 and CONTRACTS notes | factory-engineer | `DailyBrief.tsx`, `DIVERGENCES.md`, `docs/CONTRACTS.md` | R3 | verified | 3, 9 |
 | R6 | QA recheck of D1, the toast, and regressions | factory-qa | none | R5 | verified (`147f012d`) | 3, 5, 7 |
 
-Released: PR kenny-io/radar#11 is merged as `6db9492f` (it includes `main` up to `1fcf699e` through merge commit `030b63ca`). The production deploy succeeded at 19:48:34Z on 2026-10-26, and the new web build is live. Next action: confirm in production that the worker runs `brief.rescan`, either from the worker logs or from Thally's "Found at" time.
+Released and verified in production. PR kenny-io/radar#11 is merged as `6db9492f` (with `main` up to `1fcf699e` through `030b63ca`), and it deployed at 19:48:34Z on 2026-10-26. The first background rescan for thally.io ran at 19:48Z and added 4 items, with the toast sent. Open items:
+- Two Hacker News threads with the same title were both drafted.
+- OpenRouter is out of credits; the Anthropic fallback is working.
+- Thally's keywords are unlikely to match posts like Tom Johnson's.

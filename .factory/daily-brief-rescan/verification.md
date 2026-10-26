@@ -65,6 +65,12 @@
 - **Merge:** the owner approved it on 2026-10-26. PR kenny-io/radar#11 merged at 19:46:07Z as merge commit `6db9492f` on `main`.
 - **Deploy:** GitHub deployment "radar / production" `7341878462` for `6db9492f` reached `success` at 19:48:34Z.
 - **Web check:** `https://radar.thally.io/` serves the new card copy, "Up to two conversations from each every morning."
-- **Worker check (`brief.rescan`):** not yet verified. The Railway CLI here is logged out, and the built-in browser isn't signed in to Railway or Radar. To confirm:
-  - **Worker logs:** the worker should be enqueuing `brief.scan` jobs with `background:true`. Errors would show as `[brief.rescan]`, and a skipped platform as `source failed (background rescan, skipped)`.
-  - **Thally's brief:** "Found at" should move to a time after the deploy, since the morning scan was more than 2 h earlier.
+- **Worker check (`brief.rescan`):** verified in production. I used the owner's signed-in Railway in Chrome and ran read-only `SELECT`s only.
+  - **Worker deploy:** `65a2c024` (PR #11) is active, and the log shows `[worker] started` at 19:47:59Z. It logged no `[brief.rescan]` and no `[cron brief.rescan]` errors.
+  - **Jobs:** `jobs` for thally.io (timezone **Asia/Dubai**) on 2026-10-26:
+    - The morning `first` scan ran at 02:00Z (06:00 Dubai) and added 8.
+    - A background rescan ran at **19:48Z**: `mode: again`, `background: true`, `round: 1`, status `done`, `added: 4`, `notified: true`, `skippedPlats: []`.
+  - **Items added by the rescan:** the 4 replies with `fresh: true` were Hacker News ×2 (both titled "Show HN: ADRs for AI…" but with different item ids, 50246884 and 50241217), Reddit ×1 (r/technicalwriting) and X ×1. No LinkedIn item, so Tom Johnson's post was **not** found. That's consistent with the risks in the brief: the keywords don't match the post, or LinkedIn's search index hasn't caught up.
+  - **Correction to the brief:** Thally's day runs on Dubai time. The post went up at 19:10 Dubai, 13 h after the 06:00 scan, so the diagnosis stands. The Dubai day ended at 20:00Z, 12 minutes after the first rescan, so 2026-10-26 got only one rescan.
+- **Operational, not from this change:** the worker log shows `[ai] OpenRouter unavailable for 10 min: HTTP 402 … requires more credits`. `brief.rank` and `brief.reply` fell back to Anthropic directly and succeeded.
+- **Found during the check:** two Hacker News threads with the same title but different ids were both drafted (the same post appears twice on HN). Threads are deduplicated by id only, and this predates the feature.
