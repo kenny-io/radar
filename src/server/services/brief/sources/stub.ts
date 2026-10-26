@@ -1,6 +1,8 @@
 // DEV-ONLY deterministic sources (RADAR_DEV_STUBS=1): realistic threads per platform built from the Business Profile.
 // No network. Includes threads the ranker must reject (hostile, off-topic, competitor-owned, rule-violating), a third
-// strong Reddit thread (to prove the 2-per-platform cap) and one fresh X ask that only appears on "Scan again".
+// strong Reddit thread (to prove the first scan's 2-per-platform cap), and two fresh asks that only appear on later scans
+// (Scan again, background rescans): one on X (where the company still has a slot) and one on Reddit (already full from
+// the morning, so it shows the day cap of 4 letting a later find in).
 // BRIEF_STUB_FAIL=x (comma list of platforms) makes that platform's source fail, to verify the failure UI.
 import type { BriefPlatform, Profile } from '@/lib/types';
 import { lcf } from '@/lib/format';
@@ -33,6 +35,9 @@ export function stubThreads(p: Profile, plat: BriefPlatform, subs: string[]): T[
       title: `Is ${kw(0)} worth setting up for a team of three?`, body: `We’re three people and everything lives in our heads. Is it worth the setup or is that overkill at our size?` },
     { id: 'reddit:t3_d4', where: 'r/' + sub(0), who: 'u/AutoModerator', url: `https://www.reddit.com/r/${sub(0)}/comments/1g7d4p/`, age: 11, engN: 340, community: sub(0), promoBanned: true,
       title: 'Weekly self-promotion thread: share what you’re building', body: 'Post your product, portfolio or service here. Self-promotion outside this thread will be removed.' },
+    { id: 'reddit:t3_f6', where: 'r/' + sub(1), who: 'u/hourglass_studio', url: `https://www.reddit.com/r/${sub(1)}/comments/1g7f6r/`, age: 0.5, engN: 17, community: sub(1), promoBanned: false, late: true,
+      title: `What’s the best way to ${need(0)} when ${kw(0)} keeps slipping?`,
+      body: `Posted this morning after another Friday spent rebuilding the week. We need to ${need(1)} and ${need(0)} without it becoming a second job. Is ${kw(1)} worth setting up for a ${seg(0)}?` },
     { id: 'reddit:t3_e5', where: 'r/' + sub(2), who: 'u/latte_and_lines', url: `https://www.reddit.com/r/${sub(2)}/comments/1g7e5q/`, age: 5, engN: 61, community: sub(2), promoBanned: false,
       title: 'What laptop are you all using in 2026?', body: 'Mine is six years old and the battery is gone. Mac or Windows?' },
   ];

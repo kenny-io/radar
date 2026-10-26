@@ -56,7 +56,7 @@ See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `
 - `calendar.generate` (ref = businessId) — progress `{ phase: 0..6, results: string[], keep: boolean }`
 - `article.draft` (ref = entryId) — progress `{ blocks: Block[], partial: string }` (streaming)
 - `gsc.backfill` (ref = businessId) — progress `{ pct }`
-- `brief.scan` (ref = date) — progress `{ step, threadsRead, failed?: platform }`
+- `brief.scan` (ref = date, one per business and day: Scan again during a running scan joins it) — payload `{ mode: 'first'|'again'|'keep', date, fromJob?, background?: true, round? }`; progress `{ step, threadsRead, failed?: platform, steps, mode, quiet? }` (`quiet`: Keep runs and background rescans, never shown as the scan view unless joined); result `{ mode, added, addedIds, since, failed?, partial?, notified?: true, skipped?: 'no_day'|'past', skippedPlats?: platform[] }` (`skippedPlats`: background runs, the platforms that failed and were skipped) (`notified`: the server already toasted the members, so the client shows no toast of its own)
 - `social.generate` (ref = client token) — progress `{ done: number }`, result `{ packId }`
 - `visibility.collect` (ref = resultId)
 

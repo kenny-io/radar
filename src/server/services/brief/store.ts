@@ -13,6 +13,12 @@ export async function getDay(bid: string, date: string): Promise<DayRow | null> 
   return r[0] || null;
 }
 
+/** Does the day exist? (No items read: the rescan cron asks this every minute.) */
+export async function hasDay(bid: string, date: string): Promise<boolean> {
+  const r = await db.select({ date: schema.briefDays.date }).from(schema.briefDays).where(and(eq(schema.briefDays.businessId, bid), eq(schema.briefDays.date, date))).limit(1);
+  return r.length > 0;
+}
+
 /** Lock the day row, let `fn` compute the change, write it. Returns fn's value (null → no write). */
 export async function withDay<T>(bid: string, date: string, fn: (row: DayRow) => { items?: BriefItem[]; candidates?: CandMark[]; scannedAt?: string; stats?: DayStats; ret: T } | null): Promise<T | null> {
   return db.transaction(async tx => {

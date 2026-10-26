@@ -1,22 +1,29 @@
 // The Daily Brief research agent (02-system §9): discover → collect (per platform) → rank → select → draft → save.
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, lt } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { briefSettingsOf, bizToday, getBiz } from '@/server/workspace';
 import { notify } from '@/server/notify';
 import { getJob, type JobCtx } from '@/server/jobs/queue';
 import { fmtTime, nowHMIn } from '@/lib/format';
 import type { BriefAccount, BriefItem, BriefPlatform, BriefSettings, Profile } from '@/lib/types';
-import { DRAFT_SUB, DRAFT_SUB_BOTH, DRAFT_SUB_CO, RANK_SUB, accountsOf, acctOf, enabledInOrder, platsFor, type BriefScanProgress, type BriefScanResult, type ScanMode, type ScanStep, type ScanStepKey } from '@/features/brief/model';
+import { DRAFT_SUB, DRAFT_SUB_BOTH, DRAFT_SUB_CO, RANK_SUB, accountsOf, enabledInOrder, platsFor, type BriefScanProgress, type BriefScanResult, type ScanMode, type ScanStep, type ScanStepKey } from '@/features/brief/model';
 import { buildPlan, clip, relevance, type Candidate } from './plan';
 import { sourceFor } from './sources';
 import { rankCandidates, selectReplies, type Scored } from './rank';
 import { draftCompanyReply, draftPosts, draftReply, feedThemes } from './draft';
 import { createDay, getDay, mergeStats, withDay, type CandMark, type DayStats } from './store';
+import { fitToCap, slotsLeft } from './cap';
+import { newSinceFor } from './rescan';
 import './stubs';
 
-export interface ScanPayload { mode: ScanMode; date?: string; fromJob?: string }
+export interface ScanPayload {
+  mode: ScanMode; date?: string; fromJob?: string;
+  /** Automatic rescan (cron `brief.rescan`): quiet progress, a failing platform is skipped, members get the toast. */
+  background?: boolean;
+  /** Earlier `brief.scan` jobs for this date (query rotation, `queriesFor`). First scans always search round 0. */
+  round?: number;
+}
 const WINDOW_MS = 48 * 3600e3;
-const MAX_REPLIES = 2;
 
 /** Candidates kept with a failed job so "Keep this morning’s brief" can use them without re-reading. */
 const slim = (c: Candidate): Candidate => ({ ...c, body: clip(c.body, 400), comments: (c.comments || []).slice(0, 3) });
@@ -27,11 +34,16 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const profile = { ...(b.profile as Profile), domain: b.domain };
   const settings = briefSettingsOf(b) as BriefSettings;
   const date = ctx.payload.date || bizToday(b);
+  const background = !!ctx.payload.background;
   const existing = await getDay(bid, date);
+  // A background rescan only adds to today's brief: it never creates a day quietly (that is the morning scan's job, with
+  // its +15/+30 retries), and once the day has ended it does nothing.
+  if (background && (!existing || date !== bizToday(b))) return { mode: 'again', added: 0, addedIds: [], since: existing?.scannedAt ?? null, skipped: existing ? 'past' : 'no_day' };
   let mode: ScanMode = ctx.payload.mode || 'first';
   if (mode === 'first' && existing) mode = 'again';
   if (mode === 'again' && !existing) mode = 'first';
   const since = existing?.scannedAt ?? null;
+  const round = mode === 'first' ? 0 : ctx.payload.round ?? 0;
   const accts = accountsOf(settings);
   const both = accts.length > 1;
   // Read only where some account drafts (the company alone never reads Reddit, Hacker News or Quora).
@@ -43,13 +55,17 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   let step: ScanStepKey = plats[0] || 'rank';
   let threadsRead = 0;
   const stats: DayStats = {};
-  const quiet = mode === 'keep';
+  const quiet = mode === 'keep' || background;
   const push = (extra: Partial<BriefScanProgress> = {}) => ctx.progress({ step, threadsRead, steps, mode, ...(quiet ? { quiet } : {}), ...extra } satisfies BriefScanProgress);
   await push();
 
   // ── Collect ──
   const seen = new Set<string>([...((existing?.candidates || []) as CandMark[]).map(c => c.id)]);
   let cands: Candidate[] = [];
+  const skippedPlats: BriefPlatform[] = [];
+  // Background rescans: real-time sources (the X API) read only threads posted since the previous scan that read them.
+  const earlier = background ? await db.select({ createdAt: schema.jobs.createdAt, status: schema.jobs.status, payload: schema.jobs.payload, result: schema.jobs.result }).from(schema.jobs)
+    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'brief.scan'), eq(schema.jobs.ref, date), lt(schema.jobs.createdAt, ctx.job.createdAt))).orderBy(desc(schema.jobs.createdAt)) : [];
   if (mode === 'keep') {
     const from = ctx.payload.fromJob ? await getJob(ctx.payload.fromJob) : null;
     cands = ((from?.result as any)?.partialCands || []) as Candidate[];
@@ -58,13 +74,15 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
       step = p; stats[p] = stats[p] || { read: 0 }; await push();
       try {
         const got = await sourceFor(p)({
-          plan, profile, bid, mode, sinceMs: Date.now() - WINDOW_MS,
+          plan, profile, bid, mode, round, sinceMs: Date.now() - WINDOW_MS, newSinceMs: background ? newSinceFor(earlier, p) : undefined,
           onRead: n => { threadsRead += n; stats[p] = { read: (stats[p]?.read || 0) + n }; push().catch(() => {}); },
           setSub: s => { steps = steps.map(x => (x.k === p ? { ...x, sub: s } : x)); push().catch(() => {}); },
         });
         cands.push(...got);
       } catch (e: any) {
-        console.error(`[brief.scan] ${p} source failed:`, e?.message || e);
+        console.error(`[brief.scan] ${p} source failed${background ? ' (background rescan, skipped)' : ''}:`, e?.message || e);
+        // A background rescan skips the platform and carries on with the others: no failure UI, today's brief stays.
+        if (background) { skippedPlats.push(p); delete stats[p]; continue; }
         await push({ failed: p });
         // Partial results are kept only if the user chooses "Keep this morning’s brief" (only offered when a brief exists).
         const partialCands = existing ? dedupe(cands).filter(c => !seen.has(c.id)).map(c => ({ c, r: relevance(c.title + ' ' + c.body, plan) })).sort((a, b2) => b2.r - a.r).slice(0, 40).map(x => slim(x.c)) : [];
@@ -72,17 +90,18 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
       }
     }
   }
+  // Every platform failed: nothing was read, so the day (and its "Found at") is left alone; the next rescan tries again.
+  if (background && plats.length && skippedPlats.length === plats.length) throw new Error('Every source failed (background rescan)');
   const fresh = dedupe(cands).filter(c => !seen.has(c.id) && plats.includes(c.plat));
 
   // ── Rank ──
   step = 'rank'; await push();
   const scored: Scored[] = fresh.length ? await rankCandidates(profile, plan, fresh, bid) : [];
 
-  // ── Select: at most 2 replies per platform per account (counting what the day already has) ──
-  // Threads already in the day (either account) are never drafted twice.
+  // ── Select: per platform per account, 2 on the first scan and up to 4 for the day on later scans (cap.ts, DBR-8),
+  // counting what the day already has. Threads already in the day (either account) are never drafted twice.
   const dayItems = (existing?.items || []) as BriefItem[];
-  const have = (a: BriefAccount, k: BriefPlatform) => dayItems.filter(i => i.kind === 'reply' && i.plat === k && acctOf(i) === a).length;
-  const capFor = (a: BriefAccount, ps: BriefPlatform[]) => Object.fromEntries(ps.map(k => [k, MAX_REPLIES - have(a, k)])) as Partial<Record<BriefPlatform, number>>;
+  const capFor = (a: BriefAccount, ps: BriefPlatform[]) => slotsLeft(dayItems, a, ps, mode);
   const fPlats = accts.includes('founder') ? platsFor('founder', plats) : [];
   const cPlats = accts.includes('company') ? platsFor('company', plats) : [];
   // Direct requests for a tool are the company's to answer first (UPDATE-2026-10-20b §2); the founder takes the best of
@@ -124,22 +143,16 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
     addedIds = (await withDay(bid, date, row => {
       const items = row.items as BriefItem[];
       // Re-check the cap under the lock (items may have changed while drafting).
-      const counts: Record<string, number> = {};
-      const key = (i: BriefItem) => `${acctOf(i)}:${i.plat}`;
-      for (const i of items) if (i.kind === 'reply' && i.plat) counts[key(i)] = (counts[key(i)] || 0) + 1;
-      const add: BriefItem[] = [];
-      for (const r of replies) {
-        if (items.some(i => i.id === r.id) || (counts[key(r)] || 0) >= MAX_REPLIES) continue;
-        counts[key(r)] = (counts[key(r)] || 0) + 1; add.push(r);
-      }
+      const add = fitToCap(items, replies, mode);
       return { items: [...add, ...items], candidates: [...((row.candidates || []) as CandMark[]), ...marks], scannedAt: mode === 'keep' ? undefined : scannedAt, stats: mergeStats(row.stats as DayStats, stats), ret: add.map(a => a.id) };
     })) || [];
   }
   step = 'done'; await push();
-  if (mode === 'keep' && addedIds.length) {
-    await notify(bid, `${addedIds.length} new ${addedIds.length === 1 ? 'conversation' : 'conversations'} since ${fmtTime(since)}`, { tone: 'signal' });
-  }
-  return { mode, added: addedIds.length, addedIds, since, ...({ threadsRead, replies: replies.length, posts: posts.length, perPlat: stats } as object) };
+  // Nobody is watching a background run, so every member gets the toast (silent when nothing was added). `notified` tells
+  // a Scan again click that joined the job not to toast a second time.
+  const notified = (mode === 'keep' || background) && addedIds.length > 0;
+  if (notified) await notify(bid, `${addedIds.length} new ${addedIds.length === 1 ? 'conversation' : 'conversations'} since ${fmtTime(since)}`, { tone: 'signal' });
+  return { mode, added: addedIds.length, addedIds, since, ...(notified ? { notified } : {}), ...({ threadsRead, replies: replies.length, posts: posts.length, perPlat: stats, ...(background ? { background, round, skippedPlats } : {}) } as object) };
 }
 
 function dedupe(cs: Candidate[]): Candidate[] {

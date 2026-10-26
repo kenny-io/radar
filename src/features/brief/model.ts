@@ -31,7 +31,8 @@ export interface BriefScanProgress {
   /** One entry per enabled platform (with the sources actually being read), then rank and draft. */
   steps?: ScanStep[];
   mode?: ScanMode;
-  /** Background "keep partial results" runs — the UI never shows the scan view for them. */
+  /** Background runs ("keep partial results", and the automatic 2-hourly rescans): the UI never switches to the scan
+   *  view for them on its own. A Scan again click that joins one still shows its progress. */
   quiet?: boolean;
 }
 export type ScanMode = 'first' | 'again' | 'keep';
@@ -48,6 +49,11 @@ export interface BriefScanResult {
   dismissed?: boolean;
   /** Candidates collected before the failing platform (kept only if the user chooses). */
   partial?: number;
+  /** The server already toasted every member "{n} new conversations since {time}" (background rescans and Keep runs),
+   *  so a Scan again click that joined this job shows no second toast. */
+  notified?: boolean;
+  /** A background rescan that did nothing: today's brief is missing, or the day ended before it ran. */
+  skipped?: 'no_day' | 'past';
 }
 
 export const RANK_SUB = 'By fit with your audience and how recently people replied';

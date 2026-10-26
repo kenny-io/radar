@@ -169,16 +169,18 @@ export function DailyBrief() {
       let r: BriefScanResult | null = (live as any).result || null;
       if (!r && live!.status === 'done') { try { r = ((await app.act('job.get', { id: scan.jobId })) as any)?.result || null; } catch { /* */ } }
       if (!alive) return;
-      if (live!.status === 'failed' || r?.failed) { setResult(r || { mode: scan.kind, failed: 'source' }); return; }
+      // A job that threw (status failed, result { detail }) still needs `failed`, or the scan view is left without actions.
+      if (live!.status === 'failed' || r?.failed) { setResult({ ...(r || {}), mode: r?.mode || scan.kind, failed: r?.failed || 'source' }); return; }
       setTimeout(() => { if (alive) scanDone(r!); }, 350);
     })();
     return () => { alive = false; };
   }, [scan?.jobId, jobDone]); // eslint-disable-line react-hooks/exhaustive-deps
   const scanDone = async (r: BriefScanResult) => {
     await app.refresh(); // the new day (and setup) must be in B before the scan view closes
-    if (r.mode === 'again' || r.mode === 'keep') {
+    // A click that joined a background rescan (or a Keep run) already got the server's toast (`notified`): show one only.
+    if ((r.mode === 'again' || r.mode === 'keep') && !r.notified) {
       const n = r.added || 0;
-      toast(n ? `${n} new ${n === 1 ? 'conversation' : 'conversations'} since ${fmtTime(r.since)}` : 'Nothing new since this morning', { tone: n ? 'signal' : null });
+      toast(n ? `${n} new ${n === 1 ? 'conversation' : 'conversations'} since ${fmtTime(r.since)}` : `Nothing new since ${r.since ? fmtTime(r.since) : 'this morning'}`, { tone: n ? 'signal' : null });
     }
     if (r.addedIds && r.addedIds.length) setPendingSel(r.addedIds[0]);
     setResult(null); setScan(null);
@@ -476,7 +478,7 @@ function BriefSettingsSheet({ open, onClose, br }: { open: boolean; onClose: () 
   };
   return <Sheet open={open} onClose={onClose} title="Brief settings" width={480} footer={<><span className="grow" /><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" disabled={!dirty || !st.platforms.length} onClick={save}>Save</Btn></>}>
     <div className="col" style={{ gap: 28 }}>
-      <Field label="Where to look" hint="Up to two conversations from each."><BriefPlatforms value={st.platforms} onChange={p => setSt({ ...st, platforms: p })} /></Field>
+      <Field label="Where to look" hint="Up to two conversations from each in the morning, and up to two more later in the day."><BriefPlatforms value={st.platforms} onChange={p => setSt({ ...st, platforms: p })} /></Field>
       <Field label="Draft for" hint={`${name} drafts cover X and LinkedIn. Reddit and Hacker News stay personal, where brand accounts aren’t welcome.`}><div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>{([['founder', 'You'], ['company', name]] as [BriefAccount, string][]).map(([k, l]) => { const a = st.accounts || BRIEF_DEFAULT.accounts; const on = a.includes(k); return <button key={k} type="button" className="brief-chip" data-on={on} aria-pressed={on} disabled={on && a.length === 1} onClick={() => setSt({ ...st, accounts: on ? a.filter(x => x !== k) : (['founder', 'company'] as BriefAccount[]).filter(x => x === k || a.includes(x)) })}>{l}</button>; })}</div></Field>
       <Field label={`Plug ${name}`} hint={st.mention === 'asked' ? 'Only when someone asks for a tool or recommendation. You can switch any reply.' : st.mention === 'relevant' ? 'Whenever it fits, always with a disclosure.' : 'Replies stay purely helpful.'}><Seg value={st.mention} onChange={v => setSt({ ...st, mention: v })} options={BMENTION.map(o => ({ v: o.v, l: o.l }))} /></Field>
       <Field label="Have it ready by"><input type="time" className="input" style={{ width: 140 }} value={st.time} onChange={e => setSt({ ...st, time: e.target.value })} /></Field>
