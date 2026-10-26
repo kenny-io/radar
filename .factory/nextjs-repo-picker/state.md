@@ -25,3 +25,11 @@ Owner review of the PR; merge deploys.
   - Test connection on `kenny-io/radar-connector-test`: "Connected". Afterwards that repo has only `main` and no open PRs.
   - Cancelled; nothing saved.
 - Follow-ups in PR kenny-io/radar#9: the platform is named GitHub; only a site-named repo is preselected; GitHub's test line says "test branch".
+
+## Released: GitHub name and follow-ups (2026-10-26)
+- Merged: PR kenny-io/radar#9 as `b5c4ea45`, then PR kenny-io/radar#7 (landing copy) as `3fe684ea`, on the owner's go-ahead.
+- Deployed `3fe684ea`: `radar - worker` success 16:59:12Z, `radar - web` success 17:04:22Z.
+- Production check:
+  - Picker tile reads GitHub, subtitle "Pull request", GitHub mark; the window title is "Connect GitHub".
+  - After sign-in nothing is preselected ("Choose…"), since no repo is named after thally.io.
+  - Test on `kenny-io/radar-connector-test`: "Connected · test branch created, then deleted". The repo has only `main` and no open PRs. Cancelled; nothing saved.
