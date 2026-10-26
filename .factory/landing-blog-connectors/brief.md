@@ -41,3 +41,6 @@ House style: short declarative sentences, curly apostrophes, no exclamation mark
 
 ## Known risk, for the owner
 Shopify is listed (as it already was). But merchants outside the owner's Shopify organization can't install the app until it has custom distribution or an App Store listing (LAUNCH §7.5).
+
+## Change after review (2026-10-26)
+Owner request: the pull-request platform is called **GitHub**, not Next.js (any site built from a repository can use it). Every Next.js mention on the home and Organic search pages now says GitHub, and the logo row shows the GitHub mark. App rename: PR kenny-io/radar#9 branch `kenny-dev/github-platform-name`.
