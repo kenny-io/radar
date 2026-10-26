@@ -55,7 +55,7 @@ function stub(type: ConnType): Connector {
       const vars: Record<string, string> = { domain: c.domain, login: slugify(String(c.creds?.login || 'fieldnote')) || 'fieldnote', label: slugify(c.domain.replace(/^www\./, '').split('.')[0]) || 'site' };
       return STUB_TARGETS[type]!.map(n => {
         const name = n.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
-        if (type === 'nextjs') return { id: name, name, url: 'https://github.com/' + name };
+        if (type === 'nextjs') return { id: name, name, url: 'https://github.com/' + name, ...(name.endsWith('-website') ? { suggested: true } : {}) };
         return { id: 'stub-' + slugify(name), name, url: type === 'wix' || type === 'wpcom' ? 'https://' + name.replace(/ \(staging\)$/, '') : null };
       });
     } } : {}),

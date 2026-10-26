@@ -52,7 +52,7 @@ describe('RADAR_REAL_CONNECTORS (dev-only switch)', () => {
     env.devStubs = true; env.realConnectors = [];
     const c = { type: 'nextjs' as const, fields: { path: 'content/posts' }, creds: { access_token: 'stub-github-token', login: 'fieldnote' }, target: null, targetId: null, bid: 'b1', domain: 'www.acme.co', businessName: 'Acme' };
     const t = await connectorFor('nextjs').targets!(c);
-    expect(t).toEqual([{ id: 'fieldnote/acme-website', name: 'fieldnote/acme-website', url: 'https://github.com/fieldnote/acme-website' }, { id: 'fieldnote/blog', name: 'fieldnote/blog', url: 'https://github.com/fieldnote/blog' }]);
+    expect(t).toEqual([{ id: 'fieldnote/acme-website', name: 'fieldnote/acme-website', url: 'https://github.com/fieldnote/acme-website', suggested: true }, { id: 'fieldnote/blog', name: 'fieldnote/blog', url: 'https://github.com/fieldnote/blog' }]);
     expect(t.every(x => parseRepo(x.id))).toBe(true);
     const r = await connectorFor('nextjs').publish({ ...c, fields: { ...c.fields, repo: t[0].id } }, payload({ slug: 'hello' }), { id: 'stub-x' });
     expect(r.url).toMatch(/^https:\/\/github\.com\/fieldnote\/acme-website\/pull\/\d+$/);

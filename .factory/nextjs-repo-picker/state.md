@@ -14,3 +14,14 @@ Branch `kenny-dev/nextjs-repo-picker` from `main` @ `b854e86d`. Delivery: a PR t
 
 ## Next action
 Owner review of the PR; merge deploys.
+
+## Released (2026-10-26)
+- Merged: PR kenny-io/radar#8 → `main` as `30392143`, on the owner's go-ahead.
+- Deployed: `radar - worker` success 14:49:20Z, `radar - web` success 14:51:52Z (radar.thally.io returns 200).
+- Production check (owner's signed-in Chrome, Settings → Publishing → Add connection → Next.js blog):
+  - Sign in with GitHub was enabled with no fields; Radar was already authorized, so GitHub returned straight away.
+  - The Repository list had 391 repos and no `thallylabs/` ones (the org hasn't approved Radar); `kenny-io/radar` was preselected (no repo named after thally.io).
+  - Content folder `content/posts` with hint; picker help line and link shown.
+  - Test connection on `kenny-io/radar-connector-test`: "Connected". Afterwards that repo has only `main` and no open PRs.
+  - Cancelled; nothing saved.
+- Follow-ups in PR kenny-io/radar#9: the platform is named GitHub; only a site-named repo is preselected; GitHub's test line says "test branch".
