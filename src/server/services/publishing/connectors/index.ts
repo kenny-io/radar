@@ -21,6 +21,8 @@ const REAL: Record<ConnType, Connector> = { wordpress, ghost, webflow, notion, w
 const STUB_TARGETS: Partial<Record<ConnType, string[]>> = {
   webflow: ['Blog Posts', 'Resources', 'Changelog'], notion: ['Blog', 'Content calendar', 'Marketing wiki'], wix: ['{domain}', '{domain} (staging)'],
   shopify: ['News', 'Journal'], wpcom: ['{domain}', 'notes.{domain}'], framer: ['Blog', 'Articles'],
+  // Next.js targets are real owner/repo names (the id is the repository, stored as fields.repo).
+  nextjs: ['{login}/{label}-website', '{login}/blog'],
 };
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 /** DEV-ONLY test hook: a field or credential containing "fail" makes the stub answer 401 Unauthorized. */
@@ -48,7 +50,15 @@ function stubUrl(c: ConnCtx, p: PublishPayload): string {
 }
 function stub(type: ConnType): Connector {
   return {
-    ...(STUB_TARGETS[type] ? { targets: async (c: ConnCtx): Promise<Target[]> => { await wait(250); stubGate(c); return STUB_TARGETS[type]!.map(n => { const name = n.replace(/\{domain\}/g, c.domain); return { id: 'stub-' + slugify(name), name, url: type === 'wix' || type === 'wpcom' ? 'https://' + name.replace(/ \(staging\)$/, '') : null }; }); } } : {}),
+    ...(STUB_TARGETS[type] ? { targets: async (c: ConnCtx): Promise<Target[]> => {
+      await wait(250); stubGate(c);
+      const vars: Record<string, string> = { domain: c.domain, login: slugify(String(c.creds?.login || 'fieldnote')) || 'fieldnote', label: slugify(c.domain.replace(/^www\./, '').split('.')[0]) || 'site' };
+      return STUB_TARGETS[type]!.map(n => {
+        const name = n.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+        if (type === 'nextjs') return { id: name, name, url: 'https://github.com/' + name };
+        return { id: 'stub-' + slugify(name), name, url: type === 'wix' || type === 'wpcom' ? 'https://' + name.replace(/ \(staging\)$/, '') : null };
+      });
+    } } : {}),
     async test(c) { await wait(900); stubGate(c); },
     async createDraft(c, p) { await wait(400); stubGatePublish(c); return { id: 'stub-' + p.slug }; },
     async publish(c, p) { await wait(500); stubGatePublish(c); return { url: stubUrl(c, p) }; },

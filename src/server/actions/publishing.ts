@@ -12,7 +12,7 @@ import type { ConnType } from '@/lib/types';
 import { connectorFor } from '../services/publishing/connectors';
 import { PublishError, statusLine } from '../services/publishing/http';
 import { newWebhookSecret, maskSecret } from '../services/publishing/connectors/webhook';
-import { parseRepo } from '../services/publishing/connectors/nextjs';
+import { normFolder, parseRepo } from '../services/publishing/connectors/nextjs';
 import { shopDomain } from '../services/publishing/connectors/shopify';
 import { retimePubs } from '../services/social/publish/pubs';
 import { bizInfo, connCreds, connRow, connSecret, ctxOf, deletePending, readPending, savePending, splitFields } from '../services/publishing/store';
@@ -62,7 +62,15 @@ async function resolveConn(ctx: ActCtx, input: ConnInput) {
     fields[k] = v;
   }
   if (type === 'webhook' && !fields.hook.startsWith('https://')) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
-  if (type === 'nextjs' && !parseRepo(fields.repo)) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
+  let target = input.target || null; let targetId = input.targetId || null;
+  // Next.js: the picked repository (owner/repo) is stored as fields.repo, which publishing reads. A connection saved
+  // before the picker has no targetId and keeps its fields.repo.
+  if (type === 'nextjs') {
+    const r = parseRepo(input.targetId || existing?.fields?.repo || '');
+    if (!r) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
+    fields.repo = target = targetId = `${r.owner}/${r.repo}`;
+    fields.path = normFolder(fields.path);
+  }
   if (type === 'shopify') fields.store = shopDomain(fields.store);
   let creds: Record<string, any> = { ...connCreds(existing) };
   for (const [k, , , ty] of P.fields || []) if (ty === 'password') { if (sec[k]) creds[k] = sec[k]; if (!creds[k]) throw new RadarError('Some fields aren’t valid.', 400, 'invalid'); }
@@ -75,8 +83,8 @@ async function resolveConn(ctx: ActCtx, input: ConnInput) {
   }
   if (P.oauth && !creds.access_token && !creds.instanceId) throw new PublishError(401, 'not authorized', '', 'auth-expired');
   if (type === 'webhook' && !secret) throw new PublishError(401, 'no signing secret', '', 'auth-expired');
-  if (P.pick && !input.targetId) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
-  return { type, P, fields, creds, secret, existing, target: input.target || null, targetId: input.targetId || null };
+  if (P.pick && !targetId) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
+  return { type, P, fields, creds, secret, existing, target, targetId };
 }
 
 async function setBlog(bid: string, patch: Record<string, any>) {

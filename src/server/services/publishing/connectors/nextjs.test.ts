@@ -6,7 +6,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublishError } from '../http';
 import type { ConnCtx, PublishPayload } from '../types';
-import { branchOf, mdxFile, nextjs } from './nextjs';
+import { failCopy } from '@/server/actions/publishing';
+import { branchOf, mdxFile, nextjs, normFolder } from './nextjs';
 
 const API = 'https://api.github.com';
 const R = `${API}/repos/fieldnote/site`;
@@ -265,5 +266,86 @@ describe('branch names', () => {
     const long = 'a'.repeat(300);
     expect(branchOf(P({ slug: long }))).toBe(`radar/${'a'.repeat(120)}-Ab3-x_9Q`);
     expect(branchOf(P({ slug: long }))).not.toBe(branchOf(P({ slug: long, entryId: 'e_zzz' })));
+  });
+});
+
+describe('content folder', () => {
+  it('pasted GitHub page paths, URLs and slashes become the repo-relative folder; empty is content/posts', () => {
+    expect(normFolder('content/posts')).toBe('content/posts');
+    expect(normFolder('/content/posts/')).toBe('content/posts');
+    expect(normFolder('tree/main/public/blog')).toBe('public/blog');
+    expect(normFolder('blob/dev/src/posts/')).toBe('src/posts');
+    expect(normFolder('https://github.com/o/r/tree/main/content/posts')).toBe('content/posts');
+    expect(normFolder(' github.com/thallylabs/thally-website/tree/main/public/blog/ ')).toBe('public/blog');
+    expect(normFolder('https://github.com/o/r')).toBe('content/posts');
+    expect(normFolder('tree/main')).toBe('content/posts');
+    expect(normFolder('/')).toBe('content/posts');
+    expect(normFolder('')).toBe('content/posts');
+  });
+  it('a stored folder pasted as "tree/main/…" is normalized before publishing writes to it', async () => {
+    await nextjs.createDraft({ ...C, fields: { ...C.fields, path: 'tree/main/public/blog' } }, P());
+    expect(calls.find(c => c.method === 'PUT')!.url).toBe(`${R}/contents/public/blog/billing-tips.mdx`);
+  });
+});
+
+describe('repository picker (targets)', () => {
+  const REPOS = `${API}/user/repos`;
+  const repoRow = (full: string, push = true) => ({ full_name: full, name: full.split('/')[1], html_url: `https://github.com/${full}`, permissions: { push, pull: true } });
+  const listed = (pages: any[][]) => { override = (m, u) => (u.startsWith(REPOS) ? reply(200, pages[Number(new URL(u).searchParams.get('page')) - 1] || []) : null); };
+
+  it('asks for owner, collaborator and org-member repos, most recently pushed first, and keeps only those it can push to', async () => {
+    listed([[repoRow('kenny/notes'), repoRow('acme/readonly', false), repoRow('acme/site')]]);
+    const t = await nextjs.targets!(C);
+    expect(calls).toHaveLength(1);
+    const u = new URL(calls[0].url);
+    expect(u.origin + u.pathname).toBe(REPOS);
+    expect(Object.fromEntries(u.searchParams)).toEqual({ per_page: '100', sort: 'pushed', affiliation: 'owner,collaborator,organization_member', page: '1' });
+    expect(hdr(calls[0], 'authorization')).toBe('Bearer gho_tok');
+    expect(t).toEqual([{ id: 'kenny/notes', name: 'kenny/notes', url: 'https://github.com/kenny/notes' }, { id: 'acme/site', name: 'acme/site', url: 'https://github.com/acme/site' }]);
+  });
+  it('pages until a page has fewer than 100 repos, and stops after 5 pages', async () => {
+    const page = (n: number, size: number) => Array.from({ length: size }, (_, i) => repoRow(`o/r${n}-${i}`));
+    listed([page(1, 100), page(2, 30), page(3, 100)]);
+    expect(await nextjs.targets!(C)).toHaveLength(130);
+    expect(calls.map(c => new URL(c.url).searchParams.get('page'))).toEqual(['1', '2']);
+    calls = [];
+    listed(Array.from({ length: 7 }, (_, i) => page(i + 1, 100)));
+    expect(await nextjs.targets!(C)).toHaveLength(500);
+    expect(calls).toHaveLength(5);
+  });
+  it('moves repos named after the business domain to the front (preselected), keeping the order otherwise', async () => {
+    listed([[repoRow('fieldnote/infra'), repoRow('someone/notes'), repoRow('kenny/fieldnote-website'), repoRow('fieldnote/api'), repoRow('kenny/fieldnote-blog')]]);
+    expect((await nextjs.targets!({ ...C, domain: 'www.fieldnote.app' })).map(t => t.id)).toEqual(['kenny/fieldnote-website', 'kenny/fieldnote-blog', 'fieldnote/infra', 'someone/notes', 'fieldnote/api']);
+  });
+  it('a revoked token while listing is a 401 auth-expired', async () => {
+    override = () => reply(401, { message: 'Bad credentials' });
+    expect((await err(nextjs.targets!(C))).kind).toBe('auth-expired');
+  });
+});
+
+describe('organization access', () => {
+  // GitHub's real message runs past the 300 characters PublishError keeps; the org name comes early enough to survive.
+  const RESTRICTED = { message: 'Although you appear to have the correct authorization credentials, the `thallylabs` organization has enabled OAuth App access restrictions, meaning that data access to third-parties is limited. For more information on these restrictions, including how to enable this app, visit https://docs.github.com/articles/restricting-access-to-your-organization-s-data/', documentation_url: 'https://docs.github.com/rest/repos/repos#get-a-repository', status: '403' };
+  it('an org that restricts OAuth apps says which org and how to grant access, not "check the credentials"', async () => {
+    override = () => reply(403, RESTRICTED);
+    const e = await err(nextjs.test(C));
+    expect([e.http, e.kind, e.retryable]).toEqual([403, 'config', false]);
+    expect(failCopy('nextjs', e)).toBe('The thallylabs organization hasn’t approved Radar on GitHub. An organization owner can grant access under GitHub Settings → Applications → Radar, then test again.');
+  });
+  it('without a named org it still explains the restriction', async () => {
+    override = () => reply(403, { message: 'This organization has enabled OAuth App access restrictions.' });
+    expect(failCopy('nextjs', await err(nextjs.test(C)))).toBe('The repository’s organization hasn’t approved Radar on GitHub. An organization owner can grant access under GitHub Settings → Applications → Radar, then test again.');
+  });
+  it('SAML single sign-on enforcement asks to authorize Radar for the org', async () => {
+    override = () => reply(403, { message: 'Resource protected by organization SAML enforcement. You must grant your OAuth token access to this organization.' });
+    const e = await err(nextjs.test(C));
+    expect(failCopy('nextjs', e)).toBe('The repository’s organization uses single sign-on. Authorize Radar for it under GitHub Settings → Applications → Radar, then test again.');
+  });
+  it('a rate-limited 403 still maps to a retried 429; any other 403 still says "check the credentials"', async () => {
+    override = () => reply(403, { message: 'You have exceeded a secondary rate limit.' });
+    const r = await err(nextjs.test(C));
+    expect([r.http, r.retryable]).toEqual([429, true]);
+    override = () => reply(403, { message: 'Resource not accessible by integration' });
+    expect(failCopy('nextjs', await err(nextjs.test(C)))).toBe('403 Forbidden — check the credentials');
   });
 });
