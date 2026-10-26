@@ -25,7 +25,7 @@ export function PublishingSettings() {
   return <>
     <Row t="Connections" d="Articles publish to your default. Pick another per article.">
       {conns.length ? <div className="col">{conns.map((c, i) => <div key={c.id} className="row" style={{ gap: 12, padding: '10px 0', borderTop: i ? '1px solid var(--line2)' : 0, flexWrap: 'wrap' }}>
-        <PlatMark k={c.type} s={34} /><span className="col grow" style={{ minWidth: 160 }}><span className="small" style={{ fontWeight: 500 }}>{platLabel(c.type)}{c.id === def && <span className="sub" style={{ fontWeight: 400 }}> · Default</span>}</span><span className="xs sub mono trunc">{c.url}{c.target ? ' · ' + c.target : ''}</span></span>
+        <PlatMark k={c.type} s={34} /><span className="col grow" style={{ minWidth: 160 }}><span className="small" style={{ fontWeight: 500 }}>{platLabel(c.type)}{c.id === def && <span className="sub" style={{ fontWeight: 400 }}> · Default</span>}</span><span className="xs sub mono trunc">{c.url}{c.target && c.type !== 'nextjs' ? ' · ' + c.target : ''}</span></span>
         {c.status === 'error' && !bl.paused ? <Status tone="bad">Needs reconnecting</Status> : <Status tone={bl.paused ? 'warn' : 'ok'}>{bl.paused ? 'Paused' : 'Connected'}</Status>}
         <div style={{ position: 'relative' }}><Btn kind="ghost" size="sm" icon="dots" aria-label="Connection options" onClick={() => setMenu(menu === c.id ? null : c.id)} />
           {menu === c.id && <div className="pop" style={{ right: 0, top: 'calc(100% + 4px)' }} onMouseLeave={() => setMenu(null)}>
