@@ -1,8 +1,10 @@
 // Article → publishable formats (02-system.md §7 "Publishing payload"). Pure functions, safe to import anywhere on the server.
 // blocksToHtml / blocksToMarkdown are the contract other areas may use (CONTRACTS.md).
-import type { Block, Source, VideoRef } from '@/lib/types';
+import type { ArticleBodyImage, Block, Source, VideoRef } from '@/lib/types';
+import { articleBodyImageAnchor } from '@/lib/articleImages';
 
 export interface RenderOpts {
+  bodyImages?: ArticleBodyImage[];
   /** Embedded YouTube videos (in order). Inserted after the first section, as in the article editor. */
   videos?: (VideoRef | { id: string; title?: string; channel?: string })[];
   /** Sources rendered as a citations list at the end (removed sources are skipped). */
@@ -38,7 +40,11 @@ export function blocksToHtml(blocks: Block[], opts: RenderOpts = {}): string {
   const out: string[] = [];
   const vids = opts.videos || [];
   const anchor = videoAnchor(blocks);
-  blocks.forEach((b, i) => { out.push(blockHtml(b)); if (i === anchor) vids.forEach(v => out.push(videoHtml(v))); });
+  blocks.forEach((b, i) => {
+    out.push(blockHtml(b));
+    for (const image of opts.bodyImages || []) if (articleBodyImageAnchor(blocks, image) === i && /^https?:\/\//i.test(image.url)) out.push(`<figure class="radar-body-image"><img src="${escHtml(image.url)}" alt="${escHtml(image.alt)}" width="1200" height="675" loading="lazy" /></figure>`);
+    if (i === anchor) vids.forEach(v => out.push(videoHtml(v)));
+  });
   if (!blocks.length) vids.forEach(v => out.push(videoHtml(v)));
   const src = sourcesList(opts.sources);
   if (src.length) out.push(`<h2>${escHtml(opts.sourcesHeading || 'Sources')}</h2><ol class="radar-sources">` + src.map(s => `<li><a href="${escHtml(safeUrl(s.url))}" rel="noopener">${escHtml(s.title || s.url)}</a></li>`).join('') + '</ol>');
@@ -71,6 +77,7 @@ export function blocksToMarkdown(blocks: Block[], opts: RenderOpts = {}): string
     else if (b[0] === 'h2') out.push(`## ${escMd(b[1] as string)}`);
     else if (b[0] === 'h3') out.push(`### ${escMd(b[1] as string)}`);
     else out.push(escMd(b[1] as string));
+    for (const image of opts.bodyImages || []) if (articleBodyImageAnchor(blocks, image) === i && /^https?:\/\//i.test(image.url)) out.push(`![${escMd(image.alt.replace(/\s+/g, ' '))}](${mdUrl(image.url)})`);
     if (i === anchor) vids.forEach(v => out.push(vmd(v)));
   });
   const src = sourcesList(opts.sources);

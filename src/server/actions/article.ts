@@ -6,6 +6,8 @@ import { db, schema } from '../db';
 import { RadarError, notFound } from '../errors';
 import { calendarSettingsOf, entryFromRow } from '../workspace';
 import { startDraft } from '../services/drafting/start';
+import { startBodyImages } from '../services/drafting/bodyImages';
+import { assertNoArticleWork, assertNoDraftWork, lockArticle } from '../services/drafting/guard';
 import { rewriteSelection } from '../services/drafting/rewrite';
 import { suggestVideos } from '../services/drafting/youtube';
 import { renderImage } from '../services/images';
@@ -29,8 +31,15 @@ async function load(bid: string, entryId: string) {
   const e = entryFromRow(r);
   return { row: r, e, a: ({ ...defaultArticle(e), ...((a?.data as Article) || {}) }) as Article };
 }
-async function save(bid: string, entryId: string, data: Article) {
-  await db.insert(schema.articles).values({ entryId, businessId: bid, data, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
+async function save(bid: string, entryId: string, change: (latest: Article) => Article) {
+  return db.transaction(async tx => {
+    const row = await lockArticle(tx, bid, entryId);
+    if (row.status === 'published' || row.status === 'publishing') throw new RadarError('This article is locked while it’s queued or published.');
+    await assertNoDraftWork(tx, bid, entryId);
+    const current = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
+    const data = change({ ...defaultArticle(entryFromRow(row)), ...((current?.data as Article) || {}) });
+    await tx.insert(schema.articles).values({ entryId, businessId: bid, data, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
+  });
 }
 const profileOf = (biz: any): Profile => ({ ...(biz.profile as Profile), domain: biz.domain });
 async function render(bid: string, biz: any, title: string, a: Article): Promise<Article['img']> {
@@ -50,7 +59,13 @@ export const actions: ActionMap = {
     if (patch.img?.style && patch.img.style !== a.img.style && next.generated) {
       try { next.img = await render(ctx.bid, ctx.biz, e.title, next); } catch { next.img = { ...next.img, url: null, urlKey: null }; }
     }
-    await save(ctx.bid, entryId, next);
+    await save(ctx.bid, entryId, latest => ({
+      ...latest,
+      ...(patch.body ? { body: patch.body as Article['body'] } : {}),
+      brief: { ...latest.brief, ...patch.brief }, seo: { ...latest.seo, ...patch.seo, ...(patch.seo?.slug != null ? { slug: next.seo.slug } : {}) },
+      img: { ...latest.img, ...patch.img, ...(patch.img?.style && patch.img.style !== a.img.style ? { url: next.img.url, urlKey: next.img.urlKey } : {}) },
+      ...(patch.videos ? { videos: patch.videos } : {}),
+    }));
     return { ok: true };
   } }),
 
@@ -59,9 +74,14 @@ export const actions: ActionMap = {
     const { e, a } = await load(ctx.bid, entryId);
     const next = { ...a, img: { ...a.img, seed: (a.img.seed || 1) + 1 } };
     next.img = await render(ctx.bid, ctx.biz, e.title, next);
-    await save(ctx.bid, entryId, next);
+    await save(ctx.bid, entryId, latest => {
+      if (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
+      return { ...latest, img: { ...latest.img, url: next.img.url, urlKey: next.img.urlKey, seed: next.img.seed } };
+    });
     return { url: next.img.url, seed: next.img.seed };
   } }),
+
+  'article.regenerateBodyImages': action({ input: z.object({ entryId: z.string().min(1).max(100) }), run: async (ctx, { entryId }) => ({ jobId: await startBodyImages(ctx.bid, entryId) }) }),
 
   /** "Draft now" (calendar sheet + article) and "Rewrite from brief" → job `article.draft` (ref = entryId). */
   'article.draft': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
@@ -87,8 +107,10 @@ export const actions: ActionMap = {
     const p = profileOf(ctx.biz); const s = calendarSettingsOf(ctx.biz);
     const vids = await suggestVideos(ctx.bid, { kw: e.kw, title: e.title, outline: a.brief.outline, market: s.market, language: s.language, competitors: p.audience.competitors });
     // Keep metadata for videos already embedded so their credit line survives a refresh.
-    const keep = (a.videoMeta || []).filter(v => a.videos.includes(v.id) && !vids.some(x => x.id === v.id));
-    await save(ctx.bid, entryId, { ...a, videoMeta: [...vids, ...keep], videoFetchedAt: new Date().toISOString() });
+    await save(ctx.bid, entryId, latest => {
+      const retained = (latest.videoMeta || []).filter(v => latest.videos.includes(v.id) && !vids.some(x => x.id === v.id));
+      return { ...latest, videoMeta: [...vids, ...retained], videoFetchedAt: new Date().toISOString() };
+    });
     return { videos: vids };
   } }),
 
@@ -96,8 +118,7 @@ export const actions: ActionMap = {
   'article.source': action({ input: z.object({ entryId: z.string(), index: z.number().int().min(0), removed: z.boolean() }), run: async (ctx, { entryId, index, removed }) => {
     const { a } = await load(ctx.bid, entryId);
     if (!a.sources[index]) throw notFound('That source');
-    const sources = a.sources.map((s, i) => (i === index ? { ...s, removed } : s));
-    await save(ctx.bid, entryId, { ...a, sources });
+    await save(ctx.bid, entryId, latest => ({ ...latest, sources: latest.sources.map((s, i) => i === index ? { ...s, removed } : s) }));
     return { ok: true };
   } }),
 
@@ -111,14 +132,18 @@ export const actions: ActionMap = {
 
   /** CONTRACT: review/draft/approved (generated) → scheduled; withoutPublishing → approved. Needs a connection unless withoutPublishing. */
   'article.approve': action({ input: z.object({ entryId: z.string(), withoutPublishing: z.boolean().optional() }), run: async (ctx, { entryId, withoutPublishing }) => {
-    const { row, a } = await load(ctx.bid, entryId);
-    if (!a.generated) throw new RadarError('Radar hasn’t drafted this article yet.');
-    if (!['review', 'draft', 'approved'].includes(row.status)) throw new RadarError('This article can’t be approved right now.');
-    if (withoutPublishing) { await db.update(E).set({ status: 'approved' }).where(eq(E.id, entryId)); return { status: 'approved' }; }
-    const conns = await db.select({ id: schema.connections.id }).from(schema.connections).where(eq(schema.connections.businessId, ctx.bid));
-    if (!conns.length) throw new RadarError('Connect your blog to schedule this article.');
-    await db.update(E).set({ status: 'scheduled', publishError: null }).where(eq(E.id, entryId));
-    return { status: 'scheduled' };
+    return db.transaction(async tx => {
+      const row = await lockArticle(tx, ctx.bid, entryId);
+      await assertNoArticleWork(tx, ctx.bid, entryId);
+      const a = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, ctx.bid))).limit(1))[0]?.data as Article | undefined;
+      if (!a?.generated) throw new RadarError('Radar hasn’t drafted this article yet.');
+      if (!['review', 'draft', 'approved'].includes(row.status)) throw new RadarError('This article can’t be approved right now.');
+      if (withoutPublishing) { await tx.update(E).set({ status: 'approved' }).where(eq(E.id, entryId)); return { status: 'approved' }; }
+      const conns = await tx.select({ id: schema.connections.id }).from(schema.connections).where(eq(schema.connections.businessId, ctx.bid));
+      if (!conns.length) throw new RadarError('Connect your blog to schedule this article.');
+      await tx.update(E).set({ status: 'scheduled', publishError: null }).where(eq(E.id, entryId));
+      return { status: 'scheduled' };
+    });
   } }),
 
   /** CONTRACT: scheduled → review ("Unscheduled. The draft is kept.") */

@@ -1,4 +1,4 @@
-import type { Block, ConnType } from '@/lib/types';
+import type { ArticleBodyImage, Block, ConnType } from '@/lib/types';
 
 /** Everything a connector needs. `creds` is the decrypted secret material (passwords, API keys, OAuth tokens) — server only. */
 export interface ConnCtx {
@@ -29,6 +29,8 @@ export interface PublishPayload {
   markdown: string;
   /** The article blocks (for platforms with their own block format, e.g. Notion) */
   blocks: Block[];
+  /** Tenant-validated absolute URLs, placed with the same section anchors as HTML/Markdown. */
+  bodyImages?: ArticleBodyImage[];
   meta: string;
   /** The article's SEO title (Article → SEO), falling back to the title. Platforms with a meta-title field get it. */
   seoTitle?: string;

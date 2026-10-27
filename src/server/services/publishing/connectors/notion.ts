@@ -9,6 +9,7 @@
 //  - PATCH /v1/pages/:id { in_trash: true } trashes (2026-03-11 replaced `archived`)
 //  - Page `url` (notion.so) opens for workspace members only; `public_url` is set when the page is shared to the web.
 import type { Block } from '@/lib/types';
+import { articleBodyImageAnchor } from '@/lib/articleImages';
 import type { Connector, ConnCtx, PublishPayload } from '../types';
 import { TEST_TITLE } from '../types';
 import { jsonBody, PublishError, reqJson } from '../http';
@@ -36,7 +37,7 @@ function textBlocks(type: string, s: string, link?: string): any[] {
   return out;
 }
 
-export function toNotionBlocks(blocks: Block[], p: Pick<PublishPayload, 'videos' | 'sources'>): any[] {
+export function toNotionBlocks(blocks: Block[], p: Pick<PublishPayload, 'videos' | 'sources' | 'bodyImages'>): any[] {
   const out: any[] = [];
   const at = blocks.findIndex((x, j) => j > 0 && x[0] === 'h2'); const anchor = at > 0 ? at - 1 : blocks.length - 1;
   const videos = () => p.videos.forEach(v => out.push({ object: 'block', type: 'video', video: { type: 'external', external: { url: v.url }, caption: rt([v.title, 'YouTube', v.channel].filter(Boolean).join(' · ')) } }));
@@ -45,6 +46,10 @@ export function toNotionBlocks(blocks: Block[], p: Pick<PublishPayload, 'videos'
     else if (b[0] === 'h2') out.push(...textBlocks('heading_2', b[1] as string));
     else if (b[0] === 'h3') out.push(...textBlocks('heading_3', b[1] as string));
     else out.push(...textBlocks('paragraph', b[1] as string));
+    for (const image of p.bodyImages || []) if (articleBodyImageAnchor(blocks, image) === i) {
+      if (!publicHttps(image.url) || image.url.length > TEXT_MAX) throw new PublishError(422, 'Notion needs publicly reachable HTTPS URLs for article body images. Check the storage URL.', '', 'config');
+      out.push({ object: 'block', type: 'image', image: { type: 'external', external: { url: image.url }, caption: rt(image.alt) } });
+    }
     if (i === anchor) videos();
   });
   if (!blocks.length) videos();

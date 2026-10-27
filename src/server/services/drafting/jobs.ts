@@ -10,9 +10,12 @@ import { notify } from '../../notify';
 import { getBiz, entryFromRow } from '../../workspace';
 import { shortId } from '../../crypto';
 import { GENERIC_AI_ERROR } from '../../errors';
+import { RadarError } from '../../errors';
 import { addDays, nowHMIn, todayIn } from '@/lib/format';
 import { draftArticle, entriesStatus, type DraftPayload } from './draft';
 import { startDraft } from './start';
+import { generateArticleBodyImages, type BodyImagesPayload } from './bodyImages';
+import { assertArticleEditable, assertArticleJobOwned, assertNoArticleWork, lockArticle } from './guard';
 import type { Article, Profile } from '@/lib/types';
 
 const trunc = (t: string) => (t.length > 40 ? t.slice(0, 40).trimEnd() + '…' : t);
@@ -27,20 +30,31 @@ defineJob<DraftPayload>({
   kind: 'article.draft', maxAttempts: 2, timeoutMs: 15 * 60e3,
   run: async (ctx) => {
     const bid = ctx.businessId!; const { entryId, source } = ctx.payload;
-    const row = (await db.select().from(schema.calendarEntries).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.businessId, bid))).limit(1))[0];
-    if (!row) return { skipped: 'missing' };
+    const { row, art } = await db.transaction(async tx => {
+      const row = await lockArticle(tx, bid, entryId);
+      assertArticleEditable(row.status, row.publishRemote);
+      await assertNoArticleWork(tx, bid, entryId, ctx.job.id);
+      await assertArticleJobOwned(tx, ctx.job);
+      const art = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
+      await tx.update(schema.calendarEntries).set({ status: 'drafting' }).where(eq(schema.calendarEntries.id, entryId));
+      return { row, art };
+    });
     try {
       const biz = await getBiz(bid); const profile = { ...(biz.profile as Profile), domain: biz.domain };
-      const art = (await db.select().from(schema.articles).where(eq(schema.articles.entryId, entryId)).limit(1))[0];
       const g = (await db.select({ status: schema.gscConnections.status }).from(schema.gscConnections).where(eq(schema.gscConnections.businessId, bid)).limit(1))[0];
       const gsc = !!g && ['connected', 'error', 'syncing'].includes(g.status);
       const a = await draftArticle(ctx, entryFromRow(row), (art?.data as Article) || null, profile, gsc, profile.business.name);
-      await db.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() })
-        .onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: new Date() } });
       const auto = await publishingReady(bid, biz.blog);
       const final = auto ? 'scheduled' : 'review';
-      await db.update(schema.calendarEntries).set({ status: final, publishError: null })
-        .where(and(eq(schema.calendarEntries.id, entryId), inArray(schema.calendarEntries.status, ['drafting', 'approved', 'proposed'])));
+      await db.transaction(async tx => {
+        const current = await lockArticle(tx, bid, entryId);
+        if (current.status !== 'drafting') throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
+        await assertArticleJobOwned(tx, ctx.job);
+        const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
+        if (JSON.stringify(latest?.data) !== JSON.stringify(art?.data)) throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
+        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: new Date() } });
+        await tx.update(schema.calendarEntries).set({ status: final, publishError: null }).where(eq(schema.calendarEntries.id, entryId));
+      });
       await ctx.touch();
       const now = (await entriesStatus([entryId]))[0];
       await announce(bid, ctx.payload, now?.title || row.title, now?.status === 'scheduled');
@@ -48,12 +62,49 @@ defineJob<DraftPayload>({
     } catch (e) {
       if (ctx.attempt >= ctx.job.maxAttempts) {
         // Give the entry back so "Draft now" works; the cron retries tomorrow.
-        await db.update(schema.calendarEntries).set({ status: 'approved' }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.status, 'drafting')));
-        await once(`draft-failed:${entryId}:${todayIn((await getBiz(bid)).timezone)}`);
-        await notify(bid, GENERIC_AI_ERROR, { tone: 'bad' });
+        const cleaned = await db.transaction(async tx => {
+          const current = await lockArticle(tx, bid, entryId);
+          await assertArticleJobOwned(tx, ctx.job);
+          if (current.status !== 'drafting') return false;
+          await tx.update(schema.calendarEntries).set({ status: 'approved' }).where(eq(schema.calendarEntries.id, entryId));
+          return true;
+        }).catch(() => false);
+        if (cleaned) {
+          await once(`draft-failed:${entryId}:${todayIn((await getBiz(bid)).timezone)}`);
+          await notify(bid, GENERIC_AI_ERROR, { tone: 'bad' });
+        }
       }
       throw e;
     }
+  },
+});
+
+defineJob<BodyImagesPayload>({
+  kind: 'article.bodyImages', maxAttempts: 2, timeoutMs: 10 * 60e3,
+  run: async ctx => {
+    const bid = ctx.businessId!; const { entryId } = ctx.payload;
+    const snapshot = await db.transaction(async tx => {
+      const row = await lockArticle(tx, bid, entryId);
+      assertArticleEditable(row.status, row.publishRemote);
+      await assertNoArticleWork(tx, bid, entryId, ctx.job.id);
+      await assertArticleJobOwned(tx, ctx.job);
+      const a = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0]?.data as Article | undefined;
+      if (!a?.generated || !a.body?.length) throw new RadarError('Draft this article before adding body images.', 400, 'not_generated');
+      return { row, a };
+    });
+    const biz = await getBiz(bid); const profile = { ...(biz.profile as Profile), domain: biz.domain };
+    const bodyImages = await generateArticleBodyImages(ctx, entryFromRow(snapshot.row), snapshot.a, profile);
+    const bodyImagesGeneratedAt = new Date().toISOString();
+    await db.transaction(async tx => {
+      const row = await lockArticle(tx, bid, entryId);
+      assertArticleEditable(row.status, row.publishRemote);
+      await assertArticleJobOwned(tx, ctx.job);
+      const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0]?.data as Article | undefined;
+      if (!latest || JSON.stringify(latest.body) !== JSON.stringify(snapshot.a.body)) throw new RadarError('The article text changed while Radar was making its images. Try again to match the latest text.', 409, 'article_changed');
+      await tx.update(schema.articles).set({ data: { ...latest, bodyImages, bodyImagesGeneratedAt }, updatedAt: new Date() }).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid)));
+    });
+    await ctx.touch();
+    return { entryId, bodyImagesGeneratedAt, count: bodyImages.length };
   },
 });
 

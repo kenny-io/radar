@@ -47,6 +47,12 @@ export type Block = ['p' | 'h2' | 'h3', string] | ['ul', string[]];
 export type ImageStyle = 'branded' | 'illustration' | 'photography' | 'infographic';
 export interface VideoRef { id: string; title: string; channel: string; dur: string; views: string; why: string }
 export interface Source { title: string; url: string; use: string; removed?: boolean; /** research notes (facts quoted from the source) — statistics in the draft must appear here */ notes?: string[] }
+export interface ArticleBodyImage {
+  id: string;
+  /** Stable section identity plus the original heading index as a rename fallback. Empty heading = a headingless body. */
+  after: { heading: string; occurrence: number; block: number };
+  url: string; alt: string; prompt: string; seed: number;
+}
 export interface Article {
   entryId: string; generated: boolean; body: Block[];
   brief: { angle: string; outline: string[]; words: 900 | 1400 | 2200 };
@@ -57,6 +63,9 @@ export interface Article {
   claims: { block: number; text: string; source: number }[];
   /** ISO time the last draft job finished (content area) */
   draftedAt?: string | null;
+  /** Optional for articles created before inline illustrations were supported. */
+  bodyImages?: ArticleBodyImage[];
+  bodyImagesGeneratedAt?: string;
   /** when videoMeta (YouTube suggestions) was fetched */
   videoFetchedAt?: string | null;
 }

@@ -11,6 +11,8 @@ import { KwMembership } from '@/features/calendar/ContentCalendar';
 import { platLabel, publishFailParts, tzShort } from '@/lib/constants';
 import { addDays, fmtDW, fmtTime } from '@/lib/format';
 import { defaultArticle, parseBlocks } from './blocks';
+import { articleBodyImageAnchor } from '@/lib/articleImages';
+import { BodyImage, BodyImagesPanel } from './BodyImage';
 import { RewriteBar, VideoEmbed, VideoPicker } from './RewriteBar';
 import type { Article, Block as BlockT, CalendarEntry, ConnectionPublic, VideoRef, Workspace } from '@/lib/types';
 
@@ -24,9 +26,10 @@ const patchEntry = (id: string, patch: Partial<CalendarEntry>) => (B: Workspace)
 export function ArticleWorkspace() {
   const app = useApp(); const { route, go, toast } = app; const B = app.B!;
   const id = String(route.params || ''); const e = B.calendar.entries.find(x => x.id === id);
-  const [tab, setTab] = useState<'brief' | 'seo' | 'image' | 'sources'>('brief'); const [mode, setMode] = useState<'edit' | 'preview'>('edit'); const [imgBusy, setImgBusy] = useState(false);
+  const [tab, setTab] = useState<'brief' | 'seo' | 'image' | 'sources'>('brief'); const [imgBusy, setImgBusy] = useState(false);
   const [pubIntro, setPubIntro] = useState(false); const [conn, setConn] = useState<null | string | { type: string; id?: string | null }>(null); const [menu, setMenu] = useState(false); const menuRef = useRef<HTMLDivElement>(null); const proseRef = useRef<HTMLDivElement>(null);
   const [vids, setVids] = useState<VideoRef[] | null>(null); const [vidBusy, setVidBusy] = useState(false); const [starting, setStarting] = useState(false);
+  const [bodyStarting, setBodyStarting] = useState(false);
   const A: Article | null = e ? (B.articles[id] ? { ...defaultArticle(e), ...B.articles[id] } : defaultArticle(e)) : null;
 
   // Draft job (Draft now, Rewrite from brief, the D-1 cron): stream progress; keep the stream up until the workspace has the result.
@@ -39,6 +42,13 @@ export function ArticleWorkspace() {
   const streamBlocks = useMemo(() => [...(prog.blocks || []), ...parseBlocks(prog.partial || '')], [prog.blocks, prog.partial]);
   const genActive = running || catching || starting;
   const gen = genActive && (!!A?.generated || streamBlocks.length > 0) ? streamBlocks : null;
+  const bodyJob = app.jobFor('article.bodyImages', id);
+  const bodyRunning = !!bodyJob && ['queued', 'running'].includes(bodyJob.status);
+  const bodyCatching = bodyJob?.status === 'done' && !!bodyJob.result?.bodyImagesGeneratedAt && new Date(bodyJob.result.bodyImagesGeneratedAt).getTime() > new Date(A?.bodyImagesGeneratedAt || 0).getTime();
+  const bodyBusy = bodyStarting || bodyRunning || bodyCatching;
+  useEffect(() => { if (bodyJob?.status === 'done') app.refresh(); }, [bodyJob?.id, bodyJob?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (bodyJob) setBodyStarting(false); }, [bodyJob?.id, bodyJob?.status]);
+  useEffect(() => { setBodyStarting(false); }, [id]);
 
   useEffect(() => { setVids(null); }, [id]);
   useEffect(() => {
@@ -64,7 +74,7 @@ export function ArticleWorkspace() {
   const st = e.status; const brand = B.profile.brand; const blog = B.blog; const conns = blog.conns;
   const defConn = conns.find(c => c.id === blog.defaultId) || conns[0] || null;
   const destConn = conns.find(c => c.id === e.dest) || defConn;
-  const draftNow = () => { setStarting(true); app.act('article.draft', { entryId: id }, { optimistic: ['approved', 'proposed'].includes(st) ? patchEntry(id, { status: 'drafting' }) : undefined }).catch(() => setStarting(false)); };
+  const draftNow = async () => { setStarting(true); try { await app.flushLater(); await app.act('article.draft', { entryId: id }, { optimistic: ['approved', 'proposed'].includes(st) ? patchEntry(id, { status: 'drafting' }) : undefined }); } catch { setStarting(false); } };
   const approve = () => { if (!conns.length) { setPubIntro(true); return; } schedule(); };
   const schedule = (c?: ConnectionPublic | null) => {
     const to = c || destConn;
@@ -78,14 +88,22 @@ export function ArticleWorkspace() {
   const statusLine = st === 'scheduled' ? <Status tone={blog.paused ? 'warn' : 'ok'}>{blog.paused ? 'Paused · ' : 'Publishes '}{fmtDW(e.date)} · {fmtTime(blog.time)} {tzShort(blog.tz)}</Status> : st === 'publishing' ? <Status tone="signal" pulse>Publishing…</Status> : <EntryStatus s={st} />;
   const rewrite = async (m: string, selection: string, before: string, after: string) => (await app.act<{ text: string }>('article.rewrite', { entryId: id, mode: m, selection, before, after })).text;
   const embedded = (A.videoMeta || []).filter(v => A.videos.includes(v.id));
+  const bodyImages = A.bodyImages || [];
+  const mediaLocked = ['scheduled', 'publishing', 'published'].includes(st);
+  const canEdit = !mediaLocked && !genActive && !bodyBusy && B.role !== 'Viewer';
+  const bodyError = bodyJob?.status === 'failed' && (!A.bodyImagesGeneratedAt || new Date(bodyJob.createdAt).getTime() > new Date(A.bodyImagesGeneratedAt).getTime());
+  const generateBodyImages = async () => {
+    setBodyStarting(true);
+    try { await app.flushLater(); await app.act('article.regenerateBodyImages', { entryId: id }); }
+    catch { setBodyStarting(false); /* app.act displays the failure */ }
+  };
 
   return <div className="art-wrap" style={{ margin: '-44px clamp(-56px,-4vw,-20px) 0' }}>
     <div className="row art-bar" style={{ position: 'sticky', top: 0, zIndex: 20, padding: '12px clamp(16px,3vw,32px)', background: 'color-mix(in oklch,var(--paper) 88%,transparent)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}>
       <Btn kind="ghost" size="sm" icon="back" onClick={() => go('calendar', { open: null })}>Calendar</Btn>
       <span className="grow row" style={{ gap: 14, minWidth: 'min(220px,40vw)' }}><span className="trunc hide-sm" style={{ fontWeight: 500, minWidth: 0 }}>{e.title}</span><span style={{ flex: 'none' }}>{statusLine}</span></span>
       {conns.length > 1 && !['published', 'publishing'].includes(st) && <select className="input hide-sm" aria-label="Publish to" style={{ width: 'auto', height: 34, fontSize: 13, paddingLeft: 12 }} value={e.dest || blog.defaultId || ''} onChange={ev => { const v = ev.target.value; app.act('article.dest', { entryId: id, dest: v }, { optimistic: patchEntry(id, { dest: v }) }).catch(() => {}); }}>{conns.map(c => <option key={c.id} value={c.id}>To {platLabel(c.type)}{c.id === blog.defaultId ? ' (default)' : ''}</option>)}</select>}
-      {A.generated && <Seg value={mode} onChange={setMode} options={[{ v: 'edit', l: 'Edit' }, { v: 'preview', l: 'Preview' }]} />}
-      {A.generated && !gen && ['review', 'draft', 'approved'].includes(st) && <Btn kind="primary" icon="check" onClick={approve}>Approve article</Btn>}
+      {A.generated && !gen && ['review', 'draft', 'approved'].includes(st) && <Btn kind="primary" icon="check" disabled={bodyBusy} onClick={approve}>Approve article</Btn>}
       {st === 'scheduled' && <div style={{ position: 'relative' }} ref={menuRef}><Btn kind="secondary" iconR="chevD" onClick={() => setMenu(!menu)}>Queued</Btn><Popover anchor={menuRef} open={menu} onClose={() => setMenu(false)} align="right"><button className="pop-i" onClick={() => publishNow()}><Icon n="send" s={16} />Publish now</button><button className="pop-i" onClick={() => { setMenu(false); app.act('article.unschedule', { entryId: id }, { optimistic: patchEntry(id, { status: 'review' }) }).catch(() => {}); toast('Unscheduled. The draft is kept.'); }}><Icon n="undo" s={16} />Unschedule</button></Popover></div>}
       {st === 'published' && <Btn kind="secondary" iconR="ext" onClick={() => window.open(e.publishedUrl || `https://${B.profile.domain}`, '_blank', 'noopener')}>View post</Btn>}
     </div>
@@ -102,12 +120,12 @@ export function ArticleWorkspace() {
           </div>
             : <div className="prose" ref={proseRef}>
               <div style={{ marginBottom: 28 }}><Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} busy={imgBusy || !!gen} url={heroUrl} /></div>
-              <h1 className="h-display art-h1" style={{ fontSize: 40, marginBottom: 20 }} contentEditable={mode === 'edit' && !gen} suppressContentEditableWarning onBlur={ev => { const t = ev.currentTarget.innerText.replace(/\s+/g, ' ').trim(); if (t && t !== e.title) app.act('calendar.update', { entryId: id, title: t }, { optimistic: patchEntry(id, { title: t }) }).catch(() => {}); }}>{e.title}</h1>
+              <h1 className="h-display art-h1" style={{ fontSize: 40, marginBottom: 20 }} contentEditable={canEdit} suppressContentEditableWarning onBlur={ev => { const t = ev.currentTarget.innerText.replace(/\s+/g, ' ').trim(); if (t && t !== e.title) app.act('calendar.update', { entryId: id, title: t }, { optimistic: patchEntry(id, { title: t }) }).catch(() => {}); }}>{e.title}</h1>
               {gen ? <GenStream blocks={gen} /> : A.body.map((b, i) => {
                 const vidAt = A.body.findIndex((x, j) => j > 0 && x[0] === 'h2'); const vs = i === vidAt - 1 ? embedded : [];
-                return <Fragment key={id + i}><Block b={b} edit={mode === 'edit'} flags={flagged(i)} onChange={v => { const body = A.body.map((x, j) => (j === i ? [x[0], v] as BlockT : x)); if (JSON.stringify(body[i]) !== JSON.stringify(A.body[i])) setA({ body }, false); }} />{vs.map(v => <VideoEmbed key={v.id} v={v} edit={mode === 'edit'} onRemove={() => setA({ videos: A.videos.filter(x => x !== v.id) }, false)} />)}</Fragment>;
+                return <Fragment key={id + i}><Block b={b} edit={canEdit} flags={flagged(i)} onChange={v => { const body = A.body.map((x, j) => (j === i ? [x[0], v] as BlockT : x)); if (JSON.stringify(body[i]) !== JSON.stringify(A.body[i])) setA({ body }, false); }} />{bodyImages.filter(image => articleBodyImageAnchor(A.body, image) === i).map(image => <BodyImage key={image.id} image={image} />)}{vs.map(v => <VideoEmbed key={v.id} v={v} edit={canEdit} onRemove={() => setA({ videos: A.videos.filter(x => x !== v.id) }, false)} />)}</Fragment>;
               })}
-              <RewriteBar root={proseRef} enabled={mode === 'edit' && !gen && A.generated} onRewrite={rewrite} />
+              <RewriteBar root={proseRef} enabled={canEdit && A.generated} onRewrite={rewrite} />
             </div>}
         </article>
       </div>
@@ -118,25 +136,27 @@ export function ArticleWorkspace() {
           <Field label="Angle"><textarea className="input" rows={3} value={A.brief.angle} onChange={ev => setA({ brief: { ...A.brief, angle: ev.target.value } })} /></Field>
           <Field label="Outline" hint={A.generated ? 'Changing the outline won’t rewrite your draft.' : null}><ListEditor items={A.brief.outline} onChange={v => setA({ brief: { ...A.brief, outline: v } })} placeholder="Add section" /></Field>
           <Field label="Length"><Seg value={A.brief.words} onChange={v => setA({ brief: { ...A.brief, words: v } }, false)} options={[{ v: 900 as const, l: 'Short' }, { v: 1400 as const, l: 'Standard' }, { v: 2200 as const, l: 'Long' }]} /></Field>
-          {A.generated && <><Btn icon="refresh" loading={genActive} onClick={draftNow}>Rewrite from brief</Btn><span className="xs sub">Or select any text in the draft to rewrite just that part.</span></>}
+          {A.generated && <><Btn icon="refresh" loading={genActive} disabled={bodyBusy || mediaLocked} onClick={draftNow}>Rewrite from brief</Btn><span className="xs sub">Or select any text in the draft to rewrite just that part.</span></>}
         </div>}
         {tab === 'seo' && <SeoPanel A={A} set={(k, v) => setA({ seo: { ...A.seo, [k]: v } })} domain={B.profile.domain} />}
         {tab === 'image' && <div className="col" style={{ gap: 18 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Cover image</h3>
           <Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} radius={10} busy={imgBusy} url={heroUrl} />
-          <Field label="Style"><select className="input" value={A.img.style} onChange={ev => setA({ img: { style: ev.target.value as any } }, false)}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Direction"><textarea className="input" rows={2} value={A.img.prompt} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
-          <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
-          <div className="row"><Btn icon="refresh" loading={imgBusy} onClick={async () => { setImgBusy(true); try { await app.act('article.regenerateImage', { entryId: id }); } catch { /* toasted */ } setImgBusy(false); }}>Regenerate image</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
+          <Field label="Style"><select className="input" value={A.img.style} disabled={bodyBusy || genActive || mediaLocked} onChange={ev => setA({ img: { style: ev.target.value as any } }, false)}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <Field label="Direction"><textarea className="input" rows={2} value={A.img.prompt} disabled={bodyBusy || genActive || mediaLocked} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
+          <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={bodyBusy || genActive || mediaLocked} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
+          <div className="row"><Btn icon="refresh" loading={imgBusy} disabled={bodyBusy || genActive || mediaLocked} onClick={async () => { setImgBusy(true); try { await app.act('article.regenerateImage', { entryId: id }); } catch { /* toasted */ } setImgBusy(false); }}>Regenerate image</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
           <span className="xs sub">Uses {B.profile.business.name}’s colors <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.primary, verticalAlign: -1 }} /> <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.secondary, verticalAlign: -1 }} /> from your Business Profile.</span>
+          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} onGenerate={generateBodyImages} />}
           <VideoPicker vids={vids || []} loading={vidBusy} on={A.videos} onToggle={(v, has) => { setA({ videos: has ? A.videos.filter(x => x !== v.id) : [...A.videos, v.id] }, false); toast(has ? 'Video removed' : 'Video embedded after the first section'); }} />
         </div>}
         {tab === 'sources' && <div className="col">{A.sources.map((s, i) => <div key={i} className="row" style={{ padding: '14px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 10, alignItems: 'flex-start' }}>
           <div className="col grow" style={{ gap: 3, minWidth: 0, opacity: s.removed ? .45 : 1 }}><span className="small" style={{ fontWeight: 500, textDecoration: s.removed ? 'line-through' : 'none' }}>{s.title}</span><span className="mono sub trunc">{s.url.replace(/^https?:\/\/(www\.)?/, '')}</span><span className="xs sub">Used for: {s.use}</span></div>
-          {mode === 'edit' && <Btn kind="ghost" size="sm" icon={s.removed ? 'undo' : 'x'} aria-label={s.removed ? 'Restore source' : 'Remove source'} title={s.removed ? 'Restore source' : 'Remove source'} onClick={() => app.act('article.source', { entryId: id, index: i, removed: !s.removed }, { optimistic: patchArticle(id, A, a => ({ sources: a.sources.map((x, j) => (j === i ? { ...x, removed: !s.removed } : x)) })) }).catch(() => {})} />}
+          {canEdit && <Btn kind="ghost" size="sm" icon={s.removed ? 'undo' : 'x'} aria-label={s.removed ? 'Restore source' : 'Remove source'} title={s.removed ? 'Restore source' : 'Remove source'} onClick={() => app.act('article.source', { entryId: id, index: i, removed: !s.removed }, { optimistic: patchArticle(id, A, a => ({ sources: a.sources.map((x, j) => (j === i ? { ...x, removed: !s.removed } : x)) })) }).catch(() => {})} />}
         </div>)}<p className="xs sub" style={{ marginTop: 14 }}>Radar cites sources inline and never invents statistics. Remove any source and its claims are flagged in the draft.</p></div>}
       </aside>
     </div>
-    <PublishIntro existing={conns.map(c => c.type)} open={pubIntro} onClose={() => setPubIntro(false)} onPick={t => { setPubIntro(false); setConn(t); }} onSkip={() => { setPubIntro(false); app.act('article.approve', { entryId: id, withoutPublishing: true }, { optimistic: patchEntry(id, { status: 'approved' }) }).then(() => toast('Approved. Copy it from Preview whenever you’re ready.')).catch(() => {}); }} />
+    <PublishIntro existing={conns.map(c => c.type)} open={pubIntro} onClose={() => setPubIntro(false)} onPick={t => { setPubIntro(false); setConn(t); }} onSkip={() => { setPubIntro(false); app.act('article.approve', { entryId: id, withoutPublishing: true }, { optimistic: patchEntry(id, { status: 'approved' }) }).then(() => toast('Approved. Copy the article whenever you’re ready.')).catch(() => {}); }} />
     <BlogConnect type={conn} onClose={() => setConn(null)} onSaved={c => { setConn(null); if (st === 'failed') publishNow(true); else schedule(c); }} />
   </div>;
 }
