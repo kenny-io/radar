@@ -28,3 +28,8 @@
 - No external CMS was published, no production data changed, and no merge/deployment performed. Live external model/CMS success calls were not exercised. Existing optional integration suites without configured credentials remain skipped.
 - Final production build on the unified-view source fingerprint passed: NEXT_DIST_DIR=.next-body-images-build npm run build (stub/local test DB). Log `.data/article-body-images/build-final.log`; compile, type validation, static generation and tracing all completed. Restored Next's automatic extra build-directory tsconfig include after compilation.
 - Final independent unified browser flow passed: no Edit/Preview controls; inline text edit + blur + reload persisted, with identical retained body-image data; queued/Viewer article text is read-only; images loaded on desktop and 390px with no overflow.
+
+## Delivery
+- Product commit: `b1d7c4524ae4c2cb07df0ff8027a1a2f91b2d09c`; committed source rehashed and matches the independent QA fingerprint.
+- Draft PR: https://github.com/kenny-io/radar/pull/13 targeting main. Confirmed draft, mergeable, and no configured status checks. Attached to this chat.
+- This final delivery record changes only documentation; tested application source remains unchanged. PR is unmerged and production is unchanged.
