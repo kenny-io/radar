@@ -33,3 +33,8 @@
 - Product commit: `b1d7c4524ae4c2cb07df0ff8027a1a2f91b2d09c`; committed source rehashed and matches the independent QA fingerprint.
 - Draft PR: https://github.com/kenny-io/radar/pull/13 targeting main. Confirmed draft, mergeable, and no configured status checks. Attached to this chat.
 - This final delivery record changes only documentation; tested application source remains unchanged. PR is unmerged and production is unchanged.
+
+## Authorized production release (2026-10-27)
+- User explicitly requested merge and production verification after draft PR delivery. PR #13 merged as `5adb4ee4d43e4cf723e60159f2427527a526a537`; its source fingerprint matches the tested application.
+- GitHub production deployment7359154233 and both individual web/worker statuses succeeded at that revision. Independent QA confirmed Railway Active and runtime startup for each.
+- Original production draft `/article/e_mMDsBFf2` now has two body images after an authorized Add smoke and reload. All rendered article text SHA256 remained identical (`cbb4483fde5cff5ba8e719567118af82f2419c78ae4ba9afb5c67442959dc230`), cover preserved, status still Ready for review; Edit/Preview tabs absent. Detailed loaded-image evidence and deployment records are in production-qa.md and release.md.
