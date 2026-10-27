@@ -149,6 +149,17 @@ describe('test connection', () => {
 });
 
 describe('createDraft + publish (new post)', () => {
+  it('passes inline image markup through HTML conversion with the IMAGE plugin and keeps converted nodes', async () => {
+    const html = '<p>Section text.</p><figure class="radar-body-image"><img src="https://cdn.example.com/body.png" alt="Section diagram" /></figure>';
+    wx({ 'POST /ricos/v1/ricos-document/convert/to-ricos': () => reply(200, { document: { nodes: [{ type: 'PARAGRAPH', id: 'text' }, { type: 'IMAGE', id: 'body', imageData: { image: { src: { url: 'https://cdn.example.com/body.png' } } } }] } }) });
+    await wix.createDraft(C, P({ html }));
+    const convert = json(apiCalls().find(c => c.url.endsWith('/convert/to-ricos'))!);
+    expect(convert.html).toBe(html);
+    expect(convert.options.plugins).toContain('IMAGE');
+    const create = json(apiCalls().find(c => c.url.endsWith('/blog/v3/draft-posts'))!).draftPost;
+    expect(create.richContent.nodes.map((n: any) => n.type)).toEqual(['PARAGRAPH', 'IMAGE']);
+    expect(create.media.altText).toBe('A ledger on a desk');
+  });
   it('converts the HTML with explicit plugins, imports the hero, and creates the draft with slug, excerpt, SEO tags and cover alt text', async () => {
     wx();
     const d = await wix.createDraft(C, P());

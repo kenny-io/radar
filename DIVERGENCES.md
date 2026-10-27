@@ -548,3 +548,13 @@ Details: `.factory/marketing-trial-gating/` (brief, architecture, verification).
 |---|---|---|---|---|---|
 | Number of images | 1–3 (Recommended) / 3–5; Radar picks the exact count | A single choice of exactly 1, 2, 3 or 4 in the same segmented control, hint "X allows up to 4." Radar makes that many. Choices saved before map 1–3 → 1 and 3–5 → 3; older posts with 5 images open the window at 4 | Owner request | Yes | Approved by owner |
 | Download | Saves the post's images | Saves the stored images. Bucket images are read through a same-origin route for members of the business (`/api/b/{bid}/media`), since the bucket sends no CORS headers. Before, the failed read silently saved the style's brand template instead. If an image still can't be read: toast "Radar couldn’t download the image. Try again." and nothing is saved. Same for Social pack and article image downloads | Bug fix | Yes (failure toast) | Needs approval (failure copy) |
+
+## Article body images (2026-10-27, owner request)
+
+Articles previously produced only a cover. New drafts and full rewrites now create section-specific body images in addition to the cover: two for short/standard articles, three for long articles, capped by the available meaningful sections. Images use the existing selected article style and image provider/template fallback. Body media is additive to the text block format; old articles remain readable without it and require no database migration.
+
+The existing Media panel separates Cover image from Body images. Generated drafts can Add body images or Regenerate body images without rewriting text or changing the cover. The action runs as a background job with progress and retry; old images remain until all replacements have stored successfully. Scheduled/publishing/published articles are locked for this action. New drafts cannot finish successfully without their planned body-image set.
+
+Editor, Preview, HTML, Markdown/MDX and native Notion use the same section placement helper. Body URLs are validated against the business's generated storage and made absolute for publishing; the featured image remains separate. This addresses the missing article-body capability; the other unbuilt image-options controls recorded under the 2026-10-21 Daily Brief update remain outside this change. See `.factory/article-body-images/` for architecture, acceptance and verification.
+
+Owner follow-up: the duplicate Edit/Preview switch is removed. One article view shows the final layout and supports inline text editing for editable drafts. Queued/published article text, Viewers, and active generation states are read-only.

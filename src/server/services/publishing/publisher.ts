@@ -9,7 +9,7 @@ import { env } from '@/server/env';
 import { notify } from '@/server/notify';
 import { bump, blogOf, connPublic, entryFromRow, getBiz, type BizRow } from '@/server/workspace';
 import { renderImage } from '@/server/services/images';
-import { readLocal } from '@/server/services/storage';
+import { readLocal, storedKey } from '@/server/services/storage';
 import { platLabel } from '@/lib/constants';
 import { slugify } from '@/lib/format';
 import type { Article, CalendarEntry, ConnType, Profile } from '@/lib/types';
@@ -18,6 +18,7 @@ import { connectorFor } from './connectors';
 import { PublishError } from './http';
 import { ctxFromRow, type ConnRow } from './store';
 import type { PublishPayload, RemoteDraft } from './types';
+import { assertNoArticleWork, lockArticle } from '../drafting/guard';
 
 const abs = (u: string) => (u.startsWith('/') ? env.appUrl + u : u);
 
@@ -53,13 +54,19 @@ export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Pro
   const meta = new Map((a.videoMeta || []).map(v => [v.id, v]));
   const videos = (a.videos || []).map(id => { const m = meta.get(id); return { id, title: m?.title || '', channel: m?.channel || '', url: `https://www.youtube.com/watch?v=${id}` }; });
   const sources = sourcesList(a.sources);
-  const opts = { videos, sources };
+  const bodyImages = (a.bodyImages || []).map(image => {
+    if (!storedKey(b.id, image.url)) throw new PublishError(422, 'An article body image is not stored for this business. Regenerate body images before publishing.', '', 'config');
+    const url = abs(image.url.split(/[?#]/)[0]);
+    if (!/^https?:\/\//i.test(url)) throw new PublishError(422, 'The article image URL is not publicly usable. Check the app and storage URL.', '', 'config');
+    return { ...image, url };
+  });
+  const opts = { videos, sources, bodyImages };
   const slug = slugify(a.seo?.slug || e.kw || e.title) || slugify(e.title) || e.id;
   const imgUrl = await heroImage(b, e, a);
   const canonical = e.mode === 'refresh' && e.url ? e.url : null;
   const html = await applyOutbound(b.id, e.url || null, blocksToHtml(a.body || [], opts));
   return {
-    entryId: e.id, title: e.title, slug, html, markdown: blocksToMarkdown(a.body || [], opts), blocks: a.body || [], meta: a.seo?.meta || '', seoTitle: a.seo?.title?.trim() || e.title, keyword: e.kw, date: e.date,
+    entryId: e.id, title: e.title, slug, html, markdown: blocksToMarkdown(a.body || [], opts), blocks: a.body || [], bodyImages, meta: a.seo?.meta || '', seoTitle: a.seo?.title?.trim() || e.title, keyword: e.kw, date: e.date,
     image: imgUrl ? {
       url: abs(imgUrl), alt: a.img?.alt || e.title,
       bytes: async () => {
@@ -94,7 +101,17 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   if (row.status !== 'scheduled' && row.status !== 'publishing') return { status: 'skipped', reason: 'status ' + row.status };
   const b = await getBiz(row.businessId);
   if ((b.blog || {}).paused && !o.manual && row.status === 'scheduled') return { status: 'skipped', reason: 'paused' };
-  const e = entryFromRow(row);
+  // Read the publish snapshot under the same lock that admits generation, saving and approval.
+  const admitted = await db.transaction(async tx => {
+    const current = await lockArticle(tx, b.id, entryId);
+    if (!['scheduled', 'publishing'].includes(current.status)) return null;
+    await assertNoArticleWork(tx, b.id, entryId);
+    const art = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, b.id))).limit(1))[0]?.data as Article | undefined;
+    await tx.update(schema.calendarEntries).set({ status: 'publishing', publishError: null }).where(eq(schema.calendarEntries.id, entryId));
+    return { row: current, art };
+  });
+  if (!admitted) return { status: 'skipped', reason: 'status changed' };
+  const e = entryFromRow(admitted.row);
   const conn = await connectionFor(b, e.dest);
   const setEntry = async (v: Partial<typeof schema.calendarEntries.$inferInsert>) => { await db.update(schema.calendarEntries).set(v).where(eq(schema.calendarEntries.id, entryId)); await bump(b.id); };
   const fail = async (err: PublishError, type: string | null) => {
@@ -105,16 +122,15 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
     return { status: 'failed' as const, error };
   };
   if (!conn) return fail(new PublishError(0, 'No blog connection', '', 'config'), null);
-  const art = (await db.select().from(schema.articles).where(eq(schema.articles.entryId, entryId)).limit(1))[0]?.data as Article | undefined;
+  const art = admitted.art;
   if (!art || !(art.body || []).length) return fail(new PublishError(0, 'The article has no draft', '', 'config'), conn.type);
 
-  if (row.status !== 'publishing') await setEntry({ status: 'publishing', publishError: null });
   const type = conn.type as ConnType;
   const c = ctxFromRow(b, conn);
   const connector = connectorFor(type);
   try {
     const payload = await buildPayload(b, e, art);
-    let draft: RemoteDraft | null = row.publishRemote && row.publishRemote.connId === conn.id ? row.publishRemote : null;
+    let draft: RemoteDraft | null = admitted.row.publishRemote && admitted.row.publishRemote.connId === conn.id ? admitted.row.publishRemote : null;
     if (!draft) {
       draft = { ...(await connector.createDraft(c, payload)), connId: conn.id };
       await db.update(schema.calendarEntries).set({ publishRemote: draft }).where(eq(schema.calendarEntries.id, entryId));

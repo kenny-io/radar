@@ -13,6 +13,7 @@ import { tokens } from '../calendar/research';
 import type { Article, Block, CalendarEntry, Profile, Source } from '@/lib/types';
 import type { JobCtx } from '../../jobs/queue';
 import './stubs';
+import { generateArticleBodyImages } from './bodyImages';
 
 const MARKS = /\s*\[\d{1,2}\]/g;
 const ResearchOut = z.object({ sources: z.array(z.object({ title: z.string(), url: z.string(), use: z.string(), notes: z.array(z.string()) })) });
@@ -175,7 +176,8 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
     try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }
     catch (err: any) { console.error('[draft] image failed', err?.message); img.url = null; img.urlKey = null; }
   }
-  return { ...a, generated: true, body, seo, img, sources, claims, draftedAt: new Date().toISOString() };
+  const bodyImages = await generateArticleBodyImages({ businessId: bid, progress: p => ctx.progress({ ...p, blocks: body, partial: '' }) }, e, { ...a, body, img }, profile);
+  return { ...a, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: new Date().toISOString(), sources, claims, draftedAt: new Date().toISOString() };
 }
 
 interface Bad { block: number; item: number | null; sentence: string }

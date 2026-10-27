@@ -25,7 +25,10 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 ### content area (Calendar, Article)
 - `article.approve` `{ entryId, withoutPublishing?: boolean }` — review/draft/approved (generated) → `scheduled`; with `withoutPublishing` → `approved` (the "Not now — approve without publishing" path). Requires a blog connection unless `withoutPublishing`.
 - `article.unschedule` `{ entryId }` — scheduled → review.
+- `article.regenerateBodyImages` `{ entryId }` → `{ jobId }` — Editor, generated editable drafts only; repeated requests join the active image job. Replaces only body images after every new image is stored. Refuses queued/published articles, active full drafts, and failed publications with a pending remote draft.
 - Drafting: entries move `approved → drafting → review` (or `scheduled` when autopilot && a connection exists && !paused).
+- New drafts/rewrites require 2 section illustrations (3 for long articles, limited by useful sections). Optional `Article.bodyImages`/`bodyImagesGeneratedAt` preserve legacy compatibility. Stable heading+occurrence anchors use `src/lib/articleImages.ts` in Editor, Preview, HTML, Markdown and Notion. Text-only Block tuples and claim indices stay unchanged; media URLs/anchors are server-owned and cannot be autosaved by clients.
+- Article writes merge submitted fields onto the latest JSON under a short entry-row lock. Draft/image admission, approval and publication share that lock; image completion detects body edits and expired worker attempts before atomically replacing its fields.
 
 ### publishing area
 - `blog.test` `{ type, id?, fields, target?, targetId?, oauthRef? }` → `{ ok, http?, message? }` (creates then deletes a draft)
@@ -35,7 +38,7 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 - `blog.schedule` `{ time?: 'HH:MM', tz?: string }` — Settings → Publishing → Schedule
 - `publish.now` `{ entryId }` · `publish.retry` `{ entryId }`
 - Components: `PublishIntro`, `BlogConnect`, `PublishingSettings` (props in their placeholder files).
-- Server helper: `src/server/services/publishing/render.ts` → `blocksToHtml(blocks, opts)` / `blocksToMarkdown(blocks)`.
+- Server helper: `src/server/services/publishing/render.ts` → `blocksToHtml(blocks, opts)` / `blocksToMarkdown(blocks, opts)`; optional `opts.bodyImages` are inserted after resolved sections. Publishing validates tenant-owned stored URLs and makes them absolute before serialization; the cover remains a separate featured image.
 
 ### social area
 - Component `PackThumb` (props in placeholder).
@@ -54,7 +57,8 @@ See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `
 ## Job kinds (for `app.jobFor(kind, ref)`)
 - `analysis.site` (ref = businessId) — progress `{ phase: 'site'|'biz'|'content'|'aud'|'brand'|'done', results: { site?: string, biz?: string, content?: string, aud?: string, brand?: string }, colors?: [p, s], logoMissing?: boolean, failed?: string }`
 - `calendar.generate` (ref = businessId) — progress `{ phase: 0..6, results: string[], keep: boolean }`
-- `article.draft` (ref = entryId) — progress `{ blocks: Block[], partial: string }` (streaming)
+- `article.draft` (ref = entryId) — progress `{ blocks: Block[], partial: string, stage?, completed?, total? }` (streaming; text remains visible while images render)
+- `article.bodyImages` (ref = entryId) — progress `{ stage: 'images', completed, total }`; result `{ entryId, bodyImagesGeneratedAt, count }`. Storage failure preserves the old set and exposes the existing queue retry/failure state.
 - `gsc.backfill` (ref = businessId) — progress `{ pct }`
 - `brief.scan` (ref = date, one per business and day: Scan again during a running scan joins it) — payload `{ mode: 'first'|'again'|'keep', date, fromJob?, background?: true, round? }`; progress `{ step, threadsRead, failed?: platform, steps, mode, quiet? }` (`quiet`: Keep runs and background rescans, never shown as the scan view unless joined); result `{ mode, added, addedIds, since, failed?, partial?, notified?: true, skipped?: 'no_day'|'past', skippedPlats?: platform[] }` (`skippedPlats`: background runs, the platforms that failed and were skipped) (`notified`: the server already toasted the members, so the client shows no toast of its own)
 - `social.generate` (ref = client token) — progress `{ done: number }`, result `{ packId }`
