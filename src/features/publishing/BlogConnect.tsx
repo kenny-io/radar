@@ -2,7 +2,7 @@
 // CONTRACT (owned by the publishing area): connect / edit a blog connection, including the first-connection Mode step.
 // type: null (closed) | 'wordpress' (new connection of that platform) | { type, id?, step?: 'mode' } (edit / mode-only).
 // Port of BlogConnect (radar-publish.jsx): real OAuth popups, targets from the platform, a real test (draft created, then deleted).
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { openOAuth } from '@/client/api';
 import { Btn, Field, Modal, Status } from '@/components/ui';
@@ -24,11 +24,19 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
   const [f, setF] = useState<Record<string, string>>({}); const [auth, setAuth] = useState<'none' | 'authing' | 'ok'>('none'); const [oauthRef, setOauthRef] = useState<string | null>(null);
   const [opts, setOpts] = useState<Target[] | null>(null); const [pick, setPick] = useState<string | null>(null);
   const [test, setTest] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle'); const [failMsg, setFailMsg] = useState('');
+  const [showNextHint, setShowNextHint] = useState(false); const nextHintId = useId();
   const [step, setStep] = useState<'conn' | 'mode'>('conn'); const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState(B.blog.mode); const [ack, setAck] = useState(false); const [tz, setTz] = useState(B.blog.tz); const [time, setTime] = useState(B.blog.time);
   const [secret, setSecret] = useState<{ ref: string; secret: string; masked: string } | null>(null); const [showSecret, setShowSecret] = useState(false);
   const gen = useRef(0); const tzs = useRef<string[] | null>(null); if (!tzs.current) tzs.current = timezones();
   const key = t ? `${t.type}|${t.id || ''}|${t.step || ''}` : '';
+
+  useEffect(() => {
+    if (!key || !showNextHint || test === 'ok') return;
+    const dismiss = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); setShowNextHint(false); } };
+    window.addEventListener('keydown', dismiss, true);
+    return () => window.removeEventListener('keydown', dismiss, true);
+  }, [key, showNextHint, test]);
 
   const loadTargets = async (input: any, g: number): Promise<Target[] | null> => {
     try {
@@ -49,6 +57,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     const cur = editing ? editing.targetId || (P.k === 'nextjs' && editing.f.repo ? editing.f.repo.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/(\.git)?\/*$/, '') : null) : null;
     const curOpt = cur ? { id: cur, name: editing!.target || cur } : null;
     setF(init); setAuth(editing && P.oauth ? 'ok' : 'none'); setOauthRef(null); setPick(cur); setTest(editing ? 'ok' : 'idle'); setFailMsg('');
+    setShowNextHint(false);
     setStep(t.step || 'conn'); setMode(B.blog.mode); setAck(B.blog.mode === 'autopilot'); setTz(B.blog.tz); setTime(B.blog.time); setSaving(false); setShowSecret(false);
     setSecret(null); setOpts(curOpt ? [curOpt] : null);
     if (editing && P.pick && !t.step) loadTargets({ type: P.k, id: editing.id }, g).then(list => {
@@ -97,6 +106,8 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     } catch (e: any) { setFailMsg(e?.message || GENERIC); setTest('fail'); }
   };
   const first = !conns.length || (!!editing && conns.length === 1);
+  const nextLabel = first && !editing ? 'Continue' : editing ? 'Save changes' : 'Add connection';
+  const nextHint = test === 'ok' ? '' : test === 'testing' ? 'Testing connection…' : test === 'fail' ? 'Fix the error and test the connection again.' : P.oauth && auth !== 'ok' ? !fieldsOk && !P.authFirst ? `Complete the connection details, then sign in with ${P.oauthLabel || P.l}.` : `Sign in with ${P.oauthLabel || P.l}, then test the connection to continue.` : !ready ? 'Complete the connection details, then test the connection.' : 'Test the connection to continue.';
   const save = async () => {
     setSaving(true);
     try {
@@ -120,14 +131,15 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
       <div className="row" style={{ gap: 14 }}><PlatMark k={P.k} s={44} /><div className="col"><span className="eyebrow">{editing ? 'Edit connection' : 'New connection'}</span><h2 className="h1" style={{ fontSize: 24 }}>Connect {P.l}</h2></div></div>
       {!P.authFirst && fieldsEl}
       {P.secret && <Field label="Signing secret" hint="Use it to verify each request came from Radar."><input className="input mono" style={{ fontSize: 13 }} readOnly value={secretValue} onFocus={e => { if (secret && !editing) { setShowSecret(true); const el = e.currentTarget; setTimeout(() => el.select(), 0); } }} onBlur={() => setShowSecret(false)} /></Field>}
-      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary" disabled={(!!P.fields && !P.authFirst && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
+      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary btn-sm" disabled={(!!P.fields && !P.authFirst && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
       {P.pick && (auth === 'ok' || !P.oauth) && <Field label={P.pick} hint={P.k === 'nextjs' ? <>Don’t see your repository? Its organization may need to approve Radar in <a href="https://github.com/settings/applications" target="_blank" rel="noopener">GitHub Settings → Applications</a>.</> : undefined}><select className="input" value={pick || ''} onChange={e => { setPick(e.target.value); setTest('idle'); }}><option value="" disabled>Choose…</option>{(opts || []).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>}
       {P.authFirst && auth === 'ok' && fieldsEl}
       {P.help && <span className="xs sub">{P.help}</span>}
-      <div className="row" style={{ minHeight: 40, gap: 14, flexWrap: 'wrap' }}><Btn icon="refresh" loading={test === 'testing'} disabled={!ready} onClick={run}>Test connection</Btn>
+      <div className="row" style={{ minHeight: 32, gap: 14, flexWrap: 'wrap' }}><Btn size="sm" icon="refresh" loading={test === 'testing'} disabled={!ready} onClick={run}>Test connection</Btn>
         {test === 'ok' && <Status tone="ok">Connected · test {P.k === 'nextjs' ? 'branch' : 'draft'} created, then deleted</Status>}
         {test === 'fail' && <Status tone="bad">{failCopy}</Status>}</div>
-      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn>{first && !editing ? <Btn kind="primary" disabled={test !== 'ok'} iconR="arrow" onClick={() => setStep('mode')}>Continue</Btn> : <Btn kind="primary" disabled={test !== 'ok'} loading={saving} onClick={save}>{editing ? 'Save changes' : 'Add connection'}</Btn>}</div>
+      {nextHint && <p id={nextHintId} className="small sub" role="status">{nextHint}</p>}
+      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn size="sm" kind="ghost" onClick={onClose}>Cancel</Btn><span className="blog-connect-next" tabIndex={nextHint ? 0 : undefined} role={nextHint ? 'group' : undefined} aria-label={nextHint ? `${nextLabel} unavailable` : undefined} aria-describedby={nextHint ? nextHintId : undefined} onMouseEnter={() => setShowNextHint(true)} onMouseLeave={() => setShowNextHint(false)} onFocus={() => setShowNextHint(true)} onBlur={() => setShowNextHint(false)}>{first && !editing ? <Btn size="sm" kind="primary" disabled={test !== 'ok'} aria-describedby={nextHint ? nextHintId : undefined} iconR="arrow" onClick={() => setStep('mode')}>Continue</Btn> : <Btn size="sm" kind="primary" disabled={test !== 'ok'} aria-describedby={nextHint ? nextHintId : undefined} loading={saving} onClick={save}>{nextLabel}</Btn>}{nextHint && showNextHint && <span className="blog-connect-next-tooltip" role="tooltip">{nextHint}</span>}</span></div>
     </> : <>
       <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>How should articles publish?</h2><p className="sub">Applies to every connection. You can change this or pause publishing anytime.</p></div>
       <div className="col" style={{ border: '1px solid var(--line)', borderRadius: 16, overflow: 'hidden' }}>
@@ -135,7 +147,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
       </div>
       {mode === 'autopilot' && <label className="row small enter" style={{ gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}><input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} style={{ accentColor: 'var(--ink)', width: 16, height: 16, marginTop: 2 }} /><span>I understand articles will go live on {dom} without my review. I can pause anytime.</span></label>}
       <div className="grid-2" style={{ gap: 14 }}><Field label="Publish time"><input type="time" className="input" value={time} onChange={e => setTime(e.target.value)} /></Field><Field label="Timezone"><select className="input" value={tz} onChange={e => setTz(e.target.value)}>{(tzs.current.includes(tz) ? tzs.current : [tz, ...tzs.current]).map(z => <option key={z}>{z}</option>)}</select></Field></div>
-      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}>{!t.step && <Btn kind="ghost" onClick={() => setStep('conn')}>Back</Btn>}{t.step && <Btn kind="ghost" onClick={onClose}>Cancel</Btn>}<Btn kind="primary" disabled={(mode === 'autopilot' && !ack) || !/^\d\d:\d\d$/.test(time || '')} loading={saving} onClick={save}>{mode === 'autopilot' ? 'Turn on autopilot' : t.step ? 'Save' : 'Save and schedule'}</Btn></div>
+      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}>{!t.step && <Btn size="sm" kind="ghost" onClick={() => setStep('conn')}>Back</Btn>}{t.step && <Btn size="sm" kind="ghost" onClick={onClose}>Cancel</Btn>}<Btn size="sm" kind="primary" disabled={(mode === 'autopilot' && !ack) || !/^\d\d:\d\d$/.test(time || '')} loading={saving} onClick={save}>{mode === 'autopilot' ? 'Turn on autopilot' : t.step ? 'Save' : 'Save and schedule'}</Btn></div>
     </>}
   </div></Modal>;
 }
