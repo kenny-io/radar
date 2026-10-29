@@ -39,6 +39,7 @@ export function failCopy(type: string, e: PublishError): string {
   if (e.hint) return e.hint;
   if (e.kind === 'auth-expired' || (P.oauth && !P.fields && (e.http === 401 || e.http === 403))) return EXPIRED;
   if (!e.http) return `Couldn’t reach ${e.host || 'the site'} — check the URL`;
+  if (type === 'nextjs' && e.http === 404) return 'GitHub can’t find that repository for Radar. Check owner/repo and your push access. For organization repositories, approve or request Radar under GitHub Settings → Applications → Radar. If the organization uses SSO, sign in through it and reauthorize Radar, then test again.';
   // An OAuth platform's 404 means the site/database was unshared or deleted, not a bad credential.
   if (P.oauth && e.http === 404) return `Radar can’t see that ${P.pick?.toLowerCase() || (type === 'nextjs' ? 'repository' : 'site')} anymore. Reconnect and share it again.`;
   if (e.http >= 300 && e.http < 400) return `${statusLine(e.http)} — check the URL`;

@@ -141,8 +141,9 @@ Use a throwaway WordPress.com site and a throwaway Notion workspace. Record each
   - **Authorization callback URL:** `https://radar.thally.io/api/oauth/github/callback`.
   - Leave **Enable Device Flow** off.
 - [ ] **Generate a new client secret.** Set **Client ID** → `GITHUB_CLIENT_ID` and the secret → `GITHUB_CLIENT_SECRET` on web and worker, then redeploy.
-- Radar asks for the `repo` scope, which covers every repository the user can reach, private ones included. A GitHub App installed on chosen repositories (Contents and Pull requests: write) would be least privilege, but it needs a different flow. That's a product decision (DIVERGENCES, GitHub).
-- An organization with OAuth app access restrictions must approve Radar (org settings → Third-party access) before its repositories show up. Until then they return 404.
+- Radar asks for the `repo` scope and lists repositories with push access, including personal, collaborator and organization/team repositories. Organization policy and single sign-on can still restrict the app. A GitHub App installed on chosen repositories (Contents and Pull requests: write) would be least privilege, but it needs a different flow. That's a product decision (DIVERGENCES, GitHub).
+- For missing organization repositories, open GitHub → Settings → Applications → Authorized OAuth Apps → Radar → Organization access. An owner chooses **Grant**; a member requests approval from an owner. Owning an organization does not automatically approve Radar. For SAML organizations, sign in through the organization's SSO and reauthorize Radar. Restricted repositories may be omitted from listings or return 403/404.
+- After approval, choose **Refresh repositories** in Radar's GitHub connection. Alternatively, choose **Enter repository manually**, enter `owner/repo` or its GitHub URL, and **Test connection** for an access check. Manual entry still requires GitHub permission; a successful test creates and deletes a temporary branch.
 - Each article opens a pull request from a branch `radar/{slug}-{id}` with `{folder}/{slug}.mdx`. **Published** means the PR is open (DIVERGENCES #10).
 
 ### 7.5 Shopify

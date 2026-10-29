@@ -17,10 +17,10 @@ export function openOAuth(provider: string, bid: string, params: Record<string, 
   return new Promise(resolve => {
     const q = new URLSearchParams({ bid, ...params });
     const w = 520, h = 640, x = window.screenX + (window.outerWidth - w) / 2, y = window.screenY + (window.outerHeight - h) / 2;
-    const pop = window.open(`/api/oauth/${provider}/start?${q}`, 'radar-oauth', `width=${w},height=${h},left=${x},top=${y}`);
+    const pop = window.open(`/api/oauth/${provider}/start?${q}`, `radar-oauth-${crypto.randomUUID()}`, `width=${w},height=${h},left=${x},top=${y}`);
     let done = false;
     const onMsg = (e: MessageEvent) => {
-      if (e.origin !== location.origin || !e.data || e.data.type !== 'radar-oauth' || e.data.provider !== provider) return;
+      if (!pop || e.source !== pop || e.origin !== location.origin || !e.data || e.data.type !== 'radar-oauth' || e.data.provider !== provider) return;
       done = true; cleanup(); resolve({ ok: !!e.data.ok, result: e.data.result, error: e.data.error });
     };
     const iv = setInterval(() => { if (pop && pop.closed && !done) { cleanup(); resolve({ ok: false, error: 'closed' }); } }, 500);

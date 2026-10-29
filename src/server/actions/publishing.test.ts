@@ -30,6 +30,16 @@ describe('Next.js connection (resolveConn)', () => {
     await test({ fields: { repo: 'someone/else', path: 'content/posts' }, targetId: 'acme/site', oauthRef: 'pend_ok' });
     expect(M.seen[0].fields.repo).toBe('acme/site');
   });
+  it('normalizes a manually entered GitHub URL through the same test path as a selected repository', async () => {
+    await test({ fields: { path: 'content/posts' }, targetId: ' https://github.com/acme/private-blog.git/ ', target: 'untrusted label', oauthRef: 'pend_ok' });
+    expect(M.seen[0]).toMatchObject({ fields: { repo: 'acme/private-blog' }, target: 'acme/private-blog', targetId: 'acme/private-blog' });
+  });
+  it('rejects manual values that could escape the GitHub repository endpoint or send credentials elsewhere', async () => {
+    for (const targetId of ['https://evil.test/acme/site', 'https://github.com@evil.test/acme/site', 'https://github.com/acme/site/tree/main', 'acme/%2e%2e', 'acme/site?token=x', 'acme/site#readme', './site', 'acme/../site']) {
+      expect((await fail(test({ fields: { path: 'content/posts' }, targetId, oauthRef: 'pend_ok' }))).status).toBe(400);
+    }
+    expect(M.seen).toHaveLength(0);
+  });
   it('the content folder is stored repo-relative ("tree/main/…", a GitHub URL, slashes)', async () => {
     await test({ fields: { path: 'tree/main/public/blog' }, targetId: 'acme/site', oauthRef: 'pend_ok' });
     await test({ fields: { path: 'https://github.com/acme/site/tree/main/content/posts/' }, targetId: 'acme/site', oauthRef: 'pend_ok' });

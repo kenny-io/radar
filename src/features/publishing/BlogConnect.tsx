@@ -23,20 +23,28 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
   const P = t ? platOf(t.type) : null; const dom = B.profile.domain;
   const [f, setF] = useState<Record<string, string>>({}); const [auth, setAuth] = useState<'none' | 'authing' | 'ok'>('none'); const [oauthRef, setOauthRef] = useState<string | null>(null);
   const [opts, setOpts] = useState<Target[] | null>(null); const [pick, setPick] = useState<string | null>(null);
+  const [targetsLoading, setTargetsLoading] = useState(false); const [targetsError, setTargetsError] = useState(''); const [manualRepo, setManualRepo] = useState(false);
   const [test, setTest] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle'); const [failMsg, setFailMsg] = useState('');
   const [step, setStep] = useState<'conn' | 'mode'>('conn'); const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState(B.blog.mode); const [ack, setAck] = useState(false); const [tz, setTz] = useState(B.blog.tz); const [time, setTime] = useState(B.blog.time);
   const [secret, setSecret] = useState<{ ref: string; secret: string; masked: string } | null>(null); const [showSecret, setShowSecret] = useState(false);
-  const gen = useRef(0); const tzs = useRef<string[] | null>(null); if (!tzs.current) tzs.current = timezones();
+  const gen = useRef(0); const targetsRequest = useRef(0); const testRequest = useRef(0); const currentPick = useRef<string | null>(null);
+  const tzs = useRef<string[] | null>(null); if (!tzs.current) tzs.current = timezones();
   const key = t ? `${t.type}|${t.id || ''}|${t.step || ''}` : '';
+  const invalidateTest = () => { testRequest.current++; setTest('idle'); setFailMsg(''); };
+  const choose = (value: string | null) => { currentPick.current = value; setPick(value); invalidateTest(); };
+  const close = () => { gen.current++; targetsRequest.current++; testRequest.current++; onClose(); };
 
   const loadTargets = async (input: any, g: number): Promise<Target[] | null> => {
+    const request = ++targetsRequest.current;
+    setTargetsLoading(true); setTargetsError('');
     try {
       const r = await app.act<{ targets: Target[]; error?: string }>('blog.targets', input, { silent: true });
-      if (g !== gen.current) return null;
-      if (r.error) { setOpts([]); setFailMsg(r.error); setTest('fail'); return null; }
+      if (g !== gen.current || request !== targetsRequest.current) return null;
+      if (r.error) { setTargetsError(r.error); return null; }
       setOpts(r.targets); return r.targets;
-    } catch (e: any) { if (g === gen.current) { setOpts([]); setFailMsg(e?.message || GENERIC); setTest('fail'); } return null; }
+    } catch (e: any) { if (g === gen.current && request === targetsRequest.current) setTargetsError(e?.message || GENERIC); return null; }
+    finally { if (g === gen.current && request === targetsRequest.current) setTargetsLoading(false); }
   };
 
   useEffect(() => {
@@ -48,15 +56,14 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     // A Next.js connection saved before the repository picker has no targetId: its fields.repo is the pick.
     const cur = editing ? editing.targetId || (P.k === 'nextjs' && editing.f.repo ? editing.f.repo.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/(\.git)?\/*$/, '') : null) : null;
     const curOpt = cur ? { id: cur, name: editing!.target || cur } : null;
+    currentPick.current = cur;
     setF(init); setAuth(editing && P.oauth ? 'ok' : 'none'); setOauthRef(null); setPick(cur); setTest(editing ? 'ok' : 'idle'); setFailMsg('');
+    setTargetsLoading(false); setTargetsError(''); setManualRepo(false);
     setStep(t.step || 'conn'); setMode(B.blog.mode); setAck(B.blog.mode === 'autopilot'); setTz(B.blog.tz); setTime(B.blog.time); setSaving(false); setShowSecret(false);
     setSecret(null); setOpts(curOpt ? [curOpt] : null);
-    if (editing && P.pick && !t.step) loadTargets({ type: P.k, id: editing.id }, g).then(list => {
-      if (!list || !curOpt) return;
-      const same = list.find(x => x.id.toLowerCase() === curOpt.id.toLowerCase());
-      if (same) setPick(same.id); else setOpts([curOpt, ...list]);
-    });
+    if (editing && P.pick && !t.step) void loadTargets({ type: P.k, id: editing.id }, g);
     if (!editing && P.secret) app.act<{ oauthRef: string; secret: string; masked: string }>('blog.newSecret', {}, { silent: true }).then(r => { if (g === gen.current) setSecret({ ref: r.oauthRef, secret: r.secret, masked: r.masked }); }).catch(() => {});
+    return () => { gen.current++; targetsRequest.current++; testRequest.current++; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -68,7 +75,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     if (!okUrl || !okKey) return;
     if (editing && !(f.key || '').trim() && f.url === editing.f.url) return; // loaded by the init effect
     const g = gen.current;
-    const tm = setTimeout(() => { loadTargets({ type: 'framer', id: editing?.id || null, fields: f }, g).then(list => { if (list && list.length && !list.some(x => x.id === pick)) setPick(null); }); }, 700);
+    const tm = setTimeout(() => { loadTargets({ type: 'framer', id: editing?.id || null, fields: f }, g).then(list => { if (list && list.length && !list.some(x => x.id === currentPick.current)) choose(null); }); }, 700);
     return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [framerKey]);
@@ -76,58 +83,80 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
   if (!t || !P) return null;
   const isSecretField = (ty?: string) => ty === 'password';
   const fieldsOk = (P.fields || []).every(([k, , , ty]) => (f[k] || '').trim().length > 2 || (isSecretField(ty) && !!editing)) && (P.k !== 'webhook' || (f.hook || '').startsWith('https://'));
-  const ready = fieldsOk && (!P.oauth || auth === 'ok') && (!P.pick || !!pick) && (P.k !== 'webhook' || !!editing || !!secret);
+  const ready = fieldsOk && (!P.oauth || auth === 'ok') && (!P.pick || !!pick?.trim()) && (P.k !== 'webhook' || !!editing || !!secret);
   const pickName = (opts || []).find(o => o.id === pick)?.name || (editing && pick === editing.targetId ? editing.target : null) || null;
+  // A saved or manually entered repository remains selected even if GitHub omits it from the refreshed list.
+  const selectOpts = pick && !(opts || []).some(o => o.id === pick) ? [{ id: pick, name: pickName || pick }, ...(opts || [])] : (opts || []);
 
   const doAuth = async () => {
-    setAuth('authing'); const g = gen.current;
-    const r = await openOAuth(providerOf(P.k), app.bid!, P.k === 'shopify' ? { shop: (f.store || '').trim() } : {});
-    if (g !== gen.current) return;
-    if (!r.ok || !r.result?.oauthRef) { setAuth('none'); if (r.error && r.error !== 'closed') app.toast(GENERIC, { tone: 'bad' }); return; }
-    setOauthRef(r.result.oauthRef); setTest('idle');
-    if (P.pick) { const list = await loadTargets({ type: P.k, oauthRef: r.result.oauthRef }, g); if (g !== gen.current) return; setAuth('ok'); if (list && list[0] && (P.k !== 'nextjs' || list[0].suggested)) setPick(list[0].id); }
-    else setAuth('ok');
+    const g = ++gen.current; targetsRequest.current++;
+    setAuth('authing'); setOauthRef(null); choose(null); setOpts(null); setTargetsError(''); setTargetsLoading(false); setManualRepo(false);
+    try {
+      const r = await openOAuth(providerOf(P.k), app.bid!, P.k === 'shopify' ? { shop: (f.store || '').trim() } : {});
+      if (g !== gen.current) return;
+      if (!r.ok || !r.result?.oauthRef) { setAuth('none'); if (r.error && r.error !== 'closed') app.toast(GENERIC, { tone: 'bad' }); return; }
+      setOauthRef(r.result.oauthRef); setAuth('ok');
+      if (P.pick) {
+        const unchanged = testRequest.current;
+        const list = await loadTargets({ type: P.k, oauthRef: r.result.oauthRef }, g);
+        if (g !== gen.current) return;
+        if (unchanged === testRequest.current && !currentPick.current && list?.[0] && (P.k !== 'nextjs' || list[0].suggested)) choose(list[0].id);
+      }
+    } catch { if (g === gen.current) { setAuth('none'); app.toast(GENERIC, { tone: 'bad' }); } }
   };
+  const refreshTargets = () => loadTargets({ type: P.k, ...(oauthRef ? { oauthRef } : { id: editing?.id }) }, gen.current);
   const payload = () => ({ type: P.k, id: editing?.id || null, fields: f, target: pickName, targetId: pick, oauthRef: P.k === 'webhook' ? secret?.ref || null : oauthRef });
   const run = async () => {
-    setTest('testing');
+    const g = gen.current; const request = ++testRequest.current;
+    setTest('testing'); setFailMsg('');
     try {
       const r = await app.act<{ ok: boolean; message?: string }>('blog.test', payload(), { silent: true });
+      if (g !== gen.current || request !== testRequest.current) return;
       if (r.ok) setTest('ok'); else { setFailMsg(r.message || GENERIC); setTest('fail'); }
-    } catch (e: any) { setFailMsg(e?.message || GENERIC); setTest('fail'); }
+    } catch (e: any) { if (g === gen.current && request === testRequest.current) { setFailMsg(e?.message || GENERIC); setTest('fail'); } }
   };
   const first = !conns.length || (!!editing && conns.length === 1);
   const save = async () => {
-    setSaving(true);
+    const g = gen.current; setSaving(true);
     try {
       if (t.step === 'mode') {
         await app.act('blog.setMode', { mode, ack: mode === 'autopilot' ? ack : null, time, tz });
+        if (g !== gen.current) return;
         if (editing && onSaved) onSaved(editing);
         else onClose();
       } else {
         const withMode = step === 'mode' || first ? { mode, ack: mode === 'autopilot' ? ack : null, time, tz } : {};
         const r = await app.act<{ connection: ConnectionPublic }>('blog.saveConnection', { ...payload(), ...withMode });
+        if (g !== gen.current) return;
         onSaved ? onSaved(r.connection) : onClose();
       }
-    } catch { /* toast shown by act */ } finally { setSaving(false); }
+    } catch { /* toast shown by act */ } finally { if (g === gen.current) setSaving(false); }
   };
   const failCopy = failMsg || (P.oauth && !P.fields ? 'The authorization expired. Reconnect and try again.' : '401 Unauthorized — check the credentials');
-  const fieldsEl = (P.fields || []).map(([k, l, ph, ty, hint]) => <Field key={k} label={l} hint={hint}><input className={'input' + (['hook', 'repo', 'path', 'key'].includes(k) ? ' mono' : '')} style={['hook', 'repo', 'path', 'key'].includes(k) ? { fontSize: 13 } : undefined} type={ty || 'text'} placeholder={ph} value={f[k] || ''} autoComplete={ty === 'password' ? 'new-password' : 'off'} onChange={e => { setF({ ...f, [k]: e.target.value }); setTest('idle'); }} /></Field>);
+  const fieldsEl = (P.fields || []).map(([k, l, ph, ty, hint]) => <Field key={k} label={l} hint={hint}><input className={'input' + (['hook', 'repo', 'path', 'key'].includes(k) ? ' mono' : '')} style={['hook', 'repo', 'path', 'key'].includes(k) ? { fontSize: 13 } : undefined} type={ty || 'text'} placeholder={ph} value={f[k] || ''} autoComplete={ty === 'password' ? 'new-password' : 'off'} onChange={e => { setF({ ...f, [k]: e.target.value }); invalidateTest(); if (P.k === 'framer') { targetsRequest.current++; setTargetsLoading(false); } }} /></Field>);
   const secretValue = editing ? editing.secretHint || 'whsec_…' : secret ? (showSecret ? secret.secret : secret.masked) : '';
 
-  return <Modal open onClose={onClose} width={560}><div className="col" style={{ padding: 32, gap: 22 }}>
+  return <Modal open onClose={close} width={560}><div className="col" style={{ padding: 32, gap: 22 }}>
     {step === 'conn' ? <>
       <div className="row" style={{ gap: 14 }}><PlatMark k={P.k} s={44} /><div className="col"><span className="eyebrow">{editing ? 'Edit connection' : 'New connection'}</span><h2 className="h1" style={{ fontSize: 24 }}>Connect {P.l}</h2></div></div>
       {!P.authFirst && fieldsEl}
       {P.secret && <Field label="Signing secret" hint="Use it to verify each request came from Radar."><input className="input mono" style={{ fontSize: 13 }} readOnly value={secretValue} onFocus={e => { if (secret && !editing) { setShowSecret(true); const el = e.currentTarget; setTimeout(() => el.select(), 0); } }} onBlur={() => setShowSecret(false)} /></Field>}
-      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary" disabled={(!!P.fields && !P.authFirst && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; setAuth('none'); setOauthRef(null); setPick(null); setOpts(null); setTest('idle'); }}>Switch account</Btn>}</div>}
-      {P.pick && (auth === 'ok' || !P.oauth) && <Field label={P.pick} hint={P.k === 'nextjs' ? <>Don’t see your repository? Its organization may need to approve Radar in <a href="https://github.com/settings/applications" target="_blank" rel="noopener">GitHub Settings → Applications</a>.</> : undefined}><select className="input" value={pick || ''} onChange={e => { setPick(e.target.value); setTest('idle'); }}><option value="" disabled>Choose…</option>{(opts || []).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>}
+      {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary" disabled={(!!P.fields && !P.authFirst && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; targetsRequest.current++; setAuth('none'); setOauthRef(null); choose(null); setOpts(null); setTargetsLoading(false); setTargetsError(''); setManualRepo(false); }}>Switch account</Btn>}</div>}
+      {P.pick && (auth === 'ok' || !P.oauth) && <div className="col" style={{ gap: 10 }}>
+        <Field label={P.pick}><select className="input" value={pick || ''} disabled={P.k === 'nextjs' && manualRepo} aria-busy={targetsLoading} onChange={e => choose(e.target.value)}><option value="" disabled>Choose…</option>{selectOpts.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>
+        {P.k === 'nextjs' && <>
+          <div className="row" style={{ gap: 14, flexWrap: 'wrap' }}><Btn kind="link" className="small" loading={targetsLoading} onClick={refreshTargets}>Refresh repositories</Btn><Btn kind="link" className="small" aria-expanded={manualRepo} aria-controls="github-manual-repository" onClick={() => setManualRepo(!manualRepo)}>{manualRepo ? 'Choose from list' : 'Enter repository manually'}</Btn></div>
+          {manualRepo && <Field label="Repository owner/name or GitHub URL" hint="Use owner/repo or https://github.com/owner/repo. Radar still needs push access."><input id="github-manual-repository" className="input mono" style={{ fontSize: 13 }} placeholder="organization/repository" value={pick || ''} autoComplete="off" onChange={e => choose(e.target.value)} /></Field>}
+          <span className="xs sub">Missing an organization repository? Open <a href="https://github.com/settings/applications" target="_blank" rel="noopener">GitHub Settings → Applications → Authorized OAuth Apps → Radar</a> to grant or request organization access, then refresh repositories. You need push access. If your organization uses SSO, sign in through it and reauthorize Radar.</span>
+        </>}
+        <div className="xs" aria-live="polite">{targetsLoading ? <span className="sub">Loading {P.k === 'nextjs' ? 'repositories' : P.pick.toLowerCase()}…</span> : targetsError ? <Status tone="bad">{targetsError}</Status> : opts?.length === 0 ? <span className="sub">{P.k === 'nextjs' ? 'No accessible repositories with push access found. Refresh after approval, or enter a repository manually and test access.' : `No ${P.pick.toLowerCase()} found.`}</span> : null}</div>
+      </div>}
       {P.authFirst && auth === 'ok' && fieldsEl}
       {P.help && <span className="xs sub">{P.help}</span>}
       <div className="row" style={{ minHeight: 40, gap: 14, flexWrap: 'wrap' }}><Btn icon="refresh" loading={test === 'testing'} disabled={!ready} onClick={run}>Test connection</Btn>
         {test === 'ok' && <Status tone="ok">Connected · test {P.k === 'nextjs' ? 'branch' : 'draft'} created, then deleted</Status>}
         {test === 'fail' && <Status tone="bad">{failCopy}</Status>}</div>
-      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn>{first && !editing ? <Btn kind="primary" disabled={test !== 'ok'} iconR="arrow" onClick={() => setStep('mode')}>Continue</Btn> : <Btn kind="primary" disabled={test !== 'ok'} loading={saving} onClick={save}>{editing ? 'Save changes' : 'Add connection'}</Btn>}</div>
+      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={close}>Cancel</Btn>{first && !editing ? <Btn kind="primary" disabled={test !== 'ok'} iconR="arrow" onClick={() => setStep('mode')}>Continue</Btn> : <Btn kind="primary" disabled={test !== 'ok'} loading={saving} onClick={save}>{editing ? 'Save changes' : 'Add connection'}</Btn>}</div>
     </> : <>
       <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>How should articles publish?</h2><p className="sub">Applies to every connection. You can change this or pause publishing anytime.</p></div>
       <div className="col" style={{ border: '1px solid var(--line)', borderRadius: 16, overflow: 'hidden' }}>
@@ -135,7 +164,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
       </div>
       {mode === 'autopilot' && <label className="row small enter" style={{ gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}><input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} style={{ accentColor: 'var(--ink)', width: 16, height: 16, marginTop: 2 }} /><span>I understand articles will go live on {dom} without my review. I can pause anytime.</span></label>}
       <div className="grid-2" style={{ gap: 14 }}><Field label="Publish time"><input type="time" className="input" value={time} onChange={e => setTime(e.target.value)} /></Field><Field label="Timezone"><select className="input" value={tz} onChange={e => setTz(e.target.value)}>{(tzs.current.includes(tz) ? tzs.current : [tz, ...tzs.current]).map(z => <option key={z}>{z}</option>)}</select></Field></div>
-      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}>{!t.step && <Btn kind="ghost" onClick={() => setStep('conn')}>Back</Btn>}{t.step && <Btn kind="ghost" onClick={onClose}>Cancel</Btn>}<Btn kind="primary" disabled={(mode === 'autopilot' && !ack) || !/^\d\d:\d\d$/.test(time || '')} loading={saving} onClick={save}>{mode === 'autopilot' ? 'Turn on autopilot' : t.step ? 'Save' : 'Save and schedule'}</Btn></div>
+      <div className="row" style={{ justifyContent: 'flex-end', borderTop: '1px solid var(--line2)', paddingTop: 18 }}>{!t.step && <Btn kind="ghost" onClick={() => setStep('conn')}>Back</Btn>}{t.step && <Btn kind="ghost" onClick={close}>Cancel</Btn>}<Btn kind="primary" disabled={(mode === 'autopilot' && !ack) || !/^\d\d:\d\d$/.test(time || '')} loading={saving} onClick={save}>{mode === 'autopilot' ? 'Turn on autopilot' : t.step ? 'Save' : 'Save and schedule'}</Btn></div>
     </>}
   </div></Modal>;
 }
