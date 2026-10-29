@@ -313,7 +313,7 @@ describe('repository picker (targets)', () => {
     expect(hdr(calls[0], 'authorization')).toBe('Bearer gho_tok');
     expect(t).toEqual([{ id: 'kenny/notes', name: 'kenny/notes', url: 'https://github.com/kenny/notes' }, { id: 'acme/site', name: 'acme/site', url: 'https://github.com/acme/site' }]);
   });
-  it('one page answers a small account; a full first page fetches pages 2–5 together and keeps them up to the first short one', async () => {
+  it('one page answers a small account; bounded batches continue beyond 500 and stop at the first short page', async () => {
     const page = (n: number, size: number) => Array.from({ length: size }, (_, i) => repoRow(`o/r${n}-${i}`));
     listed([page(1, 40)]);
     expect(await nextjs.targets!(C)).toHaveLength(40);
@@ -324,8 +324,46 @@ describe('repository picker (targets)', () => {
     expect(calls.map(c => new URL(c.url).searchParams.get('page'))).toEqual(['1', '2', '3', '4', '5']);
     calls = [];
     listed(Array.from({ length: 7 }, (_, i) => page(i + 1, 100)));
-    expect(await nextjs.targets!(C)).toHaveLength(500);
-    expect(calls).toHaveLength(5);
+    expect(await nextjs.targets!(C)).toHaveLength(700);
+    expect(calls.map(c => new URL(c.url).searchParams.get('page'))).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
+  });
+  it('deduplicates repositories case-insensitively across pages and retains first pushed order within each rank', async () => {
+    const first = Array.from({ length: 100 }, (_, i) => repoRow(`o/repo${i}`));
+    listed([first, [repoRow('O/REPO0'), repoRow('team/fieldnote-blog'), repoRow('team/readonly', false), repoRow('team/new')]]);
+    const targets = await nextjs.targets!(C);
+    expect(targets).toHaveLength(102);
+    expect(targets[0].id).toBe('team/fieldnote-blog');
+    expect(targets.slice(1).map(t => t.id)).toEqual([...first.map(r => r.full_name), 'team/new']);
+  });
+  it('ignores speculative pages and errors after the first short page', async () => {
+    const full = Array.from({ length: 100 }, (_, i) => repoRow(`o/r${i}`));
+    override = (_m, u) => {
+      const page = Number(new URL(u).searchParams.get('page'));
+      return page === 1 ? reply(200, full) : page === 2 ? reply(200, [repoRow('o/last')]) : reply(503, { message: 'Unavailable' });
+    };
+    expect(await nextjs.targets!(C)).toHaveLength(101);
+  });
+  it('fails explicitly on a required later page instead of returning a partial list', async () => {
+    const full = Array.from({ length: 100 }, (_, i) => repoRow(`o/r${i}`));
+    override = (_m, u) => Number(new URL(u).searchParams.get('page')) === 3 ? reply(502, 'Bad Gateway') : reply(200, full);
+    expect((await err(nextjs.targets!(C))).http).toBe(502);
+  });
+  it('rejects a malformed repository response rather than treating it as an empty list', async () => {
+    override = () => reply(200, { message: 'unexpected' });
+    expect((await err(nextjs.targets!(C))).http).toBe(502);
+  });
+  it('has at most four page requests in flight and keeps page order when responses arrive out of order', async () => {
+    let inFlight = 0; let peak = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      const page = Number(new URL(url).searchParams.get('page'));
+      inFlight++; peak = Math.max(peak, inFlight);
+      await new Promise(resolve => setTimeout(resolve, page === 2 ? 5 : 0));
+      inFlight--;
+      return reply(200, Array.from({ length: page < 3 ? 100 : 1 }, (_, i) => repoRow(`o/page${page}-${i}`)));
+    }));
+    const targets = await nextjs.targets!(C);
+    expect(peak).toBe(4);
+    expect(targets.map(t => t.id)).toEqual([...[1, 2].flatMap(page => Array.from({ length: 100 }, (_, i) => `o/page${page}-${i}`)), 'o/page3-0']);
   });
   it('puts the likely site repo first (preselected): named for the site, then exactly the label, then containing it; pushed order otherwise', async () => {
     listed([[repoRow('thallylabs/thallydocs'), repoRow('thallylabs/thally-website'), repoRow('kenny/notes'), repoRow('thallylabs/thally'), repoRow('thallylabs/thally-mcp'), repoRow('kenny/thally.io')]]);
@@ -362,7 +400,7 @@ describe('organization access', () => {
   it('SAML single sign-on enforcement asks to authorize Radar for the org', async () => {
     override = () => reply(403, { message: 'Resource protected by organization SAML enforcement. You must grant your OAuth token access to this organization.' });
     const e = await err(nextjs.test(C));
-    expect(failCopy('nextjs', e)).toBe('The repository’s organization uses single sign-on. Authorize Radar for it under GitHub Settings → Applications → Radar, then test again.');
+    expect(failCopy('nextjs', e)).toBe('The repository’s organization uses single sign-on. Sign in to the organization through its SSO, then reauthorize Radar on GitHub and test again.');
   });
   it('a rate-limited 403 still maps to a retried 429; any other 403 still says "check the credentials"', async () => {
     override = () => reply(403, { message: 'You have exceeded a secondary rate limit.' });

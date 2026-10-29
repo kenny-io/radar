@@ -204,9 +204,9 @@ describe('test-connection copy points at the real fix', () => {
     expect(failCopy('wordpress', e(401))).toBe('401 Unauthorized — check the credentials');
     expect(failCopy('ghost', e(403))).toBe('403 Forbidden — check the credentials');
   });
-  it('a 404 on an OAuth platform says the site or database is no longer shared', () => {
+  it('a 404 on an OAuth platform explains sharing or GitHub repository and organization access', () => {
     expect(failCopy('notion', e(404))).toBe('Radar can’t see that database anymore. Reconnect and share it again.');
-    expect(failCopy('nextjs', e(404))).toBe('Radar can’t see that repository anymore. Reconnect and share it again.');
+    expect(failCopy('nextjs', e(404))).toBe('GitHub can’t find that repository for Radar. Check owner/repo and your push access. For organization repositories, approve or request Radar under GitHub Settings → Applications → Radar. If the organization uses SSO, sign in through it and reauthorize Radar, then test again.');
   });
   it('a setup problem (config 422/403) shows the connector’s sentence, in the test copy and on the article banner', () => {
     const s = 'Publish your Webflow site once in the Designer, then try again.';

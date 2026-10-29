@@ -44,7 +44,7 @@ async function gh<T = any>(url: string, init: RequestInit & { timeoutMs?: number
   try { return await reqJson<T>(url, init); } catch (e) {
     if (e instanceof PublishError && e.http === 401) throw new PublishError(401, e.detail, e.host, 'auth-expired');
     if (e instanceof PublishError && e.http === 403 && /OAuth App access restrictions/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization hasn’t approved Radar on GitHub. Ask an organization owner to approve it, or request access under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
-    if (e instanceof PublishError && e.http === 403 && /SAML enforcement/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization uses single sign-on. Authorize Radar for it under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
+    if (e instanceof PublishError && e.http === 403 && /SAML enforcement/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization uses single sign-on. Sign in to the organization through its SSO, then reauthorize Radar on GitHub and test again.`, e.host, 'config');
     if (e instanceof PublishError && e.http === 403 && /rate limit/i.test(e.detail)) throw new PublishError(429, e.detail, e.host);
     throw e;
   }
@@ -100,17 +100,33 @@ export function mdxFile(p: PublishPayload): string {
   return fm.join('\n') + p.markdown;
 }
 
-/** Repositories the account can push to, most recently pushed first. Page 1 alone answers most accounts; a full page fetches
- * pages 2–5 together (one listing of ~500 repos page by page took ~16 s). The likely site repo leads and is preselected. */
+/** Repositories the account can push to, most recently pushed first. After page 1, fetch at most four pages at a time
+ * until the first short page. Speculative pages after it (including errors) are ignored. */
 async function repos(c: ConnCtx): Promise<Target[]> {
   type Row = { full_name: string; name: string; html_url: string; permissions?: { push?: boolean } };
-  const page = async (n: number): Promise<Row[]> => { const b = await gh(`${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${n}`, { headers: h(c) }); return Array.isArray(b) ? b : []; };
+  const page = async (n: number): Promise<Row[]> => {
+    const b = await gh(`${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${n}`, { headers: h(c) });
+    if (!Array.isArray(b)) throw new PublishError(502, 'GitHub returned an invalid repository list. Refresh repositories and try again.', 'api.github.com');
+    return b;
+  };
   const all = await page(1);
-  if (all.length === 100) for (const b of await Promise.all([2, 3, 4, 5].map(page))) { all.push(...b); if (b.length < 100) break; }
+  let complete = all.length < 100;
+  for (let start = 2; !complete; start += 4) {
+    const batch = await Promise.allSettled(Array.from({ length: 4 }, (_, i) => page(start + i)));
+    for (const result of batch) {
+      if (result.status === 'rejected') throw result.reason;
+      all.push(...result.value);
+      if (result.value.length < 100) { complete = true; break; }
+    }
+  }
   const host = (c.domain || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, ''); const label = host.split('.')[0];
   // 0: named for the site ("thally-website", "thally.io"), 1: exactly the label ("thally"), 2: contains it ("thallydocs"), 3: the rest.
   const rank = (n: string) => !label || label.length < 2 ? 3 : n === host || /^(.+)[-_.](website|site|web|www|blog|homepage|landing|marketing)$/.exec(n)?.[1] === label ? 0 : n === label ? 1 : n.includes(label) ? 2 : 3;
-  const list = all.filter(r => r.permissions?.push && r.full_name).map(r => ({ t: { id: r.full_name, name: r.full_name, url: r.html_url || null }, r: rank((r.name || r.full_name.split('/')[1] || '').toLowerCase()) }));
+  const seen = new Set<string>();
+  const list = all.filter(r => {
+    if (!r.permissions?.push || !r.full_name || seen.has(r.full_name.toLowerCase())) return false;
+    seen.add(r.full_name.toLowerCase()); return true;
+  }).map(r => ({ t: { id: r.full_name, name: r.full_name, url: r.html_url || null }, r: rank((r.name || r.full_name.split('/')[1] || '').toLowerCase()) }));
   return [0, 1, 2, 3].flatMap(k => list.filter(x => x.r === k).map(x => (k < 3 ? { ...x.t, suggested: true } : x.t)));
 }
 
