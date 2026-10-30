@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
 import { drawVisual } from '@/lib/visual';
 import { env } from '../env';
+import { RadarError } from '../errors';
 import { OPENROUTER_BASE, openrouterHeaders, openrouterImageModel, openrouterDown, markOpenrouterDown, openrouterTripped, isOpenrouterAccountError, noteOpenrouterOutcome } from '../ai/adapters/openrouter';
 import { objectKey, putObject } from './storage';
 
@@ -19,7 +20,7 @@ function ensureFonts() {
   }
 }
 
-export interface ImageReq { bid: string; style: string; brand: { primary: string; secondary: string }; headline: string; name: string; seed: number; prompt?: string; w: number; h: number; kind?: string }
+export interface ImageReq { bid: string; style: string; brand: { primary: string; secondary: string }; headline: string; name: string; seed: number; prompt?: string; w: number; h: number; kind?: string; /** Explicit custom requests must never fall back to templates. */ modelRequired?: boolean }
 
 export function renderTemplatePng(r: Omit<ImageReq, 'bid'>): Buffer {
   ensureFonts();
@@ -127,7 +128,10 @@ export async function generatePhoto(r: ImageReq): Promise<Buffer> {
  *  checks them against each platform's limits without fetching the file). */
 export async function renderImageFile(r: ImageReq): Promise<{ url: string; bytes: number; type: string }> {
   let png: Buffer;
-  if (MODEL_STYLES.includes(r.style) && imageModelConfigured()) {
+  if (r.modelRequired) {
+    if (!imageModelConfigured()) throw new RadarError('Image generation is unavailable right now. Please contact support to enable it.', 503, 'image_unavailable');
+    png = await generatePhoto(r);
+  } else if (MODEL_STYLES.includes(r.style) && imageModelConfigured()) {
     try { png = await generatePhoto(r); } catch (e: any) { console.error('[images] generation failed, using template', e.message); png = renderTemplatePng(r); }
   } else png = renderTemplatePng(r);
   const url = await putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');

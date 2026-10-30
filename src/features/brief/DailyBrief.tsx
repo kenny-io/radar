@@ -284,17 +284,21 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const live = it.st === 'open' || it.st === 'copied';
   const noun = it.kind === 'reply' ? 'reply' : 'post'; const co = acctOf(it) === 'company';
   /* ── Add visuals (UPDATE-2026-10-21-image-options §5) ── */
-  const B = app.B!; const brand = B.profile.brand;
+  const B = app.B!; const brand = B.profile.brand; const visualEditable = live && B.role !== 'Viewer';
   const [vis, setVis] = useState(false); const [vIx, setVIx] = useState(0);
   const ratio = PLAT.find(p => p.k === plat)?.ratio || 1.91;
   const im = it.kind === 'post' ? it.img || null : null;
   const vn = im ? Math.min(im.n, plat === 'x' ? 4 : 5) : 0; const vi = Math.min(vIx, Math.max(0, vn - 1));
-  const vBusy = !!im && im.status === 'generating';
+  const visualJob = app.jobFor('brief.visuals', `${day}:${it.id}`);
+  const visualExpired = im?.status === 'generating' && visualJob?.id === im.jobId && (visualJob?.status === 'failed' || (visualJob?.status === 'done' && visualJob?.result?.skipped));
+  const visualFailed = im?.status === 'failed' || visualExpired;
+  const visualError = im?.error || (visualExpired ? visualJob?.error : null);
+  const vBusy = !!im && im.status === 'generating' && !visualExpired;
   const vUrl = im ? im.urls[vi] || null : null;
-  const createVis = (x: { style: StyleKey; n: ImgCount }) => {
+  const createVis = (x: { style: StyleKey; n: ImgCount; prompt?: string }) => {
     setVis(false); setVIx(0);
-    app.act('brief.visuals', { date: day, id: it.id, style: x.style, n: x.n }, { optimistic: b => {
-      const nb = patchB(b, day, it.id, i => ({ ...i, img: { style: x.style, seed: -1, n: x.n, urls: [], status: 'generating' } }));
+    app.act('brief.visuals', { date: day, id: it.id, style: x.style, n: x.n, prompt: x.prompt?.trim() || null }, { optimistic: b => {
+      const nb = patchB(b, day, it.id, i => ({ ...i, img: x.prompt?.trim() && i.img?.urls.length && i.img.urls.every(Boolean) ? { ...i.img, jobId: undefined, error: undefined, prompt: x.prompt.trim(), pending: { style: x.style, seed: -1, n: x.n, prompt: x.prompt.trim() }, status: 'generating' } : { style: x.style, seed: -1, n: x.n, prompt: x.prompt?.trim(), urls: [], status: 'generating' } }));
       return { ...nb, social: { ...nb.social, img: { on: true, style: x.style, n: x.n } } };
     } }).catch(() => {});
   };
@@ -310,7 +314,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     if (got < vn) toast(vn > 1 ? `Radar couldn’t download ${vn - got} of ${vn} images. Try again.` : DL_ERROR, { tone: 'bad' });
     else toast(vn > 1 ? `Downloaded ${vn} images` : 'Downloaded image');
   };
-  const visInitial: { style: StyleKey; n: ImgCount } = im ? { style: styleK(im.style), n: imgCount(im.n) } : { style: styleK((B.social.img || IMG_DEFAULT).style), n: imgCount((B.social.img || IMG_DEFAULT).n) };
+  const visInitial: { style: StyleKey; n: ImgCount; prompt?: string } = im ? { style: styleK(im.pending?.style || im.style), n: imgCount(im.pending?.n || im.n), prompt: im.prompt } : { style: styleK((B.social.img || IMG_DEFAULT).style), n: imgCount((B.social.img || IMG_DEFAULT).n) };
   /* ── Social channels (publishing on): Post now / Schedule / Reply now ── */
   const now = useNowMs(); const pubOn = !!B.social.publishing;
   const bp = pubOn ? briefPublish(socialAccountsOf(B), it) : null;
@@ -384,17 +388,16 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
         {busy && <span className="row" style={{ gap: 6 }}><span className="spin" style={{ width: 11, height: 11, color: 'var(--signal)' }} />Rewriting…</span>}
       </div>
     </div>
-    {im && (vBusy || vn > 0 || im.status === 'failed') && <div className="col" style={{ gap: 10, marginTop: 18 }}>
-      {im.status === 'failed' && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>Radar couldn’t make these images.</span>{live && <Btn kind="link" className="small" onClick={() => createVis({ style: im.style, n: imgCount(im.n) })}>Try again</Btn>}{live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
+    {visualFailed && im && im.urls.some(Boolean) && <div className="row small" role="status" style={{ marginTop: 18, gap: 10, flexWrap: 'wrap', color: 'var(--bad)' }}><span className="grow">{visualError || 'Radar couldn’t generate the new images. Your previous images are kept.'}</span>{visualEditable && <Btn kind="link" className="small" onClick={() => createVis(visInitial)}>Try again</Btn>}</div>}
+    {im && (vBusy || vn > 0 || visualFailed) && <div className="col" style={{ gap: 10, marginTop: 18 }}>
+      {visualFailed && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>{visualError || 'Radar couldn’t make these images.'}</span>{visualEditable && <Btn kind="link" className="small" onClick={() => createVis({ style: im.pending?.style || im.style, n: imgCount(im.pending?.n || im.n), prompt: im.prompt })}>Try again</Btn>}{visualEditable && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
       <Visual key={vi + ':' + (vUrl || '')} style={im.style} brand={brand} headline={vi ? '' : it.title} seed={imgSeed(Math.max(1, im.seed), vi)} ratio={ratio} name={name} radius={12} busy={vBusy && !vUrl} url={vUrl} />
       {!(vBusy && !vn) && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
         {vn > 1 && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }} role="tablist" aria-label="Images">{Array.from({ length: vn }, (_, i) => <button key={i} type="button" role="tab" aria-selected={i === vi} aria-label={'Image ' + (i + 1)} onClick={() => setVIx(i)} style={{ width: 56, padding: 2, border: 0, borderRadius: 9, background: 'none', cursor: 'pointer', boxShadow: i === vi ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', transition: 'box-shadow .2s' }}><Visual style={im.style} brand={brand} headline="" seed={imgSeed(Math.max(1, im.seed), i)} ratio={1} name="" radius={7} url={im.urls[i] || null} busy={vBusy && !im.urls[i]} /></button>)}</div>}
         <span className="grow" />
-        {!vBusy && <>
-          {live && <Btn kind="link" className="small" onClick={() => setVis(true)}>Change</Btn>}
-          <Btn kind="link" className="small" onClick={dlVis}>{vn > 1 ? 'Download ' + vn : 'Download'}</Btn>
-          {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}
-        </>}
+        {visualEditable && <Btn kind="link" className="small" onClick={() => setVis(true)}>{vBusy ? 'Change request' : 'Change'}</Btn>}
+        {im.urls.length === im.n && im.urls.every(Boolean) && <Btn kind="link" className="small" onClick={dlVis}>{vn > 1 ? 'Download ' + vn : 'Download'}</Btn>}
+        {visualEditable && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}
       </div>}
       <span className="xs sub">{vBusy ? `Creating ${vn > 1 ? vn + ' images' : 'image'} · ${styleL(im.style)}` : `${styleL(im.style)}${vn > 1 ? ' · ' + vn + ' images' : ''}`}</span>
       </>}
@@ -419,7 +422,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
           <form onSubmit={e => { e.preventDefault(); if (custom.trim()) rewrite(custom.trim()); }}><input className="input" style={{ height: 36, fontSize: 13 }} placeholder="Or say what to change" value={custom} onChange={e => setCustom(e.target.value)} autoFocus /></form>
         </Popover></span>}
       <span className="grow" />
-      {it.kind === 'post' && live && !im && <Btn kind="link" className="small" onClick={() => setVis(true)}>Add visuals</Btn>}
+      {it.kind === 'post' && visualEditable && !im && <Btn kind="link" className="small" onClick={() => setVis(true)}>Add visuals</Btn>}
       {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={() => act.skip(it)}>Skip</Btn>}
       {!live && it.st !== 'scheduled' && !pub?.direct && <Btn kind="link" className="small" onClick={() => act.undo(it)}>Undo</Btn>}
     </div>}
@@ -440,14 +443,15 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
 }
 
 /** Add visuals window: style tiles and the number of images. */
-function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; n: ImgCount }; onCreate: (x: { style: StyleKey; n: ImgCount }) => void }) {
+function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; n: ImgCount; prompt?: string }; onCreate: (x: { style: StyleKey; n: ImgCount; prompt?: string }) => void }) {
   const [im, setIm] = useState(initial); useEffect(() => { if (open) setIm(initial); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   return <Modal open={open} onClose={onClose} width={640} label="Add visuals to this post"><div className="col" style={{ padding: '32px clamp(20px,5vw,32px) 26px', gap: 22 }}>
     <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>Add visuals to this post</h2><p className="sub">Radar creates images to go with the post. You can regenerate, download or remove them.</p></div>
     <Field label="Visual style"><div role="radiogroup" aria-label="Visual style" className="vis-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(104px,1fr))', gap: 12 }}>{STYLES.map(st => { const on = im.style === st.k; return <button key={st.k} type="button" role="radio" aria-checked={on} onClick={() => setIm({ ...im, style: st.k })} className="col" style={{ gap: 6, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}><span style={{ borderRadius: 12, boxShadow: on ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', padding: 2, transition: 'box-shadow .2s' }}><Visual style={st.k} brand={brand} headline="" seed={5} name="" radius={9} ratio={1} /></span><span className="xs" style={{ fontWeight: on ? 500 : 400, color: on ? 'var(--ink)' : 'var(--ink2)', lineHeight: 1.3 }}>{st.l}</span></button>; })}</div>
       <span className="small sub" style={{ marginTop: 10, display: 'block' }}>{(STYLES.find(st => st.k === im.style) || STYLES[0]).d}</span></Field>
+    <Field label="Describe your image" hint="Optional. For example: Sobha Sapphire in Dubai at sunset. Generated scenes may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} placeholder="Describe the subject, scene and details you want" value={im.prompt || ''} onChange={e => setIm({ ...im, prompt: e.target.value })} /></Field>
     <Field label="Number of images" hint="X allows up to 4."><Seg value={im.n} onChange={v => setIm({ ...im, n: v })} options={IMG_COUNTS} /></Field>
-    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" onClick={() => onCreate(im)}>Create images</Btn></div>
+    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" disabled={!!im.prompt && (!im.prompt.trim() || im.prompt.trim().length > 1000)} onClick={() => onCreate(im)}>Create images</Btn></div>
   </div></Modal>;
 }
 

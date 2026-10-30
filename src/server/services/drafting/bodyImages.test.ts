@@ -29,6 +29,14 @@ describe('section illustration generation', () => {
     await expect(generateArticleBodyImages({ businessId: 'bid', progress: async () => {} }, e, a, profile)).rejects.toThrow('storage failed');
     expect(a.bodyImages).toEqual([{ seed: 10 }]);
   });
+  it('reuses strict custom cover direction for body images without altering the prior set on failure', async () => {
+    const custom = { ...a, img: { ...a.img, style: 'branded' as const, prompt: 'Sobha Sapphire at sunset', modelRequired: true } };
+    await generateArticleBodyImages({ businessId: 'bid', progress: async () => {} }, e, custom, profile);
+    expect(M.render.mock.calls.every(([r]) => r.modelRequired === true && r.prompt.includes('Sobha Sapphire at sunset'))).toBe(true);
+    M.render.mockRejectedValue(new Error('generation unavailable'));
+    await expect(generateArticleBodyImages({ businessId: 'bid', progress: async () => {} }, e, custom, profile)).rejects.toThrow('generation unavailable');
+    expect(custom.bodyImages).toEqual(a.bodyImages);
+  });
   it('refuses empty content before rendering anything', async () => {
     await expect(generateArticleBodyImages({ businessId: 'bid', progress: async () => {} }, e, { ...a, body: [] }, profile)).rejects.toMatchObject({ code: 'empty_article' });
     expect(M.render).not.toHaveBeenCalled();

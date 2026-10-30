@@ -20,8 +20,8 @@ export async function generateArticleBodyImages(ctx: Pick<JobCtx, 'businessId' |
     const prompt = `Create a useful editorial visual explaining “${subject}” in the article “${e.title}”. Section context: ${plan.context}. Visual direction: ${a.img.prompt || 'Clear, calm editorial imagery'}. Show a concrete visual metaphor specific to this section, with a distinct composition. Do not repeat the article cover. No text, labels, logos, invented charts or statistics.`;
     const alt = `Illustration of ${subject.replace(/[.!?]+$/, '')}`.slice(0, 300);
     const seed = baseSeed + i;
-    // renderImage includes provider→template fallback. Storage failure propagates; a partial set is never saved.
-    const url = await renderImage({ bid: ctx.businessId!, style: a.img.style, brand: profile.brand, headline: subject, name: profile.business.name, seed, prompt, w: 1200, h: 675, kind: 'article-body' });
+    // Legacy requests keep provider→template fallback. Explicit custom directions require a model; a partial set is never saved.
+    const url = await renderImage({ bid: ctx.businessId!, style: a.img.style, brand: profile.brand, headline: subject, name: profile.business.name, seed, prompt, modelRequired: a.img.modelRequired, w: 1200, h: 675, kind: 'article-body' });
     if (!url) throw new RadarError('Radar couldn’t save the article images. Try again.', 502, 'image_failed');
     images.push({ id: shortId('abi_'), after: plan.after, url, alt, prompt, seed });
     await ctx.progress({ stage: 'images', completed: i + 1, total: plans.length });

@@ -102,6 +102,18 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     expect((await entry(f.id)).status).toBe('approved');
     expect(await article(f.id)).toEqual(f.a);
   }, 15_000);
+  it('rewriting an article never downgrades a missing custom cover to a template on generation failure', async () => {
+    const f = await fixture();
+    const custom = { ...f.a, img: { ...f.a.img, prompt: 'Sobha Sapphire at sunset', modelRequired: true, url: null, urlKey: null } };
+    await db.update(schema.articles).set({ data: custom }).where(eq(schema.articles.entryId, f.id));
+    M.render.mockRejectedValue(new Error('custom generation unavailable'));
+    const id = await startDraft(f.biz.id, f.id, 'user');
+    await db.update(schema.jobs).set({ attempts: 1, maxAttempts: 1 }).where(eq(schema.jobs.id, id));
+    await runJobNow(id);
+    expect(M.render.mock.calls[0][0]).toMatchObject({ kind: 'hero', modelRequired: true, prompt: 'Sobha Sapphire at sunset' });
+    expect((await getJob(id))!.status).toBe('failed');
+    expect(await article(f.id)).toEqual(custom);
+  });
   it('one failed storage operation fails the queue job and keeps the previous images and content', async () => {
     const f = await fixture();
     M.render.mockResolvedValueOnce(`/api/files/${f.biz.id}/article-body/first.png`).mockRejectedValueOnce(new Error('storage unavailable'));
@@ -121,14 +133,14 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     expect((await article(f.id)).body).toEqual([['p', 'Latest text']]);
     expect((await article(f.id)).bodyImages).toEqual(f.a.bodyImages);
   });
-  it('concurrent SEO/source/cover changes survive image completion, and later saves preserve new images', async () => {
+  it('safe SEO/source changes survive body image completion while concurrent cover generation is blocked', async () => {
     const f = await fixture(); let edited = false;
     M.render.mockImplementation(async req => {
       if (req.kind === 'article-body' && !edited) {
         edited = true;
         await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { seo: { meta: 'Updated metadata' } } });
         await actions['article.source'].run(f.ctx, { entryId: f.id, index: 0, removed: true });
-        await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id });
+        await expect(actions['article.regenerateImage'].run(f.ctx, { entryId: f.id })).rejects.toMatchObject({ code: 'article_busy' });
       }
       return `/api/files/${req.bid}/${req.kind}/new-${req.seed}.png`;
     });
@@ -136,10 +148,49 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     const saved = await article(f.id);
     expect(saved.seo.meta).toBe('Updated metadata');
     expect(saved.sources[0].removed).toBe(true);
-    expect(saved.img.seed).toBe(2);
+    expect(saved.img.seed).toBe(1);
     expect(saved.bodyImages).toHaveLength(2);
     await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { seo: { title: 'Later title' } } });
     expect((await article(f.id)).bodyImages).toEqual(saved.bodyImages);
+  });
+  it('generates a custom cover from an older template style, persists direction and reuses strict mode on normal regenerate', async () => {
+    const f = await fixture();
+    const input = actions['article.regenerateImage'].input!.parse({ entryId: f.id, prompt: '  Sobha Sapphire at sunset  ' });
+    await actions['article.regenerateImage'].run(f.ctx, input);
+    expect(M.render.mock.calls[0][0]).toMatchObject({ prompt: 'Sobha Sapphire at sunset', modelRequired: true, style: 'branded', w: 1200, h: 628 });
+    const saved = await article(f.id);
+    expect(saved.img).toMatchObject({ prompt: 'Sobha Sapphire at sunset', modelRequired: true, seed: 2, urlKey: 'branded:2' });
+    expect(saved.body).toEqual(f.a.body); expect(saved.bodyImages).toEqual(f.a.bodyImages);
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id });
+    expect(M.render.mock.calls[1][0]).toMatchObject({ prompt: 'Sobha Sapphire at sunset', modelRequired: true, seed: 3 });
+  });
+  it('cover provider/storage failures preserve the full prior article, and locked or foreign covers never render', async () => {
+    const f = await fixture(); const other = await fixture();
+    M.render.mockRejectedValue(new Error('storage unavailable'));
+    await expect(actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'A custom subject' })).rejects.toMatchObject({ code: 'image_failed' });
+    expect(await article(f.id)).toEqual(f.a);
+    M.render.mockClear();
+    await expect(actions['article.regenerateImage'].run(other.ctx, { entryId: f.id, prompt: 'Other tenant' })).rejects.toMatchObject({ status: 404 });
+    for (const status of ['scheduled', 'publishing', 'published']) {
+      await db.update(schema.calendarEntries).set({ status }).where(eq(schema.calendarEntries.id, f.id));
+      await expect(actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'Blocked' })).rejects.toMatchObject({ code: 'article_locked' });
+    }
+    expect(M.render).not.toHaveBeenCalled();
+  });
+  it('rechecks publication locks after cover generation and preserves the queued image', async () => {
+    const f = await fixture();
+    M.render.mockImplementation(async () => { await db.update(schema.calendarEntries).set({ status: 'scheduled' }).where(eq(schema.calendarEntries.id, f.id)); return '/api/files/new.png'; });
+    await expect(actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'Custom scene' })).rejects.toMatchObject({ code: 'article_locked' });
+    expect(await article(f.id)).toEqual(f.a);
+  });
+  it('rejects a stale style render if a newer custom cover finishes first', async () => {
+    const f = await fixture(); let replaced = false;
+    M.render.mockImplementation(async req => {
+      if (req.style === 'photography' && !replaced) { replaced = true; await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'Latest custom subject' }); }
+      return `/api/files/${req.bid}/hero/${req.style}-${req.seed}.png`;
+    });
+    await expect(actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { style: 'photography' } } })).rejects.toMatchObject({ code: 'article_changed' });
+    expect((await article(f.id)).img).toMatchObject({ style: 'branded', seed: 2, prompt: 'Latest custom subject', modelRequired: true, urlKey: 'branded:2' });
   });
   it('serializes approval, draft admission and manual/cron publishing against active body jobs', async () => {
     const f = await fixture();
