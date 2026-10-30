@@ -31,4 +31,9 @@ See `qa.md` for final recommendation, scenarios and evidence. Ignored scripts, r
 ## Limits and delivery
 Live-provider image quality and likeness are unverified. Reference-photo upload/search is excluded. No external CMS/social publish, merge or deployment occurred. Existing optional live suites without credentials remain skipped.
 
-Application implementation and verification are complete. Commit, draft PR and final release state will be recorded below after delivery.
+Application implementation and verification are complete. Independent QA also passed a smoke test using the completed production build (`next start`): sign-in, persisted Brief mobile prompt and reachable social generation controls. All QA web/worker processes stopped and browser session storage files deleted.
+
+- Product commit: `960d5bc10b8b848a5859d5485443bb1d2f1de699`. Its application source matches the tested fingerprint.
+- Draft PR: https://github.com/kenny-io/radar/pull/16 targeting main. Created and attached to this chat. GitHub confirms OPEN, draft and MERGEABLE/CLEAN; no configured status checks.
+- Final follow-up commit contains delivery/QA documentation only; application source remains unchanged.
+- Release status: implemented and locally verified, with the documented pre-existing test exception. Unmerged and undeployed; production remains unchanged.
