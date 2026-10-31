@@ -17,3 +17,11 @@ Independent QA recommends acceptance for review, including a production-build br
 Draft PR: https://github.com/kenny-io/radar/pull/16 (attached to this chat), targeting main, mergeable and clean, with no configured CI checks. Final documentation-only follow-up preserves tested application source.
 
 Delivery complete. Next action: owner reviews the draft PR. No merge or deployment performed; production remains unchanged.
+
+## Released — 31 October 2026
+
+The owner explicitly authorized merging PR #16 and deploying production. PR #16 merged into main as `2524537da22eae7644829c05069b3b3320995c83`, with source identical to the accepted revision. Railway worker and web deployments both succeeded, at 14:12:32 and 14:14:04 Asia/Dubai respectively. Production: https://radar.thally.io.
+
+Independent production read-only QA passed public health/auth boundaries, desktop/mobile rendering, and all 23 actual referenced assets, including served feature bundles with the copy/custom-image controls. Signed-in production actions could not run because no authenticated browser session was available. No production content edits, image-provider spend or social/CMS publishing occurred. See release-qa.md and ignored production/release.json evidence.
+
+Release is complete. This post-release documentation is recorded on the feature branch; deployed main remains `2524537d`.
