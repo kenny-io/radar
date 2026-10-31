@@ -7,7 +7,7 @@ Branch: `kenny/stripe-billing`, base `5db796b5` (application deployed previously
 | A1 | factory-architect | Contracts and setup/security design | verified |
 | E1 | factory-engineer | Account overview, Stripe portal, Billing UI, strict price validation and tests | verified locally |
 | E2 | factory-engineer | Stripe setup/preflight tooling and tests | verified |
-| P1 | PM | Live account configuration, integration/docs/delivery | review (PR preparation) |
+| P1 | PM | Live account configuration, integration/docs/delivery | verified; draft PR17 open |
 | Q1 | factory-qa | Independent acceptance and browser verification | verified locally, final focused suite145/145 |
 | A2 | PM + owner | Runtime keys, Railway, real Stripe tests and production activation | blocked on access |
 
@@ -18,3 +18,7 @@ Baseline: typecheck passed; full database suite 728 passed,65 skipped, one known
 Integrated build/typecheck pass in isolated billing-only snapshot. Full suite779 passed,65 skipped, one exact baseline failure. Subsequent affected copy/setup suites4/4 and22/22 pass. Independent browser QA passes observed states. Review-ready code; not merged/deployed and live billing is not enabled. Existing repository rule requires owner's go-ahead before merging auto-deploying main.
 
 Final independent source/package/scripts fingerprint: `f6aa391bca9b1d2683a85a71cec98ad4ce88cb37b69f226a63612bf584407690`, exact match between billing-only snapshot and checkout. Final focused database suite145/145 passed. Pending runtime-access question remains with owner; no secrets should be pasted into chat.
+
+## Delivery
+
+Application revision `7e9dcda10477e814d78c37c0dee61b7dc0a48263`. Draft PR https://github.com/kenny-io/radar/pull/17 is open, mergeable, attached to this chat, with no configured CI checks. Only billing files committed; concurrent homepage changes left untouched. No merge, deployment or billing enablement. Next action: restore runtime keys/Railway access, verify real Stripe flows and obtain owner merge go-ahead under existing repository delivery policy.
