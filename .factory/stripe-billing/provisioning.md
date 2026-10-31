@@ -15,10 +15,14 @@ The generated webhook signing secret and public configuration values are saved o
 
 No customer, payment, balance, invoice or subscription mutations were performed. `RADAR_BILLING` was not enabled, and nothing was merged or deployed. Tax settings and account-wide recovery settings were not changed.
 
+## Runtime configuration completed — 31 October 2026
+
+The owner authorized reusing Thally's existing live secret and publishable keys. The keys were read securely and never displayed, copied into tracked files, or passed as command-line arguments. Radar's own price, portal, webhook secret and pinned API version were installed alongside them on both Railway production services using stdin, with automatic deployments suppressed until all values were verified. A targeted 0600 rollback backup is stored privately.
+
+Read-only `billing:check` passed with these values, then both services were redeployed from the unchanged production source `2524537d`. New deployments succeeded: web `680ccab6-d234-4335-ae40-8c6d603b6bf9`, worker `1bbc3c47-3c1d-4984-a3dd-4eafe4d61ddb`. Independent QA confirmed all six settings match, public health/auth checks pass, signed synthetic webhook/replay return 200 with deduplication, and an invalid signature returns 400. The synthetic smoke writes only one harmless processed event row, with no customer/payment/subscription mutation. No keys or signatures appear in evidence.
+
 ## Remaining activation dependencies
 
-- Runtime live restricted/secret API key and matching publishable key, supplied securely through `.env.local` or the Radar Railway environment. The connected integration cannot issue application API keys.
-- Railway CLI re-authentication (`railway login`): current account listing is unauthorized.
-- Copy private generated configuration to web and worker secret environments after access is restored; verify all mode/price/webhook/portal settings. The private provisioning file does not configure a running app automatically.
-- Real sandbox payment, 3-D Secure, webhook delivery and portal scenarios remain unrun. Live configuration GET checks are not payment acceptance tests.
-- Repository policy requires owner go-ahead before merge to auto-deploying main. Preserve grandfather policy and roll out with the gate off until validation is complete.
+- Real sandbox payment, 3-D Secure, Stripe-delivered webhook and hosted portal scenarios remain unrun; configuration and synthetic signature checks are not payment acceptance tests.
+- PR #17 is still unmerged, so the new billing management UI is not deployed. Repository policy requires owner go-ahead before merging auto-deploying main.
+- `RADAR_BILLING` stays off. Preserve grandfather policy and verify tax/recovery settings before enabling paid access.
