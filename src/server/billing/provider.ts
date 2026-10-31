@@ -17,7 +17,11 @@ export interface Subscription {
   current_period_end: number | null; metadata: Record<string, string>; latest_invoice: string | null; default_payment_method: string | null;
 }
 export interface Invoice { id: string; status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void'; amount_due: number; client_secret: string | null }
-export interface Price { id: string; unit_amount: number | null; currency: string; interval: string | null }
+export interface Price {
+  id: string; unit_amount: number | null; currency: string; interval: string | null;
+  active: boolean; type: string; billing_scheme: string; interval_count: number | null; usage_type: string | null;
+  transform_quantity: unknown | null; custom_unit_amount: unknown | null;
+}
 /** The stub's monthly price, used when STRIPE_PRICE_ID is unset and the provider is the stub. */
 export const STUB_PRICE_ID = 'price_stub_monthly';
 
@@ -37,6 +41,8 @@ export interface CreateSub {
 
 export interface BillingProvider {
   name: 'stripe' | 'stub';
+  /** Fresh, short-lived hosted portal session. Its URL is a bearer secret: never log or persist it. */
+  createPortalSession(p: { customer: string; returnUrl: string; configuration?: string }, key: string): Promise<{ url: string }>;
   createCustomer(p: { email: string; name: string; uid: string }, key: string): Promise<{ id: string }>;
   setCustomerDefaultPaymentMethod(customer: string, pm: string, key: string): Promise<void>;
   attachPaymentMethod(pm: string, customer: string, key: string): Promise<void>;

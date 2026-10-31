@@ -35,7 +35,7 @@ export async function restart(u: BillingUser, pmId: string, ip: string): Promise
   const p = await needProvider();
   if (await ownAccess({ id: u.id, email: u.email, guest: false })) throw BillingError.alreadyActive();
   await limitBilling(u.id, ip);
-  const price = priceId(p); void checkPriceOnce(p, price);
+  const price = priceId(p); await checkPriceOnce(p, price);
   const customer = await ensureCustomer(p, u);
   return withBillingLock(u.id, async (tx, later): Promise<RestartResult> => {
     const a = await lockAccount(tx, u.id);

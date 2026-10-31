@@ -270,6 +270,20 @@ export interface DraftSummary {
 }
 /** Signup pending variant (AC-S2). */
 export type PendingProfile = Pick<DraftSummary, 'name' | 'domain' | 'brand'>;
+/** The signed-in user's persisted billing account, independent of the selected business or billing gate. */
+export interface BillingOverview {
+  provider: 'stripe' | 'stub' | 'none';
+  enforced: boolean;
+  status: SubStatus | 'comp';
+  priceCents: number;
+  currency: 'usd';
+  interval: 'month';
+  trialEnd: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  canManage: boolean;
+  everSubscribed: boolean;
+}
 export interface BillingState {
   /** false → billing off for this user; /start-trial redirects */
   enforced: boolean;

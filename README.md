@@ -42,6 +42,7 @@ Then add credentials for the integrations you want — every one is optional and
 - Blog connector OAuth apps: **Webflow, Notion, Wix, Shopify, WordPress.com, GitHub** (WordPress, Ghost, Webhook and Framer use per-connection credentials)
 - **X** and **LinkedIn** (profile + page) apps for connected social accounts: post now and scheduling, behind `RADAR_SOCIAL_PUBLISHING` (off by default; see `docs/LAUNCH.md` §7b)
 - **Resend** (email), optional **S3**-compatible storage
+- **Stripe** (optional paid access): existing $1 card confirmation, three-day trial, then $50/month; Settings → Billing opens customer self-service. See `docs/LAUNCH.md` §7c for sandbox provisioning, verification and grandfathered rollout. Billing stays off until configured.
 
 Run `npm run db:migrate` on deploy.
 

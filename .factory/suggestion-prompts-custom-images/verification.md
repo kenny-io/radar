@@ -37,3 +37,13 @@ Application implementation and verification are complete. Independent QA also pa
 - Draft PR: https://github.com/kenny-io/radar/pull/16 targeting main. Created and attached to this chat. GitHub confirms OPEN, draft and MERGEABLE/CLEAN; no configured status checks.
 - Final follow-up commit contains delivery/QA documentation only; application source remains unchanged.
 - Release status: implemented and locally verified, with the documented pre-existing test exception. Unmerged and undeployed; production remains unchanged.
+
+## Production release — 31 October 2026
+- User authorized merge and deployment. PR #16 marked ready and merged with expected head `0b83753338c0201c0a5d1daba15f88de6398c87a`; main merge commit `2524537da22eae7644829c05069b3b3320995c83`. Main application/contract source matches the tested revision.
+- Railway worker deployment `53c7689b-3dc7-4466-8200-f48ca7e868d5`: success at 10:12:32 UTC / 14:12:32 Asia/Dubai.
+- Railway web deployment `7110231c-a208-46e0-9832-b9762eb2613a`: success at 10:14:04 UTC / 14:14:04 Asia/Dubai. Aggregate GitHub production deployment `7457248098`: success at 10:14:07 UTC.
+- Production home/sign-in return 200; protected routes redirect signed-out visitors to signup. An initial connection reset during rollout resolved on retry.
+- Independent release QA: desktop/mobile public page rendering passes; five protected routes respect authentication; all 23 actual referenced assets return 200, including the exact served Performance, Social, Brief and Article bundles containing the new controls. See release-qa.md.
+- Authenticated production interactions remain untested because no signed-in session was available. No customer content was modified and no live image generation or publishing was triggered.
+- Evidence: ignored `.data/suggestion-prompts-custom-images/production/` and `production-qa/`. Railway CLI authentication was unavailable; successful deployments were confirmed through GitHub/Railway statuses and the deployed site.
+- Final status: merged and deployed to production.

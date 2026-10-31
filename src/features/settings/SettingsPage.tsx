@@ -10,6 +10,7 @@ import { Btn, PageHead, Section, Seg, Status } from '@/components/ui';
 import { GscConnect } from '@/features/gsc/GscConnect';
 import { PublishingSettings } from '@/features/publishing/PublishingSettings';
 import { SocialAccounts } from '@/features/social/channels/SocialAccounts';
+import { BillingSettings } from '@/features/billing/BillingSettings';
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
 import type { CalendarSettings, Member, Role, Workspace, Appearance } from '@/lib/types';
@@ -51,11 +52,11 @@ export function AISettings() {
 }
 
 const SET_KEY = 'radar.settings.tab';
-type SetKey = 'gsc' | 'publishing' | 'social' | 'ai' | 'calendar' | 'team' | 'account' | 'feedback';
+type SetKey = 'gsc' | 'publishing' | 'social' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'feedback';
 const SET_NAV: [string, [SetKey, string][]][] = [
   ['Connections', [['gsc', 'Search Console'], ['publishing', 'Publishing'], ['social', 'Social accounts']]],
   ['Content', [['ai', 'AI models'], ['calendar', 'Calendar']]],
-  ['Workspace', [['team', 'Team'], ['account', 'Account']]],
+  ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing']]],
   ['Support', [['feedback', 'Request a feature']]],
 ];
 
@@ -115,6 +116,7 @@ export function SettingsPage() {
       <Row t="Email"><span className="small">{app.user.email}</span></Row>
       <Row t="Appearance" d="System follows your device."><AppearanceSetting /></Row>
     </Section>,
+    billing: <Section title="Billing" sub="Manage your Radar account and subscription." style={{ marginTop: 0 }}><BillingSettings /></Section>,
     feedback: <Section title="Request a feature" style={{ marginTop: 0 }}><FeatureRequest /></Section>,
   };
   return <div className="page" style={{ maxWidth: 1080 }}>

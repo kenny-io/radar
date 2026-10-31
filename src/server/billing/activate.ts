@@ -26,7 +26,7 @@ export async function start(u: BillingUser, pmId: string, ip: string): Promise<S
   const p = await needProvider();
   if (await ownAccess({ id: u.id, email: u.email, guest: false })) throw BillingError.alreadyActive();
   await limitBilling(u.id, ip);
-  const price = priceId(p); void checkPriceOnce(p, price);
+  const price = priceId(p); await checkPriceOnce(p, price);
   const customer = await ensureCustomer(p, u);
   return withBillingLock(u.id, async (tx, later): Promise<StartResult> => {
     const a = await lockAccount(tx, u.id);
@@ -98,6 +98,7 @@ export async function activateIn(p: BillingProvider, tx: Tx, later: Later, pi: P
     const T = t0 - nowSec() < 3600 ? Math.floor(trialEndFrom().getTime() / 1000) : t0;
     let sub = await adopt(p, customer, pi.id);
     if (!sub) {
+      await checkPriceOnce(p, priceId(p));
       try {
         sub = (await p.createSubscription({ customer, price: priceId(p), defaultPaymentMethod: pi.payment_method, trialEnd: T, metadata: { radar_user_id: uid, radar_pi: pi.id } }, `radar:sub:${pi.id}:${T}`)).sub;
       } catch (e) {

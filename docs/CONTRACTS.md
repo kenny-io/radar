@@ -155,12 +155,16 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 | Call | Success | Error codes |
 |---|---|---|
 | `GET /api/billing/state` | `BillingState` (bare, no `ok`) | 401 |
+| `GET /api/billing/overview` | `BillingOverview` for the signed-in user's account, including persisted dates, cancellation state and `canManage` (bare, no `ok`) | 401 |
+| `POST /api/billing/portal` | `{ ok: true, url }`, a fresh Stripe-hosted portal session for the caller's stored customer | 401; forbidden origin (403); `no_subscription` (409); `rate_limited` (429); `billing_unavailable` (503) |
 | `POST /api/billing/start` `{ paymentMethodId }` | `{ ok, clientSecret, paymentIntentId, trialEnd }`, or `{ ok, activated: true, state }` when an earlier $1 already succeeded | `already_active`, `restart_required`, `trial_used`, `payment_processing` (409); `invalid_payment_method` (400); `rate_limited` (429); `billing_unavailable` (503) |
 | `POST /api/billing/restart` `{ paymentMethodId }` | `{ ok, clientSecret, subscriptionId }`, or `{ ok, activated: true, state }` | `already_active`, `not_lapsed` (409); 400; 429; 503 |
 | `POST /api/billing/confirm` `{ paymentIntentId }` \| `{ subscriptionId }` | `{ ok, state }` with `state.access === true`; sets `radar_biz` to the business just committed | `not_yours` (403); `payment_not_succeeded` (409: not active yet; retry, then poll state); `activation_failed` (502) |
 | `POST /api/billing/webhook` | Stripe only (signature) | 400 bad signature or no secret; 500 handler failure |
 
 - The client always passes `payment_method` to `confirmCardPayment` (a restart against an open invoice doesn't use the subscription default).
+- Overview and portal are account-scoped, independent of selected business, membership and billing enforcement. No client customer ID or return URL is accepted. Responses are private and uncached; overview contains no Stripe identifiers. Complimentary payers retain management access. Settings → Billing and the restart screen share the management action; the server chooses a fixed Radar return path. Portal session URLs contain bearer secrets and must never be logged or stored.
+- New trial/restart payments await successful validation of the configured price: active, recurring, licensed, per-unit, $50 USD, month, interval count one. Failed or mismatched prices return 503 before customer/payment creation. Portal access does not depend on price validation.
 - `trialEnd` comes from the server (now + 72 h, to the second) and never changes after start; show `state.trialEnd` after confirm.
 - `state.dueTodayCents` in restart mode is what the restart will charge: the open invoice's `amount_due` (`past_due`, `unpaid`, an unpaid restart), else $50 less any unused credit ($49 when the trial was canceled before its first invoice). Show it on the button and timeline.
 - Events: `trial.started`, `trial.payment_failed`, `sub.status_changed`, `onboarding.claimed`, `onboarding.draft_replaced`, `business.onboarded` (from `commitDraft`, the only path to an active business). They carry ids and enum props only.
@@ -170,6 +174,7 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 - `POST /api/billing/dev/confirm-intent` `{ paymentIntentId, outcome: 'succeed'|'decline'|'auth_fail', webhook?: boolean }` → stripe-js `{ paymentIntent: { id, status } }` | `{ error: { type, code, decline_code?, message, payment_intent } }` (HTTP 200). The PaymentIntent id is `clientSecret.split('_secret_')[0]`. `decline` (or a `decline` card) → `type: 'card_error', code: 'card_declined'`; `auth_fail` → `code: 'payment_intent_authentication_failure'`. `webhook: true` also delivers the events Stripe would send, through the real handlers (the "tab closed after paying" path).
 - `POST /api/billing/dev/simulate` `{ status }` → `{ ok, state }` — moves the account's subscription (`past_due`/`unpaid` open a $49 invoice: $50 less the $1 credit; `active`; `canceled`) and runs the webhook path. Stub state is in memory: a dev server restart forgets subscriptions (`simulate` then answers 409 `no_subscription`).
 - Both dev endpoints answer 404 unless the stub is the provider.
+- The stub deliberately does not emulate a hosted portal. Its overview reports `canManage: false`, and portal requests return 503. Use a real Stripe sandbox to verify hosted card updates, invoices and cancellation.
 
 ### Server helpers other areas may call
 - `ownAccess(user)`, `bizAccess({ ownerId })`, `accessSummary(uid)` — `src/server/billing/access.ts`. A guest never has access.

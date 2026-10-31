@@ -83,6 +83,7 @@ function invoiceFor(s: SSub, pm: string | null): SInv {
 
 export const stubProvider: BillingProvider = {
   name: 'stub',
+  async createPortalSession() { throw new ProviderError('Hosted billing is unavailable in development stubs', 503); },
   async createCustomer(p, key) {
     return idem('createCustomer', key, p, () => { const c: Cus = { id: nid('cus'), email: p.email, name: p.name, uid: p.uid, defaultPm: null, balance: 0 }; S().customers.set(c.id, c); return { id: c.id }; });
   },
@@ -152,7 +153,7 @@ export const stubProvider: BillingProvider = {
   async creditBalance(customer, cents, description, key) {
     idem('creditBalance', key, { customer, cents, description }, () => { cus(customer).balance -= cents; S().credits.push({ customer, amount: -cents, description, key }); return null; });
   },
-  async getPrice(id) { log('getPrice'); return { id, unit_amount: PRICE_CENTS, currency: 'usd', interval: 'month' }; },
+  async getPrice(id) { log('getPrice'); return { id, unit_amount: PRICE_CENTS, currency: 'usd', interval: 'month', active: true, type: 'recurring', billing_scheme: 'per_unit', interval_count: 1, usage_type: 'licensed', transform_quantity: null, custom_unit_amount: null }; },
 };
 
 export type StubOutcome = 'succeed' | 'decline' | 'auth_fail';
