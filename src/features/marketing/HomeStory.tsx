@@ -59,8 +59,8 @@ export function HomeScrollEffects() {
 
 const STEPS = [
   ['Radar reads your site', 'It learns what you sell, who buys it and how you sound.'],
-  ['Your month is planned', 'Thirty topics your site can win, and the conversations worth joining.'],
-  ['You approve. It ships.', 'Articles publish on their date. Posts go out when you say so.'],
+  ['Your month is planned', 'Topics matched to your site and schedule, and conversations worth joining.'],
+  ['Choose how it ships.', 'Review each draft, or enable automatic publishing in its settings.'],
 ];
 const DURATIONS = [9000, 7000, 6000];
 const ANALYSIS = [
@@ -134,7 +134,7 @@ export function HowItWorks() {
           <div className={'ceil' + (time >= 350 ? ' run' : '')} id="ceil" role="group" aria-label="Illustrative keyword list with a difficulty ceiling of 34"><p className="ob-t">Keywords fieldnote.app can win</p><div className="ceil-h"><span>Keyword</span><span className="vol">Volume</span><span className="ceil-tag">Ceiling 34</span></div><ol>{KEYWORDS.map(([keyword, volume, difficulty]) => <li key={keyword} className={difficulty > 34 ? 'out' : ''}><span className="kw">{keyword}</span><span className="vol">{volume}</span><span className="bar" style={vars({ '--d': difficulty })}><i /></span><span className="dv">{difficulty}</span></li>)}</ol><p className="ceil-n">Radar skips keywords above your site’s ceiling and plans the rest.</p></div>
         </div>
         <div className={'hp' + (current === 2 ? ' on' : '')} id="hp-2" role="tabpanel" aria-labelledby="hs-2" inert={current !== 2} aria-hidden={current !== 2}>
-          <div className="ship" id="ship"><p className="ob-t">Ready for your review</p><ul className="sp-l">{SHIP.map(([title, detail, action, status], i) => { const done = time >= 950 + i * 1100; return <li className={'sp-i' + (done ? ' done' : time >= 700 + i * 1100 ? ' press' : '')} key={title}><span className="sp-m"><b>{title}</b><em>{detail}</em></span><span className="sp-a"><span className={'sp-b' + (i === 0 ? ' solid' : '')} aria-hidden={done}>{action}</span><span className="sp-st" aria-hidden={!done}><i className="dot" />{status}</span></span></li>; })}</ul><p className="ceil-n">Nothing goes out until you approve it. Autopilot is opt-in.</p></div>
+          <div className="ship" id="ship"><p className="ob-t">Ready for your review</p><ul className="sp-l">{SHIP.map(([title, detail, action, status], i) => { const done = time >= 950 + i * 1100; return <li className={'sp-i' + (done ? ' done' : time >= 700 + i * 1100 ? ' press' : '')} key={title}><span className="sp-m"><b>{title}</b><em>{detail}</em></span><span className="sp-a"><span className={'sp-b' + (i === 0 ? ' solid' : '')} aria-hidden={done}>{action}</span><span className="sp-st" aria-hidden={!done}><i className="dot" />{status}</span></span></li>; })}</ul><p className="ceil-n">Review-first shown. Blog autopilot and social automatic scheduling are opt-in.</p></div>
         </div>
       </div>
     </div><p className="pg-cap">Illustrative example.</p>
@@ -143,7 +143,7 @@ export function HowItWorks() {
 
 const FEATURES = [
   { name: 'Daily Brief', title: 'Be there when people ask.', text: 'Every morning, Radar finds threads on Reddit, X, LinkedIn, Hacker News and Quora where you can help, with a reply drafted in your voice.', shot: 'c-brief-open', width: 2560, height: 1150, w: '112%', pan: '-8%', alt: 'Daily Brief in Radar: a thread from r/freelance with a helpful reply drafted in the founder’s voice.' },
-  { name: 'Content Calendar', title: 'A month of articles, planned.', text: 'Thirty topics your site can realistically rank for, each drafted the day before it publishes.', shot: 'c-calendar', width: 1990, height: 1620, w: '100%', pan: '-32%', alt: 'Content Calendar in Radar: a month view with one researched article topic per day.', href: '/features/organic-search', link: 'Organic search' },
+  { name: 'Content Calendar', title: 'A month of articles, planned.', text: 'Topics matched to your site and publishing schedule, with drafts ready for review or Daily autopilot.', shot: 'c-calendar', width: 1990, height: 1620, w: '100%', pan: '-32%', alt: 'Content Calendar in Radar: a month view with one researched article topic per day.', href: '/features/organic-search', link: 'Organic search' },
   { name: 'AI Visibility', title: 'Know when AI recommends you.', text: 'Every night, Radar asks five assistants what your customers ask, and shows where you stand.', shot: 'c-ai', width: 2036, height: 1080, w: '108%', pan: '-16%', alt: 'AI Visibility in Radar: mentioned in 6 of 14 answers across five assistants.', href: '/features/ai-visibility', link: 'AI visibility' },
   { name: 'Social Marketing', title: 'On brand, on every platform.', text: 'Turn an idea, a link or an article into posts and visuals made for each platform.', shot: 'c-social', width: 1300, height: 560, w: '100%', pan: '0%', alt: 'Two post packs in Radar with on-brand visuals.' },
   { name: 'Performance', title: 'Your next move, spelled out.', text: 'Search Console data, with suggestions ranked by expected impact.', shot: 'p-perf', width: 2000, height: 1255, w: '100%', pan: '-20%', alt: 'Performance in Radar: Search Console clicks, impressions and suggestions.' },
