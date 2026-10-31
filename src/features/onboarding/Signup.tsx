@@ -79,7 +79,7 @@ export function AuthShell({ energy, art, children }: { energy: number; art?: Rea
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,1fr)', minHeight: '100vh', position: 'relative' }} className="signup">
     <style>{`@media(max-width:860px){.signup{grid-template-columns:1fr!important}.signup-art{min-height:200px!important}}`}</style>
     <div className="signup-art" style={{ position: 'relative', minHeight: '100vh' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, padding: '28px 32px', gap: 9 }} className="row"><Mark s={24} /><span style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.02em' }}>Radar</span></div>
+      <a href="/" aria-label="Radar home" style={{ position: 'absolute', left: 0, top: 0, padding: '28px 32px', gap: 9, color: 'inherit', textDecoration: 'none' }} className="row"><Mark s={24} /><span style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.02em' }}>Radar</span></a>
       {art && <div style={{ position: 'absolute', left: 0, bottom: 0, padding: '0 32px 40px', maxWidth: 560 }} className="col hide-sm">{art}</div>}
     </div>
     <div className="col" style={{ justifyContent: 'center', padding: '48px clamp(24px,6vw,88px)', position: 'relative' }}>

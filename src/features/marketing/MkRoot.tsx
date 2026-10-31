@@ -61,7 +61,7 @@ export function Nav() {
   }, [home]);
   return <header className={`nav${day ? ' day' : ''}${sc ? ' sc' : ''}`} id="nav">
     <div className="wrap nav-in">{home
-      ? <><a className="brand" href="#top" aria-label="Radar home"><RadarMark s={22} /><span>Radar</span></a><nav className="nav-r" aria-label="Primary"><a className="lnk mhide-sm" href="#features">Features</a><a className="lnk mhide-sm" href="#pricing">Pricing</a><a className="lnk mhide-sm" href="#faq">Questions</a><a className="lnk" href="/signin">Sign in</a><a className="mbtn mbtn-solid" href="/signup">Get started</a></nav></>
+      ? <><a className="brand" href="#top" aria-label="Radar home"><RadarMark s={22} /><span>Radar</span></a><nav className="nav-r" aria-label="Primary"><a className="lnk mhide-sm" href="#how">How it works</a><a className="lnk mhide-sm" href="#features">Features</a><a className="lnk mhide-sm" href="#pricing">Pricing</a><a className="lnk mhide-sm" href="#faq">Questions</a><a className="lnk" href="/signin">Sign in</a><a className="mbtn mbtn-solid" href="/signup">Get started</a></nav></>
       : <><Link className="brand" href="/" aria-label="Radar home"><RadarMark s={22} /><span>Radar</span></Link><nav className="nav-r" aria-label="Primary"><Link className="lnk mhide-sm" href="/#features">Features</Link><Link className="lnk mhide-sm" href="/#pricing">Pricing</Link><a className="lnk" href="/signin">Sign in</a><a className="mbtn mbtn-solid" href="/signup">Get started</a></nav></>}
     </div></header>;
 }
