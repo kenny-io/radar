@@ -79,3 +79,7 @@ Final source SHA-256 values (also matched exactly by the frozen-tree main accept
 - `src/features/marketing/MkRoot.tsx`: `c52f92ff2de867c943cea0feb598943855ba3c1a7edab317d8d2cde5e624e508`
 - `src/features/marketing/marketing.css`: `ac94bb4adec015f8f16336ceba942fe7e2d82d00e1d69a04a85ef255664075a1`
 - `src/features/onboarding/Signup.tsx`: `112a8d7178bd8192181463e0a9352a7c047db6def2837e69cbbc18f934bcb5ab`
+
+## Commit and PR delivery
+
+The seven QA-tested source files were verified against the staged SHA-256 fingerprints and committed in `e5435c50` on `kenny/homepage-redesign`, based on `origin/main` at `2524537d`. PR [#18](https://github.com/kenny-io/radar/pull/18) is open against main. The PR excludes the separate Stripe billing commits and local TypeScript configuration formatting drift. Generated browser PNGs, logs and JSON stay local; the summary, fingerprints and reproducible scripts are committed. GitHub reports the PR mergeable and reported no status checks at creation. The subsequent handoff commit changes records only; tested source fingerprints remain identical. No merge or deployment performed.
