@@ -1,0 +1,9 @@
+{
+  "src/features/marketing/Home.tsx": "e9facfd78febafb293bafd2d2ab05ca0163bef929bce5e5b97c0c2c816c9ebc7",
+  "src/features/marketing/HomeStory.tsx": "9010c8a368a3a53cac41c0b23be7d1c6e3eb4dba02b2a1b7ed4f7e959e643cb8",
+  "src/features/marketing/home-redesign.css": "ab5498593147b78e3f3c5a654232dcdf9f754724769aff8440194042b70f8961",
+  "src/features/marketing/MkRoot.tsx": "c52f92ff2de867c943cea0feb598943855ba3c1a7edab317d8d2cde5e624e508",
+  "src/features/marketing/marketing.css": "ac94bb4adec015f8f16336ceba942fe7e2d82d00e1d69a04a85ef255664075a1",
+  "src/features/marketing/parts.tsx": "8d3866e21048aabf5a26b132b691156497c24470668cca5b8b14b408a513801e",
+  "src/features/onboarding/Signup.tsx": "112a8d7178bd8192181463e0a9352a7c047db6def2837e69cbbc18f934bcb5ab"
+}

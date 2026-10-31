@@ -11,9 +11,9 @@ export function Logo({ k, s, color }: { k: string; s: number; color?: string }) 
   return <span className="mk-logo" aria-hidden="true"><BrandIcon k={k} s={s} style={color ? { color } : undefined} /></span>;
 }
 
-/** Closing card: "You built it● Let people and AI find it." with the website field. */
-export function Closing() {
-  return <section className="end" id="begin" aria-labelledby="end-t"><div className="wrap"><div className="end-card rv"><h2 className="end-t" id="end-t">You built it<span className="pd" aria-hidden="true"></span><span className="sr">.</span><br />Let people and AI find it.</h2><DomainForm id="dom-fin" /><p className="wm wm-d" aria-hidden="true">Radar</p></div></div></section>;
+/** Closing card with an optional page-specific headline and the shared website field. */
+export function Closing({ headline }: { headline?: React.ReactNode } = {}) {
+  return <section className="end" id="begin" aria-labelledby="end-t"><div className="wrap"><div className="end-card rv"><h2 className="end-t" id="end-t">{headline ?? <>You built it<span className="pd" aria-hidden="true"></span><span className="sr">.</span><br />Let people and AI find it.</>}</h2><DomainForm id="dom-fin" /><p className="wm wm-d" aria-hidden="true">Radar</p></div></div></section>;
 }
 
 export function Footer({ bot }: { bot?: boolean }) {
