@@ -79,6 +79,8 @@ export const env = {
   /** Read on the server and passed to /start-trial as a prop (not NEXT_PUBLIC_*, which would be inlined at build time). */
   stripePublishableKey: e.STRIPE_PUBLISHABLE_KEY || '',
   stripeWebhookSecret: e.STRIPE_WEBHOOK_SECRET || '',
+  // Dedicated Radar customer portal configuration; empty uses the account default.
+  stripePortalConfigurationId: e.STRIPE_PORTAL_CONFIGURATION_ID || '',
   /** The $50/month recurring USD price. */
   stripePriceId: e.STRIPE_PRICE_ID || '',
   /** Pinned Stripe-Version header. Code reads items.data[0].current_period_end, which needs Basil (2025-03-31) or later. */

@@ -7,10 +7,10 @@ import { accountByCustomer, withBillingLock } from './account';
 import { activateIn } from './activate';
 import { getProvider } from './provider';
 import { syncById } from './sync';
+import { WEBHOOK_EVENTS } from '@/lib/billing';
 
 export interface StripeEvent { id: string; type: string; data: { object: any } }
-export const WEBHOOK_EVENTS = ['payment_intent.succeeded', 'payment_intent.payment_failed', 'customer.subscription.created', 'customer.subscription.updated',
-  'customer.subscription.deleted', 'invoice.paid', 'invoice.payment_failed'] as const;
+export { WEBHOOK_EVENTS } from '@/lib/billing';
 const E = schema.billingEvents;
 const idOf = (v: any): string | null => (typeof v === 'string' ? v : v?.id || null);
 const userExists = async (uid: string) => !!(await db.select({ id: schema.users.id }).from(schema.users).where(and(eq(schema.users.id, uid), eq(schema.users.guest, false))).limit(1))[0];

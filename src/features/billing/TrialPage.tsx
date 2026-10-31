@@ -14,6 +14,7 @@ import { StubCardFields } from './StubCardFields';
 import { addMonthIso, D_PLACEHOLDER, DW_PLACEHOLDER, fmtD, fmtDW } from './dates';
 import { billingErrorOutcome, cardErrorMessage, trialCopy, type DateNode } from './copy';
 import { firstError, type CardErrors } from './elementErrors';
+import { PortalButton } from './PortalButton';
 
 interface StartRes { ok: true; clientSecret?: string; paymentIntentId?: string; subscriptionId?: string; trialEnd?: string; activated?: boolean; state?: BillingState }
 
@@ -69,6 +70,7 @@ export function TrialPage({ state, publishableKey }: TrialPageProps) {
       {fail && <p className="small enter" role="alert" style={{ color: 'var(--bad)' }}>{fail}</p>}
       <Btn kind="primary" size="lg" className="btn-block" type="submit" loading={busy} style={{ marginTop: 4 }}>{busy ? c.busy : c.button}</Btn>
       {c.fine && <p className="xs sub">{parts(c.fine)}</p>}
+      {state.mode === 'restart' && state.provider === 'stripe' && <PortalButton label="Manage billing in Stripe" kind="link" disabled={busy} />}
     </form>
     : <div className="col enter" style={{ gap: 18, maxWidth: 400, width: '100%', margin: '0 auto', position: 'relative' }} role="status">
       <span style={{ width: 48, height: 48, borderRadius: 99, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center' }}><Icon n="check" s={22} w={2} /></span>

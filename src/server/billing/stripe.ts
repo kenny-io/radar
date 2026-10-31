@@ -74,6 +74,10 @@ const toInvoice = (i: any): Invoice => ({ id: i.id, status: i.status, amount_due
 
 export const stripeProvider: BillingProvider = {
   name: 'stripe',
+  async createPortalSession(p, key) {
+    const s = await stripeRequest('POST', '/billing_portal/sessions', { params: { customer: p.customer, return_url: p.returnUrl, configuration: p.configuration }, key });
+    return { url: s.url };
+  },
   async createCustomer(p, key) { return { id: (await stripeRequest('POST', '/customers', { params: { email: p.email, name: p.name, metadata: { radar_user_id: p.uid } }, key })).id }; },
   async setCustomerDefaultPaymentMethod(customer, pm, key) { await stripeRequest('POST', `/customers/${seg(customer)}`, { params: { invoice_settings: { default_payment_method: pm } }, key }); },
   async attachPaymentMethod(pm, customer, key) { await stripeRequest('POST', `/payment_methods/${seg(pm)}/attach`, { params: { customer }, key }); },
@@ -108,5 +112,11 @@ export const stripeProvider: BillingProvider = {
     // A negative amount is a credit, applied to the customer's next invoice (https://docs.stripe.com/billing/customer/balance).
     await stripeRequest('POST', `/customers/${seg(customer)}/balance_transactions`, { params: { amount: -Math.abs(cents), currency: 'usd', description }, key });
   },
-  async getPrice(id): Promise<Price> { const p = await stripeRequest('GET', `/prices/${seg(id)}`); return { id: p.id, unit_amount: p.unit_amount ?? null, currency: p.currency, interval: p.recurring?.interval ?? null }; },
+  async getPrice(id): Promise<Price> {
+    const p = await stripeRequest('GET', `/prices/${seg(id)}`);
+    return { id: p.id, unit_amount: p.unit_amount ?? null, currency: p.currency, interval: p.recurring?.interval ?? null,
+      active: p.active === true, type: p.type, billing_scheme: p.billing_scheme,
+      interval_count: p.recurring?.interval_count ?? null, usage_type: p.recurring?.usage_type ?? null,
+      transform_quantity: p.transform_quantity ?? null, custom_unit_amount: p.custom_unit_amount ?? null };
+  },
 };

@@ -110,4 +110,17 @@ describe('stripeRequest', () => {
     await expect(stripeProvider.getPrice('price_1')).rejects.toMatchObject({ status: 503 });
     expect(calls).toHaveLength(0);
   });
+  it('creates a hosted portal session with only server-supplied settings and preserves its request key on retry', async () => {
+    replies.push(() => { throw new TypeError('fetch failed'); }, reply(200, { id: 'bps_1', url: 'https://billing.stripe.com/p/session/test_only' }));
+    expect(await stripeProvider.createPortalSession({ customer: 'cus_1', returnUrl: 'https://radar.example/settings?section=billing', configuration: 'bpc_radar' }, 'radar:portal:request-1'))
+      .toEqual({ url: 'https://billing.stripe.com/p/session/test_only' });
+    expect(calls).toHaveLength(2);
+    expect(calls[0].url).toBe('https://api.stripe.com/v1/billing_portal/sessions');
+    expect(body(calls[0])).toBe('customer=cus_1&return_url=https://radar.example/settings?section=billing&configuration=bpc_radar');
+    expect(calls.map(c => headers(c)['Idempotency-Key'])).toEqual(['radar:portal:request-1', 'radar:portal:request-1']);
+  });
+  it('maps the full price contract needed to refuse metered, multi-month or transformed prices', async () => {
+    replies.push(reply(200, { id: 'price_month', unit_amount: 5000, currency: 'usd', active: true, type: 'recurring', billing_scheme: 'per_unit', recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed' }, transform_quantity: null, custom_unit_amount: null }));
+    expect(await stripeProvider.getPrice('price_month')).toEqual({ id: 'price_month', unit_amount: 5000, currency: 'usd', active: true, type: 'recurring', billing_scheme: 'per_unit', interval: 'month', interval_count: 1, usage_type: 'licensed', transform_quantity: null, custom_unit_amount: null });
+  });
 });
