@@ -101,6 +101,7 @@ defineJob<BodyImagesPayload>({
       await assertArticleJobOwned(tx, ctx.job);
       const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0]?.data as Article | undefined;
       if (!latest || JSON.stringify(latest.body) !== JSON.stringify(snapshot.a.body)) throw new RadarError('The article text changed while Radar was making its images. Try again to match the latest text.', 409, 'article_changed');
+      if (latest.img.style !== snapshot.a.img.style || latest.img.prompt !== snapshot.a.img.prompt || latest.img.modelRequired !== snapshot.a.img.modelRequired) throw new RadarError('The image direction changed while Radar was generating. Try again.', 409, 'article_changed');
       await tx.update(schema.articles).set({ data: { ...latest, bodyImages, bodyImagesGeneratedAt }, updatedAt: new Date() }).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid)));
     });
     await ctx.touch();

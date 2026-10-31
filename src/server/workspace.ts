@@ -95,6 +95,21 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
     const past = date < today;
     briefDaysMap[date] = { date, scannedAt: d.scannedAt, stats: (d.stats || {}) as BriefDay['stats'], items: (d.items || []).map((i: any) => (past && (i.st === 'open' || i.st === 'copied') ? { ...i, st: 'expired' } : i)) };
   }
+  // A timed-out worker cannot commit image state. Recover from the exact persisted job even after
+  // it has aged out of the recent-jobs feed, preserving the previous assets and retry direction.
+  const imageJobIds = [...new Set(Object.values(briefDaysMap).flatMap(d => d.items.flatMap(i => i.img?.status === 'generating' && i.img.jobId ? [i.img.jobId] : [])))];
+  if (imageJobIds.length) {
+    const imageJobs = await db.select({ id: schema.jobs.id, status: schema.jobs.status, error: schema.jobs.error }).from(schema.jobs)
+      .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'brief.visuals'), inArray(schema.jobs.id, imageJobIds)));
+    const byId = new Map(imageJobs.map(j => [j.id, j]));
+    for (const day of Object.values(briefDaysMap)) day.items = day.items.map(item => {
+      const img = item.img;
+      if (img?.status !== 'generating' || !img.jobId) return item;
+      const job = byId.get(img.jobId);
+      if (job && (job.status === 'queued' || job.status === 'running')) return item;
+      return { ...item, img: { ...img, status: 'failed', error: job?.error || 'Radar couldn’t finish generating these images. Try again.' } };
+    });
+  }
   const brief: BriefState = { setup: b.briefSetup, settings: briefSettingsOf(b) as any, days: briefDaysMap };
   const proposals = props.map(proposalFromRow);
   const backlinks: BacklinksState = { joined: !!(b.backlinks || {}).joined, prefs: (b.backlinks || {}).prefs || {}, inbound: proposals.filter(p => p.direction === 'in'), outbound: proposals.filter(p => p.direction === 'out'), live: live.map(liveFromRow) };

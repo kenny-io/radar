@@ -3,18 +3,18 @@
 // the edit lock near a post's send time and the image meta the posting checks use.
 import { z } from 'zod';
 import { and, eq, ne } from 'drizzle-orm';
-import { action, type ActionMap } from './define';
+import { action, type ActionMap, type ActCtx } from './define';
 import { db, schema } from '../db';
 import { enqueue } from '../jobs/queue';
 import { RadarError, notFound } from '../errors';
-import { bump } from '../workspace';
 import { getPack, renderPostImage, updatePack, writePost, type StoredPack } from '../services/social/generate';
 import { suggestIdeas } from '../services/social/ideas';
 import { DAYS } from '../services/social/auto';
-import type { Platform, Profile } from '@/lib/types';
+import type { ImageStyle, Platform, Profile } from '@/lib/types';
 import { COPY, canPost, packSid } from '@/lib/socialPublish';
 import { socialOn } from '../flags';
 import { assertEditable } from '../services/social/publish/guards';
+import { randomToken } from '../crypto';
 import { accountRows } from '../services/social/publish/accounts';
 
 const PlatformZ = z.enum(['linkedin', 'x', 'facebook', 'reddit', 'quora']);
@@ -29,6 +29,29 @@ const postOr404 = (p: StoredPack, k: Platform) => { const q = p.posts[k]; if (!q
 const editable = (ctx: { biz: any }, packId: string, k: Platform) => (canPost(k) ? assertEditable(ctx.biz, packSid(packId, k)) : Promise.resolve());
 const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any>) =>
   updatePack(bid, id, p => ({ ...p, posts: { ...p.posts, [k]: { ...postOr404(p, k), ...patch } } })).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
+
+/** Reserve a request before rendering; update only its image fields after storage succeeds. */
+async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform; prompt?: string; style?: ImageStyle }) {
+  await editable(ctx, i.packId, i.platform);
+  await packOr404(ctx.bid, i.packId);
+  const request = randomToken(16);
+  const reserved = await updatePack(ctx.bid, i.packId, async p => {
+    await editable(ctx, i.packId, i.platform);
+    const q = postOr404(p, i.platform);
+    return { ...p, posts: { ...p.posts, [i.platform]: { ...q, imageRequest: request, ...(i.prompt !== undefined ? { imagePrompt: i.prompt } : {}) } } };
+  }).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
+  const q = postOr404(reserved, i.platform); const seed = (q.seed || 1) + 11; const style = i.style || q.style;
+  let result;
+  try { result = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style, seed, imagePrompt: q.imagePrompt }, reserved.headline || reserved.source.label, reserved.custom); }
+  catch (e: any) { console.error('[social] render failed', e?.message); if (e instanceof RadarError) throw e; throw new RadarError('Radar couldn’t generate this image. Your previous image is kept. Try again.', 502, 'image_failed'); }
+  await updatePack(ctx.bid, i.packId, async p => {
+    await editable(ctx, i.packId, i.platform);
+    const cur = postOr404(p, i.platform);
+    if (cur.imageRequest !== request || cur.seed !== q.seed || cur.style !== q.style || cur.imageUrl !== q.imageUrl || cur.imagePrompt !== q.imagePrompt) throw new RadarError('The image changed while Radar was generating it. Try again.', 409, 'image_changed');
+    return { ...p, posts: { ...p.posts, [i.platform]: { ...cur, seed, style, imageUrl: result.url, photo: result.photo, imageMeta: result.meta, compressed: false } } };
+  }).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
+  return { seed, imageUrl: result.url };
+}
 
 export const actions: ActionMap = {
   /** Start a pack: job social.generate (ref = client token) → progress { done }, result { packId }. */
@@ -94,33 +117,16 @@ export const actions: ActionMap = {
     },
   }),
 
-  /** Regenerate image → new seed, re-render at the platform size. */
+  /** Regenerate the selected platform, reusing its saved custom direction unless one is supplied. */
   'social.regenImage': action({
-    input: z.object({ packId: z.string().max(64), platform: PlatformZ }),
-    run: async (ctx, i) => {
-      await editable(ctx, i.packId, i.platform);
-      const p = await packOr404(ctx.bid, i.packId); const q = postOr404(p, i.platform); const seed = (q.seed || 1) + 11;
-      let imageUrl: string | null = null; let photo = false; let imageMeta = null;
-      try { const r = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style: q.style, seed }, p.headline || p.source.label, p.custom); imageUrl = r.url; photo = r.photo; imageMeta = r.meta; } catch (e: any) { console.error('[social] render failed', e?.message); }
-      await setPost(ctx.bid, i.packId, i.platform, { seed, imageUrl, photo, imageMeta, compressed: false });
-      return { seed, imageUrl };
-    },
+    input: z.object({ packId: z.string().max(64), platform: PlatformZ, prompt: z.string().trim().min(1, 'Describe the image you want.').max(1000).optional() }),
+    run: changeImage,
   }),
 
-  /** Change a post's image style → re-render. */
+  /** Render the new style before replacing the previous complete image. */
   'social.style': action({
     input: z.object({ packId: z.string().max(64), platform: PlatformZ, style: ImageStyleZ }),
-    run: async (ctx, i) => {
-      await editable(ctx, i.packId, i.platform);
-      const p = await packOr404(ctx.bid, i.packId); const q = postOr404(p, i.platform);
-      await setPost(ctx.bid, i.packId, i.platform, { style: i.style, imageUrl: null, photo: false, imageMeta: null, compressed: false });
-      await bump(ctx.bid);
-      let imageUrl: string | null = null; let photo = false; let imageMeta = null;
-      try { const r = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style: i.style, seed: q.seed }, p.headline || p.source.label, p.custom); imageUrl = r.url; photo = r.photo; imageMeta = r.meta; } catch (e: any) { console.error('[social] render failed', e?.message); }
-      // Only store if the style wasn't changed again meanwhile.
-      await updatePack(ctx.bid, i.packId, x => { const cur = x.posts[i.platform]; return cur && cur.style === i.style ? { ...x, posts: { ...x.posts, [i.platform]: { ...cur, imageUrl, photo, imageMeta } } } : x; });
-      return { imageUrl };
-    },
+    run: changeImage,
   }),
 
   /** Automatic generation settings (AutoModal). */

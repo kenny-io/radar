@@ -57,7 +57,7 @@ export interface Article {
   entryId: string; generated: boolean; body: Block[];
   brief: { angle: string; outline: string[]; words: 900 | 1400 | 2200 };
   seo: { title: string; meta: string; slug: string };
-  img: { style: ImageStyle; seed: number; prompt: string; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null };
+  img: { style: ImageStyle; seed: number; prompt: string; /** Explicit custom requests require a model on later regenerations. */ modelRequired?: boolean; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null };
   videos: string[]; videoMeta: VideoRef[]; sources: Source[];
   /** claim spans tied to sources: [blockIndex, text, sourceIndex] — used to flag claims when a source is removed */
   claims: { block: number; text: string; source: number }[];
@@ -81,6 +81,10 @@ export interface SocialPost {
   text: string; style: PackStyle; seed: number; imageUrl: string | null; copiedAt: number | null; v: number;
   /** Size and type of the file at `imageUrl`, recorded when Radar renders it (social channels). Absent on older posts: the server checks the real file. */
   imageMeta?: MediaMeta | null;
+  /** User direction for this platform, reused by Regenerate. */
+  imagePrompt?: string;
+  /** Latest in-flight image request; prevents stale renders replacing a newer image. */
+  imageRequest?: string;
   /** Radar re-encoded the image to fit the platform's limits (Compress images). */
   compressed?: boolean;
   /** Publishing state from Radar (projected from `social_pubs` when `social.publishing`). Absent/null = never scheduled or posted by Radar. */
@@ -173,6 +177,14 @@ export interface BriefImages {
   n: number;
   /** One per image, filled in as each one finishes; null while generating or if it failed. */
   urls: (string | null)[]; status: 'generating' | 'ready' | 'failed';
+  /** Request identity survives remove/re-add races; jobId lets the UI recover from expired jobs. */
+  request?: string; jobId?: string;
+  /** Custom direction, retained for retries. */
+  prompt?: string;
+  /** User-safe failure detail for unavailable generation or a failed custom set. */
+  error?: string;
+  /** Custom image sets replace the current complete set only after every new image is stored. */
+  pending?: { style: import('./imageOptions').StyleKey; seed: number; n: number; prompt: string };
   /** Parallel to `urls`: size/type recorded when each image is rendered (absent on older items). */
   meta?: (MediaMeta | null)[];
 }

@@ -77,11 +77,11 @@ export async function writePost(bid: string, p: Profile, k: Platform, o: { kind:
 export const renderStyle = (s: PackStyle): ImageStyle => (s === 'custom' ? 'illustration' : s);
 
 /** Renders the post's visual to a real file. `meta` (size, type) is stored as the post's imageMeta for the posting checks. */
-export async function renderPostImage(bid: string, p: Profile, k: Platform, post: Pick<SocialPost, 'style' | 'seed'>, headline: string, custom?: string): Promise<{ url: string; photo: boolean; meta: MediaMeta }> {
+export async function renderPostImage(bid: string, p: Profile, k: Platform, post: Pick<SocialPost, 'style' | 'seed' | 'imagePrompt'>, headline: string, custom?: string): Promise<{ url: string; photo: boolean; meta: MediaMeta }> {
   const [w, h] = IMG_SIZES[k];
   const style = renderStyle(post.style);
-  const { url, bytes, type } = await renderImageFile({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: custom?.trim() ? `${custom.trim()}. Topic: ${headline}` : headline, w, h });
-  return { url, photo: (style === 'photography' || style === 'illustration') && imageModelConfigured(), meta: { bytes, type } };
+  const { url, bytes, type } = await renderImageFile({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: post.imagePrompt || (custom?.trim() ? `${custom.trim()}. Topic: ${headline}` : headline), modelRequired: !!post.imagePrompt, w, h });
+  return { url, photo: (!!post.imagePrompt || style === 'photography' || style === 'illustration') && imageModelConfigured(), meta: { bytes, type } };
 }
 
 /** Build and save a pack. `onProgress(done)` fires after each platform finishes (copy + visual). */

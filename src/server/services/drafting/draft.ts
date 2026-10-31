@@ -173,8 +173,8 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   if (img.style === 'branded' && !(a.body || []).length && /^Calm, editorial image about /.test(img.prompt || '') && defaultArticleImageStyle() === 'illustration') img.style = 'illustration';
   const key = `${img.style}:${img.seed}`;
   if (!img.url || img.urlKey !== key) {
-    try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }
-    catch (err: any) { console.error('[draft] image failed', err?.message); img.url = null; img.urlKey = null; }
+    try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, modelRequired: img.modelRequired, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }
+    catch (err: any) { console.error('[draft] image failed', err?.message); if (img.modelRequired) throw err; img.url = null; img.urlKey = null; }
   }
   const bodyImages = await generateArticleBodyImages({ businessId: bid, progress: p => ctx.progress({ ...p, blocks: body, partial: '' }) }, e, { ...a, body, img }, profile);
   return { ...a, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: new Date().toISOString(), sources, claims, draftedAt: new Date().toISOString() };

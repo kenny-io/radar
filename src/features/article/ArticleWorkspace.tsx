@@ -30,6 +30,7 @@ export function ArticleWorkspace() {
   const [pubIntro, setPubIntro] = useState(false); const [conn, setConn] = useState<null | string | { type: string; id?: string | null }>(null); const [menu, setMenu] = useState(false); const menuRef = useRef<HTMLDivElement>(null); const proseRef = useRef<HTMLDivElement>(null);
   const [vids, setVids] = useState<VideoRef[] | null>(null); const [vidBusy, setVidBusy] = useState(false); const [starting, setStarting] = useState(false);
   const [bodyStarting, setBodyStarting] = useState(false);
+  const [imageError, setImageError] = useState('');
   const A: Article | null = e ? (B.articles[id] ? { ...defaultArticle(e), ...B.articles[id] } : defaultArticle(e)) : null;
 
   // Draft job (Draft now, Rewrite from brief, the D-1 cron): stream progress; keep the stream up until the workspace has the result.
@@ -50,7 +51,7 @@ export function ArticleWorkspace() {
   useEffect(() => { if (bodyJob) setBodyStarting(false); }, [bodyJob?.id, bodyJob?.status]);
   useEffect(() => { setBodyStarting(false); }, [id]);
 
-  useEffect(() => { setVids(null); }, [id]);
+  useEffect(() => { setVids(null); setImageError(''); }, [id]);
   useEffect(() => {
     if (tab !== 'image' || !A || vids) return;
     if (A.videoMeta?.length) { setVids(A.videoMeta.slice(0, 3)); return; }
@@ -91,6 +92,12 @@ export function ArticleWorkspace() {
   const bodyImages = A.bodyImages || [];
   const mediaLocked = ['scheduled', 'publishing', 'published'].includes(st);
   const canEdit = !mediaLocked && !genActive && !bodyBusy && B.role !== 'Viewer';
+  const generateCover = async (custom = false) => {
+    setImgBusy(true); setImageError('');
+    try { await app.flushLater(); await app.act('article.regenerateImage', { entryId: id, ...(custom ? { prompt: A.img.prompt.trim() } : {}) }); toast('Cover image generated'); }
+    catch (error: any) { setImageError(error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous cover is kept. Try again.'); }
+    finally { setImgBusy(false); }
+  };
   const bodyError = bodyJob?.status === 'failed' && (!A.bodyImagesGeneratedAt || new Date(bodyJob.createdAt).getTime() > new Date(A.bodyImagesGeneratedAt).getTime());
   const generateBodyImages = async () => {
     setBodyStarting(true);
@@ -142,12 +149,13 @@ export function ArticleWorkspace() {
         {tab === 'image' && <div className="col" style={{ gap: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Cover image</h3>
           <Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} radius={10} busy={imgBusy} url={heroUrl} />
-          <Field label="Style"><select className="input" value={A.img.style} disabled={bodyBusy || genActive || mediaLocked} onChange={ev => setA({ img: { style: ev.target.value as any } }, false)}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Direction"><textarea className="input" rows={2} value={A.img.prompt} disabled={bodyBusy || genActive || mediaLocked} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
-          <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={bodyBusy || genActive || mediaLocked} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
-          <div className="row"><Btn icon="refresh" loading={imgBusy} disabled={bodyBusy || genActive || mediaLocked} onClick={async () => { setImgBusy(true); try { await app.act('article.regenerateImage', { entryId: id }); } catch { /* toasted */ } setImgBusy(false); }}>Regenerate image</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
+          <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <Field label="Describe your image" hint="Describe the cover you want. After generating a custom cover, its direction also guides body images. Generated scenes may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
+          <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
+          {imageError && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageError}</span>}
           <span className="xs sub">Uses {B.profile.business.name}’s colors <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.primary, verticalAlign: -1 }} /> <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.secondary, verticalAlign: -1 }} /> from your Business Profile.</span>
-          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} onGenerate={generateBodyImages} />}
+          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={imgBusy || genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} onGenerate={generateBodyImages} />}
           <VideoPicker vids={vids || []} loading={vidBusy} on={A.videos} onToggle={(v, has) => { setA({ videos: has ? A.videos.filter(x => x !== v.id) : [...A.videos, v.id] }, false); toast(has ? 'Video removed' : 'Video embedded after the first section'); }} />
         </div>}
         {tab === 'sources' && <div className="col">{A.sources.map((s, i) => <div key={i} className="row" style={{ padding: '14px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 10, alignItems: 'flex-start' }}>

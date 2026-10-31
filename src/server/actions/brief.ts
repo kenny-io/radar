@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
 import { db, schema } from '../db';
 import { RadarError } from '../errors';
+import { randomToken } from '../crypto';
 import { bizToday, briefSettingsOf } from '../workspace';
 import { getJob } from '../jobs/queue';
 import { enqueueScan } from '../services/brief/jobs';
@@ -118,7 +119,7 @@ export const actions: ActionMap = {
   /** Add visuals / Change (UPDATE-2026-10-21-image-options §5): set the post's images and make them (job brief.visuals,
    *  ref = date:id). style null = Remove. The choice also becomes the social default (businesses.social_img). */
   'brief.visuals': action({
-    input: z.object({ date: Date_, id: z.string().min(1).max(40), style: z.enum(['editorial', 'flat', 'render3d', 'handdrawn', 'photography']).nullable(), n: z.number().int().min(1).max(4).optional(), range: z.enum(['few', 'many']).optional() }),
+    input: z.object({ date: Date_, id: z.string().min(1).max(40), style: z.enum(['editorial', 'flat', 'render3d', 'handdrawn', 'photography']).nullable(), n: z.number().int().min(1).max(4).optional(), prompt: z.string().trim().min(1, 'Describe the image you want.').max(1000).nullable().optional(), range: z.enum(['few', 'many']).optional() }),
     run: async (ctx, input) => {
       if (input.date < bizToday(ctx.biz)) throw new RadarError(PAST_ERROR, 400, 'read_only');
       // New images would change a scheduled post.
@@ -126,21 +127,37 @@ export const actions: ActionMap = {
       if (ps?.locked) throw lockedError();
       if (ps && ps.pub.status === 'scheduled') throw new RadarError(COPY.unscheduleFirst, 409, 'scheduled');
       // `range` (1–3 / 3–5) is what a page loaded before exact counts sends.
-      const seed = Math.floor(Math.random() * 500) + 1; const count = imgCount(input.n, input.range);
+      const request = randomToken(16);
+      let seed = Math.floor(Math.random() * 500) + 1; const count = imgCount(input.n, input.range);
       const ok = await withDay(ctx.bid, input.date, row => {
         const items = row.items as BriefItem[]; const i = items.findIndex(x => x.id === input.id);
         if (i < 0 || items[i].kind !== 'post' || !isLive(items[i])) return null;
         // 1–4, which fits both X (4) and LinkedIn.
         const n = input.style ? count : 0;
         const next = [...items];
-        next[i] = { ...items[i], img: input.style ? { style: input.style, seed, n, urls: Array(n).fill(null), status: 'generating' } : null };
+        const prior = items[i].img;
+        seed = Math.max(seed, prior?.seed || 0, prior?.pending?.seed || 0) + 1;
+        const prompt = input.prompt === undefined ? prior?.prompt : input.prompt || undefined;
+        // Keep the last complete asset set visible until every custom image has been saved.
+        const pending = input.style && prompt ? { style: input.style, seed, n, prompt } : undefined;
+        const complete = prior?.urls.length && prior.urls.every(Boolean);
+        next[i] = { ...items[i], img: !input.style ? null : pending ? {
+          ...(complete ? prior! : { style: input.style, seed, n, urls: [] }), prompt, pending, status: 'generating',
+        } : { style: input.style, seed, n, urls: Array(n).fill(null), status: 'generating' } };
+        if (next[i].img) next[i].img = { ...next[i].img!, request, jobId: undefined, error: undefined };
         return { items: next, ret: next[i] };
       });
       if (!ok) throw new RadarError('That post wasn’t found.', 404, 'not_found');
       if (!input.style) return { ok: true };
       const img: ImageSettings = { on: true, style: input.style, n: count };
       await db.update(schema.businesses).set({ socialImg: img }).where(eq(schema.businesses.id, ctx.bid));
-      const jobId = await enqueueVisuals(ctx.bid, input.date, input.id, seed);
+      let jobId: string;
+      try { jobId = await enqueueVisuals(ctx.bid, input.date, input.id, seed, request); }
+      catch (error) {
+        await withDay(ctx.bid, input.date, row => ({ items: (row.items as BriefItem[]).map(it => it.id === input.id && it.img?.request === request ? { ...it, img: { ...it.img, status: 'failed' as const } } : it), ret: true }));
+        throw error;
+      }
+      await withDay(ctx.bid, input.date, row => ({ items: (row.items as BriefItem[]).map(it => it.id === input.id && it.img?.request === request ? { ...it, img: { ...it.img, jobId } } : it), ret: true }));
       trackSoon('brief.visuals_added', { bid: ctx.bid, uid: ctx.user.id, ref: input.id, props: { date: input.date, style: input.style, n: ok.img?.n } });
       return { ok: true, jobId, img: ok.img };
     },

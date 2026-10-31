@@ -4,7 +4,7 @@
 import { PlatName, PlatLogo } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/client/app';
-import { AutoText, Btn, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
+import { AutoText, Btn, Field, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
 import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
 import { packKeys } from './PackThumb';
 import { PublishBox } from './channels/PublishBox';
@@ -21,21 +21,26 @@ export function PackView({ pack }: { pack: SocialPack }) {
   const rp = pubOn ? (app.route.params?.plat as Platform | undefined) : undefined;
   const keys = packKeys(pack); const [cur, setCur] = useState<Platform>(rp && keys.includes(rp) ? rp : keys[0]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [directions, setDirections] = useState<Partial<Record<Platform, string>>>({});
+  const [imageErrors, setImageErrors] = useState<Partial<Record<Platform, string>>>({});
+  useEffect(() => { setDirections({}); setImageErrors({}); }, [pack.id]);
   useEffect(() => { if (rp && keys.includes(rp)) setCur(rp); }, [rp]); // eslint-disable-line react-hooks/exhaustive-deps
   const [, tick] = useState(0); useEffect(() => { const iv = setInterval(() => tick(x => x + 1), 30000); return () => clearInterval(iv); }, []);
   const p = pack.posts && pack.posts[cur];
   const headline = (pack as any).headline || pack.source.label;
   const patchPost = (k: Platform, patch: Partial<SocialPost>) => (b: Workspace): Workspace => ({ ...b, social: { ...b.social, packs: b.social.packs.map(x => x.id === pack.id ? { ...x, posts: { ...x.posts, [k]: { ...x.posts[k]!, ...patch } } } : x) } });
-  const regen = async (what: 'text' | 'image') => {
+  const regen = async (what: 'text' | 'image', prompt?: string) => {
     setBusy(b => ({ ...b, [what]: true }));
-    try { await app.act(what === 'text' ? 'social.regenText' : 'social.regenImage', { packId: pack.id, platform: cur }); } catch { /* toasted */ }
+    try { await app.act(what === 'text' ? 'social.regenText' : 'social.regenImage', { packId: pack.id, platform: cur, ...(prompt !== undefined ? { prompt: prompt.trim() } : {}) }); if (what === 'image') { setImageErrors(x => ({ ...x, [cur]: '' })); toast('Image generated'); } } catch (error: any) { if (what === 'image') setImageErrors(x => ({ ...x, [cur]: error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous image is kept. Try again.' })); }
     setBusy(b => ({ ...b, [what]: false }));
   };
   const fname = (k: string) => `${pack.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-${k}`;
   const dlOne = async (k: Platform) => { const q = pack.posts[k]!; const [w, h] = IMG_SIZES[k]; const blob = await visualBlob(q.imageUrl, { style: q.style === 'custom' ? 'illustration' : q.style, brand, headline, seed: q.seed, name: B.profile.business.name }, w, h, app.bid); if (blob) downloadBlob(blob, fname(k) + '.png'); else toast(DL_ERROR, { tone: 'bad' }); return !!blob; };
   const dlAll = async () => { const txt = keys.map(k => `— ${plat(k).l} —\n\n${pack.posts[k]!.text}\n`).join('\n'); downloadBlob(new Blob([txt], { type: 'text/plain' }), fname('copy') + '.txt'); let got = 0; for (const k of keys) { await sleep(250); if (await dlOne(k)) got++; } if (got) toast(`Downloaded copy and ${got} visual${got > 1 ? 's' : ''}. Nothing was posted.`); };
   const len = p ? (pubOn ? charCount('x', p.text) : p.text.length) : 0;
-  const locked = pubOn && !!p && isLocked(p.pub, now);
+  const locked = B.role === 'Viewer' || (pubOn && !!p && isLocked(p.pub, now));
+  const direction = directions[cur] ?? p?.imagePrompt ?? '';
+  const imageDisabled = locked || busy.image;
   return <div className="page">
     <Btn kind="ghost" size="sm" icon="back" onClick={() => go('social')} style={{ marginLeft: -10, marginBottom: 18 }}>Content library</Btn>
     <PageHead title={pack.name} sub={<span>From {pack.source.kind === 'suggest' ? 'a Radar suggestion' : pack.source.kind === 'idea' ? 'an idea' : pack.source.kind === 'url' ? 'an article URL' : 'a Radar article'} · {fmtD(pack.created)}{pack.auto ? ' · Auto-generated' : ''}</span>}>
@@ -60,8 +65,15 @@ export function PackView({ pack }: { pack: SocialPack }) {
         </div>}
         <div className="col" style={{ borderTop: '1px solid var(--line2)' }}>
           <div className="row" style={{ padding: '14px 0', borderBottom: '1px solid var(--line2)' }}><span className="grow small">Text{cur === 'x' && <span className="num" style={{ marginLeft: 8, color: len > 280 ? 'var(--bad)' : 'var(--mute)' }}>{len}/280</span>}</span><Btn size="sm" kind="ghost" icon="refresh" loading={busy.text} disabled={locked} onClick={() => regen('text')}>Regenerate</Btn></div>
-          <div className="row" style={{ padding: '14px 0', borderBottom: '1px solid var(--line2)' }}><span className="grow small">Image · {(STYLES.find(s => s.k === p.style) || STYLES[1]).l}</span><Btn size="sm" kind="ghost" icon="refresh" loading={busy.image} disabled={locked} onClick={() => regen('image')}>Regenerate</Btn></div>
-          <div className="row" style={{ padding: '14px 0' }}><span className="grow small">Style</span><select className="input" style={{ width: 170, height: 34, fontSize: 13 }} value={p.style} disabled={locked} onChange={e => { const style = e.target.value as SocialPost['style']; app.act('social.style', { packId: pack.id, platform: cur, style }, { optimistic: patchPost(cur, { style, imageUrl: null }) }).catch(() => {}); }}>{STYLES.filter(s => s.k !== 'custom').map(s => <option key={s.k} value={s.k}>{s.l}</option>)}</select></div>
+          <div className="row" style={{ padding: '14px 0', borderBottom: '1px solid var(--line2)' }}><span className="grow small">Image · {(STYLES.find(s => s.k === p.style) || STYLES[1]).l}</span><Btn size="sm" kind="ghost" icon="refresh" loading={busy.image} disabled={imageDisabled} onClick={() => regen('image')}>Regenerate</Btn></div>
+          <div className="row" style={{ padding: '14px 0' }}><span className="grow small">Style</span><select className="input" style={{ width: 170, height: 34, fontSize: 13 }} value={p.style} disabled={imageDisabled} aria-label="Image style" onChange={async e => { const style = e.target.value as SocialPost['style']; setBusy(b => ({ ...b, image: true })); try { await app.act('social.style', { packId: pack.id, platform: cur, style }); setImageErrors(x => ({ ...x, [cur]: '' })); } catch (error: any) { setImageErrors(x => ({ ...x, [cur]: error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous image is kept. Try again.' })); } finally { setBusy(b => ({ ...b, image: false })); } }}>{STYLES.filter(s => s.k !== 'custom').map(s => <option key={s.k} value={s.k}>{s.l}</option>)}</select></div>
+        </div>
+        <div className="col" style={{ gap: 12 }}>
+          <Field label="Describe your image" hint="For example: Sobha Sapphire in Dubai at sunset. Generated scenes may differ from the real subject.">
+            <textarea className="input" rows={3} maxLength={1000} value={direction} disabled={imageDisabled} placeholder="Describe the subject, scene and details you want" onChange={e => setDirections(x => ({ ...x, [cur]: e.target.value }))} />
+          </Field>
+          <Btn icon="image" loading={busy.image} disabled={locked || !direction.trim() || direction.trim().length > 1000} onClick={() => regen('image', direction)}>Generate image</Btn>
+          {imageErrors[cur] && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageErrors[cur]}</span>}
         </div>
         {cur === 'reddit' && <p className="xs sub">Includes a disclosure line. Check each community’s self-promotion rules before posting.</p>}
       </div>
