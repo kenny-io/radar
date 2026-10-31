@@ -1,32 +1,35 @@
-# State
+# State: Stripe billing
 
-Branch: `kenny/stripe-billing`, base `5db796b5` (application deployed previously via main `2524537d`). Working in the existing checkout on a separate feature branch; no worktree created.
+Feature branch: `kenny/stripe-billing`. PR https://github.com/kenny-io/radar/pull/17 was explicitly authorized for merge by the owner and merged into main as `29c3fe36fc248c1abb2fb593948e1185b3e6b9ce` on 31 October 2026.
 
 | ID | Owner | Scope | Status |
 |---|---|---|---|
 | A1 | factory-architect | Contracts and setup/security design | verified |
-| E1 | factory-engineer | Account overview, Stripe portal, Billing UI, strict price validation and tests | verified locally |
-| E2 | factory-engineer | Stripe setup/preflight tooling and tests | verified |
-| P1 | PM | Live account configuration, integration/docs/delivery | verified; draft PR17 open |
-| Q1 | factory-qa | Independent acceptance and browser verification | verified locally, final focused suite145/145 |
-| A2 | PM + owner | Runtime keys and Railway configuration | verified; real payment acceptance and feature release pending |
+| E1 | factory-engineer | Account overview, portal, Billing UI, strict price validation | verified and deployed |
+| E2 | factory-engineer | Stripe setup/preflight tooling | verified and deployed |
+| Q1 | factory-qa | Independent local acceptance | verified, 145/145 focused tests |
+| P1 | PM | Live configuration, integration and authorized release | verified |
+| Q3 | factory-qa | Independent production release smoke | verified within authorized scope |
+| A2 | PM + owner | Real Stripe sandbox payment/portal acceptance and paid-access enablement | pending; gate remains off |
 
-Access: user connected Stripe and explicitly selected **Thally live**, then authorized reusing Thally's existing live runtime keys and installing them on Radar Railway. All six Stripe settings were installed and read back independently on web and worker. Read-only billing configuration checks pass. Keys and signing secrets were never displayed or committed. Existing production revision `2524537d` was redeployed successfully to load the values; paid access stays off. See provisioning.md and ignored activation evidence.
+## Released — 31 October 2026
 
-Baseline: typecheck passed; full database suite 728 passed,65 skipped, one known image golden mismatch. See verification.md. Isolated migrated database ready.
+Production https://radar.thally.io. Railway auto-deployments for the exact merged revision both succeeded:
+- Web: `0cbdc2b1-82c3-4115-a79b-cadbaf7a952b`.
+- Worker: `9491e30d-c23b-42d9-8bd4-d844b0299ef7`.
 
-Integrated build/typecheck pass in isolated billing-only snapshot. Full suite779 passed,65 skipped, one exact baseline failure. Subsequent affected copy/setup suites4/4 and22/22 pass. Independent browser QA passes observed states. Review-ready code; not merged/deployed and live billing is not enabled. Existing repository rule requires owner's go-ahead before merging auto-deploying main.
+All 29 billing source/package/script files in the merged revision exactly match the accepted independent QA fingerprint `f6aa391bca9b1d2683a85a71cec98ad4ce88cb37b69f226a63612bf584407690`. Main also retains the separately released homepage work. No configured GitHub CI checks existed; Railway's production build and deploy succeeded.
 
-Final independent source/package/scripts fingerprint: `f6aa391bca9b1d2683a85a71cec98ad4ce88cb37b69f226a63612bf584407690`, exact match between billing-only snapshot and checkout. Final focused database suite145/145 passed. Runtime keys and Railway access have been provided and verified. Real card/3-D Secure/portal acceptance and the feature's merge authorization remain outstanding.
+Independent real Chrome desktop/mobile home and sign-in smoke passed, with no document overflow or broken completed images and the auth logo home link working. New overview/portal routes return 401 with private/no-store headers when signed out; existing authentication boundaries pass. Missing/bad webhook signatures return 400; replaying the existing harmless synthetic event returns 200, with replay confirmed on the new deployment. No new event row, payment, customer or subscription was created during release smoke. Evidence: ignored `.data/stripe-billing/release-qa.json` and release screenshots.
 
-## Delivery
+## Runtime configuration
 
-Application revision `7e9dcda10477e814d78c37c0dee61b7dc0a48263`. Draft PR https://github.com/kenny-io/radar/pull/17 is open, mergeable, attached to this chat, with no configured CI checks. Only billing files committed; concurrent homepage changes left untouched. No feature merge or paid-access enablement. Existing production revision was refreshed successfully with the installed runtime configuration. Next action: verify real Stripe sandbox flows and obtain owner merge go-ahead under existing repository delivery policy.
+The owner explicitly selected Thally live and authorized reusing its existing live runtime keys. All six Stripe settings were securely installed and independently matched on Radar web and worker; read-only billing configuration preflight passes. Keys, signatures and cookies were never displayed or committed. Radar's product, exact $50/month price, dedicated portal and seven-event webhook are documented in provisioning.md. Stripe automatically made the account's first portal configuration its default; Radar uses its explicit configuration ID.
 
-## Runtime configuration verified — 31 October 2026
+## Verification and remaining work
 
-The owner explicitly authorized reusing Thally's live runtime keys and installing them on Radar Railway. All six settings match the secure sources on both services; read-only configuration preflight passes. Both existing-source redeploys succeeded: web `680ccab6-d234-4335-ae40-8c6d603b6bf9`, worker `1bbc3c47-3c1d-4984-a3dd-4eafe4d61ddb`, source `2524537da22eae7644829c05069b3b3320995c83`.
+Local typecheck/build pass. Focused independent billing suite: 145/145 passed. Full suite: 779 passed, 65 skipped and one exact pre-existing raster golden failure; final affected suites rerun after changes. See qa.md and verification.md.
 
-Independent operational QA passed public health/auth boundaries, a signed synthetic unsupported webhook event (200), exact replay (200, deduplication confirmed in filtered logs), and bad signature (400). The smoke test wrote one harmless processed event row and performed no Stripe customer/payment/subscription operation. Evidence is ignored `.data/stripe-billing/activation-qa.json`; no secrets are in this record.
+The code release is complete. `RADAR_BILLING` remains unset/off on both services. There was no authenticated production session, so signed-in Billing UI, real card/3-D Secure, Stripe-delivered payment webhooks and hosted portal actions remain unverified. Next action before enabling paid access: complete real sandbox scenarios, confirm grandfather/tax/recovery settings, then authorize the paid-access rollout. No more feature-merge action remains.
 
-The runtime configuration task is complete. PR #17 remains unmerged; the new billing management UI is not deployed. Paid access remains off. Real Stripe-delivered events, card/3-D Secure and hosted portal acceptance still need a sandbox run before enabling paid access.
+This post-release record is saved on the feature branch only, preserving the tested deployed main revision.
