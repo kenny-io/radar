@@ -1,0 +1,521 @@
+{
+  "atUTC": "2026-11-02T21:25:37.409Z",
+  "base": "http://localhost:3910",
+  "revision": "597b6d64e02147defebe1e049c61f011ae67f23a2a76bc17c295642f1266736c",
+  "passed": [
+    "metadata /",
+    "metadata /features/organic-search",
+    "metadata /features/ai-visibility",
+    "metadata /features/backlinks",
+    "metadata /privacy",
+    "metadata /terms",
+    "metadata /bot",
+    "metadata /signup",
+    "metadata /signin",
+    "unique public titles/descriptions",
+    "image /social/home.png",
+    "image /social/organic-search.png",
+    "image /social/ai-visibility.png",
+    "image /social/backlinks.png",
+    "image /social/privacy.png",
+    "image /social/terms.png",
+    "image /social/bot.png",
+    "image /social/signup.png",
+    "image /social/signin.png",
+    "robots and sitemap",
+    "unknown social card returns actual 404",
+    "context /llms.txt",
+    "context /llms-full.txt",
+    "context /pricing.md",
+    "crawler facebookexternalhit/1.1",
+    "crawler LinkedInBot/1.0",
+    "crawler Twitterbot/1.0",
+    "crawler OAI-SearchBot/1.4",
+    "crawler PerplexityBot/1.0",
+    "crawler Claude-SearchBot/1.0",
+    "crawler Googlebot/2.1",
+    "crawler bingbot/2.0",
+    "crawler Slackbot-LinkExpanding 1.0",
+    "crawler Discordbot/2.0",
+    "crawler WhatsApp/2.24.1",
+    "crawler TelegramBot (like TwitterBot)",
+    "indexing /login",
+    "indexing /start-trial",
+    "indexing /onboarding",
+    "indexing /start",
+    "indexing /dashboard",
+    "indexing /settings",
+    "indexing /calendar",
+    "indexing /social",
+    "indexing /brief",
+    "indexing /performance",
+    "indexing /backlinks",
+    "indexing /profile",
+    "indexing /article/seo-qa-probe",
+    "indexing /api/health",
+    "indexing /api/me",
+    "legacy login redirect preserves return path",
+    "browser 1440 /",
+    "browser 1440 /features/organic-search",
+    "browser 1440 /features/ai-visibility",
+    "browser 1440 /features/backlinks",
+    "browser 1440 /privacy",
+    "browser 1440 /terms",
+    "browser 1440 /bot",
+    "browser 1440 /signup",
+    "browser 1440 /signin",
+    "browser 1440 refresh",
+    "browser 1440 public navigation",
+    "browser 1440 runtime errors",
+    "browser 390 /",
+    "browser 390 /features/organic-search",
+    "browser 390 /features/ai-visibility",
+    "browser 390 /features/backlinks",
+    "browser 390 /privacy",
+    "browser 390 /terms",
+    "browser 390 /bot",
+    "browser 390 /signup",
+    "browser 390 /signin",
+    "browser 390 refresh",
+    "browser 390 public navigation",
+    "browser 390 runtime errors",
+    "browser without JavaScript can read product pricing FAQs",
+    "social cards render at thumbnail size"
+  ],
+  "failed": [],
+  "pages": [
+    {
+      "path": "/",
+      "title": "Radar — Search, AI visibility and social marketing",
+      "description": "Grow beyond your network with Radar by Thally: researched articles, AI visibility checks, social content and relevant conversations. One plan, $50/month.",
+      "canonical": "https://radar.thally.io",
+      "image": "https://radar.thally.io/social/home.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/features/organic-search",
+      "title": "Organic search and content marketing · Radar",
+      "description": "Plan, research and publish articles for keywords your site can realistically win. Review every draft or enable blog autopilot in Radar by Thally.",
+      "canonical": "https://radar.thally.io/features/organic-search",
+      "image": "https://radar.thally.io/social/organic-search.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/features/ai-visibility",
+      "title": "AI visibility tracking across five assistants · Radar",
+      "description": "Track whether ChatGPT, Perplexity, Gemini, Claude and Grok mention your business. See cited sites and turn missing answers into content with Radar.",
+      "canonical": "https://radar.thally.io/features/ai-visibility",
+      "image": "https://radar.thally.io/social/ai-visibility.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/features/backlinks",
+      "title": "Optional, approved backlinks network · Radar",
+      "description": "Join Radar’s optional backlinks network. Review relevant matches, approve placements and keep links disclosed. Joining is free; rankings are never guaranteed.",
+      "canonical": "https://radar.thally.io/features/backlinks",
+      "image": "https://radar.thally.io/social/backlinks.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/privacy",
+      "title": "Privacy Policy — Radar by Thally",
+      "description": "How Radar, a Thally product operated by Fairspleet LLC, collects and uses account, business, billing and connected-service data, and your privacy choices.",
+      "canonical": "https://radar.thally.io/privacy",
+      "image": "https://radar.thally.io/social/privacy.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/terms",
+      "title": "Terms of Service — Radar by Thally",
+      "description": "Read Radar’s terms for accounts, the three-day trial, card confirmation, subscriptions, publishing and cancellation. Operated by Fairspleet LLC.",
+      "canonical": "https://radar.thally.io/terms",
+      "image": "https://radar.thally.io/social/terms.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/bot",
+      "title": "RadarBot crawler information — Radar by Thally",
+      "description": "Learn why RadarBot visits customer websites, how it identifies itself, respects robots.txt and crawl delays, and how to control or report its access.",
+      "canonical": "https://radar.thally.io/bot",
+      "image": "https://radar.thally.io/social/bot.png",
+      "robots": "index, follow"
+    },
+    {
+      "path": "/signup",
+      "title": "Create your account · Radar",
+      "description": "Create your Radar account to plan content, track AI visibility and manage search and social marketing. Review the trial and pricing terms before subscribing.",
+      "canonical": "https://radar.thally.io/signup",
+      "image": "https://radar.thally.io/social/signup.png",
+      "robots": "noindex, follow",
+      "xRobots": "noindex, follow"
+    },
+    {
+      "path": "/signin",
+      "title": "Sign in · Radar",
+      "description": "Sign in to Radar by Thally to manage your business profile, content calendar, search performance, AI visibility, social posts and subscription.",
+      "canonical": "https://radar.thally.io/signin",
+      "image": "https://radar.thally.io/social/signin.png",
+      "robots": "noindex, follow",
+      "xRobots": "noindex, follow"
+    }
+  ],
+  "images": [
+    {
+      "url": "https://radar.thally.io/social/home.png",
+      "bytes": 69133,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/organic-search.png",
+      "bytes": 69332,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/ai-visibility.png",
+      "bytes": 69737,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/backlinks.png",
+      "bytes": 77853,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/privacy.png",
+      "bytes": 65553,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/terms.png",
+      "bytes": 67373,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/bot.png",
+      "bytes": 60124,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/signup.png",
+      "bytes": 70453,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    },
+    {
+      "url": "https://radar.thally.io/social/signin.png",
+      "bytes": 63990,
+      "width": 1200,
+      "height": 630,
+      "type": "image/png"
+    }
+  ],
+  "browser": [
+    {
+      "path": "/",
+      "width": 1440,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "h1": [
+        "You built it.Let people and AI find it."
+      ],
+      "schemaBlocks": 1,
+      "overflow": false
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 1440,
+      "title": "Organic search and content marketing · Radar",
+      "h1": [
+        "Get found in Google, even on a new domain."
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 1440,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "h1": [
+        "Get discovered by AI, not just Google."
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 1440,
+      "title": "Optional, approved backlinks network · Radar",
+      "h1": [
+        "Build reputation with founders like you, honestly."
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/privacy",
+      "width": 1440,
+      "title": "Privacy Policy — Radar by Thally",
+      "h1": [
+        "Privacy Policy"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/terms",
+      "width": 1440,
+      "title": "Terms of Service — Radar by Thally",
+      "h1": [
+        "Terms of Service"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/bot",
+      "width": 1440,
+      "title": "RadarBot crawler information — Radar by Thally",
+      "h1": [
+        "RadarBot"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/signup",
+      "width": 1440,
+      "title": "Create your account · Radar",
+      "h1": [
+        "Create your account"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/signin",
+      "width": 1440,
+      "title": "Sign in · Radar",
+      "h1": [
+        "Sign in"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "h1": [
+        "You built it.Let people and AI find it."
+      ],
+      "schemaBlocks": 1,
+      "overflow": false
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 390,
+      "title": "Organic search and content marketing · Radar",
+      "h1": [
+        "Get found in Google, even on a new domain."
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 390,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "h1": [
+        "Get discovered by AI, not just Google."
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 390,
+      "title": "Optional, approved backlinks network · Radar",
+      "h1": [
+        "Build reputation with founders like you, honestly."
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/privacy",
+      "width": 390,
+      "title": "Privacy Policy — Radar by Thally",
+      "h1": [
+        "Privacy Policy"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/terms",
+      "width": 390,
+      "title": "Terms of Service — Radar by Thally",
+      "h1": [
+        "Terms of Service"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/bot",
+      "width": 390,
+      "title": "RadarBot crawler information — Radar by Thally",
+      "h1": [
+        "RadarBot"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/signup",
+      "width": 390,
+      "title": "Create your account · Radar",
+      "h1": [
+        "Create your account"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    },
+    {
+      "path": "/signin",
+      "width": 390,
+      "title": "Sign in · Radar",
+      "h1": [
+        "Sign in"
+      ],
+      "schemaBlocks": 0,
+      "overflow": false
+    }
+  ],
+  "robots": "User-Agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://radar.thally.io/sitemap.xml\n",
+  "sitemapUrls": [
+    "https://radar.thally.io/",
+    "https://radar.thally.io/features/organic-search",
+    "https://radar.thally.io/features/ai-visibility",
+    "https://radar.thally.io/features/backlinks",
+    "https://radar.thally.io/privacy",
+    "https://radar.thally.io/terms",
+    "https://radar.thally.io/bot"
+  ],
+  "/llms.txt": {
+    "bytes": 2433,
+    "links": [
+      "https://radar.thally.io/",
+      "https://radar.thally.io/features/organic-search",
+      "https://radar.thally.io/features/ai-visibility",
+      "https://radar.thally.io/features/backlinks",
+      "https://radar.thally.io/pricing.md",
+      "https://radar.thally.io/#pricing",
+      "https://radar.thally.io/privacy",
+      "https://radar.thally.io/terms",
+      "https://radar.thally.io/bot",
+      "https://thally.io",
+      "https://radar.thally.io/llms-full.txt",
+      "https://radar.thally.io/sitemap.xml"
+    ]
+  },
+  "/llms-full.txt": {
+    "bytes": 5936,
+    "links": [
+      "https://radar.thally.io/",
+      "https://radar.thally.io/features/organic-search",
+      "https://radar.thally.io/features/ai-visibility",
+      "https://radar.thally.io/features/backlinks",
+      "https://radar.thally.io/pricing.md",
+      "https://radar.thally.io/#pricing",
+      "https://radar.thally.io/privacy",
+      "https://radar.thally.io/terms",
+      "https://radar.thally.io/bot",
+      "https://thally.io",
+      "https://radar.thally.io/llms-full.txt",
+      "https://radar.thally.io/sitemap.xml",
+      "https://radar.thally.io/#pricing",
+      "https://radar.thally.io/terms",
+      "https://radar.thally.io/privacy",
+      "https://radar.thally.io/"
+    ]
+  },
+  "/pricing.md": {
+    "bytes": 1744,
+    "links": [
+      "https://radar.thally.io/#pricing",
+      "https://radar.thally.io/terms",
+      "https://radar.thally.io/privacy",
+      "https://radar.thally.io/"
+    ]
+  },
+  "schema": [
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://radar.thally.io/#organization",
+          "name": "Thally",
+          "legalName": "Fairspleet LLC",
+          "url": "https://thally.io",
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "contactType": "customer support",
+              "email": "support@thally.io"
+            },
+            {
+              "@type": "ContactPoint",
+              "contactType": "legal and privacy",
+              "email": "team@thally.io"
+            }
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://radar.thally.io/#website",
+          "name": "Radar by Thally",
+          "url": "https://radar.thally.io/",
+          "inLanguage": "en",
+          "publisher": {
+            "@id": "https://radar.thally.io/#organization"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://radar.thally.io/#software",
+          "name": "Radar",
+          "url": "https://radar.thally.io/",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "publisher": {
+            "@id": "https://radar.thally.io/#organization"
+          },
+          "description": "Search and social marketing software for small businesses: researched articles, AI visibility tracking, social content and relevant conversations.",
+          "offers": {
+            "@type": "Offer",
+            "url": "https://radar.thally.io/#pricing",
+            "priceCurrency": "USD",
+            "price": 50,
+            "description": "$1 card-confirmation payment, credited toward the first month; 3-day trial; $49 first monthly invoice after the credit, then $50/month. Cancel before the trial ends to avoid the monthly subscription charge."
+          }
+        }
+      ]
+    }
+  ]
+}

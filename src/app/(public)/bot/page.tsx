@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
+import { metadataFor } from '@/lib/seo';
 import { LegalPage, Contact } from '../LegalPage';
 
-export const metadata: Metadata = { title: 'RadarBot — Radar' };
+export const metadata = metadataFor('/bot');
 export const dynamic = 'force-dynamic';
 
 export default function BotPage() {

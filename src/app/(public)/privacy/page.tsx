@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
+import { metadataFor } from '@/lib/seo';
 import { LegalPage, Contact, Operator } from '../LegalPage';
 
-export const metadata: Metadata = { title: 'Privacy Policy — Radar' };
+export const metadata = metadataFor('/privacy');
 export const dynamic = 'force-dynamic';
 
 export default function PrivacyPage() {

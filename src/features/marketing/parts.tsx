@@ -18,6 +18,6 @@ export function Closing({ headline }: { headline?: React.ReactNode } = {}) {
 
 export function Footer({ bot }: { bot?: boolean }) {
   return <footer className="foot">
-    <div className="wrap foot-in"><span className="brand"><RadarMark s={18} />Radar</span><nav className="foot-l" aria-label="Footer"><Link href="/features/organic-search">Organic search</Link><Link href="/features/ai-visibility">AI visibility</Link><Link href="/features/backlinks">Backlinks</Link><a href="/signin">Sign in</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a>{bot && <a href="/bot">RadarBot</a>}</nav><span className="foot-c">Product images show illustrative data.</span></div></footer>;
+    <div className="wrap foot-in"><span className="brand"><RadarMark s={18} />Radar</span><nav className="foot-l" aria-label="Footer"><Link href="/features/organic-search">Organic search</Link><Link href="/features/ai-visibility">AI visibility</Link><Link href="/features/backlinks">Backlinks</Link><a href="/signin">Sign in</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a>{bot && <a href="/bot">RadarBot</a>}</nav><span className="foot-c">A product of <a href="https://thally.io">Thally</a>. Product images show illustrative data.</span></div></footer>;
 }
 
