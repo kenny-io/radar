@@ -55,6 +55,7 @@ export function metadataFor(path: SeoPath): Metadata {
 
 export const ROOT_METADATA: Metadata = {
   metadataBase: new URL(SITE_ORIGIN), title: SITE_NAME,
+  verification: { other: { 'msvalidate.01': 'D4A4779CD5B1653E37E2C6038ABA2F5E' } },
   description: 'Search, AI visibility and social marketing for your business, from Radar by Thally.',
   // Public routes explicitly opt in. New account/workspace routes remain non-indexable by default.
   robots: { index: false, follow: true },
