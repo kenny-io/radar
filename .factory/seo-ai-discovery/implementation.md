@@ -27,3 +27,11 @@ No migration, runtime variable or secret change needed. Commit the static PNGs t
 ## A2 architecture correction
 
 The social workspace header is exact `/social`, rather than `/social/:path*`, so the public PNG assets under `/social/` do not inherit noindex. Regression coverage asserts this boundary. After the correction, typecheck, all eight focused tests and whitespace checks passed again.
+
+## E2 production metadata-streaming correction
+
+Production QA found AI/search identities received metadata streamed into body despite social crawlers receiving a complete head. Architect approved Next's documented top-level `htmlLimitedBots: /.*/` configuration. The correction disables metadata streaming for normal nonempty user-agent identities, ensuring AI/search/social consumers receive metadata in the initial head. Root/account privacy guards, routes, prices and assets are unchanged.
+
+Added a regression invoking the installed Next `shouldServeStreamingMetadata` decision function against 13 AI, search, social, browser and future-crawler identities. Typecheck, all nine focused tests and whitespace checks passed. Source fingerprint across the same 425-file set: `271e5a6532471d504dc0197f27ec8b5e85e445153c31ba987332957cc0f076e9`.
+
+Installed Next internally treats an empty/missing User-Agent separately (streams despite the configured regexp); this bounded documented fix covers normal identified crawlers and browsers. PM/QA own production-mode rebuild and live initial-head matrix; no deployment or acceptance claim is made by the engineer.

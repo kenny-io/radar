@@ -9,8 +9,18 @@ import { GET as getLlms } from '../app/llms.txt/route';
 import { GET as getFullLlms } from '../app/llms-full.txt/route';
 import { GET as getPricing } from '../app/pricing.md/route';
 import nextConfig from '../../next.config';
+import { shouldServeStreamingMetadata } from 'next/dist/server/lib/streaming-metadata';
 
 describe('public SEO boundaries', () => {
+  it('keeps initial-head metadata blocking for AI, search, social and future crawler identities', () => {
+    // Exercise the installed Next decision function, not just a regexp snapshot. Default bot detection
+    // streamed metadata into body for several AI/search crawlers during the production acceptance run.
+    const pattern = nextConfig.htmlLimitedBots?.source;
+    expect(pattern).toBeDefined();
+    for (const ua of ['OAI-SearchBot/1.4', 'PerplexityBot/1.0', 'Claude-SearchBot/1.0', 'Googlebot/2.1', 'bingbot/2.0', 'Twitterbot/1.0', 'facebookexternalhit/1.1', 'LinkedInBot/1.0', 'Slackbot/1.0', 'Discordbot/2.0', 'WhatsApp/2.0', 'FutureSearchCrawler/1.0', 'Mozilla/5.0']) {
+      expect(shouldServeStreamingMetadata(ua, pattern), ua).toBe(false);
+    }
+  });
   it('indexes only the explicit public route allowlist, never accounts or customer resources', () => {
     const urls = sitemap().map(p => p.url);
     expect(urls).toEqual(['/', '/features/organic-search', '/features/ai-visibility', '/features/backlinks', '/privacy', '/terms', '/bot'].map(absoluteUrl));

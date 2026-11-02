@@ -1,0 +1,54 @@
+{
+  "atUTC": "2026-11-02T21:29:59.594Z",
+  "revision": "84316883d4ad3aef16be5eea8c5a3f2f5d57e450",
+  "rows": [
+    {
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 1508,
+      "canonicalOffset": 54864,
+      "ogImageOffset": 55363,
+      "headCanonical": 0,
+      "bodyCanonical": 1,
+      "fullCanonical": "https://radar.thally.io",
+      "headOgImage": 0,
+      "bodyOgImage": 1
+    },
+    {
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 1508,
+      "canonicalOffset": 54864,
+      "ogImageOffset": 55363,
+      "headCanonical": 0,
+      "bodyCanonical": 1,
+      "fullCanonical": "https://radar.thally.io",
+      "headOgImage": 0,
+      "bodyOgImage": 1
+    },
+    {
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 1508,
+      "canonicalOffset": 54864,
+      "ogImageOffset": 55363,
+      "headCanonical": 0,
+      "bodyCanonical": 1,
+      "fullCanonical": "https://radar.thally.io",
+      "headOgImage": 0,
+      "bodyOgImage": 1
+    },
+    {
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 1508,
+      "canonicalOffset": 54864,
+      "ogImageOffset": 55363,
+      "headCanonical": 0,
+      "bodyCanonical": 1,
+      "fullCanonical": "https://radar.thally.io",
+      "headOgImage": 0,
+      "bodyOgImage": 1
+    }
+  ]
+}
