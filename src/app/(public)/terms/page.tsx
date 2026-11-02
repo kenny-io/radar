@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import { metadataFor } from '@/lib/seo';
 import Link from 'next/link';
 import { LegalPage, Contact, Operator } from '../LegalPage';
 
-export const metadata: Metadata = { title: 'Terms of Service — Radar' };
+export const metadata = metadataFor('/terms');
 export const dynamic = 'force-dynamic';
 
 export default function TermsPage() {

@@ -1,4 +1,5 @@
-import type { Metadata, Viewport } from 'next';
+import type { Viewport } from 'next';
+import { ROOT_METADATA } from '@/lib/seo';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import '@fontsource/roboto/500.css'; // Google sign-in button spec (Roboto Medium 14px), bundled locally
@@ -6,7 +7,7 @@ import { ToastHost } from '@/components/ui';
 import { currentUser } from '@/server/auth/session';
 import './radar.css';
 
-export const metadata: Metadata = { title: 'Radar', description: 'Search and social marketing that runs on what makes your business yours.' };
+export const metadata = ROOT_METADATA;
 export const viewport: Viewport = {
   width: 'device-width', initialScale: 1, colorScheme: 'light dark',
   themeColor: [{ media: '(prefers-color-scheme: light)', color: '#fbfbf9' }, { media: '(prefers-color-scheme: dark)', color: '#141518' }],

@@ -13,6 +13,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
     "typecheck": "tsc --noEmit",
+    "seo:cards": "node --import tsx scripts/generate-social-cards.ts",
     "test": "vitest run",
     "lint": "tsc --noEmit",
     "db:push": "drizzle-kit push --force",

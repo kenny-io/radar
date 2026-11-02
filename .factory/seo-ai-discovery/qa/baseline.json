@@ -1,0 +1,136 @@
+{
+  "atUTC": "2026-11-02T21:20:04.366286+00:00",
+  "environment": "production-read-only-before-change",
+  "revision": "e981adb79b386687c9b57716c88aa775a9851a8b per PM",
+  "base": "https://radar.thally.io",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "Radar carries what you built beyond your network: into Google, AI answers, and the conversations where people ask for it."
+        }
+      ]
+    },
+    {
+      "path": "/features/organic-search",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "A month of articles aimed at keywords your site can actually win, researched from your Business Profile and published where your site lives."
+        }
+      ]
+    },
+    {
+      "path": "/features/ai-visibility",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "See whether ChatGPT, Perplexity, Gemini, Claude and Grok mention your product, and turn every gap into an article."
+        }
+      ]
+    },
+    {
+      "path": "/features/backlinks",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "An optional network of businesses that link to each other only where it genuinely helps readers. Every link approved and disclosed."
+        }
+      ]
+    },
+    {
+      "path": "/privacy",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "Search and social marketing that runs on what makes your business yours."
+        }
+      ]
+    },
+    {
+      "path": "/terms",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "Search and social marketing that runs on what makes your business yours."
+        }
+      ]
+    },
+    {
+      "path": "/bot",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "Search and social marketing that runs on what makes your business yours."
+        }
+      ]
+    },
+    {
+      "path": "/signup",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "Search and social marketing that runs on what makes your business yours."
+        }
+      ]
+    },
+    {
+      "path": "/signin",
+      "status": 200,
+      "type": "text/html; charset=utf-8",
+      "xRobots": null,
+      "tags": [
+        {
+          "name": "description",
+          "content": "Search and social marketing that runs on what makes your business yours."
+        }
+      ]
+    },
+    {
+      "path": "/robots.txt",
+      "status": 404
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 404
+    },
+    {
+      "path": "/llms.txt",
+      "status": 404
+    },
+    {
+      "path": "/llms-full.txt",
+      "status": 404
+    },
+    {
+      "path": "/pricing.md",
+      "status": 404
+    }
+  ]
+}
