@@ -12,7 +12,7 @@ const D = (iso: string | null, w?: boolean) => `[${w ? 'DW' : 'D'}:${iso}]`;
 const text = (parts: any[] | null) => (parts || []).join('');
 
 describe('trial page copy (handoff §4)', () => {
-  it('trial mode reads exactly as designed, with every date from trial_end', () => {
+  it('trial mode discloses the credit, renewal and cancellation deadline, with every date from trial_end', () => {
     const c = trialCopy(base, D, () => 'x');
     expect(c.h1).toBe('Start your free trial');
     expect(c.sub).toBe('3 days free, then $50/month. Every feature included.');
@@ -23,7 +23,7 @@ describe('trial page copy (handoff §4)', () => {
     ]);
     expect(c.button).toBe('Pay $1 and start trial');
     expect(c.busy).toBe('Confirming your card…');
-    expect(text(c.fine)).toBe('The $1 payment confirms your card works. Your trial starts once it goes through, and $50/month begins on [DW:2026-10-28T15:00:00Z].');
+    expect(text(c.fine)).toBe('The $1 payment confirms your card works and is credited toward your first monthly bill. Your trial starts once it goes through. Your first monthly bill is $49 on [DW:2026-10-28T15:00:00Z], then $50/month. Cancel in Billing before your trial ends to avoid the monthly subscription charge.');
     expect(c.fine!.join('')).not.toContain('sample card');
     expect(c.doneH1).toBe('Your free trial has started.');
     expect(c.doneHref).toBe('/dashboard?started=trial');

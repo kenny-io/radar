@@ -17,15 +17,18 @@ export function Signup({ mode = 'signup', pending = null }: { mode?: 'signup' | 
   const signin = mode === 'signin';
   const sp = useSearchParams();
   const [f, setF] = useState({ name: '', email: '', pw: '' }); const [err, setErr] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false);
+  // SSR must not offer a native form submission before React attaches the JSON authentication handler.
+  const [mounted, setMounted] = useState(false); useEffect(() => setMounted(true), []);
   const rawNext = sp?.get('next') || '';
   const safeNext = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '';
   const next = safeNext || '/dashboard';
   useEffect(() => { if (sp?.get('error') === 'google') setErr({ email: GOOGLE_ERR }); }, [sp]);
   const submit = async (e?: React.FormEvent) => {
-    e && e.preventDefault(); const er: Record<string, string> = {};
+    e && e.preventDefault(); if (!mounted || busy) return; const er: Record<string, string> = {};
     if (!signin && !f.name.trim()) er.name = 'Add your name';
-    if (!EMAIL_RE.test(f.email)) er.email = 'Enter a valid email';
+    if (!EMAIL_RE.test(f.email.trim())) er.email = 'Enter a valid email';
     if (signin ? !f.pw : f.pw.length < 8) er.pw = signin ? 'Enter your password' : 'Use at least 8 characters';
+    if (!signin && new TextEncoder().encode(f.pw).length > 72) er.pw = 'Use a password of 72 bytes or fewer (some characters use more than one byte).';
     setErr(er); if (Object.keys(er).length) return;
     setBusy(true);
     try {
@@ -37,8 +40,8 @@ export function Signup({ mode = 'signup', pending = null }: { mode?: 'signup' | 
       if (x instanceof ApiError && x.errors) setErr(x.errors); else setErr({ pw: (x as Error).message || 'Radar couldn’t finish this. Try again.' });
     }
   };
-  const google = () => { setBusy(true); window.location.href = '/api/auth/google/start?next=' + encodeURIComponent(next); };
-  const hint = (k: string) => err[k] && <span style={{ color: 'var(--bad)' }}>{err[k]}</span>;
+  const google = () => { if (!mounted || busy) return; setBusy(true); window.location.href = '/api/auth/google/start?next=' + encodeURIComponent(next); };
+  const hint = (k: string) => err[k] && <span role="alert" style={{ color: 'var(--bad)' }}>{err[k]}</span>;
   const q = rawNext ? '?next=' + encodeURIComponent(next) : '';
   return <AuthShell energy={.35} art={<><span style={{ fontSize: 'clamp(32px,4.4vw,56px)', lineHeight: 1.02, fontWeight: 600, letterSpacing: '-0.045em', textWrap: 'balance' } as React.CSSProperties}>Be found by the people looking for you.</span><span style={{ color: 'var(--ink2)', marginTop: 14, fontSize: 15 }}>Search and social marketing that runs on what makes your business yours.</span></>}>
     <form className="col enter" style={{ gap: 18, maxWidth: 380, width: '100%', margin: '0 auto', position: 'relative' }} onSubmit={submit} noValidate>
@@ -47,16 +50,18 @@ export function Signup({ mode = 'signup', pending = null }: { mode?: 'signup' | 
         ? <div className="col" style={{ gap: 6, marginBottom: 6 }}><h1 className="h1">Sign in</h1></div>
         : <div className="col" style={{ gap: 6, marginBottom: 6 }}><h1 className="h1">{pending ? 'Save your Business Profile' : 'Create your account'}</h1><p className="sub">{pending ? <>Create an account to keep <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{pending.name}</span> and open your dashboard.</> : 'Set up your Business Profile, then start your 3-day free trial.'}</p></div>}
       {pending && !signin && <div className="row" style={{ gap: 12, padding: '12px 14px', borderRadius: 14, background: 'var(--surface)', boxShadow: '0 0 0 1px var(--line)' }}><LogoTile brand={pending.brand} s={34} /><span className="col grow" style={{ minWidth: 0, lineHeight: 1.3 }}><span className="small trunc" style={{ fontWeight: 500 }}>{pending.name}</span><span className="xs sub trunc">{pending.domain}</span></span><Status tone="ok">Ready</Status></div>}
-      <GoogleButton onClick={google} disabled={busy}>Continue with Google</GoogleButton>
+      <GoogleButton onClick={google} disabled={!mounted || busy}>Continue with Google</GoogleButton>
       <div className="row xs sub" style={{ gap: 12 }}><hr className="hair grow" />or<hr className="hair grow" /></div>
-      {!signin && <Field label="Name" hint={hint('name')}><input className={'input' + (err.name ? ' err' : '')} autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>}
-      <Field label="Work email" hint={hint('email')}><input className={'input' + (err.email ? ' err' : '')} type="email" autoComplete="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
-      <Field label="Password" hint={err.pw ? hint('pw') : signin ? null : 'At least 8 characters'}><input className={'input' + (err.pw ? ' err' : '')} type="password" autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>
-      <Btn kind="primary" size="lg" className="btn-block" type="submit" loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
+      {!signin && <Field label="Name" hint={hint('name')}><input className={'input' + (err.name ? ' err' : '')} disabled={!mounted} autoComplete="name" maxLength={200} value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>}
+      <Field label="Work email" hint={hint('email')}><input className={'input' + (err.email ? ' err' : '')} disabled={!mounted} type="email" autoComplete="email" maxLength={320} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
+      <Field label="Password" hint={err.pw ? hint('pw') : signin ? null : 'At least 8 characters'}><input className={'input' + (err.pw ? ' err' : '')} disabled={!mounted} type="password" maxLength={signin ? 1024 : 256} autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>
+      <Btn kind="primary" size="lg" className="btn-block" type="submit" disabled={!mounted} loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
       {signin
         ? <p className="xs sub" style={{ textAlign: 'center' }}>New to Radar? <a href={'/signup' + q}>Create account</a></p>
         : <p className="xs sub" style={{ textAlign: 'center' }}>Already have an account? <a href={'/signin' + q}>Sign in</a></p>}
-      <p className="xs" style={{ textAlign: 'center', color: 'var(--faint)', marginTop: 8 }}><a href="/privacy" style={{ color: 'inherit' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit' }}>Terms</a></p>
+      <p className="xs" style={{ textAlign: 'center', color: 'var(--faint)', marginTop: 8 }}>{signin
+        ? <><a href="/privacy" style={{ color: 'inherit' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit' }}>Terms</a></>
+        : <>By creating an account or continuing with Google, you agree to the <a href="/terms" style={{ color: 'inherit' }}>Terms</a> and acknowledge the <a href="/privacy" style={{ color: 'inherit' }}>Privacy Policy</a>.</>}</p>
     </form>
   </AuthShell>;
 }

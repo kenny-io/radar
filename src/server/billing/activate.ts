@@ -121,10 +121,11 @@ export async function activateIn(p: BillingProvider, tx: Tx, later: Later, pi: P
     later.push(() => track('trial.started', { uid, ref: subId, props: { via } }));
   }
   if (!a.trialCreditedAt) {
-    try {
-      await p.creditBalance(customer, FEE_CENTS, 'Card confirmation credit', `radar:credit:${pi.id}`);
-      await tx.update(A).set({ trialCreditedAt: new Date() }).where(eq(A.userId, uid));
-    } catch (e: any) { console.error(`[billing] card confirmation credit for ${pi.id} failed; retried on the next activation:`, e?.message); }
+    // The credit is part of the advertised price. A failure must keep the webhook unprocessed so Stripe retries it.
+    // If the transaction rolls back after subscription creation, the next activation adopts that subscription; the
+    // credit uses the same idempotency key even if its provider request succeeded before a network failure.
+    await p.creditBalance(customer, FEE_CENTS, 'Card confirmation credit', `radar:credit:${pi.id}`);
+    await tx.update(A).set({ trialCreditedAt: new Date() }).where(eq(A.userId, uid));
   }
   return { subId, committed };
 }

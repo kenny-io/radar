@@ -13,6 +13,8 @@ import { POST as WEBHOOK } from '@/app/api/billing/webhook/route';
 import { processEvent } from './webhook';
 import { signPayload } from './signature';
 import { stubProvider, stubReset, stubSetStatus, stubState } from './stub';
+import { setStripeDepsForTests, stripeProvider } from './stripe';
+import { billingOverview } from './overview';
 
 const ON = !!process.env.DATABASE_URL;
 const F = new Fixtures();
@@ -91,6 +93,29 @@ describe.skipIf(!ON)('webhook sync (stub, database)', () => {
     await payOpenInvoice(sub); const newer = subEvent('customer.subscription.updated', sub);
     await processEvent(newer); await processEvent(older);
     expect((await account(u.id)).status).toBe('active');
+  });
+
+  it('persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date', async () => {
+    const { u, sub, cus } = await trialing();
+    let current: { id: string; customer: string; status: string; cancel_at_period_end: boolean; cancel_at: number | null;
+      canceled_at: number; ended_at: null; created: number; trial_end: number;
+      items: { data: { current_period_start: number; current_period_end: number }[] } } = { id: sub, customer: cus, status: 'trialing', cancel_at_period_end: false, cancel_at: 1793911362,
+      canceled_at: 1793652415, ended_at: null, created: 1793652168, trial_end: 1793911362,
+      items: { data: [{ current_period_start: 1793652168, current_period_end: 1793911362 }] } };
+    setStripeDepsForTests({ secretKey: () => 'sk_test_mapping_fixture', apiVersion: () => '2026-05-27.dahlia',
+      fetch: async () => new Response(JSON.stringify(current), { headers: { 'content-type': 'application/json' } }) });
+    vi.spyOn(stubProvider, 'getSubscription').mockImplementation(id => stripeProvider.getSubscription(id));
+    const event = D.event('customer.subscription.updated', { id: sub, object: 'subscription', customer: cus });
+    expect(await processEvent(event)).toBe('processed');
+    expect(await billingOverview(u)).toMatchObject({ status: 'trialing', cancelAtPeriodEnd: true, currentPeriodEnd: '2026-11-05T20:42:42.000Z' });
+    expect(await processEvent(event)).toBe('replay');
+    // Clearing the schedule and later terminal state clear the persisted warning; canceled_at is historical only.
+    current = { ...current, cancel_at: null };
+    await processEvent(D.event('customer.subscription.updated', { id: sub, customer: cus }));
+    expect((await account(u.id)).cancelAtPeriodEnd).toBe(false);
+    current = { ...current, status: 'canceled', cancel_at: 1793911362, cancel_at_period_end: true };
+    await processEvent(D.event('customer.subscription.deleted', { id: sub, customer: cus }));
+    expect(await billingOverview(u)).toMatchObject({ status: 'canceled', cancelAtPeriodEnd: false, currentPeriodEnd: '2026-11-05T20:42:42.000Z' });
   });
 
   it('an event for an old subscription (or the old trial $1) never regresses a restarted account', async () => {

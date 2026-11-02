@@ -11,6 +11,7 @@ import { encrypt, randomToken } from '../crypto';
 import { Fixtures, uniq, type TUser } from '../testing/fixtures';
 import { GUEST_COOKIE, SESSION_COOKIE, hashPassword } from './session';
 import { claimGuest } from './claim';
+import { GOOGLE_STATE_COOKIE } from './googleState';
 import { BIZ_COOKIE, getMe } from './users';
 import { POST as SIGNUP } from '@/app/api/auth/signup/route';
 import { POST as SIGNIN } from '@/app/api/auth/signin/route';
@@ -18,7 +19,7 @@ import { GET as GOOGLE } from '@/app/api/auth/google/callback/route';
 
 const ON = !!process.env.DATABASE_URL;
 const F = new Fixtures();
-const post = (fn: any, body: any) => fn(new Request('http://t/api/auth', { method: 'POST', body: JSON.stringify(body) }));
+const post = (fn: any, body: any) => fn(new Request('http://t/api/auth', { method: 'POST', headers: { 'x-real-ip': `claim-${uniq()}` }, body: JSON.stringify(body) }));
 const S = schema;
 afterEach(() => { delete process.env.RADAR_BILLING; H.jar.clear(); });
 
@@ -101,6 +102,7 @@ describe.skipIf(!ON)('claim (database)', () => {
     await F.biz(u, { status: 'active', createdAt: new Date(Date.now() - 864e5) });
     const { d } = await guestWithDraft({ saved: true });
     const state = randomToken(8);
+    H.jar.set(GOOGLE_STATE_COOKIE, state);
     await db.insert(S.oauthStates).values({ state, provider: 'google-signin', data: { next: '/' } });
     const r = await GOOGLE(new Request(`http://t/api/auth/google/callback?state=${state}&code=${encodeURIComponent('dev:' + u.email)}`));
     const to = new URL(r.headers.get('location')!);
@@ -113,6 +115,7 @@ describe.skipIf(!ON)('claim (database)', () => {
     const { g, d } = await guestWithDraft();
     const email = `g-${uniq()}@test.local`;
     const state = randomToken(8);
+    H.jar.set(GOOGLE_STATE_COOKIE, state);
     await db.insert(S.oauthStates).values({ state, provider: 'google-signin', data: { next: '/' } });
     const r = await GOOGLE(new Request(`http://t/api/auth/google/callback?state=${state}&code=${encodeURIComponent('dev:' + email)}`));
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);

@@ -20,10 +20,14 @@ export function LegalPage({ title, updated, children }: { title: string; updated
 }
 
 export function contactEmail() {
-  return process.env.SUPPORT_INBOX || process.env.MAIL_FROM?.replace(/^.*<|>.*$/g, '') || '';
+  return 'support@thally.io';
 }
 
-export function Contact() {
-  const email = contactEmail();
-  return email ? <a href={`mailto:${email}`}>{email}</a> : <span>the support address shown in the app</span>;
+export function Contact({ legal = false }: { legal?: boolean }) {
+  const email = legal ? 'team@thally.io' : contactEmail();
+  return <a href={`mailto:${email}`}>{email}</a>;
+}
+
+export function Operator() {
+  return <p>Radar is a product of Fairspleet LLC, the company behind <a href="https://thally.io">Thally</a>. Our mailing address is 348 Business Bay, Dubai, UAE.</p>;
 }

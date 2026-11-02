@@ -183,7 +183,8 @@ export async function openrouterChat(body: any, opts: { timeoutMs: number; onDel
   const touch = () => { clearTimeout(it); it = setTimeout(() => { idle = true; ctl.abort(); }, idleMs); };
   touch();
   try {
-    const r = await fetch(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ ...body, stream: true }), signal: ctl.signal });
+    // Keep privacy restrictions on every pass, including structured-output retries and visibility calls.
+    const r = await fetch(`${OPENROUTER_BASE}/chat/completions`, { method: 'POST', headers: openrouterHeaders(), body: JSON.stringify({ ...body, provider: { ...body.provider, data_collection: 'deny' }, stream: true }), signal: ctl.signal });
     touch();
     if (!r.ok) { const txt = await readAll(r, touch); const e: any = new Error(`HTTP ${r.status}: ${txt.slice(0, 400)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
     if (/application\/json/i.test(r.headers.get('content-type') || '')) { const txt = await readAll(r, touch); return txt ? JSON.parse(txt) : {}; }

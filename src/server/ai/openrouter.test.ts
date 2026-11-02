@@ -12,7 +12,7 @@ vi.mock('../db', () => ({
 
 import { env } from '../env';
 import { run, routes } from './index';
-import { openrouterRun, resetOpenrouterState, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterId, strictCompatible, openrouterTripped, STREAM_IDLE_MS, BREAKER_MS } from './adapters/openrouter';
+import { openrouterChat, openrouterRun, resetOpenrouterState, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterId, strictCompatible, openrouterTripped, STREAM_IDLE_MS, BREAKER_MS } from './adapters/openrouter';
 import { OPENROUTER_IMAGE_TIMEOUT_MS } from '../services/images';
 import { generatePhoto, openrouterAspect } from '../services/images';
 import { askEngine, EngineUnavailable } from '../services/visibility/engines';
@@ -45,6 +45,11 @@ beforeEach(() => {
 afterEach(() => { Object.assign(env, saved); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('OpenRouter route order', () => {
+  it('retains the non-collecting provider restriction even if a caller supplies permissive preferences', async () => {
+    mockFetch(() => orText('private response'));
+    await openrouterChat({ model: 'openai/gpt-6-sol', messages: [], provider: { require_parameters: true, data_collection: 'allow' } }, { timeoutMs: 5000 });
+    expect(calls[0].body.provider).toEqual({ require_parameters: true, data_collection: 'deny' });
+  });
   it('tries each model on OpenRouter, then its direct provider, then the next model', () => {
     expect(routes('writing', 'gpt-6-sol')).toEqual([
       { modelId: 'gpt-6-sol', via: 'openrouter' }, { modelId: 'gpt-6-sol', via: 'direct' },
@@ -83,6 +88,7 @@ describe('OpenRouter route order', () => {
     expect(c.body).toMatchObject({ model: 'openai/gpt-6-sol', max_tokens: 321, messages: [{ role: 'system', content: 'sys' }, { role: 'user', content: 'hi' }] });
     expect(c.body.temperature).toBeUndefined();
     expect(c.body.stream).toBe(true); // every OpenRouter call streams (idle timeout)
+    expect(c.body.provider).toEqual({ data_collection: 'deny' });
   });
 });
 
@@ -97,7 +103,7 @@ describe('OpenRouter structured outputs', () => {
     expect(rf.json_schema).toMatchObject({ name: 'post_idea', strict: true });
     expect(rf.json_schema.schema.$schema).toBeUndefined();
     expect(rf.json_schema.schema.properties.title.maxLength).toBe(40);
-    expect(calls[0].body.provider).toEqual({ require_parameters: true });
+    expect(calls[0].body.provider).toEqual({ require_parameters: true, data_collection: 'deny' });
   });
   it('gives Claude models the Claude schema subset', async () => {
     mockFetch(() => orText('{"title":"t","tags":[]}'));
@@ -281,7 +287,7 @@ describe('AI Visibility via OpenRouter', () => {
     const a = await askEngine('ChatGPT', 'best docs tool?', ctx);
     expect(a.text).toBe('Try Acme and Foo.');
     expect(a.cites).toEqual(['https://acme.example/', 'https://foo.example/x']);
-    expect(calls[0].body).toEqual({ model: 'openai/gpt-6-sol', messages: [{ role: 'user', content: 'best docs tool?' }], tools: [{ type: 'openrouter:web_search' }], stream: true });
+    expect(calls[0].body).toEqual({ model: 'openai/gpt-6-sol', messages: [{ role: 'user', content: 'best docs tool?' }], tools: [{ type: 'openrouter:web_search' }], provider: { data_collection: 'deny' }, stream: true });
   });
   it('uses each engine\'s model family; Perplexity searches on its own', async () => {
     mockFetch(() => json({ choices: [{ message: { content: 'answer' } }], citations: ['https://p.example/1'] }));

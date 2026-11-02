@@ -424,7 +424,7 @@ describe('OpenRouter structured outputs', () => {
     expect(b.stream).toBe(true); // every OpenRouter text call streams so the 45 s idle timeout covers it
     expect(onDelta).not.toHaveBeenCalled();
     expect(b.tools).toBeUndefined();
-    expect(b.provider).toEqual({ require_parameters: true });
+    expect(b.provider).toEqual({ require_parameters: true, data_collection: 'deny' });
     expect(b.response_format.type).toBe('json_schema');
     expect(b.response_format.json_schema).toMatchObject({ name: 'social_post_', strict: true });
     expect(b.response_format.json_schema.schema).toMatchObject({ type: 'object', additionalProperties: false, required: ['title', 'tags'] });
@@ -451,7 +451,7 @@ describe('OpenRouter structured outputs', () => {
     expect(calls.map(tag)).toEqual(['or:openai/gpt-6-sol', 'or:openai/gpt-6-sol', OA]);
     expect(calls[0].body.response_format).toBeDefined();
     expect(calls[1].body.response_format).toBeUndefined();
-    expect(calls[1].body.provider).toBeUndefined();
+    expect(calls[1].body.provider).toEqual({ data_collection: 'deny' });
     expect(calls[1].body.messages.at(-1).content).toMatch(/Return only a JSON value[\s\S]*"title"/);
   });
   it('schema 400 with OpenRouter as the only route: 2 calls per model, never more', async () => {

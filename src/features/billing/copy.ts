@@ -61,7 +61,7 @@ export function trialCopy(s: BillingState, D: DateNode, now: () => string): Tria
       ['var(--faint)', [D(s.trialEnd), ` · ${price}/month`], 'Your subscription begins.'],
     ],
     button: `Pay ${fee} and start trial`, busy,
-    fine: [`The ${fee} payment confirms your card works. Your trial starts once it goes through, and ${price}/month begins on `, D(s.trialEnd, true), '.'],
+    fine: [`The ${fee} payment confirms your card works and is credited toward your first monthly bill. Your trial starts once it goes through. Your first monthly bill is ${money(Math.max(0, s.priceCents - FEE_CENTS))} on `, D(s.trialEnd, true), `, then ${price}/month. Cancel in Billing before your trial ends to avoid the monthly subscription charge.`],
     doneH1: 'Your free trial has started.',
     // The confirmed subscription's trial_end, never the preview (architecture §7.1 step 5).
     doneBody: st => ['Your card is confirmed. Everything is free until ', D(st.trialEnd, true), `, then ${price}/month.`],
