@@ -1,384 +1,798 @@
 {
-  "atUTC": "2026-11-02T21:29:03.455Z",
-  "revision": "84316883d4ad3aef16be5eea8c5a3f2f5d57e450",
+  "atUTC": "2026-11-02T21:35:19.130Z",
+  "revision": "f4e0ec581bc5c95330cb20e57fb579835b87e434",
   "base": "https://radar.thally.io",
   "checks": [
     {
       "path": "/",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3608,
+      "canonicalOffset": 1779,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/organic-search",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3649,
+      "canonicalOffset": 1774,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/ai-visibility",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3669,
+      "canonicalOffset": 1784,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/features/backlinks",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3677,
+      "canonicalOffset": 1782,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/privacy",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3262,
+      "canonicalOffset": 1465,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/terms",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3254,
+      "canonicalOffset": 1455,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/bot",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3267,
+      "canonicalOffset": 1470,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signup",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3427,
+      "canonicalOffset": 1624,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "Twitterbot/1.0",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "facebookexternalhit/1.1",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "LinkedInBot/1.0",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "Slackbot-LinkExpanding 1.0",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "Discordbot/2.0",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "WhatsApp/2.24.1",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     },
     {
       "path": "/signin",
       "ua": "TelegramBot (like TwitterBot)",
       "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "OAI-SearchBot/1.4",
+      "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "PerplexityBot/1.0",
+      "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "Claude-SearchBot/1.0",
+      "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "Googlebot/2.1",
+      "status": 200,
+      "headEnd": 3327,
+      "canonicalOffset": 1598,
       "missing": []
     }
   ]

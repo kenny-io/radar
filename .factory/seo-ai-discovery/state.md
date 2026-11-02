@@ -6,8 +6,8 @@ Base main e981adb79b386687c9b57716c88aa775a9851a8b. Isolated branch kenny/seo-ai
 |---|---|---|---|
 | A1 | factory-architect | verified | Metadata/discovery/card contracts; architecture.md |
 | E1 | factory-engineer | verified | Pure catalog, metadata,9 static PNG cards, discovery resources/schema; A2 corrected; focused checks passed |
-| Q1 | factory-qa | verified | Local acceptance78/78; live acceptance pending deployment |
-| P1 | PM | active | Requirements, integration, release and live deployment |
+| Q1 | factory-qa | verified | Final local/live78/78 plus99/99 initial-head checks;9 images/18 browser views |
+| P1 | PM | verified | Requirements, integration, merged/deployed and runtime verification |
 
 User authorized implementing and deploying this scope. No further approval required. Contracts settled:7 indexable pages, branded noindex account entries, physical PNG cards, static discovery routes, safe noindex default and bounded redirect/API headers. Final production build and independent local QA78/78 passed. No source defect remains observed. Release-ready. Next: commit/PR/merge and verify production deployment.
 
@@ -22,3 +22,9 @@ Both Railway deployments succeeded: web `88e3a34b-c062-42d6-ae88-cc52f9e6be4f`, 
 First rollout passed all9 image checks,18 desktop/mobile pageviews and63 initial-head responses for social crawlers. Strengthened live QA found4 AI/search identities receive metadata streamed into body rather than the initial head (74/78 overall). A3 approved documented Next htmlLimitedBots wildcard to block metadata streaming for all identified crawlers/browser UAs; no guard/billing changes. E2 config correction and9 focused regression tests passed. Production rebuild and local regression are underway before follow-up deployment. Do not claim final live acceptance until the four failures pass.
 
 E2 corrected build `F4OinTfBN-CfkTDOH59qG` passed production build and independent local acceptance78/78 plus99/99 initial-head checks. Source fingerprint `6c09a50b3f5d20bd42399c8024f84988485fa0d137ec49eb6c6e30b1ca3bdca3` (439 files). Ready for follow-up merge/deployment. Final live check remains required.
+
+PR22 https://github.com/kenny-io/radar/pull/22 merged as `f4e0ec581bc5c95330cb20e57fb579835b87e434` (tested head `d69dde8e`). Both GitHub checks and mergeability inspected; no CI/status checks configured. Merge source/assets exactly match the tested tree. Corrected Railway deployments are building: web `72b405c0-8047-4948-88fb-df5f3402bb71`, worker `c3031d0d-8aa8-4897-b33e-1164758c8775`. Final live audit pending successful rollout.
+
+## Released
+
+Both corrected deployments SUCCESS at `f4e0ec58`. Effective containers confirm the same source, billing ON, production mode, stubs0, correct app/support settings and unset lazy cutoff. Readiness200. Final independent live verifier78/78 and head matrix99/99 passed; all9 assets exactly match committed PNGs. S1–S7 complete within the documented public/read-only scope. No unresolved implementation defect observed. Indexing, citations and external preview caches remain unverified. See release.md and verification-qa.md for evidence and framework empty-UA caveat.

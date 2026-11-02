@@ -1,0 +1,85 @@
+{
+  "atUTC": "2026-11-02T21:35:08.869Z",
+  "revision": "f4e0ec581bc5c95330cb20e57fb579835b87e434",
+  "health": {
+    "status": 200,
+    "body": {
+      "ok": true
+    },
+    "xRobots": "noindex, nofollow"
+  },
+  "images": [
+    {
+      "path": "/social/home.png",
+      "status": 200,
+      "bytes": 69133,
+      "sha256": "b0ca0df5e94d6c295b0b4d26d33f25a237e26bf6da3257bda2b6492b90534903",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/organic-search.png",
+      "status": 200,
+      "bytes": 69332,
+      "sha256": "fc5c6aac5577b4c95e23696e8a310dea44ea2cdaa02a066673c71410bb060b88",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/ai-visibility.png",
+      "status": 200,
+      "bytes": 69737,
+      "sha256": "eb9a0ab34607e3d9bfef19bddd53f39038f019aa7d6a0a71e39089dcdf3f5802",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/backlinks.png",
+      "status": 200,
+      "bytes": 77853,
+      "sha256": "dd145ae5b884bfd87934d42cae938f082c5e5fd8d2b5911adaa4d3484695bdbb",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/privacy.png",
+      "status": 200,
+      "bytes": 65553,
+      "sha256": "23a7aa63562752700fdfb824744d9e956bc45073ed91d5a29f74a3f319d3f4e1",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/terms.png",
+      "status": 200,
+      "bytes": 67373,
+      "sha256": "acf572408fb81ea7e856ccd58b87a320cd6f11398df47ca12b368293e62852a2",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/bot.png",
+      "status": 200,
+      "bytes": 60124,
+      "sha256": "c05e6475f687678dfa1e98d31113a24580de5380090b9a7d11575a40e46a5127",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/signup.png",
+      "status": 200,
+      "bytes": 70453,
+      "sha256": "1c9abc219d6afd633f11e7bb33f9af9c4651250b445ef2c8ccbf3e2580e837ab",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    },
+    {
+      "path": "/social/signin.png",
+      "status": 200,
+      "bytes": 63990,
+      "sha256": "9658210a32ea74930d68eef46c56e8df8fba61e634fe11f6289eee4d2f774d17",
+      "matchesCommittedAsset": true,
+      "xRobots": null
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
-  "atUTC": "2026-11-02T21:28:52.956Z",
+  "atUTC": "2026-11-02T21:35:05.099Z",
   "base": "https://radar.thally.io",
-  "revision": "84316883d4ad3aef16be5eea8c5a3f2f5d57e450",
+  "revision": "f4e0ec581bc5c95330cb20e57fb579835b87e434",
   "passed": [
     "metadata /",
     "metadata /features/organic-search",
@@ -30,6 +30,10 @@
     "crawler facebookexternalhit/1.1",
     "crawler LinkedInBot/1.0",
     "crawler Twitterbot/1.0",
+    "crawler OAI-SearchBot/1.4",
+    "crawler PerplexityBot/1.0",
+    "crawler Claude-SearchBot/1.0",
+    "crawler Googlebot/2.1",
     "crawler bingbot/2.0",
     "crawler Slackbot-LinkExpanding 1.0",
     "crawler Discordbot/2.0",
@@ -78,24 +82,7 @@
     "browser without JavaScript can read product pricing FAQs",
     "social cards render at thumbnail size"
   ],
-  "failed": [
-    {
-      "name": "crawler OAI-SearchBot/1.4",
-      "message": "initial head requires link[rel=\"canonical\"]\n\n0 !== 1\n"
-    },
-    {
-      "name": "crawler PerplexityBot/1.0",
-      "message": "initial head requires link[rel=\"canonical\"]\n\n0 !== 1\n"
-    },
-    {
-      "name": "crawler Claude-SearchBot/1.0",
-      "message": "initial head requires link[rel=\"canonical\"]\n\n0 !== 1\n"
-    },
-    {
-      "name": "crawler Googlebot/2.1",
-      "message": "initial head requires link[rel=\"canonical\"]\n\n0 !== 1\n"
-    }
-  ],
+  "failed": [],
   "pages": [
     {
       "path": "/",

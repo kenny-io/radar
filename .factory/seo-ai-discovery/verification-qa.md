@@ -1,5 +1,7 @@
 # Independent SEO / AI discoverability QA
 
+**Final status: accepted live on November 3, 2026.** Corrected production merge `f4e0ec581bc5c95330cb20e57fb579835b87e434` passed the complete **78/78** independent HTTP/browser suite and **99/99** initial-head compatibility matrix, with zero failures. Historical checkpoints below retain the first deployment's streaming observation and its verified correction.
+
 ## Scope and baseline
 
 Workspace: `/Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar-push`; branch `kenny/seo-ai-discovery`; baseline `e981adb79b386687c9b57716c88aa775a9851a8b`. Requirements: brief.md S1–S7. No authenticated account supplied or required for public checks. All production checks are read-only; no signup, analysis, billing or publishing actions.
@@ -54,3 +56,16 @@ Evidence preserved in `qa/live-before-streaming-fix.json`, `qa/live-head-matrix-
 Production build `F4OinTfBN-CfkTDOH59qG`, tested at `http://localhost:3911`, runtime fingerprint `6c09a50b3f5d20bd42399c8024f84988485fa0d137ec49eb6c6e30b1ca3bdca3` (439 files). The full verifier passed **78/78**, including all strict initial-head assertions, nine metadata pages, nine valid PNG responses and 18 real desktop/mobile Chrome page views. The separate nine-page × eleven social/AI/search user-agent initial-head matrix passed **99/99**. Focused SEO tests independently passed **9/9**, including the installed-Next decision regression. No implementation acceptance assertion was removed to obtain these results.
 
 Evidence: `qa/local-results.json`, `qa/local-head-matrix.json`, `qa/local-card-gallery.png`; reusable matrix command is `BASE_URL=http://localhost:3911 QA_REVISION=6c09a50b3f5d20bd42399c8024f84988485fa0d137ec49eb6c6e30b1ca3bdca3 QA_OUTPUT=.factory/seo-ai-discovery/qa/local-head-matrix.json node .factory/seo-ai-discovery/qa/head-matrix.mjs`. Recommend deploying this corrected source, then repeating both suites live. S7 remains pending the follow-up deployment.
+
+## Final live acceptance — passed
+
+Environment: `https://radar.thally.io`, corrected deployed merge `f4e0ec581bc5c95330cb20e57fb579835b87e434` (PR22, following PR21). Live checks ran on November 3, 2026, around 01:35 Dubai. PM confirmed both deployments SUCCESS and the actual web/worker runtime source SHA, production mode, stubs disabled and billing still ON. The PM also confirmed final merge runtime/assets match the locally tested fingerprint. QA independently confirmed production readiness `200 {"ok":true}` with the expected operational noindex header.
+
+- **78/78** full-suite checks passed: nine complete unique metadata sets, correct absolute canonical/OG/X URLs, nine valid public 1200×630 PNGs, seven canonical sitemap entries, correct robots policy, all discovery files and linked first-party URLs, safe context/accurate pricing and ownership, explicit account/private/API noindex, anonymous redirects and preserved legacy return path.
+- **99/99** initial-response checks passed: nine pages × eleven identified social/AI/search user agents. Canonical plus OG title/description/URL/type/image and X card/title/description/image occur once in the initial head. The four previously streamed AI/search cases now pass unchanged strict assertions.
+- **18 real Chrome page views** passed at desktop 1440×1000 and mobile 390×844, plus navigation, FAQ expansion, refresh, no-JavaScript readability and runtime-error checks. Rendered JSON-LD parses with correct entity relationships and pricing; visible homepage Thally identity and $49 first invoice match the machine-readable facts. No horizontal overflow or runtime error was observed.
+- All **nine live PNGs match committed source bytes exactly**, and none carries a noindex response header. The live browser card gallery was visually inspected; branded headlines and supporting copy remain readable without clipping.
+
+Evidence: `qa/live-results.json`, `qa/live-head-matrix.json`, `qa/live-asset-proof.json`, `qa/live-card-gallery.png`. Reproducible scripts are `qa/verify.mjs` and `qa/head-matrix.mjs`; set `BASE_URL=https://radar.thally.io`, `QA_REVISION=f4e0ec581bc5c95330cb20e57fb579835b87e434` and an appropriate `QA_OUTPUT` path.
+
+**Acceptance coverage:** S1–S7 passed within the authorized public/read-only scope. No unresolved implementation defect was observed. No signup, account creation, analysis, payment or publishing mutation was performed. Authenticated private-page content was not independently opened; unchanged guards and inherited noindex policy were inspected, and anonymous responses were verified. Search Console/Bing submission or actual indexing, AI citations, real crawler IP access, first-party rich-result eligibility and native social-platform publication/preview caches remain unverified and are not inferred from user-agent probes. The documented empty/missing-UA Next behavior remains a narrow framework limitation; normal identified crawlers all passed. Recommend accepting the deployed release.
