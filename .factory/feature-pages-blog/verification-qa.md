@@ -24,7 +24,7 @@ Record exact integrated Git revision or source fingerprint, production build ID,
 
 ## Status
 
-Local implementation accepted on the final build described below. PM may merge/deploy; production acceptance awaits live repetition.
+**Accepted live at `c0e6c5861d3d66a816c564b736102ef65f2318ff` on November3,2026.** M1–M7 passed within the public/read-only scope, with no unresolved observed implementation defect. Details and limits follow.
 
 ## Independent integrated acceptance
 
@@ -57,3 +57,16 @@ BASE_URL=http://[::1]:3920 QA_SCREEN_PREFIX=visual-local node .factory/feature-p
 ```
 
 M1–M6 passed within public/read-only scope; M7 local/build/design portion passed. No unresolved observed implementation defect. Recommend merging/deploying this tested source, then repeating the full audit and flows on the exact deployed revision. Authenticated app content was not exercised; its source/guards are unchanged and anonymous noindex/redirect behavior passed. Actual search indexing/citations, real crawler IP access, native platform preview caches and first-party rich-result eligibility remain unverified.
+
+## Final production acceptance — passed
+
+Target `https://radar.thally.io`, deployed merge `c0e6c5861d3d66a816c564b736102ef65f2318ff`; PM verified deployed source matches the accepted local469-file fingerprint and both running services are on that SHA. Anonymous fresh Chrome contexts only.
+
+- **209/209** live HTTP/browser checks passed, zero failures. All18 metadata/card sets,16 canonical sitemap URLs, five complete articles/relations/schema, strict RSS XML, crawler-head compatibility, static cookie-independent bytes, protected noindex/anonymous gates, screenshot resources, no-JavaScript content and78 browser pageviews at360/390/760/1000/1440/1920 passed. No browser errors, document overflow or unexpected application mutations observed.
+- **12/12** live functional flows passed, zero failures, including the measured-reference Blog Latest geometry regression and all demo/keyboard/clipboard-promise/download/TOC/CTA/validation/reduced-motion/autoplay checks listed above. The downloaded Reddit demo is a real1200×900 PNG (57956bytes), visually inspected as a legible branded graphic. Native OS clipboard is not claimed.
+- **18/18** live social PNGs independently byte-match the tested source assets and have correct MIME/no image noindex. RSS returns200 `application/rss+xml; charset=utf-8`,2872bytes and five items; SHA256 `b656f1a3a27e815faac3f2c5534c5f234b2ac457934da88bfd70bb9e8e1b37a2`. Independent readiness200 `{ok:true}`.
+- Twelve fresh live desktop/mobile visual captures record settled scrollY0, visible nav top0/height64 and correct footer columns. Live Blog Latest top526.47 matches source/reference geometry. Actual live Blog/DailyBrief desktop and Social/AI-guide mobile images were visually inspected and match the accepted implementation. All nine new social-card designs were independently inspected at full size before deployment; deployed byte matches preserve those visuals.
+
+Evidence: `qa/live-results.json`, `qa/live-flows.json`, `qa/live-asset-proof.json`, `qa/visual-live/facts.json` and accompanying images. Commands are the same independent scripts above with BASE_URL=https://radar.thally.io and QA_REVISION set to the deployed merge; `qa/asset-proof.mjs` supplies the asset/feed/readiness proof. PM separately reports actual production prerender manifest verification for all12 HTML pages plus RSS and container readbacks with billing ON; QA does not claim to have independently inspected those runtime variables.
+
+**Release recommendation: accept the deployed release.** No account creation, payment, valid website analysis or external publishing was performed. The original one-class spacing defect is closed and source-independent harness corrections are documented in qa/defects.md. No feature implementation was edited by QA. Authenticated app content, actual indexing/citations, real crawler IP access, native social preview caches, native OS clipboard and first-party rich-result eligibility remain outside observed acceptance coverage.

@@ -1,0 +1,224 @@
+{
+  "base": "https://radar.thally.io",
+  "revision": "c0e6c5861d3d66a816c564b736102ef65f2318ff",
+  "records": [
+    {
+      "path": "/features/daily-brief",
+      "width": 1440,
+      "scrollY": 0,
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "Be there when people ask for what you built.",
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 1440,
+      "scrollY": 0,
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "One idea. A post for every platform.",
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/performance",
+      "width": 1440,
+      "scrollY": 0,
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "See how people find you, and what to fix next.",
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog",
+      "width": 1440,
+      "scrollY": 0,
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "Notes on getting found.",
+      "latestCardTop": 526.46875,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 1440,
+      "scrollY": 0,
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "How to find out if ChatGPT recommends your product",
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 1440,
+      "scrollY": 0,
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "How to refresh pages ranking on page two",
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 390,
+      "scrollY": 0,
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "Be there when people ask for what you built.",
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 390,
+      "scrollY": 0,
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "One idea. A post for every platform.",
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/performance",
+      "width": 390,
+      "scrollY": 0,
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "See how people find you, and what to fix next.",
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog",
+      "width": 390,
+      "scrollY": 0,
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "Notes on getting found.",
+      "latestCardTop": 399.65625,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 390,
+      "scrollY": 0,
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "How to find out if ChatGPT recommends your product",
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 390,
+      "scrollY": 0,
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "nav": {
+        "top": 0,
+        "height": 64,
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "position": "fixed",
+        "zIndex": "20"
+      },
+      "h1": "How to refresh pages ranking on page two",
+      "footerColumns": 2
+    }
+  ]
+}

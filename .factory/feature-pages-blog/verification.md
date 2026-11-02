@@ -23,3 +23,15 @@ QA actual prototype comparison found one P2 layout defect: BlogPages index Lates
 Final fresh build `gE6b-fiXSFBU6x88F8k-m` passed production build/typecheck. Independent main rerun209/209 and static-manifest proof passed at final29c3 fingerprint. Existing11 behavior flows passed again. Reference-matched Blog Latest top526.47px at1440×1000 (reference526px),mobile399.66px; visual P2 closed. Final fresh contexts recorded settled scrollY0/navtop0 for12 desktop/mobile screenshots. All9 new cards visually inspected; old9 PNGs unchanged. Existing three feature bodies before related rows and Home.tsx byte-preserved against base. No source changes after final build. QA recommends merge/deploy; live acceptance pending.
 
 Final interaction result12/12 passed at final29c3 source, including added measured-reference geometry check. Reference hero bottom514.47/cardtop526.47 gives the intended12px gap; original zero-gap test assumption preserved separately. Independent QA release recommendation confirmed; no outstanding implementation defect.
+
+## Merge/deployment
+
+PR23 merged as `c0e6c5861d3d66a816c564b736102ef65f2318ff` from tested head `2ae8a5db`. GitHub checks inspected: no configured CI/status checks; CLEAN/MERGEABLE. PM git diff confirmed merge source/assets/config exactly match local accepted29c3 tree. Automatic Railway rollout started for web `d92f7407-2071-4f82-b6f5-ba66d4908847` and worker `0dda54c3-f527-49bd-9854-0e5f04836bc9`. Awaiting deployment health/runtime readback and independent live acceptance. No vars/schema/provider/billing changes were required or performed.
+
+Both deployments SUCCESS. Actual running-container SSH readbacks confirm merge c0e6c586, Node22.23.3, production true, billing ON, stubs0, app URL https://radar.thally.io, support@thally.io and no lazy grandfather cutoff. Web's actual production prerender manifest independently contains all12 public feature/blog pages plus RSS, with unknown post fallbackfalse; homepage and private dashboard are not statically cached. No database credential/value was printed.
+
+PM live probes: /api/health200 {ok:true},no-store; /blog/rss.xml200 application/rss+xml; charset=utf-8,public max-age3600; /features/daily-brief and /blog200 text/html,s-maxage31536000. Independent full live acceptance running.
+
+## Final live acceptance
+
+At production c0e6c586, independent main suite209/209 and flow suite12/12 passed, zero failures.78 browser pageviews at6widths plus12 fresh-context visual captures matched the accepted reference/local design; Blog Latest cardtop526.47px remains correct.18/18 PNGs independently byte-match source and carry correct dimensions/MIME/no image noindex. RSS200/five items and readiness200 independently verified. No app/account/payment/analysis/external publishing mutations. M1–M7 accepted; source unchanged since final29c3 build. See qa/live-results.json,qa/live-flows.json,qa/live-asset-proof.json,qa/visual-live/,verification-qa.md and release.md.

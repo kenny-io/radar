@@ -1,0 +1,35 @@
+{
+  "atUTC": "2026-11-02T22:12:34.384Z",
+  "base": "https://radar.thally.io",
+  "revision": "c0e6c5861d3d66a816c564b736102ef65f2318ff",
+  "passed": [
+    "Blog Latest card follows the hero without duplicate section padding",
+    "Features hover bridge, keyboard navigation and active marker",
+    "Daily Brief async copy, posted, undo and style reset",
+    "Daily Brief clipboard denial and stale async completion are honest",
+    "Social roving tabs, platform actions, length and visual ratios",
+    "Social copy and actual PNG download stay local",
+    "Performance keyboard, seeded series, inverted position and refresh",
+    "Blog sticky contents, contrast, CTA and mobile contents policy",
+    "Invalid domain validation does not start analysis",
+    "Reduced motion keeps social and performance demos static",
+    "Social autoplay starts visible and interaction permanently stops it",
+    "No account, analysis or publishing mutations"
+  ],
+  "failed": [],
+  "mutations": [],
+  "downloads": [
+    {
+      "filename": "fieldnote-reddit-demo.png",
+      "bytes": 57956,
+      "width": 1200,
+      "height": 900
+    }
+  ],
+  "note": "Public anonymous Chrome; clipboard promises controlled in page memory for deterministic async/error coverage; no native OS clipboard claim.",
+  "blogLatestGeometry": {
+    "heroBottom": 514.46875,
+    "cardTop": 526.46875,
+    "expectedGap": 12
+  }
+}

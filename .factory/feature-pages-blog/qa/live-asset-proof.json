@@ -1,0 +1,166 @@
+{
+  "atUTC": "2026-11-02T22:12:34.113Z",
+  "revision": "c0e6c5861d3d66a816c564b736102ef65f2318ff",
+  "base": "https://radar.thally.io",
+  "assets": [
+    {
+      "pathname": "/social/home.png",
+      "bytes": 69133,
+      "sha256": "b0ca0df5e94d6c295b0b4d26d33f25a237e26bf6da3257bda2b6492b90534903",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/daily-brief.png",
+      "bytes": 73691,
+      "sha256": "f208652308a90584d429d5b1121b4bc707906c220786f984c047f09ada29dcc5",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/organic-search.png",
+      "bytes": 69332,
+      "sha256": "fc5c6aac5577b4c95e23696e8a310dea44ea2cdaa02a066673c71410bb060b88",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/ai-visibility.png",
+      "bytes": 69737,
+      "sha256": "eb9a0ab34607e3d9bfef19bddd53f39038f019aa7d6a0a71e39089dcdf3f5802",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/social-marketing.png",
+      "bytes": 74772,
+      "sha256": "8081e94d7652baae210ac69b35d366011f7ddedc2679663053e9e951f0468879",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/performance.png",
+      "bytes": 75174,
+      "sha256": "be7ee9fd5bb66c1f04224497448d709487577d871d1acbfb575111f84bef506a",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/backlinks.png",
+      "bytes": 77853,
+      "sha256": "dd145ae5b884bfd87934d42cae938f082c5e5fd8d2b5911adaa4d3484695bdbb",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/blog.png",
+      "bytes": 63728,
+      "sha256": "15db59a8c004971bc1b7c3e684d25a2a04ec22d89b529818b7c265468057accc",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/blog-does-chatgpt-recommend-you.png",
+      "bytes": 85948,
+      "sha256": "17f620aeaab8cd58650d7d2cc63b9749b81240e29babdfa3e92ab9393c9d4c5f",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/blog-rank-a-new-website.png",
+      "bytes": 83175,
+      "sha256": "dd715006b89e624184831f29fb30d530f3ef3fbc53eec339e8b0180351b9a9bb",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/blog-reddit-without-getting-banned.png",
+      "bytes": 76080,
+      "sha256": "b1b5df749c1d9e3f0f47b13d529006d7a42ed1ea39b3a5610caa9b43fc79df9e",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/blog-page-two-refresh.png",
+      "bytes": 80808,
+      "sha256": "a0c3a998c7eb4507ef2b11a265189d42c708b5f7203ef50d14bdbd9e9b02dea8",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/blog-safe-backlinks-new-sites.png",
+      "bytes": 80424,
+      "sha256": "a14cfb20b6406de184d27af622cb5adf3a2dcd1b3c1143b896a5f6add1bd9e67",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/privacy.png",
+      "bytes": 65553,
+      "sha256": "23a7aa63562752700fdfb824744d9e956bc45073ed91d5a29f74a3f319d3f4e1",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/terms.png",
+      "bytes": 67373,
+      "sha256": "acf572408fb81ea7e856ccd58b87a320cd6f11398df47ca12b368293e62852a2",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/bot.png",
+      "bytes": 60124,
+      "sha256": "c05e6475f687678dfa1e98d31113a24580de5380090b9a7d11575a40e46a5127",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/signup.png",
+      "bytes": 70453,
+      "sha256": "1c9abc219d6afd633f11e7bb33f9af9c4651250b445ef2c8ccbf3e2580e837ab",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    },
+    {
+      "pathname": "/social/signin.png",
+      "bytes": 63990,
+      "sha256": "9658210a32ea74930d68eef46c56e8df8fba61e634fe11f6289eee4d2f774d17",
+      "matchesTestedSource": true,
+      "contentType": "image/png",
+      "xRobots": null
+    }
+  ],
+  "feed": {
+    "status": 200,
+    "contentType": "application/rss+xml; charset=utf-8",
+    "bytes": 2872,
+    "items": 5,
+    "sha256": "b656f1a3a27e815faac3f2c5534c5f234b2ac457934da88bfd70bb9e8e1b37a2",
+    "cache": "public, max-age=3600",
+    "prerendered": null
+  },
+  "readiness": {
+    "status": 200,
+    "body": {
+      "ok": true
+    }
+  }
+}
