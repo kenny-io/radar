@@ -6,6 +6,7 @@ import * as cheerio from 'cheerio';
 import robotsParser from 'robots-parser';
 import { env } from '../../env';
 import { devFetch } from './devsite';
+import { assertPublicUrl, publicDispatcher } from '../../http/publicNetwork';
 
 export interface FetchResult { status: number; type: string; body: Buffer; url: string }
 export interface CrawledPage { url: string; path: string; title: string; h1: string; description: string; text: string; links: string[]; kind: 'article' | 'page'; kindSure: boolean; html?: string }
@@ -20,30 +21,48 @@ const uaToken = () => (env.crawlerUserAgent.split('/')[0] || 'RadarBot').trim();
 function isPrivateIp(ip: string) {
   if (net.isIPv4(ip)) {
     const [a, b] = ip.split('.').map(Number);
-    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127);
+    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
   }
   const v = ip.toLowerCase();
-  return v === '::1' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe80') || v.startsWith('::ffff:127.') || v === '::';
+  if (v.startsWith('::ffff:')) {
+    const mapped = v.slice(7);
+    if (net.isIPv4(mapped)) return isPrivateIp(mapped);
+    const parts = mapped.split(':');
+    if (parts.length === 2 && parts.every(x => /^[a-f0-9]{1,4}$/.test(x))) {
+      const value = parseInt(parts[0], 16) * 65536 + parseInt(parts[1], 16);
+      return isPrivateIp([value >>> 24, (value >>> 16) & 255, (value >>> 8) & 255, value & 255].join('.'));
+    }
+  }
+  return v === '::1' || v === '::' || /^(fc|fd|fe[89ab]|ff)/.test(v);
 }
-const hostChecked = new Map<string, boolean>();
 async function hostAllowed(host: string) {
-  if (hostChecked.has(host)) return hostChecked.get(host)!;
-  let ok = false;
-  try { const addrs = await dns.lookup(host, { all: true }); ok = addrs.length > 0 && !addrs.some(a => isPrivateIp(a.address)); } catch { ok = false; }
-  hostChecked.set(host, ok); return ok;
+  const name = host.replace(/^\[|\]$/g, '');
+  try {
+    const addrs = net.isIP(name) ? [{ address: name }] : await dns.lookup(name, { all: true });
+    return addrs.length > 0 && !addrs.some(a => isPrivateIp(a.address));
+  } catch { return false; }
 }
 
 /** Fetch with Radar's UA, timeouts, size cap and SSRF guard. Dev stubs: synthesized site. */
 export async function fetchUrl(url: string, accept = 'text/html,application/xhtml+xml'): Promise<FetchResult> {
   if (env.devStubs) return devFetch(url);
-  const u = new URL(url);
-  if (!/^https?:$/.test(u.protocol) || !(await hostAllowed(u.hostname))) throw new Error('blocked host');
-  const r = await fetch(url, { headers: { 'user-agent': env.crawlerUserAgent, accept, 'accept-language': 'en;q=0.9,*;q=0.5' }, redirect: 'follow', signal: AbortSignal.timeout(12000) });
-  const final = new URL(r.url || url);
-  if (!(await hostAllowed(final.hostname))) throw new Error('blocked host');
+  let at = new URL(url);
+  const signal = AbortSignal.timeout(12000);
+  let r: Response;
+  for (let hop = 0; ; hop++) {
+    // Validate before every request. Native redirect-follow would contact a private target before we could reject it.
+    assertPublicUrl(at);
+    if (!(await hostAllowed(at.hostname))) throw new Error('blocked host');
+    r = await fetch(at.href, { headers: { 'user-agent': env.crawlerUserAgent, accept, 'accept-language': 'en;q=0.9,*;q=0.5' }, redirect: 'manual', signal, dispatcher: publicDispatcher() } as RequestInit);
+    if (![301, 302, 303, 307, 308].includes(r.status)) break;
+    const location = r.headers.get('location');
+    await r.body?.cancel();
+    if (!location || hop >= 5) throw new Error('invalid redirect');
+    at = new URL(location, at);
+  }
   const reader = r.body?.getReader(); const chunks: Uint8Array[] = []; let size = 0;
   if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; size += value.length; if (size > MAX_BYTES) { try { await reader.cancel(); } catch { /* */ } break; } chunks.push(value); } }
-  return { status: r.status, type: r.headers.get('content-type') || '', body: Buffer.concat(chunks), url: final.toString() };
+  return { status: r.status, type: r.headers.get('content-type') || '', body: Buffer.concat(chunks), url: at.toString() };
 }
 
 const sameSite = (host: string, base: string) => host.replace(/^www\./, '') === base.replace(/^www\./, '');

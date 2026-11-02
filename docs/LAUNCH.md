@@ -16,6 +16,9 @@ Everything you need to create, configure and provide. Env var names match `.env.
 - [ ] **Object storage** (logos, generated images) — S3, Cloudflare R2 or any S3-compatible bucket with public read on objects. → `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT` (R2/others), `S3_PUBLIC_URL`, plus `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Local disk only works on a single persistent server.
 - [ ] Core env: `APP_URL`, `RADAR_SECRET_KEY` (generate: `openssl rand -base64 48` — keep it forever; it decrypts stored tokens), `NODE_ENV=production`. Make sure `RADAR_DEV_STUBS` is **unset/0**.
 - [ ] Run `npm run db:migrate` on every deploy.
+- [ ] Use `/api/health` for deployment readiness. It checks Postgres and returns only 200/503 with `{ok}`. This does not replace an external uptime monitor. Reconcile any Railway dashboard healthcheck override with `railway.web.json`.
+- [ ] Budget Postgres connections across processes: default `DB_POOL_MAX=10` per web/worker process, plus migration/admin headroom. Checkout is bounded to five seconds. Confirm `max_connections` before increasing replicas or worker concurrency.
+- [ ] Verify scheduled private backups and a restore drill. The current Hobby workspace rejected Railway native backup scheduling; the owner is arranging a private destination. A manual local snapshot and successful isolated restore do not provide scheduled offsite recovery.
 - [ ] `CRAWLER_USER_AGENT` — point the URL at a real page describing the Radar bot (e.g. `RadarBot/1.0 (+https://yourdomain.com/bot)`).
 
 ## 2. Google — sign-in + Search Console (required)
@@ -318,6 +321,7 @@ A successful configuration check verifies shapes and settings, not an actual del
 
 ## 9. Legal and policy (before real users)
 
+- Radar is a Fairspleet LLC product within Thally. `/privacy` and `/terms` reuse the shared Thally company policies while documenting Radar's specific data use and billing. Support/billing: `support@thally.io`; legal/privacy: `team@thally.io`. Keep the public pages and runtime `SUPPORT_INBOX` aligned.
 - [ ] Privacy policy and terms (Google verification needs them).
 - [ ] A public "Radar bot" page (crawler identity + opt-out via robots.txt).
 - [ ] Backlink network terms (disclosure, `rel="sponsored"`, removal process).
@@ -336,3 +340,14 @@ A successful configuration check verifies shapes and settings, not an actual del
 - [ ] Run a Daily Brief scan, generate a social pack, collect one AI-visibility cell.
 - [ ] Invite a teammate (email arrives, link works).
 - [ ] Error monitoring (Sentry or similar) and uptime checks on web + worker; Postgres backups on.
+
+## 12. November 2026 launch verification
+
+See `.factory/production-launch/verification.md`, `qa.md`, `providers.md`, and `rollout.md` for current evidence and outstanding checks. Historical feature records that say real Stripe testing was unavailable are superseded by this launch record where explicitly tested.
+
+- Account endpoints use shared Postgres throttles: signup 10/IP/hour, signin 30/IP/15 minutes and 10/normalized account/15 minutes, Google start 30/IP/15 minutes. Authentication bodies are capped at 8KB; new passwords are capped at bcrypt's 72 UTF-8 byte boundary. Verify trusted proxy hops so unrelated users do not share limits.
+- Google sign-in state is bound to its initiating browser and expires after ten minutes. Production ignores `RADAR_DEV_STUBS=1`; it cannot enable development auth/payment/provider shortcuts.
+- Event streams coalesce authorized per-business reads, poll at 1.5 seconds during jobs and five seconds when idle, and recheck access every minute. Scaling web replicas does not require sticky sessions; shared Postgres and S3 remain the source of truth.
+- The local production build passed 200 authenticated sessions plus 200 event streams and mixed reads. This is a measured local envelope, not proof of 200 concurrent paid analyses, provider quota, signup CPU or Railway capacity. Run staging checks at realistic data sizes before claiming more.
+- Actual sandbox checks now cover a $1 confirmation, one $1 balance credit, a paid $49 first monthly invoice and a $50 renewal with Stripe-signed delivered events. Keep real browser 3-D Secure, hosted portal and cancellation evidence separate from server/stub tests.
+- OpenRouter's per-key remaining allowance is not the account's available balance. Actual launch probes found the account out of credit even though the key had allowance remaining; controlled writing/research requests succeeded through Anthropic fallback. Refill and recheck providers before relying on the primary route for launch traffic.

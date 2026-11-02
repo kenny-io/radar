@@ -32,7 +32,7 @@ export function TrialPage({ state, publishableKey }: TrialPageProps) {
   useEffect(() => { if (refocus) card.current?.focus('num'); }, [refocus]);
   const stop = (msg: string) => { setBusy(false); setFail(msg); setRefocus(n => n + 1); };
   const pay = async (e?: React.FormEvent) => {
-    e && e.preventDefault(); if (busy || !card.current) return;
+    e && e.preventDefault(); if (!mounted || busy || !card.current) return;
     const er = card.current.validate(); setErr(er); setFail('');
     const first = firstError(er); if (first) { card.current.focus(first); return; }
     setBusy(true);
@@ -66,9 +66,9 @@ export function TrialPage({ state, publishableKey }: TrialPageProps) {
       <ol className="col" style={{ listStyle: 'none', margin: '4px 0 2px', padding: 0 }} aria-label={state.mode === 'restart' ? 'How the restart works' : 'How the trial works'}>
         {steps.map(([col, t, d], i) => <li key={i} className="row" style={{ gap: 12, alignItems: 'flex-start', padding: '11px 0', borderTop: i ? '1px solid var(--line2)' : 0 }}><i className="dot" style={{ background: col, marginTop: 7 }} /><span className="col grow" style={{ gap: 1, minWidth: 0 }}><span className="small" style={{ fontWeight: 500 }}>{parts(t)}</span><span className="xs sub">{d}</span></span></li>)}
       </ol>
-      {state.provider === 'stub' ? <StubCardFields err={err} handle={card} disabled={busy} /> : <CardFields publishableKey={publishableKey} err={err} handle={card} disabled={busy} />}
+      {state.provider === 'stub' ? <StubCardFields err={err} handle={card} disabled={!mounted || busy} /> : <CardFields publishableKey={publishableKey} err={err} handle={card} disabled={!mounted || busy} />}
       {fail && <p className="small enter" role="alert" style={{ color: 'var(--bad)' }}>{fail}</p>}
-      <Btn kind="primary" size="lg" className="btn-block" type="submit" loading={busy} style={{ marginTop: 4 }}>{busy ? c.busy : c.button}</Btn>
+      <Btn kind="primary" size="lg" className="btn-block" type="submit" disabled={!mounted} loading={busy} style={{ marginTop: 4 }}>{busy ? c.busy : c.button}</Btn>
       {c.fine && <p className="xs sub">{parts(c.fine)}</p>}
       {state.mode === 'restart' && state.provider === 'stripe' && <PortalButton label="Manage billing in Stripe" kind="link" disabled={busy} />}
     </form>

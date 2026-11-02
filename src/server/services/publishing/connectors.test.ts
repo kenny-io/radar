@@ -128,6 +128,16 @@ describe('a refresh never turns into a second post when the lookup fails', () =>
     handler = (r, _b, res) => (r.method === 'GET' ? json(res, 200, []) : json(res, 201, { id: 99, link: base + '/new-slug/' }));
     expect(await wordpress.createDraft(ctx('wordpress', { url: base, user: 'u' }, { pass: 'p' }), refresh())).toEqual({ id: '99', url: base + '/new-slug/' });
   });
+  it('WordPress: a redirected GET lookup still finds the original post without creating a duplicate', async () => {
+    handler = (r, _b, res) => {
+      if (r.url === '/resolved-posts') return json(res, 200, [{ id: 42, link: base + '/old-post/' }]);
+      res.writeHead(302, { location: '/resolved-posts' }); res.end();
+    };
+    const result = await wordpress.createDraft(ctx('wordpress', { url: base, user: 'u' }, { pass: 'p' }), refresh());
+    expect(result).toMatchObject({ id: '42', extra: { refresh: true } });
+    expect(seen.map(s => s.method)).toEqual(['GET', 'GET']);
+    expect(seen[1].url).toBe('/resolved-posts');
+  });
   it('WordPress: a post this account can\'t edit (hidden from context=edit) is still found, so no second post is made', async () => {
     let created = 0;
     handler = (r, _b, res) => {
