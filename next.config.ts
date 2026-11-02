@@ -3,6 +3,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
+  // Keep metadata in the initial head for AI/search crawlers as well as social preview bots.
+  htmlLimitedBots: /.*/,
   distDir: process.env.NEXT_DIST_DIR || '.next',
   serverExternalPackages: ['@napi-rs/canvas', 'pg', 'framer-api'],
   images: { unoptimized: true },

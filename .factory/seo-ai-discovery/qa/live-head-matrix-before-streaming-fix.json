@@ -1,0 +1,385 @@
+{
+  "atUTC": "2026-11-02T21:29:03.455Z",
+  "revision": "84316883d4ad3aef16be5eea8c5a3f2f5d57e450",
+  "base": "https://radar.thally.io",
+  "checks": [
+    {
+      "path": "/",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/organic-search",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/ai-visibility",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/features/backlinks",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/privacy",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/terms",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/bot",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signup",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "Twitterbot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "facebookexternalhit/1.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "LinkedInBot/1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "Slackbot-LinkExpanding 1.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "Discordbot/2.0",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "WhatsApp/2.24.1",
+      "status": 200,
+      "missing": []
+    },
+    {
+      "path": "/signin",
+      "ua": "TelegramBot (like TwitterBot)",
+      "status": 200,
+      "missing": []
+    }
+  ]
+}

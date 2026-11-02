@@ -28,6 +28,9 @@ function metadata(html) {
   const val = selector => $(selector).attr('content');
   return { $, title: $('title').text(), description: val('meta[name="description"]'), canonical: $('link[rel="canonical"]').attr('href'), robots: val('meta[name="robots"]'), ogTitle: val('meta[property="og:title"]'), ogDescription: val('meta[property="og:description"]'), ogUrl: val('meta[property="og:url"]'), ogType: val('meta[property="og:type"]'), image: val('meta[property="og:image"]'), width: val('meta[property="og:image:width"]'), height: val('meta[property="og:image:height"]'), alt: val('meta[property="og:image:alt"]'), twitterCard: val('meta[name="twitter:card"]'), twitterTitle: val('meta[name="twitter:title"]'), twitterDescription: val('meta[name="twitter:description"]'), twitterImage: val('meta[name="twitter:image"]') };
 }
+function assertSocialHead($) {
+  for (const selector of ['link[rel="canonical"]', 'meta[property="og:title"]', 'meta[property="og:description"]', 'meta[property="og:url"]', 'meta[property="og:type"]', 'meta[property="og:image"]', 'meta[name="twitter:card"]', 'meta[name="twitter:title"]', 'meta[name="twitter:description"]', 'meta[name="twitter:image"]']) assert.equal($(`head ${selector}`).length, 1, `initial head requires ${selector}`);
+}
 
 for (const path of [...publicPaths, ...entryPaths]) await check(`metadata ${path}`, async () => {
   const response = await get(path); assert.equal(response.status, 200);
@@ -37,7 +40,7 @@ for (const path of [...publicPaths, ...entryPaths]) await check(`metadata ${path
   assert.equal(m.ogTitle, m.title); assert.equal(m.ogDescription, m.description); assert.equal(new URL(m.ogUrl).href, new URL(m.canonical).href); assert.equal(m.ogType, 'website');
   assert.equal(m.twitterCard, 'summary_large_image'); assert.equal(m.twitterTitle, m.ogTitle); assert.equal(m.twitterDescription, m.description); assert.equal(m.twitterImage, m.image);
   assert(m.image?.startsWith(origin + '/')); assert(m.alt); assert.equal(m.width, '1200'); assert.equal(m.height, '630');
-  assert.equal(m.$('head meta[property="og:image"]').length, 1, 'Twitterbot image declaration must be in head');
+  assertSocialHead(m.$);
   if (entryPaths.includes(path)) assert(/noindex/.test(m.robots || response.headers['x-robots-tag'] || ''), 'entry route must noindex');
   else assert(!/noindex/.test((m.robots || '') + (response.headers['x-robots-tag'] || '')));
   result.pages.push({ path, title: m.title, description: m.description, canonical: m.canonical, image: m.image, robots: m.robots, xRobots: response.headers['x-robots-tag'] });
@@ -93,6 +96,7 @@ for (const path of discoveryPaths) await check(`context ${path}`, async () => {
 
 for (const ua of ['facebookexternalhit/1.1', 'LinkedInBot/1.0', 'Twitterbot/1.0', 'OAI-SearchBot/1.4', 'PerplexityBot/1.0', 'Claude-SearchBot/1.0', 'Googlebot/2.1', 'bingbot/2.0', 'Slackbot-LinkExpanding 1.0', 'Discordbot/2.0', 'WhatsApp/2.24.1', 'TelegramBot (like TwitterBot)']) await check(`crawler ${ua}`, async () => {
   const response = await get('/', ua); assert.equal(response.status, 200); const m = metadata(response.text); assert(m.image); assert(m.canonical); assert.match(response.text, /\$50/); assert.match(response.text, /Questions/);
+  assertSocialHead(m.$);
   const image = await get(m.image, ua); assert.equal(image.status, 200); assert.match(image.headers['content-type'], /^image\/png/);
 });
 
