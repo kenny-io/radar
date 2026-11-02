@@ -1,0 +1,142 @@
+{
+  "base": "http://127.0.0.1:3920",
+  "records": [
+    {
+      "path": "/features/daily-brief.html",
+      "scrollY": 0,
+      "title": "Daily Brief: conversations worth joining, every morning · Radar",
+      "h1": [
+        "Be there when people ask for what you built."
+      ],
+      "sections": [
+        "Why launch posts stop at your network",
+        "How your brief comes together",
+        "Today’s brief.",
+        "Inside every brief",
+        "Help first. Always.",
+        "Questions",
+        "More ways Radar gets you found",
+        "You built it.Let people and AI find it."
+      ],
+      "footerColumns": 3,
+      "demo": [
+        "br"
+      ],
+      "overflow": false,
+      "nav": "\n\nRadar\nFeaturesDaily BriefConversations worth joining, every morningOrganic searchA month of articles your site can rankAI visibilityKnow when AI assistants recommend youSocial marketingOn-brand posts for every platformPerformanceSearch Console data, with next stepsBacklinksApproved, disclosed links that fitPricingBlogSign inGet started\n\n",
+      "bodyTextLength": 4502
+    },
+    {
+      "path": "/features/social-marketing.html",
+      "scrollY": 0,
+      "title": "Social marketing: on-brand posts for every platform · Radar",
+      "h1": [
+        "One idea. A post for every platform."
+      ],
+      "sections": [
+        "Why posting everywhere feels like a second job",
+        "From idea to post pack",
+        "A pack, ready to go.",
+        "Inside every pack",
+        "Sounds like you. Looks like you.",
+        "Questions",
+        "More ways Radar gets you found",
+        "You built it.Let people and AI find it."
+      ],
+      "footerColumns": 3,
+      "demo": [
+        "sx"
+      ],
+      "overflow": false,
+      "nav": "\n\nRadar\nFeaturesDaily BriefConversations worth joining, every morningOrganic searchA month of articles your site can rankAI visibilityKnow when AI assistants recommend youSocial marketingOn-brand posts for every platformPerformanceSearch Console data, with next stepsBacklinksApproved, disclosed links that fitPricingBlogSign inGet started\n\n",
+      "bodyTextLength": 4226
+    },
+    {
+      "path": "/features/performance.html",
+      "scrollY": 0,
+      "title": "Performance: Search Console data with next steps · Radar",
+      "h1": [
+        "See how people find you, and what to fix next."
+      ],
+      "sections": [
+        "Why Search Console alone isn’t enough",
+        "From data to a decision",
+        "Every number, with a next step.",
+        "What you can see",
+        "Honest numbers.",
+        "Questions",
+        "More ways Radar gets you found",
+        "You built it.Let people and AI find it."
+      ],
+      "footerColumns": 3,
+      "demo": [
+        "pm"
+      ],
+      "overflow": false,
+      "nav": "\n\nRadar\nFeaturesDaily BriefConversations worth joining, every morningOrganic searchA month of articles your site can rankAI visibilityKnow when AI assistants recommend youSocial marketingOn-brand posts for every platformPerformanceSearch Console data, with next stepsBacklinksApproved, disclosed links that fitPricingBlogSign inGet started\n\n",
+      "bodyTextLength": 4137
+    },
+    {
+      "path": "/blog/index.html",
+      "scrollY": 0,
+      "title": "Blog: notes on getting found · Radar",
+      "h1": [
+        "Notes on getting found."
+      ],
+      "sections": [
+        "How to find out if ChatGPT recommends your product",
+        "You built it.Let people and AI find it."
+      ],
+      "footerColumns": 3,
+      "demo": [],
+      "overflow": false,
+      "nav": "\n\nRadar\nFeaturesDaily BriefConversations worth joining, every morningOrganic searchA month of articles your site can rankAI visibilityKnow when AI assistants recommend youSocial marketingOn-brand posts for every platformPerformanceSearch Console data, with next stepsBacklinksApproved, disclosed links that fitPricingBlogSign inGet started\n\n",
+      "bodyTextLength": 1512
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you.html",
+      "scrollY": 0,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "h1": [
+        "How to find out if ChatGPT recommends your product"
+      ],
+      "sections": [
+        "Buyers ask assistants now",
+        "Write the prompts your customers would",
+        "Ask more than one assistant, more than once",
+        "Why assistants mention some products and not others",
+        "Turn every gap into a page",
+        "Keep reading",
+        "You built it.Let people and AI find it."
+      ],
+      "footerColumns": 3,
+      "demo": [],
+      "overflow": false,
+      "nav": "\n\nRadar\nFeaturesDaily BriefConversations worth joining, every morningOrganic searchA month of articles your site can rankAI visibilityKnow when AI assistants recommend youSocial marketingOn-brand posts for every platformPerformanceSearch Console data, with next stepsBacklinksApproved, disclosed links that fitPricingBlogSign inGet started\n\n",
+      "bodyTextLength": 4625
+    },
+    {
+      "path": "/blog/page-two-refresh.html",
+      "scrollY": 0,
+      "title": "Page two is the fastest way to page one · Radar",
+      "h1": [
+        "Page two is the fastest way to page one"
+      ],
+      "sections": [
+        "Why page two matters",
+        "Find your page-two pages in Search Console",
+        "Diagnose before you rewrite",
+        "What a good refresh changes",
+        "Give it time, then check",
+        "Keep reading",
+        "You built it.Let people and AI find it."
+      ],
+      "footerColumns": 3,
+      "demo": [],
+      "overflow": false,
+      "nav": "\n\nRadar\nFeaturesDaily BriefConversations worth joining, every morningOrganic searchA month of articles your site can rankAI visibilityKnow when AI assistants recommend youSocial marketingOn-brand posts for every platformPerformanceSearch Console data, with next stepsBacklinksApproved, disclosed links that fitPricingBlogSign inGet started\n\n",
+      "bodyTextLength": 3882
+    }
+  ],
+  "failures": []
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { FEE_CENTS, PRICE_CENTS, TRIAL_DAYS } from './billing';
+import { BLOG_POSTS, getPost, type BlogPostMeta, type BlogSlug } from './marketing-posts';
 
 /** Public, fixed-origin facts only. Never derive crawler content from sessions, request hosts or customer data. */
 export const SITE_ORIGIN = 'https://radar.thally.io';
@@ -10,7 +11,7 @@ export const PRICING = {
 } as const;
 export const PRICING_SUMMARY = `$${PRICING.confirmation} card-confirmation payment, credited toward the first month; ${PRICING.trialDays}-day trial; $${PRICING.firstInvoice} first monthly invoice after the credit, then $${PRICING.monthly}/month. Cancel before the trial ends to avoid the monthly subscription charge.`;
 
-export const SEO_PAGES = [
+const CORE_SEO_PAGES = [
   { path: '/', slug: 'home', index: true, title: 'Radar — Search, AI visibility and social marketing', description: 'Grow beyond your network with Radar by Thally: researched articles, AI visibility checks, social content and relevant conversations. One plan, $50/month.', cardTitle: ['Get found by people.', 'And AI.'], cardDescription: 'Search, AI visibility and social marketing for your business.', label: 'Search · AI answers · Social' },
   { path: '/features/organic-search', slug: 'organic-search', index: true, title: 'Organic search and content marketing · Radar', description: 'Plan, research and publish articles for keywords your site can realistically win. Review every draft or enable blog autopilot in Radar by Thally.', cardTitle: ['Articles built', 'to be discovered.'], cardDescription: 'Research, plan and publish where your website already lives.', label: 'Organic search' },
   { path: '/features/ai-visibility', slug: 'ai-visibility', index: true, title: 'AI visibility tracking across five assistants · Radar', description: 'Track whether ChatGPT, Perplexity, Gemini, Claude and Grok mention your business. See cited sites and turn missing answers into content with Radar.', cardTitle: ['Know what AI says', 'about your business.'], cardDescription: 'Five assistants. Nightly checks. Clear next steps.', label: 'AI visibility' },
@@ -21,17 +22,33 @@ export const SEO_PAGES = [
   { path: '/signup', slug: 'signup', index: false, title: 'Create your account · Radar', description: 'Create your Radar account to plan content, track AI visibility and manage search and social marketing. Review the trial and pricing terms before subscribing.', cardTitle: ['Your next customers', 'are looking.'], cardDescription: 'Create your Radar account and start with your website.', label: 'Create an account' },
   { path: '/signin', slug: 'signin', index: false, title: 'Sign in · Radar', description: 'Sign in to Radar by Thally to manage your business profile, content calendar, search performance, AI visibility, social posts and subscription.', cardTitle: ['Welcome back', 'to Radar.'], cardDescription: 'Your content, visibility and next steps in one place.', label: 'Sign in' },
 ] as const;
+const MARKETING_SEO_PAGES = [
+  { path: '/features/daily-brief', slug: 'daily-brief', index: true, title: 'Daily Brief: conversations worth joining · Radar', description: 'Find relevant conversations on Reddit, X, LinkedIn, Hacker News and Quora. Review helpful replies drafted in your voice with Radar’s Daily Brief.', cardTitle: ['Conversations worth', 'joining. Every morning.'], cardDescription: 'Relevant threads and helpful replies in your voice.', label: 'Daily Brief' },
+  { path: '/features/social-marketing', slug: 'social-marketing', index: true, title: 'Social content and marketing for your business · Radar', description: 'Create on-brand social posts and visuals with Radar. Review your library or enable separate generation and scheduling controls where publishing is available.', cardTitle: ['Your brand.', 'Across the conversation.'], cardDescription: 'Social posts and visuals, with control over what gets published.', label: 'Social marketing' },
+  { path: '/features/performance', slug: 'performance', index: true, title: 'Search Console performance and next steps · Radar', description: 'Turn Google Search Console metrics into practical next steps. Track clicks, impressions and queries, then plan content refreshes for review in Radar.', cardTitle: ['Search performance.', 'With a next step.'], cardDescription: 'Measured Search Console data and useful content opportunities.', label: 'Performance' },
+  { path: '/blog', slug: 'blog', index: true, title: 'Notes on getting found · Radar blog', description: 'Practical Radar guides for founders: organic search, AI visibility, useful community replies, Search Console refreshes and responsible backlinks.', cardTitle: ['Notes on', 'getting found.'], cardDescription: 'Practical guides for founders building visibility from zero.', label: 'Radar blog' },
+] as const;
+const BLOG_CARD_TITLES: Record<BlogSlug, readonly string[]> = {
+  'does-chatgpt-recommend-you': ['Does ChatGPT', 'recommend your product?'],
+  'rank-a-new-website': ['A new website.', 'A realistic search plan.'],
+  'reddit-without-getting-banned': ['Be useful on Reddit.', 'Before you promote.'],
+  'page-two-refresh': ['Refresh the pages', 'already getting seen.'],
+  'safe-backlinks-new-sites': ['Earn relevant links.', 'Skip the shortcuts.'],
+};
+const BLOG_SEO_PAGES = BLOG_POSTS.map(post => ({ path: `/blog/${post.slug}` as const, slug: `blog-${post.slug}`, index: true, title: `${post.title} · Radar`, description: post.description, cardTitle: BLOG_CARD_TITLES[post.slug], cardDescription: post.dek, label: `${post.category} · Guide` }));
+export const SEO_PAGES = [...CORE_SEO_PAGES, ...MARKETING_SEO_PAGES, ...BLOG_SEO_PAGES] as const;
 export type SeoPath = typeof SEO_PAGES[number]['path'];
 export const INDEXABLE_PAGES = SEO_PAGES.filter(page => page.index);
 export function absoluteUrl(path: string): string { return new URL(path, SITE_ORIGIN).href; }
 export function metadataFor(path: SeoPath): Metadata {
   const page = SEO_PAGES.find(p => p.path === path)!;
   const url = absoluteUrl(page.path);
+  const post = page.path.startsWith('/blog/') ? getPost(page.path.slice(6)) : undefined;
   const image = { url: absoluteUrl(`/social/${page.slug}.png`), width: 1200, height: 630, type: 'image/png', alt: `${SITE_NAME}: ${page.cardTitle.join(' ')} ${page.cardDescription}` };
   return {
     title: page.title, description: page.description,
-    alternates: { canonical: url }, robots: { index: page.index, follow: true },
-    openGraph: { type: 'website', locale: 'en_US', siteName: SITE_NAME, url, title: page.title, description: page.description, images: [image] },
+    alternates: { canonical: url, ...(post || page.path === '/blog' ? { types: { 'application/rss+xml': absoluteUrl('/blog/rss.xml') } } : {}) }, robots: { index: page.index, follow: true },
+    openGraph: { locale: 'en_US', siteName: SITE_NAME, url, title: page.title, description: page.description, images: [image], ...(post ? { type: 'article' as const, publishedTime: post.date, modifiedTime: post.dateModified, authors: ['Radar team'], section: post.category } : { type: 'website' as const }) },
     twitter: { card: 'summary_large_image', title: page.title, description: page.description, images: [{ url: image.url, alt: image.alt }] },
   };
 }
@@ -58,7 +75,7 @@ export function publicStructuredData() {
 export function jsonLd(value: unknown): string { return JSON.stringify(value).replace(/</g, '\\u003c'); }
 
 export function llmsText(): string {
-  return `# Radar by Thally\n\n> Radar is search, AI visibility and social marketing software for small businesses. It is a product of Fairspleet LLC, the company behind Thally.\n\nRadar learns from a business website, researches and drafts articles, tracks mentions across five AI assistants, prepares social posts and finds relevant conversations. Review-first is the default; automatic publishing requires separate opt-ins. Rankings and AI recommendations are not guaranteed.\n\n## Product and features\n\n${INDEXABLE_PAGES.filter(p => p.path === '/' || p.path.startsWith('/features/')).map(p => `- [${p.title}](${absoluteUrl(p.path)}): ${p.description}`).join('\n')}\n\n## Pricing\n\n${PRICING_SUMMARY} One account subscription covers all businesses the account owns. Joining the optional backlinks network is free.\n\n- [Pricing and trial details](${absoluteUrl('/pricing.md')})\n- [Visible pricing](${absoluteUrl('/#pricing')})\n\n## Policies and contact\n\n- [Privacy policy](${absoluteUrl('/privacy')})\n- [Terms of service](${absoluteUrl('/terms')})\n- [RadarBot crawler information](${absoluteUrl('/bot')})\n- [Thally](https://thally.io): Parent product brand, operated by Fairspleet LLC.\n\nSupport and billing: support@thally.io. Legal and privacy: team@thally.io.\n\n## Optional\n\n- [Expanded product context](${absoluteUrl('/llms-full.txt')})\n- [Public page sitemap](${absoluteUrl('/sitemap.xml')})\n`;
+  return `# Radar by Thally\n\n> Radar is search, AI visibility and social marketing software for small businesses. It is a product of Fairspleet LLC, the company behind Thally.\n\nRadar learns from a business website, researches and drafts articles, tracks mentions across five AI assistants, prepares social posts and finds relevant conversations. Review-first is the default; automatic publishing requires separate opt-ins. Rankings and AI recommendations are not guaranteed.\n\n## Product and features\n\n${INDEXABLE_PAGES.filter(p => p.path === '/' || p.path.startsWith('/features/')).map(p => `- [${p.title}](${absoluteUrl(p.path)}): ${p.description}`).join('\n')}\n\n## Guides\n\n- [Radar blog](${absoluteUrl('/blog')})\n${BLOG_POSTS.map(post => `- [${post.title}](${absoluteUrl(`/blog/${post.slug}`)}): ${post.description}`).join('\n')}\n\n## Pricing\n\n${PRICING_SUMMARY} One account subscription covers all businesses the account owns. Joining the optional backlinks network is free.\n\n- [Pricing and trial details](${absoluteUrl('/pricing.md')})\n- [Visible pricing](${absoluteUrl('/#pricing')})\n\n## Policies and contact\n\n- [Privacy policy](${absoluteUrl('/privacy')})\n- [Terms of service](${absoluteUrl('/terms')})\n- [RadarBot crawler information](${absoluteUrl('/bot')})\n- [Thally](https://thally.io): Parent product brand, operated by Fairspleet LLC.\n\nSupport and billing: support@thally.io. Legal and privacy: team@thally.io.\n\n## Optional\n\n- [Expanded product context](${absoluteUrl('/llms-full.txt')})\n- [Public page sitemap](${absoluteUrl('/sitemap.xml')})\n- [Blog RSS feed](${absoluteUrl('/blog/rss.xml')})\n`;
 }
 export function pricingMarkdown(): string {
   return `# Radar pricing\n\nRadar by Thally is operated by Fairspleet LLC. Currency: ${PRICING.currency} (US dollars).\n\n## One monthly plan\n\n- Subscription: $${PRICING.monthly} per month.\n- Card confirmation: a $${PRICING.confirmation} payment to begin the trial; this is credited toward the first month.\n- Trial: ${PRICING.trialDays} days after the card-confirmation payment succeeds.\n- First monthly invoice: $${PRICING.firstInvoice} after applying the $${PRICING.confirmation} credit to the $${PRICING.monthly} subscription price.\n- Subsequent monthly invoices: $${PRICING.monthly}.\n- Cancel before the trial ends to avoid the monthly subscription charge. The confirmation payment is a payment, not an authorization hold; refund terms are in the Terms of Service.\n- One account subscription covers all businesses you own. A business joined as a teammate can be covered by its owner.\n\n## Included\n\nContent Calendar and researched articles; AI visibility checks; Daily Brief conversations and draft replies; social posts and visuals; Search Console performance; supported blog publishing; team invitations; and the optional backlinks network. Joining the backlinks network is free.\n\nReview-first is the default. Blog autopilot and social automatic scheduling are separate opt-ins. Social publishing to X and LinkedIn is available where enabled in the workspace; other community replies are reviewed and posted by the user. No rankings or AI citations are guaranteed.\n\n## Manage billing\n\nUse Settings → Billing in your signed-in account for the Stripe billing portal, invoices, payment methods and cancellation.\n\n- [Visible pricing](${absoluteUrl('/#pricing')})\n- [Terms and refund policy](${absoluteUrl('/terms')})\n- [Privacy policy](${absoluteUrl('/privacy')})\n- [Product overview](${absoluteUrl('/')})\n\nSupport and billing: support@thally.io. Legal and privacy: team@thally.io.\n`;
@@ -68,4 +85,17 @@ export function llmsFullText(): string {
 }
 export function textResponse(body: string, markdown = false): Response {
   return new Response(body, { headers: { 'Content-Type': `${markdown ? 'text/markdown' : 'text/plain'}; charset=utf-8`, 'X-Robots-Tag': 'noindex, follow', 'Cache-Control': 'public, max-age=3600' } });
+}
+
+/** Public editorial article data only; this never reads customer article records. */
+export function blogStructuredData(post: BlogPostMeta) {
+  const url = absoluteUrl(`/blog/${post.slug}`);
+  return { '@context': 'https://schema.org', '@type': 'BlogPosting', '@id': `${url}#article`, headline: post.title, description: post.description, mainEntityOfPage: { '@type': 'WebPage', '@id': url }, datePublished: post.date, dateModified: post.dateModified,
+    image: { '@type': 'ImageObject', url: absoluteUrl(`/social/blog-${post.slug}.png`), width: 1200, height: 630 },
+    author: { '@type': 'Organization', name: 'Radar team', url: absoluteUrl('/blog') },
+    publisher: { '@type': 'Organization', '@id': `${SITE_ORIGIN}/#organization`, name: 'Thally', legalName: 'Fairspleet LLC', url: 'https://thally.io' }, inLanguage: 'en' };
+}
+function xml(value: string): string { return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
+export function blogRssXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Radar blog — Notes on getting found</title><link>${SITE_ORIGIN}/blog</link><description>Practical guides to search, AI visibility and responsible marketing.</description><language>en</language><atom:link href="${SITE_ORIGIN}/blog/rss.xml" rel="self" type="application/rss+xml"/>${BLOG_POSTS.map(post => { const url = absoluteUrl(`/blog/${post.slug}`); return `<item><title>${xml(post.title)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><description>${xml(post.description)}</description><category>${xml(post.category)}</category><pubDate>${new Date(post.date + 'T00:00:00Z').toUTCString()}</pubDate></item>`; }).join('')}</channel></rss>\n`;
 }

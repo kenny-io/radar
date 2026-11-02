@@ -1,0 +1,23 @@
+{
+  "buildId": "gE6b-fiXSFBU6x88F8k-m",
+  "revision": "29c3f7970a8a26c632f2c723232cb223580421c0ece75d003f58c8d8ec9a8f26",
+  "routes": [
+    "/features/daily-brief",
+    "/features/organic-search",
+    "/features/ai-visibility",
+    "/features/social-marketing",
+    "/features/performance",
+    "/features/backlinks",
+    "/blog",
+    "/blog/does-chatgpt-recommend-you",
+    "/blog/rank-a-new-website",
+    "/blog/reddit-without-getting-banned",
+    "/blog/page-two-refresh",
+    "/blog/safe-backlinks-new-sites"
+  ],
+  "count": 12,
+  "feedStatic": true,
+  "homepageDynamic": true,
+  "privateRoutesDynamic": true,
+  "unknownBlogFallback": false
+}
