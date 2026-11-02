@@ -12,7 +12,8 @@ import { confirmTrial } from '../../../src/server/billing/confirm.ts';
 
 const EXPECTED_ACCOUNT = 'acct_1TsnjEGaLrbBBaPs';
 const path = '.data/production-launch/stripe-invoices-e3.json';
-if (!process.argv.includes('--verify-only')) {
+const verifyOnly = process.argv.includes('--verify-only');
+if (!verifyOnly) {
   try { await access(path); throw new Error('E3 evidence already exists; preserve the fixture and use --verify-only.'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
 }
@@ -20,7 +21,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const safeError = e => ({ name: e?.name, status: e?.status, type: e?.type, code: e?.code,
   message: String(e?.message || e).replace(/(?:sk|pk|rk)_(?:test|live)_[A-Za-z0-9]+|whsec_[A-Za-z0-9]+|[A-Za-z0-9_]+_secret_[A-Za-z0-9]+/g, '[redacted]').slice(0, 500) });
 let evidence = { run: `E3-${Date.now()}`, stage: 'preflight', account: EXPECTED_ACCOUNT, sandbox: true };
-const save = async () => writeFile(path, JSON.stringify(evidence, null, 2) + '\n', { mode: 0o600 });
+let verificationPhase = 'preflight';
+const save = async () => {
+  assert(!verifyOnly, 'Verification must never write retained evidence');
+  await writeFile(path, JSON.stringify(evidence, null, 2) + '\n', { mode: 0o600 });
+};
 const stage = async value => { evidence.stage = value; await save(); console.log(JSON.stringify({ stage: value, run: evidence.run })); };
 const testResource = value => {
   if (Array.isArray(value?.data)) value.data.forEach(testResource);
@@ -28,7 +33,10 @@ const testResource = value => {
   return value;
 };
 const get = async (route, params) => testResource(await stripeRequest('GET', route, { params }));
-const post = async (route, params, suffix) => testResource(await stripeRequest('POST', route, { params, key: `radar:e3:${evidence.run}:${suffix}` }));
+const post = async (route, params, suffix) => {
+  assert(!verifyOnly, 'Verification must never mutate Stripe');
+  return testResource(await stripeRequest('POST', route, { params, key: `radar:e3:${evidence.run}:${suffix}` }));
+};
 const idOf = value => typeof value === 'string' ? value : value?.id;
 const customer = () => get(`/customers/${evidence.customer}`);
 const subscription = () => get(`/subscriptions/${evidence.subscription}`);
@@ -99,25 +107,30 @@ async function verifyRetained() {
   assert.equal(local.currentPeriodEnd.getTime() / 1000, sub.items.data[0].current_period_end);
   const rows = await db.select().from(schema.billingEvents).where(inArray(schema.billingEvents.id, evidence.webhooks.map(value => value.id)));
   assert.equal(rows.length, evidence.webhooks.length); assert(rows.every(row => row.processedAt && row.attempts === 1));
-  evidence.postflight = { verifiedAt: new Date().toISOString(), paymentAmounts: [100, 4900, 5000], oneCredit: true, periodEndMatches: true,
+  const postflight = { verifiedAt: new Date().toISOString(), paymentAmounts: [100, 4900, 5000], oneCredit: true, periodEndMatches: true,
     currentPeriodEnd: local.currentPeriodEnd.toISOString(), processedEvents: rows.length };
-  await save(); console.log(JSON.stringify({ result: 'retained-read-only-verified', postflight: evidence.postflight }));
+  console.log(JSON.stringify({ result: 'retained-read-only-verified', postflight }));
 }
 
 try {
+  // Load retained evidence first; verification errors must never replace it with a fresh preflight record.
+  if (verifyOnly) {
+    evidence = JSON.parse(await readFile(path, 'utf8'));
+    assert.equal(evidence.account, EXPECTED_ACCOUNT); assert.equal(evidence.sandbox, true);
+  }
   assert.match(process.env.STRIPE_SECRET_KEY || '', /^sk_test_/, 'Sandbox test key required');
   assert.equal(new URL(process.env.DATABASE_URL).pathname, '/radar_launch_stripe_sandbox');
-  assert.equal(process.env.APP_URL, 'http://localhost:3902');
+  assert(['http://localhost:3902', 'https://localhost:3903'].includes(process.env.APP_URL), 'Only the authorized local HTTP/HTTPS fixture origins are allowed');
   assert.equal(process.env.RADAR_DEV_STUBS, '0'); assert.equal(process.env.RADAR_BILLING, 'on');
   const account = await get('/account'); assert.equal(account.id, EXPECTED_ACCOUNT);
   const price = await get(`/prices/${process.env.STRIPE_PRICE_ID}`);
   assert.equal(price.livemode, false); assert.equal(price.unit_amount, 5000); assert.equal(price.currency, 'usd');
-  if (process.argv.includes('--verify-only')) evidence = JSON.parse(await readFile(path, 'utf8'));
-  evidence.charges_enabled = account.charges_enabled; evidence.price = price.id;
-  delete evidence.failure;
-  if (process.argv.includes('--verify-only')) {
+  if (verifyOnly) {
+    verificationPhase = 'retained-verification';
     await verifyRetained();
   } else {
+  evidence.charges_enabled = account.charges_enabled; evidence.price = price.id;
+  delete evidence.failure;
   if (!evidence.clock) {
     await stage('create-clock-and-user');
     const clock = await post('/test_helpers/test_clocks', { frozen_time: Math.floor(Date.now() / 1000), name: `Radar ${evidence.run} invoice acceptance` }, 'clock');
@@ -183,6 +196,7 @@ try {
     cardCheck: evidence.cardCheck, firstInvoice: evidence.firstInvoice, secondInvoice: evidence.secondInvoice, webhooks: evidence.webhooks }));
   }
 } catch (error) {
-  evidence.failure = safeError(error); await save();
-  console.log(JSON.stringify({ result: 'blocked-or-failed', stage: evidence.stage, failure: evidence.failure })); process.exitCode = 1;
+  const failure = safeError(error);
+  if (!verifyOnly) { evidence.failure = failure; await save(); }
+  console.log(JSON.stringify({ result: 'blocked-or-failed', stage: verifyOnly ? verificationPhase : evidence.stage, failure })); process.exitCode = 1;
 } finally { await pool.end(); }

@@ -10,8 +10,8 @@ Base: main `0a9af070`; branch: `kenny/production-launch`. Target launch: Novembe
 | E2 connector boundary/deadline | factory-engineer | verified | Redirect/DNS-pinning, full body deadline and streamed webhook size guard passed |
 | E3 real recurring billing | factory-engineer | verified | Actual Stripe test clock: $1 / $49 / $50, one credit and signed event processing; stripe-invoices.md |
 | Q1/Q2 independent QA | factory-qa | verified | Public/local/hydration/production browser; focused regressions; qa.md |
-| Q3 real Stripe browser | factory-qa | active | Elements, 3DS, card update, invoice download passed; actual cancellation-shape fix now requires final retest |
-| P1 integration/delivery | PM | active | Final build/QA after cancellation fix, concrete PR and authorized rollout |
+| Q3 real Stripe browser | factory-qa | verified | Real Elements/3DS/portal/invoice/cancellation; fresh signed event and persisted desktop/mobile warning passed |
+| P1 integration/delivery | PM | review | Code and QA complete; PR20 ready for owner merge/deployment authorization |
 
 ## Owner decisions and runtime
 
@@ -25,3 +25,7 @@ Base: main `0a9af070`; branch: `kenny/production-launch`. Target launch: Novembe
 ## Delivery constraints
 
 Existing repository policy requires owner go-ahead before merging auto-deploying main. Prepare the final reviewable PR first. Billing activation is a separate step with a recorded grandfather cutoff. External Google consent verification, real email receipt and ongoing monitoring remain unverified; report these limits explicitly.
+
+## Final checkpoint
+
+Runtime source commit `1f6a1a1b`; final release build `NNH2Klc26NzUsej_cYYXV`. Build/typecheck passed; full suite 855 passed, 65 external skips, one unchanged raster baseline failure. Independent final public smoke 15/15 and real Stripe browser 9/9 passed; cancellation defect closed. Exact-build repeated 200-session/200-SSE load passed at 156.5 GET/s, p95 86ms, zero errors. Final record changes after this checkpoint are documentation/test-harness only. No main merge, production deployment or billing activation.
