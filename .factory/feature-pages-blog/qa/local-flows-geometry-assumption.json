@@ -1,0 +1,35 @@
+{
+  "atUTC": "2026-11-02T22:07:02.363Z",
+  "base": "http://[::1]:3920",
+  "revision": "29c3f7970a8a26c632f2c723232cb223580421c0ece75d003f58c8d8ec9a8f26",
+  "passed": [
+    "Features hover bridge, keyboard navigation and active marker",
+    "Daily Brief async copy, posted, undo and style reset",
+    "Daily Brief clipboard denial and stale async completion are honest",
+    "Social roving tabs, platform actions, length and visual ratios",
+    "Social copy and actual PNG download stay local",
+    "Performance keyboard, seeded series, inverted position and refresh",
+    "Blog sticky contents, contrast, CTA and mobile contents policy",
+    "Invalid domain validation does not start analysis",
+    "Reduced motion keeps social and performance demos static",
+    "Social autoplay starts visible and interaction permanently stops it",
+    "No account, analysis or publishing mutations"
+  ],
+  "failed": [
+    {
+      "name": "Blog Latest card follows the hero without duplicate section padding",
+      "message": "Latest card has extra padding beyond the supplied hero spacing",
+      "stack": "AssertionError [ERR_ASSERTION]: Latest card has extra padding beyond the supplied hero spacing\n    at file:///Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar-push/.factory/feature-pages-blog/qa/flows.mjs:25:3\n    at async check (file:///Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar-push/.factory/feature-pages-blog/qa/flows.mjs:8:40)\n    at async file:///Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar-push/.factory/feature-pages-blog/qa/flows.mjs:22:1"
+    }
+  ],
+  "mutations": [],
+  "downloads": [
+    {
+      "filename": "fieldnote-reddit-demo.png",
+      "bytes": 57956,
+      "width": 1200,
+      "height": 900
+    }
+  ],
+  "note": "Public anonymous Chrome; clipboard promises controlled in page memory for deterministic async/error coverage; no native OS clipboard claim."
+}

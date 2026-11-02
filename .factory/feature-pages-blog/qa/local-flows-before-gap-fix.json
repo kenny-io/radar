@@ -1,0 +1,29 @@
+{
+  "atUTC": "2026-11-02T22:04:03.306Z",
+  "base": "http://[::1]:3920",
+  "revision": "a096b9c552a11efbfd2c2c9243b9cf253ce9bb6801bf9be74997ba6a8b4e66c9",
+  "passed": [
+    "Features hover bridge, keyboard navigation and active marker",
+    "Daily Brief async copy, posted, undo and style reset",
+    "Daily Brief clipboard denial and stale async completion are honest",
+    "Social roving tabs, platform actions, length and visual ratios",
+    "Social copy and actual PNG download stay local",
+    "Performance keyboard, seeded series, inverted position and refresh",
+    "Blog sticky contents, contrast, CTA and mobile contents policy",
+    "Invalid domain validation does not start analysis",
+    "Reduced motion keeps social and performance demos static",
+    "Social autoplay starts visible and interaction permanently stops it",
+    "No account, analysis or publishing mutations"
+  ],
+  "failed": [],
+  "mutations": [],
+  "downloads": [
+    {
+      "filename": "fieldnote-reddit-demo.png",
+      "bytes": 57956,
+      "width": 1200,
+      "height": 900
+    }
+  ],
+  "note": "Public anonymous Chrome; clipboard promises controlled in page memory for deterministic async/error coverage; no native OS clipboard claim."
+}

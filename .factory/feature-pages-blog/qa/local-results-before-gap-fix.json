@@ -1,0 +1,1057 @@
+{
+  "atUTC": "2026-11-02T22:02:46.443Z",
+  "base": "http://[::1]:3920",
+  "revision": "a096b9c552a11efbfd2c2c9243b9cf253ce9bb6801bf9be74997ba6a8b4e66c9",
+  "passed": [
+    "metadata /",
+    "metadata /features/daily-brief",
+    "metadata /features/organic-search",
+    "metadata /features/ai-visibility",
+    "metadata /features/social-marketing",
+    "metadata /features/performance",
+    "metadata /features/backlinks",
+    "metadata /blog",
+    "metadata /blog/does-chatgpt-recommend-you",
+    "metadata /blog/rank-a-new-website",
+    "metadata /blog/reddit-without-getting-banned",
+    "metadata /blog/page-two-refresh",
+    "metadata /blog/safe-backlinks-new-sites",
+    "metadata /privacy",
+    "metadata /terms",
+    "metadata /bot",
+    "metadata /signup",
+    "metadata /signin",
+    "unique page metadata",
+    "image /",
+    "image /features/daily-brief",
+    "image /features/organic-search",
+    "image /features/ai-visibility",
+    "image /features/social-marketing",
+    "image /features/performance",
+    "image /features/backlinks",
+    "image /blog",
+    "image /blog/does-chatgpt-recommend-you",
+    "image /blog/rank-a-new-website",
+    "image /blog/reddit-without-getting-banned",
+    "image /blog/page-two-refresh",
+    "image /blog/safe-backlinks-new-sites",
+    "image /privacy",
+    "image /terms",
+    "image /bot",
+    "image /signup",
+    "image /signin",
+    "distinct18 card images",
+    "marketing screenshot /marketing/shots/c-brief-open.webp",
+    "marketing screenshot /marketing/shots/c-calendar.webp",
+    "marketing screenshot /marketing/shots/c-ai.webp",
+    "marketing screenshot /marketing/shots/c-social.webp",
+    "marketing screenshot /marketing/shots/p-perf.webp",
+    "marketing screenshot /marketing/shots/c-backlinks.webp",
+    "marketing screenshot /marketing/shots/p-social.webp",
+    "static cookie independence /features/daily-brief",
+    "static cookie independence /blog",
+    "static cookie independence /blog/does-chatgpt-recommend-you",
+    "feature structure /features/daily-brief",
+    "feature structure /features/organic-search",
+    "feature structure /features/ai-visibility",
+    "feature structure /features/social-marketing",
+    "feature structure /features/performance",
+    "feature structure /features/backlinks",
+    "article content does-chatgpt-recommend-you",
+    "article content rank-a-new-website",
+    "article content reddit-without-getting-banned",
+    "article content page-two-refresh",
+    "article content safe-backlinks-new-sites",
+    "blog index order and latest",
+    "internal links /",
+    "internal links /features/daily-brief",
+    "internal links /features/organic-search",
+    "internal links /features/ai-visibility",
+    "internal links /features/social-marketing",
+    "internal links /features/performance",
+    "internal links /features/backlinks",
+    "internal links /blog",
+    "internal links /blog/does-chatgpt-recommend-you",
+    "internal links /blog/rank-a-new-website",
+    "internal links /blog/reddit-without-getting-banned",
+    "internal links /blog/page-two-refresh",
+    "internal links /blog/safe-backlinks-new-sites",
+    "discovery boundaries",
+    "not found /blog/not-a-real-guide",
+    "not found /blog/../../not-a-real-guide",
+    "not found /social/not-a-card.png",
+    "private guard /dashboard",
+    "private guard /settings",
+    "private guard /calendar",
+    "private guard /social",
+    "private guard /start-trial",
+    "private guard /onboarding",
+    "private guard /api/me",
+    "crawler OAI-SearchBot/1.4 /features/daily-brief",
+    "crawler OAI-SearchBot/1.4 /blog",
+    "crawler OAI-SearchBot/1.4 /blog/does-chatgpt-recommend-you",
+    "crawler PerplexityBot/1.0 /features/daily-brief",
+    "crawler PerplexityBot/1.0 /blog",
+    "crawler PerplexityBot/1.0 /blog/does-chatgpt-recommend-you",
+    "crawler Claude-SearchBot/1.0 /features/daily-brief",
+    "crawler Claude-SearchBot/1.0 /blog",
+    "crawler Claude-SearchBot/1.0 /blog/does-chatgpt-recommend-you",
+    "crawler Googlebot/2.1 /features/daily-brief",
+    "crawler Googlebot/2.1 /blog",
+    "crawler Googlebot/2.1 /blog/does-chatgpt-recommend-you",
+    "crawler Twitterbot/1.0 /features/daily-brief",
+    "crawler Twitterbot/1.0 /blog",
+    "crawler Twitterbot/1.0 /blog/does-chatgpt-recommend-you",
+    "crawler facebookexternalhit/1.1 /features/daily-brief",
+    "crawler facebookexternalhit/1.1 /blog",
+    "crawler facebookexternalhit/1.1 /blog/does-chatgpt-recommend-you",
+    "crawler LinkedInBot/1.0 /features/daily-brief",
+    "crawler LinkedInBot/1.0 /blog",
+    "crawler LinkedInBot/1.0 /blog/does-chatgpt-recommend-you",
+    "crawler Slackbot-LinkExpanding 1.0 /features/daily-brief",
+    "crawler Slackbot-LinkExpanding 1.0 /blog",
+    "crawler Slackbot-LinkExpanding 1.0 /blog/does-chatgpt-recommend-you",
+    "crawler Discordbot/2.0 /features/daily-brief",
+    "crawler Discordbot/2.0 /blog",
+    "crawler Discordbot/2.0 /blog/does-chatgpt-recommend-you",
+    "crawler WhatsApp/2.24.1 /features/daily-brief",
+    "crawler WhatsApp/2.24.1 /blog",
+    "crawler WhatsApp/2.24.1 /blog/does-chatgpt-recommend-you",
+    "crawler TelegramBot (like TwitterBot) /features/daily-brief",
+    "crawler TelegramBot (like TwitterBot) /blog",
+    "crawler TelegramBot (like TwitterBot) /blog/does-chatgpt-recommend-you",
+    "RSS strict XML and ordered canonical items",
+    "browser 360 /",
+    "browser 360 /features/daily-brief",
+    "browser 360 /features/organic-search",
+    "browser 360 /features/ai-visibility",
+    "browser 360 /features/social-marketing",
+    "browser 360 /features/performance",
+    "browser 360 /features/backlinks",
+    "browser 360 /blog",
+    "browser 360 /blog/does-chatgpt-recommend-you",
+    "browser 360 /blog/rank-a-new-website",
+    "browser 360 /blog/reddit-without-getting-banned",
+    "browser 360 /blog/page-two-refresh",
+    "browser 360 /blog/safe-backlinks-new-sites",
+    "browser 390 /",
+    "browser 390 /features/daily-brief",
+    "browser 390 /features/organic-search",
+    "browser 390 /features/ai-visibility",
+    "browser 390 /features/social-marketing",
+    "browser 390 /features/performance",
+    "browser 390 /features/backlinks",
+    "browser 390 /blog",
+    "browser 390 /blog/does-chatgpt-recommend-you",
+    "browser 390 /blog/rank-a-new-website",
+    "browser 390 /blog/reddit-without-getting-banned",
+    "browser 390 /blog/page-two-refresh",
+    "browser 390 /blog/safe-backlinks-new-sites",
+    "browser 760 /",
+    "browser 760 /features/daily-brief",
+    "browser 760 /features/organic-search",
+    "browser 760 /features/ai-visibility",
+    "browser 760 /features/social-marketing",
+    "browser 760 /features/performance",
+    "browser 760 /features/backlinks",
+    "browser 760 /blog",
+    "browser 760 /blog/does-chatgpt-recommend-you",
+    "browser 760 /blog/rank-a-new-website",
+    "browser 760 /blog/reddit-without-getting-banned",
+    "browser 760 /blog/page-two-refresh",
+    "browser 760 /blog/safe-backlinks-new-sites",
+    "browser 1000 /",
+    "browser 1000 /features/daily-brief",
+    "browser 1000 /features/organic-search",
+    "browser 1000 /features/ai-visibility",
+    "browser 1000 /features/social-marketing",
+    "browser 1000 /features/performance",
+    "browser 1000 /features/backlinks",
+    "browser 1000 /blog",
+    "browser 1000 /blog/does-chatgpt-recommend-you",
+    "browser 1000 /blog/rank-a-new-website",
+    "browser 1000 /blog/reddit-without-getting-banned",
+    "browser 1000 /blog/page-two-refresh",
+    "browser 1000 /blog/safe-backlinks-new-sites",
+    "browser 1440 /",
+    "browser 1440 /features/daily-brief",
+    "browser 1440 /features/organic-search",
+    "browser 1440 /features/ai-visibility",
+    "browser 1440 /features/social-marketing",
+    "browser 1440 /features/performance",
+    "browser 1440 /features/backlinks",
+    "browser 1440 /blog",
+    "browser 1440 /blog/does-chatgpt-recommend-you",
+    "browser 1440 /blog/rank-a-new-website",
+    "browser 1440 /blog/reddit-without-getting-banned",
+    "browser 1440 /blog/page-two-refresh",
+    "browser 1440 /blog/safe-backlinks-new-sites",
+    "browser 1920 /",
+    "browser 1920 /features/daily-brief",
+    "browser 1920 /features/organic-search",
+    "browser 1920 /features/ai-visibility",
+    "browser 1920 /features/social-marketing",
+    "browser 1920 /features/performance",
+    "browser 1920 /features/backlinks",
+    "browser 1920 /blog",
+    "browser 1920 /blog/does-chatgpt-recommend-you",
+    "browser 1920 /blog/rank-a-new-website",
+    "browser 1920 /blog/reddit-without-getting-banned",
+    "browser 1920 /blog/page-two-refresh",
+    "browser 1920 /blog/safe-backlinks-new-sites",
+    "browser runtime and mutation boundary",
+    "no JavaScript /features/daily-brief",
+    "no JavaScript /features/organic-search",
+    "no JavaScript /features/ai-visibility",
+    "no JavaScript /features/social-marketing",
+    "no JavaScript /features/performance",
+    "no JavaScript /features/backlinks",
+    "no JavaScript /blog",
+    "no JavaScript /blog/does-chatgpt-recommend-you",
+    "no JavaScript /blog/rank-a-new-website",
+    "no JavaScript /blog/reddit-without-getting-banned",
+    "no JavaScript /blog/page-two-refresh",
+    "no JavaScript /blog/safe-backlinks-new-sites"
+  ],
+  "failed": [],
+  "pages": [
+    {
+      "path": "/",
+      "title": "Radar — Search, AI visibility and social marketing",
+      "description": "Grow beyond your network with Radar by Thally: researched articles, AI visibility checks, social content and relevant conversations. One plan, $50/month.",
+      "canonical": "https://radar.thally.io",
+      "image": "https://radar.thally.io/social/home.png",
+      "type": "website"
+    },
+    {
+      "path": "/features/daily-brief",
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "description": "Find relevant conversations on Reddit, X, LinkedIn, Hacker News and Quora. Review helpful replies drafted in your voice with Radar’s Daily Brief.",
+      "canonical": "https://radar.thally.io/features/daily-brief",
+      "image": "https://radar.thally.io/social/daily-brief.png",
+      "type": "website"
+    },
+    {
+      "path": "/features/organic-search",
+      "title": "Organic search and content marketing · Radar",
+      "description": "Plan, research and publish articles for keywords your site can realistically win. Review every draft or enable blog autopilot in Radar by Thally.",
+      "canonical": "https://radar.thally.io/features/organic-search",
+      "image": "https://radar.thally.io/social/organic-search.png",
+      "type": "website"
+    },
+    {
+      "path": "/features/ai-visibility",
+      "title": "AI visibility tracking across five assistants · Radar",
+      "description": "Track whether ChatGPT, Perplexity, Gemini, Claude and Grok mention your business. See cited sites and turn missing answers into content with Radar.",
+      "canonical": "https://radar.thally.io/features/ai-visibility",
+      "image": "https://radar.thally.io/social/ai-visibility.png",
+      "type": "website"
+    },
+    {
+      "path": "/features/social-marketing",
+      "title": "Social content and marketing for your business · Radar",
+      "description": "Create on-brand social posts and visuals with Radar. Review your library or enable separate generation and scheduling controls where publishing is available.",
+      "canonical": "https://radar.thally.io/features/social-marketing",
+      "image": "https://radar.thally.io/social/social-marketing.png",
+      "type": "website"
+    },
+    {
+      "path": "/features/performance",
+      "title": "Search Console performance and next steps · Radar",
+      "description": "Turn Google Search Console metrics into practical next steps. Track clicks, impressions and queries, then plan content refreshes for review in Radar.",
+      "canonical": "https://radar.thally.io/features/performance",
+      "image": "https://radar.thally.io/social/performance.png",
+      "type": "website"
+    },
+    {
+      "path": "/features/backlinks",
+      "title": "Optional, approved backlinks network · Radar",
+      "description": "Join Radar’s optional backlinks network. Review relevant matches, approve placements and keep links disclosed. Joining is free; rankings are never guaranteed.",
+      "canonical": "https://radar.thally.io/features/backlinks",
+      "image": "https://radar.thally.io/social/backlinks.png",
+      "type": "website"
+    },
+    {
+      "path": "/blog",
+      "title": "Notes on getting found · Radar blog",
+      "description": "Practical Radar guides for founders: organic search, AI visibility, useful community replies, Search Console refreshes and responsible backlinks.",
+      "canonical": "https://radar.thally.io/blog",
+      "image": "https://radar.thally.io/social/blog.png",
+      "type": "website"
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "description": "AI assistants are a new front door for buyers. How to check whether ChatGPT, Perplexity, Gemini, Claude and Grok mention your product, and what to do when they don’t.",
+      "canonical": "https://radar.thally.io/blog/does-chatgpt-recommend-you",
+      "image": "https://radar.thally.io/social/blog-does-chatgpt-recommend-you.png",
+      "type": "article"
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "description": "Big sites own the obvious keywords. How a new domain finds the keywords it can realistically win, publishes on a schedule, and builds from there.",
+      "canonical": "https://radar.thally.io/blog/rank-a-new-website",
+      "image": "https://radar.thally.io/social/blog-rank-a-new-website.png",
+      "type": "article"
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "title": "How to market on Reddit without getting banned · Radar",
+      "description": "A founder’s guide to relevant Reddit threads, useful replies, disclosure and community rules. No posting cadence or wording guarantees protection from a ban.",
+      "canonical": "https://radar.thally.io/blog/reddit-without-getting-banned",
+      "image": "https://radar.thally.io/social/blog-reddit-without-getting-banned.png",
+      "type": "article"
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "title": "How to refresh pages ranking on page two · Radar",
+      "description": "Use Search Console average-position data to shortlist pages for a focused refresh. Diagnose reader needs, improve the page and measure what changes.",
+      "canonical": "https://radar.thally.io/blog/page-two-refresh",
+      "image": "https://radar.thally.io/social/blog-page-two-refresh.png",
+      "type": "article"
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "description": "Links still help Google trust a site. How a new domain can earn them honestly, what counts as a link scheme, and how to mark partner links correctly.",
+      "canonical": "https://radar.thally.io/blog/safe-backlinks-new-sites",
+      "image": "https://radar.thally.io/social/blog-safe-backlinks-new-sites.png",
+      "type": "article"
+    },
+    {
+      "path": "/privacy",
+      "title": "Privacy Policy — Radar by Thally",
+      "description": "How Radar, a Thally product operated by Fairspleet LLC, collects and uses account, business, billing and connected-service data, and your privacy choices.",
+      "canonical": "https://radar.thally.io/privacy",
+      "image": "https://radar.thally.io/social/privacy.png",
+      "type": "website"
+    },
+    {
+      "path": "/terms",
+      "title": "Terms of Service — Radar by Thally",
+      "description": "Read Radar’s terms for accounts, the three-day trial, card confirmation, subscriptions, publishing and cancellation. Operated by Fairspleet LLC.",
+      "canonical": "https://radar.thally.io/terms",
+      "image": "https://radar.thally.io/social/terms.png",
+      "type": "website"
+    },
+    {
+      "path": "/bot",
+      "title": "RadarBot crawler information — Radar by Thally",
+      "description": "Learn why RadarBot visits customer websites, how it identifies itself, respects robots.txt and crawl delays, and how to control or report its access.",
+      "canonical": "https://radar.thally.io/bot",
+      "image": "https://radar.thally.io/social/bot.png",
+      "type": "website"
+    },
+    {
+      "path": "/signup",
+      "title": "Create your account · Radar",
+      "description": "Create your Radar account to plan content, track AI visibility and manage search and social marketing. Review the trial and pricing terms before subscribing.",
+      "canonical": "https://radar.thally.io/signup",
+      "image": "https://radar.thally.io/social/signup.png",
+      "type": "website"
+    },
+    {
+      "path": "/signin",
+      "title": "Sign in · Radar",
+      "description": "Sign in to Radar by Thally to manage your business profile, content calendar, search performance, AI visibility, social posts and subscription.",
+      "canonical": "https://radar.thally.io/signin",
+      "image": "https://radar.thally.io/social/signin.png",
+      "type": "website"
+    }
+  ],
+  "images": [
+    {
+      "page": "/",
+      "url": "https://radar.thally.io/social/home.png",
+      "bytes": 69133,
+      "hash": "b0ca0df5e94d6c295b0b4d26d33f25a237e26bf6da3257bda2b6492b90534903"
+    },
+    {
+      "page": "/features/daily-brief",
+      "url": "https://radar.thally.io/social/daily-brief.png",
+      "bytes": 73691,
+      "hash": "f208652308a90584d429d5b1121b4bc707906c220786f984c047f09ada29dcc5"
+    },
+    {
+      "page": "/features/organic-search",
+      "url": "https://radar.thally.io/social/organic-search.png",
+      "bytes": 69332,
+      "hash": "fc5c6aac5577b4c95e23696e8a310dea44ea2cdaa02a066673c71410bb060b88"
+    },
+    {
+      "page": "/features/ai-visibility",
+      "url": "https://radar.thally.io/social/ai-visibility.png",
+      "bytes": 69737,
+      "hash": "eb9a0ab34607e3d9bfef19bddd53f39038f019aa7d6a0a71e39089dcdf3f5802"
+    },
+    {
+      "page": "/features/social-marketing",
+      "url": "https://radar.thally.io/social/social-marketing.png",
+      "bytes": 74772,
+      "hash": "8081e94d7652baae210ac69b35d366011f7ddedc2679663053e9e951f0468879"
+    },
+    {
+      "page": "/features/performance",
+      "url": "https://radar.thally.io/social/performance.png",
+      "bytes": 75174,
+      "hash": "be7ee9fd5bb66c1f04224497448d709487577d871d1acbfb575111f84bef506a"
+    },
+    {
+      "page": "/features/backlinks",
+      "url": "https://radar.thally.io/social/backlinks.png",
+      "bytes": 77853,
+      "hash": "dd145ae5b884bfd87934d42cae938f082c5e5fd8d2b5911adaa4d3484695bdbb"
+    },
+    {
+      "page": "/blog",
+      "url": "https://radar.thally.io/social/blog.png",
+      "bytes": 63728,
+      "hash": "15db59a8c004971bc1b7c3e684d25a2a04ec22d89b529818b7c265468057accc"
+    },
+    {
+      "page": "/blog/does-chatgpt-recommend-you",
+      "url": "https://radar.thally.io/social/blog-does-chatgpt-recommend-you.png",
+      "bytes": 85948,
+      "hash": "17f620aeaab8cd58650d7d2cc63b9749b81240e29babdfa3e92ab9393c9d4c5f"
+    },
+    {
+      "page": "/blog/rank-a-new-website",
+      "url": "https://radar.thally.io/social/blog-rank-a-new-website.png",
+      "bytes": 83175,
+      "hash": "dd715006b89e624184831f29fb30d530f3ef3fbc53eec339e8b0180351b9a9bb"
+    },
+    {
+      "page": "/blog/reddit-without-getting-banned",
+      "url": "https://radar.thally.io/social/blog-reddit-without-getting-banned.png",
+      "bytes": 76080,
+      "hash": "b1b5df749c1d9e3f0f47b13d529006d7a42ed1ea39b3a5610caa9b43fc79df9e"
+    },
+    {
+      "page": "/blog/page-two-refresh",
+      "url": "https://radar.thally.io/social/blog-page-two-refresh.png",
+      "bytes": 80808,
+      "hash": "a0c3a998c7eb4507ef2b11a265189d42c708b5f7203ef50d14bdbd9e9b02dea8"
+    },
+    {
+      "page": "/blog/safe-backlinks-new-sites",
+      "url": "https://radar.thally.io/social/blog-safe-backlinks-new-sites.png",
+      "bytes": 80424,
+      "hash": "a14cfb20b6406de184d27af622cb5adf3a2dcd1b3c1143b896a5f6add1bd9e67"
+    },
+    {
+      "page": "/privacy",
+      "url": "https://radar.thally.io/social/privacy.png",
+      "bytes": 65553,
+      "hash": "23a7aa63562752700fdfb824744d9e956bc45073ed91d5a29f74a3f319d3f4e1"
+    },
+    {
+      "page": "/terms",
+      "url": "https://radar.thally.io/social/terms.png",
+      "bytes": 67373,
+      "hash": "acf572408fb81ea7e856ccd58b87a320cd6f11398df47ca12b368293e62852a2"
+    },
+    {
+      "page": "/bot",
+      "url": "https://radar.thally.io/social/bot.png",
+      "bytes": 60124,
+      "hash": "c05e6475f687678dfa1e98d31113a24580de5380090b9a7d11575a40e46a5127"
+    },
+    {
+      "page": "/signup",
+      "url": "https://radar.thally.io/social/signup.png",
+      "bytes": 70453,
+      "hash": "1c9abc219d6afd633f11e7bb33f9af9c4651250b445ef2c8ccbf3e2580e837ab"
+    },
+    {
+      "page": "/signin",
+      "url": "https://radar.thally.io/social/signin.png",
+      "bytes": 63990,
+      "hash": "9658210a32ea74930d68eef46c56e8df8fba61e634fe11f6289eee4d2f774d17"
+    }
+  ],
+  "browser": [
+    {
+      "path": "/",
+      "width": 360,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 360,
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 360,
+      "title": "Organic search and content marketing · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 360,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 360,
+      "title": "Social content and marketing for your business · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/performance",
+      "width": 360,
+      "title": "Search Console performance and next steps · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 360,
+      "title": "Optional, approved backlinks network · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog",
+      "width": 360,
+      "title": "Notes on getting found · Radar blog",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 360,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "width": 360,
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "width": 360,
+      "title": "How to market on Reddit without getting banned · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 360,
+      "title": "How to refresh pages ranking on page two · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "width": 360,
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 390,
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 390,
+      "title": "Organic search and content marketing · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 390,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 390,
+      "title": "Social content and marketing for your business · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/performance",
+      "width": 390,
+      "title": "Search Console performance and next steps · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 390,
+      "title": "Optional, approved backlinks network · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog",
+      "width": 390,
+      "title": "Notes on getting found · Radar blog",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 390,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "width": 390,
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "width": 390,
+      "title": "How to market on Reddit without getting banned · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 390,
+      "title": "How to refresh pages ranking on page two · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "width": 390,
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/",
+      "width": 760,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 760,
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 760,
+      "title": "Organic search and content marketing · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 760,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 760,
+      "title": "Social content and marketing for your business · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/performance",
+      "width": 760,
+      "title": "Search Console performance and next steps · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 760,
+      "title": "Optional, approved backlinks network · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog",
+      "width": 760,
+      "title": "Notes on getting found · Radar blog",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 760,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "width": 760,
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "width": 760,
+      "title": "How to market on Reddit without getting banned · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 760,
+      "title": "How to refresh pages ranking on page two · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "width": 760,
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "overflow": false,
+      "footerColumns": 2
+    },
+    {
+      "path": "/",
+      "width": 1000,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 1000,
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 1000,
+      "title": "Organic search and content marketing · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 1000,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 1000,
+      "title": "Social content and marketing for your business · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/performance",
+      "width": 1000,
+      "title": "Search Console performance and next steps · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 1000,
+      "title": "Optional, approved backlinks network · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog",
+      "width": 1000,
+      "title": "Notes on getting found · Radar blog",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 1000,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "width": 1000,
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "width": 1000,
+      "title": "How to market on Reddit without getting banned · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 1000,
+      "title": "How to refresh pages ranking on page two · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "width": 1000,
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 1440,
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 1440,
+      "title": "Organic search and content marketing · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 1440,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 1440,
+      "title": "Social content and marketing for your business · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/performance",
+      "width": 1440,
+      "title": "Search Console performance and next steps · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 1440,
+      "title": "Optional, approved backlinks network · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog",
+      "width": 1440,
+      "title": "Notes on getting found · Radar blog",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 1440,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "width": 1440,
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "width": 1440,
+      "title": "How to market on Reddit without getting banned · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 1440,
+      "title": "How to refresh pages ranking on page two · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "width": 1440,
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/",
+      "width": 1920,
+      "title": "Radar — Search, AI visibility and social marketing",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/daily-brief",
+      "width": 1920,
+      "title": "Daily Brief: conversations worth joining · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/organic-search",
+      "width": 1920,
+      "title": "Organic search and content marketing · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/ai-visibility",
+      "width": 1920,
+      "title": "AI visibility tracking across five assistants · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/social-marketing",
+      "width": 1920,
+      "title": "Social content and marketing for your business · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/performance",
+      "width": 1920,
+      "title": "Search Console performance and next steps · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/features/backlinks",
+      "width": 1920,
+      "title": "Optional, approved backlinks network · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog",
+      "width": 1920,
+      "title": "Notes on getting found · Radar blog",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "width": 1920,
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "width": 1920,
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "width": 1920,
+      "title": "How to market on Reddit without getting banned · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "width": 1920,
+      "title": "How to refresh pages ranking on page two · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "width": 1920,
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "overflow": false,
+      "footerColumns": 4
+    }
+  ],
+  "networkMutations": [],
+  "rss": {
+    "version": "2.0",
+    "items": [
+      {
+        "title": "How to find out if ChatGPT recommends your product",
+        "link": "https://radar.thally.io/blog/does-chatgpt-recommend-you",
+        "guid": "https://radar.thally.io/blog/does-chatgpt-recommend-you",
+        "date": "Mon, 02 Nov 2026 00:00:00 GMT"
+      },
+      {
+        "title": "How to rank a new website when Google doesn’t know you yet",
+        "link": "https://radar.thally.io/blog/rank-a-new-website",
+        "guid": "https://radar.thally.io/blog/rank-a-new-website",
+        "date": "Tue, 27 Oct 2026 00:00:00 GMT"
+      },
+      {
+        "title": "How to market on Reddit without getting banned",
+        "link": "https://radar.thally.io/blog/reddit-without-getting-banned",
+        "guid": "https://radar.thally.io/blog/reddit-without-getting-banned",
+        "date": "Tue, 20 Oct 2026 00:00:00 GMT"
+      },
+      {
+        "title": "How to refresh pages ranking on page two",
+        "link": "https://radar.thally.io/blog/page-two-refresh",
+        "guid": "https://radar.thally.io/blog/page-two-refresh",
+        "date": "Tue, 13 Oct 2026 00:00:00 GMT"
+      },
+      {
+        "title": "Backlinks for new sites: what’s safe and what isn’t",
+        "link": "https://radar.thally.io/blog/safe-backlinks-new-sites",
+        "guid": "https://radar.thally.io/blog/safe-backlinks-new-sites",
+        "date": "Tue, 06 Oct 2026 00:00:00 GMT"
+      }
+    ]
+  }
+}

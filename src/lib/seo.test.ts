@@ -23,8 +23,8 @@ describe('public SEO boundaries', () => {
   });
   it('indexes only the explicit public route allowlist, never accounts or customer resources', () => {
     const urls = sitemap().map(p => p.url);
-    expect(urls).toEqual(['/', '/features/organic-search', '/features/ai-visibility', '/features/backlinks', '/privacy', '/terms', '/bot'].map(absoluteUrl));
-    expect(INDEXABLE_PAGES).toHaveLength(7);
+    expect(urls).toEqual(['/', '/features/organic-search', '/features/ai-visibility', '/features/backlinks', '/privacy', '/terms', '/bot', '/features/daily-brief', '/features/social-marketing', '/features/performance', '/blog', '/blog/does-chatgpt-recommend-you', '/blog/rank-a-new-website', '/blog/reddit-without-getting-banned', '/blog/page-two-refresh', '/blog/safe-backlinks-new-sites'].map(absoluteUrl));
+    expect(INDEXABLE_PAGES).toHaveLength(16);
     for (const url of urls) { expect(new URL(url).origin).toBe(SITE_ORIGIN); expect(new URL(url).search).toBe(''); }
     expect(ROOT_METADATA.robots).toEqual({ index: false, follow: true });
     expect(metadataFor('/signup').robots).toEqual({ index: false, follow: true });
@@ -35,7 +35,7 @@ describe('public SEO boundaries', () => {
     for (const page of SEO_PAGES) {
       const m = metadataFor(page.path); titles.add(m.title); descriptions.add(m.description);
       expect(m.alternates?.canonical).toBe(absoluteUrl(page.path));
-      expect(m.openGraph).toMatchObject({ type: 'website', url: absoluteUrl(page.path), title: m.title, description: m.description, images: [{ url: `${SITE_ORIGIN}/social/${page.slug}.png`, width: 1200, height: 630, type: 'image/png' }] });
+      expect(m.openGraph).toMatchObject({ type: page.path.startsWith('/blog/') ? 'article' : 'website', url: absoluteUrl(page.path), title: m.title, description: m.description, images: [{ url: `${SITE_ORIGIN}/social/${page.slug}.png`, width: 1200, height: 630, type: 'image/png' }] });
       expect(m.twitter).toMatchObject({ card: 'summary_large_image', title: m.title, description: m.description, images: [{ url: `${SITE_ORIGIN}/social/${page.slug}.png`, alt: expect.stringContaining('Radar by Thally') }] });
     }
     expect(titles.size).toBe(SEO_PAGES.length); expect(descriptions.size).toBe(SEO_PAGES.length);
@@ -74,7 +74,7 @@ describe('AI discovery facts and safe serialization', () => {
     }
   });
   it('only links public authoritative pages or actually implemented discovery files', () => {
-    const allowed = new Set([...INDEXABLE_PAGES.map(p => absoluteUrl(p.path)), absoluteUrl('/#pricing'), absoluteUrl('/pricing.md'), absoluteUrl('/llms-full.txt'), absoluteUrl('/sitemap.xml'), 'https://thally.io']);
+    const allowed = new Set([...INDEXABLE_PAGES.map(p => absoluteUrl(p.path)), absoluteUrl('/#pricing'), absoluteUrl('/pricing.md'), absoluteUrl('/llms-full.txt'), absoluteUrl('/sitemap.xml'), absoluteUrl('/blog/rss.xml'), 'https://thally.io']);
     for (const doc of [llmsText(), llmsFullText(), pricingMarkdown()]) for (const match of doc.matchAll(/\]\((https?:[^)]+)\)/g)) expect(allowed.has(match[1])).toBe(true);
   });
   it('returns fetchable static UTF-8 text without cookies and discourages duplicate search results', async () => {
