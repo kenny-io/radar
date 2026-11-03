@@ -3,17 +3,13 @@ Reply to: support@thally.io
 
 Hi Alex,
 
-Let’s get to know your business.
+Your Business Profile is ready.
 
-Start with your website. Radar reads it to learn what you sell, who buys it and how you sound.
+Radar has analyzed your website and created the Business Profile for Fieldnote.
 
-1. Read your Business Profile and fix anything Radar has missed. Your articles, posts and replies will start from here.
+That profile is the starting point for your articles, social posts and replies. Open Radar to continue from where you left off.
 
-2. Connect Google Search Console if you have it. You can come back to this later.
-
-3. Finish setup, then open your dashboard to choose your first article or conversation to work on.
-
-Open Radar: https://radar.thally.io/dashboard
+Continue with my profile: https://radar.thally.io/dashboard
 
 Reply to this email or write to support@thally.io.
 

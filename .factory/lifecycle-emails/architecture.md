@@ -12,10 +12,10 @@ EMAIL-A1. Workspace: `/Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar
 
 | Type | Trigger / durable dedupe eventKey | Recipient and content |
 | --- | --- | --- |
-| `welcome` | New real user insert, `welcome:{uid}` | Account owner; account created, finish website setup or open dashboard, connect Search Console when available; no assertion of an active subscription. |
-| `founder_note` | Same insert, due +24h, `founder:{uid}` | One service-focused support note from Ekene; reply for help with setup, no product promotion. Optional guidance optout applies. |
+| `welcome` | New real user insert, `welcome:{uid}`, with trusted guest-analysis context | Primary signup already has an analyzed Business Profile: acknowledge it by business name and continue with that profile. Neutral account-ready fallback for direct signup or incomplete analysis; no active-trial/workspace claim. |
+| `founder_note` | Same insert, due +24h, `founder:{uid}` | Owner-supplied reason from launch script: building got easier, discovery remains a full-time job, Radar takes on that work. Brief offer to reply for help, no invented biography or setup lecture. Optional guidance optout applies. |
 | `password_reset` | Accepted recovery request, `reset:{tokenHash}` | Password-account owner only; one-hour single-use link, ignore if not requested. |
-| `workspace_ready` | Successful first `commitDraft`, `workspace:{bid}` | Business owner; workspace saved and available, inspect profile and choose a next action. Do not claim a ready Daily Brief or ranking data. |
+| `workspace_ready` | Successful first `commitDraft`, `workspace:{bid}` | Workspace is open after activation: plan articles in Content Calendar or find conversations in Daily Brief. Do not repeat earlier profile creation or claim finished scans/ranking data. |
 | `trial_started` | First activation, `trial:{subId}` | Billing owner; actual trial end UTC date/time, $1 confirmation credit, $50/month afterward, manage/cancel action. |
 | `trial_ending` | Due 24h before trial end, `trial-ending:{subId}:{trialEndISO}` | Billing owner; revalidate still trialing, same subscription/end and not canceling; do not send after trial ends. |
 | `invoice_paid` | Verified `invoice.paid`, `invoice-paid:{invoiceId}` | Billing owner; actual paid amount/currency from verified provider invoice; covers first month, renewals and recovered payments without separate duplicate recovery email. |

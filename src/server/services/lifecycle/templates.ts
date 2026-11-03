@@ -4,6 +4,7 @@ export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'wo
 export type LifecycleType = typeof LIFECYCLE_TYPES[number];
 export interface LifecycleData {
   name?: string; businessName?: string; businessId?: string; resetUrl?: string;
+  profileAnalyzed?: boolean;
   trialEnd?: string; periodEnd?: string; amountCents?: number; currency?: string; invoiceNumber?: string;
   subscriptionId?: string; invoiceId?: string; attemptCount?: number; status?: string;
 }
@@ -30,14 +31,21 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
   const billing = app('/settings?section=billing');
   switch (type) {
     case 'welcome':
-      subject = 'Welcome to Radar'; heading = 'Let’s get to know your business.';
-      paragraphs = ['Start with your website. Radar reads it to learn what you sell, who buys it and how you sound.'];
-      steps = ['Read your Business Profile and fix anything Radar has missed. Your articles, posts and replies will start from here.', 'Connect Google Search Console if you have it. You can come back to this later.', 'Finish setup, then open your dashboard to choose your first article or conversation to work on.'];
-      cta = 'Open Radar'; href = app('/dashboard'); break;
+      subject = 'Welcome to Radar';
+      if (d.profileAnalyzed) {
+        heading = 'Your Business Profile is ready.';
+        paragraphs = [d.businessName ? `Radar has analyzed your website and created the Business Profile for ${d.businessName}.` : 'Radar has analyzed your website and created your Business Profile.', 'That profile is the starting point for your articles, social posts and replies. Open Radar to continue from where you left off.'];
+        cta = 'Continue with my profile';
+      } else {
+        heading = 'Welcome to Radar.';
+        paragraphs = ['Your account is ready. Open Radar to pick up where you left off.'];
+        cta = 'Open Radar';
+      }
+      href = app('/dashboard'); break;
     case 'founder_note':
-      subject = 'A note from Ekene'; heading = 'How’s setup going?';
-      paragraphs = ['I’m Ekene, Radar’s founder.', 'The Business Profile is the bit worth spending a few minutes on. It tells Radar who you sell to and how you sound. If that’s wrong, the drafts will be too.', 'If you’re stuck on a step, reply and tell me where. Or send a line Radar wrote that doesn’t sound like your business.', 'Thanks for trying Radar.\nEkene'];
-      cta = 'Back to Radar'; href = app('/dashboard'); break;
+      subject = 'Why we built Radar'; heading = 'A note from Ekene';
+      paragraphs = ['I’m Ekene, Radar’s founder.', 'It’s never been easier to build a product. But getting it beyond your own network is still a full-time job.', 'That’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.', 'If you get stuck or anything is unclear, reply here. I’m happy to help.\n\nEkene'];
+      cta = 'Reply to Ekene'; href = 'mailto:team@thally.io'; break;
     case 'password_reset': {
       subject = 'Reset your Radar password'; heading = 'Choose a new password';
       const reset = new URL(d.resetUrl || '');
@@ -46,9 +54,9 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
       cta = 'Reset password'; href = reset.href; break;
     }
     case 'workspace_ready':
-      subject = `${d.businessName || 'Your business'} is ready in Radar`; heading = 'Your Business Profile is saved.';
-      paragraphs = [`Radar will use the profile for ${d.businessName || 'your business'} to plan topics and draft in your voice.`, 'Open your dashboard and choose what to work on first: an article, a social post or a Daily Brief.', 'Search Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.'];
-      cta = 'Go to my dashboard'; href = app('/dashboard'); break;
+      subject = 'Your Radar workspace is ready'; heading = 'Your workspace is open.';
+      paragraphs = [`${d.businessName || 'Your business'} is now set up in Radar.`, 'Open Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.', 'Search Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.'];
+      cta = 'Open my workspace'; href = app('/dashboard'); break;
     case 'trial_started':
       subject = 'Your Radar trial is on'; heading = `${TRIAL_DAYS} days to try Radar`;
       paragraphs = [`Your trial ends on ${date(d.trialEnd)}.`, `The ${confirmation} you paid to confirm your card comes off your first month. That’s normally ${first}, then ${monthly}/month. Any tax or other adjustments will be shown on your invoice.`, 'If you don’t want to continue, cancel in Settings → Billing before the trial ends. Otherwise, your subscription will renew automatically.'];

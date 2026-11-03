@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData } from '../src/server/services/lifecycle/templates';
 const folder = '.factory/lifecycle-emails/previews';
-const data: LifecycleData = { name: 'Alex', businessName: 'Fieldnote', businessId: '00000000-0000-4000-8000-000000000000', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z',
+const data: LifecycleData = { name: 'Alex', businessName: 'Fieldnote', profileAnalyzed: true, businessId: '00000000-0000-4000-8000-000000000000', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z',
   amountCents: 4900, currency: 'usd', invoiceNumber: 'RADAR-DEMO-0001', status: 'canceled', resetUrl: 'https://radar.thally.io/reset-password#token=preview-only-not-a-real-token' };
 await mkdir(folder, { recursive: true });
 const catalogue: string[] = ['# Radar email previews', '', 'Fictional sample data; no email is sent by this script.', ''];

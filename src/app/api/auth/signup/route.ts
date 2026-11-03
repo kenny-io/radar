@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { track } from '@/server/events';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
-import { hashPassword, isGuestEmail } from '@/server/auth/session';
+import { currentGuest, hashPassword, isGuestEmail } from '@/server/auth/session';
 import { attachInvites } from '@/server/auth/users';
 import { finishAuth } from '@/server/auth/claim';
 import { handle, json } from '@/server/http/handle';
@@ -27,10 +27,11 @@ export const POST = handle(async (req: Request) => {
   if (exists[0]) return json({ ok: false, errors: { email: 'An account with this email already exists. Sign in instead.' } }, 409);
   // The unique email constraint decides a race between two tabs; never turn a duplicate into a 500.
   const passwordHash = await hashPassword(b.password);
+  const guest = await currentGuest();
   const u = await db.transaction(async tx => {
     const [created] = await tx.insert(schema.users).values({ name: b.name.trim(), email, passwordHash })
       .onConflictDoNothing({ target: schema.users.email }).returning();
-    if (created) await queueSignupEmails(tx, created);
+    if (created) await queueSignupEmails(tx, created, guest?.id);
     return created;
   });
   if (!u) return json({ ok: false, errors: { email: 'An account with this email already exists. Sign in instead.' } }, 409);

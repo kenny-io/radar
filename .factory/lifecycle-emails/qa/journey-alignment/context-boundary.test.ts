@@ -1,0 +1,23 @@
+import {afterAll,afterEach,expect,it,vi} from 'vitest';
+const H=vi.hoisted(()=>{process.env.RADAR_DEV_STUBS='1';return {jar:new Map<string,string>()};});
+vi.mock('next/headers',async()=>(await import('@/server/testing/jar')).headersMock(()=>H.jar));
+import {and,eq} from 'drizzle-orm';
+import {db,schema} from '@/server/db';
+import {decrypt} from '@/server/crypto';
+import {Fixtures,uniq,clearLimits} from '@/server/testing/fixtures';
+import {POST as SIGNUP} from '@/app/api/auth/signup/route';
+const F=new Fixtures('journey-qa-'+uniq()),ip='journey-qa-'+uniq();
+afterEach(()=>H.jar.clear());
+afterAll(async()=>{await F.cleanup();await clearLimits(ip);});
+it.each([false,true])('ignores forged guest/profile JSON and another guest data (own cookie expired=%s)',async(expired)=>{
+ const own=await F.user({guest:true});await F.signIn(own,H.jar,undefined,expired?-1:72);
+ await F.biz(own,{status:'onboarding',site:expired?{analyzedAt:new Date().toISOString()}:{},profile:{business:{name:'Own profile'}}});
+ const unrelated=await F.user({guest:true});const other=await F.biz(unrelated,{status:'onboarding',site:{analyzedAt:new Date().toISOString()},profile:{business:{name:'Unrelated private company'}}});
+ const email=`journey-boundary-${uniq()}@test.local`;
+ const r=await SIGNUP(new Request('http://localhost:3000/api/auth/signup',{method:'POST',headers:{'x-real-ip':ip},body:JSON.stringify({name:'Ada',email,password:'long-enough-password',guestId:unrelated.id,profileAnalyzed:true,businessName:'Unrelated private company'})}));
+ expect(r.status).toBe(200);const [user]=await db.select().from(schema.users).where(eq(schema.users.email,email));F.track(user.id);
+ const [mail]=await db.select().from(schema.lifecycleEmails).where(and(eq(schema.lifecycleEmails.userId,user.id),eq(schema.lifecycleEmails.type,'welcome')));
+ const p=decrypt<any>(mail.payloadEnc);
+ expect(p.data.profileAnalyzed).toBe(false);expect(p.data.businessName).toBeUndefined();expect(p.envelope.text).not.toContain('Unrelated private company');
+ expect((await db.select().from(schema.businesses).where(eq(schema.businesses.id,other.id)))[0].ownerId).toBe(unrelated.id);
+});

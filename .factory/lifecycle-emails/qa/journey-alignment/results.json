@@ -1,0 +1,272 @@
+{
+  "environment": "local HTML in isolated Google Chrome only; no account/server/provider",
+  "checks": [
+    {
+      "name": "welcome_analyzed",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour Business Profile is ready.\n\nRadar has analyzed your website and created the Business Profile for Fieldnote.\n\nThat profile is the starting point for your articles, social posts and replies. Open Radar to continue from where you left off.\n\nContinue with my profile\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "workspace_open",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour workspace is open.\n\nFieldnote is now set up in Radar.\n\nOpen Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.\n\nSearch Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.\n\nOpen my workspace\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "welcome_direct",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nWelcome to Radar.\n\nYour account is ready. Open Radar to pick up where you left off.\n\nOpen Radar\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "founder_actual",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "mailto:team@thally.io",
+        "mailto:team@thally.io",
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nA note from Ekene\n\nI’m Ekene, Radar’s founder.\n\nIt’s never been easier to build a product. But getting it beyond your own network is still a full-time job.\n\nThat’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.\n\nIf you get stuck or anything is unclear, reply here. I’m happy to help.\n\nEkene\n\nReply to Ekene\n\nReply to this email or write to team@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC.\n\nStop optional setup emails"
+    },
+    {
+      "name": "password_reset",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/reset-password#token=preview-only-not-a-real-token",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nChoose a new password\n\nUse the button below to choose a new password for Radar.\n\nThis link works once and expires one hour after you requested it. You’ll need to sign in again on your devices after changing your password.\n\nIf you didn’t ask for this, ignore this email. Your password hasn’t changed.\n\nReset password\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "trial_started",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\n3 days to try Radar\n\nYour trial ends on November 7, 2026 at 12:00 PM UTC.\n\nThe $1.00 you paid to confirm your card comes off your first month. That’s normally $49.00, then $50.00/month. Any tax or other adjustments will be shown on your invoice.\n\nIf you don’t want to continue, cancel in Settings → Billing before the trial ends. Otherwise, your subscription will renew automatically.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "trial_ending",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour trial is nearly up.\n\nYour trial ends on November 7, 2026 at 12:00 PM UTC.\n\nIf you continue, your first month is normally $49.00 after the $1.00 card-confirmation credit, then $50.00/month. Any tax or other adjustments will be shown on your invoice.\n\nNo action is needed to keep Radar. To avoid the monthly charge, cancel in Settings → Billing before your trial ends.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "invoice_paid",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nPayment received. Thank you.\n\nWe’ve received your $49.00 payment for Radar.\n\nInvoice: RADAR-DEMO-0001.\n\nYour invoice and receipt are in Settings → Billing.\n\nView invoices\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "payment_failed",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nPlease check your payment method.\n\nWe couldn’t collect your $49.00 payment for Radar.\n\nOpen Billing to update your card and pay the invoice. Access may be paused until it’s paid.\n\nOpen Billing\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "cancellation_scheduled",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour cancellation is confirmed.\n\nYou can keep using Radar until December 7, 2026 at 12:00 PM UTC.\n\nYour subscription won’t renew after that. You can change this in Settings → Billing before it ends.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "subscription_ended",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/start-trial",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour subscription has ended\n\nYour Radar subscription is no longer active.\n\nYou can restart from your account. You’ll see the amount due before confirming payment.\n\nOpen my account\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "welcome_analyzed",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour Business Profile is ready.\n\nRadar has analyzed your website and created the Business Profile for Fieldnote.\n\nThat profile is the starting point for your articles, social posts and replies. Open Radar to continue from where you left off.\n\nContinue with my profile\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "workspace_open",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour workspace is open.\n\nFieldnote is now set up in Radar.\n\nOpen Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.\n\nSearch Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.\n\nOpen my workspace\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "welcome_direct",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nWelcome to Radar.\n\nYour account is ready. Open Radar to pick up where you left off.\n\nOpen Radar\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "founder_actual",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "mailto:team@thally.io",
+        "mailto:team@thally.io",
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nA note from Ekene\n\nI’m Ekene, Radar’s founder.\n\nIt’s never been easier to build a product. But getting it beyond your own network is still a full-time job.\n\nThat’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.\n\nIf you get stuck or anything is unclear, reply here. I’m happy to help.\n\nEkene\n\nReply to Ekene\n\nReply to this email or write to team@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC.\n\nStop optional setup emails"
+    },
+    {
+      "name": "password_reset",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/reset-password#token=preview-only-not-a-real-token",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nChoose a new password\n\nUse the button below to choose a new password for Radar.\n\nThis link works once and expires one hour after you requested it. You’ll need to sign in again on your devices after changing your password.\n\nIf you didn’t ask for this, ignore this email. Your password hasn’t changed.\n\nReset password\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "trial_started",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\n3 days to try Radar\n\nYour trial ends on November 7, 2026 at 12:00 PM UTC.\n\nThe $1.00 you paid to confirm your card comes off your first month. That’s normally $49.00, then $50.00/month. Any tax or other adjustments will be shown on your invoice.\n\nIf you don’t want to continue, cancel in Settings → Billing before the trial ends. Otherwise, your subscription will renew automatically.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "trial_ending",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour trial is nearly up.\n\nYour trial ends on November 7, 2026 at 12:00 PM UTC.\n\nIf you continue, your first month is normally $49.00 after the $1.00 card-confirmation credit, then $50.00/month. Any tax or other adjustments will be shown on your invoice.\n\nNo action is needed to keep Radar. To avoid the monthly charge, cancel in Settings → Billing before your trial ends.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "invoice_paid",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nPayment received. Thank you.\n\nWe’ve received your $49.00 payment for Radar.\n\nInvoice: RADAR-DEMO-0001.\n\nYour invoice and receipt are in Settings → Billing.\n\nView invoices\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "payment_failed",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nPlease check your payment method.\n\nWe couldn’t collect your $49.00 payment for Radar.\n\nOpen Billing to update your card and pay the invoice. Access may be paused until it’s paid.\n\nOpen Billing\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "cancellation_scheduled",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour cancellation is confirmed.\n\nYou can keep using Radar until December 7, 2026 at 12:00 PM UTC.\n\nYour subscription won’t renew after that. You can change this in Settings → Billing before it ends.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    },
+    {
+      "name": "subscription_ended",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/start-trial",
+        "mailto:support@thally.io"
+      ],
+      "text": "◉ Radar by Thally\n\nHi Alex,\n\nYour subscription has ended\n\nYour Radar subscription is no longer active.\n\nYou can restart from your account. You’ll see the amount due before confirming payment.\n\nOpen my account\n\nReply to this email or write to support@thally.io.\n\nRadar is a Thally product, operated by Fairspleet LLC."
+    }
+  ],
+  "founder": "Owner reason provided: building is easier; reaching beyond an existing network remains substantial work. Latest founder message reviewed against that source."
+}

@@ -16,6 +16,16 @@ describe('lifecycle templates', () => {
     expect(x.html).not.toContain('<script>'); expect(x.html).toContain('&lt;script&gt;'); expect(x.html).toContain('A&amp;B &quot;&lt;test&gt;&quot;');
     expect(x.text).toContain('A&B "<test>"');
   });
+  it('continues from an analyzed profile without asking the customer to repeat website setup', () => {
+    const welcome = renderLifecycle('welcome', { ...data, profileAnalyzed: true }, ctx);
+    expect(welcome.text).toContain('Business Profile for Fieldnote');
+    expect(welcome.text).toContain('Continue with my profile: https://radar.thally.io/dashboard');
+    expect(welcome.text).not.toMatch(/start with your website|add your website|connect.*search console/i);
+    const direct = renderLifecycle('welcome', { ...data, profileAnalyzed: false }, ctx);
+    expect(direct.text).toContain('Your account is ready');
+    expect(direct.text).not.toContain('Business Profile is ready');
+    expect(direct.text).not.toContain('has analyzed');
+  });
   it('uses actual amounts and UTC dates and the working billing settings destination', () => {
     const paid = renderLifecycle('invoice_paid', { ...data, amountCents: 1234, currency: 'eur' }, ctx);
     expect(paid.text).toContain('€12.34'); expect(paid.text).toContain('/settings?section=billing');

@@ -1,17 +1,17 @@
-Fieldnote is ready in Radar
+Your Radar workspace is ready
 Reply to: support@thally.io
 
 Hi Alex,
 
-Your Business Profile is saved.
+Your workspace is open.
 
-Radar will use the profile for Fieldnote to plan topics and draft in your voice.
+Fieldnote is now set up in Radar.
 
-Open your dashboard and choose what to work on first: an article, a social post or a Daily Brief.
+Open Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.
 
 Search Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.
 
-Go to my dashboard: https://radar.thally.io/dashboard
+Open my workspace: https://radar.thally.io/dashboard
 
 Reply to this email or write to support@thally.io.
 
