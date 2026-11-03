@@ -1,6 +1,6 @@
 import { FEE_CENTS, PRICE_CENTS, TRIAL_DAYS } from '@/lib/billing';
 
-export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'workspace_ready', 'trial_started', 'trial_ending', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended'] as const;
+export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'trial_ending', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended'] as const;
 export type LifecycleType = typeof LIFECYCLE_TYPES[number];
 export interface LifecycleData {
   name?: string; businessName?: string; businessId?: string; resetUrl?: string;
@@ -53,10 +53,6 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
       paragraphs = ['Use the button below to choose a new password for Radar.', 'This link works once and expires one hour after you requested it. You’ll need to sign in again on your devices after changing your password.', 'If you didn’t ask for this, ignore this email. Your password hasn’t changed.'];
       cta = 'Reset password'; href = reset.href; break;
     }
-    case 'workspace_ready':
-      subject = 'Your Radar workspace is ready'; heading = 'Your workspace is open.';
-      paragraphs = [`${d.businessName || 'Your business'} is now set up in Radar.`, 'Open Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.', 'Search Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.'];
-      cta = 'Open my workspace'; href = app('/dashboard'); break;
     case 'trial_started':
       subject = 'Your Radar trial is on'; heading = `${TRIAL_DAYS} days to try Radar`;
       paragraphs = [`Your trial ends on ${date(d.trialEnd)}.`, `The ${confirmation} you paid to confirm your card comes off your first month. That’s normally ${first}, then ${monthly}/month. Any tax or other adjustments will be shown on your invoice.`, 'If you don’t want to continue, cancel in Settings → Billing before the trial ends. Otherwise, your subscription will renew automatically.'];

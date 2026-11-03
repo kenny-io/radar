@@ -361,7 +361,6 @@ The current launch checkpoint is `.factory/lifecycle-emails/launch-readiness.md`
 | Welcome and next steps | New password or Google account, once; continues from the authenticated guest's analyzed Business Profile, with a neutral direct-signup fallback |
 | Founder note | 24 hours after new account creation; the founder's reason for building Radar and an offer to help, with optional-email opt-out |
 | Password reset | Explicit recovery request for a password account; one-hour single-use link |
-| Workspace ready | Business Profile commits to an active workspace; does not promise finished scans |
 | Trial started | Confirmed activation, actual trial end and confirmation-credit terms |
 | Trial ending | Scheduled 24 hours before the actual trial end; suppressed after cancellation, expiry or changed state |
 | Payment received | Verified fetched invoice, actual paid amount, once per nonzero paid invoice |

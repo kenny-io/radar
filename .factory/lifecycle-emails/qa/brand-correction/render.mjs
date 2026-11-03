@@ -1,7 +1,7 @@
 import {chromium} from 'playwright';
 import {readFile,writeFile} from 'node:fs/promises';
 const out='.factory/lifecycle-emails/qa/brand-correction';
-const names=['welcome','founder_note','password_reset','workspace_ready','trial_started','trial_ending','invoice_paid','payment_failed','cancellation_scheduled','subscription_ended'];
+const names=['welcome','founder_note','password_reset','trial_started','trial_ending','invoice_paid','payment_failed','cancellation_scheduled','subscription_ended'];
 const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
 const page=await browser.newPage();const checks=[];
 const mark=await readFile('public/brand/radar-mark-email.png');

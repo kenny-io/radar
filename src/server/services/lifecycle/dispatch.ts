@@ -15,6 +15,8 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /** Time-sensitive notices are checked against current authoritative application/provider state before delivery. */
 export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, now = new Date(), signal?: AbortSignal): Promise<boolean> {
+  // Retire previously frozen workspace notices as well as removing new enqueueing.
+  if (row.type === 'workspace_ready') return false;
   const [u] = await db.select().from(schema.users).where(eq(schema.users.id, row.userId)).limit(1);
   if (!u || u.guest || payload.envelope.to.length !== 1 || payload.envelope.to[0] !== u.email) return false;
   const d = payload.data;
@@ -27,11 +29,6 @@ export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, no
     return !!(await db.select({ hash: schema.passwordResetTokens.tokenHash }).from(schema.passwordResetTokens).where(and(
       eq(schema.passwordResetTokens.tokenHash, sha256(raw)), eq(schema.passwordResetTokens.userId, u.id), isNull(schema.passwordResetTokens.usedAt), gt(schema.passwordResetTokens.expiresAt, now),
     )).limit(1))[0];
-  }
-  if (row.type === 'workspace_ready') {
-    if (!row.businessId) return false;
-    const [b] = await db.select({ ownerId: schema.businesses.ownerId, status: schema.businesses.status }).from(schema.businesses).where(eq(schema.businesses.id, row.businessId)).limit(1);
-    return b?.ownerId === u.id && b.status === 'active';
   }
   if (!['trial_started', 'trial_ending', 'payment_failed', 'cancellation_scheduled', 'subscription_ended'].includes(row.type)) return true;
   const [a] = await db.select().from(schema.billingAccounts).where(eq(schema.billingAccounts.userId, u.id)).limit(1);

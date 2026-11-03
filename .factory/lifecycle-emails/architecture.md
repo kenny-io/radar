@@ -8,14 +8,13 @@ EMAIL-A1. Workspace: `/Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar
 
 `src/app/api/auth/signup/route.ts` and the Google callback track new accounts but send no welcome. There is no password-recovery route. `src/server/billing/sync.ts` centralizes locked subscription state changes; `activate.ts` guards trial creation with `trialStartedAt`. Neither sends account emails. `draft.ts::commitDraft` is the only activation of a business. The existing minute scheduler and Postgres job queue supply all needed infrastructure.
 
-## Ten event contracts
+## Nine event contracts
 
 | Type | Trigger / durable dedupe eventKey | Recipient and content |
 | --- | --- | --- |
 | `welcome` | New real user insert, `welcome:{uid}`, with trusted guest-analysis context | Primary signup already has an analyzed Business Profile: acknowledge it by business name and continue with that profile. Neutral account-ready fallback for direct signup or incomplete analysis; no active-trial/workspace claim. |
 | `founder_note` | Same insert, due +24h, `founder:{uid}` | Owner-supplied reason from launch script: building got easier, discovery remains a full-time job, Radar takes on that work. Brief offer to reply for help, no invented biography or setup lecture. Optional guidance optout applies. |
 | `password_reset` | Accepted recovery request, `reset:{tokenHash}` | Password-account owner only; one-hour single-use link, ignore if not requested. |
-| `workspace_ready` | Successful first `commitDraft`, `workspace:{bid}` | Workspace is open after activation: plan articles in Content Calendar or find conversations in Daily Brief. Do not repeat earlier profile creation or claim finished scans/ranking data. |
 | `trial_started` | First activation, `trial:{subId}` | Billing owner; actual trial end UTC date/time, $1 confirmation credit, $50/month afterward, manage/cancel action. |
 | `trial_ending` | Due 24h before trial end, `trial-ending:{subId}:{trialEndISO}` | Billing owner; revalidate still trialing, same subscription/end and not canceling; do not send after trial ends. |
 | `invoice_paid` | Verified `invoice.paid`, `invoice-paid:{invoiceId}` | Billing owner; actual paid amount/currency from verified provider invoice; covers first month, renewals and recovered payments without separate duplicate recovery email. |
@@ -53,8 +52,8 @@ Only the founder support note is optional. It must remain service-focused withou
 
 1. Mail engineer: shared schema/migration, typed event contracts, renderer/previews, enqueue, dispatch, scheduling, preference endpoint and focused tests.
 2. Auth engineer: password recovery, new-user hooks in password/Google signup, using the shared enqueue contract; no competing migration.
-3. Billing engineer/PM integration: locked subscription/trial hooks, verified invoice events, workspace activation and reminder scheduling. Fetch current provider state to reject stale/out-of-order events. Extend provider/stub Invoice with optional amount_paid, currency, customer and subscription fields, fetched authoritatively via getInvoice. Require customer/current subscription association and appropriate actual invoice status before queueing. Legacy fixtures with only id/customer safely no-op on missing proof rather than manufacturing a receipt. Preserve the existing seven Stripe events; trial ending is locally scheduled. Do not treat hardcoded $50 as an actual receipt amount.
-4. Independent QA: compare ten templates and trigger matrix, actual browser recovery flow on isolated test account, verify dedupe/rollback/retry/tenant and no-backfill behavior, production deployment only after authorized merge.
+3. Billing engineer/PM integration: locked subscription/trial hooks, verified invoice events and reminder scheduling. Fetch current provider state to reject stale/out-of-order events. Extend provider/stub Invoice with optional amount_paid, currency, customer and subscription fields, fetched authoritatively via getInvoice. Require customer/current subscription association and appropriate actual invoice status before queueing. Legacy fixtures with only id/customer safely no-op on missing proof rather than manufacturing a receipt. Preserve the existing seven Stripe events; trial ending is locally scheduled. Do not treat hardcoded $50 as an actual receipt amount.
+4. Independent QA: compare nine templates and trigger matrix, actual browser recovery flow on isolated test account, verify dedupe/rollback/retry/tenant and no-backfill behavior, production deployment only after authorized merge.
 
 ## Required verification
 

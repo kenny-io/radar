@@ -41,6 +41,13 @@ describe.skipIf(!ON)('durable lifecycle dispatch (database, fake provider only)'
     const fetcher = ack(); await send(fetcher);
     expect(fetcher).not.toHaveBeenCalled(); expect(await row(u.id)).toMatchObject({ status: 'suppressed', payloadEnc: '' });
   });
+  it('suppresses a previously queued workspace notice without contacting the provider', async () => {
+    const u = await welcome(), fetcher = ack();
+    await db.update(M).set({ type: 'workspace_ready' }).where(eq(M.userId, u.id));
+    await send(fetcher);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(await row(u.id)).toMatchObject({ status: 'suppressed', attempts: 0, lastError: 'no_longer_applicable' });
+  });
   it('stub mode never calls a provider even when a key exists; missing real credentials keep mail queued', async () => {
     const u = await welcome(), fetcher = ack(); env.resendKey = ''; await send(fetcher);
     expect(await row(u.id)).toMatchObject({ status: 'queued', attempts: 0 });

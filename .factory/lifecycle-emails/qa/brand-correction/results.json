@@ -50,22 +50,6 @@
       "text": "\tRadar by Thally\n\nHi Alex,\n\nChoose a new password\n\nUse the button below to choose a new password for Radar.\n\nThis link works once and expires one hour after you requested it. You’ll need to sign in again on your devices after changing your password.\n\nIf you didn’t ask for this, ignore this email. Your password hasn’t changed.\n\nReset password\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms"
     },
     {
-      "name": "workspace_ready",
-      "width": 390,
-      "pass": true,
-      "overflow": false,
-      "images": [
-        {
-          "src": "https://radar.thally.io/brand/radar-mark-email.png",
-          "width": 224,
-          "height": 224,
-          "displayWidth": 28
-        }
-      ],
-      "heading": "Your workspace is open.",
-      "text": "\tRadar by Thally\n\nHi Alex,\n\nYour workspace is open.\n\nFieldnote is now set up in Radar.\n\nOpen Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.\n\nSearch Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.\n\nOpen my workspace\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms"
-    },
-    {
       "name": "trial_started",
       "width": 390,
       "pass": true,
@@ -208,22 +192,6 @@
       ],
       "heading": "Choose a new password",
       "text": "\tRadar by Thally\n\nHi Alex,\n\nChoose a new password\n\nUse the button below to choose a new password for Radar.\n\nThis link works once and expires one hour after you requested it. You’ll need to sign in again on your devices after changing your password.\n\nIf you didn’t ask for this, ignore this email. Your password hasn’t changed.\n\nReset password\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms"
-    },
-    {
-      "name": "workspace_ready",
-      "width": 600,
-      "pass": true,
-      "overflow": false,
-      "images": [
-        {
-          "src": "https://radar.thally.io/brand/radar-mark-email.png",
-          "width": 224,
-          "height": 224,
-          "displayWidth": 28
-        }
-      ],
-      "heading": "Your workspace is open.",
-      "text": "\tRadar by Thally\n\nHi Alex,\n\nYour workspace is open.\n\nFieldnote is now set up in Radar.\n\nOpen Content Calendar to plan your articles, or Daily Brief to find conversations worth joining.\n\nSearch Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.\n\nOpen my workspace\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms"
     },
     {
       "name": "trial_started",

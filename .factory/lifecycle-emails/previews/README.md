@@ -7,7 +7,6 @@ Fictional sample data; no email is sent by this script.
 - [welcome](welcome.html): Welcome to Radar
 - [founder_note](founder_note.html): Why we built Radar
 - [password_reset](password_reset.html): Reset your Radar password
-- [workspace_ready](workspace_ready.html): Your Radar workspace is ready
 - [trial_started](trial_started.html): Your Radar trial is on
 - [trial_ending](trial_ending.html): Your Radar trial ends soon
 - [invoice_paid](invoice_paid.html): Your Radar receipt

@@ -4,7 +4,7 @@ Owner request: audit launch readiness, draft the ten most useful customer email 
 
 ## Scope and experience
 
-Ten events: welcome with next steps; founder service check-in; password reset; workspace ready; trial started; trial ending; payment received; payment failed; cancellation scheduled; subscription ended. Reuse the existing Radar design language and verified `radar@thally.io` sender, `support@thally.io` for service replies and `team@thally.io` for the founder note. All templates have useful plain text and accessible HTML. Account recovery reuses the current auth shell, fields and buttons, with request/sent, reset/success, expired/invalid, rate limit and mobile/keyboard states.
+Nine events: welcome with next steps; founder service check-in; password reset; trial started; trial ending; payment received; payment failed; cancellation scheduled; subscription ended. Reuse the existing Radar design language and verified `radar@thally.io` sender, `support@thally.io` for service replies and `team@thally.io` for the founder note. All templates have useful plain text and accessible HTML. Account recovery reuses the current auth shell, fields and buttons, with request/sent, reset/success, expired/invalid, rate limit and mobile/keyboard states.
 
 No announcement campaign, automatic mailing of historical customers, new provider spend, live payment mutation, unrelated site changes or ownership changes. Founder content concerns setup/support only, contains no promotions, and provides an easy opt-out for optional onboarding mail. Billing and security notices remain essential service messages.
 

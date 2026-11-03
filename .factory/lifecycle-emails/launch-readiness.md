@@ -12,7 +12,7 @@ This checkpoint supersedes older launch records where they describe billing as o
 
 ## New email release
 
-Ten events are implemented on `kenny/lifecycle-emails`, with encrypted durable payloads, transactionally persisted triggers, duplicate protection, bounded retries and stale-notice suppression. Password recovery adds hashed single-use one-hour tokens and full session revocation. The founder check-in is a one-time service support note with an optional-email opt-out; this is not a launch campaign or historical-user backfill.
+Nine events are implemented on `kenny/lifecycle-emails`, with encrypted durable payloads, transactionally persisted triggers, duplicate protection, bounded retries and stale-notice suppression. Password recovery adds hashed single-use one-hour tokens and full session revocation. The founder check-in is a one-time service support note with an optional-email opt-out; this is not a launch campaign or historical-user backfill.
 
 Actual application transport accepted and Resend marked delivered two controlled simulator messages (welcome/reset). No human recipient or production customer was contacted. Human inbox placement remains unverified. Production does not yet contain this feature; migration0009, source deployment and live post-deploy smoke require the reviewable PR and owner approval before auto-deploying main.
 

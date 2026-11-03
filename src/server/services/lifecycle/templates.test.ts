@@ -14,7 +14,7 @@ describe('lifecycle templates', () => {
     expect(x.html).not.toContain('◉');
   });
   it('escapes all user-controlled values without corrupting plain text', () => {
-    const x = renderLifecycle('workspace_ready', { name: '<script>bad()</script>', businessName: 'A&B "<test>"' }, ctx);
+    const x = renderLifecycle('welcome', { profileAnalyzed: true, name: '<script>bad()</script>', businessName: 'A&B "<test>"' }, ctx);
     expect(x.html).not.toContain('<script>'); expect(x.html).toContain('&lt;script&gt;'); expect(x.html).toContain('A&amp;B &quot;&lt;test&gt;&quot;');
     expect(x.text).toContain('A&B "<test>"');
   });
@@ -36,11 +36,9 @@ describe('lifecycle templates', () => {
     expect(() => renderLifecycle('trial_ending', {}, ctx)).toThrow('date required');
     expect(() => renderLifecycle('invoice_paid', { amountCents: -1 }, ctx)).toThrow('amount');
   });
-  it('only offers optional opt-out on founder mail and does not claim a finished brief', () => {
+  it('only offers optional opt-out on founder mail', () => {
     expect(renderLifecycle('founder_note', data, ctx).text).toContain('Stop optional setup emails');
     expect(renderLifecycle('invoice_paid', data, ctx).text).not.toContain('Stop optional');
-    const ready = renderLifecycle('workspace_ready', data, ctx).text;
-    expect(ready).toContain('may still be collecting'); expect(ready).not.toContain('Daily Brief is ready');
   });
   it('requires a reset link on the configured origin with a fragment token', () => {
     expect(() => renderLifecycle('password_reset', { resetUrl: 'https://evil.test/reset-password#token=stolen' }, ctx)).toThrow('Invalid reset');

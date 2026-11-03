@@ -37,17 +37,17 @@ afterEach(() => { delete process.env.RADAR_BILLING; H.jar.clear(); vi.restoreAll
 describe.skipIf(!process.env.DATABASE_URL)('billing lifecycle (database, no external sends)', () => {
   afterAll(async () => { await D.cleanup(); for (const uid of F.users) await clearLimits(uid); await clearLimits('10.88.'); await F.cleanup(); });
 
-  it('durably queues one trial, one future reminder and one saved workspace across confirm/webhook replays', async () => {
+  it('durably queues one trial and one future reminder without workspace mail across confirm/webhook replays', async () => {
     const { u, draft, pi, sub } = await trial(true);
     await processEvent(D.event('payment_intent.succeeded', D.pi(pi)));
     expect((await billing.confirm({ paymentIntentId: pi })).status).toBe(200);
     const starts = await rows(u.id, 'trial_started'), reminders = await rows(u.id, 'trial_ending'), ready = await rows(u.id, 'workspace_ready');
-    expect([starts.length, reminders.length, ready.length]).toEqual([1, 1, 1]);
+    expect([starts.length, reminders.length, ready.length]).toEqual([1, 1, 0]);
     const a = await account(u.id);
     expect(payload(starts[0]).data).toMatchObject({ subscriptionId: sub, trialEnd: a.trialEnd!.toISOString() });
     expect(reminders[0].nextAttemptAt.getTime()).toBe(a.trialEnd!.getTime() - 864e5);
     expect(reminders[0].nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
-    expect(payload(ready[0]).data).toMatchObject({ businessId: draft!.id, businessName: 'Fieldnote' });
+    expect((await db.select().from(schema.businesses).where(eq(schema.businesses.id, draft!.id)))[0].status).toBe('active');
     expect(stubState().credits).toHaveLength(1);
   });
 
@@ -88,7 +88,7 @@ describe.skipIf(!process.env.DATABASE_URL)('billing lifecycle (database, no exte
     expect(await rows(u.id, 'cancellation_scheduled')).toHaveLength(1);
   });
 
-  it('rolls trial and workspace mail back with a failed credit, then adopts the same subscription and queues once', async () => {
+  it('rolls trial mail and workspace activation back with a failed credit, then queues trial mail once', async () => {
     const u = await F.user(); await F.signIn(u, H.jar);
     const b = await F.biz(u, { status: 'onboarding', onboarding: { savedAt: new Date().toISOString() } });
     const start = await billing.start(await card()); await billing.confirmIntent(start.j.paymentIntentId);
@@ -101,7 +101,7 @@ describe.skipIf(!process.env.DATABASE_URL)('billing lifecycle (database, no exte
     expect((await billing.confirm({ paymentIntentId: start.j.paymentIntentId })).status).toBe(200);
     expect(await rows(u.id, 'trial_started')).toHaveLength(1);
     expect(await rows(u.id, 'trial_ending')).toHaveLength(1);
-    expect(await rows(u.id, 'workspace_ready')).toHaveLength(1);
+    expect(await rows(u.id, 'workspace_ready')).toHaveLength(0);
     expect(stubState().subs.size).toBe(1);
     expect(stubState().credits).toHaveLength(1);
   });
@@ -142,15 +142,12 @@ describe.skipIf(!process.env.DATABASE_URL)('billing lifecycle (database, no exte
     expect((await account(u.id)).stripeSubscriptionId).toBe(sub);
   });
 
-  it('workspace activation and ready mail commit together and concurrent activation sends once', async () => {
+  it('activates workspaces idempotently without an extra email', async () => {
     const u = await F.user(); const b = await F.biz(u, { status: 'onboarding' });
-    vi.spyOn(lifecycle, 'queueLifecycle').mockRejectedValueOnce(new Error('outbox unavailable'));
-    await expect(commitDraft(b.id)).rejects.toThrow('outbox unavailable');
-    expect((await db.select().from(schema.businesses).where(eq(schema.businesses.id, b.id)))[0].status).toBe('onboarding');
-    expect(await rows(u.id, 'workspace_ready')).toHaveLength(0);
     const results = await Promise.all([commitDraft(b.id), commitDraft(b.id)]);
     expect(results.filter(Boolean)).toEqual([b.id]);
-    expect(await rows(u.id, 'workspace_ready')).toHaveLength(1);
+    expect((await db.select().from(schema.businesses).where(eq(schema.businesses.id, b.id)))[0].status).toBe('active');
+    expect(await rows(u.id, 'workspace_ready')).toHaveLength(0);
     const guest = await F.user({ guest: true }); const guestDraft = await F.biz(guest, { status: 'onboarding' });
     await commitDraft(guestDraft.id);
     expect(await rows(guest.id, 'workspace_ready')).toHaveLength(0);
