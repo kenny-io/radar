@@ -1,18 +1,18 @@
-Fieldnote is set up on Radar
+Fieldnote is ready in Radar
 Reply to: support@thally.io
 
 Hi Alex,
 
-Your Business Profile is saved
+Your Business Profile is saved.
 
-Fieldnote is ready to open in Radar. Your saved Business Profile will guide its suggestions and drafts.
+Radar will use the profile for Fieldnote to plan topics and draft in your voice.
 
-Open your dashboard to review your next steps. Search Console data, keyword estimates and other analyses may still be collecting; Radar shows their status in the app.
+Open your dashboard and choose what to work on first: an article, a social post or a Daily Brief.
 
-Review your profile and publishing settings before turning on any automatic publishing.
+Search Console data and keyword estimates may still be collecting. You’ll see their progress in Radar.
 
-Open your dashboard: https://radar.thally.io/dashboard
+Go to my dashboard: https://radar.thally.io/dashboard
 
-Need help? Reply to support@thally.io.
+Reply to this email or write to support@thally.io.
 
 Radar is a Thally product, operated by Fairspleet LLC.

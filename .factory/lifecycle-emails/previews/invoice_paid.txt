@@ -1,18 +1,18 @@
-Your Radar payment was received
+Your Radar receipt
 Reply to: support@thally.io
 
 Hi Alex,
 
-Payment received
+Payment received. Thank you.
 
-Your Radar invoice has been marked paid: $49.00.
+We’ve received your $49.00 payment for Radar.
 
 Invoice: RADAR-DEMO-0001.
 
-Open Settings → Billing to view your invoices, download a receipt or manage your subscription.
+Your invoice and receipt are in Settings → Billing.
 
-View billing and invoices: https://radar.thally.io/settings?section=billing
+View invoices: https://radar.thally.io/settings?section=billing
 
-Need help? Reply to support@thally.io.
+Reply to this email or write to support@thally.io.
 
 Radar is a Thally product, operated by Fairspleet LLC.

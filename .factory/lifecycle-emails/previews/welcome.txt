@@ -1,22 +1,20 @@
-Welcome to Radar — here’s where to start
+Welcome to Radar
 Reply to: support@thally.io
 
 Hi Alex,
 
-Your next steps with Radar
+Let’s get to know your business.
 
-Your Radar account is ready. Start with your website so Radar can learn what your business does and who it serves.
+Start with your website. Radar reads it to learn what you sell, who buys it and how you sound.
 
-Creating an account alone does not start a paid subscription. Radar asks you to confirm the trial terms and payment before your trial starts.
+1. Read your Business Profile and fix anything Radar has missed. Your articles, posts and replies will start from here.
 
-1. Add your website and review your Business Profile. Correct anything Radar should know before it drafts for you.
+2. Connect Google Search Console if you have it. You can come back to this later.
 
-2. Connect Google Search Console if you have it. You can skip this and connect it later.
+3. Finish setup, then open your dashboard to choose your first article or conversation to work on.
 
-3. Finish setup, review the trial terms, then open your dashboard to choose your first next step.
+Open Radar: https://radar.thally.io/dashboard
 
-Continue setup: https://radar.thally.io/start
-
-Need help? Reply to support@thally.io.
+Reply to this email or write to support@thally.io.
 
 Radar is a Thally product, operated by Fairspleet LLC.

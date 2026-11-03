@@ -5,14 +5,12 @@ Hi Alex,
 
 Your subscription has ended
 
-Your Radar subscription has ended, and subscription access is no longer active.
+Your Radar subscription is no longer active.
 
-Open Radar to review your account or restart your subscription. Restart pricing and any outstanding invoice are shown before you confirm payment.
+You can restart from your account. You’ll see the amount due before confirming payment.
 
-If you didn’t expect this, reply and we’ll help you check what happened.
+Open my account: https://radar.thally.io/start-trial
 
-Open your account: https://radar.thally.io/start-trial
-
-Need help? Reply to support@thally.io.
+Reply to this email or write to support@thally.io.
 
 Radar is a Thally product, operated by Fairspleet LLC.
