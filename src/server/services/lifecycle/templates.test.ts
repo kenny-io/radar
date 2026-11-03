@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData } from './templates';
+import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData, type WorkUpdateSection } from './templates';
 const ctx = { appUrl: 'https://radar.thally.io', unsubscribeUrl: 'https://radar.thally.io/email-preferences?token=fake' };
-const data: LifecycleData = { name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
+const data: LifecycleData = { name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
 describe('lifecycle templates', () => {
   it.each(LIFECYCLE_TYPES)('%s has accessible HTML, useful plain text and explicit reply contact', type => {
     const x = renderLifecycle(type, data, ctx);
@@ -48,4 +48,27 @@ describe('lifecycle templates', () => {
   it('does not describe expired subscription setup as a voluntary cancellation', () => {
     expect(renderLifecycle('subscription_ended', { status: 'incomplete_expired' }, ctx).text).toContain('setup expired before payment');
   });
+  it.each(['brief_reply', 'calendar_review', 'article_social', 'social_publish'] as const)('makes %s useful without inventing outcomes', kind => {
+    const section = { ...data.workSections![0], kind, title: 'How to plan your first product launch' };
+    const mail = renderLifecycle('work_update', { ...data, workSections: [section] }, ctx);
+    expect(mail.text).not.toMatch(/35%|guarantee|haven.t replied|haven.t posted/i);
+    expect(mail.text).toContain('Turn off work reminders');
+    expect(mail.text).toContain('348 Business Bay, Dubai, UAE');
+    const html = mail.html.replace(/&amp;/g, '&');
+    expect(html).toContain('/email/open?businessId=00000000-0000-4000-8000-000000000002&kind=' + kind);
+    expect(mail.html).toContain('width="28"');
+  });
+  it('combines up to three sections without duplicating the primary button or accepting arbitrary destinations', () => {
+    const sections: WorkUpdateSection[] = [data.workSections![0], { ...data.workSections![0], kind: 'calendar_review', eventId: '00000000-0000-4000-8000-000000000003', count: 8 }];
+    const mail = renderLifecycle('work_update', { workSections: sections }, ctx);
+    expect(mail.text).toContain('3 conversations'); expect(mail.text).toContain('8 topics');
+    expect(mail.html.match(/background:#17181c/g)).toHaveLength(1);
+    expect(() => renderLifecycle('work_update', { workSections: [] }, ctx)).toThrow('Invalid work');
+    expect(() => renderLifecycle('work_update', { workSections: sections }, { appUrl: ctx.appUrl })).toThrow('Invalid work');
+    expect(() => renderLifecycle('work_update', { workSections: [sections[0], sections[0]] }, ctx)).toThrow('Invalid work');
+    expect(() => renderLifecycle('work_update', { workSections: [{ ...sections[0], kind: 'https://other.example' as any }] }, ctx)).toThrow('Invalid work');
+    const escaped = renderLifecycle('work_update', { workSections: [{ ...sections[0], businessName: '<script>bad()</script>' }] }, ctx);
+    expect(escaped.html).not.toContain('<script>'); expect(escaped.html).toContain('&lt;script&gt;');
+  });
+
 });

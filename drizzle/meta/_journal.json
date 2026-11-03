@@ -71,6 +71,13 @@
       "when": 1793718547093,
       "tag": "0009_lifecycle_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793745533158,
+      "tag": "0010_engagement_updates",
+      "breakpoints": true
     }
   ]
 }

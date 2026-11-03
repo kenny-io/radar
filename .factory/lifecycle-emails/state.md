@@ -7,7 +7,7 @@
 | EMAIL-E2 auth/recovery | factory-engineer | verified | 28 auth checks pass, including independently discovered stale-claim defect fixed |
 | EMAIL-E3 billing/readiness wiring | factory-engineer | verified | 74 focused checks pass; eight new lifecycle scenarios |
 | EMAIL-Q1 independent verification | factory-qa | verified | 45/45 dev +45/45 optimized production browser;190 focused tests; two defects closed; all owned servers stopped |
-| EMAIL-P1 integration/launch handoff | PM | review | [PR25](https://github.com/kenny-io/radar/pull/25), source57b69edb. Build/typecheck/diff pass; full suite920 pass/65 external skips/one unchanged raster baseline failure. Await owner approval for auto-deploying main |
+| EMAIL-P1 integration/launch handoff | PM | review | [PR25](https://github.com/kenny-io/radar/pull/25), current engagement source fingerprint036e3bd7…(488files). Build/typecheck/diff pass; full suite960pass/65external skips/one unchanged raster baseline failure. QA42browser+1configured-gate proof,19probes and10renders pass. Await existing owner approval for auto-deploying main |
 
 Isolated existing worktree, branch `kenny/lifecycle-emails`. Test database `radar_lifecycle_20261103` created on local Postgres port54329. No production writes, real recipients or deployment in this task so far. Verified connected Resend: Thally sending domain enabled/verified; 50,000 monthly limit,338 used, no daily cap,10 requests/second. No Radar hosted templates found; Thally templates belong to Thally and are preserved.
 
@@ -43,3 +43,10 @@ Billing inspection confirms `BillingSettings` → `PortalButton` → authenticat
 Owner removed the separate workspace-is-open notice because workspace creation is part of signup. The current set contains nine events. Removed the template and `commitDraft` enqueue trigger; kept activation/idempotency and trial/billing behavior. The dispatcher explicitly suppresses any previously frozen `workspace_ready` row before provider contact. The preview generator removes retired HTML/plaintext files and displays nine templates; current brand screenshots were regenerated without the retired message. Older QA snapshots remain historical evidence.
 
 Verification:37/37 local database-backed tests passed (billing lifecycle8, dispatcher14, templates15), including activation/webhook replays without workspace mail and suppression of a previously queued notice with zero provider attempts.18/18 local mobile/desktop render checks and typecheck passed. No provider sends, billing changes, merge or deployment. This supersedes earlier ten-event descriptions.
+
+
+## Conditional work reminders
+
+PR25 now includes the nine core messages plus one optional work-update template with four missing-action conditions. Brief waits1h without copy/reply action; calendar24h without approval/scheduling; article2h without social content; social pack24h without copy/schedule/post. Events are captured only after explicit category opt-in, and meaningful actions permanently retire reminders. A combined digest is capped with the founder note to one optional mail per24h across businesses, during business-local daytime. State is checked at collection and dispatch. Settings, signed work opt-out, business-safe links, source hooks and migration0010 are complete. No35%result claim.
+
+Frozen source036e3bd7c87d8cde09acaf00694df4418fa5fdd13501f6049614d741fa87f784: optimized build and typecheck pass; full suite960pass/65external skips/one unchanged native-raster golden mismatch. Independent19probes,21devbrowser+22configured-productionbrowser,10render and2actual readiness checks pass. One sign-in target defect was fixed and retested; one later20s readiness delay did not reproduce on confirmatory run. Worker now waits read-only for migration0010 before taking jobs. See engagement/verification.md and engagement/qa/review.md. No live provider/customer/billing changes, merge or deployment.

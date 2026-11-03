@@ -4,8 +4,10 @@ import '../server/jobs/all';
 import { startWorker } from '../server/jobs/queue';
 import { startScheduler } from '../server/jobs/cron';
 import { startLifecycleDispatcher } from '../server/services/lifecycle/worker';
+import { waitForWorkerSchema } from '../server/db/workerReady';
 
 async function main() {
+  await waitForWorkerSchema();
   const w = await startWorker();
   const s = startScheduler();
   const mail = startLifecycleDispatcher();

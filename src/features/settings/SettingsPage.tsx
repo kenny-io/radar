@@ -11,6 +11,7 @@ import { GscConnect } from '@/features/gsc/GscConnect';
 import { PublishingSettings } from '@/features/publishing/PublishingSettings';
 import { SocialAccounts } from '@/features/social/channels/SocialAccounts';
 import { BillingSettings } from '@/features/billing/BillingSettings';
+import { EmailSettings } from './EmailSettings';
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
 import type { CalendarSettings, Member, Role, Workspace, Appearance } from '@/lib/types';
@@ -52,11 +53,11 @@ export function AISettings() {
 }
 
 const SET_KEY = 'radar.settings.tab';
-type SetKey = 'gsc' | 'publishing' | 'social' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'feedback';
+type SetKey = 'gsc' | 'publishing' | 'social' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'feedback';
 const SET_NAV: [string, [SetKey, string][]][] = [
   ['Connections', [['gsc', 'Search Console'], ['publishing', 'Publishing'], ['social', 'Social accounts']]],
   ['Content', [['ai', 'AI models'], ['calendar', 'Calendar']]],
-  ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing']]],
+  ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing'], ['emails', 'Emails']]],
   ['Support', [['feedback', 'Request a feature']]],
 ];
 
@@ -116,6 +117,7 @@ export function SettingsPage() {
       <Row t="Email"><span className="small">{app.user.email}</span></Row>
       <Row t="Appearance" d="System follows your device."><AppearanceSetting /></Row>
     </Section>,
+    emails: <Section title="Emails" sub="Useful reminders, only when there’s a next step." style={{ marginTop: 0 }}><EmailSettings /></Section>,
     billing: <Section title="Billing" sub="Manage your Radar account and subscription." style={{ marginTop: 0 }}><BillingSettings /></Section>,
     feedback: <Section title="Request a feature" style={{ marginTop: 0 }}><FeatureRequest /></Section>,
   };

@@ -3,6 +3,8 @@
 import { and, eq, lt } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import type { BriefItem } from '@/lib/types';
+import type { Q } from '@/server/billing/draft';
+import { resolveEngagement } from '../lifecycle/engagement';
 
 export type DayRow = typeof schema.briefDays.$inferSelect;
 export type DayStats = Record<string, { read: number }>;
@@ -33,6 +35,7 @@ export async function withDay<T>(bid: string, date: string, fn: (row: DayRow) =>
     if (out.scannedAt) set.scannedAt = out.scannedAt;
     if (out.stats) set.stats = out.stats;
     if (Object.keys(set).length) await tx.update(schema.briefDays).set(set).where(and(eq(schema.briefDays.businessId, bid), eq(schema.briefDays.date, date)));
+    if ([...(r[0].items as BriefItem[]), ...(out.items || [])].some(i => i.kind === 'reply' && ['copied', 'posted', 'scheduled', 'skipped'].includes(i.st))) await resolveEngagement(tx, bid, 'brief_reply', date);
     return out.ret;
   });
 }
@@ -45,9 +48,10 @@ export function mergeStats(a: DayStats | null | undefined, b: DayStats): DayStat
 }
 
 /** Insert a new day, or (if one appeared meanwhile) merge into it. */
-export async function createDay(bid: string, date: string, items: BriefItem[], candidates: CandMark[], scannedAt: string, stats: DayStats = {}) {
-  await db.insert(schema.briefDays).values({ businessId: bid, date, items, candidates, scannedAt, stats })
-    .onConflictDoNothing({ target: [schema.briefDays.businessId, schema.briefDays.date] });
+export async function createDay(bid: string, date: string, items: BriefItem[], candidates: CandMark[], scannedAt: string, stats: DayStats = {}, q: Q = db) {
+  const inserted = await q.insert(schema.briefDays).values({ businessId: bid, date, items, candidates, scannedAt, stats })
+    .onConflictDoNothing({ target: [schema.briefDays.businessId, schema.briefDays.date] }).returning({ date: schema.briefDays.date });
+  return inserted.length > 0;
 }
 
 /** Persist expiry: open/copied items of past days become 'expired' (the workspace also maps it on read). */

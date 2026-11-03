@@ -2,10 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { db, pool, schema } from '@/server/db';
 import { env } from '@/server/env';
-import { decrypt, sha256 } from '@/server/crypto';
+import { decrypt, encrypt, sha256 } from '@/server/crypto';
 import { getProvider } from '@/server/billing/provider';
 import { onboardingAllowed } from './preferences';
-import type { LifecyclePayload } from './queue';
+import { lifecyclePayload, type LifecyclePayload } from './queue';
+import { currentWorkSections, optionalDeliveryAfter } from './engagement';
 const M = schema.lifecycleEmails;
 type Mail = typeof M.$inferSelect;
 const MAX_ATTEMPTS = 8;
@@ -20,6 +21,10 @@ export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, no
   const [u] = await db.select().from(schema.users).where(eq(schema.users.id, row.userId)).limit(1);
   if (!u || u.guest || payload.envelope.to.length !== 1 || payload.envelope.to[0] !== u.email) return false;
   const d = payload.data;
+  if (row.type === 'work_update') {
+    const current = await currentWorkSections(row, payload, now);
+    return row.firstAttemptAt ? current.length > 0 && current.length === d.workSections?.length : current.length > 0;
+  }
   if (row.type === 'founder_note') return onboardingAllowed(u.id);
   if (row.type === 'password_reset') {
     if (!u.passwordHash) return false;
@@ -73,6 +78,7 @@ async function claim(now: Date, userIds?: string[]): Promise<Mail | null> {
 }
 const owned = (row: Mail) => and(eq(M.id, row.id), eq(M.claimToken, row.claimToken!), eq(M.status, 'sending'));
 async function release(row: Mail) { await db.update(M).set({ status: 'queued', claimedAt: null, claimToken: null }).where(owned(row)); }
+async function defer(row: Mail, next: Date) { await db.update(M).set({ status: 'queued', nextAttemptAt: next, claimedAt: null, claimToken: null, lastError: 'optional_frequency_or_quiet_hours' }).where(owned(row)); }
 async function terminal(row: Mail, status: 'failed' | 'suppressed', reason: string) {
   await db.update(M).set({ status, lastError: reason, claimedAt: null, claimToken: null, ...(row.type === 'password_reset' ? { payloadEnc: '' } : {}) }).where(owned(row));
   if (status === 'failed') console.error('[lifecycle] delivery failed', { id: row.id, type: row.type, reason });
@@ -120,6 +126,19 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         const [attempted] = await db.update(M).set({ attempts: row.attempts + 1 }).where(owned(row)).returning();
         if (attempted) await retry(attempted, 'eligibility_check_unavailable', now);
         continue;
+      }
+      if (row.type === 'work_update' || row.type === 'founder_note') {
+        const after = await optionalDeliveryAfter(row.userId, now, row.id);
+        if (after) { await defer(row, after); continue; }
+      }
+      if (row.type === 'work_update' && !row.firstAttemptAt) {
+        const sections = await currentWorkSections(row, payload, now);
+        if (!sections.length) { await terminal(row, 'suppressed', 'no_longer_applicable'); continue; }
+        const [u] = await db.select({ id: schema.users.id, name: schema.users.name, email: schema.users.email }).from(schema.users).where(eq(schema.users.id, row.userId)).limit(1);
+        if (!u || payload.envelope.to[0] !== u.email) { await terminal(row, 'suppressed', 'no_longer_applicable'); continue; }
+        payload = lifecyclePayload('work_update', u, { ...payload.data, workSections: sections });
+        const [frozen] = await db.update(M).set({ payloadEnc: encrypt(payload) }).where(owned(row)).returning({ id: M.id });
+        if (!frozen) continue;
       }
       if (options.shouldStop?.() || options.signal?.aborted) { await release(row); break; }
       if (env.devStubs) {

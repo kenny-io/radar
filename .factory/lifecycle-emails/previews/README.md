@@ -13,3 +13,8 @@ Fictional sample data; no email is sent by this script.
 - [payment_failed](payment_failed.html): Your Radar payment didn’t go through
 - [cancellation_scheduled](cancellation_scheduled.html): Your Radar cancellation is confirmed
 - [subscription_ended](subscription_ended.html): Your Radar subscription has ended
+- [work_update](work_update.html): A few things to pick up in Radar
+- [work_brief_reply](work_brief_reply.html): Conversations worth joining
+- [work_calendar_review](work_calendar_review.html): Choose the topics you want to publish
+- [work_article_social](work_article_social.html): Turn your article into social posts
+- [work_social_publish](work_social_publish.html): Your social posts are ready to schedule

@@ -15,6 +15,7 @@ import { createDay, getDay, mergeStats, withDay, type CandMark, type DayStats } 
 import { fitToCap, slotsLeft } from './cap';
 import { newSinceFor } from './rescan';
 import './stubs';
+import { recordEngagement } from '../lifecycle/engagement';
 
 export interface ScanPayload {
   mode: ScanMode; date?: string; fromJob?: string;
@@ -138,9 +139,12 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   for (const c of fresh) if (!marks.find(m => m.id === c.id)) marks.push({ id: c.id, plat: c.plat, ...tk(c), at });
   let addedIds: string[] = [];
   if (mode === 'first') {
-    await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats);
+    await db.transaction(async tx => {
+      const inserted = await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats, tx);
+      await tx.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
+      if (inserted && replies.some(i => i.st === 'open' && /^https?:\/\//i.test(i.url || ''))) await recordEngagement(tx, { businessId: bid, kind: 'brief_reply', ref: date });
+    });
     addedIds = [...replies, ...posts].map(i => i.id);
-    await db.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
   } else {
     addedIds = (await withDay(bid, date, row => {
       const items = row.items as BriefItem[];

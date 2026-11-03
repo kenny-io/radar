@@ -13,6 +13,7 @@ import { suggestVideos } from '../services/drafting/youtube';
 import { renderImage } from '../services/images';
 import { defaultArticle, statNumbers } from '@/features/article/blocks';
 import type { Article, Profile } from '@/lib/types';
+import { recordEngagement, resolveCalendarForEntries } from '../services/lifecycle/engagement';
 
 const E = schema.calendarEntries;
 const BlockZ = z.union([z.tuple([z.enum(['p', 'h2', 'h3']), z.string().max(20000)]), z.tuple([z.literal('ul'), z.array(z.string().max(5000)).max(200)])]);
@@ -147,10 +148,17 @@ export const actions: ActionMap = {
       const a = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, ctx.bid))).limit(1))[0]?.data as Article | undefined;
       if (!a?.generated) throw new RadarError('Radar hasn’t drafted this article yet.');
       if (!['review', 'draft', 'approved'].includes(row.status)) throw new RadarError('This article can’t be approved right now.');
-      if (withoutPublishing) { await tx.update(E).set({ status: 'approved' }).where(eq(E.id, entryId)); return { status: 'approved' }; }
+      if (withoutPublishing) {
+        await tx.update(E).set({ status: 'approved' }).where(eq(E.id, entryId));
+        await resolveCalendarForEntries(tx, ctx.bid, [entryId]);
+        await recordEngagement(tx, { businessId: ctx.bid, kind: 'article_social', ref: entryId });
+        return { status: 'approved' };
+      }
       const conns = await tx.select({ id: schema.connections.id }).from(schema.connections).where(eq(schema.connections.businessId, ctx.bid));
       if (!conns.length) throw new RadarError('Connect your blog to schedule this article.');
       await tx.update(E).set({ status: 'scheduled', publishError: null }).where(eq(E.id, entryId));
+      await resolveCalendarForEntries(tx, ctx.bid, [entryId]);
+      await recordEngagement(tx, { businessId: ctx.bid, kind: 'article_social', ref: entryId });
       return { status: 'scheduled' };
     });
   } }),

@@ -17,6 +17,7 @@ import { startDraft } from './start';
 import { generateArticleBodyImages, type BodyImagesPayload } from './bodyImages';
 import { assertArticleEditable, assertArticleJobOwned, assertNoArticleWork, lockArticle } from './guard';
 import type { Article, Profile } from '@/lib/types';
+import { recordEngagement, resolveCalendarForEntries } from '../lifecycle/engagement';
 
 const trunc = (t: string) => (t.length > 40 ? t.slice(0, 40).trimEnd() + '…' : t);
 
@@ -37,6 +38,7 @@ defineJob<DraftPayload>({
       await assertArticleJobOwned(tx, ctx.job);
       const art = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
       await tx.update(schema.calendarEntries).set({ status: 'drafting' }).where(eq(schema.calendarEntries.id, entryId));
+      await resolveCalendarForEntries(tx, bid, [entryId]);
       return { row, art };
     });
     try {
@@ -54,6 +56,7 @@ defineJob<DraftPayload>({
         if (JSON.stringify(latest?.data) !== JSON.stringify(art?.data)) throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
         await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: new Date() } });
         await tx.update(schema.calendarEntries).set({ status: final, publishError: null }).where(eq(schema.calendarEntries.id, entryId));
+        await recordEngagement(tx, { businessId: bid, kind: 'article_social', ref: entryId });
       });
       await ctx.touch();
       const now = (await entriesStatus([entryId]))[0];

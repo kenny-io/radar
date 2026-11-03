@@ -63,3 +63,8 @@ Billing inspection confirms `BillingSettings` → `PortalButton` → authenticat
 Owner removed the separate workspace-is-open notice because workspace creation is part of signup. The current set contains nine events. Removed the template and `commitDraft` enqueue trigger; kept activation/idempotency and trial/billing behavior. The dispatcher explicitly suppresses any previously frozen `workspace_ready` row before provider contact. The preview generator removes retired HTML/plaintext files and displays nine templates; current brand screenshots were regenerated without the retired message. Older QA snapshots remain historical evidence.
 
 Verification:37/37 local database-backed tests passed (billing lifecycle8, dispatcher14, templates15), including activation/webhook replays without workspace mail and suppression of a previously queued notice with zero provider attempts.18/18 local mobile/desktop render checks and typecheck passed. No provider sends, billing changes, merge or deployment. This supersedes earlier ten-event descriptions.
+
+
+## Conditional work reminder extension
+
+Current evidence supersedes earlier event counts and source fingerprints: see engagement/verification.md, engagement/qa/review.md and engagement/source-fingerprint.json. Nine core messages plus one optional four-condition work template;14visual examples. Full suite960pass/65external skips/one unchanged native-raster baseline mismatch. Optimized build VtQMuZSb-6yVqkxLp30R1, typecheck, independent19probes/21dev+22configured-productionbrowser/10render checks pass. Source036e3bd7c87d8cde09acaf00694df4418fa5fdd13501f6049614d741fa87f784. No real recipient sends or deployment in this extension.
