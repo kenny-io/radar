@@ -9,7 +9,9 @@ describe('lifecycle templates', () => {
     expect(x.html).toContain('<html lang="en">'); expect(x.html).toContain('role="presentation"'); expect(x.html).toContain('<h1');
     expect(x.text).toContain('Fairspleet LLC'); expect(x.text).toContain('https://radar.thally.io/');
     expect(x.replyTo).toBe(type === 'founder_note' ? 'team@thally.io' : 'support@thally.io');
-    expect(x.html).not.toContain('<script'); expect(x.html).not.toContain('<img');
+    expect(x.html).not.toContain('<script');
+    expect(x.html).toContain('src="https://radar.thally.io/brand/radar-mark-email.png"');
+    expect(x.html).not.toContain('◉');
   });
   it('escapes all user-controlled values without corrupting plain text', () => {
     const x = renderLifecycle('workspace_ready', { name: '<script>bad()</script>', businessName: 'A&B "<test>"' }, ctx);
