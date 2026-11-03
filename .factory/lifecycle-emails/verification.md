@@ -2,6 +2,8 @@
 
 Integrated implementation verified on `kenny/lifecycle-emails`, source fingerprint `3beebabab50b13b7629a49df808231ee6e52cc6b8232f55220817e3c432b2d50` (476 files, `src/**`, `next.config.ts`, `drizzle/**`; see QA manifest). Dedicated local databases only; no production fixtures, live charges or human emails. Production deployment remains pending owner merge approval.
 
+Implementation commit `57b69edba3f570c371a877cdfd1cdfbc2c5f5e4a`; [PR25](https://github.com/kenny-io/radar/pull/25). Final documentation-only delivery checkpoint follows this source commit. GitHub reports no status-check runs for the head; do not describe an unconfigured CI check as passed.
+
 Primary implementation references reviewed: [Resend idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys) (24-hour key window) and [OWASP forgot password guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
 
 ## Integrated checks
