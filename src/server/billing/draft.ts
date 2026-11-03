@@ -2,6 +2,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { track } from '../events';
+import { queueLifecycle } from '../services/lifecycle/queue';
 import type { DraftSummary, OnboardingState } from '@/lib/types';
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -31,8 +32,14 @@ export async function draftOf(ownerId: string, q: Q = db): Promise<BizRow | null
  *  `business.onboarded` tracked once. Idempotent (only the call that flips the status does anything). Bumps the revision in
  *  the same UPDATE. Returns the bid when this call committed it, else null. Pass `q` + `later` inside a transaction. */
 export async function commitDraft(bid: string, q: Q = db, later?: Later): Promise<string | null> {
+  if (q === db) {
+    const deferred: Later = later || [];
+    const result = await db.transaction(tx => commitDraft(bid, tx, deferred));
+    if (!later) await runLater(deferred);
+    return result;
+  }
   const B = schema.businesses;
-  const cur = (await q.select({ onboarding: B.onboarding, timezone: B.timezone }).from(B).where(and(eq(B.id, bid), eq(B.status, 'onboarding'))).limit(1))[0];
+  const cur = (await q.select({ onboarding: B.onboarding, timezone: B.timezone, profile: B.profile, domain: B.domain }).from(B).where(and(eq(B.id, bid), eq(B.status, 'onboarding'))).limit(1))[0];
   if (!cur) return null;
   const tz = validTz(cur.onboarding?.tz) ? cur.onboarding.tz : cur.timezone;
   const committedAt = new Date().toISOString();
@@ -43,6 +50,8 @@ export async function commitDraft(bid: string, q: Q = db, later?: Later): Promis
   const g = (await q.select({ status: G.status }).from(G).where(eq(G.businessId, bid)).limit(1))[0];
   if (!g) await q.insert(G).values({ businessId: bid, status: 'skipped' }).onConflictDoNothing();
   else if (g.status === 'none') await q.update(G).set({ status: 'skipped' }).where(eq(G.businessId, bid));
+  await queueLifecycle(q, { type: 'workspace_ready', userId: r[0].ownerId, businessId: bid, eventKey: `workspace:${bid}`,
+    data: { businessId: bid, businessName: cur.profile?.business?.name || cur.domain } });
   const t = () => track('business.onboarded', { bid, uid: r[0].ownerId });
   if (later) later.push(t); else await t();
   return bid;

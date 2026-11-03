@@ -3,12 +3,15 @@ import './env'; // must be first: loads .env / .env.local before anything reads 
 import '../server/jobs/all';
 import { startWorker } from '../server/jobs/queue';
 import { startScheduler } from '../server/jobs/cron';
+import { startLifecycleDispatcher } from '../server/services/lifecycle/worker';
 
 async function main() {
   const w = await startWorker();
   const s = startScheduler();
+  const mail = startLifecycleDispatcher();
   console.log('[worker] started');
-  const stop = async () => { s.stop(); await w.stop(); process.exit(0); };
+  let stopping = false;
+  const stop = async () => { if (stopping) return; stopping = true; s.stop(); await Promise.all([mail.stop(), w.stop()]); process.exit(0); };
   process.on('SIGINT', stop); process.on('SIGTERM', stop);
 }
 main().catch(e => { console.error(e); process.exit(1); });

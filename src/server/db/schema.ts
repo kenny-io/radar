@@ -284,6 +284,41 @@ export const outboxEmails = pgTable('outbox_emails', {
   sentAt: timestamp('sent_at', { withTimezone: true }),
 });
 
+/** New lifecycle mail only. Frozen provider bodies (including reset links) are encrypted at rest. */
+export const lifecycleEmails = pgTable('lifecycle_emails', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'cascade' }),
+  eventKey: text('event_key').notNull(),
+  type: text('type').notNull(),
+  payloadEnc: text('payload_enc').notNull(),
+  status: text('status').$type<'queued' | 'sending' | 'sent' | 'failed' | 'suppressed' | 'logged'>().notNull().default('queued'),
+  attempts: integer('attempts').notNull().default(0),
+  nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+  firstAttemptAt: timestamp('first_attempt_at', { withTimezone: true }),
+  claimedAt: timestamp('claimed_at', { withTimezone: true }),
+  claimToken: text('claim_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  providerId: text('provider_id'),
+  lastError: text('last_error'),
+  createdAt: created(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, t => [uniqueIndex('lifecycle_event_uq').on(t.eventKey), index('lifecycle_due_idx').on(t.status, t.nextAttemptAt)]);
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: created(),
+}, t => [index('reset_user_idx').on(t.userId)]);
+
+export const userEmailPreferences = pgTable('user_email_preferences', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  onboarding: boolean('onboarding').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const aiCalls = pgTable('ai_calls', {
   id: id(),
   businessId: uuid('business_id'),

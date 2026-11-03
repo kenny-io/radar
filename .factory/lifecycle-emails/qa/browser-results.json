@@ -1,0 +1,427 @@
+{
+  "base": "http://localhost:3931",
+  "environment": "local Next dev, dedicated local QA database, stubs only, no worker/provider sending",
+  "checks": [
+    {
+      "name": "browser signup queues exactly welcome and founder",
+      "pass": true
+    },
+    {
+      "name": "primary session is authenticated before reset",
+      "pass": true
+    },
+    {
+      "name": "signin recovery link opens request page",
+      "pass": true
+    },
+    {
+      "name": "request queues encrypted reset link",
+      "pass": true
+    },
+    {
+      "name": "fragment token removed after mount",
+      "pass": true
+    },
+    {
+      "name": "GET does not consume reset token",
+      "pass": true
+    },
+    {
+      "name": "reset page has noindex/no-referrer/no-store",
+      "pass": true,
+      "detail": {
+        "cache-control": "no-store, must-revalidate",
+        "connection": "keep-alive",
+        "content-encoding": "gzip",
+        "content-type": "text/html; charset=utf-8",
+        "date": "Tue, 03 Nov 2026 15:19:07 GMT",
+        "keep-alive": "timeout=5",
+        "referrer-policy": "no-referrer",
+        "transfer-encoding": "chunked",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding",
+        "x-frame-options": "SAMEORIGIN",
+        "x-powered-by": "Next.js",
+        "x-robots-tag": "noindex, nofollow",
+        "link": "</_next/static/media/acc1c922d613a50a.p.woff2>; rel=preload; as=\"font\"; crossorigin=\"\"; type=\"font/woff2\", </_next/static/media/dbccb4a9e22cbf0d-s.p.woff2>; rel=preload; as=\"font\"; crossorigin=\"\"; type=\"font/woff2\", </_next/static/css/app/layout.css?v=1793719147294>; rel=preload; as=\"style\""
+      }
+    },
+    {
+      "name": "reset page metadata forbids indexing",
+      "pass": true
+    },
+    {
+      "name": "confirmation mismatch is actionable",
+      "pass": true
+    },
+    {
+      "name": "all old sessions revoked",
+      "pass": true
+    },
+    {
+      "name": "reset does not auto sign in",
+      "pass": true
+    },
+    {
+      "name": "old password refused after reset",
+      "pass": true
+    },
+    {
+      "name": "new password signs in through browser",
+      "pass": true
+    },
+    {
+      "name": "email billing CTA opens actual Billing section",
+      "pass": true
+    },
+    {
+      "name": "billing section persists across refresh",
+      "pass": true
+    },
+    {
+      "name": "no bearer token in HTTP request URLs",
+      "pass": true
+    },
+    {
+      "name": "used link fails with recovery action",
+      "pass": true
+    },
+    {
+      "name": "missing link explains next step",
+      "pass": true
+    },
+    {
+      "name": "expired link fails with recovery action",
+      "pass": true
+    },
+    {
+      "name": "recovery mobile has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "scanner GET does not unsubscribe",
+      "pass": true
+    },
+    {
+      "name": "explicit preference POST persists",
+      "pass": true
+    },
+    {
+      "name": "preference survives refresh",
+      "pass": true
+    },
+    {
+      "name": "old in-flight response cannot overwrite newly opened reset link",
+      "pass": true
+    },
+    {
+      "name": "preview welcome at600px",
+      "pass": true
+    },
+    {
+      "name": "preview founder_note at600px",
+      "pass": true
+    },
+    {
+      "name": "preview password_reset at600px",
+      "pass": true
+    },
+    {
+      "name": "preview workspace_ready at600px",
+      "pass": true
+    },
+    {
+      "name": "preview trial_started at600px",
+      "pass": true
+    },
+    {
+      "name": "preview trial_ending at600px",
+      "pass": true
+    },
+    {
+      "name": "preview invoice_paid at600px",
+      "pass": true
+    },
+    {
+      "name": "preview payment_failed at600px",
+      "pass": true
+    },
+    {
+      "name": "preview cancellation_scheduled at600px",
+      "pass": true
+    },
+    {
+      "name": "preview subscription_ended at600px",
+      "pass": true
+    },
+    {
+      "name": "preview welcome at390px",
+      "pass": true
+    },
+    {
+      "name": "preview founder_note at390px",
+      "pass": true
+    },
+    {
+      "name": "preview password_reset at390px",
+      "pass": true
+    },
+    {
+      "name": "preview workspace_ready at390px",
+      "pass": true
+    },
+    {
+      "name": "preview trial_started at390px",
+      "pass": true
+    },
+    {
+      "name": "preview trial_ending at390px",
+      "pass": true
+    },
+    {
+      "name": "preview invoice_paid at390px",
+      "pass": true
+    },
+    {
+      "name": "preview payment_failed at390px",
+      "pass": true
+    },
+    {
+      "name": "preview cancellation_scheduled at390px",
+      "pass": true
+    },
+    {
+      "name": "preview subscription_ended at390px",
+      "pass": true
+    },
+    {
+      "name": "no browser page errors",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "errors": [],
+  "templateChecks": [
+    {
+      "name": "welcome",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/start",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "founder_note",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:team@thally.io",
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "password_reset",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/reset-password#token=preview-only-not-a-real-token",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "workspace_ready",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "trial_started",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "trial_ending",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "invoice_paid",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "payment_failed",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "cancellation_scheduled",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "subscription_ended",
+      "width": 600,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/start-trial",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "welcome",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/start",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "founder_note",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:team@thally.io",
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "password_reset",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/reset-password#token=preview-only-not-a-real-token",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "workspace_ready",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/dashboard",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "trial_started",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "trial_ending",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "invoice_paid",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "payment_failed",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "cancellation_scheduled",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/settings?section=billing",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    },
+    {
+      "name": "subscription_ended",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "links": [
+        "https://radar.thally.io/start-trial",
+        "mailto:support@thally.io"
+      ],
+      "lang": "en"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+Action needed: your Radar payment failed
+Reply to: support@thally.io
+
+Hi Alex,
+
+Please check your payment details
+
+The payment for your Radar invoice of $49.00 did not complete.
+
+Open Settings → Billing to review the invoice and update your payment method. Your subscription access may be paused while payment is outstanding.
+
+If you believe this is a mistake, reply to this email and we’ll help. Please don’t send card details.
+
+Review payment details: https://radar.thally.io/settings?section=billing
+
+Need help? Reply to support@thally.io.
+
+Radar is a Thally product, operated by Fairspleet LLC.

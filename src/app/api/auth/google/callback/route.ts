@@ -7,6 +7,7 @@ import { env } from '@/server/env';
 import { attachInvites } from '@/server/auth/users';
 import { finishAuth } from '@/server/auth/claim';
 import { consumeGoogleState } from '@/server/auth/googleState';
+import { queueSignupEmails } from '@/server/auth/signupEmails';
 
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
@@ -39,7 +40,11 @@ export async function GET(req: Request) {
   let user: typeof schema.users.$inferSelect;
   if (found) { user = found; if (!found.googleSub) await db.update(schema.users).set({ googleSub: sub }).where(eq(schema.users.id, found.id)); }
   else {
-    const [created] = await db.insert(schema.users).values({ name, email, googleSub: sub }).onConflictDoNothing().returning();
+    const created = await db.transaction(async tx => {
+      const [u] = await tx.insert(schema.users).values({ name, email, googleSub: sub }).onConflictDoNothing().returning();
+      if (u) await queueSignupEmails(tx, u);
+      return u;
+    });
     if (created) { user = created; await track('user.signed_up', { uid: user.id, props: { method: 'google' } }); }
     else {
       // Another callback or email signup won the unique-email race. Reuse the account on a verified email.

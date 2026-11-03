@@ -289,7 +289,7 @@ A successful configuration check verifies shapes and settings, not an actual del
   - API keys → `STRIPE_SECRET_KEY` (a restricted runtime key: write Customers including balance transactions, PaymentIntents, PaymentMethods, Subscriptions, Invoices and Billing Portal Sessions; read Prices) and `STRIPE_PUBLISHABLE_KEY`. Provisioning/checking also needs Products, Prices, Webhook Endpoints and Billing Portal Configurations permissions; use a separate restricted setup key rather than retaining setup write access in the runtime key.
   - Dedicated `STRIPE_PORTAL_CONFIGURATION_ID`: invoice history, payment method updates, billing name/email/address updates and cancellation **at period end**, with subscription price/quantity updates disabled. `billing:setup` preserves any existing default. Stripe makes its first configuration the default automatically; Radar always should use its explicit configuration ID. If omitted at runtime, the default portal configuration applies; review it before use.
   - `STRIPE_API_VERSION`: keep the pinned `2026-05-27.dahlia` (later Dahlia versions are additive). Stripe's newest major line is Endive (`2026-09-30.endive`, possibly breaking); read its changelog before moving the pin. The code reads `items.data[0].current_period_end` and the invoice `confirmation_secret`, which need Basil (2025-03-31) or later.
-- [ ] **Webhook endpoint** `{APP_URL}/api/billing/webhook` (`https://radar.thally.io/api/billing/webhook`) with exactly these seven events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Its signing secret → `STRIPE_WEBHOOK_SECRET` (unset = every delivery refused with 400). Don't add `customer.subscription.trial_will_end`: no email is designed. Deliveries are deduplicated by event id (`billing_events`); a handler failure answers 500 so Stripe retries, and `billing_events.last_error` keeps the message (never the payload).
+- [ ] **Webhook endpoint** `{APP_URL}/api/billing/webhook` (`https://radar.thally.io/api/billing/webhook`) with exactly these seven events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Its signing secret → `STRIPE_WEBHOOK_SECRET` (unset = every delivery refused with 400). No `customer.subscription.trial_will_end` event is needed: Radar queues its own trial-reminder email (§13). Deliveries are deduplicated by event id (`billing_events`); a handler failure answers 500 so Stripe retries, and `billing_events.last_error` keeps the message (never the payload).
 - [ ] **Failed payments:** in the Stripe Dashboard's subscription retry settings (Billing → Revenue recovery → Retries; the menu path may move), set "If all retries for a payment fail" to **Cancel the subscription** (owner decision). Either way the account loses access while `past_due` and the app shows "Restart your subscription"; paying the open invoice restores it.
 - [ ] **The $1** is charged once per account to confirm the card, then credited back to the customer balance ("Card confirmation credit", −$1.00), so the first $50 invoice is **$49**. Nothing to configure.
 - [ ] **Test-mode run** (each needs real Stripe; the stub can't prove them):
@@ -317,7 +317,7 @@ A successful configuration check verifies shapes and settings, not an actual del
 
 - [ ] **Resend** account, verify your sending domain (SPF/DKIM) → `RESEND_API_KEY`, `MAIL_FROM`
 - [ ] Support inbox for feature requests → `SUPPORT_INBOX`
-- Without Resend, emails (team invites, backlink partner notices) are only logged — invites won't arrive.
+- Without Resend, legacy invites/partner notices are logged and do not arrive. Lifecycle mail stays durably queued with a visible missing-key error; dev-stub mode records lifecycle metadata without sending. See §13 for the lifecycle templates, recovery flow and rollout.
 
 ## 9. Legal and policy (before real users)
 
@@ -351,3 +351,28 @@ See `.factory/production-launch/verification.md`, `qa.md`, `providers.md`, and `
 - The local production build passed 200 authenticated sessions plus 200 event streams and mixed reads. This is a measured local envelope, not proof of 200 concurrent paid analyses, provider quota, signup CPU or Railway capacity. Run staging checks at realistic data sizes before claiming more.
 - Actual sandbox checks now cover a $1 confirmation, one $1 balance credit, a paid $49 first monthly invoice and a $50 renewal with Stripe-signed delivered events. Keep real browser 3-D Secure, hosted portal and cancellation evidence separate from server/stub tests.
 - OpenRouter's per-key remaining allowance is not the account's available balance. Actual launch probes found the account out of credit even though the key had allowance remaining; controlled writing/research requests succeeded through Anthropic fallback. Refill and recheck providers before relying on the primary route for launch traffic.
+
+## 13. Lifecycle emails and account recovery
+
+The current launch checkpoint is `.factory/lifecycle-emails/launch-readiness.md`. Its live billing/deployment observations supersede older pre-deployment notes. Reviewed sample copy is in `.factory/lifecycle-emails/previews/README.md`; regenerate with `node --import tsx scripts/preview-lifecycle-emails.ts` (no sending).
+
+| Event | Trigger |
+| --- | --- |
+| Welcome and next steps | New password or Google account, once; never a returning sign-in or anonymous guest |
+| Founder setup check-in | 24 hours after new account creation; one service support note, optional-email opt-out |
+| Password reset | Explicit recovery request for a password account; one-hour single-use link |
+| Workspace ready | Business Profile commits to an active workspace; does not promise finished scans |
+| Trial started | Confirmed activation, actual trial end and confirmation-credit terms |
+| Trial ending | Scheduled 24 hours before the actual trial end; suppressed after cancellation, expiry or changed state |
+| Payment received | Verified fetched invoice, actual paid amount, once per nonzero paid invoice |
+| Payment failed | Verified fetched outstanding invoice for the current subscription; suppressed after recovery |
+| Cancellation scheduled | Genuine cancellation transition; obsolete queued notice suppressed on resuming |
+| Subscription ended | Current subscription becomes canceled or incomplete-expired; no claim that an unpaid account voluntarily canceled |
+
+Deployment requires additive migration `0009_lifecycle_emails`, then both web and worker from the same source. Use the existing `RESEND_API_KEY`, `MAIL_FROM=Radar <radar@thally.io>`, `RADAR_SECRET_KEY` and `APP_URL`; replies go to `support@thally.io`, or `team@thally.io` for the founder note. No hosted-template or Stripe webhook-event changes are required. Trial reminders are scheduled by Radar. Legacy invitations/partner notices retain their existing transport and are not automatically replayed.
+
+The existing worker process runs a separate mail dispatcher loop, independent of long analysis slots and cron. It drains batches of ten with a shared Postgres lock, prioritizes password recovery, and conservatively spaces provider requests. Frozen encrypted payloads, atomic claims, stable Resend idempotency keys, at most eight attempts and a 23-hour retry window protect against duplicate sends. Observe `lifecycle_emails` status/attempt/provider-id counts and `[lifecycle]` failures; `sent` means provider accepted, not inbox receipt. Permanent provider errors require attention. No welcome/founder backfill or announcement campaign runs on deployment.
+
+`/signin` links to `/forgot-password`. Recovery requests give the same response for unknown and Google-only accounts; requests are rate limited. Reset URLs use a fragment, which is removed after the form reads it. Password changes revoke all sessions and other reset links, and do not sign the account in automatically. Optional setup-email opt-out does not suppress security or billing notices.
+
+After authorized deployment, check health, worker startup, recovery page headers and one owner-controlled signup/reset inbox receipt. Never perform a live charge merely to test email. On rollback, stop the new worker dispatcher before reverting web/worker source; retain the additive tables and queued rows for diagnosis and a later safe retry. Do not disable billing, remove customer data or replay all queued messages manually.

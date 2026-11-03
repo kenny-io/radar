@@ -16,7 +16,11 @@ export interface Subscription {
   /** items.data[0].current_period_end (Basil and later) */
   current_period_end: number | null; metadata: Record<string, string>; latest_invoice: string | null; default_payment_method: string | null;
 }
-export interface Invoice { id: string; status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void'; amount_due: number; client_secret: string | null }
+export interface Invoice {
+  id: string; status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void'; amount_due: number; client_secret: string | null;
+  /** Fetched association and receipt facts. Optional for legacy provider fixtures; missing proof never creates a receipt. */
+  customer?: string | null; subscription?: string | null; amount_paid?: number; currency?: string; number?: string | null;
+}
 export interface Price {
   id: string; unit_amount: number | null; currency: string; interval: string | null;
   active: boolean; type: string; billing_scheme: string; interval_count: number | null; usage_type: string | null;

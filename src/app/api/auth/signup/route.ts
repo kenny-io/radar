@@ -9,6 +9,7 @@ import { finishAuth } from '@/server/auth/claim';
 import { handle, json } from '@/server/http/handle';
 import { EMAIL_RE } from '@/lib/format';
 import { assertAuthOrigin, authBody, limitAuthIp, NEW_PASSWORD_BYTES } from '@/server/auth/requests';
+import { queueSignupEmails } from '@/server/auth/signupEmails';
 
 const Body = z.object({ name: z.string().max(200), email: z.string().max(320), password: z.string().max(256), next: z.string().max(2000).optional() });
 export const POST = handle(async (req: Request) => {
@@ -25,11 +26,16 @@ export const POST = handle(async (req: Request) => {
   const exists = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
   if (exists[0]) return json({ ok: false, errors: { email: 'An account with this email already exists. Sign in instead.' } }, 409);
   // The unique email constraint decides a race between two tabs; never turn a duplicate into a 500.
-  const [u] = await db.insert(schema.users).values({ name: b.name.trim(), email, passwordHash: await hashPassword(b.password) })
-    .onConflictDoNothing({ target: schema.users.email }).returning();
+  const passwordHash = await hashPassword(b.password);
+  const u = await db.transaction(async tx => {
+    const [created] = await tx.insert(schema.users).values({ name: b.name.trim(), email, passwordHash })
+      .onConflictDoNothing({ target: schema.users.email }).returning();
+    if (created) await queueSignupEmails(tx, created);
+    return created;
+  });
   if (!u) return json({ ok: false, errors: { email: 'An account with this email already exists. Sign in instead.' } }, 409);
   await track('user.signed_up', { uid: u.id, props: { method: 'password' } });
   await attachInvites(u.id, email);
-  const r = await finishAuth({ id: u.id, name: u.name, email: u.email, appearance: u.appearance }, b.next);
+  const r = await finishAuth({ id: u.id, name: u.name, email: u.email, appearance: u.appearance }, b.next, passwordHash);
   return json({ ok: true, next: r.next });
 });
