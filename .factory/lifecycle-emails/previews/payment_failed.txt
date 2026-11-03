@@ -13,4 +13,4 @@ Open Billing: https://radar.thally.io/settings?section=billing
 
 Reply to this email or write to support@thally.io.
 
-Radar is a Thally product, operated by Fairspleet LLC.
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms

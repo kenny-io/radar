@@ -13,7 +13,7 @@ try{
    await page.setContent(await readFile(`.factory/lifecycle-emails/previews/${name}.html`,'utf8'));
    await page.evaluate(()=>Promise.all([...document.images].map(i=>i.decode())));
    const result=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,images:[...document.images].map(i=>({src:i.src,width:i.naturalWidth,height:i.naturalHeight,displayWidth:i.width})),heading:document.querySelector('h1')?.textContent,text:document.body.innerText}));
-   const pass=!result.overflow&&result.images.length===1&&result.images[0].width===96&&result.images[0].displayWidth===28&&!result.text.includes('◉');
+   const pass=!result.overflow&&result.images.length===1&&result.images[0].width===224&&result.images[0].displayWidth===28&&!result.text.includes('◉');
    checks.push({name,width,pass,...result});if(!pass)throw Error(`Bad preview ${name}@${width}`);
    await page.screenshot({path:`${out}/${name}-${width}.png`,fullPage:true});
   }

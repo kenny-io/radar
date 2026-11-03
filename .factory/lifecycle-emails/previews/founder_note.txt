@@ -19,6 +19,6 @@ Reply to Ekene: mailto:team@thally.io
 
 Reply to this email or write to team@thally.io.
 
-Radar is a Thally product, operated by Fairspleet LLC.
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 
 Stop optional setup emails: https://radar.thally.io/email-preferences?token=preview-only

@@ -7,7 +7,7 @@ describe('lifecycle templates', () => {
     const x = renderLifecycle(type, data, ctx);
     expect(x.subject.length).toBeGreaterThan(10);
     expect(x.html).toContain('<html lang="en">'); expect(x.html).toContain('role="presentation"'); expect(x.html).toContain('<h1');
-    expect(x.text).toContain('Fairspleet LLC'); expect(x.text).toContain('https://radar.thally.io/');
+    expect(x.text).toContain('Privacy: https://radar.thally.io/privacy'); expect(x.text).toContain('https://radar.thally.io/');
     expect(x.replyTo).toBe(type === 'founder_note' ? 'team@thally.io' : 'support@thally.io');
     expect(x.html).not.toContain('<script');
     expect(x.html).toContain('src="https://radar.thally.io/brand/radar-mark-email.png"');
