@@ -88,7 +88,10 @@ export const env = {
   // Abuse limits for anonymous onboarding (§8). RADAR_ANALYSIS_GLOBAL_PER_HOUR is read at call time (abuse/rateLimit.ts).
   /** X-Forwarded-For entries added by trusted proxies; the client IP is this many entries from the right. */
   trustedProxyHops: Math.max(1, Number(e.RADAR_TRUSTED_PROXY_HOPS) || 1),
-  /** Cloudflare Turnstile secret. Unset → the human check passes (seam only; no widget is shipped). */
+  /** Opt-in challenge. Shared IP/address/global budgets always protect signup/security mail. */
+  signupTurnstileRequired: e.RADAR_SIGNUP_TURNSTILE === '1',
   turnstileSecretKey: e.TURNSTILE_SECRET_KEY || '',
+  guestTurnstileSecretKey: e.GUEST_TURNSTILE_SECRET_KEY || '',
+  turnstileSiteKey: e.TURNSTILE_SITE_KEY || '',
 };
 export const oauthRedirect = (provider: string) => `${env.appUrl}/api/oauth/${provider}/callback`;

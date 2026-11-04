@@ -79,7 +79,7 @@ export async function signupContext(): Promise<{ pending: PendingProfile | null 
 }
 
 const APP_PATH = /^\/(dashboard|calendar|article|performance|profile|settings|social|brief|backlinks)(\/|\?|#|$)/;
-export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/\\') ? n : null;
+export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !/[\u0000-\u0020\u007f\\]/.test(n) ? n : null;
 
 /** After signup, signin or Google: invites first, then resolveEntry (claim already ran). `committed` is the business the
  *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */

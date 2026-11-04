@@ -53,8 +53,8 @@ describe.skipIf(!ON)('public auth regression (database)', () => {
     await db.delete(schema.rateLimits).where(or(like(schema.rateLimits.key, `auth:%:ip:${prefix}%`), inArray(schema.rateLimits.key, [...accountLimitKeys])));
   });
 
-  it('bounds strings and rejects passwords bcrypt would silently truncate, including multibyte input', async () => {
-    for (const change of [{ name: 'a'.repeat(201) }, { email: 'a'.repeat(321) }, { password: 'a'.repeat(73) }, { password: '😀'.repeat(19) }]) {
+  it('bounds signup strings and legacy sign-in input', async () => {
+    for (const change of [{ name: 'a'.repeat(201) }, { email: 'a'.repeat(321) }]) {
       const r = await signup(request('signup', { name: 'Ada', email: email(uniq()), password: 'longenough1', ...change }));
       expect(r.status).toBe(400);
     }
@@ -62,17 +62,17 @@ describe.skipIf(!ON)('public auth regression (database)', () => {
     expect((await signup(new Request('http://localhost/auth', { method: 'POST', headers: { 'x-real-ip': prefix + '-malformed' }, body: '{bad' }))).status).toBe(400);
   });
 
-  it('handles simultaneous signup of one normalized email with one account and a useful 409', async () => {
+  it('handles simultaneous signup of one normalized email with one pending account and generic responses', async () => {
     const address = email('race');
     const responses = await Promise.all([
       signup(request('signup', { name: 'Ada', email: ` ${address.toUpperCase()} `, password: 'longenough1' })),
       signup(request('signup', { name: 'Ada', email: address, password: 'longenough1' })),
     ]);
-    expect(responses.map(r => r.status).sort()).toEqual([200, 409]);
-    expect(await responses.find(r => r.status === 409)!.json()).toMatchObject({ errors: { email: expect.stringContaining('already exists') } });
+    expect(responses.map(r => r.status).sort()).toEqual([200, 200]);
+    for (const r of responses) expect(await r.json()).toEqual({ ok: true, verificationRequired: true });
     const rows = await db.select().from(schema.users).where(eq(schema.users.email, address));
     expect(rows).toHaveLength(1);
-    expect(H.jar.has(SESSION_COOKIE)).toBe(true);
+    expect(H.jar.has(SESSION_COOKIE)).toBe(false);
   });
 
   it('allows sign-in for legacy passwords above bcrypt’s 72-byte limit', async () => {

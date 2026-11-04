@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { track } from '@/server/events';
-import { and, eq, or } from 'drizzle-orm';
-import { decodeJwt } from 'jose';
+import { EMAIL_RE } from '@/lib/format';
+import { isGuestEmail } from '@/server/auth/session';
+import { and, eq } from 'drizzle-orm';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'), { timeoutDuration: 10000 });
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { attachInvites } from '@/server/auth/users';
@@ -26,30 +29,36 @@ export async function GET(req: Request) {
       const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(15000), body: new URLSearchParams({ code, client_id: env.googleClientId, client_secret: env.googleClientSecret, redirect_uri: `${env.appUrl}/api/auth/google/callback`, grant_type: 'authorization_code' }) });
       if (!r.ok) return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
       const tok = await r.json();
-      // id_token received directly from Google's token endpoint over TLS (OIDC §3.1.3.7).
-      const claims = decodeJwt(tok.id_token);
-      if (claims.aud !== env.googleClientId || claims.email_verified !== true || !claims.sub ||
+      const { payload: claims } = await jwtVerify(tok.id_token, googleKeys, { audience: env.googleClientId, issuer: ['accounts.google.com', 'https://accounts.google.com'], algorithms: ['RS256'] });
+      if (claims.aud !== env.googleClientId || claims.email_verified !== true || typeof claims.sub !== 'string' || !claims.sub || claims.sub.length > 255 ||
         !['accounts.google.com', 'https://accounts.google.com'].includes(String(claims.iss)) ||
-        typeof claims.exp !== 'number' || claims.exp <= Date.now() / 1000 || typeof claims.email !== 'string')
+        typeof claims.exp !== 'number' || claims.exp <= Date.now() / 1000 || typeof claims.email !== 'string' || claims.email.length > 320 || !EMAIL_RE.test(claims.email) || isGuestEmail(claims.email))
         return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
       sub = claims.sub; email = claims.email.toLowerCase(); name = typeof claims.name === 'string' ? claims.name.slice(0, 200) : email.split('@')[0];
     } catch { return NextResponse.redirect(`${env.appUrl}/signup?error=google`); }
   }
-  const found = (await db.select().from(schema.users).where(and(or(eq(schema.users.googleSub, sub), eq(schema.users.email, email)), eq(schema.users.guest, false))).limit(1))[0];
+  // An email match is never proof that this provider owns an existing Radar credential.
+  const found = (await db.select().from(schema.users).where(and(eq(schema.users.googleSub, sub), eq(schema.users.guest, false))).limit(1))[0];
   let user: typeof schema.users.$inferSelect;
-  if (found) { user = found; if (!found.googleSub) await db.update(schema.users).set({ googleSub: sub }).where(eq(schema.users.id, found.id)); }
+  if (found) user = found;
   else {
-    const [created] = await db.insert(schema.users).values({ name, email, googleSub: sub }).onConflictDoNothing().returning();
+    const [created] = await db.insert(schema.users).values({ name, email, googleSub: sub, emailVerifiedAt: new Date() }).onConflictDoNothing().returning();
     if (created) { user = created; await track('user.signed_up', { uid: user.id, props: { method: 'google' } }); }
     else {
-      // Another callback or email signup won the unique-email race. Reuse the account on a verified email.
-      const [existing] = await db.select().from(schema.users).where(and(eq(schema.users.email, email), eq(schema.users.guest, false))).limit(1);
-      if (!existing || (existing.googleSub && existing.googleSub !== sub)) return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
+      // A concurrent callback may have inserted the same provider identity. Email-only collisions are refused.
+      const [existing] = await db.select().from(schema.users).where(and(eq(schema.users.googleSub, sub), eq(schema.users.guest, false))).limit(1);
+      if (!existing) return NextResponse.redirect(`${env.appUrl}/signin?error=google_link`);
       user = existing;
-      if (!existing.googleSub) await db.update(schema.users).set({ googleSub: sub }).where(eq(schema.users.id, existing.id));
     }
   }
-  await attachInvites(user.id, email);
+  // A matching Google subject proves this provider identity even if a partial/manual import lacks its timestamp.
+  if (!user.emailVerifiedAt) {
+    await db.transaction(async tx => {
+      await tx.update(schema.users).set({ emailVerifiedAt: new Date(), passwordHash: null }).where(eq(schema.users.id, user.id));
+      await tx.delete(schema.sessions).where(eq(schema.sessions.userId, user.id));
+    });
+  }
+  await attachInvites(user.id, user.email);
   // The Lax radar_guest cookie arrives on this top-level redirect, so the guest draft is claimed here too (AC-G5).
   const r = await finishAuth({ id: user.id, name: user.name, email: user.email, appearance: user.appearance }, (st.data as any)?.next);
   return NextResponse.redirect(`${env.appUrl}${r.next}`);

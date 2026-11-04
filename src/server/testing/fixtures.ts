@@ -11,10 +11,10 @@ export type TUser = { id: string; name: string; email: string; guest: boolean };
 export class Fixtures {
   users: string[] = [];
   constructor(public tag = uniq()) {}
-  async user(o: { name?: string; email?: string; guest?: boolean; password?: string } = {}): Promise<TUser> {
+  async user(o: { name?: string; email?: string; guest?: boolean; password?: string; verified?: boolean } = {}): Promise<TUser> {
     const n = this.users.length;
     const email = o.email || (o.guest ? `guest+${this.tag}-${n}@guest.radar.invalid` : `t-${this.tag}-${n}@test.local`);
-    const [u] = await db.insert(schema.users).values({ name: o.name ?? (o.guest ? '' : `User ${n}`), email, guest: !!o.guest, passwordHash: o.password ?? null }).returning();
+    const [u] = await db.insert(schema.users).values({ name: o.name ?? (o.guest ? '' : `User ${n}`), email, guest: !!o.guest, passwordHash: o.password ?? null, emailVerifiedAt: !o.guest && o.verified !== false ? new Date() : null }).returning();
     this.users.push(u.id);
     return { id: u.id, name: u.name, email: u.email, guest: u.guest };
   }
