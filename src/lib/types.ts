@@ -318,4 +318,4 @@ export interface OnboardingStageProps {
   /** cleaned and validated ?domain= */
   autoDomain: string | null;
 }
-export interface AuthResult { ok: true; next: string }
+export type AuthResult = { ok: true; next: string; verificationRequired?: never } | { ok: true; verificationRequired: true; next?: never };

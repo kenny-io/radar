@@ -4,14 +4,15 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 const H = vi.hoisted(() => { process.env.RADAR_DEV_STUBS = '1'; return { jar: new Map<string, string>() }; });
 vi.mock('next/headers', async () => (await import('@/server/testing/jar')).headersMock(() => H.jar));
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import { db, schema } from '../db';
-import { encrypt } from '../crypto';
+import { encrypt, decrypt } from '../crypto';
 import { Fixtures, uniq, type TUser } from '../testing/fixtures';
-import { GUEST_COOKIE } from '../auth/session';
+import { GUEST_COOKIE, SESSION_COOKIE } from '../auth/session';
 import { POST as ACT } from '@/app/api/b/[bid]/act/route';
 import { POST as CREATE } from '@/app/api/b/route';
 import { POST as SIGNUP } from '@/app/api/auth/signup/route';
+import { POST as VERIFY } from '@/app/api/auth/verify-email/route';
 
 const ON = !!process.env.DATABASE_URL;
 const F = new Fixtures();
@@ -42,7 +43,7 @@ describe.skipIf(!ON)('onboarding actions (database)', () => {
     expect((await biz(ud.id)).status).toBe('onboarding');
   });
 
-  it('a guest’s save with the flag off still goes to /signup; after signup the claim commits it', async () => {
+  it('a guest’s save with the flag off waits for mailbox confirmation before the claim commits it', async () => {
     const g = await F.user({ guest: true }); await as(g);
     const d = await F.biz(g, { status: 'onboarding' });
     expect((await act(d.id, 'onboarding.save', { tz: 'America/Denver' })).j.data).toEqual({ committed: false, next: '/signup', id: d.id });
@@ -50,7 +51,22 @@ describe.skipIf(!ON)('onboarding actions (database)', () => {
     const email = `ob-${uniq()}@test.local`;
     const r = await SIGNUP(new Request('http://t/s', { method: 'POST', body: JSON.stringify({ name: 'Ada', email, password: 'longenough1' }) }));
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);
-    expect(await r.json()).toEqual({ ok: true, next: '/dashboard?saved=profile' });
+    expect(await r.json()).toEqual({ ok: true, verificationRequired: true });
+    expect(u.passwordHash).toBeNull();
+    expect(u.emailVerifiedAt).toBeNull();
+    expect(H.jar.has(SESSION_COOKIE)).toBe(false);
+    expect(H.jar.has(GUEST_COOKIE)).toBe(true);
+    expect((await biz(d.id)).ownerId).toBe(g.id);
+    expect((await biz(d.id)).status).toBe('onboarding');
+    expect(await onboarded(d.id)).toBe(0);
+    const [mail] = await db.select().from(S.outboxEmails).where(eq(S.outboxEmails.to, email)).orderBy(desc(S.outboxEmails.createdAt)).limit(1);
+    expect(mail.text.startsWith('encrypted-auth:')).toBe(true);
+    const text = decrypt<{ text: string }>(mail.text.slice('encrypted-auth:'.length))!.text;
+    const token = text.match(/#token=([A-Za-z0-9_-]{43})/)![1];
+    const confirmed = await VERIFY(new Request('http://t/v', { method: 'POST', body: JSON.stringify({ token, password: 'MailboxChosen456!' }) }));
+    expect(await confirmed.json()).toEqual({ ok: true, next: '/dashboard?saved=profile' });
+    expect(H.jar.has(SESSION_COOKIE)).toBe(true);
+    expect(H.jar.has(GUEST_COOKIE)).toBe(false);
     const b = await biz(d.id);
     expect([b.status, b.ownerId, b.timezone]).toEqual(['active', u.id, 'America/Denver']);
     expect(await onboarded(d.id)).toBe(1);

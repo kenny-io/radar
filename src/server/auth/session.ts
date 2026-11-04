@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { eq, and, gt, lt, sql } from 'drizzle-orm';
+import { eq, and, gt, lt, sql, isNotNull } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { randomToken, sha256 } from '../crypto';
 import { env } from '../env';
+import { unauthorized } from '../errors';
 import type { User } from '@/lib/types';
 
 export const SESSION_COOKIE = 'radar_session';
@@ -25,6 +26,8 @@ const cookieOpts = (expires: Date) => ({ httpOnly: true, sameSite: 'lax' as cons
 const userCols = { id: schema.users.id, name: schema.users.name, email: schema.users.email, appearance: schema.users.appearance };
 
 export async function createSession(userId: string) {
+  const [user] = await db.select({ verified: schema.users.emailVerifiedAt, guest: schema.users.guest }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+  if (!user?.verified || user.guest) throw unauthorized();
   const token = randomToken();
   const expiresAt = new Date(Date.now() + DAYS * 864e5);
   await db.insert(schema.sessions).values({ id: sha256(token), userId, expiresAt });
@@ -49,7 +52,7 @@ export async function currentUser(): Promise<SessionUser | null> {
   if (!t) return null;
   const rows = await db.select(userCols)
     .from(schema.sessions).innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
-    .where(and(eq(schema.sessions.id, sha256(t)), gt(schema.sessions.expiresAt, new Date()), eq(schema.users.guest, false))).limit(1);
+    .where(and(eq(schema.sessions.id, sha256(t)), gt(schema.sessions.expiresAt, new Date()), eq(schema.users.guest, false), isNotNull(schema.users.emailVerifiedAt))).limit(1);
   return rows[0] || null;
 }
 

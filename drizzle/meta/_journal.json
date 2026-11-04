@@ -64,6 +64,13 @@
       "when": 1792896628517,
       "tag": "0008_grandfather",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793808223880,
+      "tag": "0009_signup_security",
+      "breakpoints": true
     }
   ]
 }

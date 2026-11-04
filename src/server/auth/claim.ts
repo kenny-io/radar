@@ -1,9 +1,10 @@
 // Claim: the guest's onboarding draft moves to the account at signup, signin or Google sign-in (architecture §6, AC-G5).
 // One transaction with a FOR UPDATE lock on the guest row: two tabs or a double submit move it exactly once. Everything is
 // keyed by business_id (GSC tokens, crawl pages, jobs, logo), so moving the owner and the member row moves all of it.
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql, isNotNull } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { decrypt } from '../crypto';
+import { unauthorized } from '../errors';
 import { track } from '../events';
 import { revoke, type GscTokens } from '../services/gsc/client';
 import { entryAfterAuth } from '../billing/guard';
@@ -49,6 +50,8 @@ export async function claimGuest(guestId: string, user: { id: string; email: str
  *  starts the session, makes a profile committed here the current business (radar_biz) and returns where to go
  *  (AuthResult.next). A claimed draft that waits for payment is made current by /api/billing/confirm instead. */
 export async function finishAuth(user: SessionUser, next?: string | null): Promise<{ next: string; claimed: string | null }> {
+  const [trusted] = await db.select({ id: schema.users.id }).from(schema.users).where(and(eq(schema.users.id, user.id), eq(schema.users.guest, false), isNotNull(schema.users.emailVerifiedAt))).limit(1);
+  if (!trusted) throw unauthorized();
   const g = await currentGuest();
   const r = g ? await claimGuest(g.id, user) : { claimed: null };
   await clearGuestCookie();
