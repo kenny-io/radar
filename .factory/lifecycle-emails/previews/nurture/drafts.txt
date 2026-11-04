@@ -1,0 +1,293 @@
+RADAR PRE-TRIAL EMAIL DRAFTS
+
+Editorial drafts for review. No sequence is scheduled and nothing is sent.
+Example recipient Alex; company/profile details are not inferred or personalized here.
+The activation and founder drafts overlap existing core messages and must not be sent twice.
+
+============================================================
+From profile to first article
+Suggested timing: day 0 (not scheduled)
+Audience: Pre-trial account with completed website analysis and a saved Business Profile.
+Skip when: Trial started, paid/complimentary access, missing profile, opted out, or welcome already sent.
+Relationship to existing emails: An alternative activation draft, not a second welcome. Keep the approved welcome unless this version is chosen to replace it.
+
+Subject: Put your Business Profile to work
+
+Preview: Your website is already analyzed. Choose what you want to publish next.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+You’ve already given Radar your website. Your Business Profile is the starting point for what comes next.
+
+Start your trial, then use Content Calendar to choose the first topics you want to publish. Radar researches the opportunities and proposes a plan for you to review.
+
+Approve a topic you like, review the article when it’s drafted, and schedule it for your site. You can also turn that article into social posts.
+
+Start with one topic you’d want your next customer to find.
+
+Continue with Radar: https://radar.thally.io/start-trial
+
+$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+
+============================================================
+Backlinks, with a decision you control
+Suggested timing: day 14 (not scheduled)
+Audience: Consenting pre-trial account interested in how the optional backlinks network works.
+Skip when: Trial started, paid/complimentary access, network already joined, prior send, or opted out.
+Relationship to existing emails: Radar version of the backlinks introduction. Describes the review workflow, not promised daily links or ranking gains.
+
+Subject: Read the sentence before you agree to the link
+
+Preview: See the page, the partner and the proposed placement.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+A useful link needs a reason to be on the page. The reader should be able to follow it and find something relevant.
+
+That’s the idea behind Radar’s optional backlinks network. You choose your topics and review proposals from other businesses.
+
+• See the partner’s page and the exact sentence around the proposed link.
+• See the destination page and why the link fits.
+• Approve or decline the proposal. Radar re-checks live links weekly.
+
+You can review each proposal yourself. Auto-approval is an optional setting, not the starting point.
+
+See how the network works: https://radar.thally.io/features/backlinks
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+
+============================================================
+What happens after you start
+Suggested timing: day 4 (not scheduled)
+Audience: Consenting analyzed pre-trial account that has not activated Radar.
+Skip when: Trial started, paid/complimentary access, prior send, or opted out.
+Relationship to existing emails: Radar version of the behind-the-scenes email. Future workflow is explicit because the account has not started its trial.
+
+Subject: What happens before an article goes live
+
+Preview: Topics, drafts and publishing, with review built into the workflow.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+You don’t need to arrive with a month of article ideas or a spreadsheet of keywords.
+
+Here’s the workflow once you start your Radar trial:
+
+• Radar uses your Business Profile and keyword research to propose topics in Content Calendar.
+• You approve the topics you want, then review and edit the articles Radar drafts.
+• Connect a supported publishing destination and schedule the articles you’re ready to put out.
+
+Review comes first by default. Blog autopilot is a separate choice you can make later.
+
+You can start with one article and decide how much of the workflow you want to automate.
+
+Start my Radar trial: https://radar.thally.io/start-trial
+
+$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+
+============================================================
+The founder’s reason
+Suggested timing: day 1 (not scheduled)
+Audience: New account eligible for the existing founder note, including pre-trial users.
+Skip when: Existing founder note already queued/sent, founder opt-out, or global optional-email cap.
+Relationship to existing emails: Reuses the already-approved founder note. Do not add another founder email to the sequence.
+
+Subject: Why we built Radar
+
+Preview: Building is easier. Getting beyond your own network is still work.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+I’m Ekene, Radar’s founder.
+
+It’s never been easier to build a product. But getting it beyond your own network is still a full-time job.
+
+That’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.
+
+If you get stuck or anything is unclear, reply here. I’m happy to help.
+
+Reply to Ekene: mailto:team@thally.io
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+
+============================================================
+Discovery through participation
+Suggested timing: day 18 (not scheduled)
+Audience: Consenting pre-trial account that has not yet used Daily Brief.
+Skip when: Trial started, paid/complimentary access, Daily Brief already set up, prior send, or opted out.
+Relationship to existing emails: Replaces competitor-pressure messaging with Radar’s conversation workflow. This is feature education, not the action-conditioned live Brief reminder.
+
+Subject: Find one conversation you can help with
+
+Preview: Daily Brief helps you find discussions where you have something to add.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+Publishing is one way to get your product in front of people. Joining a useful conversation is another.
+
+The difficult part is finding a discussion where you can help, while there’s still a reason to join it.
+
+Daily Brief looks for relevant conversations across Reddit, X, LinkedIn and Hacker News. It brings the discussion and a suggested reply into Radar so you can review them together.
+
+You decide which conversations are worth your time and make each reply your own before sharing it.
+
+Once you start your trial, try it with one conversation where you have something useful to contribute.
+
+Try Daily Brief: https://radar.thally.io/start-trial
+
+$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+
+============================================================
+A practical search opportunity
+Suggested timing: day 11 (not scheduled)
+Audience: Consenting pre-trial account with an existing website; no assumption that Search Console is connected.
+Skip when: Trial started, paid/complimentary access, prior send, or opted out.
+Relationship to existing emails: Evergreen Radar counterpart to the Bing news email. Uses Radar’s supported Google Search Console workflow rather than repeating unverified third-party release news.
+
+Subject: Your next article might be a page you already have
+
+Preview: Start with the searches that already bring your site impressions.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+Before writing something new, it can be useful to look at what people already find on your site.
+
+If your site has Google Search Console data, look for pages that get impressions but few clicks, or queries with an average position around 10–20.
+
+Those are places to investigate. The page may need a clearer title, a fuller answer or an update to an older section.
+
+During your Radar trial, connect Search Console and let the history sync. Performance shows the queries and pages alongside suggested changes you can review and add to Content Calendar.
+
+This guide walks through how to review a page-two opportunity before deciding what to change.
+
+Read the page-two refresh guide: https://radar.thally.io/blog/page-two-refresh
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+
+============================================================
+AI visibility you can inspect
+Suggested timing: day 7 (not scheduled)
+Audience: Consenting pre-trial account with a completed Business Profile; AI results need not exist yet.
+Skip when: Trial started, paid/complimentary access, prior send, or opted out.
+Relationship to existing emails: Radar version of the AI checker introduction. AI visibility is included in Radar, not a separate free checker or a promise of recommendations.
+
+Subject: Would an AI assistant recommend your product?
+
+Preview: Read each assistant’s response and the pages it cites.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+Think of a question someone might ask before discovering your product. Which products would an AI assistant include in its answer?
+
+AI Visibility in Radar checks questions related to your business across ChatGPT, Perplexity, Gemini, Claude and Grok.
+
+• Read the response each assistant returned.
+• See whether your business was mentioned and which pages were cited.
+• Use a question worth answering as a topic for your Content Calendar.
+
+You can add your own questions, too. A response that hasn’t been collected is shown separately from one where you weren’t mentioned.
+
+Start your trial, then open Performance → AI Visibility to see the answers for yourself.
+
+Try AI Visibility in Radar: https://radar.thally.io/start-trial
+
+$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft

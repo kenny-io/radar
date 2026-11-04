@@ -55,6 +55,7 @@ export function Signup({ mode = 'signup', pending = null }: { mode?: 'signup' | 
       {!signin && <Field label="Name" hint={hint('name')}><input className={'input' + (err.name ? ' err' : '')} disabled={!mounted} autoComplete="name" maxLength={200} value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>}
       <Field label="Work email" hint={hint('email')}><input className={'input' + (err.email ? ' err' : '')} disabled={!mounted} type="email" autoComplete="email" maxLength={320} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
       <Field label="Password" hint={err.pw ? hint('pw') : signin ? null : 'At least 8 characters'}><input className={'input' + (err.pw ? ' err' : '')} disabled={!mounted} type="password" maxLength={signin ? 1024 : 256} autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>
+      {signin && <a href="/forgot-password" className="small" style={{ alignSelf: 'flex-end' }}>Forgot your password?</a>}
       <Btn kind="primary" size="lg" className="btn-block" type="submit" disabled={!mounted} loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
       {signin
         ? <p className="xs sub" style={{ textAlign: 'center' }}>New to Radar? <a href={'/signup' + q}>Create account</a></p>

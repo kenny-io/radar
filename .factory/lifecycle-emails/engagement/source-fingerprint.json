@@ -1,0 +1,5 @@
+{
+  "algorithm": "SHA256 over full relative POSIX-string-sorted path UTF8 + NUL + raw bytes + NUL for src/**, drizzle/**, next.config.ts",
+  "sha256": "036e3bd7c87d8cde09acaf00694df4418fa5fdd13501f6049614d741fa87f784",
+  "files": 488
+}

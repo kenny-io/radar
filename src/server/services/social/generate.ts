@@ -13,6 +13,7 @@ import type { ImageStyle, MediaMeta, PackStyle, Platform, Profile, SocialPack, S
 import { check, enforce, rulesFor } from './rules';
 import { readArticle, readUrl, type Grounding } from './source';
 import './stubs';
+import { recordEngagement, resolveEngagement } from '../lifecycle/engagement';
 
 export type SourceKind = SocialPack['source']['kind'];
 export interface IdeaContext { metric?: string; why?: string; tie?: string | null; page?: string | null; q?: string }
@@ -107,7 +108,11 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
     created: bizToday(b), style, custom: input.custom || '', voice: input.voice || '', auto: !!input.auto, posts, order: input.platforms,
     headline, grounding: { brief: g.brief.slice(0, 2500), link: g.link, idea: input.idea || null },
   };
-  await db.insert(schema.socialPacks).values({ id, businessId: bid, data: pack });
+  await db.transaction(async tx => {
+    await tx.insert(schema.socialPacks).values({ id, businessId: bid, data: pack });
+    if (Object.keys(posts).length) await recordEngagement(tx, { businessId: bid, kind: 'social_publish', ref: id });
+    if (input.source.kind === 'article' && input.source.ref) await resolveEngagement(tx, bid, 'article_social', input.source.ref);
+  });
   return id;
 }
 
@@ -118,6 +123,7 @@ export async function updatePack(bid: string, packId: string, fn: (p: StoredPack
     if (!r) throw Object.assign(new Error('pack'), { notFound: true });
     const next = await fn({ ...(r.data as StoredPack), id: r.id });
     await tx.update(schema.socialPacks).set({ data: next }).where(eq(schema.socialPacks.id, packId));
+    if ([...Object.values((r.data as StoredPack).posts || {}), ...Object.values(next.posts || {})].some(post => post?.copiedAt != null || ['scheduled', 'sending', 'posted'].includes(post?.pub?.status || ''))) await resolveEngagement(tx, bid, 'social_publish', packId);
     return next;
   });
 }

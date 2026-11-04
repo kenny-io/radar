@@ -284,6 +284,64 @@ export const outboxEmails = pgTable('outbox_emails', {
   sentAt: timestamp('sent_at', { withTimezone: true }),
 });
 
+/** New lifecycle mail only. Frozen provider bodies (including reset links) are encrypted at rest. */
+export const lifecycleEmails = pgTable('lifecycle_emails', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'cascade' }),
+  eventKey: text('event_key').notNull(),
+  type: text('type').notNull(),
+  payloadEnc: text('payload_enc').notNull(),
+  status: text('status').$type<'queued' | 'sending' | 'sent' | 'failed' | 'suppressed' | 'logged'>().notNull().default('queued'),
+  attempts: integer('attempts').notNull().default(0),
+  nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+  firstAttemptAt: timestamp('first_attempt_at', { withTimezone: true }),
+  claimedAt: timestamp('claimed_at', { withTimezone: true }),
+  claimToken: text('claim_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  providerId: text('provider_id'),
+  lastError: text('last_error'),
+  createdAt: created(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, t => [uniqueIndex('lifecycle_event_uq').on(t.eventKey), index('lifecycle_due_idx').on(t.status, t.nextAttemptAt)]);
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: created(),
+}, t => [index('reset_user_idx').on(t.userId)]);
+
+export const userEmailPreferences = pgTable('user_email_preferences', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  onboarding: boolean('onboarding').notNull().default(true),
+  dailyBrief: boolean('daily_brief').notNull().default(false),
+  calendarReminders: boolean('calendar_reminders').notNull().default(false),
+  articleSocial: boolean('article_social').notNull().default(false),
+  dailyBriefSince: timestamp('daily_brief_since', { withTimezone: true }),
+  calendarRemindersSince: timestamp('calendar_reminders_since', { withTimezone: true }),
+  articleSocialSince: timestamp('article_social_since', { withTimezone: true }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** References to newly completed work only, never scraped content or an implicit historical subscription. */
+export const engagementEvents = pgTable('engagement_events', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  kind: text('kind').$type<'brief_reply' | 'calendar_review' | 'article_social' | 'social_publish'>().notNull(),
+  sourceKey: text('source_key').notNull(),
+  sourceRef: jsonb('source_ref').$type<{ ref: string; entryIds?: string[] }>().notNull(),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+  eligibleAt: timestamp('eligible_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolvedReason: text('resolved_reason'),
+  lifecycleEmailId: uuid('lifecycle_email_id').references(() => lifecycleEmails.id, { onDelete: 'set null' }),
+  createdAt: created(),
+}, t => [uniqueIndex('engagement_source_uq').on(t.sourceKey), index('engagement_due_idx').on(t.userId, t.eligibleAt).where(sql`resolved_at IS NULL`)]);
+
 export const aiCalls = pgTable('ai_calls', {
   id: id(),
   businessId: uuid('business_id'),

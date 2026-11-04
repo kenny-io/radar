@@ -1,0 +1,11 @@
+{
+  "head": "4a2a2d389d217034b66b4ef3fcfa2ff5793a096c",
+  "scope": "src/** + next.config.ts + drizzle/**",
+  "files": 476,
+  "sha256": "2a853cd54a02a6b2e567b225ce148ba207757d50cec362a1e4c6ec428d5d8824",
+  "priorCopyFingerprint": "8da069a6563db18e50d9c9c5b7a1f2fcdfcbe1f5ef42646b80379b972cb50f04",
+  "priorFullFlowFingerprint": "3beebabab50b13b7629a49df808231ee6e52cc6b8232f55220817e3c432b2d50",
+  "algorithm": "Sort by full relative POSIX string, then SHA256(path UTF8 + NUL + file bytes + NUL) per file",
+  "legacyComponentSortSha256": "7837825fa32f3fcd8dc64d5174c7ee3224c2b8ae61ae91750c4a2b1936703aab",
+  "note": "Historical QA hashes used default Path component sorting; do not compare across these ordering algorithms as proof of byte changes."
+}

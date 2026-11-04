@@ -1,0 +1,7 @@
+{
+  "head": "963a2d597b96bb7f9e37b33cc485d87ac22a5e5b",
+  "branch": "kenny/lifecycle-emails",
+  "scope": "src/** + next.config.ts + drizzle/**",
+  "files": 476,
+  "sha256": "3beebabab50b13b7629a49df808231ee6e52cc6b8232f55220817e3c432b2d50"
+}

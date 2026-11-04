@@ -79,6 +79,15 @@ export async function signupContext(): Promise<{ pending: PendingProfile | null 
 }
 
 const APP_PATH = /^\/(dashboard|calendar|article|performance|profile|settings|social|brief|backlinks)(\/|\?|#|$)/;
+/** Work emails may return through this one landing route after authentication. No generic /email or /api allowance. */
+function isWorkLanding(n: string) {
+  if (!n.startsWith('/email/open?') || n.includes('#') || /[\\\u0000-\u001f\u007f]/.test(n)) return false;
+  const params = new URLSearchParams(n.slice('/email/open?'.length));
+  if ([...params].length !== 3 || [...params.keys()].some(key => !['businessId', 'kind', 'ref'].includes(key))) return false;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.get('businessId') || '')) return false;
+  if (!['brief_reply', 'calendar_review', 'article_social', 'social_publish'].includes(params.get('kind') || '')) return false;
+  return /^[A-Za-z0-9_.:-]{1,120}$/.test(params.get('ref') || '');
+}
 export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/\\') ? n : null;
 
 /** After signup, signin or Google: invites first, then resolveEntry (claim already ran). `committed` is the business the
@@ -88,8 +97,10 @@ export async function entryAfterAuth(u: SessionUser, next?: string | null): Prom
   if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);
   if ('redirect' in e) return { next: e.redirect, committed: null };
-  const to = n && APP_PATH.test(n) ? n : '/dashboard';
+  const work = !!n && isWorkLanding(n);
+  const to = n && (APP_PATH.test(n) || work) ? n : '/dashboard';
   if (!e.committed) return { next: to, committed: null };
+  if (work) return { next: to, committed: e.committed };
   return { next: to + (to.includes('?') ? '&' : '?') + 'saved=profile', committed: e.committed };
 }
 export const destinationAfterAuth = async (u: SessionUser, next?: string | null) => (await entryAfterAuth(u, next)).next;

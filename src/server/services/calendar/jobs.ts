@@ -15,6 +15,7 @@ import { normKw } from '../gsc/metrics';
 import { slotDates } from './schedule';
 import { clusterCandidates, difficultyCeiling, existingArticles, gscHasData, gscQueryStats, refreshCandidates, researchCandidates, writeTopics, type Candidate, type Topic } from './research';
 import type { CalendarSettings, Profile } from '@/lib/types';
+import { recordEngagement } from '../lifecycle/engagement';
 
 export interface CalGenPayload { settings: CalendarSettings; keep: boolean }
 export interface CalGenProgress { phase: number; results: string[]; keep: boolean; gsc: boolean }
@@ -102,6 +103,7 @@ defineJob<CalGenPayload>({
           })));
         }
         await tx.update(schema.businesses).set({ calendarGeneratedAt: generatedAt, calendarSettings: settings }).where(eq(schema.businesses.id, bid));
+        if (rows.length) await recordEngagement(tx, { businessId: bid, kind: 'calendar_review', ref: generatedAt.toISOString(), entryIds: rows.map(r => r.id), now: generatedAt });
       });
       await notify(bid, keep ? `Calendar refreshed. ${keptRows.length} approved topics kept in place.` : `${topics.length} topics proposed. Approve the ones you like.`, { tone: 'ok' });
       // Say why the month isn't full, or why volumes are missing, instead of leaving a quietly short calendar.

@@ -3,6 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { schema } from '../db';
 import { track } from '../events';
+import { queueLifecycle } from '../services/lifecycle/queue';
 import { limitBilling } from '../abuse/rateLimit';
 import { FEE_CENTS } from '@/lib/billing';
 import { accountGrants, ownAccess } from './access';
@@ -116,6 +117,11 @@ export async function activateIn(p: BillingProvider, tx: Tx, later: Later, pi: P
     const fp = (await p.getPaymentMethod(pi.payment_method)).card?.fingerprint;
     if (fp) await tx.insert(F).values({ fingerprint: fp, userId: uid, paymentIntentId: pi.id }).onConflictDoNothing();
     await tx.update(A).set({ trialStartedAt: new Date() }).where(eq(A.userId, uid));
+    const current = (await tx.select({ status: A.status, trialEnd: A.trialEnd }).from(A).where(eq(A.userId, uid)))[0];
+    if (subId && current?.status === 'trialing' && current.trialEnd && current.trialEnd.getTime() > Date.now()) {
+      await queueLifecycle(tx, { type: 'trial_started', userId: uid, eventKey: `trial:${subId}`,
+        data: { subscriptionId: subId, trialEnd: current.trialEnd.toISOString() } });
+    }
     const d = await draftOf(uid, tx);
     if (d?.onboarding?.savedAt) committed = await commitDraft(d.id, tx, later);
     later.push(() => track('trial.started', { uid, ref: subId, props: { via } }));

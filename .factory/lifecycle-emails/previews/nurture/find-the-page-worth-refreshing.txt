@@ -1,0 +1,32 @@
+Subject: Your next article might be a page you already have
+
+Preview: Start with the searches that already bring your site impressions.
+
+From: Ekene at Radar <radar@thally.io>
+
+Reply to: team@thally.io
+
+
+
+Hi Alex,
+
+Before writing something new, it can be useful to look at what people already find on your site.
+
+If your site has Google Search Console data, look for pages that get impressions but few clicks, or queries with an average position around 10–20.
+
+Those are places to investigate. The page may need a clearer title, a fuller answer or an update to an older section.
+
+During your Radar trial, connect Search Console and let the history sync. Performance shows the queries and pages alongside suggested changes you can review and add to Content Calendar.
+
+This guide walks through how to review a page-two opportunity before deciding what to change.
+
+Read the page-two refresh guide: https://radar.thally.io/blog/page-two-refresh
+
+Ekene
+Founder, Radar
+
+Reply to team@thally.io.
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft

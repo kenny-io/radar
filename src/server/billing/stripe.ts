@@ -85,7 +85,16 @@ const toPI = (p: any): PaymentIntent => ({
 });
 const toPM = (m: any): PaymentMethod => ({ id: m.id, type: m.type, customer: idOf(m.customer), card: m.card ? { fingerprint: m.card.fingerprint ?? null } : null });
 /** Basil and later: the invoice's PaymentIntent secret is `confirmation_secret.client_secret` (expanded). */
-const toInvoice = (i: any): Invoice => ({ id: i.id, status: i.status, amount_due: i.amount_due, client_secret: i.confirmation_secret?.client_secret ?? null });
+const toInvoice = (i: any): Invoice => ({
+  id: i.id, status: i.status, amount_due: i.amount_due, client_secret: i.confirmation_secret?.client_secret ?? null,
+  ...(i.customer !== undefined ? { customer: idOf(i.customer) } : {}),
+  // Basil moved subscription invoices under parent.subscription_details; older fixtures may use subscription.
+  ...(i.parent?.subscription_details?.subscription !== undefined || i.subscription !== undefined
+    ? { subscription: idOf(i.parent?.subscription_details?.subscription ?? i.subscription) } : {}),
+  ...(typeof i.amount_paid === 'number' ? { amount_paid: i.amount_paid } : {}),
+  ...(typeof i.currency === 'string' ? { currency: i.currency } : {}),
+  ...(i.number !== undefined ? { number: i.number } : {}),
+});
 
 export const stripeProvider: BillingProvider = {
   name: 'stripe',

@@ -1,0 +1,18 @@
+{
+  "scope": "Actual default read-only schema probe; no worker/job/scheduler start",
+  "checks": [
+    {
+      "name": "migrated isolated QA database",
+      "passed": true,
+      "diagnostics": 0
+    },
+    {
+      "name": "isolated empty QA database fails closed",
+      "passed": true,
+      "budgetMs": 0,
+      "diagnostics": [
+        "[worker] waiting for database migrations before processing jobs"
+      ]
+    }
+  ]
+}

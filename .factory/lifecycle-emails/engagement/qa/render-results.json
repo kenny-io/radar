@@ -1,0 +1,229 @@
+{
+  "environment": "Isolated installed Google Chrome, local generated HTML only; first-party brand URL fulfilled from deployable local asset; no provider calls or inbox claim",
+  "checks": [
+    {
+      "name": "work_update",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 3,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=brief_reply&ref=2026-11-04",
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=calendar_review&ref=2026-11-04T06%3A00%3A00Z",
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=article_social&ref=e_preview"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nPick up where you left off.\n\nHere’s the work that’s ready for your next step.\n\nFieldnote · Daily Brief\n\nYour Daily Brief has 4 conversations ready to review. Pick one where you have something useful to add, make the suggested reply your own, and join in.\n\nFind a conversation\n\nFieldnote · Content Calendar\n\n8 topics are ready for review. Approve the ones you want to use, then review and schedule the drafts when they’re ready.\n\nReview my topics\n\nFieldnote · Article to social\n\n“How to plan your first product launch” is ready in Radar. Use it to create social posts, then review them before anything goes out.\n\nCreate social posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_brief_reply",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=brief_reply&ref=2026-11-04"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nConversations worth joining\nFieldnote · Daily Brief\n\nYour Daily Brief has 4 conversations ready to review. Pick one where you have something useful to add, make the suggested reply your own, and join in.\n\nFind a conversation\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_calendar_review",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=calendar_review&ref=2026-11-04T06%3A00%3A00Z"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nChoose the topics you want to publish\nFieldnote · Content Calendar\n\n8 topics are ready for review. Approve the ones you want to use, then review and schedule the drafts when they’re ready.\n\nReview my topics\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_article_social",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=article_social&ref=e_preview"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nTurn your article into social posts\nFieldnote · Article to social\n\n“How to plan your first product launch” is ready in Radar. Use it to create social posts, then review them before anything goes out.\n\nCreate social posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_social_publish",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=social_publish&ref=pack_preview"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nYour social posts are ready to schedule\nFieldnote · Social posts\n\nYour posts for “How to plan your first product launch” are saved in your social library. Review them, then publish now or choose a time that works for you.\n\nReview my posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_update",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 3,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=brief_reply&ref=2026-11-04",
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=calendar_review&ref=2026-11-04T06%3A00%3A00Z",
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=article_social&ref=e_preview"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nPick up where you left off.\n\nHere’s the work that’s ready for your next step.\n\nFieldnote · Daily Brief\n\nYour Daily Brief has 4 conversations ready to review. Pick one where you have something useful to add, make the suggested reply your own, and join in.\n\nFind a conversation\n\nFieldnote · Content Calendar\n\n8 topics are ready for review. Approve the ones you want to use, then review and schedule the drafts when they’re ready.\n\nReview my topics\n\nFieldnote · Article to social\n\n“How to plan your first product launch” is ready in Radar. Use it to create social posts, then review them before anything goes out.\n\nCreate social posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_brief_reply",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=brief_reply&ref=2026-11-04"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nConversations worth joining\nFieldnote · Daily Brief\n\nYour Daily Brief has 4 conversations ready to review. Pick one where you have something useful to add, make the suggested reply your own, and join in.\n\nFind a conversation\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_calendar_review",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=calendar_review&ref=2026-11-04T06%3A00%3A00Z"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nChoose the topics you want to publish\nFieldnote · Content Calendar\n\n8 topics are ready for review. Approve the ones you want to use, then review and schedule the drafts when they’re ready.\n\nReview my topics\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_article_social",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=article_social&ref=e_preview"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nTurn your article into social posts\nFieldnote · Article to social\n\n“How to plan your first product launch” is ready in Radar. Use it to create social posts, then review them before anything goes out.\n\nCreate social posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    },
+    {
+      "name": "work_social_publish",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "sections": 1,
+      "primaryButtons": 1,
+      "actions": [
+        "https://radar.thally.io/email/open?businessId=00000000-0000-4000-8000-000000000000&kind=social_publish&ref=pack_preview"
+      ],
+      "unsubscribe": [
+        "https://radar.thally.io/email-preferences?token=preview-only"
+      ],
+      "image": [
+        {
+          "naturalWidth": 224,
+          "width": 28
+        }
+      ],
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nYour social posts are ready to schedule\nFieldnote · Social posts\n\nYour posts for “How to plan your first product launch” are saved in your social library. Review them, then publish now or choose a time that works for you.\n\nReview my posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nTurn off work reminders"
+    }
+  ]
+}

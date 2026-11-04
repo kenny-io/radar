@@ -1,0 +1,22 @@
+{"name":"Daily Brief follow-through starts off","pass":true}
+{"name":"Calendar reminders starts off","pass":true}
+{"name":"Social follow-through starts off","pass":true}
+{"name":"keyboard opt-in persists only chosen category","pass":true}
+{"name":"preference survives refresh","pass":true}
+{"name":"save failure rolls checkbox back","pass":true}
+{"name":"read failure exposes retry","pass":true}
+{"name":"retry permits a successful save","pass":true}
+{"name":"mobile settings has no horizontal overflow","pass":true}
+{"name":"scanner GET does not unsubscribe","pass":true}
+{"name":"signed opt-out turns all work flags off","pass":true}
+{"name":"work opt-out preserves founder preference","pass":true}
+{"name":"forged one-click token cannot change preferences","pass":true}
+{"name":"provider one-click POST needs no session or Origin","pass":true}
+{"name":"email link chooses correct business and preselects actual article","pass":true}
+{"name":"wrong current business is replaced by authorized email target","pass":true}
+{"name":"following article CTA does not generate social posts","pass":true}
+{"name":"signed-out target reaches signin","pass":true}
+{"name":"signin roundtrip preserves email target and article","pass":true}
+{"name":"signin roundtrip also performs no generation","pass":true}
+{"name":"no browser runtime errors","pass":true}
+{"passed":21,"total":21}

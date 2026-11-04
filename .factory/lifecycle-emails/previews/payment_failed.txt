@@ -1,0 +1,16 @@
+Your Radar payment didn’t go through
+Reply to: support@thally.io
+
+Hi Alex,
+
+Please check your payment method.
+
+We couldn’t collect your $49.00 payment for Radar.
+
+Open Billing to update your card and pay the invoice. Access may be paused until it’s paid.
+
+Open Billing: https://radar.thally.io/settings?section=billing
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms

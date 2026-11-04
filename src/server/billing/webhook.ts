@@ -3,10 +3,11 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { track } from '../events';
-import { accountByCustomer, withBillingLock } from './account';
+import { accountByCustomer, lockAccount, withBillingLock } from './account';
 import { activateIn } from './activate';
 import { getProvider } from './provider';
-import { syncById } from './sync';
+import { syncById, syncIn } from './sync';
+import { queueLifecycle } from '../services/lifecycle/queue';
 import { WEBHOOK_EVENTS } from '@/lib/billing';
 
 export interface StripeEvent { id: string; type: string; data: { object: any } }
@@ -54,10 +55,28 @@ export async function dispatch(ev: StripeEvent) {
       await syncById(p, o.id, idOf(o.customer));
       return;
     case 'invoice.paid': case 'invoice.payment_failed': {
-      // Invoice → subscription fields moved in Basil; follow the account's current subscription instead.
+      // Follow the current subscription, but never use webhook payload amounts or assume this invoice belongs to it.
       const cus = idOf(o.customer); if (!cus) return;
       const a = await accountByCustomer(cus);
-      if (a?.stripeSubscriptionId) await syncById(p, a.stripeSubscriptionId, cus);
+      if (!a?.stripeSubscriptionId) return;
+      await withBillingLock(a.userId, async (tx, later) => {
+        const current = await lockAccount(tx, a.userId);
+        if (!current.stripeSubscriptionId || current.stripeCustomerId !== cus) return;
+        const sub = await p.getSubscription(current.stripeSubscriptionId);
+        await syncIn(tx, later, current, sub);
+        if (typeof o.id !== 'string') return;
+        const invoice = await p.getInvoice(o.id);
+        if (invoice.customer !== cus || invoice.subscription !== current.stripeSubscriptionId || sub.customer !== cus) return;
+        const paid = ev.type === 'invoice.paid';
+        if (paid ? invoice.status !== 'paid' : invoice.status !== 'open' || sub.latest_invoice !== invoice.id) return;
+        const amount = paid ? invoice.amount_paid : invoice.amount_due;
+        // Zero-dollar trial invoices are not payments. Missing facts never become a fabricated $50 receipt.
+        if (!Number.isSafeInteger(amount) || amount! <= 0 || !/^[a-z]{3}$/i.test(invoice.currency || '')) return;
+        await queueLifecycle(tx, { type: paid ? 'invoice_paid' : 'payment_failed', userId: current.userId,
+          eventKey: `${paid ? 'invoice-paid' : 'payment-failed'}:${invoice.id}`,
+          data: { subscriptionId: sub.id, invoiceId: invoice.id, invoiceNumber: invoice.number || undefined,
+            amountCents: amount, currency: invoice.currency, periodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : undefined } });
+      });
       return;
     }
   }

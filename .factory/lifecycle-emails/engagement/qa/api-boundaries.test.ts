@@ -1,0 +1,76 @@
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+const H = vi.hoisted(() => ({ jar: new Map<string, string>() }));
+vi.mock('next/headers', async () => (await import('@/server/testing/jar')).headersMock(() => H.jar));
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/server/db';
+import { env } from '@/server/env';
+import { Fixtures } from '@/server/testing/fixtures';
+import { GET as getPrefs, PATCH as patchPrefs } from '@/app/api/me/email-preferences/route';
+import { GET as openMail } from '@/app/email/open/route';
+import { POST as optout } from '@/app/api/email-preferences/route';
+import { getEngagementPreferences, updateEngagementPreferences, workPreferenceToken, preferenceToken } from '@/server/services/lifecycle/preferences';
+const F = new Fixtures('engagement-independent-api');
+const origin = () => new URL(env.appUrl).origin;
+const patch = (body: unknown, extra: Record<string, string> = {}) => new Request(`${origin()}/api/me/email-preferences`, { method: 'PATCH', headers: { origin: origin(), 'content-type': 'application/json', ...extra }, body: JSON.stringify(body) });
+const open = (businessId: string, kind: string, ref: string) => openMail(new Request(`${origin()}/email/open?` + new URLSearchParams({ businessId, kind, ref })));
+beforeEach(() => H.jar.clear());
+afterAll(() => F.cleanup());
+describe('independent engagement preferences and link boundaries', () => {
+  it('rejects an unauthenticated preference read or write and defaults all categories off', async () => {
+    expect((await getPrefs()).status).toBe(401);
+    expect((await patchPrefs(patch({ dailyBrief: true }))).status).toBe(401);
+    const u = await F.user(); await F.signIn(u, H.jar);
+    const result = await getPrefs();
+    expect(result.headers.get('cache-control')).toContain('no-store');
+    expect(await result.json()).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
+  });
+  it('uses the authenticated identity only and rejects foreign-origin or extra identity fields', async () => {
+    const u = await F.user(), other = await F.user(); await F.signIn(u, H.jar);
+    expect((await patchPrefs(patch({ dailyBrief: true, userId: other.id }))).status).toBe(400);
+    expect((await patchPrefs(patch({ dailyBrief: true }, { origin: 'https://other.test' }))).status).toBe(403);
+    expect(await getEngagementPreferences(other.id)).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
+    const saved = await patchPrefs(patch({ calendarReminders: true }));
+    expect(saved.status).toBe(200); expect(await saved.json()).toEqual({ dailyBrief: false, calendarReminders: true, articleSocial: false });
+    H.jar.clear(); await F.signIn(other, H.jar);
+    expect(await (await getPrefs()).json()).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
+  });
+  it('preserves opt-in time on repeat saves; old founder tokens cannot disable work categories', async () => {
+    const u = await F.user(); await F.signIn(u, H.jar);
+    const time = new Date('2026-11-01T09:00:00Z');
+    await updateEngagementPreferences(u.id, { dailyBrief: true }, time);
+    await updateEngagementPreferences(u.id, { dailyBrief: true }, new Date(time.getTime() + 60000));
+    const [row] = await db.select().from(schema.userEmailPreferences).where(eq(schema.userEmailPreferences.userId, u.id));
+    expect(row.dailyBriefSince?.toISOString()).toBe(time.toISOString());
+    const request = new Request(`${origin()}/api/email-preferences`, { method: 'POST', headers: { origin: origin(), 'content-type': 'application/json' }, body: JSON.stringify({ token: preferenceToken(u.id) }) });
+    expect((await optout(request)).status).toBe(200);
+    expect((await getEngagementPreferences(u.id)).dailyBrief).toBe(true);
+  });
+  it('sends a signed-out email link to signin with the precise safe target and never trusts an arbitrary destination', async () => {
+    const id = '00000000-0000-4000-8000-000000000001';
+    const response = await open(id, 'article_social', 'entry-one');
+    expect(response.status).toBe(303);
+    const sign = new URL(response.headers.get('location')!);
+    expect(sign.pathname).toBe('/signin');
+    const back = new URL(sign.searchParams.get('next')!, origin());
+    expect(back.pathname).toBe('/email/open'); expect(back.searchParams.get('businessId')).toBe(id); expect(back.searchParams.get('ref')).toBe('entry-one');
+    expect((await open(id, 'https://evil.test', 'entry-one')).status).toBe(400);
+  });
+  it('selects the authorized business via the cookie hop, while a foreign article or business remains denied', async () => {
+    const u = await F.user(), other = await F.user();
+    await F.account(u.id, { comp: true });
+    const own = await F.biz(u), foreign = await F.biz(other);
+    await db.insert(schema.calendarEntries).values({ id: 'qa-local-entry', businessId: own.id, title: 'Local article', kw: 'test', type: 'article', date: '2026-11-04', status: 'review' });
+    await db.insert(schema.articles).values({ entryId: 'qa-local-entry', businessId: own.id, data: { generated: true } });
+    await db.insert(schema.calendarEntries).values({ id: 'qa-foreign-entry', businessId: foreign.id, title: 'Foreign article', kw: 'test', type: 'article', date: '2026-11-04', status: 'review' });
+    await db.insert(schema.articles).values({ entryId: 'qa-foreign-entry', businessId: foreign.id, data: { generated: true } });
+    await F.signIn(u, H.jar);
+    const response = await open(own.id, 'article_social', 'qa-local-entry');
+    expect(response.status).toBe(303);
+    const hop = new URL(response.headers.get('location')!);
+    expect(hop.pathname).toBe('/api/b/current'); expect(hop.searchParams.get('id')).toBe(own.id);
+    const next = new URL(hop.searchParams.get('next')!, origin());
+    expect(next.pathname).toBe('/social'); expect(next.searchParams.get('article')).toBe('qa-local-entry'); expect(next.searchParams.get('generate')).toBe('1');
+    expect((await open(own.id, 'article_social', 'qa-foreign-entry')).status).toBe(404);
+    expect([403,404]).toContain((await open(foreign.id, 'article_social', 'qa-foreign-entry')).status);
+  });
+});

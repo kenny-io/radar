@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
       ...privateRoutes.map(route => ({ source: `/${route}/:path*`, headers: [{ key: 'X-Robots-Tag', value: route === 'api' ? 'noindex, nofollow' : 'noindex, follow' }] })),
       // The workspace page shares a prefix with public /social/*.png preview assets.
       { source: '/social', headers: [{ key: 'X-Robots-Tag', value: 'noindex, follow' }] },
+      ...['forgot-password', 'reset-password'].map(route => ({ source: `/${route}/:path*`, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }, { key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'Cache-Control', value: 'no-store' }] })),
     ];
   },
 };

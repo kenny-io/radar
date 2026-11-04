@@ -2,12 +2,14 @@
 // shared COPY, and write a `scheduled` row without ever overwriting one that is posted, sending or locked.
 import { sql } from 'drizzle-orm';
 import { db } from '../../../db';
+import type { Q } from '../../../billing/draft';
+import { resolveEngagement } from '../../lifecycle/engagement';
 import { RadarError, notFound } from '../../../errors';
 import { bizToday, getBiz, socialAutoOf, type BizRow } from '../../../workspace';
 import { socialOn } from '../../../flags';
 import { track } from '../../../events';
 import { addDays } from '@/lib/format';
-import { COPY, LOCK_MS, packSid, type PostPlatform, MAX_AHEAD_DAYS, accountsFor, acctLabel, briefAccount, isLocked, pickAccount, preflight, zonedTimeToUtc } from '@/lib/socialPublish';
+import { COPY, LOCK_MS, packSid, parseSid, type PostPlatform, MAX_AHEAD_DAYS, accountsFor, acctLabel, briefAccount, isLocked, pickAccount, preflight, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { Pub, SocialAccount, SocialChannel } from '@/lib/types';
 import { acctPublic, accountRows, type AcctRow } from './accounts';
 import { P, ensureImages, loadTarget, preflightInput, pubOf, pubRow, type PubRow, type Target } from './pubs';
@@ -75,10 +77,10 @@ export async function scheduleChecks(biz: BizRow, r: Resolved, date: string, tim
   await preflightGate(biz, r);
 }
 
-type Q = Pick<typeof db, 'insert'>;
 /** Upsert the row as `scheduled` (resetting attempts and errors). Never takes over a row that is posted, sending, or scheduled
  *  inside the lock window — except a held one (its account expired), which may always be moved. null = not written. */
 export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: string; time: string; userId: string | null; auto?: boolean }): Promise<PubRow | null> {
+  if (q === db) return db.transaction(tx => writeScheduled(tx, o));
   const a = o.r.acct!;
   const v = {
     platform: o.r.t.platform, kind: o.r.t.kind, acctId: a.id, ch: a.ch, acctLabel: acctLabel(acctPublic(a)), status: 'scheduled' as const,
@@ -90,6 +92,11 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
       target: [P.businessId, P.sid], set: { ...v, updatedAt: sql`now()` },
       setWhere: sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`,
     }).returning();
+  if (row) {
+    const source = parseSid(row.sid);
+    if (source?.src === 'pack') await resolveEngagement(q, o.biz.id, 'social_publish', source.packId);
+    else if (source?.src === 'brief' && o.r.t.kind === 'reply') await resolveEngagement(q, o.biz.id, 'brief_reply', source.day);
+  }
   return row || null;
 }
 
