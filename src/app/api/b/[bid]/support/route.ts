@@ -6,7 +6,8 @@ import { readSupportRequest } from '@/server/services/support/input';
 import { supportRequest } from '@/server/services/support';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// Six routes can each make a schema-rejection fallback request (12 x 12s), plus local work.
+export const maxDuration = 180;
 /** Support is available to every signed-in member, including members troubleshooting billing. */
 export const POST = handle(async (req: Request, { params }: { params: Promise<{ bid: string }> }) => {
   assertAuthOrigin(req);
