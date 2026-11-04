@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { useApp, type Page } from '@/client/app';
 import { Btn, Icon, LogoTile, Mark, Popover, Skel, type IconName } from '@/components/ui';
 import { Onboarding } from '@/features/onboarding/Onboarding';
+import { SupportWidget } from '@/features/support/SupportWidget';
 import type { BusinessSummary, DraftSummary } from '@/lib/types';
 
 const NAV: [Page, string, IconName][] = [['dashboard', 'Dashboard', 'home'], ['brief', 'Daily Brief', 'brief'], ['calendar', 'Content Calendar', 'calendar'], ['social', 'Social Marketing', 'social'], ['performance', 'Performance', 'chart'], ['backlinks', 'Backlinks', 'link']];
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="main" key={page + (B?.id || '')}>{body}</main>
     </div>
     {onboarding.open && <Onboarding actor="user" draft={draftOf(me.businesses)} saveCommits autoDomain={null} inApp />}
+    {B && !onboarding.open && <SupportWidget key={`${me.user.id}:${B.id}`} businessId={B.id} userEmail={me.user.email} page={page} />}
   </div>;
 }
 

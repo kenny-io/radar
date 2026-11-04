@@ -52,6 +52,7 @@ Run `npm run db:migrate` on deploy.
 - `docs/LAUNCH.md` — everything to set up to run Radar live (accounts, keys, OAuth apps, hosting)
 - `docs/webhook.md` — the signed webhook payload for the Webhook connector
 - `docs/CONTRACTS.md` — actions, components and job kinds shared between feature areas
+- `docs/SUPPORT.md` — dashboard AI assistant, email handoff, configuration and verification
 
 ## Scripts
 `npm run typecheck` · `npm test` · `npm run db:generate` (after schema changes) · `npm run db:migrate`
