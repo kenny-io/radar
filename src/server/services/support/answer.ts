@@ -25,7 +25,9 @@ export async function answerSupport(biz: Pick<BizRow, 'id' | 'domain' | 'profile
     const result = await ai.run('writing', {
       purpose: 'support.answer', system: SUPPORT_SYSTEM,
       prompt: JSON.stringify({ workspaceLabel: { domain: String(biz.domain).slice(0, 255), name: String((biz.profile as any)?.business?.name || '').slice(0, 120) }, page: input.page, history: input.history, question: input.message }),
-      schema: Answer, schemaName: 'radar_support_answer', maxTokens: 900, timeoutMs: 5000, stubContext: { message: input.message },
+      // Real configured writing models can take more than five seconds even for ordinary support answers.
+      // Keep each provider request bounded while allowing the existing routing/failover to complete.
+      schema: Answer, schemaName: 'radar_support_answer', maxTokens: 900, timeoutMs: 12000, stubContext: { message: input.message },
     }, { businessId: biz.id, retries: 0 });
     const parsed = Answer.safeParse(result.json);
     if (!parsed.success) return fallback();
