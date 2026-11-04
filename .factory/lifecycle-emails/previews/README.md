@@ -3,6 +3,7 @@
 Fictional sample data; no email is sent by this script.
 
 [Open the complete visual gallery](index.html)
+[Review the seven pre-trial drafts](nurture/index.html)
 
 - [welcome](welcome.html): Welcome to Radar
 - [founder_note](founder_note.html): Why we built Radar
