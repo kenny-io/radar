@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "Retry keeps one registration and same slug",
+    "Retry does not overwrite generated route wrappers",
+    "Refresh preserves route identity and original publication date",
+    "New post avoids unregistered route folder and flat-file collisions",
+    "Missing registry fails configuration",
+    "Template advertising absent OG companion fails configuration",
+    "Inherited required BlogPost fields safely rejected",
+    "Spread overriding a literal registry slug safely rejected"
+  ],
+  "defects": [],
+  "destinationRevision": "c44cde2f12d5170a2fbaf4e038b467b12efb161f"
+}

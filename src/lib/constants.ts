@@ -79,7 +79,7 @@ export const PLATFORMS: PlatformDef[] = ([
   { k: 'wpcom', l: 'WordPress.com', mono: 'W.', oauth: true, pick: 'Site' },
   { k: 'webhook', l: 'Webhook', mono: '{ }', fields: [['hook', 'Endpoint URL', 'https://api.yoursite.com/radar']], secret: true, help: 'Radar sends each article as signed JSON.' },
   { k: 'framer', l: 'Framer', mono: 'F', fields: [['url', 'Project URL', 'https://framer.com/projects/…'], ['key', 'API token', '', 'password']], pick: 'CMS collection' },
-  { k: 'nextjs', l: 'GitHub', d: 'Pull request', mono: 'GH', fields: [['path', 'Content folder', 'content/posts', 'text', 'Where your posts live in the repository.']], oauth: true, oauthLabel: 'GitHub', authFirst: true, pick: 'Repository', help: 'Radar opens a pull request with each article as MDX.' },
+  { k: 'nextjs', l: 'GitHub', d: 'Pull request', mono: 'GH', fields: [['path', 'Content folder hint', 'content/posts', 'text', 'A starting point for discovery. Radar also inspects routes, post listings and navigation elsewhere in the repository.']], oauth: true, oauthLabel: 'GitHub', authFirst: true, pick: 'Repository', help: 'Radar inspects your repository and prepares the article and blog integration changes together. It opens a draft pull request for build and deployment preview checks.' },
 ] as PlatformDef[]).sort((a, b) => a.l.localeCompare(b.l));
 export const platOf = (k?: string | null) => PLATFORMS.find(p => p.k === k) || PLATFORMS.find(p => p.k === 'wordpress')!;
 export const platLabel = (k?: string | null) => platOf(k).l;

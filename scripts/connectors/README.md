@@ -68,3 +68,19 @@ scripts/connectors/webhook-down.sh --purge
 ```
 
 The down scripts delete the containers with their data and remove their values from `harness.env`.
+
+## GitHub post integration
+
+Radar inspects the connected repository before preparing each article PR. **Content folder** is a discovery hint: the planner can follow source references elsewhere in the repository to identify the actual article format, renderer, route, blog listing/navigation and generator configuration. This applies to every repository layout; there is no special Next.js registry contract or automatic file-only fallback.
+
+The planner reads an immutable Git snapshot and proposes small exact edits plus new files. The host validates observed source SHAs, unique replacements, change budgets, article-body insertion and protected paths. A separate source-based review checks the proposed content-to-route-to-listing chain. Unclear, ungrounded or unsafe plans stop before any branch/content changes. Destination code and model-proposed commands are never executed in Radar.
+
+All accepted article and integration files enter one atomic Git tree/commit, followed by a non-force article-branch reference update. Retries recover the article identity from the final generated commit trailer, binding the entry, folder hint, chosen slug and article path. An unrelated branch or reviewer commit without that identity cannot be resumed automatically.
+
+PRs open as **drafts**, with changed files, source evidence and static-review findings. Radar has not run the destination build or deployment preview; review the diff, let its CI/build checks run and confirm the article route, blog listing and navigation in a preview before marking the PR ready. A persisted older content-only draft is bound to its article branch and upgraded through the same complete repository planning/review before a PR can open; missing or mismatched records stop with a recovery error. Opening the review PR remains the connector's completion URL; it does not make the article live. Connection testing checks GitHub write permission; repository integration planning happens when preparing the article PR.
+
+The writing-model/provider configuration used by article generation also powers repository reasoning. Planning failures retain retry/error reporting; they never fall back to standalone Markdown export. Local mock tests exercise host policies and transport behavior without model calls or GitHub mutations:
+
+```sh
+npx vitest run src/server/services/publishing/connectors/nextjs.test.ts src/server/services/publishing/connectors/nextjs-agent.test.ts
+```

@@ -1,0 +1,137 @@
+{
+  "results": [
+    {
+      "fixture": "astro",
+      "status": "planned",
+      "paths": [
+        "products/guide-web/src/content/insights/reliable-publishing.md"
+      ],
+      "articlePath": "products/guide-web/src/content/insights/reliable-publishing.md",
+      "route": "/notes/reliable-publishing/",
+      "draft": true,
+      "runtimeVerified": false,
+      "elapsedMs": 41191
+    },
+    {
+      "fixture": "thally",
+      "status": "failed-safely",
+      "http": 422,
+      "kind": "config",
+      "reason": "Radar could not safely integrate this article: independent source review could not establish a complete, focused integration. Review the repository’s publishing conventions or update the content folder hint and try again.",
+      "elapsedMs": 101348
+    }
+  ],
+  "plannerSha256AtLoad": "fa780be7949f0804aa5d942b0e30c6e3c7c2bff04df5773a10a9bf50f23bd1df",
+  "providerRequestsIncludingPriorAttempt": 10,
+  "providerRequestLimit": 12,
+  "aiCalls": 10,
+  "modelCalls": [
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.plan",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.repair",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.review",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.plan",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.review",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    }
+  ],
+  "networkCalls": [
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 3056
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 6992
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 10962
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 10459
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 9117
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 7641
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 10231
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 16636
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 44898
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 21763
+    }
+  ],
+  "halted": false,
+  "blockedHosts": [],
+  "diagnosticsSuppressed": 10,
+  "localRouting": "Child omitted documented unavailable OpenRouter/OpenAI routes; existing configured Anthropic model route unchanged",
+  "scope": "Read-only local/snapshot source, real configured provider through production ai.run; DB connection isolated to unreachable loopback; no GitHub or remote publishing writes. Intermediate/private source remains temporary only."
+}
