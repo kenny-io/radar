@@ -1,0 +1,118 @@
+{
+  "results": [
+    {
+      "fixture": "astro",
+      "status": "failed-safely",
+      "http": 422,
+      "kind": "config",
+      "reason": "Radar could not safely integrate this article: the plan cites unobserved or invented source evidence. Review the repository’s publishing conventions or update the content folder hint and try again.",
+      "elapsedMs": 24110
+    },
+    {
+      "fixture": "custom",
+      "status": "planned",
+      "paths": [
+        "packages/field-notes/articles/reliable-publishing.html",
+        "packages/field-notes/catalog/essays.json"
+      ],
+      "articlePath": "packages/field-notes/articles/reliable-publishing.html",
+      "route": "/reading/reliable-publishing/",
+      "draft": true,
+      "runtimeVerified": false,
+      "elapsedMs": 50560
+    }
+  ],
+  "providerRequestsIncludingPriorAttempt": 10,
+  "aiCalls": 7,
+  "modelCalls": [
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.plan",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.discover",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.plan",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    },
+    {
+      "purpose": "github.integration.review",
+      "model": "claude-sonnet-5.5",
+      "provider": "Anthropic"
+    }
+  ],
+  "networkCalls": [
+    {
+      "host": "openrouter.ai",
+      "status": 402,
+      "elapsedMs": 679
+    },
+    {
+      "host": "api.openai.com",
+      "status": 429,
+      "elapsedMs": 3903
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 4307
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 6680
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 8504
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 3026
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 11589
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 20037
+    },
+    {
+      "host": "api.anthropic.com",
+      "status": 200,
+      "elapsedMs": 15688
+    }
+  ],
+  "halted": false,
+  "blockedHosts": [
+    "openrouter.ai",
+    "api.openai.com"
+  ],
+  "diagnosticsSuppressed": 16,
+  "scope": "Synthetic local source only, real configured provider through production ai.run; DB connection isolated to unreachable loopback; no GitHub or remote publishing writes."
+}

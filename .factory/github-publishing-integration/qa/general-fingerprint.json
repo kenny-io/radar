@@ -1,0 +1,15 @@
+{
+  "head": "f9eb61786db4ae1a6ce9cbbd81ddaef1243bcd49",
+  "branch": "kenny/signup-security",
+  "sha256": {
+    "src/server/services/publishing/connectors/nextjs-agent.ts": "c94c066afec620714c5e75bf5735547197cd1625edfd375fc20e7f8eb38b28ac",
+    "src/server/services/publishing/connectors/nextjs-agent.test.ts": "8235f2d433b82ae91e4c65254d6d7f30d924781928f870d954b0e4ec0b5df674",
+    "src/server/services/publishing/connectors/nextjs.ts": "5f3356c321d4f683f99a2d484fdb4737380db6964b37e5805915fb470d3087b6",
+    "src/server/services/publishing/connectors/nextjs.test.ts": "06c3914df1e5ad42601e5b6c29ef7edbc383f0341a1ae7b897e8419197fc5af6",
+    "src/server/services/publishing/connectors/nextjs.live.test.ts": "05eca1815c32bf217355151c67470e4243ece1d128b33b990616d233404cb5fe",
+    "src/lib/constants.ts": "ed878ac249f1b3fc49cad05f3866895f53ebba95202ee442060f1002b65ccaf5",
+    "package.json": "d9755ebc19750aac21821d9dce6483321689b2aae0fab99a72c5f86202f25809",
+    "package-lock.json": "b2e4c149548b5cf00bb93efc40de3d8a4f1dac729fb4cc59ac64c3bf84e1f9ff",
+    "scripts/connectors/README.md": "e940ba18367013b370abd7ea87c3d477daa7d0dd010e90cec5af3eaaf3edcd09"
+  }
+}

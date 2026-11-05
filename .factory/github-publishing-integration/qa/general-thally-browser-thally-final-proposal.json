@@ -1,0 +1,18 @@
+{
+  "base": "http://127.0.0.1:55317",
+  "variant": "thally-final-proposal",
+  "checks": [
+    "Real production BlogIndex exposes the model-generated article",
+    "Keyboard navigation renders real production PostShell and original body",
+    "Production article survives reload",
+    "Fresh browser page resolves the production article directly",
+    "Real breadcrumb returns to populated production blog index",
+    "Mobile real production article renders without horizontal overflow",
+    "Actual generated production OG image renders a1200×630 PNG",
+    "Build-generated full corpus includes the article URL"
+  ],
+  "pageErrors": [],
+  "failedLocalResponses": [],
+  "destinationRevision": "c44cde2f12d5170a2fbaf4e038b467b12efb161f",
+  "scope": "Actual normal production build and genuine target components from real-model proposed files. No manual catalog/corpus source patches; normal build regenerated them. No remote mutation."
+}

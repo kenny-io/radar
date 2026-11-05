@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "fixture": "astro",
+      "set": "artifacts",
+      "base": "http://127.0.0.1:52495",
+      "route": "/notes/reliable-publishing/",
+      "checks": [
+        "Exactly one public listing link to the generated article",
+        "Keyboard index navigation opens complete generated article in the actual framework build",
+        "Direct article route survives browser reload",
+        "Fresh browser page resolves generated article directly",
+        "Mobile listing navigation renders article without horizontal overflow"
+      ],
+      "pageErrors": []
+    },
+    {
+      "fixture": "jekyll",
+      "set": "artifacts",
+      "base": "http://127.0.0.1:52514",
+      "route": "/journal/reliable-publishing/",
+      "checks": [
+        "Exactly one public listing link to the generated article",
+        "Keyboard index navigation opens complete generated article in the actual framework build",
+        "Direct article route survives browser reload",
+        "Fresh browser page resolves generated article directly",
+        "Mobile listing navigation renders article without horizontal overflow"
+      ],
+      "pageErrors": []
+    },
+    {
+      "fixture": "custom",
+      "set": "artifacts",
+      "base": "http://127.0.0.1:52523",
+      "route": "/reading/reliable-publishing/",
+      "checks": [
+        "Exactly one public listing link to the generated article",
+        "Keyboard index navigation opens complete generated article in the actual framework build",
+        "Direct article route survives browser reload",
+        "Fresh browser page resolves generated article directly",
+        "Mobile listing navigation renders article without horizontal overflow"
+      ],
+      "pageErrors": []
+    }
+  ],
+  "scope": "Actual framework/static-site build output produced from production planner result. Mocked planning for artifacts; live configured AI planning for live-artifacts. No remote writes."
+}
