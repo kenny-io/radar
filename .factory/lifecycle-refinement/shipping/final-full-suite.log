@@ -1,0 +1,1142 @@
+
+> radar@1.0.0 test
+> vitest run --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+ ❯ src/server/ai/openrouter.qa.test.ts (74 tests | 1 failed) 3077ms
+   × parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot 521ms
+     → expected { …(14) } to deeply equal { …(14) }
+   ✓ parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > an empty OPENROUTER_API_KEY counts as unset (no OpenRouter request) 5ms
+   ✓ route order with OPENROUTER_API_KEY > research: OR(opus) → direct(opus) → OR(gpt-6-sol) → direct → OR(grok) → direct 5ms
+   ✓ route order with OPENROUTER_API_KEY > total transient failure: OR gets 1 try per model, direct keeps its 3 (12 fetches, not more) 25ms
+   ✓ route order with OPENROUTER_API_KEY > OpenRouter only (no direct keys): each model gets the usual 3 attempts on OpenRouter (9 fetches) 24ms
+   ✓ route order with OPENROUTER_API_KEY > a model with no direct key is still served by OpenRouter, in one call 6ms
+   ✓ route order with OPENROUTER_API_KEY > a business-chosen Grok model goes OR(grok) first and keeps temperature only for Grok 7ms
+   ✓ route order with OPENROUTER_API_KEY > OPENROUTER_MODEL_MAP "" sends that model straight to its direct provider 5ms
+   ✓ route order with OPENROUTER_API_KEY > after an OpenRouter account error, later models in the SAME call skip OpenRouter 23ms
+   ✓ OpenRouter failure handling > 401 bad key → 10-minute cooldown for text and images; next calls go direct 30ms
+   ✓ OpenRouter failure handling > 402 no credit → 10-minute cooldown for text and images; next calls go direct 29ms
+   ✓ OpenRouter failure handling > 403 key limit → 10-minute cooldown for text and images; next calls go direct 29ms
+   ✓ OpenRouter failure handling > 429 credit wording → 10-minute cooldown for text and images; next calls go direct 29ms
+   ✓ OpenRouter failure handling > moderation-flagged 403 → this call goes direct, no cooldown (next call tries OpenRouter again) 10ms
+   ✓ OpenRouter failure handling > a moderation-flagged 403 on an IMAGE request does not pause OpenRouter 29ms
+   ✓ OpenRouter failure handling > 404 unknown model → skips OpenRouter for that model only (10 min), others still use it 9ms
+   ✓ OpenRouter failure handling > 404 "no endpoints support the requested parameters" → direct for this call only 9ms
+   ✓ OpenRouter failure handling > 429 rate limit → falls back to direct, no cooldown 7ms
+   ✓ OpenRouter failure handling > 500 → falls back to direct, no cooldown 7ms
+   ✓ OpenRouter failure handling > 502 provider error → falls back to direct, no cooldown 9ms
+   ✓ OpenRouter failure handling > 503 → falls back to direct, no cooldown 8ms
+   ✓ OpenRouter failure handling > network timeout → aborts after timeoutMs, falls back, opens the 2-minute breaker (not the 10-minute cooldown) 70ms
+   ✓ OpenRouter failure handling > network error (fetch rejects) → falls back 8ms
+   ✓ OpenRouter failure handling > in-stream error chunk: partial OR text discarded via onReset, direct answer shown, no partial in result 8ms
+   ✓ OpenRouter failure handling > in-stream credit error (402 chunk) → cooldown 10ms
+   ✓ OpenRouter failure handling > stream that ends with no content → treated as failure and falls back 9ms
+   ✓ OpenRouter failure handling > malformed JSON in structured output → schema validation fails, one OR call, then direct 8ms
+   ✓ OpenRouter failure handling > JSON wrapped in prose/code fences from OpenRouter is still extracted and fitted to the schema 5ms
+   ✓ OpenRouter failure handling > 200 body with an error object (no choices) → fails over 6ms
+   ✓ OpenRouter structured outputs > request shape: json_schema + strict + require_parameters, streamed (PM 2026-10-23) but no JSON deltas shown, no tools 7ms
+   ✓ OpenRouter structured outputs > optional / record fields → strict:false for non-Claude models; Claude models always strict with the Claude subset 10ms
+   ✓ OpenRouter structured outputs > schema 400 → exactly one plain-JSON retry on OpenRouter; a second 400 moves on (no loop) 8ms
+   ✓ OpenRouter structured outputs > schema 400 with OpenRouter as the only route: 2 calls per model, never more 9ms
+   ✓ OpenRouter structured outputs > a non-schema 400 is not retried as plain JSON 6ms
+   ✓ OpenRouter structured outputs > research + schema: web_search pass then structuring pass; failure in pass 2 → direct does both passes (4 fetches) 8ms
+   ✓ OpenRouter structured outputs > plain research (web search, no schema) sends the web_search tool and returns url_citation citations 12ms
+   ✓ images via OpenRouter > aspect ratio for every size Radar requests (hero/linkedin/facebook/quora 1200×628, x/brief 1200×675, reddit 1200×900)  357ms
+   ✓ images via OpenRouter > decodes image/png (with and without data: prefix) and cover-crops to exactly 1200×628 54ms
+   ✓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×900 73ms
+   ✓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×675 53ms
+   ✓ images via OpenRouter > missing media_type is fine; SVG and empty data fall back to OpenAI 95ms
+   ✓ images via OpenRouter > renderImage: OR failure with no other image key → brand template (no throw) 31ms
+   ✓ images via OpenRouter > an image account error (402) pauses OpenRouter for text too 29ms
+   ✓ images via OpenRouter > dev stubs: no image model even with a key 5ms
+   ✓ AI Visibility via OpenRouter > each engine → its model, web search tool (not for Sonar), Claude max_tokens 2048, attribution headers 7ms
+   ✓ AI Visibility via OpenRouter > citations: nested url_citation, flat url, Perplexity citations (strings/objects), search_results fallback 5ms
+   ✓ AI Visibility via OpenRouter > Gemini grounding redirect links in OR citations are resolved like the direct path (no key sent to Google) 7ms
+   ✓ AI Visibility via OpenRouter > falls back to the official API on OR failure, with the exact parent-commit direct request 6ms
+   ✓ AI Visibility via OpenRouter > fetch rejection / 429 / 200-with-error → falls back to the official API 10ms
+   ✓ AI Visibility via OpenRouter > OR account error from visibility → cooldown shared with text; next engine call goes direct only 8ms
+   ✓ AI Visibility via OpenRouter > "not collected" semantics: OR fails + no direct key → real error; no OR + no key → EngineUnavailable with zero requests 12ms
+   ✓ AI Visibility via OpenRouter > OR in cooldown + no direct key → reported as "not configured" (EngineUnavailable), no request 5ms
+   ✓ AI Visibility via OpenRouter > dev stubs bypass OpenRouter entirely 157ms
+   ✓ the OpenRouter key never leaks > not in logs, ai_calls rows, thrown errors, visibility errors; only ever sent to openrouter.ai 114ms
+   ✓ the OpenRouter key never leaks > HTTP-Referer is APP_URL without trailing slash; defaults to localhost when APP_URL unset 10ms
+   ✓ the OpenRouter key never leaks > ai_calls row for an OR failure stores the provider error text, not request headers 6ms
+   ✓ retest: OpenRouter streaming for every text call > JSON split at arbitrary byte boundaries (inside the data: line and inside UTF-8 characters) reassembles exactly 9ms
+   ✓ retest: OpenRouter streaming for every text call > plain-text (no onDelta) and visibility calls now send stream:true and parse the reassembled answer 7ms
+   ✓ retest: OpenRouter streaming for every text call > stream that ends with finish_reason but no [DONE] → accepted 6ms
+   ✓ retest: OpenRouter streaming for every text call > a stream that closes mid-answer (no finish_reason, no [DONE]) is treated as a failure and falls back direct 7ms
+   ✓ retest: OpenRouter streaming for every text call > error chunk in the middle of a JSON answer → partial JSON discarded, falls back, counts as one transient strike 7ms
+   ✓ retest: idle cutoff and timers > idle and total timers are cleared after success / HTTP error / JSON body: nothing aborts later, breaker stays closed 258ms
+   ✓ retest: idle cutoff and timers > keep-alive comments count as activity: a slow-but-alive stream is not cut 152ms
+   ✓ retest: idle cutoff and timers > stalled stream after partial text → idle cutoff, partial discarded via onReset, direct answer, breaker opens 59ms
+   ✓ retest: idle cutoff and timers > hang before response headers → idle cutoff also applies 58ms
+   ✓ retest: circuit breaker > 3 consecutive 5xx open it; a success in between resets the count; it closes after 2 minutes 14ms
+   ✓ retest: circuit breaker > 4xx answers (rate limit, schema, moderation) do not count as strikes 10ms
+   ✓ retest: circuit breaker > does not block OpenRouter-only setups: text, images and visibility still use OpenRouter while it is open 154ms
+   ✓ retest: circuit breaker > while open, it is skipped per model only where that model has a direct route 11ms
+   ✓ retest: circuit breaker > an image timeout (60 s total) falls back to OpenAI and opens the breaker for text 100ms
+   ✓ retest: circuit breaker > visibility: idle cutoff falls back to the official API and opens the breaker 49ms
+   ✓ retest: circuit breaker > non-credit 403 (e.g. region block) skips only that model, no global cooldown 7ms
+   ✓ retest: concurrent calls > 6 concurrent calls hitting a 402: each tries OpenRouter at most once, none tries it for a second model, all succeed direct 44ms
+   ✓ retest: concurrent calls > 3 concurrent calls into a hung OpenRouter each wait one idle cutoff, then go direct; the 4th skips OpenRouter 71ms
+stderr | src/server/services/brief/scan.test.ts > background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure
+[radar.failure] {"id":"b72931f0-12a6-45c5-8941-99c0a6b613a0","timestamp":"2026-11-09T23:03:47.707Z","environment":"test","service":"web","context":{"source":"brief","operation":"brief.source","businessId":"1f167d5f-4b6b-4d85-988e-c8d9a5ff2078","ref":"2026-11-09","provider":"linkedin","attempt":0,"maxAttempts":1,"degraded":true,"jobId":"a82aa983-74ce-432b-a9ec-e8403ab602da"},"rootOperation":"brief.scan","error":{"name":"Error","message":"linkedin (stub) failed on purpose (BRIEF_STUB_FAIL)"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/brief/scan.test.ts > background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure
+[brief.scan] linkedin source failed (background rescan, skipped): linkedin (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+stderr | src/server/services/brief/scan.test.ts > background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure
+[radar.failure] {"id":"133460e3-bd89-46a1-b940-4a55678fff56","timestamp":"2026-11-09T23:03:54.400Z","environment":"test","service":"web","context":{"source":"brief","operation":"brief.source","businessId":"1f167d5f-4b6b-4d85-988e-c8d9a5ff2078","ref":"2026-11-09","provider":"linkedin","attempt":0,"maxAttempts":1,"degraded":false,"jobId":"f4708f8d-730f-44e5-be3e-3ecc578d9f31"},"rootOperation":"brief.scan","error":{"name":"Error","message":"linkedin (stub) failed on purpose (BRIEF_STUB_FAIL)"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/brief/scan.test.ts > background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure
+[brief.scan] linkedin source failed: linkedin (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/brief/scan.test.ts (4 tests) 29420ms
+   ✓ background rescans (database, dev stubs) > a quiet rescan is enqueued 2 h after the last scan, adds new replies marked New, and toasts the members once  19721ms
+   ✓ background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure  9635ms
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[radar.failure] {"id":"6d536d0c-b585-40dd-bc3e-d5a12e8fb573","timestamp":"2026-11-04T12:00:00.000Z","environment":"test","service":"web","context":{"source":"brief","operation":"brief.source","businessId":"85446efa-d510-4449-b4da-83c18dcd8a29","ref":"2026-11-04","provider":"reddit","attempt":0,"maxAttempts":1,"degraded":false,"jobId":"c89ed878-1729-4025-9c31-be957db2af4f"},"rootOperation":"brief.scan","error":{"name":"Error","message":"reddit (stub) failed on purpose (BRIEF_STUB_FAIL)"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[brief.scan] reddit source failed: reddit (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/lifecycle/engagement.test.ts (15 tests) 9846ms
+   ✓ conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs  9525ms
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > a full draft image-storage failure never marks the article ready or replaces its previous content
+[radar.failure] {"id":"d2be0610-b521-49df-b33c-3430350c5586","timestamp":"2026-11-09T23:04:11.075Z","environment":"test","service":"web","context":{"source":"job","operation":"article.draft","businessId":"d63c1ad4-a93b-4b59-85dd-e3695b843172","ref":"e_images_mw9vbj44zmkx9_4","attempt":1,"maxAttempts":1,"retrying":false,"jobId":"d112ce71-f072-45b4-a4a3-e23da9e9ee10"},"rootOperation":"article.draft","error":{"name":"Error","message":"storage unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > rewriting an article never downgrades a missing custom cover to a template on generation failure
+[draft] image failed custom generation unavailable
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > rewriting an article never downgrades a missing custom cover to a template on generation failure
+[radar.failure] {"id":"44c83543-6755-4715-bfa0-f659ac93fa6c","timestamp":"2026-11-09T23:04:12.560Z","environment":"test","service":"web","context":{"source":"job","operation":"article.draft","businessId":"1596bbfa-3264-4d77-8110-a7ec8410ad68","ref":"e_images_mw9vbj44zmkx9_5","attempt":1,"maxAttempts":1,"retrying":false,"jobId":"b09dce5b-7ec0-4e3d-8b82-0595dc87dce3"},"rootOperation":"article.draft","error":{"name":"Error","message":"custom generation unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > one failed storage operation fails the queue job and keeps the previous images and content
+[radar.failure] {"id":"ff20e8a2-b6cc-425a-8e6b-7ad57a1b8e85","timestamp":"2026-11-09T23:04:12.582Z","environment":"test","service":"web","context":{"source":"job","operation":"article.bodyImages","businessId":"2e49b1d3-563e-497e-9f87-591ab59850ab","ref":"e_images_mw9vbj44zmkx9_6","attempt":1,"maxAttempts":1,"retrying":false,"jobId":"68141db5-382a-4611-95d0-a559da25669e"},"rootOperation":"article.bodyImages","error":{"name":"Error","message":"storage unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > cover provider/storage failures preserve the full prior article, and locked or foreign covers never render
+[article] cover generation failed storage unavailable
+
+ ✓ src/server/services/drafting/bodyImages.db.test.ts (18 tests) 7646ms
+   ✓ article body images (database) > new drafts and long rewrites cannot complete without their body images  3001ms
+   ✓ article body images (database) > a full draft image-storage failure never marks the article ready or replaces its previous content  1513ms
+   ✓ article body images (database) > rewriting an article never downgrades a missing custom cover to a template on generation failure  1486ms
+   ✓ article body images (database) > a late final draft attempt cannot demote the newer draft during failure cleanup  1448ms
+stdout | src/server/auth/passwordReset.test.ts > password recovery (database, no mail delivery) > bounds reset requests by normalized email and source IP and rejects foreign origins/oversized bodies
+[abuse] limit hit: auth:reset-request
+
+stdout | src/server/auth/passwordReset.test.ts > password recovery (database, no mail delivery) > bounds reset requests by normalized email and source IP and rejects foreign origins/oversized bodies
+[abuse] limit hit: auth:reset-request
+
+ ✓ src/server/auth/passwordReset.test.ts (7 tests) 5716ms
+   ✓ password recovery (database, no mail delivery) > returns the same response for password, Google-only and unknown accounts, stores only hashed reset tokens and encrypted links  444ms
+   ✓ password recovery (database, no mail delivery) > atomically replaces the password, invalidates every session and other reset link, and never signs in automatically  760ms
+   ✓ password recovery (database, no mail delivery) > lets only one of concurrent distinct valid reset links change the password  431ms
+   ✓ password recovery (database, no mail delivery) > refuses a session for a password hash verified before a concurrent reset  306ms
+   ✓ password recovery (database, no mail delivery) > rejects a stale password proof before claiming a guest or replacing either onboarding draft  309ms
+   ✓ password recovery (database, no mail delivery) > bounds reset requests by normalized email and source IP and rejects foreign origins/oversized bodies  3302ms
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > manual replies are handed to owner with selected edits; repeated runs dedupe and late arrivals are delivered
+[mail:log] to=autopilot-e4a22d94-8e24-4bde-baa4-074e6517d3c0@test.local subject=Radar Autopilot: 2 actions need you · Autopilot tests
+Autopilot needs your help with these 2 actions for Autopilot tests:
+
+1. Connect your publishing destination
+
+Radar can prepare articles. Connect a blog so Autopilot can publish them.
+
+Review in Radar: http://localhost:3933/api/b/current?id=de75f3b1-892b-4819-9385-c231e493507d&next=%2Fsettings%3Fsection%3Dpublishing
+
+2. reddit: Help with tracking
+
+Radar cannot post this comment. Open the conversation and send the prepared reply from your account.
+
+Open conversation: https://www.reddit.com/r/test/comments/1
+
+Review in Radar: http://localhost:3933/api/b/current?id=de75f3b1-892b-4819-9385-c231e493507d&next=%2Fbrief%3Fdate%3D2026-11-09
+
+Prepared draft:
+My prepared reply
+
+Manage Autopilot: http://localhost:3933/api/b/current?id=de75f3b1-892b-4819-9385-c231e493507d&next=%2Fsettings%3Fsection%3Dautopilot
+
+You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Email preferences: http://localhost:3933/email-preferences
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates
+[social.send] pub 47f14d9a-002b-40e0-bc4b-80c22eb6d1c8 s:auto-de75f3b1-892b-4819-9385-c231e493507d-2026-11-09:x: posted (attempt 1)
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > revoking while media uploads prevents the remote create call
+[social.send] pub e23a4912-0577-40ce-9929-3ba0d84b059a s:pmw9vby200udrlQ:x: failed rejected after 1 attempt(s): Autopilot is off. Schedule this draft manually to publish it.
+
+ ✓ src/server/services/autopilot/autopilot.db.test.ts (11 tests) 4603ms
+   ✓ Autopilot program (database) > additive calendar generation preserves existing proposals, dates and edited article bodies  3702ms
+   ✓ Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates  327ms
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > a guest is limited per IP per hour, with the flag off too; the 6th analysis is refused with copy
+[abuse] limit hit: analysis:ip
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > a signed-in user without access is limited the same way; with access not at all
+[abuse] limit hit: analysis:ip
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > 20 per IP per day, and 10 per domain per day across addresses
+[abuse] limit hit: analysis:ip
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > 20 per IP per day, and 10 per domain per day across addresses
+[abuse] limit hit: analysis:domain
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > the global breaker answers 503 busy
+[abuse] limit hit: analysis:global
+
+stderr | src/server/abuse/rateLimit.test.ts > rate limits (database) > the global breaker answers 503 busy
+[radar.failure] {"id":"5a65549f-da60-4618-a3e8-48f5ee271638","timestamp":"2026-11-09T23:04:29.513Z","environment":"test","service":"web","context":{"source":"action","operation":"onboarding.analyze","businessId":"8a4b920e-895c-4765-8fb7-5ed0af5c7661","userId":"1c816da5-b886-45d0-b18f-41edd79ac195","requestId":"bccba227-5d9c-4c97-a364-5a7c002c6f71"},"rootOperation":"onboarding.analyze","error":{"name":"Error","message":"Radar is busy right now. Try again in a few minutes.","status":503,"code":"busy"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > creating guests is limited to 10 per IP per hour
+[abuse] limit hit: guest:ip
+
+ ✓ src/server/abuse/rateLimit.test.ts (6 tests) 2375ms
+   ✓ rate limits (database) > fixed windows: counts within a window, a new window starts at 1, hour and day never share a row  2115ms
+ ✓ src/server/auth/claim.test.ts (9 tests) 1675ms
+   ✓ claim (database) > signup by email claims the draft intact (edits, Edited flags, Search Console); journey A lands on /start-trial  340ms
+   ✓ claim (database) > signin to an existing account claims it and replaces the account’s own old draft; with access a saved draft commits  342ms
+   ✓ claim (database) > D2: a signin claim that commits opens the claimed profile (radar_biz), not the account’s oldest business, billing on and off  624ms
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > keeps signup and resend responses generic and throttles an address across rotating IPs
+[abuse] limit hit: auth:verification
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"edc0ea0f-73db-4394-b332-e292331e25c5","timestamp":"2026-11-09T23:04:33.706Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"0b21c781-ad86-4434-81d1-cb6bf6200b95"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Account confirmation is temporarily unavailable. Please try again later.","status":503,"code":"auth_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"f5ee6375-06a8-41bb-84e7-f659ba693486","timestamp":"2026-11-09T23:04:33.708Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"bafd2bfc-c3a2-4881-9141-1a6dfdead5c5"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Account confirmation is temporarily unavailable. Please try again later.","status":503,"code":"auth_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"afd3b19a-7218-47ff-895e-c268af20ef53","timestamp":"2026-11-09T23:04:33.713Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.auth","provider":"Resend","requestId":"764179ec-5b24-4ac0-97db-6714dc7c50d6"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Security email delivery unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"c3021eaf-498b-4fb6-93af-794dad557c30","timestamp":"2026-11-09T23:04:33.715Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"764179ec-5b24-4ac0-97db-6714dc7c50d6"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Radar couldn’t send the confirmation email. Please try again.","status":503,"code":"mail_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > shares a ten-attempt IP budget across signup and resend even when each route has attempts remaining
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[abuse] limit hit: auth:verification
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[radar.failure] {"id":"d2350853-90ed-455c-9c30-6677d9b38506","timestamp":"2026-11-09T23:04:33.744Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"26ab6733-8208-4716-8313-6b95231b7c1d"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Account confirmation is busy. Please try again later.","status":503,"code":"busy"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/auth/verification.test.ts (11 tests) 1483ms
+   ✓ mailbox confirmation security (database) > does not accept a registrant password or grant a session/admin capability before inbox confirmation  497ms
+   ✓ mailbox confirmation security (database) > recovers legacy account in place, preserves paid/business records and invalidates old sessions and all other links  453ms
+   ✓ mailbox confirmation security (database) > expires tokens, binds their email, validates password bytes and permits exactly one concurrent consume  446ms
+stderr | src/server/services/social/proactive.db.test.ts > daily social drafts (database) > falls through an unreadable Radar source to a cached blog
+[radar.failure] {"id":"80d63ae1-2d6b-46bc-8247-3fbb86a66549","timestamp":"2026-11-09T23:04:35.286Z","environment":"test","service":"web","context":{"source":"social","operation":"social.dailyArticle","businessId":"9a3c99c0-79a5-4aff-8baa-3b30fb00e2c0","ref":"entry-8f528ed9-b6e1-4ae1-833c-745d45dd0f22","degraded":true},"rootOperation":"social.dailyArticle","error":{"name":"Error","message":"Article unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/social/proactive.db.test.ts > daily social drafts (database) > falls through an unreadable Radar source to a cached blog
+[social] daily article unavailable; trying another source
+
+stderr | src/server/services/social/proactive.db.test.ts > daily social drafts (database) > falls back to business knowledge if search idea generation fails
+[radar.failure] {"id":"21c2f325-8baa-4ec3-9985-0846f9191dc4","timestamp":"2026-11-09T23:04:35.294Z","environment":"test","service":"web","context":{"source":"social","operation":"social.dailyIdeas","businessId":"9a3c99c0-79a5-4aff-8baa-3b30fb00e2c0","ref":"2026-11-09","degraded":true},"rootOperation":"social.dailyIdeas","error":{"name":"Error","message":"Ideas unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/social/proactive.db.test.ts > daily social drafts (database) > falls back to business knowledge if search idea generation fails
+[social] daily search ideas unavailable; using business profile
+
+ ✓ src/server/services/social/proactive.db.test.ts (15 tests) 1193ms
+ ✓ src/server/services/lifecycle/guides.test.ts (15 tests) 1013ms
+ ✓ src/server/auth/signupEmails.test.ts (6 tests) 917ms
+   ✓ new-account lifecycle emails (database) > queues welcome and founder only after mailbox confirmation, once across concurrent signup/confirmation and never sign-in  502ms
+stdout | src/server/services/visibility/digest.integration.test.ts > weekly AI report actual database and lifecycle integration (fake transports) > registers and runs the real weekly report cron hook through the scheduler
+[visibility.weeklyDigest] { queued: 1, scanned: 1, skipped: 0, failed: 0 }
+
+stderr | src/server/services/visibility/digest.integration.test.ts > weekly AI report actual database and lifecycle integration (fake transports) > holds ambiguous report retries at23hours under the same body and key
+[lifecycle] delivery failed {
+  id: '96601816-9e30-46f0-9836-21108dbe5a97',
+  type: 'ai_weekly_report',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/visibility/digest.integration.test.ts (30 tests) 1428ms
+   ✓ weekly AI report actual database and lifecycle integration (fake transports) > pages beyond100 stale-series businesses during the same hour instead of starving a ready business  394ms
+ ✓ src/server/services/publishing/connectors.test.ts (28 tests) 814ms
+   ✓ RADAR_REAL_CONNECTORS (dev-only switch) > the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo  755ms
+ ✓ src/server/services/lifecycle/autopilotIntro.test.ts (17 tests) 940ms
+ ✓ src/server/services/publishing/http.test.ts (17 tests) 739ms
+stderr | src/server/services/lifecycle/education.test.ts > weekly education (real PostgreSQL; fake provider) > retains frozen body and key after an ambiguous provider failure and blocks expired retries
+[lifecycle] delivery failed {
+  id: '4b4c553a-8942-4f8e-8aca-47a73e594759',
+  type: 'weekly_education',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/lifecycle/education.test.ts (27 tests) 562ms
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] x authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] li_page authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] li_page authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] li_profile authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > two concurrent Post now clicks produce one post
+[social.send] pub d804d41a-ebae-4629-8cf4-5e746e849bd6 s:ptestmw9vce9q:x: posted (attempt 1, now)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a scheduled post is claimed once, sends the latest text, and a re-run job does nothing
+[social.send] pub d1fc076b-bfdc-4d11-8f90-058a7f3737be s:ptestmw9vce9q:linkedin: posted (attempt 1)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > nothing after a successful create can cause a resend (posted is saved first)
+[social.send] pub aed4bda3-e6a7-421e-97eb-7b1107989fd4 s:ptestmw9vce9q:x: posted (attempt 1, now)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[radar.failure] {"id":"bdfb5abe-0183-4a20-b504-25b3537a4f9a","timestamp":"2026-11-09T23:04:47.185Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":null,"ref":"14feb4d9-6ef0-41f3-8834-f78cc5f4a203","provider":"x","attempt":1,"maxAttempts":4,"retrying":true,"code":"rate_limit"},"rootOperation":"social.publish","error":{"name":"Error","message":"transient/rate_limit: stub 429","code":"rate_limit"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 14feb4d9-6ef0-41f3-8834-f78cc5f4a203 s:ptestmw9vce9q:x: retry 1/3 at 2026-11-09T23:04:50.184Z (rate_limit)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[radar.failure] {"id":"37cb4d90-d3ed-40d7-8e61-52c9431965be","timestamp":"2026-11-09T23:04:47.194Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":null,"ref":"14feb4d9-6ef0-41f3-8834-f78cc5f4a203","provider":"x","attempt":2,"maxAttempts":4,"retrying":true,"code":"rate_limit"},"rootOperation":"social.publish","error":{"name":"Error","message":"transient/rate_limit: stub 429","code":"rate_limit"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 14feb4d9-6ef0-41f3-8834-f78cc5f4a203 s:ptestmw9vce9q:x: retry 2/3 at 2026-11-09T23:04:53.192Z (rate_limit)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[radar.failure] {"id":"41e92e6e-40ec-4dd8-a35b-4d94e0307f5a","timestamp":"2026-11-09T23:04:47.201Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":null,"ref":"14feb4d9-6ef0-41f3-8834-f78cc5f4a203","provider":"x","attempt":3,"maxAttempts":4,"retrying":true,"code":"rate_limit"},"rootOperation":"social.publish","error":{"name":"Error","message":"transient/rate_limit: stub 429","code":"rate_limit"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 14feb4d9-6ef0-41f3-8834-f78cc5f4a203 s:ptestmw9vce9q:x: retry 3/3 at 2026-11-09T23:04:59.199Z (rate_limit)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[radar.failure] {"id":"9345e4b4-9fa7-4577-b440-9afbe7e23373","timestamp":"2026-11-09T23:04:47.211Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":null,"ref":"14feb4d9-6ef0-41f3-8834-f78cc5f4a203","provider":"x","attempt":4,"maxAttempts":4,"retrying":false,"code":"rate_limit"},"rootOperation":"social.publish","error":{"name":"Error","message":"stub 429","code":"rate_limit"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 14feb4d9-6ef0-41f3-8834-f78cc5f4a203 s:ptestmw9vce9q:x: failed rate_limit after 4 attempt(s): stub 429
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[radar.failure] {"id":"fecfd090-80dc-472d-bdea-f826caf81f24","timestamp":"2026-11-09T23:04:47.223Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":"11a5e836-47a0-4c71-bbd8-085947d4804a","ref":"14feb4d9-6ef0-41f3-8834-f78cc5f4a203","provider":"x","attempt":5,"maxAttempts":5,"retrying":false,"code":"rate_limit"},"rootOperation":"social.publish","error":{"name":"Error","message":"stub 429","code":"rate_limit"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 14feb4d9-6ef0-41f3-8834-f78cc5f4a203 s:ptestmw9vce9q:x: failed rate_limit after 5 attempt(s): stub 429
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[radar.failure] {"id":"20f02235-5252-4774-a4ab-ecf66c759f92","timestamp":"2026-11-09T23:04:47.234Z","environment":"test","service":"web","context":{"source":"social","operation":"social.verifyUnknown","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":"11a5e836-47a0-4c71-bbd8-085947d4804a","ref":"1ddd67de-d3c0-4f9f-9039-0a32113a2aff","provider":"x","attempt":1,"retrying":false,"degraded":true,"code":"unknown"},"rootOperation":"social.verifyUnknown","error":{"name":"Error","message":"stub network reset after send","code":"unknown"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 1ddd67de-d3c0-4f9f-9039-0a32113a2aff s:ptestmw9vce9q:x: unknown outcome; found on read-back
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 1ddd67de-d3c0-4f9f-9039-0a32113a2aff s:ptestmw9vce9q:x: posted (attempt 1, now)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[radar.failure] {"id":"67afaecd-ebfa-42e5-8e66-0a6ebcd6dad3","timestamp":"2026-11-09T23:04:47.245Z","environment":"test","service":"web","context":{"source":"social","operation":"social.verifyUnknown","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":"11a5e836-47a0-4c71-bbd8-085947d4804a","ref":"c5dfeae8-a5ab-4974-8e9c-dc8355d6370c","provider":"x","attempt":1,"retrying":false,"degraded":true,"code":"unknown"},"rootOperation":"social.verifyUnknown","error":{"name":"Error","message":"stub network timeout","code":"unknown"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[radar.failure] {"id":"0c4d4ba3-acd3-4b13-8e7e-a7868cb48596","timestamp":"2026-11-09T23:04:47.248Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":"11a5e836-47a0-4c71-bbd8-085947d4804a","ref":"c5dfeae8-a5ab-4974-8e9c-dc8355d6370c","provider":"x","attempt":1,"maxAttempts":1,"retrying":false,"code":"unknown"},"rootOperation":"social.publish","error":{"name":"Error","message":"stub network timeout","code":"unknown"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub c5dfeae8-a5ab-4974-8e9c-dc8355d6370c s:ptestmw9vce9q:x: failed unknown after 1 attempt(s): stub network timeout
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[radar.failure] {"id":"9d24e718-39ba-4863-aabc-ff2febb19d31","timestamp":"2026-11-09T23:04:47.259Z","environment":"test","service":"web","context":{"source":"social","operation":"social.verifyUnknown","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":"11a5e836-47a0-4c71-bbd8-085947d4804a","ref":"87d158e8-c365-41fb-97c4-84b4928d3a86","provider":"linkedin","attempt":1,"retrying":false,"degraded":true,"code":"unknown"},"rootOperation":"social.verifyUnknown","error":{"name":"Error","message":"stub network reset after send","code":"unknown"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[radar.failure] {"id":"f61350f6-4ea9-463b-b985-0f73f56e61f2","timestamp":"2026-11-09T23:04:47.261Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":"11a5e836-47a0-4c71-bbd8-085947d4804a","ref":"87d158e8-c365-41fb-97c4-84b4928d3a86","provider":"linkedin","attempt":1,"maxAttempts":1,"retrying":false,"code":"unknown"},"rootOperation":"social.publish","error":{"name":"Error","message":"stub network reset after send","code":"unknown"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 87d158e8-c365-41fb-97c4-84b4928d3a86 s:ptestmw9vce9q:linkedin: failed unknown after 1 attempt(s): stub network reset after send
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[radar.failure] {"id":"82bf0fff-4734-44fd-b7ae-94e3ce65573c","timestamp":"2026-11-09T23:04:47.273Z","environment":"test","service":"web","context":{"source":"social","operation":"social.verifyUnknown","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":null,"ref":"af3d8fb3-fd5b-42b7-ae18-5d0be9507bdd","provider":"x","attempt":1,"retrying":false,"degraded":true,"code":"unknown"},"rootOperation":"social.verifyUnknown","error":{"name":"Error","message":"stuck at create","code":"unknown"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[social.send] pub af3d8fb3-fd5b-42b7-ae18-5d0be9507bdd s:ptestmw9vce9q:x: unknown outcome; found on read-back
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[social.send] pub af3d8fb3-fd5b-42b7-ae18-5d0be9507bdd s:ptestmw9vce9q:x: posted (attempt 1)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[radar.failure] {"id":"5d5e65b7-9feb-4a77-b0a2-23f5c05577a8","timestamp":"2026-11-09T23:04:47.285Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","userId":null,"ref":"47457091-2473-44b6-9549-f7651c06610e","provider":"x","attempt":1,"maxAttempts":4,"retrying":true,"code":"unavailable"},"rootOperation":"social.publish","error":{"name":"Error","message":"transient/unavailable: stuck at media","code":"unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[social.send] pub 47457091-2473-44b6-9549-f7651c06610e s:ptestmw9vce9q:x: retry 1/3 at 2026-11-09T23:04:50.284Z (unavailable)
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > a post more than 24 h late fails as stale and is never sent
+[radar.failure] {"id":"20c3a376-4e28-4d8b-925a-1dc57bd20d39","timestamp":"2026-11-09T23:04:47.297Z","environment":"test","service":"web","context":{"source":"social","operation":"social.publish","businessId":"a89b1bda-e02d-45df-a46e-a08428f8379e","ref":"365dabf9-98c4-40e0-9af6-e3078bf1fe6c","provider":"x","attempt":0,"retrying":false,"code":"stale"},"rootOperation":"social.publish","error":{"name":"Error","message":"Scheduled publication is more than 24 hours late","code":"stale"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a post more than 24 h late fails as stale and is never sent
+[social.send] pub 365dabf9-98c4-40e0-9af6-e3078bf1fe6c s:ptestmw9vce9q:x: failed stale
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.tokens] refresh refused for 8cd46513-0f19-4af0-afad-f605aefc69f7: stub refresh 400 invalid_grant
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.tokens] account 8cd46513-0f19-4af0-afad-f605aefc69f7 (x) expired; 1 scheduled post(s) held
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.oauth] x authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.oauth] x authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > LinkedIn profile: social.tokens expires it at expires_at with no refresh call; later posts are held
+[social.tokens] account b055ff20-05e3-48cd-9e53-0066a14dcf11 (li_profile) expired; 1 scheduled post(s) held
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > LinkedIn profile: social.tokens expires it at expires_at with no refresh call; later posts are held
+[social.oauth] li_profile authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > disconnect deletes the tokens and unschedules that account’s posts, with the count; posted history stays
+[social.send] pub 6dc6f455-d567-4117-b288-98faf32320a3 s:ptestmw9vce9q:x: posted (attempt 1, now)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > disconnect deletes the tokens and unschedules that account’s posts, with the count; posted history stays
+[social.oauth] x authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > disconnect deletes the tokens and unschedules that account’s posts, with the count; posted history stays
+[social.oauth] li_page authorized for a89b1bda-e02d-45df-a46e-a08428f8379e
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a Brief post sent directly is posted for good, like "I posted it", and keeps counting in impact events
+[social.send] pub 89288311-8e38-4015-8dca-5d6453be031b b:2026-11-09:feed1: posted (attempt 1, now)
+
+ ✓ src/server/services/social/publish/publish.test.ts (21 tests) 707ms
+ ✓ src/server/observability/qa.test.ts (8 tests) 661ms
+   ✓ independent API outcome and diagnostic acceptance > keeps provider detail out of the user response and retains safe request correlation  336ms
+stdout | src/server/auth/requests.test.ts > public auth regression (database) > throttles a normalized account across rotating IPs and IPs across different accounts
+[abuse] limit hit: auth:signin
+
+stdout | src/server/auth/requests.test.ts > public auth regression (database) > throttles a normalized account across rotating IPs and IPs across different accounts
+[abuse] limit hit: auth:signin
+
+stdout | src/server/auth/requests.test.ts > public auth regression (database) > throttles signup before validation/hash work and rejects foreign-origin auth before inserting
+[abuse] limit hit: auth:signup
+
+ ✓ src/server/auth/requests.test.ts (9 tests) 407ms
+   ✓ public auth regression (database) > allows sign-in for legacy passwords above bcrypt’s 72-byte limit  305ms
+ ✓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests) 462ms
+   ✓ engagement settings, opt-out and work links (local database) > preserves the work destination through actual password and Google sign-in  355ms
+stderr | src/server/auth/googleIdentity.test.ts > verified Google provider identity (database) > rejects a forged signature even when all claims look valid
+[radar.failure] {"id":"99c20072-3894-4960-9da0-9be189cee460","timestamp":"2026-11-09T23:04:51.348Z","environment":"test","service":"web","context":{"source":"http","operation":"auth.google.exchange","provider":"Google"},"rootOperation":"auth.google.exchange","error":{"name":"JWSSignatureVerificationFailed","message":"signature verification failed","code":"ERR_JWS_SIGNATURE_VERIFICATION_FAILED"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/auth/googleIdentity.test.ts > verified Google provider identity (database) > rejects incorrect issuer/audience, expired token, and unverified email
+[radar.failure] {"id":"d59e88a7-60f2-4af0-8671-dba033caee31","timestamp":"2026-11-09T23:04:51.353Z","environment":"test","service":"web","context":{"source":"http","operation":"auth.google.exchange","provider":"Google"},"rootOperation":"auth.google.exchange","error":{"name":"JWTClaimValidationFailed","message":"unexpected \"aud\" claim value","code":"ERR_JWT_CLAIM_VALIDATION_FAILED","cause":"[object Object]"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/auth/googleIdentity.test.ts > verified Google provider identity (database) > rejects incorrect issuer/audience, expired token, and unverified email
+[radar.failure] {"id":"a20a1123-c81e-4b1c-8409-453d2c33e347","timestamp":"2026-11-09T23:04:51.357Z","environment":"test","service":"web","context":{"source":"http","operation":"auth.google.exchange","provider":"Google"},"rootOperation":"auth.google.exchange","error":{"name":"JWTClaimValidationFailed","message":"unexpected \"iss\" claim value","code":"ERR_JWT_CLAIM_VALIDATION_FAILED","cause":"[object Object]"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/auth/googleIdentity.test.ts > verified Google provider identity (database) > rejects incorrect issuer/audience, expired token, and unverified email
+[radar.failure] {"id":"edce1dc9-a40f-467b-9493-64c95df7de6f","timestamp":"2026-11-09T23:04:51.361Z","environment":"test","service":"web","context":{"source":"http","operation":"auth.google.exchange","provider":"Google"},"rootOperation":"auth.google.exchange","error":{"name":"JWTExpired","message":"\"exp\" claim timestamp check failed","code":"ERR_JWT_EXPIRED","cause":"[object Object]"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+ ✓ src/server/auth/googleIdentity.test.ts (3 tests) 360ms
+ ✓ src/server/actions/onboarding.test.ts (6 tests) 335ms
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start then confirm: trialing, trial_end is the pending second, draft committed once, $1 credited once
+[billing] 45e45da3-730b-4c67-a8ec-5a480dde04bc trial check pi_stub_2pui7gd created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start then confirm: trialing, trial_end is the pending second, draft committed once, $1 credited once
+[billing] 45e45da3-730b-4c67-a8ec-5a480dde04bc subscription sub_stub_4gqa7ct none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > confirm twice, racing the webhook: one subscription, one trial.started, the draft committed once
+[billing] eec64af0-f037-489b-af8a-c1252a8f6135 trial check pi_stub_2oga2kj created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > confirm twice, racing the webhook: one subscription, one trial.started, the draft committed once
+[billing] eec64af0-f037-489b-af8a-c1252a8f6135 subscription sub_stub_53v5boc none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > the webhook alone (tab closed after paying) activates and commits the draft
+[billing] 7f86f85f-a142-433d-9847-5a58828f0efe trial check pi_stub_2shfnnx created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > the webhook alone (tab closed after paying) activates and commits the draft
+[billing] 7f86f85f-a142-433d-9847-5a58828f0efe subscription sub_stub_5qij93j none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > retries a failed promised card credit without another charge, subscription or trial event
+[billing] 051ed008-67a1-4c92-9e60-55a473e7dfa1 trial check pi_stub_292tosw created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > retries a failed promised card credit without another charge, subscription or trial event
+[billing] 051ed008-67a1-4c92-9e60-55a473e7dfa1 subscription sub_stub_5zx8fm2 none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > retries a failed promised card credit without another charge, subscription or trial event
+[billing] 051ed008-67a1-4c92-9e60-55a473e7dfa1 subscription sub_stub_5zx8fm2 none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > a decline leaves no subscription and status none; confirm answers 409 payment_not_succeeded
+[billing] 5373e8f2-be13-44dd-9dc0-20bf1f4d01ae trial check pi_stub_26srxcn created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] efe0a8eb-456b-476a-a215-f92ff749823d trial check pi_stub_26polwf created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] efe0a8eb-456b-476a-a215-f92ff749823d subscription sub_stub_5f7ec9r none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] 1ac25631-a16a-4880-aab7-5282394c306d trial check pi_stub_9qru45n created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] 1ac25631-a16a-4880-aab7-5282394c306d trial check pi_stub_ab2v3t1 created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > a card that already had a trial gets 409 trial_used, before any $1
+[billing] 3f2605ee-62b0-488f-bc9c-264c7088c70b trial check pi_stub_2o04oqz created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > a card that already had a trial gets 409 trial_used, before any $1
+[billing] 3f2605ee-62b0-488f-bc9c-264c7088c70b subscription sub_stub_4upetq8 none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start when the previous $1 succeeded activates with no new charge and does not hang (one lock)
+[billing] 6a2a91d7-f73c-442d-94dd-865f49f45f9d trial check pi_stub_2yqomhv created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start when the previous $1 succeeded activates with no new charge and does not hang (one lock)
+[billing] 6a2a91d7-f73c-442d-94dd-865f49f45f9d subscription sub_stub_4grneyr none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > confirm with another user’s PaymentIntent gets 403 not_yours
+[billing] f199964f-c8c4-4067-a957-51bd2168d7d3 trial check pi_stub_2pt611x created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > late activation (trial_end under an hour away) uses a fresh 72h and is safe to retry
+[billing] ffdf64dc-3516-4147-beba-d323cfe8fc8c trial check pi_stub_2hwdrv7 created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > late activation (trial_end under an hour away) uses a fresh 72h and is safe to retry
+[billing] ffdf64dc-3516-4147-beba-d323cfe8fc8c subscription sub_stub_4p77ffe none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > late activation (trial_end under an hour away) uses a fresh 72h and is safe to retry
+[billing] ffdf64dc-3516-4147-beba-d323cfe8fc8c subscription sub_stub_4p77ffe none → trialing
+
+stderr | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > auth and provider checks: 401 signed out; dev endpoints 404 unless the stub runs; 503 with no provider
+[radar.failure] {"id":"f0d5615c-850d-4a14-9a04-faaaf5204d01","timestamp":"2026-11-09T23:04:53.650Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/billing","requestId":"69d7343c-01f2-4ce5-8163-283903bfff15"},"rootOperation":"POST /api/billing","error":{"name":"Error","message":"Payments aren’t available right now. Try again in a few minutes.","status":503,"code":"billing_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/billing/billingFlow.test.ts (13 tests) 297ms
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f trial check pi_stub_2k88rgs created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f subscription sub_stub_45ex8kb none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f subscription sub_stub_45ex8kb trialing → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f subscription sub_stub_45ex8kb past_due → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f restart: paying open invoice in_stub_7zm29pb on sub_stub_45ex8kb
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f subscription sub_stub_45ex8kb past_due → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 8251eb7c-1d96-4f40-b192-051233d8151f subscription sub_stub_45ex8kb past_due → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 trial check pi_stub_2lfe7qn created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_46at5wq none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_46at5wq trialing → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_8g7rkz0 canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_caqp9ts incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_ghlmgqr incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_ghlmgqr incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] 953b268a-a4fa-4856-81c7-9723623b3cf3 subscription sub_stub_ghlmgqr incomplete → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 trial check pi_stub_2smvd1l created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 subscription sub_stub_4nfdt97 none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 subscription sub_stub_4nfdt97 trialing → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 subscription sub_stub_4nfdt97 past_due → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 restart: paying open invoice in_stub_7jhfjc8 on sub_stub_4nfdt97
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 subscription sub_stub_4nfdt97 past_due → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 subscription sub_stub_4nfdt97 active → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] 8a150f5d-82a8-48e6-a151-3741f37972c1 subscription sub_stub_eht0ydh canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] 9982cc61-e608-4025-ba3a-d2c80479928b trial check pi_stub_2dm6vvt created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] 9982cc61-e608-4025-ba3a-d2c80479928b subscription sub_stub_40l31a6 none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] 9982cc61-e608-4025-ba3a-d2c80479928b subscription sub_stub_40l31a6 trialing → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] 9982cc61-e608-4025-ba3a-d2c80479928b subscription sub_stub_8nehfi5 canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] 9982cc61-e608-4025-ba3a-d2c80479928b subscription sub_stub_8nehfi5 incomplete → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] bc4fe43c-0412-4bbd-a771-d4a9fa730b5f trial check pi_stub_2n19dii created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] bc4fe43c-0412-4bbd-a771-d4a9fa730b5f subscription sub_stub_4d396g6 none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] bc4fe43c-0412-4bbd-a771-d4a9fa730b5f subscription sub_stub_4d396g6 trialing → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] bc4fe43c-0412-4bbd-a771-d4a9fa730b5f subscription sub_stub_8y19rjl canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] bc4fe43c-0412-4bbd-a771-d4a9fa730b5f subscription sub_stub_cc6ste1 incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] a760eab3-f3d1-42fd-841c-1dc6381b6ba0 trial check pi_stub_3ye9c27 created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] a760eab3-f3d1-42fd-841c-1dc6381b6ba0 subscription sub_stub_5cxr7ah none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] a760eab3-f3d1-42fd-841c-1dc6381b6ba0 subscription sub_stub_5cxr7ah trialing → unpaid
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] a760eab3-f3d1-42fd-841c-1dc6381b6ba0 subscription sub_stub_5cxr7ah unpaid → unpaid
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] a760eab3-f3d1-42fd-841c-1dc6381b6ba0 restart: paying open invoice in_stub_8wbhk4m on sub_stub_5cxr7ah
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] a760eab3-f3d1-42fd-841c-1dc6381b6ba0 subscription sub_stub_5cxr7ah unpaid → active
+
+ ✓ src/server/billing/restart.test.ts (6 tests) 287ms
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > durably queues one subscription-start confirmation without retired reminders or workspace mail across replays
+[billing] 221ae14f-34e5-4f16-909e-d1e94a94463f trial check pi_stub_2h2hm2u created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > durably queues one subscription-start confirmation without retired reminders or workspace mail across replays
+[billing] 221ae14f-34e5-4f16-909e-d1e94a94463f subscription sub_stub_43t5867 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 trial check pi_stub_2z9ujwz created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc trialing → unpaid
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc unpaid → canceled
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 893406cb-771b-4ed1-8fb8-a15c240173d9 subscription sub_stub_4usurtc canceled → canceled
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 0ef7ae3d-0c1e-4855-a79f-a5aa40a6ca8f trial check pi_stub_2jv4miu created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 0ef7ae3d-0c1e-4855-a79f-a5aa40a6ca8f subscription sub_stub_45m2oie none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 0ef7ae3d-0c1e-4855-a79f-a5aa40a6ca8f subscription sub_stub_45m2oie trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] bb69eda7-503f-4f5e-a852-84baf7df71cc trial check pi_stub_2e6ix4s created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] bb69eda7-503f-4f5e-a852-84baf7df71cc subscription sub_stub_4bwzgeu none → trialing
+
+stderr | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] activation of pi_stub_2e6ix4s failed: credit unavailable
+
+stderr | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[radar.failure] {"id":"54577ce1-7278-4d14-90cd-dc0feef349ff","timestamp":"2026-11-09T23:04:55.077Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/billing","requestId":"8364a03e-32ed-427a-85bd-5eae90eeff64"},"rootOperation":"POST /api/billing","error":{"name":"Error","message":"Your card is confirmed, but your trial didn’t start yet. Try again in a minute. You won’t be charged twice.","status":502,"code":"activation_failed"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] bb69eda7-503f-4f5e-a852-84baf7df71cc subscription sub_stub_4bwzgeu none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] c1780a46-6aac-4b89-9be3-eac2c36859f2 trial check pi_stub_2dnepzj created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] c1780a46-6aac-4b89-9be3-eac2c36859f2 subscription sub_stub_4jmd6w2 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] c1780a46-6aac-4b89-9be3-eac2c36859f2 subscription sub_stub_4jmd6w2 trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] c1780a46-6aac-4b89-9be3-eac2c36859f2 subscription sub_stub_4jmd6w2 trialing → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] c1780a46-6aac-4b89-9be3-eac2c36859f2 subscription sub_stub_4jmd6w2 active → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] c1780a46-6aac-4b89-9be3-eac2c36859f2 subscription sub_stub_4jmd6w2 active → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 96896a7c-a370-45f2-b9ea-83badc4c8528 trial check pi_stub_2ytvwke created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 96896a7c-a370-45f2-b9ea-83badc4c8528 subscription sub_stub_4ejszdy none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 96896a7c-a370-45f2-b9ea-83badc4c8528 subscription sub_stub_4ejszdy trialing → past_due
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 96896a7c-a370-45f2-b9ea-83badc4c8528 subscription sub_stub_4ejszdy past_due → past_due
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 96896a7c-a370-45f2-b9ea-83badc4c8528 subscription sub_stub_4ejszdy past_due → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 96896a7c-a370-45f2-b9ea-83badc4c8528 subscription sub_stub_4ejszdy active → active
+
+ ✓ src/server/billing/billingLifecycle.test.ts (8 tests) 226ms
+stderr | src/server/actions/customImages.db.test.ts > custom social images (database) > keeps existing image metadata and a retryable desired prompt when model or storage fails
+[social] render failed storage down
+
+stderr | src/server/actions/customImages.db.test.ts > custom social images (database) > keeps existing image metadata and a retryable desired prompt when model or storage fails
+[social] render failed Image generation is unavailable right now. Please contact support to enable it.
+
+stderr | src/server/actions/customImages.db.test.ts > custom Daily Brief visuals (database) > a partial custom failure retains the complete prior set and desired settings for retry
+[brief.visuals] image failed 1 provider failed
+
+ ✓ src/server/actions/customImages.db.test.ts (12 tests) 197ms
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] c546e5e8-065f-49fa-964f-bf4b2a66db10 trial check pi_stub_2noq2zy created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] c546e5e8-065f-49fa-964f-bf4b2a66db10 subscription sub_stub_4j5e4xf none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] c546e5e8-065f-49fa-964f-bf4b2a66db10 subscription sub_stub_4j5e4xf trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] c546e5e8-065f-49fa-964f-bf4b2a66db10 subscription sub_stub_4j5e4xf past_due → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] c546e5e8-065f-49fa-964f-bf4b2a66db10 subscription sub_stub_4j5e4xf active → canceled
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a replayed event id is a no-op
+[billing] 72e38ec9-9a1d-4a44-8023-d188580a302d trial check pi_stub_2r9pcch created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a replayed event id is a no-op
+[billing] 72e38ec9-9a1d-4a44-8023-d188580a302d subscription sub_stub_4f0ifg1 none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a replayed event id is a no-op
+[billing] 72e38ec9-9a1d-4a44-8023-d188580a302d subscription sub_stub_4f0ifg1 trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a handler that throws leaves processed_at null with the message; the retry processes it
+[billing] 0adf75be-7b12-4cf5-9aa7-34d070a63c3c trial check pi_stub_227mw5h created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a handler that throws leaves processed_at null with the message; the retry processes it
+[billing] 0adf75be-7b12-4cf5-9aa7-34d070a63c3c subscription sub_stub_4v57jqs none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a handler that throws leaves processed_at null with the message; the retry processes it
+[billing] 0adf75be-7b12-4cf5-9aa7-34d070a63c3c subscription sub_stub_4v57jqs trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 7d1527d8-19ea-4bbb-ab30-14d41f64c3f4 trial check pi_stub_2xjmve0 created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 7d1527d8-19ea-4bbb-ab30-14d41f64c3f4 subscription sub_stub_4lrcpv2 none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 7d1527d8-19ea-4bbb-ab30-14d41f64c3f4 subscription sub_stub_4lrcpv2 trialing → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 7d1527d8-19ea-4bbb-ab30-14d41f64c3f4 subscription sub_stub_4lrcpv2 active → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 2cbd1c8a-65c8-4afd-a9ad-1ded8dd1e4bd trial check pi_stub_29v45dr created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 2cbd1c8a-65c8-4afd-a9ad-1ded8dd1e4bd subscription sub_stub_4dpnzam none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 2cbd1c8a-65c8-4afd-a9ad-1ded8dd1e4bd subscription sub_stub_4dpnzam trialing → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 2cbd1c8a-65c8-4afd-a9ad-1ded8dd1e4bd subscription sub_stub_4dpnzam trialing → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 2cbd1c8a-65c8-4afd-a9ad-1ded8dd1e4bd subscription sub_stub_4dpnzam trialing → canceled
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] 9fe9825f-ba5f-4069-a7ae-291864b8b835 trial check pi_stub_2j5jmrv created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] 9fe9825f-ba5f-4069-a7ae-291864b8b835 subscription sub_stub_43zprta none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] 9fe9825f-ba5f-4069-a7ae-291864b8b835 subscription sub_stub_43zprta trialing → canceled
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] 9fe9825f-ba5f-4069-a7ae-291864b8b835 subscription sub_stub_8njxbc5 canceled → incomplete
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] 9fe9825f-ba5f-4069-a7ae-291864b8b835 subscription sub_stub_8njxbc5 incomplete → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] ignoring subscription sub_stub_43zprta (canceled): 9fe9825f-ba5f-4069-a7ae-291864b8b835 follows sub_stub_8njxbc5
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] ignoring subscription sub_stub_43zprta (canceled): 9fe9825f-ba5f-4069-a7ae-291864b8b835 follows sub_stub_8njxbc5
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] 13322161-9e01-49e8-9da9-865ad6ace2ea trial check pi_stub_25cp97u created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] 13322161-9e01-49e8-9da9-865ad6ace2ea subscription sub_stub_4k7nv1j none → trialing
+
+stderr | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook refused: STRIPE_WEBHOOK_SECRET is not set
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] 13322161-9e01-49e8-9da9-865ad6ace2ea subscription sub_stub_4k7nv1j trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook customer.subscription.updated evt_stub_9lnaad0: processed
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook customer.subscription.updated evt_stub_9lnaad0: replay
+
+stderr | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[radar.failure] {"id":"a2538b7b-3141-4e29-989f-05b29b2436e5","timestamp":"2026-11-09T23:04:56.705Z","environment":"test","service":"web","context":{"source":"http","operation":"billing.webhook","ref":"evt_stub_asa64jo","provider":"Stripe"},"rootOperation":"billing.webhook","error":{"name":"Error","message":"down"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook customer.subscription.updated evt_stub_asa64jo failed: down
+
+ ✓ src/server/billing/webhookSync.test.ts (7 tests) 233ms
+ ✓ src/server/ai/providers.observability.test.ts (10 tests) 235ms
+ ✓ src/server/billing/setup.test.ts (22 tests) 217ms
+ ✓ src/server/ai/openrouter.test.ts (47 tests) 227ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: '25cb4060-3fbb-4ded-b434-dc7443e27f22', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: 'af858f07-72b8-4a5f-93fe-63a1a055d53e',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: 'e323417a-637a-49ea-92c5-e0957c0181eb',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: '50c91a58-36bf-4e8d-ad88-167edbab87b1',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 166ms
+ ✓ src/server/services/operationalObservability.test.ts (6 tests) 217ms
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > retries the same recipient inside the window using the original body, subject and provider key
+[radar.failure] {"id":"009e267e-921d-4a65-b4f8-7e86ebff1a8e","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > blocks an unsent idempotent row at exactly23hours without another POST or key/body change
+[radar.failure] {"id":"90203fd9-6886-4099-bc34-4ecab55eb87b","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > blocks an unsent idempotent row at exactly23hours without another POST or key/body change
+[radar.failure] {"id":"824cbaff-2b8a-4e89-a8a5-7c3c0d1b08cb","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"The email retry window expired. Delivery was held.","status":409,"code":"mail_retry_expired"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > turns stale-recipient and expired handoff retries into controlled permanent failures
+[radar.failure] {"id":"dcb882a4-2b38-4b0f-a866-06b3ad43aca6","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > turns stale-recipient and expired handoff retries into controlled permanent failures
+[radar.failure] {"id":"e348c918-65d2-41e6-8df6-e7a3fbd90b43","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"The email recipient changed. Delivery was held.","status":409,"code":"mail_recipient_changed"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > turns stale-recipient and expired handoff retries into controlled permanent failures
+[radar.failure] {"id":"2ad04f52-a824-4a5a-af71-76aa883bd2de","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"The email retry window expired. Delivery was held.","status":409,"code":"mail_retry_expired"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+ ✓ src/server/services/lifecycle/autopilotIntegration.test.ts (7 tests) 125ms
+ ✓ src/server/billing/guard.test.ts (11 tests) 169ms
+ ✓ src/server/actGate.test.ts (6 tests) 163ms
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[radar.failure] {"id":"5cfa324e-51b5-4411-a4c6-161668ae219d","timestamp":"2026-11-09T23:05:02.824Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[radar.failure] {"id":"93893eee-8f19-4e6e-b766-a0a6ee243fe2","timestamp":"2026-11-09T23:05:02.826Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[radar.failure] {"id":"852d3a84-2bef-43f3-8852-15fce38a7b7f","timestamp":"2026-11-09T23:05:02.852Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[radar.failure] {"id":"7a65b290-7af1-41ac-be76-a08f563eedc9","timestamp":"2026-11-09T23:05:02.854Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[radar.failure] {"id":"c8b36f56-1090-4409-b590-9f615f5eef9e","timestamp":"2026-11-09T23:05:02.878Z","environment":"test","service":"web","context":{"source":"image","operation":"image.store","businessId":"bid"},"rootOperation":"image.store","error":{"name":"Error","message":"storage unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"233dd57d-0c22-498b-9b1b-73567f6ff0ae","timestamp":"2026-11-09T23:05:02.903Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"Image generation is unavailable right now. Please contact support to enable it.","status":503,"code":"image_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"73379df9-5aaa-4b09-bc73-1dce9d80a90b","timestamp":"2026-11-09T23:05:02.905Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"Image generation is unavailable right now. Please contact support to enable it.","status":503,"code":"image_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"6de26cce-eb55-470d-98d3-f53a5e3e0894","timestamp":"2026-11-09T23:05:02.906Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":false},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"f3979453-a0a3-4cc3-aeca-6f553449c979","timestamp":"2026-11-09T23:05:02.907Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > propagates custom-image storage failure without a fallback write
+[radar.failure] {"id":"3941b9a2-e29f-49b3-8750-9cafa7563ba4","timestamp":"2026-11-09T23:05:02.933Z","environment":"test","service":"web","context":{"source":"image","operation":"image.store","businessId":"bid"},"rootOperation":"image.store","error":{"name":"Error","message":"storage unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/articleImagesFallback.test.ts (4 tests) 114ms
+ ✓ src/server/billing/chargeSafety.test.ts (4 tests) 107ms
+stdout | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub 39aa8efc-18e1-407f-a297-bbb2c27b16d9 s:work-pack-a8c6db9a-eb4a-4439-b3d7-7728bd305f47:x: posted (attempt 1, now)
+
+stderr | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub 39aa8efc-18e1-407f-a297-bbb2c27b16d9: work reminder resolution failed after posted save
+
+ ✓ src/server/services/lifecycle/engagementPublishing.test.ts (3 tests) 93ms
+ ✓ src/server/services/imageAvailability.test.ts (9 tests) 102ms
+stderr | src/server/services/visibility/observations.test.ts > real append-only observation persistence (all model calls mocked) > does not copy a prior success into a later failed UTC day or treat failure as zero visibility
+[radar.failure] {"id":"ccc7a487-7c1b-4259-8ff2-28984fe16415","timestamp":"2026-11-15T00:01:00.000Z","environment":"test","service":"web","context":{"source":"visibility","operation":"visibility.collect","businessId":"a23aeb64-7d73-4833-89d9-5b6a130361aa","ref":"93c5260b-aa8f-48a5-b7ee-7996ec88a3e7","provider":"ChatGPT","degraded":true},"rootOperation":"visibility.collect","error":{"name":"Error","message":"fake failed collection"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/visibility/observations.test.ts > real append-only observation persistence (all model calls mocked) > does not copy a prior success into a later failed UTC day or treat failure as zero visibility
+[visibility] ChatGPT failed fake failed collection
+
+stderr | src/server/services/visibility/observations.test.ts > real append-only observation persistence (all model calls mocked) > rolls back the latest success if its observation insert fails rather than recording an unhistoried success
+[radar.failure] {"id":"cdd613fd-5dd1-48d0-9366-17b87b213014","timestamp":"2026-11-09T23:05:05.676Z","environment":"test","service":"web","context":{"source":"visibility","operation":"visibility.collect","businessId":"0e6a8db9-8918-4397-b7fa-ce8dfd7d97ee","ref":"55e5a3a2-74cc-4f69-8515-8a1e1dee6653","provider":"ChatGPT","degraded":true},"rootOperation":"visibility.collect","error":{"name":"Error","message":"Failed query: insert into \"ai_observations\" (\"id\", \"business_id\", \"prompt_id\", \"prompt\", \"engine\", \"series\", \"day\", \"status\", \"pos\", \"cites\", \"measured_at\") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\nparams: 0e6a8db9-8918-4397-b7fa-ce8dfd7d97ee,3249e929-5147-4323-9113-ea80ba21f4aa,Which software helps a small team?,ChatGPT,547192d52d1371290e6e272fd7a322190829c94357b12d6bd05bfe78576d7d78,2026-11-09,mentioned,1,[\"https://fieldnote.test/\"],2026-11-09T23:05:05.672Z","cause":"fake persistence failure"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/visibility/observations.test.ts > real append-only observation persistence (all model calls mocked) > rolls back the latest success if its observation insert fails rather than recording an unhistoried success
+[visibility] ChatGPT failed Failed query: insert into "ai_observations" ("id", "business_id", "prompt_id", "prompt", "engine", "series", "day", "status", "pos", "cites", "measured_at") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+params: 0e6a8db9-8918-4397-b7fa-ce8dfd7d97ee,3249e929-5147-4323-9113-ea80ba21f4aa,Whi
+
+ ✓ src/server/services/visibility/observations.test.ts (3 tests) 109ms
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted trial_ending rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted workspace_ready rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes
+[radar.failure] {"id":"19fc98a2-8125-44a9-a569-2ff858cf48b1","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes
+[radar.failure] {"id":"d939e0b5-a097-4666-ba84-fb46aab60a9d","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > keeps new internal service forwards separate and does not let retries override the stored identity
+[radar.failure] {"id":"42bd69ef-b70f-416d-9117-d5e8bfe3ddee","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > keeps new internal service forwards separate and does not let retries override the stored identity
+[radar.failure] {"id":"d540fc09-347c-449e-be09-4eab58c1087f","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/lifecycle/founderIdentity.test.ts (16 tests) 105ms
+ ✓ src/server/services/publishing/connectors/nextjs-agent.test.ts (64 tests) 94ms
+ ✓ src/server/billing/access.test.ts (8 tests) 74ms
+ ✓ src/server/services/publishing/connectors/nextjs.test.ts (58 tests) 65ms
+ ✓ src/server/services/lifecycle/educationRoutes.test.ts (4 tests) 56ms
+ ✓ src/features/brief/redditCopy.test.ts (31 tests) 62ms
+stdout | src/server/jobs/billingSkip.test.ts > job skip for lapsed businesses (database) > skips with {skipped: no_access} when billing is on and the owner has no access
+[job test.billingSkip ae220924-a955-42d0-bd7d-71ee70d75a6d] skipped: the owner has no active subscription
+
+stdout | src/server/jobs/billingSkip.test.ts > job skip for lapsed businesses (database) > runs for drafts (guest analysis), with billing off, and for an email list that does not name the owner
+[job test.billingSkip 68206c51-f391-40ed-bff1-2bb9fe6646d4] skipped: the owner has no active subscription
+
+ ✓ src/server/jobs/billingSkip.test.ts (2 tests) 55ms
+stdout | src/server/billing/grandfather.test.ts > grandfather (database) > the lazy cutoff comps owners of businesses created before it, not after; a later cutoff re-applies; idempotent
+[billing] grandfathered 1 account(s) (cutoff 2026-11-04T23:05:10.442Z)
+
+stdout | src/server/billing/grandfather.test.ts > grandfather (database) > the lazy cutoff comps owners of businesses created before it, not after; a later cutoff re-applies; idempotent
+[billing] grandfathered 1 account(s) (cutoff 2026-11-09T23:05:10.445Z)
+
+ ✓ src/server/billing/grandfather.test.ts (2 tests) 44ms
+stdout | src/server/jobs/guestCleanup.test.ts > guest cleanup (database) > deletes an expired guest older than 24h with its draft; keeps live and young guests and real users
+[cleanup] guests 2, rate-limit windows 0, webhook events 0
+
+stdout | src/server/jobs/guestCleanup.test.ts > guest cleanup (database) > prunes rate-limit windows older than two days and processed webhook events older than 30 days
+[cleanup] guests 0, rate-limit windows 1, webhook events 1
+
+ ✓ src/server/jobs/guestCleanup.test.ts (2 tests) 46ms
+ ✓ src/server/services/publishing/connectors/notion.test.ts (20 tests) 42ms
+ ✓ src/server/services/social/publish/adapters.test.ts (14 tests) 45ms
+ ✓ src/server/observability/email.test.ts (6 tests) 37ms
+stderr | src/server/services/publishing/connectors/wix.test.ts > createDraft + publish (new post) > an image Wix refuses to import is left off; the post is still created
+[wix] hero image import refused: 400 Bad Request: {"message":"Invalid url"}
+
+ ✓ src/server/services/publishing/connectors/wix.test.ts (24 tests) 34ms
+ ✓ src/server/services/lifecycle/templates.test.ts (26 tests) 28ms
+ ✓ src/lib/socialPublish.test.ts (39 tests) 30ms
+ ✓ src/server/observability/delivery.test.ts (13 tests) 30ms
+ ✓ src/server/services/publishing/connectors/shopify.test.ts (22 tests) 27ms
+ ✓ src/server/services/publishing/oauth.test.ts (22 tests) 25ms
+ ✓ src/server/services/publishing/connectors/webflow.test.ts (18 tests) 24ms
+stderr | src/server/billing/management.test.ts > billing overview and portal routes > has no fake portal in stub/unconfigured mode and no session for a user without a customer
+[radar.failure] {"id":"58ec2eca-d353-4f0a-a137-4220341907e0","timestamp":"2026-11-09T23:05:14.315Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/billing/portal","requestId":"1e5ab24e-1d0d-4dfd-8f49-88d3fc0fecfa"},"rootOperation":"POST /api/billing/portal","error":{"name":"Error","message":"Payments aren’t available right now. Try again in a few minutes.","status":503,"code":"billing_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/billing/management.test.ts > billing overview and portal routes > has no fake portal in stub/unconfigured mode and no session for a user without a customer
+[radar.failure] {"id":"0bde9772-8e55-455d-b398-004376320b75","timestamp":"2026-11-09T23:05:14.317Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/billing/portal","requestId":"56aa53d5-792f-4e33-bf7a-2b1ce131325e"},"rootOperation":"POST /api/billing/portal","error":{"name":"Error","message":"Payments aren’t available right now. Try again in a few minutes.","status":503,"code":"billing_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/billing/management.test.ts (9 tests) 22ms
+ ✓ src/server/observability/failures.test.ts (8 tests) 21ms
+ ✓ src/lib/seo.test.ts (9 tests) 20ms
+ ✓ src/server/services/publishing/connectors/wpcom.test.ts (12 tests) 23ms
+stderr | src/app/api/b/[bid]/support/route.test.ts > support authorization and API behavior > propagates safe rate limit and unavailable-mail errors
+[radar.failure] {"id":"ab84570a-6dfb-4b84-98ee-f2beee55ba15","timestamp":"2026-11-09T23:05:15.306Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/b/biz/support","requestId":"0758d7b3-61dc-4d29-bb7c-f93ed97ebe2d"},"rootOperation":"POST /api/b/biz/support","error":{"name":"Error","message":"Please retry later.","status":503,"code":"support_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/app/api/b/[bid]/support/route.test.ts (4 tests) 21ms
+ ✓ src/server/services/autopilot/policy.test.ts (20 tests) 19ms
+ ✓ src/server/http/handle.observability.test.ts (6 tests) 26ms
+ ✓ src/features/billing/dates.test.ts (4 tests) 32ms
+ ✓ src/server/billing/stripe.test.ts (21 tests) 18ms
+ ✓ src/server/services/publishing/connectors/framer.test.ts (30 tests) 44ms
+ ✓ src/server/services/support/input.test.ts (3 tests) 47ms
+ ✓ src/features/social/channels/logic.test.ts (20 tests) 22ms
+ ✓ src/app/api/health/route.test.ts (2 tests) 76ms
+stdout | src/server/billing/webhookBody.test.ts > billing webhook public body boundaries > verifies the exact raw UTF-8 body and accepts a valid event/replay unchanged
+[billing] webhook invoice.paid evt_body_fixture: processed
+
+stdout | src/server/billing/webhookBody.test.ts > billing webhook public body boundaries > verifies the exact raw UTF-8 body and accepts a valid event/replay unchanged
+[billing] webhook invoice.paid evt_body_fixture: replay
+
+ ✓ src/server/billing/webhookBody.test.ts (4 tests) 26ms
+ ✓ src/lib/marketing-posts.test.ts (3 tests) 13ms
+ ✓ src/server/env.test.ts (7 tests) 10ms
+ ✓ src/server/jobs/observability.test.ts (4 tests) 12ms
+stderr | src/server/services/lifecycle/worker.test.ts > dedicated lifecycle dispatch loop > retains the loop after one failed iteration
+[lifecycle] dispatcher iteration failed; durable queue retained
+
+ ✓ src/server/services/lifecycle/worker.test.ts (3 tests) 4ms
+ ✓ src/server/services/social/social.test.ts (11 tests) 11ms
+ ✓ src/lib/visual.test.ts (3 tests) 11ms
+ ✓ src/server/http/publicNetwork.test.ts (17 tests) 9ms
+ ✓ src/server/services/brief/replyBrevity.test.ts (22 tests) 10ms
+ ✓ src/server/jobs/cron.observability.test.ts (2 tests) 9ms
+ ✓ src/server/services/analysis/crawl.test.ts (8 tests) 10ms
+ ✓ src/server/services/social/proactive.test.ts (4 tests) 11ms
+ ✓ src/server/services/brief/plan.test.ts (16 tests) 9ms
+ ✓ src/server/services/revocationObservability.test.ts (7 tests) 7ms
+ ✓ src/server/services/social/auto.observability.test.ts (1 test) 5ms
+ ✓ src/lib/recommendationShare.test.ts (5 tests) 4ms
+ ✓ src/server/ai/ai.test.ts (13 tests) 7ms
+ ✓ src/server/services/brief/sources/retryObservability.test.ts (2 tests) 7ms
+ ✓ src/server/services/support/answer.test.ts (5 tests) 7ms
+ ✓ src/features/billing/stubStripe.test.ts (13 tests) 6ms
+ ✓ src/server/services/support/mail.test.ts (7 tests) 6ms
+ ✓ src/server/services/brief/observability.test.ts (2 tests) 6ms
+ ✓ src/server/billing/price.test.ts (12 tests) 6ms
+ ✓ src/server/services/publishing/render.test.ts (25 tests) 5ms
+ ✓ src/features/marketing/feature-demo-data.test.ts (4 tests) 5ms
+ ✓ src/server/abuse/human.test.ts (3 tests) 6ms
+ ✓ src/server/services/storage.test.ts (5 tests) 6ms
+ ✓ src/server/services/publishing/observability.test.ts (2 tests) 4ms
+ ✓ src/components/Visual.test.ts (3 tests) 4ms
+ ✓ src/server/db/workerReady.test.ts (6 tests) 5ms
+ ✓ src/server/actions/publishing.test.ts (8 tests) 6ms
+ ✓ src/server/services/drafting/bodyImages.test.ts (4 tests) 5ms
+ ✓ src/features/billing/copy.test.ts (9 tests) 4ms
+ ✓ src/server/events/cache.test.ts (3 tests) 4ms
+ ✓ src/server/services/publishing/bodyImages.test.ts (3 tests) 5ms
+ ✓ src/server/services/lifecycle/educationContent.test.ts (4 tests) 4ms
+ ✓ src/server/abuse/ip.test.ts (3 tests) 4ms
+ ✓ src/lib/suggestionPrompt.test.ts (9 tests) 4ms
+ ✓ src/server/services/visibility/digestContent.test.ts (6 tests) 4ms
+ ✓ src/server/services/brief/cap.test.ts (6 tests) 3ms
+ ✓ src/lib/promptClipboard.test.ts (3 tests) 4ms
+ ✓ src/server/services/brief/rules-figures.test.ts (4 tests) 3ms
+ ✓ src/features/billing/overviewCopy.test.ts (4 tests) 3ms
+ ✓ src/lib/articleImages.test.ts (4 tests) 3ms
+ ✓ src/server/billing/webhook.test.ts (7 tests) 3ms
+ ✓ src/client/laterQueue.test.ts (5 tests) 3ms
+ ✓ src/server/services/support/index.test.ts (3 tests) 3ms
+ ✓ src/features/billing/elementErrors.test.ts (6 tests) 3ms
+ ✓ src/features/marketing/domain.test.ts (21 tests) 3ms
+ ✓ src/server/observability/jobs.test.ts (2 tests) 3ms
+ ✓ src/server/services/brief/rescan.test.ts (8 tests) 2ms
+ ✓ src/lib/imageOptions.test.ts (3 tests) 2ms
+ ↓ src/server/services/publishing/publisher.live.test.ts (15 tests | 15 skipped)
+ ↓ src/server/services/publishing/connectors/framer.live.test.ts (5 tests | 5 skipped)
+ ↓ src/server/services/publishing/connectors/ghost.live.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/connectors/nextjs.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/shopify.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webflow.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webhook.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/wix.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/wordpress.live.test.ts (11 tests | 11 skipped)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/ai/openrouter.qa.test.ts > parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot
+AssertionError: expected { …(14) } to deeply equal { …(14) }
+
+- Expected
++ Received
+
+@@ -110,11 +110,11 @@
+      "calls": [],
+      "configured": false,
+      "logs": [],
+      "rows": [],
+      "stored": [
+-       "f883614e6a7dfb07",
++       "91d5409f50974af7",
+      ],
+      "style": "branded",
+    },
+    "p1": {
+      "backoffs": [],
+
+ ❯ src/server/ai/openrouter.qa.test.ts:203:20
+    201|     const actual = await parityScenarios();
+    202|     if (process.env.QA_CAPTURE) { fs.writeFileSync(process.env.QA_CAPT…
+    203|     expect(actual).toEqual(GOLDEN);
+       |                    ^
+    204|   });
+    205|   it('an empty OPENROUTER_API_KEY counts as unset (no OpenRouter reque…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 124 passed | 9 skipped (134)
+      Tests  1 failed | 1440 passed | 65 skipped (1506)
+   Start at  03:03:20
+   Duration  137.11s (transform 2.28s, setup 0ms, collect 34.16s, tests 81.30s, environment 13ms, prepare 5.42s)
+

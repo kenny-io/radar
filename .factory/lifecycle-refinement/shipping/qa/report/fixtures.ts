@@ -1,0 +1,13 @@
+import {and,eq,inArray,like,or}from'drizzle-orm';import{vi}from'vitest';
+import {db,schema as S}from'@/server/db';import{Fixtures}from'@/server/testing/fixtures';import{decrypt}from'@/server/crypto';
+import {currentPromptSeries}from'@/server/services/visibility/history';import{dispatchLifecycleBatch}from'@/server/services/lifecycle/dispatch';import type{LifecyclePayload}from'@/server/services/lifecycle/queue';
+export {db,S};export const NOW=new Date('2026-11-16T12:00:00Z'),DAY=864e5;
+export function guard(){if(!process.env.DATABASE_URL?.endsWith('/radar_report_shipping_qa_20261110'))throw Error('Independent fresh local report QA DB required');}
+export const F=new Fixtures('report-independent-'+Math.random().toString(36).slice(2));
+export async function owner(opts:{verified?:boolean;guest?:boolean;status?:any;prompt?:string}={}){const u=await F.user({verified:opts.verified,guest:opts.guest});await F.account(u.id,{status:opts.status||'active'});const b=await F.biz(u);await db.update(S.businesses).set({timezone:'UTC'}).where(eq(S.businesses.id,b.id));const[p]=await db.insert(S.aiPrompts).values({businessId:b.id,prompt:opts.prompt||'Which service helps a busy shop owner?',source:'user'}).returning();return{u,b,p};}
+export async function obs(x:Awaited<ReturnType<typeof owner>>,status:'mentioned'|'not-mentioned'|'not-collected'='mentioned',day='2026-11-15',engine='ChatGPT',at=day+'T23:00:00Z',series?:string){await db.insert(S.aiObservations).values({businessId:x.b.id,promptId:x.p.id,prompt:x.p.prompt,series:series||await currentPromptSeries(x.b.id),engine,status,day,measuredAt:new Date(at),cites:status==='mentioned'?['https://'+x.b.domain+'/answer']:[]});}
+export const mails=(uid:string)=>db.select().from(S.lifecycleEmails).where(and(eq(S.lifecycleEmails.userId,uid),eq(S.lifecycleEmails.type,'ai_weekly_report'))).orderBy(S.lifecycleEmails.createdAt,S.lifecycleEmails.id);
+export const unpack=(m:typeof S.lifecycleEmails.$inferSelect)=>decrypt<LifecyclePayload>(m.payloadEnc)!;
+export function provider(status=200,lookup=404){return vi.fn(async(_url:any,init?:RequestInit)=>init?.method==='GET'?new Response(lookup===401?'{"name":"restricted_api_key"}':'',{status:lookup}):new Response(status===200?'{"id":"independent-report-ack"}':'',{status}));}
+export const send=(uid:string,at=NOW,fake=provider(),limit=10)=>dispatchLifecycleBatch({userIds:[uid],now:at,clock:()=>at,fetch:fake as typeof fetch,sleep:async()=>{},limit});
+export async function cleanup(){const ids=F.users;if(ids.length){const bs=await db.select({id:S.businesses.id}).from(S.businesses).where(inArray(S.businesses.ownerId,ids));if(bs.length)await db.delete(S.cronMarks).where(or(...bs.map(b=>like(S.cronMarks.key,'%'+b.id+'%'))));}await F.cleanup();}

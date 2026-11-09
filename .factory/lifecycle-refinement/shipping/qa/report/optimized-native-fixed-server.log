@@ -1,0 +1,9 @@
+   ▲ Next.js 15.5.28
+   - Local:        http://localhost:3952
+   - Network:      http://192.168.1.33:3952
+
+ ✓ Starting...
+ ✓ Ready in 574ms
+(node:35313) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[abuse] x-forwarded-for has 1 entry; using 1 from the right (RADAR_TRUSTED_PROXY_HOPS)
