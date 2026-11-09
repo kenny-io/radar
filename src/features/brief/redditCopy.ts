@@ -15,12 +15,39 @@ export function redditCommentsUrl(value?: string): string | null {
   }
 }
 
-/** Navigation must never interrupt either the clipboard write or saving the user's edited reply. */
-export async function copyRedditReply(text: string, url: string | undefined, persist: () => Promise<boolean>): Promise<'opened' | 'copied' | 'save-failed'> {
-  await copyPromptText(text);
-  if (!await persist()) return 'save-failed';
+function closeReservedTab(tab: Window | null) {
+  try { if (tab && !tab.closed) tab.close(); } catch { /* The browser may already have discarded the tab. */ }
+}
+
+/** Reserve a tab during the gesture; external navigation waits for both copying and saving. */
+export async function copyRedditReply(text: string, url: string | undefined, persist: () => Promise<boolean>): Promise<'opened' | 'copied' | 'save-failed' | 'open-needed'> {
   const destination = redditCommentsUrl(url);
-  if (!destination) return 'copied';
-  window.location.assign(destination);
-  return 'opened';
+  // Start clipboard access before opening a tab can move focus away from Radar.
+  const copying = copyPromptText(text);
+  let tab: Window | null = null;
+  if (destination) {
+    try {
+      tab = window.open('about:blank', '_blank');
+      if (tab) tab.opener = null;
+    } catch {
+      closeReservedTab(tab);
+      tab = null;
+    }
+  }
+  try {
+    await copying;
+    if (!await persist()) { closeReservedTab(tab); return 'save-failed'; }
+    if (!destination) return 'copied';
+    try {
+      if (!tab || tab.closed) return 'open-needed';
+      tab.location.replace(destination);
+      return 'opened';
+    } catch {
+      closeReservedTab(tab);
+      return 'open-needed';
+    }
+  } catch (error) {
+    closeReservedTab(tab);
+    throw error;
+  }
 }
