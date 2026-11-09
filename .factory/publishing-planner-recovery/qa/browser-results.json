@@ -1,0 +1,87 @@
+{
+  "at": "2026-11-09T21:21:40.254Z",
+  "base": "http://localhost:3847",
+  "environment": "isolated synthetic local DB; stubs; native Chrome headless",
+  "results": [
+    {
+      "name": "PPR4 local article identifies Radar preparation and keeps source reason/body after reload",
+      "pass": true,
+      "detail": {
+        "persisted": true,
+        "bodyKept": true,
+        "wrongRemoteBlame": false
+      }
+    },
+    {
+      "name": "PPR4 dashboard names Radar and keyboard opens affected article",
+      "pass": true,
+      "detail": {
+        "keyboard": true
+      }
+    },
+    {
+      "name": "PPR4 retry action failure is visible and original preparation error remains",
+      "pass": true,
+      "detail": {
+        "errorVisible": true,
+        "oneRequest": true,
+        "persistedOriginalFailure": true
+      }
+    },
+    {
+      "name": "PPR4 remote GitHub rejection retains HTTP meaning and reconnect",
+      "pass": true,
+      "detail": {
+        "remote403": true
+      }
+    },
+    {
+      "name": "PPR4 local article mobile fits and retry has keyboard focus",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "PPR4 local dashboard mobile fits and retains Radar cause",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "Authorization: Viewer can read safe failure but cannot retry",
+      "pass": true,
+      "detail": {
+        "readable": true,
+        "retry403": true
+      }
+    },
+    {
+      "name": "Tenant boundary: outsider cannot read error or retry article",
+      "pass": true,
+      "detail": {
+        "workspace404": true,
+        "retry404": true,
+        "noArticleLeak": true
+      }
+    },
+    {
+      "name": "Authorization: anonymous direct article has authentication gate",
+      "pass": true,
+      "detail": {
+        "authenticationGate": true
+      }
+    },
+    {
+      "name": "No browser runtime exceptions",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ],
+  "errors": []
+}

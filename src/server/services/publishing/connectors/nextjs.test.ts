@@ -187,7 +187,7 @@ describe('repository-aware article transport', () => {
     expect(plan).toHaveBeenCalledTimes(1);
     expect(plan.mock.calls[0][0]).toBe(hint);
     expect(plan.mock.calls[0][1]).toEqual(P());
-    expect(plan.mock.calls[0][3]).toEqual({ businessId: C.bid });
+    expect(plan.mock.calls[0][3]).toEqual({ deadlineAt: expect.any(Number), businessId: C.bid });
     expect(draft.extra).toMatchObject({ layout: 'repository-aware', slug: 'billing-tips', path: 'web/journal/posts/billing-tips.html', draft: true, route: '/journal/billing-tips' });
     const mutations = writes();
     expect(mutations.map(call => [call.method, new URL(call.url).pathname.replace('/repos/fieldnote/site', '')])).toEqual([['POST', '/git/trees'], ['POST', '/git/commits'], ['POST', '/git/refs']]);
@@ -233,7 +233,7 @@ describe('repository-aware article transport', () => {
     expect(refs.has(BR)).toBe(true);
     const priorHead = refs.get(BR);
     const draft = await nextjs.createDraft(C, P());
-    expect(plan.mock.calls[1][3]).toEqual({ businessId: C.bid, retry: { slug: 'billing-tips', articlePath: 'web/journal/posts/billing-tips.html' } });
+    expect(plan.mock.calls[1][3]).toEqual({ deadlineAt: expect.any(Number), businessId: C.bid, retry: { slug: 'billing-tips', articlePath: 'web/journal/posts/billing-tips.html' } });
     expect(JSON.parse(branchFiles(BR).get('site/index.json')!.content).posts).toHaveLength(1);
     expect(commits.get(refs.get(BR)!)?.parents).toEqual([priorHead]);
     expect(calls.filter(call => call.method === 'POST' && call.url.endsWith('/git/refs'))).toHaveLength(1);
@@ -310,7 +310,7 @@ describe('repository-aware article transport', () => {
     const original = branchFiles(BR).get(draft.extra.path)!.content;
     await nextjs.publish(C, P(), draft);
     expect(plan).toHaveBeenCalledTimes(1);
-    expect(plan.mock.calls[0][3]).toEqual({ businessId: C.bid, legacy: { slug: draft.extra.slug, articlePath: draft.extra.path } });
+    expect(plan.mock.calls[0][3]).toEqual({ deadlineAt: expect.any(Number), businessId: C.bid, legacy: { slug: draft.extra.slug, articlePath: draft.extra.path } });
     expect(writes().map(call => [call.method, new URL(call.url).pathname.replace('/repos/fieldnote/site', '')])).toEqual([['POST', '/git/trees'], ['POST', '/git/commits'], ['PATCH', `/git/refs/heads/${BR}`], ['POST', '/pulls']]);
     expect(branchFiles(BR).get(draft.extra.path)!.content).toBe(original);
     expect(branchFiles(BR).get('reviewer-note.txt')!.content).toBe('Preserve this unrelated reviewer edit.');
@@ -331,7 +331,7 @@ describe('repository-aware article transport', () => {
     expect((await err(nextjs.publish(C, P(), draft))).retryable).toBe(true);
     expect(prs).toHaveLength(0);
     const result = await nextjs.publish(C, P(), draft);
-    expect(plan.mock.calls[1][3]).toEqual({ businessId: C.bid, retry: { slug: 'billing-tips-2', articlePath: 'web/journal/posts/billing-tips-2.html' } });
+    expect(plan.mock.calls[1][3]).toEqual({ deadlineAt: expect.any(Number), businessId: C.bid, retry: { slug: 'billing-tips-2', articlePath: 'web/journal/posts/billing-tips-2.html' } });
     expect(JSON.parse(branchFiles(BR).get('site/index.json')!.content).posts).toHaveLength(1);
     expect(prs).toHaveLength(1); expect(result.url).toBe(prs[0].html_url);
   });
@@ -477,5 +477,56 @@ describe('organization access', () => {
     expect([r.http, r.retryable]).toEqual([429, true]);
     override = () => reply(403, { message: 'Resource not accessible by integration' });
     expect(failCopy('nextjs', await err(nextjs.test(C)))).toBe('403 Forbidden — check the credentials');
+  });
+});
+
+describe('bounded source transport and publishing deadlines', () => {
+  it('preserves tree size and refuses a known oversized blob before contents download or writes', async () => {
+    override = (method, url) => method === 'GET' && url.includes('/git/trees/') ? reply(200, { tree: [{ path: 'site/huge.json', sha: 'huge-sha', type: 'blob', mode: '100644', size: 846266 }] }) : null;
+    plan.mockImplementationOnce(async (_hint: string, _payload: PublishPayload, snapshot: RepoSnapshot) => {
+      expect(snapshot.entries[0].size).toBe(846266);
+      await snapshot.read('site/huge.json');
+    });
+    expect(await err(nextjs.createDraft(C, P()))).toMatchObject({ http: 422, source: 'radar', diagnostic: { code: 'file-too-large', size: 846266, limit: 100000 } });
+    expect(calls.some(call => call.url.includes('/contents/'))).toBe(false); expect(writes()).toHaveLength(0);
+  });
+  it('classifies absent-size contents oversize as a typed local source failure without writes', async () => {
+    override = (method, url) => method === 'GET' && url.includes('/contents/site/index.json') ? reply(200, { sha: 'index-sha', encoding: 'none', content: '', size: 846266 }) : null;
+    expect(await err(nextjs.createDraft(C, P()))).toMatchObject({ source: 'radar', diagnostic: { code: 'file-too-large', size: 846266 } });
+    expect(writes()).toHaveLength(0);
+  });
+  it('measures decoded bytes when metadata underreports a multibyte text file', async () => {
+    const huge = 'é'.repeat(50_001);
+    override = (method, url) => method === 'GET' && url.includes('/contents/site/index.json') ? reply(200, { sha: 'index-sha', encoding: 'base64', content: Buffer.from(huge).toString('base64'), size: 1 }) : null;
+    expect(await err(nextjs.createDraft(C, P()))).toMatchObject({ source: 'radar', diagnostic: { code: 'file-too-large', size: 100002 } });
+    expect(writes()).toHaveLength(0);
+  });
+  it('attributes stale snapshot guards to Radar while actual GitHub 422 remains remote', async () => {
+    override = (method, url) => method === 'GET' && url.includes('/contents/') ? reply(200, { sha: 'stale', encoding: 'base64', content: '' }) : null;
+    expect(await err(nextjs.createDraft(C, P()))).toMatchObject({ source: 'radar', diagnostic: { code: 'snapshot-mismatch' } });
+    override = (method, url) => method === 'GET' && url.includes('/contents/') ? reply(422, { message: 'GitHub rejected request' }) : null;
+    const remote = await err(nextjs.createDraft(C, P())); expect(remote.http).toBe(422); expect(remote.source).toBeUndefined(); expect(remote.diagnostic).toBeUndefined();
+  });
+  it('does not create a Git tree after late planning exhausts the attempt deadline', async () => {
+    const started = Date.now(); const now = vi.spyOn(Date, 'now').mockReturnValue(started);
+    const normal = plan.getMockImplementation()!;
+    plan.mockImplementationOnce(async (...args: any[]) => { const result = await normal(...args); now.mockReturnValue(started + 101); return result; });
+    const failure = await err(nextjs.createDraft({ ...C, publishDeadlineAt: started + 100 }, P()));
+    expect(failure).toMatchObject({ http: 422, source: 'radar', retryable: false, diagnostic: { code: 'publishing-deadline' } }); expect(writes()).toHaveLength(0);
+  });
+  it('never advances a visible branch after the commit request consumes the remaining deadline', async () => {
+    const started = Date.now(); const now = vi.spyOn(Date, 'now').mockReturnValue(started);
+    override = (method, url, init) => {
+      if (method === 'POST' && url.endsWith('/git/commits')) { const response = github(method, url, init); now.mockReturnValue(started + 101); return response; }
+      return null;
+    };
+    expect(await err(nextjs.createDraft({ ...C, publishDeadlineAt: started + 100 }, P()))).toMatchObject({ diagnostic: { code: 'publishing-deadline' } });
+    expect(writes().map(call => new URL(call.url).pathname)).toEqual(['/repos/fieldnote/site/git/trees', '/repos/fieldnote/site/git/commits']);
+    expect(refs.has(BR)).toBe(false); expect(prs).toHaveLength(0);
+  });
+  it('does not open or reconcile a PR after the shared attempt deadline expires', async () => {
+    const draft = await nextjs.createDraft(C, P()); calls = [];
+    expect(await err(nextjs.publish({ ...C, publishDeadlineAt: Date.now() - 1 }, P(), draft))).toMatchObject({ diagnostic: { code: 'publishing-deadline' } });
+    expect(calls).toHaveLength(0);
   });
 });

@@ -1,3 +1,5 @@
+import type { PublishDiagnostic } from '@/lib/types';
+import { sanitizeDiagnostic } from '@/server/observability/failures';
 import dns from 'node:dns/promises';
 import net from 'node:net';
 import { env } from '@/server/env';
@@ -15,15 +17,46 @@ export const statusLine = (status: number) => `${status} ${reasonOf(status)}`;
 
 export class PublishError extends Error {
   /** http = 0 when the host couldn't be reached at all. */
-  constructor(public http: number, public detail = '', public host = '', public kind: 'http' | 'network' | 'auth-expired' | 'config' | 'ambiguous-write' = 'http') {
+  constructor(public http: number, public detail = '', public host = '', public kind: 'http' | 'network' | 'auth-expired' | 'config' | 'ambiguous-write' = 'http', public diagnostic?: PublishDiagnostic) {
     super(http ? statusLine(http) + (detail ? `: ${detail}` : '') : detail || 'Network error');
   }
+  get source(): 'radar' | undefined { return this.diagnostic ? 'radar' : undefined; }
   /** "401 Unauthorized" — what the article banner and the dashboard show after "{platform} returned". */
   get line() { return this.kind === 'ambiguous-write' ? this.detail : this.http ? statusLine(this.http) : this.host ? `no response from ${this.host}` : 'no response'; }
   /** Retry only transient failures (network, timeouts, rate limits, 5xx). 4xx won't fix themselves. */
   get retryable() { return this.kind !== 'ambiguous-write' && (this.kind === 'network' || this.http === 0 || this.http === 408 || this.http === 409 || this.http === 429 || this.http >= 500); }
   /** A setup problem the connector explains in a sentence (a required field, a taken slug, Blog not installed, no push access). */
-  get hint() { return this.kind === 'config' && (this.http === 422 || this.http === 403) && this.detail ? this.detail : null; }
+  get hint() { return this.diagnostic ? this.detail : this.kind === 'config' && (this.http === 422 || this.http === 403) && this.detail ? this.detail : null; }
+}
+
+/** Model review text is untrusted. Retain a short reason, never credentials, URLs or source excerpts. */
+export function publishingDiagnosticText(value: string, limit = 300): string {
+  return sanitizeDiagnostic(value
+    .replace(/-----BEGIN [\s\S]*?PRIVATE KEY-----[\s\S]*?(?:-----END [\s\S]*?PRIVATE KEY-----|$)/g, '[redacted]')
+    .replace(/\bgh[pousr]_[A-Za-z0-9_]+|\bgithub_pat_[A-Za-z0-9_]+|\bAKIA[A-Z0-9]{16}/g, '[redacted]')
+    .replace(/(?:https?|postgres(?:ql)?):\/\/[^\s<>"']+/gi, '[URL omitted]')
+    .replace(/```[\s\S]*?(?:```|$)/g, '[source omitted]')
+    .replace(/`[^`]*`/g, '[source omitted]')
+    .replace(/(["']?(?:token|key|pass|client[_-]?secret|private[_-]?key)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi, '$1[redacted]'))
+    .replace(/[\x00-\x1f\x7f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, limit);
+}
+
+/** Host-owned repository checks must not be attributed to a remote GitHub rejection. */
+export function repositoryPublishingError(reason: string, code = 'repository-invalid'): PublishError {
+  const safe = publishingDiagnosticText(reason, 1200);
+  return new PublishError(422, safe, '', 'config', { code, stage: 'validation', reason: safe });
+}
+
+/** Absolute deadline shared by repository planning and GitHub requests, below the job timeout. */
+export function publishingDeadlineError(stage: PublishDiagnostic['stage']): PublishError {
+  const reason = 'Repository publishing reached its time limit. Retry the article; Radar will check its saved branch and pull request before continuing.';
+  return new PublishError(422, reason, '', 'config', { code: 'publishing-deadline', stage, reason });
+}
+export function publishingTimeRemaining(deadlineAt: number | undefined, stage: PublishDiagnostic['stage']): number {
+  if (deadlineAt === undefined) return 180_000;
+  const remaining = deadlineAt - Date.now();
+  if (remaining <= 0) throw publishingDeadlineError(stage);
+  return remaining;
 }
 
 /** Throw a PublishError for a non-2xx response (with a short, secret-free detail for logs). */
