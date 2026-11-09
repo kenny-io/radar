@@ -20,8 +20,9 @@ import { failToast } from '@/features/social/channels/PublishBox';
 import { compressToast, heldLines, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
 import { ConnectSocial } from '@/features/social/channels/ConnectSocial';
 import { useNowMs } from '@/features/social/channels/useSocial';
+import { copyRedditReply } from './redditCopy';
 
-type Act = { copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
+type Act = { copying: boolean; copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
   /** Reply now opened X's reply box: mark it copied (then "I posted it"), carrying any unsaved edit, without touching the clipboard. */
   opened: (it: BriefItem) => void;
   /** Posted or scheduled from Radar: move on to the next item. */
@@ -55,6 +56,8 @@ export function DailyBrief() {
   /** Local text the user typed that the server hasn't confirmed yet (per item + variant). */
   const [overlay, setOverlay] = useState<Record<string, Record<string, string>>>({});
   const editTimers = useRef<Record<string, any>>({});
+  const copyingReddit = useRef(false);
+  const [copyingReply, setCopyingReply] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
   const br = B!.brief as BriefState;
 
@@ -87,11 +90,11 @@ export function DailyBrief() {
     const my = ++seq.current;
     if (Object.keys(patch).length) setPending(m => ({ ...m, [id]: { ...(m[id] || {}), ...patch, seq: my } }));
     const settle = () => setPending(m => { if (!m[id] || m[id].seq !== my) return m; const n = { ...m }; delete n[id]; return n; });
-    app.act('brief.item', { date: day, id, ...patch, ...extra }, { optimistic: b => patchB(b, day, id, i => {
+    return app.act('brief.item', { date: day, id, ...patch, ...extra }, { optimistic: b => patchB(b, day, id, i => {
       const n: BriefItem = { ...i, ...patch, edits: { ...(i.edits || {}) } };
       if (extra.edit) { if (extra.edit.text == null) delete n.edits[extra.edit.v]; else n.edits[extra.edit.v] = extra.edit.text; }
       return n;
-    }) }).then(settle, settle);
+    }) }).then(() => { settle(); return true; }, () => { settle(); return false; });
   }, [app, day]);
   /** Pull a not-yet-saved edit for an item so the next write carries it. */
   const takePending = (id: string): { v: string; text: string } | undefined => {
@@ -126,8 +129,30 @@ export function DailyBrief() {
   const pick = (id: string) => { setSel(id); if (narrow) { setOpened(true); toDetail(); } };
   const backToList = () => { setOpened(false); setTimeout(() => { const el = document.querySelector('.brief-qi.on') as HTMLElement | null; if (el) el.scrollIntoView({ block: 'center' }); }, 30); };
   const advance = (id: string) => { const idx = order.findIndex(i => i.id === id); const rest = [...order.slice(idx + 1), ...order.slice(0, idx)].filter(i => i.id !== id && (i.st === 'open' || i.st === 'copied')); setSel(rest[0] ? rest[0].id : null); if (narrow) toDetail(); };
+  const copyReddit = async (it: BriefItem) => {
+    if (copyingReddit.current) return;
+    copyingReddit.current = true;
+    setCopyingReply(true);
+    try {
+      const result = await copyRedditReply(textOf(it), it.url, async () => {
+        const pend = takePending(it.id);
+        const saved = await setItem(it.id, { st: 'copied' }, pend ? { edit: pend } : {});
+        if (saved && pend) clearOverlay(it.id, pend.v, pend.text);
+        return saved;
+      });
+      if (result === 'copied') toast('Copied. Open the Reddit thread and paste your reply in the comments.');
+      else if (result === 'save-failed') toast('Reply copied, but Radar couldn’t save it. Try copying again before opening Reddit.', { tone: 'bad' });
+    } catch {
+      toast('Couldn’t copy your reply. Allow clipboard access and try again, or select and copy the reply manually.', { tone: 'bad' });
+    } finally {
+      copyingReddit.current = false;
+      setCopyingReply(false);
+    }
+  };
   const act: Act = {
+    copying: copyingReply,
     copy: it => {
+      if (it.kind === 'reply' && it.plat === 'reddit') { void copyReddit(it); return; }
       copyText(textOf(it)); const pend = takePending(it.id);
       setItem(it.id, { st: 'copied' }, pend ? { edit: pend } : {});
       if (pend) setTimeout(() => clearOverlay(it.id, pend.v, pend.text), 400);
@@ -139,8 +164,12 @@ export function DailyBrief() {
     skip: it => { const prev = it.st as 'open' | 'copied'; setItem(it.id, { st: 'skipped' }); advance(it.id); toast('Skipped', { action: { label: 'Undo', fn: () => { setItem(it.id, { st: prev }); setSel(it.id); } } }); },
     undo: it => setItem(it.id, { st: 'open' }),
   };
+  // Shortcuts use the same current item and actions as the buttons, including unsaved edits and variant changes.
+  const keyboardState = useRef({ order, sel, act, day, today, sheet, scan });
+  keyboardState.current = { order, sel, act, day, today, sheet, scan };
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      const { order, sel, act, day, today, sheet, scan } = keyboardState.current;
       const tg = e.target as HTMLElement;
       if (/INPUT|TEXTAREA|SELECT/.test(tg.tagName) || tg.isContentEditable || e.metaKey || e.ctrlKey || e.altKey || sheet || scan) return;
       const idx = order.findIndex(i => i.id === sel); const it = order[idx];
@@ -150,7 +179,7 @@ export function DailyBrief() {
       else if (e.key === 's' && it && day === today && it.st !== 'posted' && it.st !== 'skipped' && it.st !== 'expired' && it.st !== 'scheduled') act.skip(it);
     };
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
-  }, [sel, order.map(i => i.id + i.st).join(), sheet, scan, day, overlay]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── scanning (job brief.scan, ref = today) ── */
   const live: ScanJob = scan?.jobId ? ((app.jobs[scan.jobId] as any) || B!.jobs.find(j => j.id === scan.jobId) || null) : null;
@@ -378,6 +407,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     <div className="brief-compose">
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', minHeight: 32 }}>
         <span className="label grow">{co ? (it.kind === 'reply' ? 'Reply as ' : 'Post as ') + name : it.kind === 'reply' ? 'Your reply' : 'Your post'}</span>
+        {it.kind === 'reply' && live && !past && <Btn size="sm" kind="primary" icon="copy" loading={act.copying} disabled={busy} onClick={() => act.copy(it)}>Copy reply</Btn>}
         {it.kind === 'reply' && !co && live && <Seg value={it.mention ? 'm' : 'h'} onChange={x => setItem({ mention: x === 'm' })} options={it.noMention ? [{ v: 'h', l: 'Just help' }] : [{ v: 'h', l: 'Just help' }, { v: 'm', l: 'Plug ' + name }]} />}
         {it.kind === 'post' && (it.plats || []).length > 1 && live && <Seg value={it.pl as string} onChange={x => setItem({ pl: x as BriefPlatform })} options={(it.plats || []).map(p => ({ v: p as string, l: BPLAT[p] }))} />}
       </div>
@@ -410,8 +440,8 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
         <Btn kind="ghost" icon="copy" aria-label="Copy post" title="Copy post" onClick={() => act.copy(it)} /></>}
       {replyDirect && it.st === 'open' && <><Btn kind="primary" disabled={busy || problems.length > 0} onClick={replyNow}><LogoLabel k="x">Reply now</LogoLabel></Btn><Btn kind="ghost" icon="copy" aria-label="Copy reply" title="Copy reply" onClick={() => act.copy(it)} /></>}
       {it.st === 'scheduled' && scheduledLine}
-      {!postDirect && !replyDirect && it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
-      {!postDirect && it.st === 'copied' && <><Btn kind="primary" icon="check" onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" onClick={() => act.copy(it)}>Copy again</Btn></>}
+      {!postDirect && !replyDirect && it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy || act.copying} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
+      {!postDirect && it.st === 'copied' && <><Btn kind="primary" icon="check" disabled={act.copying} onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" disabled={busy || act.copying} onClick={() => act.copy(it)}>Copy again</Btn></>}
       {it.st === 'posted' && <Status tone="ok">{postedL(pub)}</Status>}
       {it.st === 'posted' && pub?.direct && <Btn size="sm" kind="ghost" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={pub.platform}>{`View on ${ppl}`}</LogoLabel></Btn>}
       {it.st === 'skipped' && <span className="small sub">Skipped</span>}

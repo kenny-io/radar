@@ -1,0 +1,152 @@
+{
+  "at": "2026-11-09T17:10:36.945Z",
+  "base": "http://localhost:3132",
+  "fixture": "synthetic workspace and mutation interception on local dev login",
+  "fingerprint": {
+    "src/features/brief/DailyBrief.tsx": "7bb3433b902a4780096a10e866ab001866139588082f937ac351ed86699efb14",
+    "src/features/brief/redditCopy.ts": "4202faf3747129ecc1df8518caf2edd2fdbbdcb9a54a8113967b771c850dfd7b",
+    "src/features/brief/redditCopy.test.ts": "feafb969a59969b2523910a60d2d93626073b83fc48a6e2686973ae1cfd36486",
+    "src/server/services/brief/draft.ts": "a7a375e7269139f8fdd1577386ba5d46ca68451de41e499a197cf3dc980d487f",
+    "src/server/services/brief/rules.ts": "f0d397ae1b8355eb5a71a0d732bc163ca44a276898ec77488fceed2845c8980c"
+  },
+  "results": [
+    {
+      "name": "Real clipboard copy redirects only after edited reply is persisted; browser Back retains copied state",
+      "pass": true,
+      "detail": {
+        "clipboardExact": true,
+        "pendingEditPersisted": true,
+        "sameTab": true,
+        "backToManualConfirmation": true
+      }
+    },
+    {
+      "name": "Copy again opens comments with actual clipboard text",
+      "pass": true,
+      "detail": {
+        "copiedAgain": true
+      }
+    },
+    {
+      "name": "Keyboard C copies and opens comments without popup APIs",
+      "pass": true,
+      "detail": {
+        "keyboard": true,
+        "popupsBlocked": true
+      }
+    },
+    {
+      "name": "Keyboard C copies selected Plug variant after switching",
+      "pass": true,
+      "detail": {
+        "keyboardSelectedVariant": true
+      }
+    },
+    {
+      "name": "Keyboard C copies Just help after switching back from Plug",
+      "pass": true,
+      "detail": {
+        "keyboardReverseVariant": true
+      }
+    },
+    {
+      "name": "Keyboard C includes unsaved response edit",
+      "pass": true,
+      "detail": {
+        "keyboardUnsavedEdit": true
+      }
+    },
+    {
+      "name": "Keyboard C copies selected feed platform after switching",
+      "pass": true,
+      "detail": {
+        "keyboardPlatformSwitch": true
+      }
+    },
+    {
+      "name": "Clipboard denial preserves original state, pending text and page, with actionable error",
+      "pass": true,
+      "detail": {
+        "noNavigation": true,
+        "noCopiedStatus": true,
+        "editPreserved": true
+      }
+    },
+    {
+      "name": "Navigation waits for asynchronous clipboard completion",
+      "pass": true,
+      "detail": {
+        "awaitsWrite": true
+      }
+    },
+    {
+      "name": "Navigation waits for copied-state response before leaving",
+      "pass": true,
+      "detail": {
+        "awaitsPersistence": true
+      }
+    },
+    {
+      "name": "Copied-state save failure retains page and edited response",
+      "pass": true,
+      "detail": {
+        "noNavigation": true,
+        "clipboardWritten": true,
+        "editKept": true
+      }
+    },
+    {
+      "name": "Missing destination still copies and keeps user in Radar",
+      "pass": true,
+      "detail": {
+        "copied": true,
+        "noNavigation": true
+      }
+    },
+    {
+      "name": "Invalid external destination still copies without navigation",
+      "pass": true,
+      "detail": {
+        "copied": true,
+        "noNavigation": true
+      }
+    },
+    {
+      "name": "Non-Reddit reply retains copy-only behavior",
+      "pass": true,
+      "detail": {
+        "unchanged": true
+      }
+    },
+    {
+      "name": "Feed post retains copy-only behavior",
+      "pass": true,
+      "detail": {
+        "unchanged": true
+      }
+    },
+    {
+      "name": "Mobile copy opens comments and retains actual clipboard text",
+      "pass": true,
+      "detail": {
+        "mobile": true
+      }
+    },
+    {
+      "name": "Top copy precedes variant switch and response, and copies edited Plug variant",
+      "pass": true,
+      "detail": {
+        "topOrder": true,
+        "selectedVariant": true,
+        "editedVariant": true
+      }
+    },
+    {
+      "name": "No browser runtime exceptions",
+      "pass": true,
+      "detail": {
+        "errors": []
+      }
+    }
+  ]
+}
