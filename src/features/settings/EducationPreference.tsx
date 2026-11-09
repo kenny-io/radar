@@ -40,7 +40,7 @@ export function EducationPreference() {
     {enabled === null ? error ? <div><p className="small" role="alert">{error}</p><Btn size="sm" onClick={() => setRetry(n => n + 1)}>Try again</Btn></div> : <p className="small sub" role="status">Loading weekly education preferences…</p> : <>
       <label className="row" style={{ alignItems: 'flex-start', gap: 14, padding: '18px 0', cursor: busy ? 'wait' : 'pointer' }}>
         <input type="checkbox" checked={enabled} disabled={busy} onChange={event => void change(event.target.checked)} style={{ width: 18, height: 18, margin: '2px 0 0', flex: 'none', accentColor: 'var(--ink)' }} />
-        <span className="col" style={{ gap: 4 }}><span className="small" style={{ fontWeight: 500 }}>Weekly Radar lessons</span><span className="xs sub">Five practical lessons covering AI Visibility, Daily Brief, Backlinks, Organic Search and Social Marketing. At most one lesson a week; the series ends after five.</span></span>
+        <span className="col" style={{ gap: 4 }}><span className="small" style={{ fontWeight: 500 }}>Radar lessons and guides</span><span className="xs sub">Five weekly feature lessons, plus two one-time guides when they’re useful. The weekly series ends after five. Turn this off to stop both lessons and guides.</span></span>
       </label>
       <div aria-live="polite">{busy ? <p className="xs sub" role="status">Saving…</p> : saved ? <p className="xs sub" role="status">Weekly education preference saved.</p> : null}{error && <p className="small" role="alert">{error}</p>}</div>
     </>}

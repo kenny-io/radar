@@ -1,0 +1,24 @@
+Subject: Recommendation share this week · fieldnote.example
+Preview: Your collected answers, the previous-week comparison and what to review next.
+
+Your weekly AI recommendation report
+
+This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
+
+This week: Your business was mentioned in 6 of 20 collected answers (30%).
+
+Previous week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).
+
+That’s a change of +10.0 percentage points.
+
+This report has no missed question to highlight.
+
+Review the answers to see how the assistants described your business.
+
+Missing or failed collections are excluded from these figures. AI answers can change between checks.
+
+Review all answers: https://radar.thally.io/performance
+
+Radar by Thally
+
+Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-only-not-valid

@@ -1,36 +1,26 @@
 Subject: What happens before an article goes live
-
-Preview: Topics, drafts and publishing, with review built into the workflow.
-
-From: Ekene at Radar <radar@thally.io>
-
-Reply to: team@thally.io
-
-
+Preview: Choose the topic, review the draft and decide when it belongs on your site.
 
 Hi Alex,
 
-You don’t need to arrive with a month of article ideas or a spreadsheet of keywords.
+Start with one article you’d want a customer to find.
 
-Here’s the workflow once you start your Radar trial:
+Radar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.
 
-• Radar uses your Business Profile and keyword research to propose topics in Content Calendar.
-• You approve the topics you want, then review and edit the articles Radar drafts.
-• Connect a supported publishing destination and schedule the articles you’re ready to put out.
+1. Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.
 
-Review comes first by default. Blog autopilot is a separate choice you can make later.
+2. Read the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.
 
-You can start with one article and decide how much of the workflow you want to automate.
+You can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.
 
-Start my Radar trial: https://radar.thally.io/start-trial
+Choose my first article: https://radar.thally.io/email/learn?lesson=organic_search
 
-$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.
+Reply to this email or write to support@thally.io.
 
-Ekene
-Founder, Radar
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 
-Reply to team@thally.io.
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

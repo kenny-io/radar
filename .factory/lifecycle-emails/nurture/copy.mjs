@@ -1,111 +1,15 @@
-// Editorial drafts only. Never imported by a sender, job, route or queue.
-export const nurtureDrafts = [
-  {
-    id: 'put-your-profile-to-work', label: 'From profile to first article', day: 0,
-    subject: 'Put your Business Profile to work',
-    preheader: 'Your website is already analyzed. Choose what you want to publish next.',
-    audience: 'Pre-trial account with completed website analysis and a saved Business Profile.',
-    skip: 'Trial started, paid/complimentary access, missing profile, opted out, or welcome already sent.',
-    relationship: 'An alternative activation draft, not a second welcome. Keep the approved welcome unless this version is chosen to replace it.',
-    blocks: [
-      { p: 'You’ve already given Radar your website. Your Business Profile is the starting point for what comes next.' },
-      { p: 'Start your trial, then use Content Calendar to choose the first topics you want to publish. Radar researches the opportunities and proposes a plan for you to review.' },
-      { p: 'Approve a topic you like, review the article when it’s drafted, and schedule it for your site. You can also turn that article into social posts.' },
-      { p: 'Start with one topic you’d want your next customer to find.' },
-    ],
-    cta: 'Continue with Radar', path: '/start-trial', trial: true,
-  },
-  {
-    id: 'links-you-can-review', label: 'Backlinks, with a decision you control', day: 14,
-    subject: 'Read the sentence before you agree to the link',
-    preheader: 'See the page, the partner and the proposed placement.',
-    audience: 'Consenting pre-trial account interested in how the optional backlinks network works.',
-    skip: 'Trial started, paid/complimentary access, network already joined, prior send, or opted out.',
-    relationship: 'Radar version of the backlinks introduction. Describes the review workflow, not promised daily links or ranking gains.',
-    blocks: [
-      { p: 'A useful link needs a reason to be on the page. The reader should be able to follow it and find something relevant.' },
-      { p: 'That’s the idea behind Radar’s optional backlinks network. You choose your topics and review proposals from other businesses.' },
-      { list: ['See the partner’s page and the exact sentence around the proposed link.', 'See the destination page and why the link fits.', 'Approve or decline the proposal. Radar re-checks live links weekly.'] },
-      { p: 'You can review each proposal yourself. Auto-approval is an optional setting, not the starting point.' },
-    ],
-    cta: 'See how the network works', path: '/features/backlinks', trial: false,
-  },
-  {
-    id: 'before-anything-publishes', label: 'What happens after you start', day: 4,
-    subject: 'What happens before an article goes live',
-    preheader: 'Topics, drafts and publishing, with review built into the workflow.',
-    audience: 'Consenting analyzed pre-trial account that has not activated Radar.',
-    skip: 'Trial started, paid/complimentary access, prior send, or opted out.',
-    relationship: 'Radar version of the behind-the-scenes email. Future workflow is explicit because the account has not started its trial.',
-    blocks: [
-      { p: 'You don’t need to arrive with a month of article ideas or a spreadsheet of keywords.' },
-      { p: 'Here’s the workflow once you start your Radar trial:' },
-      { list: ['Radar uses your Business Profile and keyword research to propose topics in Content Calendar.', 'You approve the topics you want, then review and edit the articles Radar drafts.', 'Connect a supported publishing destination and schedule the articles you’re ready to put out.'] },
-      { p: 'Review comes first by default. Blog autopilot is a separate choice you can make later.' },
-      { p: 'You can start with one article and decide how much of the workflow you want to automate.' },
-    ],
-    cta: 'Start my Radar trial', path: '/start-trial', trial: true,
-  },
-  {
-    id: 'why-we-built-radar', label: 'The founder’s reason', day: 1,
-    subject: 'Why we built Radar', preheader: 'Building is easier. Getting beyond your own network is still work.',
-    audience: 'New account eligible for the existing founder note, including pre-trial users.',
-    skip: 'Existing founder note already queued/sent, founder opt-out, or global optional-email cap.',
-    relationship: 'Reuses the already-approved founder note. Do not add another founder email to the sequence.',
-    blocks: [
-      { p: 'I’m Ekene, Radar’s founder.' },
-      { p: 'It’s never been easier to build a product. But getting it beyond your own network is still a full-time job.' },
-      { p: 'That’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.' },
-      { p: 'If you get stuck or anything is unclear, reply here. I’m happy to help.' },
-    ],
-    cta: 'Reply to Ekene', path: 'mailto:team@thally.io', trial: false,
-  },
-  {
-    id: 'join-a-useful-conversation', label: 'Discovery through participation', day: 18,
-    subject: 'Find one conversation you can help with',
-    preheader: 'Daily Brief helps you find discussions where you have something to add.',
-    audience: 'Consenting pre-trial account that has not yet used Daily Brief.',
-    skip: 'Trial started, paid/complimentary access, Daily Brief already set up, prior send, or opted out.',
-    relationship: 'Replaces competitor-pressure messaging with Radar’s conversation workflow. This is feature education, not the action-conditioned live Brief reminder.',
-    blocks: [
-      { p: 'Publishing is one way to get your product in front of people. Joining a useful conversation is another.' },
-      { p: 'The difficult part is finding a discussion where you can help, while there’s still a reason to join it.' },
-      { p: 'Daily Brief looks for relevant conversations across Reddit, X, LinkedIn and Hacker News. It brings the discussion and a suggested reply into Radar so you can review them together.' },
-      { p: 'You decide which conversations are worth your time and make each reply your own before sharing it.' },
-      { p: 'Once you start your trial, try it with one conversation where you have something useful to contribute.' },
-    ],
-    cta: 'Try Daily Brief', path: '/start-trial', trial: true,
-  },
-  {
-    id: 'find-the-page-worth-refreshing', label: 'A practical search opportunity', day: 11,
-    subject: 'Your next article might be a page you already have',
-    preheader: 'Start with the searches that already bring your site impressions.',
-    audience: 'Consenting pre-trial account with an existing website; no assumption that Search Console is connected.',
-    skip: 'Trial started, paid/complimentary access, prior send, or opted out.',
-    relationship: 'Evergreen Radar counterpart to the Bing news email. Uses Radar’s supported Google Search Console workflow rather than repeating unverified third-party release news.',
-    blocks: [
-      { p: 'Before writing something new, it can be useful to look at what people already find on your site.' },
-      { p: 'If your site has Google Search Console data, look for pages that get impressions but few clicks, or queries with an average position around 10–20.' },
-      { p: 'Those are places to investigate. The page may need a clearer title, a fuller answer or an update to an older section.' },
-      { p: 'During your Radar trial, connect Search Console and let the history sync. Performance shows the queries and pages alongside suggested changes you can review and add to Content Calendar.' },
-      { p: 'This guide walks through how to review a page-two opportunity before deciding what to change.' },
-    ],
-    cta: 'Read the page-two refresh guide', path: '/blog/page-two-refresh', trial: false,
-  },
-  {
-    id: 'see-the-ai-answer', label: 'AI visibility you can inspect', day: 7,
-    subject: 'Would an AI assistant recommend your product?',
-    preheader: 'Read each assistant’s response and the pages it cites.',
-    audience: 'Consenting pre-trial account with a completed Business Profile; AI results need not exist yet.',
-    skip: 'Trial started, paid/complimentary access, prior send, or opted out.',
-    relationship: 'Radar version of the AI checker introduction. AI visibility is included in Radar, not a separate free checker or a promise of recommendations.',
-    blocks: [
-      { p: 'Think of a question someone might ask before discovering your product. Which products would an AI assistant include in its answer?' },
-      { p: 'AI Visibility in Radar checks questions related to your business across ChatGPT, Perplexity, Gemini, Claude and Grok.' },
-      { list: ['Read the response each assistant returned.', 'See whether your business was mentioned and which pages were cited.', 'Use a question worth answering as a topic for your Content Calendar.'] },
-      { p: 'You can add your own questions, too. A response that hasn’t been collected is shown separately from one where you weren’t mentioned.' },
-      { p: 'Start your trial, then open Performance → AI Visibility to see the answers for yourself.' },
-    ],
-    cta: 'Try AI Visibility in Radar', path: '/start-trial', trial: true,
-  },
+// Preview adapter for the seven former drafts. Runtime copy is imported, never duplicated here.
+import { renderLifecycle } from '../../../src/server/services/lifecycle/templates.ts';
+const appUrl = 'https://radar.thally.io';
+const context = { businessName: 'Fieldnote', offering: 'design tools', audience: 'independent studios', keyword: 'design tools for small studios', gscConnected: true, access: 'workspace' };
+const base = { name: 'Alex', businessName: 'Fieldnote', profileAnalyzed: true };
+const records = [
+  { id: 'put-your-profile-to-work', label: 'Profile activation', type: 'welcome', data: base, scheduleKey: 'welcome', timing: 'Immediately after mailbox confirmation or new verified Google signup', audience: 'New verified account; analyzed-profile copy when that context exists', relationship: 'Replaces the analyzed-profile welcome; one welcome event.' },
+  { id: 'why-we-built-radar', label: 'Founder note', type: 'founder_note', data: base, scheduleKey: 'founder_note', timing: 'Planned 24 hours after verified account creation, subject to daytime and optional-mail cap', audience: 'New verified account with effective founder-mail permission', relationship: 'Reuses the existing founder event and approved story.' },
+  { id: 'before-anything-publishes', label: 'First article workflow', type: 'lifecycle_guide', data: { ...base, guide: { version: 1, id: 'article_workflow', context } }, scheduleKey: 'article_workflow', timing: 'First observed untouched workspace +24 hours; saved/analyzed pre-trial profile +3 days', audience: 'Owner without an approved/generated content workflow', relationship: 'One-time guide; meaningful content work resolves it.' },
+  { id: 'see-the-ai-answer', label: 'AI Visibility lesson', type: 'weekly_education', data: { ...base, education: { version: 1, lesson: 'ai_visibility', context } }, scheduleKey: 'weekly:ai_visibility', timing: 'Weekly course lesson 1, first eligible daytime/cap slot after enrollment', audience: 'Eligible verified accounts across access stages', relationship: 'Uses the existing AI Visibility lesson, with access-aware copy.' },
+  { id: 'join-a-useful-conversation', label: 'Daily Brief lesson', type: 'weekly_education', data: { ...base, education: { version: 1, lesson: 'daily_brief', context } }, scheduleKey: 'weekly:daily_brief', timing: 'Weekly course lesson 2, at least 7 days after lesson 1 acceptance', audience: 'Eligible verified accounts across access stages', relationship: 'Uses the existing Daily Brief lesson, separate from action-conditioned reminders.' },
+  { id: 'links-you-can-review', label: 'Backlinks lesson', type: 'weekly_education', data: { ...base, education: { version: 1, lesson: 'backlinks', context } }, scheduleKey: 'weekly:backlinks', timing: 'Weekly course lesson 3, at least 7 days after lesson 2 acceptance', audience: 'Eligible verified accounts; joining the network remains optional', relationship: 'Uses the existing Backlinks lesson rather than adding a duplicate introduction.' },
+  { id: 'find-the-page-worth-refreshing', label: 'Search Console refresh guide', type: 'lifecycle_guide', data: { ...base, guide: { version: 1, id: 'search_refresh', context } }, scheduleKey: 'search_refresh', timing: 'Later of first observed usable Search Console data +24 hours and Organic Search lesson acceptance +7 days', audience: 'Primary business owner with connected, recent measured page data', relationship: 'One-time public guide; relevant data is rechecked before delivery.' },
 ];
+export const nurtureDrafts = records.map(record => ({ ...record, skip: 'Already delivered/resolved, opted out, recipient or ownership changed, or current relevance checks fail', mail: renderLifecycle(record.type, record.data, { appUrl, unsubscribeUrl: appUrl + '/email-preferences?token=preview-only-not-valid' }) }));

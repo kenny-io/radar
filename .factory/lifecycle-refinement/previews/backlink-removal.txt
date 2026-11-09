@@ -1,0 +1,11 @@
+Subject: Link removal request from Fieldnote
+
+Fieldnote (fieldnote.example) has asked for this link to be removed from your site.
+
+Page: https://partner.example/articles/design-tools
+Destination: https://fieldnote.example
+Anchor: Fieldnote
+
+Please remove it within 7 days. Radar will re-check the page and update the link status in Backlinks.
+
+Email preferences: https://radar.thally.io/email-preferences

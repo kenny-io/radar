@@ -2,17 +2,17 @@ Does ChatGPT or Claude recommend Paper & Pixel?
 
 Hi Alex,
 
-Ask the questions your buyers ask.
+Read the answers to buyer questions.
 
-When someone asks an AI assistant for a recommendation, does Paper & Pixel make the answer? Radar’s AI Visibility lets you inspect responses from ChatGPT, Claude, Gemini, Perplexity and Grok, including the sources they cite.
+Think of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.
 
-When you’re ready to try this, start your Radar trial, then follow the steps below. You’ll see the price before confirming.
+Your saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.
 
-1. Open Performance → AI Visibility. Add two questions a buyer might ask before finding you. Start with “Which design tools would you recommend for independent studios?”. New questions are collected overnight; open a result and use Collect now if you want to request an answer sooner.
+1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
 
-2. If an answer doesn’t mention you, read it and inspect its citations. Choose one tracked question you can answer well, add it as a Content Calendar topic, and review the resulting article before publishing. If you appear in every answer, choose a question where your own site hasn’t been cited.
+2. Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.
 
-Check progress: record the Mentioned and Cited your site counts for the same questions, then compare next week. Keep the questions stable. Not collected means no answer was collected, not zero visibility; a mention or citation isn’t guaranteed.
+Check progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
 
 Start my Radar trial: https://radar.thally.io/start-trial
 
@@ -24,4 +24,4 @@ Email preferences: https://radar.thally.io/email-preferences?token=preview-only-
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Stop weekly education emails: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

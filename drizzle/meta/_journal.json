@@ -92,6 +92,13 @@
       "when": 1794246365354,
       "tag": "0012_weekly_education",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794252984822,
+      "tag": "0013_lifecycle_guides",
+      "breakpoints": true
     }
   ]
 }

@@ -1,32 +1,28 @@
 Subject: Your next article might be a page you already have
-
-Preview: Start with the searches that already bring your site impressions.
-
-From: Ekene at Radar <radar@thally.io>
-
-Reply to: team@thally.io
-
-
+Preview: Use your Search Console data to choose an existing page worth improving.
 
 Hi Alex,
 
-Before writing something new, it can be useful to look at what people already find on your site.
+Look at the pages people already find.
 
-If your site has Google Search Console data, look for pages that get impressions but few clicks, or queries with an average position around 10–20.
+An existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.
 
-Those are places to investigate. The page may need a clearer title, a fuller answer or an update to an older section.
+Choose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.
 
-During your Radar trial, connect Search Console and let the history sync. Performance shows the queries and pages alongside suggested changes you can review and add to Content Calendar.
+1. Open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.
 
-This guide walks through how to review a page-two opportunity before deciding what to change.
+2. Choose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.
 
-Read the page-two refresh guide: https://radar.thally.io/blog/page-two-refresh
+Record the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.
 
-Ekene
-Founder, Radar
+Read the page refresh guide: https://radar.thally.io/blog/page-two-refresh
 
-Reply to team@thally.io.
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

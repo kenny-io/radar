@@ -1,18 +1,18 @@
-Five conversations Paper & Pixel could join this week
+Find a conversation Paper & Pixel can help with
 
 Hi Alex,
 
-You don’t have to start every conversation.
+Start with someone’s question.
 
-People are already asking questions, comparing tools and describing problems on Reddit, X, LinkedIn and Hacker News. Daily Brief finds relevant conversations and drafts replies in your voice. Your job is to decide where you have something useful to add.
+Someone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.
 
-When you’re ready to try this, start your Radar trial, then follow the steps below. You’ll see the price before confirming.
+Your saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.
 
-1. Open Daily Brief and review today’s conversations. Aim to find five you can help with; fewer thoughtful replies are better than forcing five. Read each original thread and edit the draft so it answers that person’s actual question.
+1. Open Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.
 
-2. Copy a reply and post it in the original conversation, then mark it posted in Radar. Mention your product only when it helps answer the question, and be clear about your connection to it. Repeat this on days you have something useful to add.
+2. Copy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.
 
-Check progress: use Radar’s copied/posted states to track your follow-through. Revisit the original threads for responses. Copying a draft alone doesn’t mean it was posted or that anyone engaged.
+Check progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.
 
 Start my Radar trial: https://radar.thally.io/start-trial
 
@@ -24,4 +24,4 @@ Email preferences: https://radar.thally.io/email-preferences?token=preview-only-
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Stop weekly education emails: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

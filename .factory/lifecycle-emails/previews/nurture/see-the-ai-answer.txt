@@ -1,36 +1,26 @@
-Subject: Would an AI assistant recommend your product?
-
-Preview: Read each assistant’s response and the pages it cites.
-
-From: Ekene at Radar <radar@thally.io>
-
-Reply to: team@thally.io
-
-
+Subject: Does ChatGPT or Claude recommend Fieldnote?
+Preview: Track two buyer questions, read the answers and choose one topic to answer on your site.
 
 Hi Alex,
 
-Think of a question someone might ask before discovering your product. Which products would an AI assistant include in its answer?
+Read the answers to buyer questions.
 
-AI Visibility in Radar checks questions related to your business across ChatGPT, Perplexity, Gemini, Claude and Grok.
+Think of the question someone would ask before discovering Fieldnote. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.
 
-• Read the response each assistant returned.
-• See whether your business was mentioned and which pages were cited.
-• Use a question worth answering as a topic for your Content Calendar.
+1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
 
-You can add your own questions, too. A response that hasn’t been collected is shown separately from one where you weren’t mentioned.
+2. Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.
 
-Start your trial, then open Performance → AI Visibility to see the answers for yourself.
+Check progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
 
-Try AI Visibility in Radar: https://radar.thally.io/start-trial
+Check my AI visibility: https://radar.thally.io/email/learn?lesson=ai_visibility
 
-$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.
+Reply to this email or write to support@thally.io.
 
-Ekene
-Founder, Radar
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 
-Reply to team@thally.io.
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

@@ -1,0 +1,26 @@
+Subject: Does ChatGPT or Claude recommend Fieldnote?
+Preview: Track two buyer questions, read the answers and choose one topic to answer on your site.
+
+Hi Alex,
+
+Read the answers to buyer questions.
+
+Think of the question someone would ask before discovering Fieldnote. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.
+
+1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
+
+2. Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.
+
+Check progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
+
+Check my AI visibility: https://radar.thally.io/email/learn?lesson=ai_visibility&businessId=11111111-1111-4111-8111-111111111111
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

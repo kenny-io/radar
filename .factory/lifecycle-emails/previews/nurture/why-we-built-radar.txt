@@ -1,14 +1,9 @@
 Subject: Why we built Radar
-
-Preview: Building is easier. Getting beyond your own network is still work.
-
-From: Ekene at Radar <radar@thally.io>
-
-Reply to: team@thally.io
-
-
+Preview: Building is easier. Getting your product beyond your own network still takes work.
 
 Hi Alex,
+
+A note from Ekene
 
 I’m Ekene, Radar’s founder.
 
@@ -16,15 +11,16 @@ It’s never been easier to build a product. But getting it beyond your own netw
 
 That’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.
 
-If you get stuck or anything is unclear, reply here. I’m happy to help.
+If you get stuck or anything is unclear, reply and tell me what you’re trying to do. I’m happy to help.
+
+Ekene
 
 Reply to Ekene: mailto:team@thally.io
 
-Ekene
-Founder, Radar
+Reply to this email or write to team@thally.io.
 
-Reply to team@thally.io.
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 
-Fairspleet LLC · 348 Business Bay, Dubai, UAE
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
-Unsubscribe: https://radar.thally.io/email-preferences?token=preview-only-nurture-draft
+Stop optional setup emails: https://radar.thally.io/email-preferences?token=preview-only-not-valid

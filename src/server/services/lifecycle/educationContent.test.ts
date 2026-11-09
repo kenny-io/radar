@@ -17,7 +17,7 @@ describe('weekly feature lesson copy', () => {
     for (const access of ['start_trial', 'restart', 'setup'] as const) {
       for (const lesson of EDUCATION_LESSONS) {
         const copy = renderEducationLesson(lesson, { ...context, access });
-        expect(copy.paragraphs.some(p => p.includes(access === 'start_trial' ? 'start your Radar trial' : access === 'restart' ? 'restart your access' : 'reviewing your Business Profile'))).toBe(true);
+        expect(copy.paragraphs.some(p => p.toLowerCase().includes(access === 'start_trial' ? 'start your radar trial' : access === 'restart' ? 'restart your radar access' : 'review the business profile'))).toBe(true);
         expect(copy.ctaLabel).toBe(access === 'start_trial' ? 'Start my Radar trial' : access === 'restart' ? 'Reopen my Radar account' : 'Continue setting up Radar');
       }
     }
@@ -33,6 +33,6 @@ describe('weekly feature lesson copy', () => {
   });
   it('does not ask a disconnected account to inspect nonexistent Search Console measurements', () => {
     expect(renderEducationLesson('organic_search', context).steps[1]).toContain('Connect Google Search Console');
-    expect(renderEducationLesson('organic_search', { ...context, gscConnected: true }).steps[1]).toContain('synced Search Console data');
+    expect(renderEducationLesson('organic_search', { ...context, gscConnected: true }).steps[1]).toContain('Queries and Pages tables in Performance');
   });
 });

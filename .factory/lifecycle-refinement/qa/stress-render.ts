@@ -1,0 +1,12 @@
+import {chromium} from 'playwright';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {renderLifecycle} from '@/server/services/lifecycle/templates';
+import {pathToFileURL} from 'node:url';
+import {invitationEmail} from '@/server/services/legacyContent';
+const out='.factory/lifecycle-refinement/qa/stress';await mkdir(out,{recursive:true});
+const appUrl='https://radar.example.test',business='W'.repeat(80),logo=await readFile('public/brand/radar-mark-email.png');
+const cases=[{id:'education-long-name',mail:renderLifecycle('weekly_education',{education:{version:1,lesson:'ai_visibility',context:{businessName:business,offering:'x'.repeat(100),audience:'y'.repeat(100),gscConnected:false,access:'workspace'}}},{appUrl,unsubscribeUrl:appUrl+'/email-preferences?token=qa-only'})},{id:'invite-long-name',mail:invitationEmail({appUrl,link:appUrl+'/api/invites/qa-only',inviter:'A'.repeat(160),business:'B'.repeat(160),domain:'qa.test',role:'Editor',days:14})}];
+if(process.env.QA_COMPANION_ROOT){const {recommendationDigestContent}=await import(pathToFileURL(process.env.QA_COMPANION_ROOT+'/src/server/services/visibility/digestContent.ts').href);const summary={weekly:{start:'2026-11-02',end:'2026-11-09',current:{share:.5,mentioned:5,collected:10},previous:{share:null,mentioned:0,collected:0},delta:null},weeklyBiggestMiss:{prompt:'W'.repeat(300),misses:5,entryId:null}};cases.push({id:'local-report-long-prompt',mail:{subject:'Report',...recommendationDigestContent(summary,appUrl,appUrl+'/ai-email-preferences?token=qa-only-invalid')}});}
+const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true}),results=[];
+try{for(const c of cases){const p=await browser.newPage({viewport:{width:390,height:1000}});await p.route('https://radar.example.test/**',r=>r.request().url().endsWith('/brand/radar-mark-email.png')?r.fulfill({contentType:'image/png',body:logo}):r.abort());await p.setContent(c.mail.html!);await p.evaluate(()=>Promise.all([...document.images].map(i=>i.decode())));const metric=await p.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth,body:document.body.scrollWidth}));results.push({id:c.id,pass:metric.width<=metric.viewport,...metric});await p.screenshot({path:out+'/'+c.id+'.png',fullPage:true});await p.close();}}
+finally{await browser.close();await writeFile(out+'/results.json',JSON.stringify(results,null,2)+'\n');console.log(JSON.stringify(results));}

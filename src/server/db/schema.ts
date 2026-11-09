@@ -529,3 +529,21 @@ export const educationEnrollments = pgTable('education_enrollments', {
 }, t => [index('education_due_idx').on(t.nextDueAt, t.userId).where(sql`status = 'active' AND pending_email_id IS NULL`),
   check('education_version_check', sql`${t.version} = 1`), check('education_lesson_check', sql`${t.nextLesson} BETWEEN 0 AND 5`),
   check('education_status_check', sql`${t.status} IN ('active', 'completed', 'paused', 'blocked')`)]);
+
+/** Account-wide one-time guide history, independent of the five-lesson course. */
+export const lifecycleGuideStates = pgTable('lifecycle_guide_states', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  guideId: text('guide_id').$type<'article_workflow' | 'search_refresh'>().notNull(),
+  firstObservedAt: timestamp('first_observed_at', { withTimezone: true }).notNull().defaultNow(),
+  dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  pendingEmailId: uuid('pending_email_id').references(() => lifecycleEmails.id, { onDelete: 'restrict' }),
+  sourceBusinessId: uuid('source_business_id').references(() => businesses.id, { onDelete: 'set null' }),
+  status: text('status').$type<'waiting' | 'queued' | 'sent' | 'skipped' | 'blocked'>().notNull().default('waiting'),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  reason: text('reason'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.guideId] }), index('lifecycle_guides_due_idx').on(t.dueAt, t.userId).where(sql`status = 'waiting'`),
+  index('lifecycle_guides_observe_idx').on(t.updatedAt, t.userId).where(sql`status = 'waiting'`),
+  check('lifecycle_guide_id_check', sql`${t.guideId} IN ('article_workflow', 'search_refresh')`),
+  check('lifecycle_guide_status_check', sql`${t.status} IN ('waiting', 'queued', 'sent', 'skipped', 'blocked')`)]);

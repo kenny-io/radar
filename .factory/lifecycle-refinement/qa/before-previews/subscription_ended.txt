@@ -1,0 +1,17 @@
+Your Radar subscription has ended
+
+Hi Alex,
+
+Your subscription has ended
+
+Your Radar subscription is no longer active.
+
+You can restart from your account. You’ll see the amount due before confirming payment.
+
+Open my account: https://radar.example.test/start-trial
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.example.test/privacy · Terms: https://radar.example.test/terms
+
+Email preferences: https://radar.example.test/email-preferences

@@ -1,5 +1,5 @@
-Your Radar receipt
-Reply to: support@thally.io
+Subject: Your Radar receipt
+Preview: Your payment details and where to download the invoice.
 
 Hi Alex,
 
@@ -16,3 +16,5 @@ Open Billing: https://radar.thally.io/settings?section=billing
 Reply to this email or write to support@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences

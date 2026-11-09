@@ -2,6 +2,7 @@
 import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { env } from '../env';
+import { CONFIRMATION_SUBJECT } from './legacyContent';
 
 export async function sendMail(to: string, subject: string, text: string, html?: string) {
   const [row] = await db.insert(schema.outboxEmails).values({ to, subject, text, html: html || null }).returning({ id: schema.outboxEmails.id });
@@ -24,7 +25,7 @@ export async function sendMail(to: string, subject: string, text: string, html?:
  * Development stubs retain an encrypted capture solely for local verification/browser QA. */
 export async function sendAuthMail(to: string, text: string) {
   const { encrypt } = await import('../crypto');
-  const subject = 'Confirm your email for Radar';
+  const subject = CONFIRMATION_SUBJECT;
   const [row] = await db.insert(schema.outboxEmails).values({ to, subject,
     text: env.devStubs ? 'encrypted-auth:' + encrypt({ text }) : '[Security email content redacted]', html: null,
   }).returning({ id: schema.outboxEmails.id });

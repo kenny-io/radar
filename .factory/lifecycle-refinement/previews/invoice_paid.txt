@@ -1,0 +1,20 @@
+Subject: Your Radar receipt
+Preview: Your payment details and where to download the invoice.
+
+Hi Alex,
+
+Payment received. Thank you.
+
+We’ve received your $49.00 payment for Radar.
+
+Invoice: RADAR-DEMO-0001.
+
+To view or download your invoice, open Settings → Billing, then Manage billing.
+
+Open Billing: https://radar.thally.io/settings?section=billing
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences

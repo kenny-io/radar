@@ -1,0 +1,2731 @@
+{
+  "environment": "Installed real Google Chrome; actual shared renderers; first-party logo fulfilled locally; plaintext is explicitly labeled viewer only; no provider/inbox claim",
+  "cases": [
+    {
+      "id": "welcome",
+      "family": "welcome",
+      "format": "html",
+      "subject": "Welcome to Radar"
+    },
+    {
+      "id": "founder_note",
+      "family": "founder_note",
+      "format": "html",
+      "subject": "Why we built Radar"
+    },
+    {
+      "id": "password_reset",
+      "family": "password_reset",
+      "format": "html",
+      "subject": "Reset your Radar password"
+    },
+    {
+      "id": "trial_started",
+      "family": "trial_started",
+      "format": "html",
+      "subject": "Your Radar trial is on"
+    },
+    {
+      "id": "trial_ending",
+      "family": "trial_ending",
+      "format": "html",
+      "subject": "Your Radar trial ends soon"
+    },
+    {
+      "id": "invoice_paid",
+      "family": "invoice_paid",
+      "format": "html",
+      "subject": "Your Radar receipt"
+    },
+    {
+      "id": "payment_failed",
+      "family": "payment_failed",
+      "format": "html",
+      "subject": "Your Radar payment didn’t go through"
+    },
+    {
+      "id": "cancellation_scheduled",
+      "family": "cancellation_scheduled",
+      "format": "html",
+      "subject": "Your Radar cancellation is confirmed"
+    },
+    {
+      "id": "subscription_ended",
+      "family": "subscription_ended",
+      "format": "html",
+      "subject": "Your Radar subscription has ended"
+    },
+    {
+      "id": "welcome-profile",
+      "family": "welcome",
+      "format": "html",
+      "subject": "Put your Business Profile to work"
+    },
+    {
+      "id": "subscription-setup-expired",
+      "family": "subscription_ended",
+      "format": "html",
+      "subject": "Your Radar subscription has ended"
+    },
+    {
+      "id": "work-brief_reply",
+      "family": "work:brief_reply",
+      "format": "html",
+      "subject": "Conversations worth joining"
+    },
+    {
+      "id": "work-calendar_review",
+      "family": "work:calendar_review",
+      "format": "html",
+      "subject": "Choose the topics you want to publish"
+    },
+    {
+      "id": "work-article_social",
+      "family": "work:article_social",
+      "format": "html",
+      "subject": "Turn your article into social posts"
+    },
+    {
+      "id": "work-social_publish",
+      "family": "work:social_publish",
+      "format": "html",
+      "subject": "Your social posts are ready to schedule"
+    },
+    {
+      "id": "work-combined",
+      "family": "work:combined",
+      "format": "html",
+      "subject": "A few things to pick up in Radar"
+    },
+    {
+      "id": "ai_visibility-workspace",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "workspace",
+      "subject": "Does ChatGPT or Claude recommend Paper & Pixel?"
+    },
+    {
+      "id": "daily_brief-workspace",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "workspace",
+      "subject": "Find a conversation Paper & Pixel can help with"
+    },
+    {
+      "id": "backlinks-workspace",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "workspace",
+      "subject": "How Paper & Pixel could appear on another site"
+    },
+    {
+      "id": "organic_search-workspace",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "workspace",
+      "subject": "What should Paper & Pixel publish next?"
+    },
+    {
+      "id": "social_marketing-workspace",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "workspace",
+      "subject": "Put Paper & Pixel’s article to work on social"
+    },
+    {
+      "id": "article_workflow-workspace",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "workspace",
+      "subject": "What happens before an article goes live"
+    },
+    {
+      "id": "search_refresh-workspace",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "workspace",
+      "subject": "Your next article might be a page you already have"
+    },
+    {
+      "id": "ai_visibility-start_trial",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "Does ChatGPT or Claude recommend Paper & Pixel?"
+    },
+    {
+      "id": "daily_brief-start_trial",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "Find a conversation Paper & Pixel can help with"
+    },
+    {
+      "id": "backlinks-start_trial",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "How Paper & Pixel could appear on another site"
+    },
+    {
+      "id": "organic_search-start_trial",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "What should Paper & Pixel publish next?"
+    },
+    {
+      "id": "social_marketing-start_trial",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "Put Paper & Pixel’s article to work on social"
+    },
+    {
+      "id": "article_workflow-start_trial",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "What happens before an article goes live"
+    },
+    {
+      "id": "search_refresh-start_trial",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "start_trial",
+      "subject": "Your next article might be a page you already have"
+    },
+    {
+      "id": "ai_visibility-restart",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "restart",
+      "subject": "Does ChatGPT or Claude recommend Paper & Pixel?"
+    },
+    {
+      "id": "daily_brief-restart",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "restart",
+      "subject": "Find a conversation Paper & Pixel can help with"
+    },
+    {
+      "id": "backlinks-restart",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "restart",
+      "subject": "How Paper & Pixel could appear on another site"
+    },
+    {
+      "id": "organic_search-restart",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "restart",
+      "subject": "What should Paper & Pixel publish next?"
+    },
+    {
+      "id": "social_marketing-restart",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "restart",
+      "subject": "Put Paper & Pixel’s article to work on social"
+    },
+    {
+      "id": "article_workflow-restart",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "restart",
+      "subject": "What happens before an article goes live"
+    },
+    {
+      "id": "search_refresh-restart",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "restart",
+      "subject": "Your next article might be a page you already have"
+    },
+    {
+      "id": "ai_visibility-setup",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "setup",
+      "subject": "Does ChatGPT or Claude recommend Paper & Pixel?"
+    },
+    {
+      "id": "daily_brief-setup",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "setup",
+      "subject": "Find a conversation Paper & Pixel can help with"
+    },
+    {
+      "id": "backlinks-setup",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "setup",
+      "subject": "How Paper & Pixel could appear on another site"
+    },
+    {
+      "id": "organic_search-setup",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "setup",
+      "subject": "What should Paper & Pixel publish next?"
+    },
+    {
+      "id": "social_marketing-setup",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "setup",
+      "subject": "Put Paper & Pixel’s article to work on social"
+    },
+    {
+      "id": "article_workflow-setup",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "setup",
+      "subject": "What happens before an article goes live"
+    },
+    {
+      "id": "search_refresh-setup",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "setup",
+      "subject": "Your next article might be a page you already have"
+    },
+    {
+      "id": "confirmation",
+      "family": "confirmation",
+      "format": "text",
+      "subject": "Confirm your email for Radar"
+    },
+    {
+      "id": "invite-admin",
+      "family": "team-invitation",
+      "format": "html",
+      "subject": "Morgan invited you to Paper & Pixel on Radar"
+    },
+    {
+      "id": "invite-editor",
+      "family": "team-invitation",
+      "format": "html",
+      "subject": "Morgan invited you to Paper & Pixel on Radar"
+    },
+    {
+      "id": "invite-viewer",
+      "family": "team-invitation",
+      "format": "html",
+      "subject": "Morgan invited you to Paper & Pixel on Radar"
+    },
+    {
+      "id": "backlink-approved-manual",
+      "family": "backlink-approved",
+      "format": "text",
+      "subject": "Beacon Studio approved a partner link on partner.example.test/guide"
+    },
+    {
+      "id": "backlink-approved-radar",
+      "family": "backlink-approved",
+      "format": "text",
+      "subject": "Beacon Studio approved a partner link on partner.example.test/guide"
+    },
+    {
+      "id": "backlink-declined",
+      "family": "backlink-declined",
+      "format": "text",
+      "subject": "Beacon Studio passed on a partner link"
+    },
+    {
+      "id": "backlink-removal",
+      "family": "backlink-removal",
+      "format": "text",
+      "subject": "Link removal request from Beacon Studio"
+    },
+    {
+      "id": "backlink-lost-missing",
+      "family": "backlink-lost",
+      "format": "text",
+      "subject": "Partner link not found on partner.example.test/guide"
+    },
+    {
+      "id": "backlink-lost-rel",
+      "family": "backlink-lost",
+      "format": "text",
+      "subject": "Partner link attribute changed on partner.example.test/guide"
+    },
+    {
+      "id": "ai-weekly-report-miss",
+      "family": "local-ai-report",
+      "format": "html",
+      "subject": "Recommendation share this week · qa.test"
+    },
+    {
+      "id": "ai-weekly-report-no-miss",
+      "family": "local-ai-report",
+      "format": "html",
+      "subject": "Recommendation share this week · qa.test"
+    }
+  ],
+  "results": [
+    {
+      "id": "welcome",
+      "family": "welcome",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nWelcome to Radar.\n\nYour Radar account is ready. Open it to continue from where you left off.\n\nYour website and Business Profile give Radar the context for the articles, social posts and replies it prepares. You can review that context as you get started.\n\nOpen Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your account is ready. Continue from where you left off.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "welcome",
+      "family": "welcome",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nWelcome to Radar.\n\nYour Radar account is ready. Open it to continue from where you left off.\n\nYour website and Business Profile give Radar the context for the articles, social posts and replies it prepares. You can review that context as you get started.\n\nOpen Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your account is ready. Continue from where you left off.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "founder_note",
+      "family": "founder_note",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nA note from Ekene\n\nI’m Ekene, Radar’s founder.\n\nIt’s never been easier to build a product. But getting it beyond your own network is still a full-time job.\n\nThat’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.\n\nIf you get stuck or anything is unclear, reply and tell me what you’re trying to do. I’m happy to help.\n\nEkene\n\nReply to Ekene\n\nReply to this email or write to team@thally.io.\n\nPrivacy · Terms\n\nEmail preferences\n\nStop optional setup emails",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Building is easier. Getting your product beyond your own network still takes work.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "founder_note",
+      "family": "founder_note",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nA note from Ekene\n\nI’m Ekene, Radar’s founder.\n\nIt’s never been easier to build a product. But getting it beyond your own network is still a full-time job.\n\nThat’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.\n\nIf you get stuck or anything is unclear, reply and tell me what you’re trying to do. I’m happy to help.\n\nEkene\n\nReply to Ekene\n\nReply to this email or write to team@thally.io.\n\nPrivacy · Terms\n\nEmail preferences\n\nStop optional setup emails",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Building is easier. Getting your product beyond your own network still takes work.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "password_reset",
+      "family": "password_reset",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose a new password\n\nUse this link to choose a new password for your Radar account.\n\nThe link works once and expires one hour after the request. After changing your password, sign in again on your devices.\n\nIf you didn’t request a reset, you can ignore this email.\n\nReset password\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your one-time link within an hour to choose a new password.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "password_reset",
+      "family": "password_reset",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose a new password\n\nUse this link to choose a new password for your Radar account.\n\nThe link works once and expires one hour after the request. After changing your password, sign in again on your devices.\n\nIf you didn’t request a reset, you can ignore this email.\n\nReset password\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your one-time link within an hour to choose a new password.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "trial_started",
+      "family": "trial_started",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\n3 days to try Radar\n\nYour Radar trial ends on November 15, 2026 at 12:00 PM UTC.\n\nYour $1.00 card-confirmation payment is credited to your first month. That month is normally $49.00, followed by $50.00/month. Your invoice shows any tax or other adjustments.\n\nYour subscription continues automatically after the trial. To avoid the monthly charge, cancel before the end date in Settings → Billing.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your trial end date, first-month credit and subscription controls.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "trial_started",
+      "family": "trial_started",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\n3 days to try Radar\n\nYour Radar trial ends on November 15, 2026 at 12:00 PM UTC.\n\nYour $1.00 card-confirmation payment is credited to your first month. That month is normally $49.00, followed by $50.00/month. Your invoice shows any tax or other adjustments.\n\nYour subscription continues automatically after the trial. To avoid the monthly charge, cancel before the end date in Settings → Billing.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your trial end date, first-month credit and subscription controls.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "trial_ending",
+      "family": "trial_ending",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour trial is nearly up.\n\nYour Radar trial ends on November 15, 2026 at 12:00 PM UTC. Your subscription will then continue automatically.\n\nYour first month is normally $49.00 after the $1.00 card-confirmation credit, followed by $50.00/month. Your invoice shows any tax or other adjustments.\n\nTo avoid the monthly charge, cancel in Settings → Billing before your trial ends. You can also review your subscription there.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Check the renewal date and amount, or manage your subscription before it renews.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "trial_ending",
+      "family": "trial_ending",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour trial is nearly up.\n\nYour Radar trial ends on November 15, 2026 at 12:00 PM UTC. Your subscription will then continue automatically.\n\nYour first month is normally $49.00 after the $1.00 card-confirmation credit, followed by $50.00/month. Your invoice shows any tax or other adjustments.\n\nTo avoid the monthly charge, cancel in Settings → Billing before your trial ends. You can also review your subscription there.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Check the renewal date and amount, or manage your subscription before it renews.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invoice_paid",
+      "family": "invoice_paid",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nPayment received. Thank you.\n\nWe’ve received your $50.00 payment for Radar.\n\nInvoice: QA-001.\n\nTo view or download your invoice, open Settings → Billing, then Manage billing.\n\nOpen Billing\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your payment details and where to download the invoice.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invoice_paid",
+      "family": "invoice_paid",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nPayment received. Thank you.\n\nWe’ve received your $50.00 payment for Radar.\n\nInvoice: QA-001.\n\nTo view or download your invoice, open Settings → Billing, then Manage billing.\n\nOpen Billing\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your payment details and where to download the invoice.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "payment_failed",
+      "family": "payment_failed",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nPlease check your payment method.\n\nYour $50.00 invoice payment for Radar didn’t go through.\n\nOpen Billing to check or update your payment method and pay the invoice. Access may be paused while it remains unpaid.\n\nReview my payment\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Open Billing to check your card and pay the outstanding invoice.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "payment_failed",
+      "family": "payment_failed",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nPlease check your payment method.\n\nYour $50.00 invoice payment for Radar didn’t go through.\n\nOpen Billing to check or update your payment method and pay the invoice. Access may be paused while it remains unpaid.\n\nReview my payment\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Open Billing to check your card and pay the outstanding invoice.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "cancellation_scheduled",
+      "family": "cancellation_scheduled",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour cancellation is confirmed.\n\nYou can keep using Radar until December 1, 2026 at 12:00 PM UTC. Your subscription won’t renew after that date.\n\nIf you decide to continue, open Settings → Billing before it ends to manage the cancellation.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your access continues until the end date shown in this email.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "cancellation_scheduled",
+      "family": "cancellation_scheduled",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour cancellation is confirmed.\n\nYou can keep using Radar until December 1, 2026 at 12:00 PM UTC. Your subscription won’t renew after that date.\n\nIf you decide to continue, open Settings → Billing before it ends to manage the cancellation.\n\nManage subscription\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your access continues until the end date shown in this email.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "subscription_ended",
+      "family": "subscription_ended",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour subscription has ended\n\nYour Radar subscription is no longer active.\n\nTo restart access, open your account and review the amount due before confirming payment.\n\nReview restart options\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Open your account if you’d like to restart access.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "subscription_ended",
+      "family": "subscription_ended",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour subscription has ended\n\nYour Radar subscription is no longer active.\n\nTo restart access, open your account and review the amount due before confirming payment.\n\nReview restart options\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Open your account if you’d like to restart access.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "welcome-profile",
+      "family": "welcome",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour Business Profile is ready.\n\nYour website analysis and Business Profile for Paper & Pixel are saved in Radar.\n\nReview what Radar learned about your business, audience and voice. That profile guides the topics, posts and replies it prepares for you.\n\nStart with one question you’d want your next customer to find an answer to. Open Radar to continue from your profile.\n\nContinue with my profile\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your website analysis is saved. Pick up from your Business Profile.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "welcome-profile",
+      "family": "welcome",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour Business Profile is ready.\n\nYour website analysis and Business Profile for Paper & Pixel are saved in Radar.\n\nReview what Radar learned about your business, audience and voice. That profile guides the topics, posts and replies it prepares for you.\n\nStart with one question you’d want your next customer to find an answer to. Open Radar to continue from your profile.\n\nContinue with my profile\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Your website analysis is saved. Pick up from your Business Profile.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "subscription-setup-expired",
+      "family": "subscription_ended",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour subscription has ended\n\nYour subscription setup expired before payment was completed.\n\nTo restart access, open your account and review the amount due before confirming payment.\n\nReview restart options\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Subscription setup expired before payment was completed.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "subscription-setup-expired",
+      "family": "subscription_ended",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour subscription has ended\n\nYour subscription setup expired before payment was completed.\n\nTo restart access, open your account and review the amount due before confirming payment.\n\nReview restart options\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Subscription setup expired before payment was completed.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-brief_reply",
+      "family": "work:brief_reply",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nConversations worth joining\nPaper & Pixel · Daily Brief\n\n2 conversations are ready to review. Read the original thread for one you can help with, edit the suggested reply and join in.\n\nReview a conversation\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read a thread, edit the reply and add something useful to the conversation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-brief_reply",
+      "family": "work:brief_reply",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nConversations worth joining\nPaper & Pixel · Daily Brief\n\n2 conversations are ready to review. Read the original thread for one you can help with, edit the suggested reply and join in.\n\nReview a conversation\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read a thread, edit the reply and add something useful to the conversation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-calendar_review",
+      "family": "work:calendar_review",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose the topics you want to publish\nPaper & Pixel · Content Calendar\n\n2 proposed topics are waiting in your content plan. Open one, check the question it should answer and approve it if it’s useful. You can review the draft when it’s ready.\n\nChoose my next topic\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Pick a proposed topic you want Radar to draft.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-calendar_review",
+      "family": "work:calendar_review",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose the topics you want to publish\nPaper & Pixel · Content Calendar\n\n2 proposed topics are waiting in your content plan. Open one, check the question it should answer and approve it if it’s useful. You can review the draft when it’s ready.\n\nChoose my next topic\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Pick a proposed topic you want Radar to draft.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-article_social",
+      "family": "work:article_social",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nTurn your article into social posts\nPaper & Pixel · Article to social\n\n“A useful article” is ready to use in a social pack. Choose an idea from it, let Radar prepare the posts and check each one before sharing.\n\nMake posts from my article\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use an idea from your article in a post you can review and share.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-article_social",
+      "family": "work:article_social",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nTurn your article into social posts\nPaper & Pixel · Article to social\n\n“A useful article” is ready to use in a social pack. Choose an idea from it, let Radar prepare the posts and check each one before sharing.\n\nMake posts from my article\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use an idea from your article in a post you can review and share.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-social_publish",
+      "family": "work:social_publish",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour social posts are ready to schedule\nPaper & Pixel · Social posts\n\nYour social posts for “A useful article” are saved in Radar. Check the wording, image and link, then publish one or choose a time to schedule it.\n\nReview and schedule my posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Check your saved posts and choose when to share them.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-social_publish",
+      "family": "work:social_publish",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nYour social posts are ready to schedule\nPaper & Pixel · Social posts\n\nYour social posts for “A useful article” are saved in Radar. Check the wording, image and link, then publish one or choose a time to schedule it.\n\nReview and schedule my posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Check your saved posts and choose when to share them.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-combined",
+      "family": "work:combined",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nPick up where you left off.\n\nThere’s work saved in your account that you can pick up. Choose one next step when you open Radar.\n\nPaper & Pixel · Daily Brief\n\n2 conversations are ready to review. Read the original thread for one you can help with, edit the suggested reply and join in.\n\nReview a conversation\n\nPaper & Pixel · Content Calendar\n\n2 proposed topics are waiting in your content plan. Open one, check the question it should answer and approve it if it’s useful. You can review the draft when it’s ready.\n\nChoose my next topic\n\nPaper & Pixel · Article to social\n\n“A useful article” is ready to use in a social pack. Choose an idea from it, let Radar prepare the posts and check each one before sharing.\n\nMake posts from my article\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose one useful next step from the work already saved in your account.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "work-combined",
+      "family": "work:combined",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nPick up where you left off.\n\nThere’s work saved in your account that you can pick up. Choose one next step when you open Radar.\n\nPaper & Pixel · Daily Brief\n\n2 conversations are ready to review. Read the original thread for one you can help with, edit the suggested reply and join in.\n\nReview a conversation\n\nPaper & Pixel · Content Calendar\n\n2 proposed topics are waiting in your content plan. Open one, check the question it should answer and approve it if it’s useful. You can review the draft when it’s ready.\n\nChoose my next topic\n\nPaper & Pixel · Article to social\n\n“A useful article” is ready to use in a social pack. Choose an idea from it, let Radar prepare the posts and check each one before sharing.\n\nMake posts from my article\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nTurn off work reminders",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose one useful next step from the work already saved in your account.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-workspace",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nCheck my AI visibility\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-workspace",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nCheck my AI visibility\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-workspace",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nOpen my Daily Brief\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-workspace",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nOpen my Daily Brief\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-workspace",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nExplore my backlink network\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-workspace",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nExplore my backlink network\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-workspace",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nReview my Content Calendar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-workspace",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nReview my Content Calendar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-workspace",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nCreate my social posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-workspace",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nCreate my social posts\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-workspace",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nChoose my first article\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-workspace",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nChoose my first article\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-workspace",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "workspace",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nOpen Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-workspace",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "workspace",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nOpen Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-start_trial",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-start_trial",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-start_trial",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-start_trial",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-start_trial",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-start_trial",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-start_trial",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-start_trial",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-start_trial",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-start_trial",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nYour saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-start_trial",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nYour saved profile carries into your Radar trial. You’ll see the price before starting, then you can follow this workflow in Content Calendar.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-start_trial",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nYour saved profile carries into your Radar trial. You’ll see the price before starting, then you can follow this workflow in Content Calendar.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nStart my Radar trial\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-start_trial",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "start_trial",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nThe guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.\n\nOnce your workspace access is active, open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-start_trial",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "start_trial",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nThe guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.\n\nOnce your workspace access is active, open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-restart",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-restart",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-restart",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-restart",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-restart",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-restart",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-restart",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-restart",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-restart",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-restart",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nYou can use these steps when you restart your Radar access. Open your account to review the amount before confirming.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-restart",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nWhen you restart your Radar access, you can pick up this workflow from your account. You’ll see the amount due before confirming.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-restart",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nWhen you restart your Radar access, you can pick up this workflow from your account. You’ll see the amount due before confirming.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nReopen my Radar account\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-restart",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "restart",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nThe guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.\n\nOnce your workspace access is active, open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-restart",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "restart",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nThe guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.\n\nOnce your workspace access is active, open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-setup",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai_visibility-setup",
+      "family": "lesson:ai_visibility",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nRead the answers to buyer questions.\n\nThink of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.\nRead one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.\n\nCheck progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Track two buyer questions, read the answers and choose one topic to answer on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-setup",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "daily_brief-setup",
+      "family": "lesson:daily_brief",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with someone’s question.\n\nSomeone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.\nCopy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.\n\nCheck progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Read the thread, make the reply your own and join in where you can add something useful.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-setup",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlinks-setup",
+      "family": "lesson:backlinks",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-setup",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "organic_search-setup",
+      "family": "lesson:organic_search",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nChoose one question worth answering.\n\nA search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.\nCheck whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.\n\nCheck progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Compare search intent and keyword estimates before choosing your next topic.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-setup",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "social_marketing-setup",
+      "family": "lesson:social_marketing",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nShare one idea from your article.\n\nAn article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.\nCheck the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.\n\nCheck progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Create posts from an article, check each one and choose when to publish.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-setup",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nFinish reviewing and saving your Business Profile in Radar. When your workspace is active, you can follow this workflow in Content Calendar.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "article_workflow-setup",
+      "family": "guide:article_workflow",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nStart with one article you’d want a customer to find.\n\nRadar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.\n\nFinish reviewing and saving your Business Profile in Radar. When your workspace is active, you can follow this workflow in Content Calendar.\n\nReview the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.\nRead the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.\n\nYou can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Choose the topic, review the draft and decide when it belongs on your site.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-setup",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "setup",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nThe guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.\n\nOnce your workspace access is active, open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "search_refresh-setup",
+      "family": "guide:search_refresh",
+      "format": "html",
+      "access": "setup",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi Alex,\n\nLook at the pages people already find.\n\nAn existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.\n\nChoose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.\n\nThe guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.\n\nOnce your workspace access is active, open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.\nChoose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.\n\nRecord the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.\n\nRead the page refresh guide\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Use your Search Console data to choose an existing page worth improving.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "confirmation",
+      "family": "confirmation",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nConfirm your email for Radar\nConfirm this email address to finish creating your Radar account and choose your password.\n\nConfirm my email: https://radar.example.test/verify-email#token=qa-only-invalid\n\nThis link works once and expires in 30 minutes. Account access starts after you confirm.\n\nIf you didn’t request this, you can ignore the email.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "confirmation",
+      "family": "confirmation",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nConfirm your email for Radar\nConfirm this email address to finish creating your Radar account and choose your password.\n\nConfirm my email: https://radar.example.test/verify-email#token=qa-only-invalid\n\nThis link works once and expires in 30 minutes. Account access starts after you confirm.\n\nIf you didn’t request this, you can ignore the email.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "invite-admin",
+      "family": "team-invitation",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Radar by Thally\n\nJoin Paper & Pixel on Radar\n\nMorgan invited you to join Paper & Pixel (paper-pixel.test) on Radar.\n\nAs an Admin, you can manage business settings, publishing and the team.\n\nAccept invitation\n\nYour invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Join the workspace as Admin and review your invitation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invite-admin",
+      "family": "team-invitation",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Radar by Thally\n\nJoin Paper & Pixel on Radar\n\nMorgan invited you to join Paper & Pixel (paper-pixel.test) on Radar.\n\nAs an Admin, you can manage business settings, publishing and the team.\n\nAccept invitation\n\nYour invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Join the workspace as Admin and review your invitation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invite-editor",
+      "family": "team-invitation",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Radar by Thally\n\nJoin Paper & Pixel on Radar\n\nMorgan invited you to join Paper & Pixel (paper-pixel.test) on Radar.\n\nAs an Editor, you can edit the Business Profile, calendar, articles and social packs, and approve articles.\n\nAccept invitation\n\nYour invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Join the workspace as Editor and review your invitation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invite-editor",
+      "family": "team-invitation",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Radar by Thally\n\nJoin Paper & Pixel on Radar\n\nMorgan invited you to join Paper & Pixel (paper-pixel.test) on Radar.\n\nAs an Editor, you can edit the Business Profile, calendar, articles and social packs, and approve articles.\n\nAccept invitation\n\nYour invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Join the workspace as Editor and review your invitation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invite-viewer",
+      "family": "team-invitation",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Radar by Thally\n\nJoin Paper & Pixel on Radar\n\nMorgan invited you to join Paper & Pixel (paper-pixel.test) on Radar.\n\nAs a Viewer, you can review the workspace. Approval and publishing controls are available to editors and admins.\n\nAccept invitation\n\nYour invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Join the workspace as Viewer and review your invitation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "invite-viewer",
+      "family": "team-invitation",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Radar by Thally\n\nJoin Paper & Pixel on Radar\n\nMorgan invited you to join Paper & Pixel (paper-pixel.test) on Radar.\n\nAs a Viewer, you can review the workspace. Approval and publishing controls are available to editors and admins.\n\nAccept invitation\n\nYour invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.\n\nEmail preferences",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Join the workspace as Viewer and review your invitation.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "backlink-approved-manual",
+      "family": "backlink-approved",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nBeacon Studio approved a partner link on partner.example.test/guide\nBeacon Studio (beacon.test) approved the proposed mention linking to their site from your page.\n\nPage: https://partner.example.test/guide\n\nProposed sentence:\n\nChoose [Paper & Pixel](https://paper-pixel.test) for your studio.\n\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\nAttribute: sponsored\nDisclosure: Member of the Radar partner network.\n\nReview the placement before adding it. You can use the sentence as written, adjust it or skip the placement. Keep the link attribute and disclosure.\n\nAfter placement, check Backlinks → Live links for verification status.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-approved-manual",
+      "family": "backlink-approved",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nBeacon Studio approved a partner link on partner.example.test/guide\nBeacon Studio (beacon.test) approved the proposed mention linking to their site from your page.\n\nPage: https://partner.example.test/guide\n\nProposed sentence:\n\nChoose [Paper & Pixel](https://paper-pixel.test) for your studio.\n\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\nAttribute: sponsored\nDisclosure: Member of the Radar partner network.\n\nReview the placement before adding it. You can use the sentence as written, adjust it or skip the placement. Keep the link attribute and disclosure.\n\nAfter placement, check Backlinks → Live links for verification status.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-approved-radar",
+      "family": "backlink-approved",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nBeacon Studio approved a partner link on partner.example.test/guide\nBeacon Studio (beacon.test) approved the proposed mention linking to their site from your page.\n\nPage: https://partner.example.test/guide\n\nProposed sentence:\n\nChoose [Paper & Pixel](https://paper-pixel.test) for your studio.\n\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\nAttribute: sponsored\nDisclosure: Member of the Radar partner network.\n\nReview the placement before adding it. You can use the sentence as written, adjust it or skip the placement. Keep the link attribute and disclosure.\n\nFor an article published through Radar, you can approve the proposal in Backlinks → Links from you. Radar adds the approved placement the next time that article publishes.\n\nAfter placement, check Backlinks → Live links for verification status.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-approved-radar",
+      "family": "backlink-approved",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nBeacon Studio approved a partner link on partner.example.test/guide\nBeacon Studio (beacon.test) approved the proposed mention linking to their site from your page.\n\nPage: https://partner.example.test/guide\n\nProposed sentence:\n\nChoose [Paper & Pixel](https://paper-pixel.test) for your studio.\n\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\nAttribute: sponsored\nDisclosure: Member of the Radar partner network.\n\nReview the placement before adding it. You can use the sentence as written, adjust it or skip the placement. Keep the link attribute and disclosure.\n\nFor an article published through Radar, you can approve the proposal in Backlinks → Links from you. Radar adds the approved placement the next time that article publishes.\n\nAfter placement, check Backlinks → Live links for verification status.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-declined",
+      "family": "backlink-declined",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nBeacon Studio passed on a partner link\nBeacon Studio (beacon.test) declined the proposed link on https://partner.example.test/guide.\n\nProposed sentence:\n\nChoose [Paper & Pixel](https://paper-pixel.test) for your studio.\n\nTheir note:\nWe already cover this topic. Thank you for the proposal.\n\nYou can review your other proposals in Radar → Backlinks.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-declined",
+      "family": "backlink-declined",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nBeacon Studio passed on a partner link\nBeacon Studio (beacon.test) declined the proposed link on https://partner.example.test/guide.\n\nProposed sentence:\n\nChoose [Paper & Pixel](https://paper-pixel.test) for your studio.\n\nTheir note:\nWe already cover this topic. Thank you for the proposal.\n\nYou can review your other proposals in Radar → Backlinks.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-removal",
+      "family": "backlink-removal",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nLink removal request from Beacon Studio\nBeacon Studio (beacon.test) has asked for this link to be removed from your site.\n\nPage: https://partner.example.test/guide\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\n\nPlease remove it within 7 days. Radar will re-check the page and update the link status in Backlinks.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-removal",
+      "family": "backlink-removal",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nLink removal request from Beacon Studio\nBeacon Studio (beacon.test) has asked for this link to be removed from your site.\n\nPage: https://partner.example.test/guide\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\n\nPlease remove it within 7 days. Radar will re-check the page and update the link status in Backlinks.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-lost-missing",
+      "family": "backlink-lost",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nPartner link not found on partner.example.test/guide\nA partner link needs a review.\n\nPage: https://partner.example.test/guide\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\n\nRadar couldn’t find the link on the page during its latest check.\n\nIf the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-lost-missing",
+      "family": "backlink-lost",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nPartner link not found on partner.example.test/guide\nA partner link needs a review.\n\nPage: https://partner.example.test/guide\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\n\nRadar couldn’t find the link on the page during its latest check.\n\nIf the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-lost-rel",
+      "family": "backlink-lost",
+      "format": "text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nPartner link attribute changed on partner.example.test/guide\nA partner link needs a review.\n\nPage: https://partner.example.test/guide\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\n\nThe link is present, but it no longer has rel=\"sponsored\". Network links require that attribute.\n\nIf the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "backlink-lost-rel",
+      "family": "backlink-lost",
+      "format": "text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Actual plaintext email\n\nPartner link attribute changed on partner.example.test/guide\nA partner link needs a review.\n\nPage: https://partner.example.test/guide\nDestination: https://paper-pixel.test\nAnchor: Paper & Pixel\n\nThe link is present, but it no longer has rel=\"sponsored\". Network links require that attribute.\n\nIf the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.\n\nEmail preferences: https://radar.example.test/email-preferences",
+      "images": [],
+      "preheaders": []
+    },
+    {
+      "id": "ai-weekly-report-miss",
+      "family": "local-ai-report",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Your weekly AI recommendation report\n\nThis week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 8 of 20 collected answers (40%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 6 of 20 collected answers (30%).\n\nThat’s a change of +10.0 percentage points.\n\nMost missed question: “What should independent studios look for in a design tool?”\n\nA topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nRadar by Thally\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "Your collected answers, the previous-week comparison and what to review next.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai-weekly-report-miss",
+      "family": "local-ai-report",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Your weekly AI recommendation report\n\nThis week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 8 of 20 collected answers (40%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 6 of 20 collected answers (30%).\n\nThat’s a change of +10.0 percentage points.\n\nMost missed question: “What should independent studios look for in a design tool?”\n\nA topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nRadar by Thally\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "Your collected answers, the previous-week comparison and what to review next.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai-weekly-report-no-miss",
+      "family": "local-ai-report",
+      "format": "html",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Your weekly AI recommendation report\n\nThis week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 20 of 20 collected answers (100%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 6 of 20 collected answers (30%).\n\nThat’s a change of +70.0 percentage points.\n\nThis report has no missed question to highlight.\n\nReview the answers to see how the assistants described your business.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nRadar by Thally\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "Your collected answers, the previous-week comparison and what to review next.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "id": "ai-weekly-report-no-miss",
+      "family": "local-ai-report",
+      "format": "html",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "Your weekly AI recommendation report\n\nThis week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 20 of 20 collected answers (100%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 6 of 20 collected answers (30%).\n\nThat’s a change of +70.0 percentage points.\n\nThis report has no missed question to highlight.\n\nReview the answers to see how the assistants described your business.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nRadar by Thally\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "Your collected answers, the previous-week comparison and what to review next.",
+          "hidden": true
+        }
+      ]
+    }
+  ]
+}

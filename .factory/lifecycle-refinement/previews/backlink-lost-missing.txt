@@ -1,0 +1,13 @@
+Subject: Partner link not found on partner.example/articles/design-tools
+
+A partner link needs a review.
+
+Page: https://partner.example/articles/design-tools
+Destination: https://fieldnote.example
+Anchor: Fieldnote
+
+Radar couldn’t find the link on the page during its latest check.
+
+If the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.
+
+Email preferences: https://radar.thally.io/email-preferences

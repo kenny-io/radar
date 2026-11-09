@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   const valid = education || work || !!preferenceUser(token);
   return <AuthShell energy={.2}><div className="col" style={{ maxWidth: 420, width: '100%', margin: '0 auto', gap: 20, position: 'relative' }}>
     <h1 className="h1">Email preferences</h1>
-    {valid ? <><p className="sub">{education ? 'You can stop weekly Radar education emails here.' : work ? 'You can stop Daily Brief, calendar and social follow-through reminders here.' : 'You can stop the founder’s optional setup check-in here.'} This does not affect billing or account-security messages.</p><PreferenceForm token={token} work={work} education={education} /></> : <p role="alert">This preference link isn’t valid. Contact <a href="mailto:support@thally.io">support@thally.io</a> for help.</p>}
+    {valid ? <><p className="sub">{education ? 'You can stop the weekly Radar lessons and one-time guides here.' : work ? 'You can stop Daily Brief, calendar and social follow-through reminders here.' : 'You can stop the founder’s optional setup check-in here.'} This does not affect billing or account-security messages.</p><PreferenceForm token={token} work={work} education={education} /></> : <p role="alert">This preference link isn’t valid. Contact <a href="mailto:support@thally.io">support@thally.io</a> for help.</p>}
     <a href="/email-preferences">Manage all email preferences</a>
     <a href="/signin">Return to sign in</a>
   </div></AuthShell>;

@@ -1,0 +1,17 @@
+Your Radar cancellation is confirmed
+
+Hi Alex,
+
+Your cancellation is confirmed.
+
+You can keep using Radar until December 1, 2026 at 12:00 PM UTC.
+
+Your subscription won’t renew after that. You can change this in Settings → Billing before it ends.
+
+Manage subscription: https://radar.example.test/settings?section=billing
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.example.test/privacy · Terms: https://radar.example.test/terms
+
+Email preferences: https://radar.example.test/email-preferences

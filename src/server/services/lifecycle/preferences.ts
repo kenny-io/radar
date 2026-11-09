@@ -77,6 +77,20 @@ export async function updateEducationPreference(userId: string, enabled: boolean
   await db.transaction(async tx => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`radar-education:${userId}`}, 0))`);
     await tx.insert(schema.userEmailPreferences).values({ userId, education: enabled }).onConflictDoUpdate({ target: schema.userEmailPreferences.userId, set: { education: enabled, updatedAt: now } });
+    const G = schema.lifecycleGuideStates, M = schema.lifecycleEmails;
+    const guides = await tx.select().from(G).where(and(eq(G.userId, userId), eq(G.status, 'queued'))).for('update');
+    for (const g of guides) {
+      const [pending] = g.pendingEmailId ? await tx.select().from(M).where(eq(M.id, g.pendingEmailId)).for('update') : [];
+      if (!pending) continue;
+      if (!enabled && pending.firstAttemptAt) {
+        await tx.update(G).set({ status: 'blocked', reason: 'opted_out_after_attempt', updatedAt: now }).where(and(eq(G.userId, userId), eq(G.guideId, g.guideId)));
+        if (pending.status === 'queued') await tx.update(M).set({ status: 'suppressed', lastError: 'opted_out_after_attempt' }).where(eq(M.id, pending.id));
+      } else if (enabled && !pending.firstAttemptAt && pending.status === 'queued') {
+        const next = new Date(Math.max(now.getTime(), g.dueAt.getTime())), expiresAt = new Date(next.getTime() + 30 * 864e5);
+        await tx.update(M).set({ nextAttemptAt: next, expiresAt }).where(eq(M.id, pending.id));
+        await tx.update(G).set({ expiresAt, updatedAt: now }).where(and(eq(G.userId, userId), eq(G.guideId, g.guideId)));
+      }
+    }
     const E = schema.educationEnrollments;
     const [e] = await tx.select().from(E).where(eq(E.userId, userId)).for('update');
     if (!e || ['completed', 'blocked'].includes(e.status)) return;

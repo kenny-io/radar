@@ -8,6 +8,7 @@ import { clientIp } from '../abuse/ip';
 import { enforce, HOUR } from '../abuse/rateLimit';
 import { verifySignupHuman } from '../abuse/human';
 import { sendAuthMail } from '../services/mail';
+import { confirmationEmail } from '../services/legacyContent';
 import { safeNext } from '../billing/guard';
 import { queueSignupEmails } from './signupEmails';
 import { hashPassword } from './session';
@@ -44,7 +45,8 @@ export async function sendVerification(user: Pick<typeof schema.users.$inferSele
     expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60000), next: safeNext(next),
   });
   try {
-    await sendAuthMail(user.email, `Confirm your email for Radar\n\nOpen this link to confirm your email and choose your password:\n${env.appUrl}/verify-email#token=${token}\n\nThis link works once and expires in ${VERIFICATION_MINUTES} minutes. If you did not request this, you can ignore this email. No account access is granted until you confirm.`);
+    const mail = confirmationEmail({ appUrl: env.appUrl, link: `${env.appUrl}/verify-email#token=${token}`, minutes: VERIFICATION_MINUTES });
+    await sendAuthMail(user.email, mail.text);
   } catch {
     await db.delete(schema.emailVerificationTokens).where(eq(schema.emailVerificationTokens.tokenHash, hash));
     throw new RadarError('Radar couldn’t send the confirmation email. Please try again.', 503, 'mail_unavailable');

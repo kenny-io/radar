@@ -1,0 +1,13 @@
+Subject: Partner link attribute changed on partner.example/articles/design-tools
+
+A partner link needs a review.
+
+Page: https://partner.example/articles/design-tools
+Destination: https://fieldnote.example
+Anchor: Fieldnote
+
+The link is present, but it no longer has rel="sponsored". Network links require that attribute.
+
+If the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.
+
+Email preferences: https://radar.thally.io/email-preferences

@@ -1,0 +1,25 @@
+What should Paper & Pixel publish next?
+
+Hi Alex,
+
+Give your next article a clear job.
+
+The next useful article starts with a question your customers need answered. Radar’s Content Calendar turns your Business Profile and target keywords into a plan you can review, with research and drafting handled in the same workflow.
+
+1. Open Content Calendar and review one proposed topic around “design tools for small studios”. Check the search intent, audience and whether you already cover it. Approve & schedule a useful topic, or add a better one.
+
+2. When the draft is ready, check its facts, examples and links. Connect your blog if needed, then approve the article for publication. Connect Google Search Console in Settings to measure how your pages perform once data is available.
+
+Check progress: follow the article’s status in Content Calendar. In Performance, compare Search Console clicks and impressions for its page over time. New pages need time and data; keyword estimates aren’t measured results.
+
+Review my Content Calendar: https://radar.example.test/email/learn?lesson=organic_search&businessId=11111111-1111-4111-8111-111111111111
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.example.test/privacy · Terms: https://radar.example.test/terms
+
+Email preferences: https://radar.example.test/email-preferences?token=qa-only-invalid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Stop weekly education emails: https://radar.example.test/email-preferences?token=qa-only-invalid

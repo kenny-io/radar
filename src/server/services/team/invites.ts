@@ -5,6 +5,7 @@ import { db, schema } from '../../db';
 import { env } from '../../env';
 import { randomToken, sha256 } from '../../crypto';
 import { sendMail } from '../mail';
+import { invitationEmail } from '../legacyContent';
 import type { Role } from '@/lib/types';
 
 /** Invites expire after this many days. */
@@ -33,19 +34,9 @@ export const inviteUrl = (token: string) => `${env.appUrl}/api/invites/${encodeU
 
 export async function sendInviteEmail(opts: { to: string; token: string; inviter: string; business: string; domain: string; role: Role }) {
   const link = inviteUrl(opts.token);
-  const roleLine = opts.role === 'Admin' ? 'As an Admin you can manage settings, publishing and the team.'
-    : opts.role === 'Editor' ? 'As an Editor you can edit the profile, calendar, articles and social packs, and approve articles.'
-    : 'As a Viewer you can see everything, but can’t approve or publish.';
-  const text = [
-    `${opts.inviter} invited you to ${opts.business} (${opts.domain}) on Radar.`,
-    '', roleLine, '',
-    `Accept the invite: ${link}`, '',
-    `This link works once and expires in ${INVITE_DAYS} days. If you weren’t expecting it, you can ignore this email.`,
-  ].join('\n');
-  const html = `<p>${esc(opts.inviter)} invited you to <strong>${esc(opts.business)}</strong> (${esc(opts.domain)}) on Radar.</p><p>${esc(roleLine)}</p><p><a href="${esc(link)}">Accept the invite</a></p><p style="color:#777">This link works once and expires in ${INVITE_DAYS} days. If you weren’t expecting it, you can ignore this email.</p>`;
-  await sendMail(opts.to, `${opts.inviter} invited you to ${opts.business} on Radar`, text, html);
+  const mail = invitationEmail({ ...opts, appUrl: env.appUrl, link, days: INVITE_DAYS });
+  await sendMail(opts.to, mail.subject, mail.text, mail.html);
 }
-const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export type AcceptResult = { ok: true; businessId: string } | { ok: false; reason: 'invalid' | 'expired' };
 

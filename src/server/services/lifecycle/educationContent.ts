@@ -12,6 +12,7 @@ export interface EducationContext {
 }
 export interface EducationLessonContent {
   subject: string;
+  preheader: string;
   heading: string;
   paragraphs: string[];
   steps: string[];
@@ -23,9 +24,9 @@ const clean = (value: string | undefined, max = 80) => value?.replace(/[\u0000-\
 const accessNote = (access: EducationContext['access']) => {
   switch (access) {
     case 'workspace': return [];
-    case 'start_trial': return ['When you’re ready to try this, start your Radar trial, then follow the steps below. You’ll see the price before confirming.'];
-    case 'restart': return ['To put this into practice, reopen Radar and restart your access. You’ll see the amount due before confirming.'];
-    case 'setup': return ['Start by adding your website in Radar and reviewing your Business Profile. Once your workspace is active, try the steps below.'];
+    case 'start_trial': return ['Your saved Business Profile is the starting point. Start your Radar trial when you’re ready to try these steps. You’ll see the price before confirming.'];
+    case 'restart': return ['You can use these steps when you restart your Radar access. Open your account to review the amount before confirming.'];
+    case 'setup': return ['Add your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.'];
   }
 };
 
@@ -35,8 +36,8 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
   const offering = clean(context.offering, 100);
   const audience = clean(context.audience, 100);
   const keyword = clean(context.keyword, 100);
-  const question = offering && audience ? `“Which ${offering} would you recommend for ${audience}?”`
-    : offering ? `“What should I look for when choosing ${offering}?”` : 'a question a buyer would ask when comparing products like yours';
+  const question = offering && audience ? `“What should ${audience} look for when choosing ${offering}?”`
+    : offering ? `“What should I look for when choosing ${offering}?”` : 'a question someone would ask when choosing a product like yours';
   const ready = context.access === 'workspace';
   const cta = (label: string) => ready ? label : context.access === 'setup' ? 'Continue setting up Radar' : context.access === 'restart' ? 'Reopen my Radar account' : 'Start my Radar trial';
   const intro = accessNote(context.access);
@@ -44,70 +45,75 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
     case 'ai_visibility':
       return {
         subject: named ? `Does ChatGPT or Claude recommend ${named}?` : 'Does ChatGPT or Claude recommend your business?',
-        heading: 'Ask the questions your buyers ask.',
+        preheader: 'Track two buyer questions, read the answers and choose one topic to answer on your site.',
+        heading: 'Read the answers to buyer questions.',
         paragraphs: [
-          `When someone asks an AI assistant for a recommendation, does ${business} make the answer? Radar’s AI Visibility lets you inspect responses from ChatGPT, Claude, Gemini, Perplexity and Grok, including the sources they cite.`,
+          `Think of the question someone would ask before discovering ${business}. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.`,
           ...intro,
         ],
         steps: [
-          `Open Performance → AI Visibility. Add two questions a buyer might ask before finding you. Start with ${question}. New questions are collected overnight; open a result and use Collect now if you want to request an answer sooner.`,
-          'If an answer doesn’t mention you, read it and inspect its citations. Choose one tracked question you can answer well, add it as a Content Calendar topic, and review the resulting article before publishing. If you appear in every answer, choose a question where your own site hasn’t been cited.',
+          `Open Performance → AI Visibility and add two buyer questions. Try ${question}. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.`,
+          'Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.',
         ],
         ctaLabel: cta('Check my AI visibility'),
       };
     case 'daily_brief':
       return {
-        subject: named ? `Five conversations ${named} could join this week` : 'Find five conversations you can help with',
-        heading: 'You don’t have to start every conversation.',
+        subject: named ? `Find a conversation ${named} can help with` : 'Find one conversation you can help with',
+        preheader: 'Read the thread, make the reply your own and join in where you can add something useful.',
+        heading: 'Start with someone’s question.',
         paragraphs: [
-          'People are already asking questions, comparing tools and describing problems on Reddit, X, LinkedIn and Hacker News. Daily Brief finds relevant conversations and drafts replies in your voice. Your job is to decide where you have something useful to add.',
+          'Someone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.',
           ...intro,
         ],
         steps: [
-          'Open Daily Brief and review today’s conversations. Aim to find five you can help with; fewer thoughtful replies are better than forcing five. Read each original thread and edit the draft so it answers that person’s actual question.',
-          'Copy a reply and post it in the original conversation, then mark it posted in Radar. Mention your product only when it helps answer the question, and be clear about your connection to it. Repeat this on days you have something useful to add.',
+          'Open Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.',
+          'Copy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.',
         ],
         ctaLabel: cta('Open my Daily Brief'),
       };
     case 'backlinks':
       return {
-        subject: named ? `Could another founder’s site introduce ${named}?` : 'Could another founder’s site introduce your business?',
-        heading: 'Make the introduction fit the article.',
+        subject: named ? `How ${named} could appear on another site` : 'How your business could appear on another site',
+        preheader: 'Review the page, the exact sentence and the destination before you approve a partner link.',
+        heading: 'Give the reader a useful next link.',
         paragraphs: [
-          `A reader discovering a related business could also be a good fit for ${business}. Radar’s optional Backlinks network proposes relevant mentions between participating businesses, with the exact sentence and destination visible for review.`,
+          `A reader on another founder’s site could be looking for something ${business} offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.`,
           ...intro,
         ],
         steps: [
-          'Open Backlinks and join the network if you haven’t already. Choose the topics that fit your business and review the rules for links from your site. Keep manual approval while you get familiar with the proposals.',
-          'Review a proposal when one is available: read the page context, check the destination, anchor, disclosure and link attribute, then approve it only if the mention is useful. An approval can still require the partner to place the link; it isn’t proof the link is live.',
+          'Open Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.',
+          'When a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.',
         ],
         ctaLabel: cta('Explore my backlink network'),
       };
     case 'organic_search':
       return {
         subject: named ? `What should ${named} publish next?` : 'What should you publish next?',
-        heading: 'Give your next article a clear job.',
+        preheader: 'Compare search intent and keyword estimates before choosing your next topic.',
+        heading: 'Choose one question worth answering.',
         paragraphs: [
-          'The next useful article starts with a question your customers need answered. Radar’s Content Calendar turns your Business Profile and target keywords into a plan you can review, with research and drafting handled in the same workflow.',
+          'A search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.',
           ...intro,
         ],
         steps: [
-          `Open Content Calendar and review one proposed topic${keyword ? ` around “${keyword}”` : ' that matches what you sell'}. Check the search intent, audience and whether you already cover it. Approve & schedule a useful topic, or add a better one.`,
-          `When the draft is ready, check its facts, examples and links. Connect your blog if needed, then approve the article for publication. ${context.gscConnected ? 'Open Performance to review your synced Search Console data for that page.' : 'Connect Google Search Console in Settings to measure how your pages perform once data is available.'}`,
+          `Open Content Calendar and compare two proposed topics${keyword ? `, including one around “${keyword}”` : ' that fit what you sell'}. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.`,
+          `Check whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. ${context.gscConnected ? 'Use the Queries and Pages tables in Performance to compare your plan with measured search activity.' : 'Connect Google Search Console in Settings when you want to compare the plan with measured search activity.'}`,
         ],
         ctaLabel: cta('Review my Content Calendar'),
       };
     case 'social_marketing':
       return {
-        subject: named ? `Give ${named}’s next article another outing` : 'Give your next article another outing',
-        heading: 'One useful idea can become several posts.',
+        subject: named ? `Put ${named}’s article to work on social` : 'Put your article to work on social',
+        preheader: 'Create posts from an article, check each one and choose when to publish.',
+        heading: 'Share one idea from your article.',
         paragraphs: [
-          'Your article may contain an answer, a practical example and a point worth discussing. Social Marketing helps turn those ideas into posts you can review and publish to your connected X and LinkedIn accounts.',
+          'An article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.',
           ...intro,
         ],
         steps: [
-          'Open Social Marketing and generate a pack from a blog article you want more people to read. If you don’t have an article ready, choose Suggest ideas for ideas based on your Business Profile. Choose the channels and check that each post makes sense on its own.',
-          'Edit the wording, image and destination link, then publish a post or choose a time to schedule it. Review automatic posting settings separately before enabling them. You can also copy a post and share it yourself.',
+          'Open Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.',
+          'Check the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.',
         ],
         ctaLabel: cta('Create my social posts'),
       };
@@ -118,11 +124,11 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
 /** A progress check closes each lesson without implying any result already exists. */
 export function educationProgress(lesson: EducationLessonId): string {
   switch (lesson) {
-    case 'ai_visibility': return 'Check progress: record the Mentioned and Cited your site counts for the same questions, then compare next week. Keep the questions stable. Not collected means no answer was collected, not zero visibility; a mention or citation isn’t guaranteed.';
-    case 'daily_brief': return 'Check progress: use Radar’s copied/posted states to track your follow-through. Revisit the original threads for responses. Copying a draft alone doesn’t mean it was posted or that anyone engaged.';
-    case 'backlinks': return 'Check progress: look in Backlinks → Live links for placement and verification status. Use Re-check when a link needs attention. A network link doesn’t guarantee a search ranking or an AI recommendation.';
-    case 'organic_search': return 'Check progress: follow the article’s status in Content Calendar. In Performance, compare Search Console clicks and impressions for its page over time. New pages need time and data; keyword estimates aren’t measured results.';
-    case 'social_marketing': return 'Check progress: check each post’s scheduled, posted or failed state in Radar, then open the published post for reactions and replies. Scheduling a post doesn’t mean it has published successfully.';
+    case 'ai_visibility': return 'Check progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.';
+    case 'daily_brief': return 'Check progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.';
+    case 'backlinks': return 'Check progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.';
+    case 'organic_search': return 'Check progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.';
+    case 'social_marketing': return 'Check progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.';
     default: throw new Error('Unknown education lesson');
   }
 }

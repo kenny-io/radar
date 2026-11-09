@@ -1,12 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import * as guideCopy from './guideContent';
+import { describe, expect, it, vi } from 'vitest';
 import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData, type WorkUpdateSection } from './templates';
 const ctx = { appUrl: 'https://radar.thally.io', unsubscribeUrl: 'https://radar.thally.io/email-preferences?token=fake' };
-const data: LifecycleData = { education: { version: 1, lesson: 'ai_visibility', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
+const data: LifecycleData = { guide: { version: 1, id: 'article_workflow', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, education: { version: 1, lesson: 'ai_visibility', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
 describe('lifecycle templates', () => {
   it.each(LIFECYCLE_TYPES)('%s has accessible HTML, useful plain text and explicit reply contact', type => {
     const x = renderLifecycle(type, data, ctx);
     expect(x.subject.length).toBeGreaterThan(10);
-    expect(x.html).toContain('<html lang="en">'); expect(x.html).toContain('role="presentation"'); expect(x.html).toContain('<h1');
+    expect(x.preheader?.length).toBeGreaterThan(10); expect(x.preheader!.length).toBeLessThanOrEqual(200);
+    expect(x.html).toContain('aria-hidden="true"');
+    expect(x.html).toContain('<table lang="en" dir="ltr" role="presentation"');
+    expect(x.html).toContain('<html lang="en" dir="ltr">'); expect(x.html).toContain('role="presentation"'); expect(x.html).toContain('<h1');
     expect(x.text).toContain('Privacy: https://radar.thally.io/privacy'); expect(x.text).toContain('https://radar.thally.io/');
     expect(x.replyTo).toBe(type === 'founder_note' ? 'team@thally.io' : 'support@thally.io');
     expect(x.html).not.toContain('<script');
@@ -26,6 +30,15 @@ describe('lifecycle templates', () => {
     expect(renderLifecycle('weekly_education', { education: { ...d.education!, context: { ...d.education!.context, access: 'restart' } } }, ctx).text).toContain('https://radar.thally.io/start-trial');
     expect(rendered.html).toContain('>Email preferences</a>');
   });
+  it('escapes and bounds inbox preview text without treating it as HTML or header content', () => {
+    const mock = vi.spyOn(guideCopy, 'renderGuide').mockReturnValue({ subject: 'A useful guide', preheader: '<img src=x onerror=bad()> & "preview"\r\n' + 'x'.repeat(250), heading: 'One useful action', paragraphs: ['Read the guide.'], ctaLabel: 'Open my calendar' });
+    try {
+      const rendered = renderLifecycle('lifecycle_guide', data, ctx);
+      expect(rendered.preheader).not.toMatch(/[\r\n]/); expect(rendered.preheader).toHaveLength(200);
+      expect(rendered.html).toContain('&lt;img src=x onerror=bad()&gt; &amp; &quot;preview&quot;');
+      expect(rendered.html).not.toContain('<img src=x'); expect(rendered.text).not.toContain('onerror=bad');
+    } finally { mock.mockRestore(); }
+  });
   it('escapes all user-controlled values without corrupting plain text', () => {
     const x = renderLifecycle('welcome', { profileAnalyzed: true, name: '<script>bad()</script>', businessName: 'A&B "<test>"' }, ctx);
     expect(x.html).not.toContain('<script>'); expect(x.html).toContain('&lt;script&gt;'); expect(x.html).toContain('A&amp;B &quot;&lt;test&gt;&quot;');
@@ -37,7 +50,7 @@ describe('lifecycle templates', () => {
     expect(welcome.text).toContain('Continue with my profile: https://radar.thally.io/dashboard');
     expect(welcome.text).not.toMatch(/start with your website|add your website|connect.*search console/i);
     const direct = renderLifecycle('welcome', { ...data, profileAnalyzed: false }, ctx);
-    expect(direct.text).toContain('Your account is ready');
+    expect(direct.text).toContain('Your Radar account is ready');
     expect(direct.text).not.toContain('Business Profile is ready');
     expect(direct.text).not.toContain('has analyzed');
   });
@@ -74,7 +87,7 @@ describe('lifecycle templates', () => {
   it('combines up to three sections without duplicating the primary button or accepting arbitrary destinations', () => {
     const sections: WorkUpdateSection[] = [data.workSections![0], { ...data.workSections![0], kind: 'calendar_review', eventId: '00000000-0000-4000-8000-000000000003', count: 8 }];
     const mail = renderLifecycle('work_update', { workSections: sections }, ctx);
-    expect(mail.text).toContain('3 conversations'); expect(mail.text).toContain('8 topics');
+    expect(mail.text).toContain('3 conversations'); expect(mail.text).toContain('8 proposed topics');
     expect(mail.html.match(/background:#17181c/g)).toHaveLength(1);
     expect(() => renderLifecycle('work_update', { workSections: [] }, ctx)).toThrow('Invalid work');
     expect(() => renderLifecycle('work_update', { workSections: sections }, { appUrl: ctx.appUrl })).toThrow('Invalid work');

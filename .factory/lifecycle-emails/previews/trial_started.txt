@@ -1,18 +1,20 @@
-Your Radar trial is on
-Reply to: support@thally.io
+Subject: Your Radar trial is on
+Preview: Your trial end date, first-month credit and subscription controls.
 
 Hi Alex,
 
 3 days to try Radar
 
-Your trial ends on November 7, 2026 at 12:00 PM UTC.
+Your Radar trial ends on November 12, 2026 at 12:00 PM UTC.
 
-The $1.00 you paid to confirm your card comes off your first month. That’s normally $49.00, then $50.00/month. Any tax or other adjustments will be shown on your invoice.
+Your $1.00 card-confirmation payment is credited to your first month. That month is normally $49.00, followed by $50.00/month. Your invoice shows any tax or other adjustments.
 
-If you don’t want to continue, cancel in Settings → Billing before the trial ends. Otherwise, your subscription will renew automatically.
+Your subscription continues automatically after the trial. To avoid the monthly charge, cancel before the end date in Settings → Billing.
 
 Manage subscription: https://radar.thally.io/settings?section=billing
 
 Reply to this email or write to support@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences
