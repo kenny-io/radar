@@ -1,5 +1,7 @@
 # Founder voice correction verification
 
+**Final integrated checkpoint:** [founder-release-verification.md](founder-release-verification.md) and [independent report](qa/founder-voice/main-observability/report.md) supersede the pre-observability source/build below while preserving its exact unchanged copy/render/migration evidence.
+
 User approved the prior catalogue with a clear correction: write as Ekene personally helping each reader get useful business results with Radar; singular “I built Radar”; retire the trial-ending cancellation reminder; use subscription wording and amounts only where necessary. Scope and acceptance are in `founder-voice-brief.md`; runtime and retry-safe sender design are in `founder-voice-architecture.md` and `founder-voice-runtime.md`.
 
 ## Frozen founder checkpoint
@@ -10,7 +12,7 @@ Starting source `5f7c56ab`, plus the frozen correction. Independent final source
 - #5 retired at subscription collection, direct queue and before decrypt/provider dispatch, including future queued/attempted/stale-claim reminders. History/keys/attempt counts stay intact; an already in-flight accepted request cannot be recalled. Other subscription events and internal operational forwards remain.
 - Routine amounts/cancellation prompts removed from trial-start email; end date, automatic subscription continuation and credit remain. Subscription receipts retain actual paid amount when available; failed-subscription notices omit the amount.
 - **28 active families / 68 variants, 29 numbered slots with #5 reserved as retired**. Existing references unchanged. Old #5 files show retirement notice. Reading/gallery include actual sender metadata with explicitly fictional preview address.
-- Additive0015 nullable sender_meta snapshots NEW general-outbox identity before provider calls; oldNULL legacy identity and existing frozen lifecycle payloads remain unchanged. Internal feature forwarding retains service identity; support forwarding keeps customer reply-to. MAIL_FROM configuration itself is not renamed, preserving legacy retries.
+- Additive 0015 nullable sender_meta snapshots NEW general-outbox identity before provider calls; oldNULL legacy identity and existing frozen lifecycle payloads remain unchanged. Internal feature forwarding retains service identity; support forwarding keeps customer reply-to. MAIL_FROM configuration itself is not renamed, preserving legacy retries.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
@@ -24,7 +26,7 @@ Starting source `5f7c56ab`, plus the frozen correction. Independent final source
 | Current mobile/desktop renders |136/136,68 active variants | qa/founder-voice/report.md |
 | Catalogue browser |11/11 pass | qa/founder-voice/report.md |
 | Optimized smoke |6/6 pass | qa/founder-voice/report.md |
-| Clean/0014→0015/no-op migrations | All16 entries, no old metadata backfill | founder-voice-migrations.json; independent proof |
+| Clean/0014→0015/no-op migrations | All 16 entries, no old metadata backfill | founder-voice-migrations.json; independent proof |
 | Worker readiness | Current accepted / prior refused,2/2 | qa/founder-voice/report.md |
 
 The raster failure is the unchanged expected `f883614e6a7dfb07` versus actual `91d5409f50974af7`, independently established on clean main-family source earlier. The full suite is not described as all green. Source/image golden were not changed to relax this check.
@@ -33,6 +35,6 @@ Separate original report companion: exact six-file patch SHA256 `d4a1d17ff843bd8
 
 ## Delivery boundary
 
-No customer sends, real provider requests, production writes, charges, main merge, deployment or activation. The correction is delivered on existing PR #25, pending owner go-ahead under `.factory/production-launch/state.md:27`. Apply migrations through0015 before matching services. Preserve metadata/guide-aware dispatch on rollback, oldNULL rows and frozen payloads; do not change global MAIL_FROM to rewrite old retry identity or replay messages for new copy.
+No customer sends, real provider requests, production writes, charges, main merge, deployment or activation. The correction is delivered on existing PR #25, pending owner go-ahead under `.factory/production-launch/state.md:27`. Apply migrations through 0015 before matching services. Preserve metadata/guide-aware dispatch on rollback, oldNULL rows and frozen payloads; do not change global MAIL_FROM to rewrite old retry identity or replay messages for new copy.
 
 While this checkpoint completed, main advanced to observability PR #38 (`8b0fc346`). A separate bounded main-mailer integration follows; its evidence is recorded separately and this checkpoint fingerprint is not claimed to cover that merge. Founder copy/schema/numbering remain frozen.

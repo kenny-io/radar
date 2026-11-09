@@ -76,6 +76,18 @@ runs the program continuously; no browser session is required. Disabling stops f
 pending publications from earlier activations. Manual schedules and separate automations continue; an external send
 already in progress may finish. See `.factory/autopilot/architecture.md` for authorization and recovery details.
 
+### Failure alerts
+
+Radar reports failed actions, background jobs, provider attempts and degraded generation/publishing flows to
+`kenny@thally.io`. Provider credit errors and outages are reported before retry/fallback, so an incident is visible
+even if another provider completes the action. Alerts include sanitized diagnostics and action/job correlation;
+failed email attempts are retained in the existing Postgres job queue and retried by the worker.
+
+Production enables alerts by default. Configure `RESEND_API_KEY` and a verified `MAIL_FROM` on both web and worker;
+`RADAR_FAILURE_ALERT_EMAIL` overrides the recipient and `RADAR_FAILURE_ALERTS=off` disables email. Development/tests
+require explicit `RADAR_FAILURE_ALERTS=on`; development stubs never send alerts. No migration or new vendor is needed.
+See [failure alert operations](docs/OBSERVABILITY.md) for coverage, a smoke test and failed-delivery recovery.
+
 ## Docs
 - `ARCHITECTURE.md` — code layout, the client `app` object, actions, jobs, AI layer, dev stubs
 - `DIVERGENCES.md` — every divergence from the design, with status (some need product approval)

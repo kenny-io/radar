@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { createGuest, currentActor, touchGuest } from '@/server/auth/session';
-import { handle, json } from '@/server/http/handle';
+import { handle, json, requestJson } from '@/server/http/handle';
 import { RadarError } from '@/server/errors';
 import { cleanDomain, DOMAIN_RE } from '@/lib/format';
 import { defaultProfile } from '@/server/workspace';
@@ -16,7 +16,7 @@ import { verifyHuman } from '@/server/abuse/human';
 import { loadTokens, revoke } from '@/server/services/gsc/client';
 
 export const POST = handle(async (req: Request) => {
-  const b = z.object({ domain: z.string(), turnstileToken: z.string().max(4096).optional() }).parse(await req.json());
+  const b = z.object({ domain: z.string(), turnstileToken: z.string().max(4096).optional() }).parse(await requestJson(req));
   const domain = cleanDomain(b.domain);
   if (!DOMAIN_RE.test(domain)) throw new RadarError('Enter a domain like yourcompany.com');
   let actor = await currentActor();

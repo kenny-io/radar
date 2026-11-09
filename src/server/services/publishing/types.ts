@@ -3,6 +3,8 @@ import type { ArticleBodyImage, Block, ConnType } from '@/lib/types';
 /** Everything a connector needs. `creds` is the decrypted secret material (passwords, API keys, OAuth tokens) — server only. */
 export interface ConnCtx {
   type: ConnType;
+  /** Absolute per-attempt GitHub publishing deadline; server-only and never persisted. */
+  publishDeadlineAt?: number;
   fields: Record<string, string>;
   creds: Record<string, any>;
   target: string | null;

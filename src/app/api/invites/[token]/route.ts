@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Invite accept link: {APP_URL}/api/invites/{token} (sent by team.invite).
 // Signed in → activate the membership, make it the current business, open the Dashboard.
 // Signed out → /signup?next=/api/invites/{token}; the auth screens send the user back here after sign-up / sign-in.
@@ -30,6 +31,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     res.cookies.set(BIZ_COOKIE, r.businessId, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 365 * 864e2 });
     return res;
   } catch (e) {
+    await reportFailure(e, { source: 'http', operation: 'invites.accept' });
     console.error('[invites]', e);
     return to('/dashboard');
   }

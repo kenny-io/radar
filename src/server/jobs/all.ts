@@ -17,3 +17,5 @@ import './guestCleanup';
 import '../services/lifecycle/engagementJobs';
 
 import '../services/autopilot/jobs';
+
+import '../observability/jobs';

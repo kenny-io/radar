@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { requireUser } from '@/server/access';
 import { notFound } from '@/server/errors';
-import { handle, json } from '@/server/http/handle';
+import { handle, json, requestJson } from '@/server/http/handle';
 import { accountOf } from '@/server/billing/access';
 import { providerName } from '@/server/billing/config';
 import { ProviderError } from '@/server/billing/provider';
@@ -17,7 +17,7 @@ const Body = z.object({ paymentIntentId: z.string().min(1).max(255), outcome: z.
 export const POST = handle(async (req: Request) => {
   if (providerName() !== 'stub') throw notFound();
   const u = await requireUser();
-  const b = Body.parse(await req.json());
+  const b = Body.parse(await requestJson(req));
   const stub = await import('@/server/billing/stub');
   const pi = await stub.stubProvider.getPaymentIntent(b.paymentIntentId).catch(e => { if (e instanceof ProviderError) throw notFound('That payment'); throw e; });
   const acct = await accountOf(u.id);

@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Google Search Console API client: encrypted token storage, token refresh, sites.list, searchanalytics.query, revoke.
 // Tokens created by the dev OAuth stub carry { stub: true } and are served by ./stub (RADAR_DEV_STUBS=1 only).
 import { eq } from 'drizzle-orm';
@@ -89,5 +90,8 @@ export async function queryAll(token: string, siteUrl: string, body: { startDate
 export async function revoke(t: GscTokens | null) {
   if (!t || t.stub) return;
   const tok = t.refresh_token || t.access_token; if (!tok) return;
-  try { await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }); } catch { /* best effort */ }
+  try {
+    const r = await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(20_000) });
+    if (!r.ok) await reportFailure(new Error('Google token revocation failed'), { source: 'system', operation: 'gsc.revoke', provider: 'Google', status: r.status, degraded: true });
+  } catch (error) { await reportFailure(error, { source: 'system', operation: 'gsc.revoke', provider: 'Google', degraded: true }); }
 }

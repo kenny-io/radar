@@ -56,12 +56,13 @@ The first-observation clocks begin after activation of the running feature. Mean
 
 **Retired:** `Your Radar workspace is ready` remains removed and suppressed. There is no additional welcome, founder or duplicate AI/Brief/Backlinks campaign.
 
-Two messages are sent by Radar **to its team**, not to the user:
+Three operational email families go to Radar’s team or operator:
 
 | Status | Subject | Trigger/cadence | Content |
 | --- | --- | --- | --- |
 | Live, internal | Radar support request | User explicitly selects Email support; retry deduped | Conversation, page/business context and reply contact |
 | Live, internal | Feature request — {domain} | User submits a feature request | Request text, authenticated contact, role and business |
+| Main source, internal operator | [Radar {environment}] Failure/Degraded: {operation} ({provider}) | Action, job or provider failure/degradation; deduped and retried | Redacted failure context for the configured operator; separate service identity and delivery |
 
 There is no dedicated multi-email expired-trial win-back campaign, new-backlink-match notice, link-now-live confirmation, invitation reminder, customer support acknowledgment, article-published receipt or social-published email. Current in-app notifications are not additional email senders. Stripe-native dashboard email settings are separate from Radar’s templates and have not been established by the code inventory; do not label them active without account-level evidence.
 

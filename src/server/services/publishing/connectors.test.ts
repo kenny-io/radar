@@ -231,3 +231,10 @@ describe('test-connection copy points at the real fix', () => {
     expect(failCopy('webflow', new PublishError(404, 'No CMS collection chosen', '', 'config'))).toBe('Radar can’t see that cms collection anymore. Reconnect and share it again.');
   });
 });
+
+describe('local publishing validation attribution', () => {
+  it('exposes Radar origin while preserving the remote destination and safe actionable hint', () => {
+    expect(publishFailParts({ http: 422, message: '422 Unprocessable Entity', platform: 'GitHub', source: 'radar', hint: 'Missing manual article registry entry.' }, 'nextjs')).toEqual({ platform: 'GitHub', source: 'radar', detail: '422 Unprocessable Entity', hint: 'Missing manual article registry entry.' });
+    expect(publishFailParts({ http: 422, message: '422 Unprocessable Entity', platform: 'GitHub' }, 'nextjs')).toEqual({ platform: 'GitHub', detail: '422 Unprocessable Entity' });
+  });
+});

@@ -1,5 +1,7 @@
 # State
 
+**Current:** [founder-release-verification.md](founder-release-verification.md). Personal founder copy;28 active families/68 variants; #5 retired; migrations through 0015. Final source a8f27eee…/636 files, build bv5te1pvkwPdSan9Pwrfw. PR #25 remains unmerged/undeployed. Earlier checkpoints below retain their historical evidence.
+
 **Previous integration checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.
 
 | Task | Owner | Status | Scope |
@@ -27,4 +29,8 @@ The requested numbered catalogue now has **29 families / 69 full variants** at `
 
 ## Founder correction checkpoint
 
-User-directed personal founder voice, retired trial-ending reminder #5 and subscription wording are implemented and independently accepted. Current catalogue:28 active families/68 complete variants with29 permanent slots; #5 stays reserved. New founder identity snapshots use additive0015. Frozen source hash ec983db607f8540a6dbadf6fda21c088a4fc11e13a436d7c41e12402095d1d8e/617files; optimized build CiMpQWcgFPwNpn-YQxGIH; full suite1256pass/65skips plus established raster baseline. `founder-voice-verification.md` and independent `qa/founder-voice/report.md` record acceptance. No production/customer actions. Main advanced to observability PR38 during checks; final bounded shared-mailer integration is next before PR delivery, with no intended copy/schema change.
+User-directed personal founder voice, retired trial-ending reminder #5 and subscription wording are implemented and independently accepted. Current catalogue:28 active families/68 complete variants with29 permanent slots; #5 stays reserved. New founder identity snapshots use additive0015. Frozen source hash ec983db607f8540a6dbadf6fda21c088a4fc11e13a436d7c41e12402095d1d8e/617 files; optimized build CiMpQWcgFPwNpn-YQxGIH; full suite 1256 pass/65 skips plus established raster baseline. `founder-voice-verification.md` and independent `qa/founder-voice/report.md` record acceptance. No production/customer actions. Main advanced to observability PR38 during checks; final bounded shared-mailer integration is next before PR delivery, with no intended copy/schema change.
+
+## Final founder delivery
+
+The accepted founder correction 5b4f9462 is integrated with frozen main 4908694f, preserving both mail identity and observability. All 68 email artifact hashes/copy/schema are unchanged. Final source hash a8f27eee95956569e06bfda1b8259e1b44b087a3a64034685bfc6848560b1282/636 files. Full suite 1349 pass/65 skips with established raster baseline; build/typecheck pass; fresh independent wrapper5/founder22/developer77/optimized6 all pass. See founder-release-verification.md and independent final report. No new material defects, customer/provider/production actions or deployment. Current PR metadata and rollout docs reflect #5 retirement, founder replies, subscription language and0015.

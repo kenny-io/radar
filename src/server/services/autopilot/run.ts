@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // The program coordinates existing capabilities; publication remains in the guarded, retry-safe publishers.
 import { and, asc, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { db, schema as S } from '@/server/db';
@@ -62,7 +63,7 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
   const stage = async (name: string, fn: () => Promise<void>) => {
     if (!(await canRun(bid, activationId))) return;
     try { await ctx.progress({ stage: name }); await fn(); }
-    catch (e) { console.error(`[autopilot] ${name} failed for ${bid}`, e instanceof Error ? e.message : 'failed'); failures.push(name); issue(`stage:${name}:${date}`, `${name} needs attention`, 'Radar could not finish this step. Review the saved work and run Autopilot again.', '/settings?section=autopilot'); }
+    catch (e) { await reportFailure(e, { source: 'autopilot', operation: `autopilot.${name}`, businessId: bid, ref: date, degraded: true }); console.error(`[autopilot] ${name} failed for ${bid}`, e instanceof Error ? e.message : 'failed'); failures.push(name); issue(`stage:${name}:${date}`, `${name} needs attention`, 'Radar could not finish this step. Review the saved work and run Autopilot again.', '/settings?section=autopilot'); }
   };
   const retry = ctx.payload.retry ? `:retry:${ctx.job.id}` : '';
 
@@ -107,7 +108,7 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       if (!post || !auto.platforms.includes(platform as Platform)) continue;
       if (!canPost(platform) || !publishing) { issue(`pack:${pack.id}:${platform}`, `Publish your ${platform} post`, !publishing && canPost(platform) ? 'Direct social publishing is not available for this workspace. Copy the prepared draft to your account.' : 'This platform requires you to publish the prepared draft yourself.', `/social?pack=${encodeURIComponent(pack.id)}&plat=${platform}`, post.text); continue; }
       try { if (await schedulePost(bid, activationId, packSid(pack.id, platform), now) === 'scheduled') scheduled++; }
-      catch { issue(`pack:${pack.id}:${platform}`, `Your ${platform} post needs attention`, 'Connect or reconnect the account, or resolve the publishing check in Radar. Your draft is saved.', `/social?pack=${encodeURIComponent(pack.id)}&plat=${platform}`, post.text); }
+      catch (e) { await reportFailure(e, { source: 'autopilot', operation: 'autopilot.scheduleSocial', businessId: bid, ref: pack.id, provider: platform, degraded: true }); issue(`pack:${pack.id}:${platform}`, `Your ${platform} post needs attention`, 'Connect or reconnect the account, or resolve the publishing check in Radar. Your draft is saved.', `/social?pack=${encodeURIComponent(pack.id)}&plat=${platform}`, post.text); }
     }
     summary.push(scheduled ? `${scheduled} social ${scheduled === 1 ? 'post' : 'posts'} scheduled` : 'Daily social drafts ready');
   });
@@ -131,7 +132,7 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       // At most two feed posts per platform/day, including the generated daily pack and manual schedules.
       if ((used.get(platform) || 0) >= 2) continue;
       try { if (await schedulePost(bid, activationId, sid, now) === 'scheduled') used.set(platform, (used.get(platform) || 0) + 1); }
-      catch { issue(key, `${platform}: ${item.title}`, 'Reconnect the account or resolve the publishing check in Radar. The prepared post is saved.', `/brief?date=${date}`, textOf(item)); }
+      catch (e) { await reportFailure(e, { source: 'autopilot', operation: 'autopilot.scheduleBrief', businessId: bid, ref: item.id, provider: platform, degraded: true }); issue(key, `${platform}: ${item.title}`, 'Reconnect the account or resolve the publishing check in Radar. The prepared post is saved.', `/brief?date=${date}`, textOf(item)); }
     }
   });
 

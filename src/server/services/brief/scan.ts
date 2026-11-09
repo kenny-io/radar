@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // The Daily Brief research agent (02-system §9): discover → collect (per platform) → rank → select → draft → save.
 import { canRun } from '../autopilot/guard';
 import { and, desc, eq, lt } from 'drizzle-orm';
@@ -84,6 +85,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
         });
         cands.push(...got);
       } catch (e: any) {
+        await reportFailure(e, { source: 'brief', operation: 'brief.source', businessId: bid, ref: date, provider: p, degraded: background });
         console.error(`[brief.scan] ${p} source failed${background ? ' (background rescan, skipped)' : ''}:`, e?.message || e);
         // A background rescan skips the platform and carries on with the others: no failure UI, today's brief stays.
         if (background) { skippedPlats.push(p); delete stats[p]; continue; }
@@ -118,7 +120,10 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   // ── Draft ──
   step = 'draft'; await push();
   const isAdd = mode !== 'first';
-  const fail = (s: Scored) => (e: any) => { console.error('[brief.scan] draft failed', s.id, e?.message); return null; };
+  const fail = (s: Scored) => async (e: any) => {
+    await reportFailure(e, { source: 'brief', operation: 'brief.draftReply', businessId: bid, ref: s.id, degraded: true });
+    console.error('[brief.scan] draft failed', s.id, e?.message); return null;
+  };
   const drafted = await Promise.all([
     ...fPicked.map(s => draftReply(profile, s, settings, bid, isAdd).catch(fail(s))),
     ...cPicked.map(s => draftCompanyReply(profile, s, bid, isAdd).catch(fail(s))),
@@ -126,7 +131,10 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const replies = drafted.filter(Boolean) as BriefItem[];
   if (fPicked.length + cPicked.length && !replies.length) throw new Error('Drafting failed for every reply');
   const themes = mode === 'first' ? feedThemes(scored) : [];
-  const postFail = (e: any) => { console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[]; };
+  const postFail = async (e: any) => {
+    await reportFailure(e, { source: 'brief', operation: 'brief.draftPosts', businessId: bid, ref: date, degraded: true });
+    console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[];
+  };
   const posts = mode === 'first' ? (await Promise.all([
     accts.includes('founder') ? draftPosts(profile, themes, fPlats, bid, date, 'founder').catch(postFail) : [],
     accts.includes('company') && cPlats.length ? draftPosts(profile, themes, cPlats, bid, date, 'company').catch(postFail) : [],

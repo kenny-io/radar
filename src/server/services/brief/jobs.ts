@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Job + cron definitions for "brief". Imported by src/server/jobs/all.ts.
 import { and, desc, eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
@@ -48,7 +49,7 @@ defineCron('brief.daily', async (now) => {
   for (const b of rows) {
     const tz = b.tz || 'America/New_York';
     const today = todayIn(tz, now);
-    if (await once(`brief-expire:${b.id}:${today}`)) await expirePastDays(b.id, today).catch(e => console.error('[brief.expire]', e?.message));
+    if (await once(`brief-expire:${b.id}:${today}`)) await expirePastDays(b.id, today).catch(async e => { await reportFailure(e, { source: 'brief', operation: 'brief.expire', businessId: b.id, ref: today }); console.error('[brief.expire]', e?.message); });
     const s = briefSettingsOf(b as any);
     const late = minutes(nowHMIn(tz, now)) - minutes(s.time || '06:00');
     if (late < 0) continue;
@@ -70,5 +71,5 @@ defineCron('brief.daily', async (now) => {
 defineCron('brief.rescan', async (now) => {
   const rows = await db.select({ id: schema.businesses.id, tz: schema.businesses.timezone })
     .from(schema.businesses).where(and(eq(schema.businesses.status, 'active'), eq(schema.businesses.briefSetup, true)));
-  for (const b of rows) await maybeRescan(b, now).catch(e => console.error('[brief.rescan]', b.id, e?.message || e));
+  for (const b of rows) await maybeRescan(b, now).catch(async e => { await reportFailure(e, { source: 'brief', operation: 'brief.rescan', businessId: b.id }); console.error('[brief.rescan]', b.id, e?.message || e); });
 });

@@ -19,8 +19,8 @@ async function appToken(): Promise<string> {
   token = { v: j.access_token, exp: Date.now() + (Number(j.expires_in) || 3600) * 1000 };
   return token.v;
 }
-async function get(path: string): Promise<any> {
-  return withRetry(async () => fetchJson('https://oauth.reddit.com' + path, { headers: { authorization: `Bearer ${await appToken()}`, 'user-agent': env.redditUserAgent }, timeoutMs: 15000 }));
+async function get(path: string, bid: string): Promise<any> {
+  return withRetry(async () => fetchJson('https://oauth.reddit.com' + path, { headers: { authorization: `Bearer ${await appToken()}`, 'user-agent': env.redditUserAgent }, timeoutMs: 15000 }), 2, { source: 'brief', operation: 'brief.redditRequest', businessId: bid, provider: 'Reddit', degraded: true });
 }
 
 export const hasRedditApi = () => !!(env.redditClientId && env.redditClientSecret);
@@ -32,7 +32,7 @@ export const redditSource: Source = async (ctx) => {
   for (const q of [...ctx.profile.audience.segments.slice(0, 2), plan.terms[0]].filter(Boolean)) {
     if (subs.length >= 5) break;
     try {
-      const r = await get(`/subreddits/search?q=${encodeURIComponent(q)}&limit=6&raw_json=1`);
+      const r = await get(`/subreddits/search?q=${encodeURIComponent(q)}&limit=6&raw_json=1`, ctx.bid);
       for (const c of r?.data?.children || []) {
         const d = c.data; if (!d || d.over18 || d.subreddit_type !== 'public' || (d.subscribers || 0) < 5000) continue;
         if (!subs.some(s => s.toLowerCase() === String(d.display_name).toLowerCase()) && subs.length < 5) subs.push(d.display_name);
@@ -47,12 +47,12 @@ export const redditSource: Source = async (ctx) => {
     // Rules: if self-promotion is forbidden (or rules can't be read), Radar never drafts a mention there.
     let promoBanned = true;
     try {
-      const rules = await get(`/r/${sub}/about/rules?raw_json=1`);
+      const rules = await get(`/r/${sub}/about/rules?raw_json=1`, ctx.bid);
       promoBanned = (rules?.rules || []).some((r: any) => PROMO_RULE_RE.test(`${r.short_name || ''} ${r.description || ''} ${r.violation_reason || ''}`));
     } catch { /* unknown → conservative */ }
     const lists = await Promise.all([
-      get(`/r/${sub}/search?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&t=week&limit=50&raw_json=1`),
-      get(`/r/${sub}/new?limit=100&raw_json=1`),
+      get(`/r/${sub}/search?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&t=week&limit=50&raw_json=1`, ctx.bid),
+      get(`/r/${sub}/new?limit=100&raw_json=1`, ctx.bid),
     ]);
     const seen = new Set<string>();
     for (const l of lists) {
@@ -74,7 +74,7 @@ export const redditSource: Source = async (ctx) => {
   const top = out.map(c => ({ c, r: relevance(c.title + ' ' + c.body, plan) })).filter(x => x.r > 0).sort((a, b) => b.r - a.r).slice(0, 8);
   for (const { c } of top) {
     try {
-      const r = await get(`/comments/${c.id.split('_')[1]}?limit=30&depth=1&sort=top&raw_json=1`);
+      const r = await get(`/comments/${c.id.split('_')[1]}?limit=30&depth=1&sort=top&raw_json=1`, ctx.bid);
       const kids = (r?.[1]?.data?.children || []).filter((k: any) => k.kind === 't1');
       ctx.onRead(kids.length);
       c.comments = kids.map((k: any) => k.data).filter((d: any) => d.body && d.author !== 'AutoModerator' && d.body.length > 40 && d.body.length < 700)

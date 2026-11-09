@@ -1,0 +1,10 @@
+npm warn Unknown user config "python". This will stop working in the next major version of npm.
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push
+
+ ✓ .factory/publishing-planner-recovery/qa/independent.test.ts (11 tests) 23ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  01:19:26
+   Duration  797ms (transform 81ms, setup 0ms, collect 464ms, tests 23ms, environment 0ms, prepare 53ms)

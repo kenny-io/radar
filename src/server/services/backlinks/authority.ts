@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Domain authority for proposals ("Authority N"): Open PageRank (OPENPAGERANK_API_KEY), normalized 0–100.
 // null when the provider is unavailable — the UI then omits the metric (never shows a fake number).
 import { env } from '../../env';
@@ -24,12 +25,13 @@ export async function fetchAuthority(domain: string): Promise<number | null> {
       body: JSON.stringify({ domains: [domain], include_history: false }),
       signal: AbortSignal.timeout(10000),
     });
-    if (!r.ok) { console.warn('[backlinks] authority lookup', domain, r.status); return null; }
+    if (!r.ok) { await reportFailure(new Error('Authority provider request failed'), { source: 'system', operation: 'backlinks.authority', provider: 'Open PageRank', status: r.status, degraded: true }); console.warn('[backlinks] authority lookup', domain, r.status); return null; }
     const j: any = await r.json();
     const row = j?.results?.[0];
     if (!row || !row.found || row.open_page_rank == null) return null;
     return Math.max(0, Math.min(100, Math.round(Number(row.open_page_rank) * 10)));
   } catch (e: any) {
+    await reportFailure(e, { source: 'system', operation: 'backlinks.authority', provider: 'Open PageRank', degraded: true });
     console.warn('[backlinks] authority lookup failed', domain, e?.message || e);
     return null;
   }

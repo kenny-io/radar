@@ -229,3 +229,127 @@ describe('exact source excerpt resolution',()=>{
     const result=await planRepositoryPost('',P(),snapshot(files),{businessId:'b1'});expect(result.discovery.every(proof=>proof.snippet===source)).toBe(true);expect(result.discovery.every(proof=>files.get(proof.path)!.includes(proof.snippet))).toBe(true);expect(M.run.mock.calls.filter(call=>call[1].purpose==='github.integration.repair')).toHaveLength(0);
   });
 });
+
+describe('bounded unavailable repository sources', () => {
+  const largePath = 'src/generated/website-pages.json';
+  function generatedSnapshot(knownSize = true) {
+    const files = new Map([...SITE, [largePath, 'x'.repeat(846_266)], ['scripts/generate-catalog.mjs', 'export const inputs = "packages/words/entries/*.html";'], ['package.json', '{"scripts":{"build":"node scripts/generate-catalog.mjs && node tools/site-builder.mjs"}}']]);
+    const s = snapshot(files);
+    if (knownSize) s.entries.find(file => file.path === largePath)!.size = 846_266;
+    return s;
+  }
+  it('never fetches a known oversized artifact and sends its unavailable notice through new discovery, planning and independent review', async () => {
+    const s = generatedSnapshot(); respond(); let discovers = 0;
+    const normal = M.run.getMockImplementation()!;
+    M.run.mockImplementation(async (...args: any[]) => args[1].purpose === 'github.integration.discover'
+      ? { json: discovers++ === 0 ? { paths: [...SITE.keys(), largePath], complete: true, summary: 'Inspect candidate sources' } : { paths: ['scripts/generate-catalog.mjs', 'package.json'], complete: true, summary: 'Trace authored input and pipeline ordering' } }
+      : normal(...args));
+    await expect(planRepositoryPost('', P(), s, { businessId: 'b1' })).resolves.toMatchObject({ draft: true });
+    expect(s.read).not.toHaveBeenCalledWith(largePath);
+    expect(M.run.mock.calls.map(call => call[1].purpose)).toEqual(['github.integration.discover', 'github.integration.discover', 'github.integration.plan', 'github.integration.review']);
+    const notice = { path: largePath, sha: 'sha:' + largePath, size: 846_266, reason: 'file-too-large', limit: 100_000 };
+    for (const call of M.run.mock.calls.slice(1)) {
+      const context = JSON.parse(call[1].prompt);
+      expect(context.unavailableSources).toEqual([notice]);
+      expect(context.observed.some((file: any) => file.path === largePath)).toBe(false);
+    }
+    const first = JSON.parse(M.run.mock.calls[0][1].prompt);
+    expect(first.manifest.find((file: any) => file.path === largePath)).toMatchObject({ size: 846_266, readability: 'too-large' });
+    expect(JSON.parse(M.run.mock.calls[1][1].prompt).remainingReads).toBe(36);
+    expect(M.run.mock.calls[0][1].system).toContain('filename means generated/optional');
+  });
+  it('recovers unknown-size oversized reads once without ever adding their bytes to inspected source', async () => {
+    const s = generatedSnapshot(false); respond(proposal(), review(), [...SITE.keys(), largePath]);
+    await expect(planRepositoryPost('', P(), s, { businessId: 'b1' })).resolves.toMatchObject({ draft: true });
+    expect(vi.mocked(s.read).mock.calls.filter(([path]) => path === largePath)).toHaveLength(1);
+    expect(M.run.mock.calls.filter(call => call[1].purpose === 'github.integration.discover')).toHaveLength(2);
+    expect(M.run.mock.calls.at(-1)![1].prompt).not.toContain('x'.repeat(1000));
+  });
+  it.each(['edit', 'evidence'])('rejects %s of unavailable source even after readable source establishes the other chain', async kind => {
+    const plan = proposal();
+    if (kind === 'edit') plan.changes.push({ kind: 'edit', path: largePath, expectedSha: 'sha:' + largePath, content: null, edits: [{ before: 'x', after: 'y' }] });
+    else plan.evidence[0] = { path: largePath, sha: 'sha:' + largePath, snippet: 'x', role: 'route' };
+    respond(plan, review(), [...SITE.keys(), largePath]);
+    const error = await planRepositoryPost('', P(), generatedSnapshot(), { businessId: 'b1' }).catch(error => error);
+    expect(error).toMatchObject({ http: 422, source: 'radar' });
+    expect(error.detail).toContain(largePath); expect(error.detail).toContain('846266'); expect(error.detail).toContain('100000');
+    expect(M.run.mock.calls.some(call => call[1].purpose === 'github.integration.review')).toBe(false);
+    expect(JSON.parse(M.run.mock.calls.find(call => call[1].purpose === 'github.integration.repair')![1].prompt).unavailableSources).toHaveLength(1);
+  });
+  it('fails repeated no-progress discovery with explicit unavailable context and no repeated downloads', async () => {
+    const s = generatedSnapshot(); M.run.mockResolvedValue({ json: { paths: [largePath], complete: false, summary: 'Need this manual registry' } });
+    const error = await planRepositoryPost('', P(), s, { businessId: 'b1' }).catch(error => error);
+    expect(error.diagnostic.code).toBe('discovery-incomplete'); expect(error.detail).toContain(largePath); expect(error.detail).toContain('846266');
+    expect(s.read).not.toHaveBeenCalled(); expect(M.run).toHaveBeenCalledTimes(2);
+  });
+  it('counts skipped paths against the same forty-file budget', async () => {
+    const s = snapshot(); s.entries.push(...Array.from({ length: 40 }, (_, i) => ({ path: `derived/${i}.json`, sha: `large-${i}`, type: 'blob', size: 100_001 })));
+    let discovery = 0; M.run.mockImplementation(async () => ({ json: discovery++ === 0 ? { paths: s.entries.slice(3).map(file => file.path), complete: false, summary: 'Inspect candidates' } : { paths: [...SITE.keys()], complete: true, summary: 'Inspect authored source' } }));
+    const error = await planRepositoryPost('', P(), s, { businessId: 'b1' }).catch(error => error);
+    expect(error.diagnostic).toMatchObject({ code: 'read-count', actual: 43, limit: 40 }); expect(s.read).not.toHaveBeenCalled();
+  });
+});
+
+describe('safe actionable plan rejection diagnostics', () => {
+  it.each([
+    ['empty', 'plan-empty', 0, undefined], ['files', 'changed-file-count', 13, 12], ['edits', 'edit-count', 81, 80],
+  ])('separates %s rejection and keeps actual host counts through a failed repair', async (kind, code, actual, limit) => {
+    const plan = proposal();
+    if (kind === 'empty') plan.changes = [];
+    if (kind === 'files') plan.changes = Array.from({ length: 13 }, (_, i) => ({ ...plan.changes[0], path: `posts/${i}.html` }));
+    if (kind === 'edits') plan.changes[1].edits = Array.from({ length: 81 }, () => ({ before: 'articles', after: 'posts' }));
+    respond(plan); const error = await planRepositoryPost('', P(), snapshot(), { businessId: 'b1' }).catch(error => error);
+    expect(error.diagnostic).toMatchObject({ code, actual, stage: 'repair', origin: { code, actual } });
+    if (limit) expect(error.diagnostic.limit).toBe(limit);
+    if (!limit) expect(error.detail).not.toContain('exceeds');
+  });
+  it('retains concrete independent-review issues and final empty-repair cause without storing raw source, URLs or credentials', async () => {
+    const originalIssue = 'Missing manual public listing. URL https://private.test/secret-path?token=private-value api_key=private-key `const source = "private-source";`';
+    respond(proposal(), { ...review(), approved: false, issues: [originalIssue] });
+    const normal = M.run.getMockImplementation()!;
+    M.run.mockImplementation(async (...args: any[]) => args[1].purpose === 'github.integration.repair' ? { json: { ...proposal(), changes: [] } } : normal(...args));
+    const error = await planRepositoryPost('', P(), snapshot(), { businessId: 'b1' }).catch(error => error);
+    expect(error.diagnostic).toMatchObject({ code: 'plan-empty', stage: 'repair', origin: { code: 'review-rejected', stage: 'review', issues: [expect.stringContaining('Missing manual public listing')] } });
+    expect(error.detail).toContain('no changes'); expect(error.detail).toContain('Missing manual public listing');
+    expect(JSON.stringify(error.diagnostic)).not.toMatch(/private-value|private-key|private-source|private\.test|secret-path/);
+    expect(JSON.stringify(error.diagnostic)).not.toContain(P().html);
+  });
+  it('caps and sanitizes rejected-review issues even when recognizable credentials prevent correction', async () => {
+    respond(proposal(), { ...review(), approved: false, issues: ['Missing registry. ghp_' + 'A'.repeat(36), 'token=private-token key=private-key pass=private-pass client_secret=private-client private_key=private-pem ' + 'x'.repeat(1000), 'third issue', 'fourth issue'] });
+    const error = await planRepositoryPost('', P(), snapshot(), { businessId: 'b1' }).catch(error => error);
+    expect(error.diagnostic.issues).toHaveLength(3); expect(error.diagnostic.issues.every((issue: string) => issue.length <= 300)).toBe(true);
+    expect(JSON.stringify(error.diagnostic)).not.toMatch(/ghp_|private-token|private-key|private-pass|private-client|private-pem/); expect(error.detail).toContain('Missing registry');
+  });
+  it('rejects by the absolute deadline while a read-only provider is pending and ignores its eventual result', async () => {
+    vi.useFakeTimers(); let release!: (value: any) => void;
+    M.run.mockImplementation(() => new Promise(resolve => { release = resolve; }));
+    try {
+      const pending = planRepositoryPost('', P(), snapshot(), { businessId: 'b1', deadlineAt: Date.now() + 20 });
+      const checked = expect(pending).rejects.toMatchObject({ http: 422, source: 'radar', retryable: false, diagnostic: { code: 'publishing-deadline' } });
+      await vi.advanceTimersByTimeAsync(20); await checked;
+      release({ json: { paths: [...SITE.keys()], complete: true, summary: 'Late result' } });
+      await vi.advanceTimersByTimeAsync(1); expect(M.run).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+});
+
+describe('empty-plan explanation', () => {
+  it('includes the sanitized planner explanation when refusing an empty plan', async () => {
+    const plan = { ...proposal(), changes: [], summary: 'The renderer requires a manual registry entry but no supported article record was found. api_key=private-value https://private.test/path?secret=hidden `raw source bytes`' };
+    respond(plan);
+    const error = await planRepositoryPost('', P(), snapshot(), { businessId: 'b1' }).catch(error => error);
+    expect(error.detail).toContain('Planner explanation: The renderer requires a manual registry entry');
+    expect(error.detail).not.toMatch(/private-value|private\.test|hidden|raw source bytes/);
+    expect(error.diagnostic).toMatchObject({ code: 'plan-empty', origin: { code: 'plan-empty' } });
+  });
+});
+
+describe('final expanded output budget', () => {
+  it('reports actual expanded bytes independently of file and edit counts', async () => {
+    const plan = proposal(); plan.changes.push({ kind: 'create', path: 'content/article-notes.txt', expectedSha: null, content: 'x'.repeat(750_000), edits: [] }); respond(plan);
+    const error = await planRepositoryPost('', P(), snapshot(), { businessId: 'b1' }).catch(error => error);
+    expect(error.diagnostic).toMatchObject({ code: 'final-output-size', limit: 750_000 }); expect(error.diagnostic.actual).toBeGreaterThan(750_000);
+    expect(error.detail).toContain(String(error.diagnostic.actual)); expect(error.detail).not.toContain('file count');
+  });
+});

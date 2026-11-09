@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // The publisher: scheduled entry → payload → draft on the platform → publish (02-system.md §7, §12).
 import { canRun } from '../autopilot/guard';
 import { trackSoon } from '@/server/events';
@@ -13,7 +14,7 @@ import { renderImage } from '@/server/services/images';
 import { readLocal, storedKey } from '@/server/services/storage';
 import { platLabel } from '@/lib/constants';
 import { slugify } from '@/lib/format';
-import type { Article, CalendarEntry, ConnType, Profile } from '@/lib/types';
+import type { Article, ArticlePublishError, CalendarEntry, ConnType, Profile } from '@/lib/types';
 import { blocksToHtml, blocksToMarkdown, sourcesList } from './render';
 import { connectorFor } from './connectors';
 import { PublishError } from './http';
@@ -34,6 +35,7 @@ async function applyOutbound(bid: string, entryUrl: string | null, html: string)
     try { mod = await import(/* webpackIgnore: true */ spec); } catch { mod = await import(/* webpackIgnore: true */ pathToFileURL(file).href); }
     return typeof mod?.applyApprovedOutboundLinks === 'function' ? await mod.applyApprovedOutboundLinks(bid, entryUrl, html) : html;
   } catch (e: any) {
+    await reportFailure(e, { source: 'publishing', operation: 'publishing.outboundLinks', businessId: bid, degraded: true });
     console.error('[publish] outbound links skipped:', e?.message || e);
     return html;
   }
@@ -47,7 +49,10 @@ async function heroImage(b: BizRow, e: CalendarEntry, a: Article): Promise<strin
     // Keep it on the article so the editor shows the same image that went live.
     await db.update(schema.articles).set({ data: sql`jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true)`, updatedAt: new Date() }).where(eq(schema.articles.entryId, e.id));
     return url;
-  } catch (err: any) { console.error('[publish] hero image failed:', err?.message || err); return null; }
+  } catch (err: any) {
+    await reportFailure(err, { source: 'publishing', operation: 'publishing.heroImage', businessId: b.id, ref: e.id, degraded: true });
+    console.error('[publish] hero image failed:', err?.message || err); return null;
+  }
 }
 
 export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Promise<PublishPayload> {
@@ -90,7 +95,7 @@ export async function connectionFor(b: BizRow, dest: string | null): Promise<Con
   return rows.find(r => r.id === dest) || rows.find(r => r.id === bl.defaultId) || rows[0];
 }
 
-export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: { http: number; message: string; platform: string; hint?: string } } | { status: 'skipped'; reason: string } | { status: 'retry' };
+export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: ArticlePublishError } | { status: 'skipped'; reason: string } | { status: 'retry' };
 
 /**
  * Publish one entry. Throws only for a transient failure that should be retried (the job queue backs off);
@@ -118,7 +123,8 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   const conn = await connectionFor(b, e.dest);
   const setEntry = async (v: Partial<typeof schema.calendarEntries.$inferInsert>) => { await db.update(schema.calendarEntries).set(v).where(eq(schema.calendarEntries.id, entryId)); await bump(b.id); };
   const fail = async (err: PublishError, type: string | null) => {
-    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}) };
+    await reportFailure(err, { source: 'publishing', operation: 'publishing.entry', businessId: b.id, ref: entryId, provider: type || undefined, status: err.http, attempt: o.attempt, maxAttempts: o.maxAttempts, retrying: false });
+    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}), ...(err.source ? { source: err.source, diagnostic: err.diagnostic } : {}) };
     await setEntry({ status: 'failed', publishError: error, publishAttempts: o.attempt });
     if (conn && (err.http === 401 || err.http === 403)) await db.update(schema.connections).set({ status: 'error', lastError: err.line }).where(eq(schema.connections.id, conn.id));
     console.error(`[publish] ${entryId} failed on ${type}:`, err.message);
@@ -130,6 +136,7 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
 
   const type = conn.type as ConnType;
   const c = ctxFromRow(b, conn);
+  if (type === 'nextjs') c.publishDeadlineAt = Date.now() + 270_000;
   const connector = connectorFor(type);
   try {
     const payload = await buildPayload(b, e, art);

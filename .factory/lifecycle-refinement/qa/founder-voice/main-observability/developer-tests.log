@@ -1,0 +1,90 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > keeps signup and resend responses generic and throttles an address across rotating IPs
+[abuse] limit hit: auth:verification
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"84bf52a2-317c-4406-ae7d-2a39a5c773e1","timestamp":"2026-11-09T21:28:51.914Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"9e0fb8f5-a4ae-4d01-882e-8ffc1892336b"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Account confirmation is temporarily unavailable. Please try again later.","status":503,"code":"auth_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"0793579d-5c4c-460d-ada2-d3f55120c162","timestamp":"2026-11-09T21:28:51.916Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"aa316a65-733b-4508-aea9-34f6fd69e25e"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Account confirmation is temporarily unavailable. Please try again later.","status":503,"code":"auth_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"da83dc58-f7be-4cd4-b9c4-d6f82a05d099","timestamp":"2026-11-09T21:28:51.921Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.auth","provider":"Resend","requestId":"0d8537b6-faba-454c-bad9-6c715e666a58"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Security email delivery unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > requires configuration consistently and never writes token-bearing mail to production outbox/logs
+[radar.failure] {"id":"a27288f7-c418-44ec-b831-ba5263ffe584","timestamp":"2026-11-09T21:28:51.923Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"0d8537b6-faba-454c-bad9-6c715e666a58"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Radar couldn’t send the confirmation email. Please try again.","status":503,"code":"mail_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > shares a ten-attempt IP budget across signup and resend even when each route has attempts remaining
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[abuse] limit hit: auth:verification
+
+stderr | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[radar.failure] {"id":"f5a9b3dc-f8e2-4f2a-b169-30f0b686fd69","timestamp":"2026-11-09T21:28:51.950Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/auth","requestId":"3fe6d05e-8b74-4d3d-af14-2b5d458589b9"},"rootOperation":"POST /api/auth","error":{"name":"Error","message":"Account confirmation is busy. Please try again later.","status":503,"code":"busy"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/auth/verification.test.ts (11 tests) 1452ms
+   ✓ mailbox confirmation security (database) > does not accept a registrant password or grant a session/admin capability before inbox confirmation  495ms
+   ✓ mailbox confirmation security (database) > recovers legacy account in place, preserves paid/business records and invalidates old sessions and all other links  446ms
+   ✓ mailbox confirmation security (database) > expires tokens, binds their email, validates password bytes and permits exactly one concurrent consume  433ms
+ ✓ src/server/observability/qa.test.ts (8 tests) 744ms
+   ✓ independent durable failure delivery against PostgreSQL > persists a failed operation before sending, retries the same immutable envelope, and never recursively alerts on email failure  474ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: '9089a36b-f4b1-420f-b38a-45d1c632a751', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: '261d4cbd-bb50-4c6b-95ab-6a5f4af348d3',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: '72ec09ac-1792-4c17-945c-2c12e679bb10',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: 'b4509a83-7adf-4ac3-aee0-87cd2a5706d4',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 143ms
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted trial_ending rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted workspace_ready rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes
+[radar.failure] {"id":"34bfcc80-45ef-46a2-9079-697b336ba256","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes
+[radar.failure] {"id":"7b217811-c3c6-4e9f-bb21-11e5b224b4ac","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > keeps new internal service forwards separate and does not let retries override the stored identity
+[radar.failure] {"id":"58c1b598-88b9-4328-850e-38c7e7950a90","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > keeps new internal service forwards separate and does not let retries override the stored identity
+[radar.failure] {"id":"fc49bc78-cedc-4092-9f38-48b677d3ab2b","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/lifecycle/founderIdentity.test.ts (16 tests) 91ms
+ ✓ src/server/observability/failures.test.ts (8 tests) 19ms
+ ✓ src/server/observability/delivery.test.ts (11 tests) 11ms
+ ✓ src/server/services/support/mail.test.ts (7 tests) 6ms
+ ✓ src/server/observability/jobs.test.ts (2 tests) 3ms
+
+ Test Files  8 passed (8)
+      Tests  77 passed (77)
+   Start at  01:28:49
+   Duration  5.02s (transform 386ms, setup 0ms, collect 1.38s, tests 2.47s, environment 1ms, prepare 281ms)
+

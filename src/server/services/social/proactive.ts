@@ -1,3 +1,4 @@
+import { reportFailure, shouldReportFailure } from '@/server/observability/failures';
 // Bounded, local grounding for daily drafts. Crawl timestamps are discovery dates, never publication dates.
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { db, schema } from '../../db';
@@ -51,7 +52,10 @@ export async function dailyContext(bid: string, p: Profile, date: string, packs:
   const finish = (s: DailySource) => ({ ...s, context, recent: recentPostContext(packs) });
   for (const e of published.filter(e => !usedArticles.has(e.id))) {
     try { return finish({ source: { kind: 'article', label: e.title, ref: e.id }, grounding: await readArticle(bid, e.id) }); }
-    catch { console.warn('[social] daily article unavailable; trying another source'); }
+    catch (error) {
+      if (shouldReportFailure(error)) await reportFailure(error, { source: 'social', operation: 'social.dailyArticle', businessId: bid, ref: e.id, degraded: true });
+      console.warn('[social] daily article unavailable; trying another source');
+    }
   }
   const blog = blogs.find(e => !usedUrls.has(e.url) && (e.text.trim() || e.description.trim()) && /^https?:\/\//i.test(e.url));
   if (blog) return finish({ source: { kind: 'url', label: blog.url }, grounding: { headline: blog.title || blog.h1 || blog.url, brief: `Business blog title: ${clip(blog.title || blog.h1, 180)}\nDescription: ${clip(blog.description, 500)}\nCached article text:\n${clip(blog.text, 3500)}\nPublication date is unknown. Do not describe this article as newly published.`, link: blog.url } });
@@ -59,12 +63,18 @@ export async function dailyContext(bid: string, p: Profile, date: string, packs:
     try {
       const g = await readArticle(bid, e.id);
       return finish({ source: { kind: 'article', label: e.title, ref: e.id }, grounding: { ...g, link: null, brief: `UPCOMING CONTENT TOPIC (${e.date}, ${e.status}). This article has not been published. Discuss the topic directly, without announcing or linking to an article.\n${g.brief}` } });
-    } catch { console.warn('[social] daily calendar topic unavailable; trying another source'); }
+    } catch (error) {
+      if (shouldReportFailure(error)) await reportFailure(error, { source: 'social', operation: 'social.dailyCalendarTopic', businessId: bid, ref: e.id, degraded: true });
+      console.warn('[social] daily calendar topic unavailable; trying another source');
+    }
   }
   try {
     const { ideas } = await suggestIdeas(bid);
     const idea = ideas.find(i => !usedLabels.has(labelKey(i.t)));
     if (idea) return finish({ source: { kind: 'suggest', label: idea.t }, idea, grounding: { headline: idea.t, brief: [`Post angle: ${idea.t}`, `Search topic: ${idea.q}`, `Search data: ${idea.metric}`, `Why now: ${idea.why}`, idea.tie && `Relevant profile fact: ${idea.tie}`, idea.page && `Related site page: ${idea.page}`].filter(Boolean).join('\n'), link: null } });
-  } catch { console.warn('[social] daily search ideas unavailable; using business profile'); }
+  } catch (error) {
+    if (shouldReportFailure(error)) await reportFailure(error, { source: 'social', operation: 'social.dailyIdeas', businessId: bid, ref: date, degraded: true });
+    console.warn('[social] daily search ideas unavailable; using business profile');
+  }
   return finish(profileSource(p, date, usedLabels));
 }

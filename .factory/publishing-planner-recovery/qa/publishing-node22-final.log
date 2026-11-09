@@ -1,0 +1,47 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push
+
+ ✓ src/server/services/publishing/connectors.test.ts (28 tests) 813ms
+   ✓ RADAR_REAL_CONNECTORS (dev-only switch) > the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo  754ms
+ ✓ src/server/services/publishing/http.test.ts (17 tests) 734ms
+ ✓ src/server/services/publishing/connectors/framer.test.ts (30 tests) 17ms
+ ✓ src/server/services/publishing/connectors/nextjs-agent.test.ts (64 tests) 85ms
+ ✓ src/server/services/publishing/connectors/nextjs.test.ts (58 tests) 67ms
+ ✓ src/server/services/publishing/connectors/wpcom.test.ts (12 tests) 18ms
+stderr | src/server/services/publishing/connectors/wix.test.ts > createDraft + publish (new post) > an image Wix refuses to import is left off; the post is still created
+[wix] hero image import refused: 400 Bad Request: {"message":"Invalid url"}
+
+ ✓ src/server/services/publishing/connectors/wix.test.ts (24 tests) 36ms
+ ✓ src/server/services/publishing/oauth.test.ts (22 tests) 26ms
+ ✓ src/server/services/publishing/connectors/notion.test.ts (20 tests) 43ms
+ ✓ src/server/services/publishing/connectors/shopify.test.ts (22 tests) 26ms
+ ✓ src/server/services/publishing/connectors/webflow.test.ts (18 tests) 23ms
+ ✓ src/server/observability/failures.test.ts (8 tests) 18ms
+ ✓ src/server/observability/delivery.test.ts (11 tests) 11ms
+ ✓ src/server/ai/ai.test.ts (13 tests) 9ms
+ ✓ src/server/observability/qa.test.ts (8 tests | 4 skipped) 15ms
+ ✓ src/server/auth/requests.test.ts (9 tests | 7 skipped) 10ms
+ ✓ src/server/services/publishing/observability.test.ts (2 tests) 5ms
+ ✓ src/server/http/publicNetwork.test.ts (17 tests) 12ms
+ ✓ src/server/actions/publishing.test.ts (8 tests) 5ms
+ ✓ src/server/services/drafting/bodyImages.test.ts (4 tests) 5ms
+ ✓ src/server/services/publishing/render.test.ts (8 tests) 3ms
+ ✓ src/server/services/publishing/bodyImages.test.ts (3 tests) 5ms
+ ✓ src/server/observability/jobs.test.ts (2 tests) 3ms
+ ↓ src/server/auth/claim.test.ts (9 tests | 9 skipped)
+ ↓ src/server/auth/googleIdentity.test.ts (3 tests | 3 skipped)
+ ↓ src/server/auth/verification.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/publisher.live.test.ts (15 tests | 1 skipped)
+ ↓ src/server/services/publishing/connectors/framer.live.test.ts (5 tests | 5 skipped)
+ ↓ src/server/services/publishing/connectors/ghost.live.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/connectors/nextjs.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/shopify.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webflow.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webhook.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/wix.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/wordpress.live.test.ts (11 tests | 11 skipped)
+
+ Test Files  23 passed | 12 skipped (35)
+      Tests  397 passed | 85 skipped (496)
+   Start at  01:24:21
+   Duration  18.29s (transform 701ms, setup 0ms, collect 10.87s, tests 1.99s, environment 4ms, prepare 1.42s)

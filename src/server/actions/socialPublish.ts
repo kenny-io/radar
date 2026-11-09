@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Posting from Radar: connected X / LinkedIn accounts, Post now, Schedule, drag to reschedule (architecture.md §6,
 // CONTRACTS.md § Social channels). Every action is behind RADAR_SOCIAL_PUBLISHING (404 not_enabled when off) and needs Editor.
 // Errors are RadarError with the shared COPY (src/lib/socialPublish.ts); provider details go to logs only.
@@ -69,7 +70,7 @@ const base: ActionMap = {
       const pend = await readPendingSocial(ctx.bid, ctx.user.id, i.oauthRef, 'li_page');
       if (!pend) return { pages: [], error: SIGN_IN_EXPIRED };
       try { return { pages: await pagesFor(ctx, pend.tokens) }; }
-      catch (e: any) { console.error('[social.oauth] pages failed', String(e?.message || e).slice(0, 200)); return { pages: [], error: LI_DOWN }; }
+      catch (e: any) { await reportFailure(e, { source: 'social', operation: 'social.pages', businessId: ctx.bid, provider: 'LinkedIn' }); console.error('[social.oauth] pages failed', String(e?.message || e).slice(0, 200)); return { pages: [], error: LI_DOWN }; }
     },
   }),
 
@@ -89,7 +90,7 @@ const base: ActionMap = {
         const pageId = old ? old.remoteId : i.pageId;
         if (!pageId) throw refuse('Pick a page to connect.', 'invalid');
         let pages: SocialPage[];
-        try { pages = await pagesFor(ctx, pend.tokens); } catch { throw refuse(LI_DOWN, 'unavailable', 502); }
+        try { pages = await pagesFor(ctx, pend.tokens); } catch (error) { await reportFailure(error, { source: 'social', operation: 'social.connect', businessId: ctx.bid, provider: 'LinkedIn' }); throw refuse(LI_DOWN, 'unavailable', 502); }
         const pg = pages.find(p => p.id === pageId);
         if (old && i.pageId && i.pageId !== old.remoteId) {
           const other = pages.find(p => p.id === i.pageId);
@@ -119,7 +120,7 @@ const base: ActionMap = {
       const row = await accountRow(ctx.bid, i.acctId);
       if (!row) throw notFound('Account');
       const t = tokensOf(row);
-      if (t) { try { await adapterFor(row.ch, t).revoke(t); } catch { /* best effort */ } }
+      if (t) { try { await adapterFor(row.ch, t).revoke(t); } catch (error) { await reportFailure(error, { source: 'social', operation: 'social.revoke', businessId: ctx.bid, ref: row.id, provider: row.ch, degraded: true }); } }
       const unscheduled = await db.transaction(async tx => {
         const [{ n }] = await tx.select({ n: sql<number>`count(*)::int` }).from(P).where(and(eq(P.acctId, row.id), eq(P.status, 'scheduled')));
         await tx.delete(P).where(and(eq(P.acctId, row.id), inArray(P.status, ['scheduled', 'failed'])));

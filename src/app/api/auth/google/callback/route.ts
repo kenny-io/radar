@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 import { NextResponse } from 'next/server';
 import { track } from '@/server/events';
 import { EMAIL_RE } from '@/lib/format';
@@ -29,7 +30,10 @@ export async function GET(req: Request) {
   else {
     try {
       const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(15000), body: new URLSearchParams({ code, client_id: env.googleClientId, client_secret: env.googleClientSecret, redirect_uri: `${env.appUrl}/api/auth/google/callback`, grant_type: 'authorization_code' }) });
-      if (!r.ok) return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
+      if (!r.ok) {
+        await reportFailure(new Error('Google OAuth token exchange failed'), { source: 'http', operation: 'auth.google.exchange', provider: 'Google', status: r.status });
+        return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
+      }
       const tok = await r.json();
       const { payload: claims } = await jwtVerify(tok.id_token, googleKeys, { audience: env.googleClientId, issuer: ['accounts.google.com', 'https://accounts.google.com'], algorithms: ['RS256'] });
       if (claims.aud !== env.googleClientId || claims.email_verified !== true || typeof claims.sub !== 'string' || !claims.sub || claims.sub.length > 255 ||
@@ -37,7 +41,7 @@ export async function GET(req: Request) {
         typeof claims.exp !== 'number' || claims.exp <= Date.now() / 1000 || typeof claims.email !== 'string' || claims.email.length > 320 || !EMAIL_RE.test(claims.email) || isGuestEmail(claims.email))
         return NextResponse.redirect(`${env.appUrl}/signup?error=google`);
       sub = claims.sub; email = claims.email.toLowerCase(); name = typeof claims.name === 'string' ? claims.name.slice(0, 200) : email.split('@')[0];
-    } catch { return NextResponse.redirect(`${env.appUrl}/signup?error=google`); }
+    } catch (error) { await reportFailure(error, { source: 'http', operation: 'auth.google.exchange', provider: 'Google' }); return NextResponse.redirect(`${env.appUrl}/signup?error=google`); }
   }
   // An email match is never proof that this provider owns an existing Radar credential.
   const found = (await db.select().from(schema.users).where(and(eq(schema.users.googleSub, sub), eq(schema.users.guest, false))).limit(1))[0];

@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { currentActor } from '@/server/auth/session';
@@ -22,6 +23,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
     const r = await p.callback({ user: u, bid: st.businessId, data: st.data, redirectUri: oauthRedirect(provider), params: q });
     return popupResult(provider, r);
   } catch (e: any) {
+    await reportFailure(e, { source: 'http', operation: 'oauth.callback', businessId: st.businessId, userId: st.userId, provider });
     console.error('[oauth callback]', provider, e?.message || e);
     return popupResult(provider, { ok: false, error: 'exchange_failed' });
   }
