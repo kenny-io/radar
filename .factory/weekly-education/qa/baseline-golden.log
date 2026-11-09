@@ -1,0 +1,118 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/reddit-copy-release/radar-push
+
+ ❯ src/server/ai/openrouter.qa.test.ts (74 tests | 1 failed | 73 skipped) 624ms
+   × parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot 624ms
+     → expected { …(14) } to deeply equal { …(14) }
+   ↓ parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > an empty OPENROUTER_API_KEY counts as unset (no OpenRouter request)
+   ↓ route order with OPENROUTER_API_KEY > research: OR(opus) → direct(opus) → OR(gpt-6-sol) → direct → OR(grok) → direct
+   ↓ route order with OPENROUTER_API_KEY > total transient failure: OR gets 1 try per model, direct keeps its 3 (12 fetches, not more)
+   ↓ route order with OPENROUTER_API_KEY > OpenRouter only (no direct keys): each model gets the usual 3 attempts on OpenRouter (9 fetches)
+   ↓ route order with OPENROUTER_API_KEY > a model with no direct key is still served by OpenRouter, in one call
+   ↓ route order with OPENROUTER_API_KEY > a business-chosen Grok model goes OR(grok) first and keeps temperature only for Grok
+   ↓ route order with OPENROUTER_API_KEY > OPENROUTER_MODEL_MAP "" sends that model straight to its direct provider
+   ↓ route order with OPENROUTER_API_KEY > after an OpenRouter account error, later models in the SAME call skip OpenRouter
+   ↓ OpenRouter failure handling > 401 bad key → 10-minute cooldown for text and images; next calls go direct
+   ↓ OpenRouter failure handling > 402 no credit → 10-minute cooldown for text and images; next calls go direct
+   ↓ OpenRouter failure handling > 403 key limit → 10-minute cooldown for text and images; next calls go direct
+   ↓ OpenRouter failure handling > 429 credit wording → 10-minute cooldown for text and images; next calls go direct
+   ↓ OpenRouter failure handling > moderation-flagged 403 → this call goes direct, no cooldown (next call tries OpenRouter again)
+   ↓ OpenRouter failure handling > a moderation-flagged 403 on an IMAGE request does not pause OpenRouter
+   ↓ OpenRouter failure handling > 404 unknown model → skips OpenRouter for that model only (10 min), others still use it
+   ↓ OpenRouter failure handling > 404 "no endpoints support the requested parameters" → direct for this call only
+   ↓ OpenRouter failure handling > 429 rate limit → falls back to direct, no cooldown
+   ↓ OpenRouter failure handling > 500 → falls back to direct, no cooldown
+   ↓ OpenRouter failure handling > 502 provider error → falls back to direct, no cooldown
+   ↓ OpenRouter failure handling > 503 → falls back to direct, no cooldown
+   ↓ OpenRouter failure handling > network timeout → aborts after timeoutMs, falls back, opens the 2-minute breaker (not the 10-minute cooldown)
+   ↓ OpenRouter failure handling > network error (fetch rejects) → falls back
+   ↓ OpenRouter failure handling > in-stream error chunk: partial OR text discarded via onReset, direct answer shown, no partial in result
+   ↓ OpenRouter failure handling > in-stream credit error (402 chunk) → cooldown
+   ↓ OpenRouter failure handling > stream that ends with no content → treated as failure and falls back
+   ↓ OpenRouter failure handling > malformed JSON in structured output → schema validation fails, one OR call, then direct
+   ↓ OpenRouter failure handling > JSON wrapped in prose/code fences from OpenRouter is still extracted and fitted to the schema
+   ↓ OpenRouter failure handling > 200 body with an error object (no choices) → fails over
+   ↓ OpenRouter structured outputs > request shape: json_schema + strict + require_parameters, streamed (PM 2026-10-23) but no JSON deltas shown, no tools
+   ↓ OpenRouter structured outputs > optional / record fields → strict:false for non-Claude models; Claude models always strict with the Claude subset
+   ↓ OpenRouter structured outputs > schema 400 → exactly one plain-JSON retry on OpenRouter; a second 400 moves on (no loop)
+   ↓ OpenRouter structured outputs > schema 400 with OpenRouter as the only route: 2 calls per model, never more
+   ↓ OpenRouter structured outputs > a non-schema 400 is not retried as plain JSON
+   ↓ OpenRouter structured outputs > research + schema: web_search pass then structuring pass; failure in pass 2 → direct does both passes (4 fetches)
+   ↓ OpenRouter structured outputs > plain research (web search, no schema) sends the web_search tool and returns url_citation citations
+   ↓ images via OpenRouter > aspect ratio for every size Radar requests (hero/linkedin/facebook/quora 1200×628, x/brief 1200×675, reddit 1200×900)
+   ↓ images via OpenRouter > decodes image/png (with and without data: prefix) and cover-crops to exactly 1200×628
+   ↓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×900
+   ↓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×675
+   ↓ images via OpenRouter > missing media_type is fine; SVG and empty data fall back to OpenAI
+   ↓ images via OpenRouter > renderImage: OR failure with no other image key → brand template (no throw)
+   ↓ images via OpenRouter > an image account error (402) pauses OpenRouter for text too
+   ↓ images via OpenRouter > dev stubs: no image model even with a key
+   ↓ AI Visibility via OpenRouter > each engine → its model, web search tool (not for Sonar), Claude max_tokens 2048, attribution headers
+   ↓ AI Visibility via OpenRouter > citations: nested url_citation, flat url, Perplexity citations (strings/objects), search_results fallback
+   ↓ AI Visibility via OpenRouter > Gemini grounding redirect links in OR citations are resolved like the direct path (no key sent to Google)
+   ↓ AI Visibility via OpenRouter > falls back to the official API on OR failure, with the exact parent-commit direct request
+   ↓ AI Visibility via OpenRouter > fetch rejection / 429 / 200-with-error → falls back to the official API
+   ↓ AI Visibility via OpenRouter > OR account error from visibility → cooldown shared with text; next engine call goes direct only
+   ↓ AI Visibility via OpenRouter > "not collected" semantics: OR fails + no direct key → real error; no OR + no key → EngineUnavailable with zero requests
+   ↓ AI Visibility via OpenRouter > OR in cooldown + no direct key → reported as "not configured" (EngineUnavailable), no request
+   ↓ AI Visibility via OpenRouter > dev stubs bypass OpenRouter entirely
+   ↓ the OpenRouter key never leaks > not in logs, ai_calls rows, thrown errors, visibility errors; only ever sent to openrouter.ai
+   ↓ the OpenRouter key never leaks > HTTP-Referer is APP_URL without trailing slash; defaults to localhost when APP_URL unset
+   ↓ the OpenRouter key never leaks > ai_calls row for an OR failure stores the provider error text, not request headers
+   ↓ retest: OpenRouter streaming for every text call > JSON split at arbitrary byte boundaries (inside the data: line and inside UTF-8 characters) reassembles exactly
+   ↓ retest: OpenRouter streaming for every text call > plain-text (no onDelta) and visibility calls now send stream:true and parse the reassembled answer
+   ↓ retest: OpenRouter streaming for every text call > stream that ends with finish_reason but no [DONE] → accepted
+   ↓ retest: OpenRouter streaming for every text call > a stream that closes mid-answer (no finish_reason, no [DONE]) is treated as a failure and falls back direct
+   ↓ retest: OpenRouter streaming for every text call > error chunk in the middle of a JSON answer → partial JSON discarded, falls back, counts as one transient strike
+   ↓ retest: idle cutoff and timers > idle and total timers are cleared after success / HTTP error / JSON body: nothing aborts later, breaker stays closed
+   ↓ retest: idle cutoff and timers > keep-alive comments count as activity: a slow-but-alive stream is not cut
+   ↓ retest: idle cutoff and timers > stalled stream after partial text → idle cutoff, partial discarded via onReset, direct answer, breaker opens
+   ↓ retest: idle cutoff and timers > hang before response headers → idle cutoff also applies
+   ↓ retest: circuit breaker > 3 consecutive 5xx open it; a success in between resets the count; it closes after 2 minutes
+   ↓ retest: circuit breaker > 4xx answers (rate limit, schema, moderation) do not count as strikes
+   ↓ retest: circuit breaker > does not block OpenRouter-only setups: text, images and visibility still use OpenRouter while it is open
+   ↓ retest: circuit breaker > while open, it is skipped per model only where that model has a direct route
+   ↓ retest: circuit breaker > an image timeout (60 s total) falls back to OpenAI and opens the breaker for text
+   ↓ retest: circuit breaker > visibility: idle cutoff falls back to the official API and opens the breaker
+   ↓ retest: circuit breaker > non-credit 403 (e.g. region block) skips only that model, no global cooldown
+   ↓ retest: concurrent calls > 6 concurrent calls hitting a 402: each tries OpenRouter at most once, none tries it for a second model, all succeed direct
+   ↓ retest: concurrent calls > 3 concurrent calls into a hung OpenRouter each wait one idle cutoff, then go direct; the 4th skips OpenRouter
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/ai/openrouter.qa.test.ts > parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot
+AssertionError: expected { …(14) } to deeply equal { …(14) }
+
+- Expected
++ Received
+
+@@ -110,11 +110,11 @@
+      "calls": [],
+      "configured": false,
+      "logs": [],
+      "rows": [],
+      "stored": [
+-       "f883614e6a7dfb07",
++       "91d5409f50974af7",
+      ],
+      "style": "branded",
+    },
+    "p1": {
+      "backoffs": [],
+
+ ❯ src/server/ai/openrouter.qa.test.ts:202:20
+    200|     const actual = await parityScenarios();
+    201|     if (process.env.QA_CAPTURE) { fs.writeFileSync(process.env.QA_CAPT…
+    202|     expect(actual).toEqual(GOLDEN);
+       |                    ^
+    203|   });
+    204|   it('an empty OPENROUTER_API_KEY counts as unset (no OpenRouter reque…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 73 skipped (74)
+   Start at  21:57:37
+   Duration  1.58s (transform 264ms, setup 0ms, collect 478ms, tests 624ms, environment 0ms, prepare 111ms)
+

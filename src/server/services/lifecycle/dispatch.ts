@@ -6,6 +6,7 @@ import { decrypt, encrypt, sha256 } from '@/server/crypto';
 import { getProvider } from '@/server/billing/provider';
 import { onboardingAllowed } from './preferences';
 import { lifecyclePayload, type LifecyclePayload } from './queue';
+import { prepareEducation, acknowledgeEducation, blockEducation } from './education';
 import { currentWorkSections, optionalDeliveryAfter } from './engagement';
 const M = schema.lifecycleEmails;
 type Mail = typeof M.$inferSelect;
@@ -21,6 +22,8 @@ export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, no
   const [u] = await db.select().from(schema.users).where(eq(schema.users.id, row.userId)).limit(1);
   if (!u || u.guest || payload.envelope.to.length !== 1 || payload.envelope.to[0] !== u.email) return false;
   const d = payload.data;
+  if (['welcome', 'founder_note', 'work_update'].includes(row.type) && !u.emailVerifiedAt) return false;
+  if (row.type === 'weekly_education') return (await prepareEducation(row, payload, now)).kind === 'send';
   if (row.type === 'work_update') {
     const current = await currentWorkSections(row, payload, now);
     return row.firstAttemptAt ? current.length > 0 && current.length === d.workSections?.length : current.length > 0;
@@ -73,14 +76,18 @@ async function claim(now: Date, userIds?: string[]): Promise<Mail | null> {
   const token = randomUUID();
   const { rows } = await pool.query<{ id: string }>(`UPDATE lifecycle_emails SET status='sending', claimed_at=$1, claim_token=$2
     WHERE id = (SELECT id FROM lifecycle_emails WHERE ((status='queued' AND next_attempt_at <= $1)
-      OR (status='sending' AND claimed_at < $3)) AND ($4::uuid[] IS NULL OR user_id = ANY($4::uuid[])) ORDER BY CASE WHEN type='password_reset' THEN 0 WHEN type IN ('payment_failed','trial_ending','cancellation_scheduled','subscription_ended') THEN 1 WHEN type='founder_note' THEN 3 ELSE 2 END, next_attempt_at, created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id`, [now, token, new Date(now.getTime() - CLAIM_MS), userIds ?? null]);
+      OR (status='sending' AND claimed_at < $3)) AND ($4::uuid[] IS NULL OR user_id = ANY($4::uuid[])) ORDER BY CASE WHEN type='password_reset' THEN 0 WHEN type IN ('payment_failed','trial_ending','cancellation_scheduled','subscription_ended') THEN 1 WHEN type='weekly_education' THEN 3 WHEN type='founder_note' THEN 4 WHEN type='work_update' THEN 5 ELSE 2 END, next_attempt_at, created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id`, [now, token, new Date(now.getTime() - CLAIM_MS), userIds ?? null]);
   return rows[0] ? (await db.select().from(M).where(eq(M.id, rows[0].id)))[0] : null;
 }
 const owned = (row: Mail) => and(eq(M.id, row.id), eq(M.claimToken, row.claimToken!), eq(M.status, 'sending'));
 async function release(row: Mail) { await db.update(M).set({ status: 'queued', claimedAt: null, claimToken: null }).where(owned(row)); }
-async function defer(row: Mail, next: Date) { await db.update(M).set({ status: 'queued', nextAttemptAt: next, claimedAt: null, claimToken: null, lastError: 'optional_frequency_or_quiet_hours' }).where(owned(row)); }
+async function defer(row: Mail, next: Date, reason = 'optional_frequency_or_quiet_hours') { await db.update(M).set({ status: 'queued', nextAttemptAt: next, claimedAt: null, claimToken: null, lastError: reason, ...(row.type === 'weekly_education' && !row.firstAttemptAt && ['education_paused', 'education_opted_out'].includes(reason) ? { expiresAt: new Date(next.getTime() + 30 * 864e5) } : {}) }).where(owned(row)); }
 async function terminal(row: Mail, status: 'failed' | 'suppressed', reason: string) {
-  await db.update(M).set({ status, lastError: reason, claimedAt: null, claimToken: null, ...(row.type === 'password_reset' ? { payloadEnc: '' } : {}) }).where(owned(row));
+  await db.transaction(async tx => {
+    if (row.type === 'weekly_education') await tx.select().from(schema.educationEnrollments).where(eq(schema.educationEnrollments.userId, row.userId)).for('update');
+    const rows = await tx.update(M).set({ status, lastError: reason, claimedAt: null, claimToken: null, ...(row.type === 'password_reset' ? { payloadEnc: '' } : {}) }).where(owned(row)).returning({ id: M.id });
+    if (rows.length && row.type === 'weekly_education') await blockEducation(tx, row, reason);
+  });
   if (status === 'failed') console.error('[lifecycle] delivery failed', { id: row.id, type: row.type, reason });
 }
 async function retry(row: Mail, reason: string, now: Date, retryAfterMs = 0) {
@@ -91,7 +98,41 @@ async function retry(row: Mail, reason: string, now: Date, retryAfterMs = 0) {
   if (attempt >= MAX_ATTEMPTS || next.getTime() - first.getTime() >= RETRY_WINDOW || next >= row.expiresAt) return terminal(row, 'failed', reason);
   await db.update(M).set({ status: 'queued', nextAttemptAt: next, lastError: reason, claimedAt: null, claimToken: null }).where(owned(row));
 }
-export interface DispatchOptions { /** Optional operator/test scope; production worker drains all users. */ userIds?: string[]; now?: Date; limit?: number; fetch?: typeof fetch; sleep?: (ms: number) => Promise<unknown>; shouldStop?: () => boolean; signal?: AbortSignal }
+/** Suppressions are never removed. Only the recognized sending-only key response uses native provider enforcement. */
+async function educationSuppression(email: string, fetcher: typeof fetch, sleep: (ms: number) => Promise<unknown>, signal?: AbortSignal): Promise<string> {
+  try {
+    const response = await fetcher(`https://api.resend.com/suppressions/${encodeURIComponent(email)}`, {
+      method: 'GET', headers: { authorization: `Bearer ${env.resendKey}` },
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000),
+    });
+    if (response.status !== 200 && response.status !== 401) {
+      await response.body?.cancel().catch(() => {});
+      return response.status === 404 ? 'clear' : `suppression_lookup_http_${response.status}`;
+    }
+    const reader = response.body?.getReader();
+    if (!reader) return 'suppression_lookup_invalid';
+    const chunks: Uint8Array[] = []; let size = 0;
+    try {
+      for (;;) {
+        const { value, done } = await reader.read(); if (done) break;
+        size += value.byteLength;
+        if (size > 4096) { await reader.cancel(); return 'suppression_lookup_invalid'; }
+        chunks.push(value);
+      }
+    } finally { reader.releaseLock(); }
+    const record = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (response.status === 401) {
+      // A valid sending-only key cannot read suppressions. Keep its least privilege and rely on Resend's
+      // native delivery suppression; never infer this exception from freeform provider messages.
+      return record !== null && typeof record === 'object' && !Array.isArray(record) && Object.hasOwn(record, 'name') && record.name === 'restricted_api_key'
+        ? 'native_suppression' : 'suppression_lookup_http_401';
+    }
+    return typeof record?.email === 'string' && record.email.toLowerCase() === email.toLowerCase() ? 'suppressed' : 'suppression_lookup_invalid';
+  } catch { return 'suppression_lookup_unavailable'; }
+  finally { await sleep(125); }
+}
+
+export interface DispatchOptions { /** Optional operator/test scope; production worker drains all users. */ userIds?: string[]; now?: Date; clock?: () => Date; limit?: number; fetch?: typeof fetch; sleep?: (ms: number) => Promise<unknown>; shouldStop?: () => boolean; signal?: AbortSignal }
 
 /** Only one batch per deployment at once; a conservative8requests/s leaves headroom below the shared provider10/s limit. */
 export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
@@ -110,25 +151,33 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
       const row = await claim(now, options.userIds);
       if (!row) break;
       processed++;
-      if (row.expiresAt <= now || (row.firstAttemptAt && now.getTime() - row.firstAttemptAt.getTime() >= RETRY_WINDOW)) {
-        await terminal(row, 'failed', 'expired_delivery_window'); continue;
-      }
       let payload: LifecyclePayload;
       try {
         const p = decrypt<LifecyclePayload>(row.payloadEnc);
         if (!p?.envelope || !p.data) throw new Error('invalid');
         payload = p;
       } catch { await terminal(row, 'failed', 'unreadable_payload'); continue; }
+      if (row.type === 'weekly_education') {
+        try {
+          const prepared = await prepareEducation(row, payload, now);
+          if (prepared.kind === 'defer') { await defer(row, prepared.until, prepared.reason); continue; }
+          if (prepared.kind === 'suppress') { await terminal(row, 'suppressed', prepared.reason); continue; }
+          payload = prepared.payload;
+        } catch { await defer(row, new Date(now.getTime() + 3600e3), 'education_preparation_unavailable'); continue; }
+      }
+      if (row.expiresAt <= now || (row.firstAttemptAt && now.getTime() - row.firstAttemptAt.getTime() >= RETRY_WINDOW)) {
+        await terminal(row, 'failed', 'expired_delivery_window'); continue;
+      }
       try {
-        if (!(await eligibleWithinDeadline(row, payload, now, options.signal))) { await terminal(row, 'suppressed', 'no_longer_applicable'); continue; }
+        if (row.type !== 'weekly_education' && !(await eligibleWithinDeadline(row, payload, now, options.signal))) { await terminal(row, 'suppressed', 'no_longer_applicable'); continue; }
       } catch {
         if (options.shouldStop?.() || options.signal?.aborted) { await release(row); break; }
         const [attempted] = await db.update(M).set({ attempts: row.attempts + 1 }).where(owned(row)).returning();
         if (attempted) await retry(attempted, 'eligibility_check_unavailable', now);
         continue;
       }
-      if (row.type === 'work_update' || row.type === 'founder_note') {
-        const after = await optionalDeliveryAfter(row.userId, now, row.id);
+      if (row.type === 'work_update' || row.type === 'founder_note' || row.type === 'weekly_education') {
+        const after = await optionalDeliveryAfter(row.userId, now, row.id, db, row.type);
         if (after) { await defer(row, after); continue; }
       }
       if (row.type === 'work_update' && !row.firstAttemptAt) {
@@ -140,11 +189,30 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         const [frozen] = await db.update(M).set({ payloadEnc: encrypt(payload) }).where(owned(row)).returning({ id: M.id });
         if (!frozen) continue;
       }
+      if (row.type === 'weekly_education' && !row.firstAttemptAt) {
+        const [frozen] = await db.update(M).set({ payloadEnc: encrypt(payload) }).where(owned(row)).returning({ id: M.id });
+        if (!frozen) continue;
+      }
       if (options.shouldStop?.() || options.signal?.aborted) { await release(row); break; }
       if (env.devStubs) {
         await db.update(M).set({ status: 'logged', sentAt: null, claimedAt: null, claimToken: null, lastError: null }).where(owned(row));
         console.info('[lifecycle] dev-stub logged', { id: row.id, type: row.type }); continue;
       }
+      if (row.type === 'weekly_education') {
+        const suppression = await educationSuppression(payload.envelope.to[0], fetcher, sleep, options.signal);
+        if (suppression === 'suppressed') { await terminal(row, 'suppressed', 'provider_suppressed'); continue; }
+        if (suppression !== 'clear' && suppression !== 'native_suppression') { await defer(row, new Date(now.getTime() + 3600e3), suppression); continue; }
+        // A lookup may take seconds; recheck recipient, preference and authorization immediately before POST.
+        const checked = await prepareEducation(row, payload, now);
+        if (checked.kind === 'defer') { await defer(row, checked.until, checked.reason); continue; }
+        if (checked.kind === 'suppress') { await terminal(row, 'suppressed', checked.reason); continue; }
+        if (!row.firstAttemptAt && JSON.stringify(checked.payload) !== JSON.stringify(payload)) {
+          payload = checked.payload;
+          const [frozen] = await db.update(M).set({ payloadEnc: encrypt(payload) }).where(owned(row)).returning({ id: M.id });
+          if (!frozen) continue;
+        }
+      }
+      if (options.shouldStop?.() || options.signal?.aborted) { await release(row); break; }
       // Count actual attempts only after eligibility. Persist before the request so a crash preserves the safe retry deadline.
       const started = row.firstAttemptAt || now;
       const [attempted] = await db.update(M).set({ attempts: row.attempts + 1, firstAttemptAt: started }).where(owned(row)).returning();
@@ -163,7 +231,12 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         } else {
           const body = await response.json().catch(() => null);
           if (!body || typeof body.id !== 'string' || !body.id) await retry(attempted, 'provider_missing_acknowledgment', now);
-          else await db.update(M).set({ status: 'sent', providerId: body.id.slice(0, 200), sentAt: new Date(), claimedAt: null, claimToken: null, lastError: null, ...(row.type === 'password_reset' ? { payloadEnc: '' } : {}) }).where(owned(row));
+          else await db.transaction(async tx => {
+            if (row.type === 'weekly_education') await tx.select().from(schema.educationEnrollments).where(eq(schema.educationEnrollments.userId, row.userId)).for('update');
+            const acceptedAt = options.clock?.() || new Date();
+            const saved = await tx.update(M).set({ status: 'sent', providerId: body.id.slice(0, 200), sentAt: acceptedAt, claimedAt: null, claimToken: null, lastError: null, ...(row.type === 'password_reset' ? { payloadEnc: '' } : {}) }).where(owned(row)).returning({ id: M.id });
+            if (saved.length && row.type === 'weekly_education') await acknowledgeEducation(tx, row, acceptedAt);
+          });
         }
       } catch { await retry(attempted, 'provider_network_or_timeout', now); }
       finally { clearTimeout(timer); }

@@ -1,0 +1,23 @@
+{
+  "checkedDateDubai": "2026-11-09",
+  "source": "Read-only Railway status and git inspection of its active source revision",
+  "web": {"status": "SUCCESS", "commit": "60c68af34c6f80eee8fd7efa8eb2f02c3794394d"},
+  "worker": {"status": "SUCCESS", "commit": "60c68af34c6f80eee8fd7efa8eb2f02c3794394d"},
+  "earlierObservedRevision": "8bc73298a9d9273a172e2806afa138e66e932794",
+  "latestRevisionAudit": "The later Reddit-copy release has no server/auth/worker email changes; deployed email inventory is unchanged",
+  "resend": {
+    "automations": 0,
+    "broadcasts": "Two unrelated Thally drafts; no Radar broadcast found",
+    "recentTransactionalsReviewed": 100,
+    "radarDeliveryEvidence": [
+      {"subject": "Confirm your email for Radar", "status": "delivered", "dateUTC": "2026-11-04"},
+      {"subject": "Radar support request", "status": "delivered", "dateUTC": "2026-11-04", "recipientRole": "support inbox"}
+    ],
+    "historicalSimulatorOnly": [
+      "Welcome to Radar — here’s where to start",
+      "Reset your Radar password"
+    ],
+    "senderPermissionCheck": {"operation": "read-only suppression lookup using current worker credential", "httpStatus": 401, "errorCode": "restricted_api_key", "sendingOnly": true, "keyInvalid": false, "resolution": "Narrow bounded known-code native-suppression fallback implemented and independently tested; no broader credential permission required"},
+    "notes": "Simulator delivery does not establish production user sends. Shared-account Thally emails are not Radar messages. No provider or production changes were made."
+  }
+}

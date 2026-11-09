@@ -5,6 +5,7 @@ import { GET as getPreferences, PATCH as patchPreferences } from '@/app/api/me/e
 import { POST as unsubscribe } from '@/app/api/email-preferences/route';
 import { GET as openWork } from '@/app/email/open/route';
 import PreferencePage from '@/app/email-preferences/page';
+import { eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { Fixtures, clearLimits } from '@/server/testing/fixtures';
 import { hashPassword } from '@/server/auth/session';
@@ -32,20 +33,20 @@ describe.skipIf(!process.env.DATABASE_URL)('engagement settings, opt-out and wor
     expect((await getPreferences()).status).toBe(401);
     const owner = await F.user(), other = await F.user(); await F.signIn(owner, H.jar);
     const initial = await getPreferences(); expect(initial.headers.get('cache-control')).toBe('private, no-store');
-    expect(await initial.json()).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
+    expect(await initial.json()).toEqual({ dailyBrief: true, calendarReminders: true, articleSocial: true });
     expect((await patch({ dailyBrief: true, userId: other.id })).status).toBe(400);
-    const changed = await patch({ dailyBrief: true }); expect(changed.status).toBe(200);
-    expect(await changed.json()).toEqual({ dailyBrief: true, calendarReminders: false, articleSocial: false });
-    expect(await getEngagementPreferences(other.id)).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
-    expect(await (await getPreferences()).json()).toEqual({ dailyBrief: true, calendarReminders: false, articleSocial: false });
+    const changed = await patch({ dailyBrief: false }); expect(changed.status).toBe(200);
+    expect(await changed.json()).toEqual({ dailyBrief: false, calendarReminders: true, articleSocial: true });
+    expect(await getEngagementPreferences(other.id)).toEqual({ dailyBrief: true, calendarReminders: true, articleSocial: true });
+    expect(await (await getPreferences()).json()).toEqual({ dailyBrief: false, calendarReminders: true, articleSocial: true });
   });
-  it('rejects cross-site, malformed and oversized preference changes without opting anyone in', async () => {
+  it('rejects cross-site, malformed and oversized preference changes without changing defaults', async () => {
     const user = await F.user(); await F.signIn(user, H.jar);
     expect((await patch({ articleSocial: true }, { origin: 'https://unrelated.example' })).status).toBe(403);
     expect((await patch({ articleSocial: 'true' })).status).toBe(400);
     expect((await patch({})).status).toBe(400);
     expect((await patch({ dailyBrief: true, extra: 'x'.repeat(9000) })).status).toBe(413);
-    expect(await getEngagementPreferences(user.id)).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
+    expect(await getEngagementPreferences(user.id)).toEqual({ dailyBrief: true, calendarReminders: true, articleSocial: true });
   });
   it('keeps signed work opt-out separate from the founder preference, with safe GET and explicit POST', async () => {
     const user = await F.user(); await updateEngagementPreferences(user.id, { dailyBrief: true, calendarReminders: true, articleSocial: true });
@@ -89,6 +90,7 @@ describe.skipIf(!process.env.DATABASE_URL)('engagement settings, opt-out and wor
     const response = await signIn(request('/api/auth/signin', { email: user.email, password, next }, { 'x-real-ip': authPrefix }));
     expect(response.status).toBe(200); expect(await response.json()).toMatchObject({ next });
     H.jar.clear();
+    await db.update(schema.users).set({ googleSub: 'dev-google-' + user.email }).where(eq(schema.users.id, user.id));
     const state = await createGoogleState(next);
     const google = await googleCallback(new Request(new URL('/api/auth/google/callback?' + new URLSearchParams({ state, code: 'dev:' + user.email }), env.appUrl)));
     expect(google.status).toBe(307); expect(new URL(google.headers.get('location')!).pathname).toBe('/email/open');

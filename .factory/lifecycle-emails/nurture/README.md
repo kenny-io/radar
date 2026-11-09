@@ -1,5 +1,7 @@
 # Radar pre-trial email drafts
 
+Current weekly-education work supersedes this directory’s proposed audience/timing: the owner now requests five actionable feature lessons for all registered users, default on with recipient opt-out, one per week. See `.factory/weekly-education/brief.md` and `src/server/services/lifecycle/educationContent.ts`. These seven earlier editorial variants remain historical references; they are not a second active sequence.
+
 User supplied nine screenshots containing seven distinct competitor themes, then confirmed the main audience is people who analyzed their website and created an account but have not started a Radar trial. These are original Radar drafts and preview artifacts only. They are not registered in LifecycleType, queued, scheduled, uploaded to a mail provider or sent. No account/work reminder consent is reused as marketing consent.
 
 Open `../previews/nurture/index.html`, or at the existing local review server `http://127.0.0.1:3934/nurture/index.html`. Plain text is in `../previews/nurture/drafts.txt`. Source copy is `copy.mjs`; rebuild with `node --import tsx scripts/preview-nurture-emails.mjs`. The main lifecycle gallery links here.

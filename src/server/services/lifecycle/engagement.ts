@@ -22,11 +22,11 @@ const zone = (tz: string) => { try { new Intl.DateTimeFormat('en-US', { timeZone
 export async function recordEngagement(q: Q, input: { businessId: string; kind: EngagementKind; ref: string; entryIds?: string[]; now?: Date }) {
   const now = input.now || new Date();
   if (!input.ref || input.ref.length > 200 || (input.entryIds?.length || 0) > 100) throw new Error('Invalid work reminder source');
-  const [b] = await q.select({ ownerId: B.ownerId, status: B.status, timezone: B.timezone, guest: schema.users.guest }).from(B).innerJoin(schema.users, eq(schema.users.id, B.ownerId)).where(eq(B.id, input.businessId)).limit(1);
-  if (!b || b.status !== 'active' || b.guest) return;
+  const [b] = await q.select({ ownerId: B.ownerId, status: B.status, timezone: B.timezone, guest: schema.users.guest, verified: schema.users.emailVerifiedAt }).from(B).innerJoin(schema.users, eq(schema.users.id, B.ownerId)).where(eq(B.id, input.businessId)).limit(1);
+  if (!b || b.status !== 'active' || b.guest || !b.verified) return;
   const [p] = await q.select().from(P).where(eq(P.userId, b.ownerId)).limit(1);
   const key = engagementKey(input.kind), since = p?.[sinceKey(key)];
-  if (p?.[key] !== true || !since || since > now) return;
+  if (p?.[key] === false || (since && since > now)) return;
   const tz = zone(b.timezone);
   if (input.kind === 'brief_reply' && input.ref !== todayIn(tz, now)) return;
   const sourceKey = `${input.kind}:${input.businessId}:${input.ref}`;
@@ -46,10 +46,10 @@ export async function resolveCalendarForEntries(q: Q, businessId: string, entryI
 }
 
 async function activeOwner(q: Q, e: EngagementEvent) {
-  const [r] = await q.select({ b: B, email: schema.users.email, guest: schema.users.guest }).from(B)
+  const [r] = await q.select({ b: B, email: schema.users.email, guest: schema.users.guest, verified: schema.users.emailVerifiedAt }).from(B)
     .innerJoin(schema.users, eq(schema.users.id, B.ownerId)).innerJoin(schema.members, and(eq(schema.members.businessId, B.id), eq(schema.members.userId, e.userId), eq(schema.members.status, 'active')))
     .where(and(eq(B.id, e.businessId), eq(B.ownerId, e.userId), eq(B.status, 'active'))).limit(1);
-  if (!r || r.guest) return null;
+  if (!r || r.guest || !r.verified) return null;
   // A reminder must never reactivate billing or lazy-grandfather an account while checking eligibility.
   if (billingEnforced(r.email)) {
     const [account] = await q.select().from(schema.billingAccounts).where(eq(schema.billingAccounts.userId, e.userId)).limit(1);
@@ -64,7 +64,7 @@ export async function engagementSection(e: EngagementEvent, now = new Date(), q:
   const key = engagementKey(e.kind);
   const [p] = await q.select().from(P).where(eq(P.userId, e.userId)).limit(1);
   const since = p?.[sinceKey(key)];
-  if (!p?.[key] || !since || e.occurredAt < since) return null;
+  if (p?.[key] === false || (since && e.occurredAt < since)) return null;
   const b = await activeOwner(q, e);
   if (!b) return null;
   const base = { eventId: e.id, kind: e.kind, businessId: e.businessId, businessName: String(b.profile?.business?.name || b.domain).slice(0, 200), ref: e.sourceRef.ref };
@@ -108,12 +108,13 @@ export async function engagementSection(e: EngagementEvent, now = new Date(), q:
 }
 
 /** All optional mail shares a rolling cap. Ambiguous attempts count, even when their acknowledgment was lost. */
-export async function optionalDeliveryAfter(userId: string, now = new Date(), excludeId?: string, q: Q = db): Promise<Date | null> {
-  const rows = await q.select({ at: M.firstAttemptAt, sent: M.sentAt, created: M.createdAt, status: M.status }).from(M).where(and(eq(M.userId, userId), inArray(M.type, ['work_update', 'founder_note']), ...(excludeId ? [ne(M.id, excludeId)] : []), or(gt(M.firstAttemptAt, new Date(now.getTime() - DAY)), gt(M.sentAt, new Date(now.getTime() - DAY)), and(eq(M.status, 'logged'), gt(M.createdAt, new Date(now.getTime() - DAY))))));
+export async function optionalDeliveryAfter(userId: string, now = new Date(), excludeId?: string, q: Q = db, type = 'work_update'): Promise<Date | null> {
+  const rows = await q.select({ at: M.firstAttemptAt, sent: M.sentAt, created: M.createdAt, status: M.status }).from(M).where(and(eq(M.userId, userId), inArray(M.type, ['work_update', 'founder_note', 'weekly_education']), ...(excludeId ? [ne(M.id, excludeId)] : []), or(gt(M.firstAttemptAt, new Date(now.getTime() - DAY)), gt(M.sentAt, new Date(now.getTime() - DAY)), and(eq(M.status, 'logged'), gt(M.createdAt, new Date(now.getTime() - DAY))))));
   const latest = rows.reduce((t, r) => Math.max(t, r.sent?.getTime() || 0, r.at?.getTime() || 0, r.status === 'logged' ? r.created.getTime() : 0), 0);
   if (latest && latest + DAY > now.getTime()) return new Date(latest + DAY);
   // One stable owner timezone across all businesses, rather than allowing another workspace to evade quiet hours.
-  const [b] = await q.select({ timezone: B.timezone }).from(B).where(and(eq(B.ownerId, userId), eq(B.status, 'active'))).orderBy(asc(B.createdAt), asc(B.id)).limit(1);
+  let [b] = await q.select({ timezone: B.timezone }).from(B).where(and(eq(B.ownerId, userId), eq(B.status, 'active'))).orderBy(asc(B.createdAt), asc(B.id)).limit(1);
+  if (!b && type === 'weekly_education') [b] = await q.select({ timezone: B.timezone }).from(B).where(and(eq(B.ownerId, userId), eq(B.status, 'onboarding'))).orderBy(sql`${B.createdAt} desc`, sql`${B.id} desc`).limit(1);
   const tz = zone(b?.timezone || 'UTC');
   const time = nowHMIn(tz, now), hour = Number(time.slice(0, 2));
   if (hour >= 9 && hour < 18) return null;

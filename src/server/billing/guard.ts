@@ -1,3 +1,4 @@
+import { isEducationLanding } from '../services/lifecycle/educationLinks';
 // Every page-level gating decision (architecture §4.3, §3.4 of the handoff). Pages and auth endpoints call only these.
 import { currentGuest, currentUser, type SessionUser } from '../auth/session';
 import { env } from '../env';
@@ -94,6 +95,8 @@ export const safeNext = (n?: string | null) => typeof n === 'string' && n.starts
  *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */
 export async function entryAfterAuth(u: SessionUser, next?: string | null): Promise<{ next: string; committed: string | null }> {
   const n = safeNext(next);
+  if (n === '/email-preferences') return { next: n, committed: null };
+  if (n && isEducationLanding(n)) return { next: n, committed: null };
   if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);
   if ('redirect' in e) return { next: e.redirect, committed: null };

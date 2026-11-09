@@ -1,0 +1,56 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[brief.scan] reddit source failed: reddit (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/lifecycle/engagement.test.ts (15 tests) 9830ms
+   ✓ conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs  9519ms
+stderr | src/server/services/lifecycle/education.test.ts > weekly education (real PostgreSQL; fake provider) > retains frozen body and key after an ambiguous provider failure and blocks expired retries
+[lifecycle] delivery failed {
+  id: '9fdf6c50-93f3-48ea-8c2e-6d15c2bf403a',
+  type: 'weekly_education',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/lifecycle/education.test.ts (14 tests) 439ms
+ ✓ src/server/auth/signupEmails.test.ts (6 tests) 891ms
+   ✓ new-account lifecycle emails (database) > queues welcome and founder only after mailbox confirmation, once across concurrent signup/confirmation and never sign-in  511ms
+ ✓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests) 415ms
+   ✓ engagement settings, opt-out and work links (local database) > preserves the work destination through actual password and Google sign-in  309ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: '36592900-4472-4c6a-a588-c2353702c0b6', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: '84a7dc4e-6d82-451d-9306-322d24c3af36',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: 'f559ae95-e5f3-4634-8809-afb5f3e0e06b',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: 'd432fb37-30f7-4405-954d-fe048e4efa11',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 162ms
+ ✓ src/server/services/lifecycle/templates.test.ts (23 tests) 28ms
+ ✓ src/server/services/lifecycle/educationContent.test.ts (4 tests) 4ms
+
+ Test Files  7 passed (7)
+      Tests  85 passed (85)
+   Start at  21:49:56
+   Duration  15.65s (transform 575ms, setup 0ms, collect 2.79s, tests 11.77s, environment 1ms, prepare 264ms)
+

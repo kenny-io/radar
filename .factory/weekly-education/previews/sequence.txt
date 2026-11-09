@@ -1,0 +1,148 @@
+Radar: five weeks, five practical lessons
+
+
+
+Example business: Paper & Pixel. Example recipient: Alex.
+
+These are local previews, not messages sent to customers.
+
+
+
+WEEK 1 — Does ChatGPT or Claude recommend Paper & Pixel?
+
+
+
+Ask the questions your buyers ask.
+
+When someone asks an AI assistant for a recommendation, does Paper & Pixel make the answer? Radar’s AI Visibility lets you inspect responses from ChatGPT, Claude, Gemini, Perplexity and Grok, including the sources they cite.
+
+
+
+1. Open Performance → AI Visibility. Add two questions a buyer might ask before finding you. Start with “Which design tools would you recommend for independent studios?”. New questions are collected overnight; open a result and use Collect now if you want to request an answer sooner.
+
+2. If an answer doesn’t mention you, read it and inspect its citations. Choose one tracked question you can answer well, add it as a Content Calendar topic, and review the resulting article before publishing. If you appear in every answer, choose a question where your own site hasn’t been cited.
+
+
+
+Check progress: record the Mentioned and Cited your site counts for the same questions, then compare next week. Keep the questions stable. Not collected means no answer was collected, not zero visibility; a mention or citation isn’t guaranteed.
+
+
+
+Button: Check my AI visibility
+
+
+
+---
+
+
+
+WEEK 2 — Five conversations Paper & Pixel could join this week
+
+
+
+You don’t have to start every conversation.
+
+People are already asking questions, comparing tools and describing problems on Reddit, X, LinkedIn and Hacker News. Daily Brief finds relevant conversations and drafts replies in your voice. Your job is to decide where you have something useful to add.
+
+
+
+1. Open Daily Brief and review today’s conversations. Aim to find five you can help with; fewer thoughtful replies are better than forcing five. Read each original thread and edit the draft so it answers that person’s actual question.
+
+2. Copy a reply and post it in the original conversation, then mark it posted in Radar. Mention your product only when it helps answer the question, and be clear about your connection to it. Repeat this on days you have something useful to add.
+
+
+
+Check progress: use Radar’s copied/posted states to track your follow-through. Revisit the original threads for responses. Copying a draft alone doesn’t mean it was posted or that anyone engaged.
+
+
+
+Button: Open my Daily Brief
+
+
+
+---
+
+
+
+WEEK 3 — Could another founder’s site introduce Paper & Pixel?
+
+
+
+Make the introduction fit the article.
+
+A reader discovering a related business could also be a good fit for Paper & Pixel. Radar’s optional Backlinks network proposes relevant mentions between participating businesses, with the exact sentence and destination visible for review.
+
+
+
+1. Open Backlinks and join the network if you haven’t already. Choose the topics that fit your business and review the rules for links from your site. Keep manual approval while you get familiar with the proposals.
+
+2. Review a proposal when one is available: read the page context, check the destination, anchor, disclosure and link attribute, then approve it only if the mention is useful. An approval can still require the partner to place the link; it isn’t proof the link is live.
+
+
+
+Check progress: look in Backlinks → Live links for placement and verification status. Use Re-check when a link needs attention. A network link doesn’t guarantee a search ranking or an AI recommendation.
+
+
+
+Button: Explore my backlink network
+
+
+
+---
+
+
+
+WEEK 4 — What should Paper & Pixel publish next?
+
+
+
+Give your next article a clear job.
+
+The next useful article starts with a question your customers need answered. Radar’s Content Calendar turns your Business Profile and target keywords into a plan you can review, with research and drafting handled in the same workflow.
+
+
+
+1. Open Content Calendar and review one proposed topic around “design tools for small studios”. Check the search intent, audience and whether you already cover it. Approve & schedule a useful topic, or add a better one.
+
+2. When the draft is ready, check its facts, examples and links. Connect your blog if needed, then approve the article for publication. Connect Google Search Console in Settings to measure how your pages perform once data is available.
+
+
+
+Check progress: follow the article’s status in Content Calendar. In Performance, compare Search Console clicks and impressions for its page over time. New pages need time and data; keyword estimates aren’t measured results.
+
+
+
+Button: Review my Content Calendar
+
+
+
+---
+
+
+
+WEEK 5 — Give Paper & Pixel’s next article another outing
+
+
+
+One useful idea can become several posts.
+
+Your article may contain an answer, a practical example and a point worth discussing. Social Marketing helps turn those ideas into posts you can review and publish to your connected X and LinkedIn accounts.
+
+
+
+1. Open Social Marketing and generate a pack from a blog article you want more people to read. If you don’t have an article ready, choose Suggest ideas for ideas based on your Business Profile. Choose the channels and check that each post makes sense on its own.
+
+2. Edit the wording, image and destination link, then publish a post or choose a time to schedule it. Review automatic posting settings separately before enabling them. You can also copy a post and share it yourself.
+
+
+
+Check progress: check each post’s scheduled, posted or failed state in Radar, then open the published post for reactions and replies. Scheduling a post doesn’t mean it has published successfully.
+
+
+
+Button: Create my social posts
+
+
+
+---
+

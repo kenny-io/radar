@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, check, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { OnboardingState, SubStatus } from '@/lib/types';
 
@@ -18,7 +18,7 @@ export const users = pgTable('users', {
   /** Anonymous onboarding visitor (architecture B1): synthetic `guest+<uuid>@guest.radar.invalid` email, empty name, own cookie. */
   guest: boolean('guest').notNull().default(false),
   createdAt: created(),
-}, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub), index('users_guest_created_idx').on(t.createdAt).where(sql`guest`)]);
+}, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub), index('users_education_eligible_idx').on(t.emailVerifiedAt, t.id).where(sql`NOT guest AND email_verified_at IS NOT NULL`), index('users_guest_created_idx').on(t.createdAt).where(sql`guest`)]);
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(), // sha256 of the cookie token
@@ -328,9 +328,11 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 export const userEmailPreferences = pgTable('user_email_preferences', {
   userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   onboarding: boolean('onboarding').notNull().default(true),
-  dailyBrief: boolean('daily_brief').notNull().default(false),
-  calendarReminders: boolean('calendar_reminders').notNull().default(false),
-  articleSocial: boolean('article_social').notNull().default(false),
+  /** null inherits the earlier optional setup choice until explicitly changed. */
+  education: boolean('education'),
+  dailyBrief: boolean('daily_brief').notNull().default(true),
+  calendarReminders: boolean('calendar_reminders').notNull().default(true),
+  articleSocial: boolean('article_social').notNull().default(true),
   dailyBriefSince: timestamp('daily_brief_since', { withTimezone: true }),
   calendarRemindersSince: timestamp('calendar_reminders_since', { withTimezone: true }),
   articleSocialSince: timestamp('article_social_since', { withTimezone: true }),
@@ -511,3 +513,19 @@ export const rateLimits = pgTable('rate_limits', {
   windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
   count: integer('count').notNull().default(0),
 }, t => [primaryKey({ columns: [t.key, t.windowStart] }), index('rate_limits_window_idx').on(t.windowStart)]);
+
+/** One finite, account-wide five-lesson sequence; completed and blocked rows are permanent tombstones. */
+export const educationEnrollments = pgTable('education_enrollments', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  version: integer('version').notNull().default(1),
+  nextLesson: integer('next_lesson').notNull().default(0),
+  nextDueAt: timestamp('next_due_at', { withTimezone: true }).notNull().defaultNow(),
+  lastAcceptedAt: timestamp('last_accepted_at', { withTimezone: true }),
+  pendingEmailId: uuid('pending_email_id').references(() => lifecycleEmails.id, { onDelete: 'restrict' }),
+  status: text('status').$type<'active' | 'completed' | 'paused' | 'blocked'>().notNull().default('active'),
+  reason: text('reason'),
+  createdAt: created(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [index('education_due_idx').on(t.nextDueAt, t.userId).where(sql`status = 'active' AND pending_email_id IS NULL`),
+  check('education_version_check', sql`${t.version} = 1`), check('education_lesson_check', sql`${t.nextLesson} BETWEEN 0 AND 5`),
+  check('education_status_check', sql`${t.status} IN ('active', 'completed', 'paused', 'blocked')`)]);

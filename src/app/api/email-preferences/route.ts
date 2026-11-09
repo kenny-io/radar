@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { authBody, assertAuthOrigin } from '@/server/auth/requests';
 import { handle, json } from '@/server/http/handle';
-import { preferenceUser, stopOnboarding, workPreferenceUser, stopWorkUpdates } from '@/server/services/lifecycle/preferences';
+import { preferenceUser, stopOnboarding, workPreferenceUser, stopWorkUpdates, educationPreferenceUser, updateEducationPreference } from '@/server/services/lifecycle/preferences';
 import { RadarError } from '@/server/errors';
 
 /** RFC8058 providers POST a fixed form body. A purpose-scoped signed URL can only turn work updates off. */
@@ -27,14 +27,17 @@ const post = handle(async (req: Request) => {
   const linkToken = new URL(req.url).searchParams.get('token');
   if (linkToken !== null) {
     if (linkToken.length > 256) return json({ ok: false, error: 'This preference link isn’t valid.' }, 400);
-    const uid = workPreferenceUser(linkToken);
+    const educationUser = educationPreferenceUser(linkToken);
+    const uid = educationUser || workPreferenceUser(linkToken);
     if (!uid) return json({ ok: false, error: 'This preference link isn’t valid.' }, 400);
     await oneClickBody(req);
-    await stopWorkUpdates(uid);
+    if (educationUser) await updateEducationPreference(uid, false); else await stopWorkUpdates(uid);
     return json({ ok: true });
   }
   assertAuthOrigin(req);
   const { token } = z.object({ token: z.string().max(256) }).strict().parse(await authBody(req));
+  const educationUser = educationPreferenceUser(token);
+  if (educationUser) { await updateEducationPreference(educationUser, false); return json({ ok: true }); }
   const workUser = workPreferenceUser(token);
   if (workUser) { await stopWorkUpdates(workUser); return json({ ok: true }); }
   const uid = preferenceUser(token);

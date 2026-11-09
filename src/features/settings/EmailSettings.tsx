@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { EducationPreference } from './EducationPreference';
 import { Btn } from '@/components/ui';
 import type { EngagementPreferences } from '@/server/services/lifecycle/preferences';
 
@@ -10,7 +11,7 @@ const fields: { key: keyof EngagementPreferences; title: string; description: st
 ];
 const endpoint = '/api/me/email-preferences';
 
-/** Preferences belong to the account, across its businesses. They start off until explicitly chosen. */
+/** Preferences belong to the account, across its businesses. New accounts receive them by default and can turn individual categories off. */
 export function EmailSettings() {
   const [value, setValue] = useState<EngagementPreferences | null>(null);
   const [loading, setLoading] = useState(true), [saving, setSaving] = useState(false);
@@ -54,11 +55,12 @@ export function EmailSettings() {
       if (version === generation.current) setSaving(false);
     }
   };
-  if (loading && !value) return <p className="small sub" role="status">Loading your email preferences…</p>;
-  if (!value) return <div className="col" style={{ gap: 12, alignItems: 'flex-start' }}><p className="small" role="alert">{error}</p><Btn size="sm" onClick={() => setRetry(n => n + 1)}>Try again</Btn></div>;
+  if (loading && !value) return <><EducationPreference /><p className="small sub" role="status">Loading your email preferences…</p></>;
+  if (!value) return <><EducationPreference /><div className="col" style={{ gap: 12, alignItems: 'flex-start' }}><p className="small" role="alert">{error}</p><Btn size="sm" onClick={() => setRetry(n => n + 1)}>Try again</Btn></div></>;
   return <div aria-busy={loading || saving}>
-    <p className="small sub" style={{ marginTop: 0 }}>Choose the reminders you’d find useful. Radar checks that the next step is still unfinished before emailing you.</p>
-    <p className="xs sub">At most one combined work update every 24 hours across your businesses, sent during the day. These choices don’t affect billing, security or the founder’s setup email.</p>
+    <EducationPreference />
+    <p className="small sub" style={{ marginTop: 0 }}>Manage your work reminders. Radar checks that the next step is still unfinished before emailing you.</p>
+    <p className="xs sub">Optional emails share a limit of one new message every 24 hours across your businesses, sent during the day. These choices don’t affect billing or security.</p>
     {fields.map(field => <label key={field.key} className="row" style={{ alignItems: 'flex-start', gap: 14, padding: '18px 0', borderTop: '1px solid var(--line2)', cursor: loading || saving ? 'wait' : 'pointer' }}>
       <input type="checkbox" checked={value[field.key]} onChange={event => void change(field.key, event.target.checked)} disabled={loading || saving} style={{ width: 18, height: 18, margin: '2px 0 0', flex: 'none', accentColor: 'var(--ink)' }} />
       <span className="col" style={{ gap: 4 }}><span className="small" style={{ fontWeight: 500 }}>{field.title}</span><span className="xs sub">{field.description}</span></span>

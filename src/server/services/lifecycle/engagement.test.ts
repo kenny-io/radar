@@ -28,6 +28,7 @@ const dispatch = (uid: string, fetcher = ack(), at = now) => dispatchLifecycleBa
 async function owner(enabled = true) {
   const u = await F.user(), b = await F.biz(u);
   await db.update(schema.businesses).set({ timezone: 'UTC' }).where(eq(schema.businesses.id, b.id));
+  if (!enabled) await updateEngagementPreferences(u.id, { dailyBrief: false, calendarReminders: false, articleSocial: false }, ago(72));
   if (enabled) await updateEngagementPreferences(u.id, { dailyBrief: true, calendarReminders: true, articleSocial: true }, ago(72));
   return { u, b };
 }
@@ -53,7 +54,7 @@ describe.skipIf(!process.env.DATABASE_URL)('conditional work updates (database; 
   afterEach(() => { vi.useRealTimers(); env.devStubs = prior.stub; env.resendKey = prior.key; });
   afterAll(() => F.cleanup());
 
-  it('defaults off, captures only after explicit consent, and keeps transition timestamps stable', async () => {
+  it('preserves explicit opt-outs and re-enable boundaries with stable transition timestamps', async () => {
     const { u, b } = await owner(false);
     expect(await getEngagementPreferences(u.id)).toEqual({ dailyBrief: false, calendarReminders: false, articleSocial: false });
     await recordEngagement(db, { businessId: b.id, kind: 'article_social', ref: 'before-optin', now: ago(5) });

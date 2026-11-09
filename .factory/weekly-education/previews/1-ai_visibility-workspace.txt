@@ -1,0 +1,25 @@
+Does ChatGPT or Claude recommend Paper & Pixel?
+
+Hi Alex,
+
+Ask the questions your buyers ask.
+
+When someone asks an AI assistant for a recommendation, does Paper & Pixel make the answer? Radar’s AI Visibility lets you inspect responses from ChatGPT, Claude, Gemini, Perplexity and Grok, including the sources they cite.
+
+1. Open Performance → AI Visibility. Add two questions a buyer might ask before finding you. Start with “Which design tools would you recommend for independent studios?”. New questions are collected overnight; open a result and use Collect now if you want to request an answer sooner.
+
+2. If an answer doesn’t mention you, read it and inspect its citations. Choose one tracked question you can answer well, add it as a Content Calendar topic, and review the resulting article before publishing. If you appear in every answer, choose a question where your own site hasn’t been cited.
+
+Check progress: record the Mentioned and Cited your site counts for the same questions, then compare next week. Keep the questions stable. Not collected means no answer was collected, not zero visibility; a mention or citation isn’t guaranteed.
+
+Check my AI visibility: https://radar.thally.io/email/learn?lesson=ai_visibility&businessId=11111111-1111-4111-8111-111111111111
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Stop weekly education emails: https://radar.thally.io/email-preferences?token=preview-only-not-valid

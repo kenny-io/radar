@@ -1,0 +1,60 @@
+{
+  "buildId": "6vbkp5nthyiRYjJX4tgtZ",
+  "environment": "Final optimized production after dispatcher-only priority and explicit privacy-header fixes; same isolated QA DB; no auth/customer mutation; no worker/provider",
+  "checks": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "location": null,
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    },
+    {
+      "path": "/api/me/education-preferences",
+      "status": 401,
+      "location": null,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    },
+    {
+      "path": "/email-preferences",
+      "status": 307,
+      "location": "/signin?next=%2Femail-preferences",
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "no-referrer",
+      "pass": true
+    },
+    {
+      "path": "/email/learn?lesson=ai_visibility",
+      "status": 303,
+      "location": "http://127.0.0.1:3940/signin?next=%2Femail%2Flearn%3Flesson%3Dai_visibility",
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "no-referrer",
+      "pass": true
+    },
+    {
+      "path": "/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=brief_reply&ref=2026-11-10",
+      "status": 303,
+      "location": "http://127.0.0.1:3940/signin?next=%2Femail%2Fopen%3FbusinessId%3D11111111-1111-4111-8111-111111111111%26kind%3Dbrief_reply%26ref%3D2026-11-10",
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "no-referrer",
+      "pass": true
+    },
+    {
+      "path": "/signin",
+      "status": 200,
+      "location": null,
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "robots": "noindex, follow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    }
+  ]
+}

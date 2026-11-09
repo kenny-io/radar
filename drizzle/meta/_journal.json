@@ -85,6 +85,13 @@
       "when": 1793808223882,
       "tag": "0011_engagement_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794246365354,
+      "tag": "0012_weekly_education",
+      "breakpoints": true
     }
   ]
 }

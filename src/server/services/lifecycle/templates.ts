@@ -1,6 +1,7 @@
+import { EDUCATION_LESSONS, renderEducationLesson, educationProgress, type EducationLessonId, type EducationContext } from './educationContent';
 import { FEE_CENTS, PRICE_CENTS, TRIAL_DAYS } from '@/lib/billing';
 
-export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'trial_ending', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work_update'] as const;
+export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'trial_ending', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work_update', 'weekly_education'] as const;
 export type LifecycleType = typeof LIFECYCLE_TYPES[number];
 export interface WorkUpdateSection {
   eventId: string;
@@ -15,6 +16,7 @@ export interface LifecycleData {
   name?: string; businessName?: string; businessId?: string; resetUrl?: string;
   profileAnalyzed?: boolean;
   workSections?: WorkUpdateSection[];
+  education?: { version: 1; lesson: EducationLessonId; context: EducationContext; businessId?: string };
   trialEnd?: string; periodEnd?: string; amountCents?: number; currency?: string; invoiceNumber?: string;
   subscriptionId?: string; invoiceId?: string; attemptCount?: number; status?: string;
 }
@@ -38,9 +40,24 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
   let subject: string, heading: string, paragraphs: string[], steps: string[] = [], cta: string, href: string;
   const hi = d.name?.trim() ? `Hi ${d.name.trim()},` : 'Hi there,';
   const monthly = money(PRICE_CENTS), first = money(PRICE_CENTS - FEE_CENTS), confirmation = money(FEE_CENTS);
+  let progress = '';
   let work: { heading: string; paragraph: string; cta: string; href: string }[] = [];
   const billing = app('/settings?section=billing');
   switch (type) {
+    case 'weekly_education': {
+      const e = d.education;
+      if (!ctx.unsubscribeUrl || e?.version !== 1 || !EDUCATION_LESSONS.includes(e.lesson) ||
+        !['workspace', 'start_trial', 'restart', 'setup'].includes(e.context?.access) || typeof e.context?.gscConnected !== 'boolean' ||
+        ['businessName', 'industry', 'offering', 'audience', 'keyword'].some(key => { const value = e.context[key as keyof EducationContext]; return value !== undefined && (typeof value !== 'string' || value.length > 200); }) ||
+        (e.businessId && !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(e.businessId))) throw new Error('Invalid education lesson');
+      const content = renderEducationLesson(e.lesson, e.context);
+      ({ subject, heading, paragraphs, steps } = content);
+      if (steps.length !== 2) throw new Error('Education requires two actions');
+      progress = educationProgress(e.lesson);
+      cta = content.ctaLabel;
+      href = e.context.access === 'workspace' ? app('/email/learn?' + new URLSearchParams({ lesson: e.lesson, ...(e.businessId ? { businessId: e.businessId } : {}) })) : app(e.context.access === 'setup' ? '/onboarding' : '/start-trial');
+      break;
+    }
     case 'welcome':
       subject = 'Welcome to Radar';
       if (d.profileAnalyzed) {
@@ -114,12 +131,13 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
       cta = 'Open my account'; href = app('/start-trial'); break;
   }
   const replyTo = type === 'founder_note' ? 'team@thally.io' : 'support@thally.io';
-  const optional = (type === 'founder_note' || type === 'work_update') && ctx.unsubscribeUrl;
-  const optoutLabel = type === 'work_update' ? 'Turn off work reminders' : 'Stop optional setup emails';
-  const company = type === 'work_update' ? 'Fairspleet LLC · 348 Business Bay, Dubai, UAE' : '';
+  const optional = (type === 'founder_note' || type === 'work_update' || type === 'weekly_education') && ctx.unsubscribeUrl;
+  const optoutLabel = type === 'weekly_education' ? 'Stop weekly education emails' : type === 'work_update' ? 'Turn off work reminders' : 'Stop optional setup emails';
+  const preferencesUrl = optional || app('/email-preferences');
+  const company = (type === 'work_update' || type === 'weekly_education') ? 'Fairspleet LLC · 348 Business Bay, Dubai, UAE' : '';
   const buttonStyle = 'display:inline-block;padding:7px 16px;font-size:14px;line-height:20px;background:#17181c;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold';
   const footer = `Privacy: ${app('/privacy')} · Terms: ${app('/terms')}`;
-  const text = [hi, heading, ...paragraphs, ...steps.map((s, i) => `${i + 1}. ${s}`), ...(work.length ? work.flatMap(w => [w.heading, w.paragraph, `${w.cta}: ${w.href}`]) : [`${cta}: ${href}`]), `Reply to this email or write to ${replyTo}.`, footer, ...(company ? [company] : []), ...(optional ? [`${optoutLabel}: ${optional}`] : [])].join('\n\n');
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(subject)}</title></head><body style="margin:0;background:#f5f5f2;color:#17181c;font-family:Arial,sans-serif;line-height:1.6"><table role="presentation" style="width:100%;border-collapse:collapse"><tr><td style="padding:32px 16px"><table role="presentation" style="width:100%;max-width:600px;margin:auto;background:#fff;border:1px solid #deded8;border-radius:16px"><tr><td style="padding:32px"><table role="presentation" style="border-collapse:collapse;margin:0 0 28px"><tr><td style="padding:0 10px 0 0;vertical-align:middle"><img src="${escape(app('/brand/radar-mark-email.png'))}" width="28" height="28" alt="" style="display:block;border:0;background:#fff"></td><td style="padding:0;vertical-align:middle;font-size:18px;font-weight:bold;letter-spacing:-.5px">Radar <span style="font-size:12px;font-weight:normal;letter-spacing:normal;color:#666">by Thally</span></td></tr></table><p>${escape(hi)}</p><h1 style="font-size:26px;line-height:1.2;letter-spacing:-.6px">${escape(heading)}</h1>${paragraphs.map(p => `<p>${escape(p).replace(/\n/g, '<br>')}</p>`).join('')}${steps.length ? `<ol style="padding-left:22px">${steps.map(s => `<li style="padding-bottom:12px">${escape(s)}</li>`).join('')}</ol>` : ''}${work.length ? work.map((w, i) => `<section style="margin:24px 0"><h2 style="font-size:16px;line-height:1.4;margin:0 0 8px">${escape(w.heading)}</h2><p>${escape(w.paragraph)}</p><p><a href="${escape(w.href)}" style="${i === 0 ? buttonStyle : 'font-size:14px;color:#17181c;text-decoration:underline;font-weight:bold'}">${escape(w.cta)}</a></p></section>`).join('') : `<p style="margin:28px 0"><a href="${escape(href)}" style="${buttonStyle}">${escape(cta)}</a></p>`}<p style="font-size:13px;color:#555">Reply to this email or write to <a style="color:#34343a" href="mailto:${replyTo}">${replyTo}</a>.</p><hr style="border:0;border-top:1px solid #e4e4df;margin:28px 0 20px"><p style="font-size:12px;color:#666"><a style="color:#666" href="${escape(app('/privacy'))}">Privacy</a> &middot; <a style="color:#666" href="${escape(app('/terms'))}">Terms</a></p>${company ? `<p style="font-size:11px;color:#777">${escape(company)}</p>` : ''}${optional ? `<p style="font-size:12px"><a style="color:#555" href="${escape(optional)}">${optoutLabel}</a></p>` : ''}</td></tr></table></td></tr></table></body></html>`;
+  const text = [hi, heading, ...paragraphs, ...steps.map((s, i) => `${i + 1}. ${s}`), ...(progress ? [progress] : []), ...(work.length ? work.flatMap(w => [w.heading, w.paragraph, `${w.cta}: ${w.href}`]) : [`${cta}: ${href}`]), `Reply to this email or write to ${replyTo}.`, footer, `Email preferences: ${preferencesUrl}`, ...(company ? [company] : []), ...(optional ? [`${optoutLabel}: ${optional}`] : [])].join('\n\n');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(subject)}</title></head><body style="margin:0;background:#f5f5f2;color:#17181c;font-family:Arial,sans-serif;line-height:1.6"><table role="presentation" style="width:100%;border-collapse:collapse"><tr><td style="padding:32px 16px"><table role="presentation" style="width:100%;max-width:600px;margin:auto;background:#fff;border:1px solid #deded8;border-radius:16px"><tr><td style="padding:32px"><table role="presentation" style="border-collapse:collapse;margin:0 0 28px"><tr><td style="padding:0 10px 0 0;vertical-align:middle"><img src="${escape(app('/brand/radar-mark-email.png'))}" width="28" height="28" alt="" style="display:block;border:0;background:#fff"></td><td style="padding:0;vertical-align:middle;font-size:18px;font-weight:bold;letter-spacing:-.5px">Radar <span style="font-size:12px;font-weight:normal;letter-spacing:normal;color:#666">by Thally</span></td></tr></table><p>${escape(hi)}</p><h1 style="font-size:26px;line-height:1.2;letter-spacing:-.6px">${escape(heading)}</h1>${paragraphs.map(p => `<p>${escape(p).replace(/\n/g, '<br>')}</p>`).join('')}${steps.length ? `<ol style="padding-left:22px">${steps.map(s => `<li style="padding-bottom:12px">${escape(s)}</li>`).join('')}</ol>` : ''}${progress ? `<p>${escape(progress)}</p>` : ''}${work.length ? work.map((w, i) => `<section style="margin:24px 0"><h2 style="font-size:16px;line-height:1.4;margin:0 0 8px">${escape(w.heading)}</h2><p>${escape(w.paragraph)}</p><p><a href="${escape(w.href)}" style="${i === 0 ? buttonStyle : 'font-size:14px;color:#17181c;text-decoration:underline;font-weight:bold'}">${escape(w.cta)}</a></p></section>`).join('') : `<p style="margin:28px 0"><a href="${escape(href)}" style="${buttonStyle}">${escape(cta)}</a></p>`}<p style="font-size:13px;color:#555">Reply to this email or write to <a style="color:#34343a" href="mailto:${replyTo}">${replyTo}</a>.</p><hr style="border:0;border-top:1px solid #e4e4df;margin:28px 0 20px"><p style="font-size:12px;color:#666"><a style="color:#666" href="${escape(app('/privacy'))}">Privacy</a> &middot; <a style="color:#666" href="${escape(app('/terms'))}">Terms</a></p>${company ? `<p style="font-size:11px;color:#777">${escape(company)}</p>` : ''}${preferencesUrl ? `<p style="margin:16px 0"><a href="${escape(preferencesUrl)}" style="display:inline-block;padding:6px 12px;border:1px solid #d5d5d0;border-radius:6px;color:#34343a;font-size:12px;line-height:18px;text-decoration:none">Email preferences</a></p>` : ''}${optional ? `<p style="font-size:12px"><a style="color:#555" href="${escape(optional)}">${optoutLabel}</a></p>` : ''}</td></tr></table></td></tr></table></body></html>`;
   return { subject, text, html, replyTo };
 }

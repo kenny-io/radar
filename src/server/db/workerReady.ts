@@ -13,11 +13,11 @@ interface ReadyOptions {
 /** Web predeploy owns migrations. A faster worker rollout must not claim jobs against an older schema. */
 export async function waitForWorkerSchema(options: ReadyOptions = {}): Promise<void> {
   const query = { text: `SELECT
-    p.onboarding, p.daily_brief, p.calendar_reminders, p.article_social,
+    p.onboarding, p.education, p.daily_brief, p.calendar_reminders, p.article_social,
     p.daily_brief_since, p.calendar_reminders_since, p.article_social_since,
     e.id, e.source_ref, e.resolved_at, e.resolved_reason, e.lifecycle_email_id,
-    m.payload_enc, m.claim_token
-    FROM user_email_preferences p CROSS JOIN engagement_events e CROSS JOIN lifecycle_emails m LIMIT 0`, query_timeout: 5000 };
+    m.payload_enc, m.claim_token, ed.next_lesson, ed.pending_email_id, u.email_verified_at
+    FROM user_email_preferences p CROSS JOIN engagement_events e CROSS JOIN lifecycle_emails m CROSS JOIN education_enrollments ed CROSS JOIN users u LIMIT 0`, query_timeout: 5000 };
   const probe = options.probe || (() => pool.query(query));
   const now = options.now || Date.now;
   const sleep = options.pause || (async (ms, signal) => { await pause(ms, undefined, { signal }); });

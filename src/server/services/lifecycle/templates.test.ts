@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData, type WorkUpdateSection } from './templates';
 const ctx = { appUrl: 'https://radar.thally.io', unsubscribeUrl: 'https://radar.thally.io/email-preferences?token=fake' };
-const data: LifecycleData = { name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
+const data: LifecycleData = { education: { version: 1, lesson: 'ai_visibility', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
 describe('lifecycle templates', () => {
   it.each(LIFECYCLE_TYPES)('%s has accessible HTML, useful plain text and explicit reply contact', type => {
     const x = renderLifecycle(type, data, ctx);
@@ -10,8 +10,21 @@ describe('lifecycle templates', () => {
     expect(x.text).toContain('Privacy: https://radar.thally.io/privacy'); expect(x.text).toContain('https://radar.thally.io/');
     expect(x.replyTo).toBe(type === 'founder_note' ? 'team@thally.io' : 'support@thally.io');
     expect(x.html).not.toContain('<script');
+    expect(x.html).toContain('>Email preferences</a>');
+    expect(x.text).toContain('Email preferences:');
     expect(x.html).toContain('src="https://radar.thally.io/brand/radar-mark-email.png"');
     expect(x.html).not.toContain('◉');
+  });
+  it('renders exactly two education actions, escaped context and access-safe fixed CTA', () => {
+    const d: LifecycleData = { education: { version: 1, lesson: 'daily_brief', context: { businessName: '<img src=x onerror=bad()>', gscConnected: false, access: 'workspace' } } };
+    const rendered = renderLifecycle('weekly_education', d, ctx);
+    expect(rendered.html).not.toContain('<img src=x');
+    expect(rendered.html).toContain('&lt;img src=x');
+    expect(rendered.html.match(/<li /g)).toHaveLength(2);
+    expect(rendered.html.indexOf('Check progress:')).toBeGreaterThan(rendered.html.indexOf('</ol>'));
+    expect(rendered.text).toContain('/email/learn?lesson=daily_brief');
+    expect(renderLifecycle('weekly_education', { education: { ...d.education!, context: { ...d.education!.context, access: 'restart' } } }, ctx).text).toContain('https://radar.thally.io/start-trial');
+    expect(rendered.html).toContain('>Email preferences</a>');
   });
   it('escapes all user-controlled values without corrupting plain text', () => {
     const x = renderLifecycle('welcome', { profileAnalyzed: true, name: '<script>bad()</script>', businessName: 'A&B "<test>"' }, ctx);
