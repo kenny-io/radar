@@ -1,0 +1,20 @@
+{
+  "marker": "radar-observability-runtime",
+  "service": "worker",
+  "commit": "8b0fc3462c2709788cfa730d2f80c3ffee014a30",
+  "NODE_ENV": "production",
+  "stubs": "0",
+  "alertsEnabled": true,
+  "recipient": "kenny@thally.io",
+  "sender": "Radar <radar@thally.io>",
+  "resendConfigured": true,
+  "alertJobRegistered": true,
+  "hashes": {
+    "src/server/observability/failures.ts": "37953eca10c89a8d0595ce58a0f91c1b4bd3009f2a6aea8d27b0d73c81d66c81",
+    "src/server/observability/delivery.ts": "ffc8387462a92732b7df772643c00d6ee8119bccf4634e36c680d7cef38af145",
+    "src/server/observability/jobs.ts": "634e1600258bd22a0d976e856a2c5cb95e3ffeefd21409aace50bcdd1ed89445",
+    "src/server/jobs/all.ts": "2927b4f49739cd849d6ccd221ae6d36e918f5c1d51b689f04d7d607fceb1c9b1",
+    "src/worker/main.ts": "b2779a5bb0293c1588fda589e255460d8e4f3ca146d46cf2215a17c62547b83f",
+    "src/instrumentation.ts": "5341d27c24a53c64e61756e65a933566e940fc5b1eb50f540119a382bc988ea2"
+  }
+}

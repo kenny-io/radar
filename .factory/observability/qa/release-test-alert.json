@@ -1,0 +1,16 @@
+{
+  "runtime": "worker",
+  "commit": "8b0fc3462c2709788cfa730d2f80c3ffee014a30",
+  "recipient": "kenny@thally.io",
+  "command": "node --import tsx scripts/test-failure-alert.ts",
+  "exitCode": 0,
+  "stdout": "Test alert 26afa389-4d2f-4dae-a61f-2136e06e8cbf: Resend accepted the email (message 01a1c226-8ec2-7a51-994c-58298a716fad). Confirm inbox receipt separately.",
+  "alertId": "26afa389-4d2f-4dae-a61f-2136e06e8cbf",
+  "providerMessageId": "01a1c226-8ec2-7a51-994c-58298a716fad",
+  "providerAccepted": true,
+  "deliveryVerified": true,
+  "providerStatus": "delivered",
+  "providerCreatedAt": "2026-11-09T21:11:09.413000+00:00",
+  "verifiedAt": "2026-11-09T21:11:44.312318+00:00",
+  "verification": "Resend get_email for exact provider message ID confirms delivered, sender, recipient and matching unique synthetic alert ID. This verifies provider delivery, not a human opening the inbox."
+}

@@ -1,0 +1,60 @@
+{
+  "at": "2026-11-09T21:10:48.094Z",
+  "origin": "https://radar.thally.io",
+  "pmConfirmedDeploymentSha": "8b0fc3462c2709788cfa730d2f80c3ffee014a30",
+  "mode": "Read-only public/unauthenticated browser verification; no form submission, account creation, generation or production configuration changes.",
+  "health": {
+    "status": 200,
+    "body": {
+      "ok": true
+    }
+  },
+  "pages": [
+    {
+      "route": "/",
+      "status": 200,
+      "finalPath": "/",
+      "title": "Radar — Search, AI visibility and social marketing",
+      "headings": [
+        "You built it.Let people and AI find it."
+      ],
+      "hasUnexpectedErrorPage": false
+    },
+    {
+      "route": "/signin",
+      "status": 200,
+      "finalPath": "/signin",
+      "title": "Sign in · Radar",
+      "headings": [
+        "Sign in"
+      ],
+      "hasUnexpectedErrorPage": false,
+      "signInForm": {
+        "emailInputs": 1,
+        "passwordInputs": 1,
+        "signInButtons": 1
+      }
+    },
+    {
+      "route": "/privacy",
+      "status": 200,
+      "finalPath": "/privacy",
+      "title": "Privacy Policy — Radar by Thally",
+      "headings": [
+        "Privacy Policy"
+      ],
+      "hasUnexpectedErrorPage": false
+    },
+    {
+      "route": "/terms",
+      "status": 200,
+      "finalPath": "/terms",
+      "title": "Terms of Service — Radar by Thally",
+      "headings": [
+        "Terms of Service"
+      ],
+      "hasUnexpectedErrorPage": false
+    }
+  ],
+  "browserErrors": []
+}

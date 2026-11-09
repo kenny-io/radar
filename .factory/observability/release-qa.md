@@ -30,3 +30,21 @@ Independent local release gate: GREEN, no blocking defect found.
 - Engineer final production build: PASS exit0 (36pages and type validation), generated include cleanup complete; current tsconfig diff empty. Engineer default full suite982PASS/231SKIP/1baselinePNGparity mismatch; its clean-main baseline915PASS/227SKIP/1same mismatch. This is distinct from old dirty-checkout counts and no new failure is reported.
 
 PM may proceed with the explicitly authorized release. Live verification is still pending: QA will wait for matching deployed web/worker commit confirmation before running the public browser smoke. No inbox/delivery or deployment claim is made by these local checks.
+
+## Authorized live read-only verification — PASS
+
+Executed only after PM confirmed both Railway services SUCCESS at merge commit `8b0fc3462c2709788cfa730d2f80c3ffee014a30` (tested head `8eb03772`; PM verified identical Git trees). PM-reported deployed IDs: web `a1d27185-bca3-4879-a37b-f7960c9a9d86`, worker `e14bd6ce-2434-4990-a9a5-1af7dc17db42`. PM independently read worker startup, enabled alerting, Kenny recipient, Resend configuration, alert-job registration and runtime source hashes. Public endpoints do not expose source SHA, so these deployment/runtime details are explicitly PM-supplied evidence rather than inferred from an HTTP200.
+
+QA ran `node .factory/observability/qa/release-browser-smoke.mjs 8b0fc3462c2709788cfa730d2f80c3ffee014a30` against `https://radar.thally.io` at `2026-11-09T21:10:48Z` (November10,01:10Asia/Dubai):
+- `/api/health`:200, `{ok:true}`.
+- Real installed Chrome: homepage, `/signin`, `/privacy`, `/terms` all200 with expected page headings/titles and no unexpected error page.
+- Actual sign-in UI has one email field, one password field and one Sign in button; current confirm-email entry remains visible. No form submitted.
+- Zero browser page errors. Homepage and sign-in screenshots visually inspected after capture.
+
+Evidence: `qa/release-browser-results.json`, `qa/release-home.png`, `qa/release-signin.png`. No account creation, authenticated action, AI generation, configuration change, production database write or email send was performed by QA. The only network activity was public/unauthenticated health and browser page loading.
+
+Live public release gate: GREEN. Authorized marked-email delivery verification remains PM-owned and separate; QA does not claim personal inbox observation. Independent local acceptance/receipt tests and live read-only application checks found no blocking defect.
+
+PM final operational evidence: actual web runtime also confirmed merge SHA and matching six source hashes, alerting enabled, Kenny recipient, configured sender and registered `observability.alert`. PM sent exactly one authorized marked test through the deployed worker: alert `26afa389-4d2f-4dae-a61f-2136e06e8cbf`, Resend message `01a1c226-8ec2-7a51-994c-58298a716fad`, created `2026-11-09T21:11:09.413Z` (November10,01:11Asia/Dubai). PM's exact Resend get-email record reports **delivered**, to `kenny@thally.io` from `Radar <radar@thally.io>`, matching the alert ID/body. This is provider-confirmed delivery, not a claim that QA personally viewed Kenny's inbox. No extra synthetic replay or email was sent.
+
+Final release recommendation: PASS for the authorized deployment. Both matching-sha services, enabled runtime alert path, provider-delivered marked test and actual public browser/readiness checks have evidence. No unresolved blocking feature defect was found. Known local baseline canvas golden mismatch is unchanged and recorded separately; no live provider outage or customer generation was intentionally triggered.

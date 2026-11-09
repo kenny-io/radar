@@ -18,3 +18,15 @@ Release validation: build PASS (36/36 pages, type validation), final typecheck/d
 Next: commit/push/create+merge PR; wait for both Railway deployments SUCCESS at merge SHA; verify runtime code/config/worker registration and web health; send one marked alert via deployed production path and verify matching provider message delivered status.
 
 Rollback: immediately preceding secure b38b67a4 on both services, or disable failure email consistently with RADAR_FAILURE_ALERTS=off while retaining logs. Do not roll back to original stale feature base. Preserve billing/auth/provider credentials and unrelated business settings.
+
+Release started: PR https://github.com/kenny-io/radar/pull/38 merged as 8b0fc3462c2709788cfa730d2f80c3ffee014a30. Tested head 8eb03772cce207a1b809a7d89a00062e2d495b99 and merge have identical trees (git diff empty). GitHub commit status/workflow checks are absent, matching repository configuration; local and independent checks above provide validation.
+
+New Railway deployments: web a1d27185-bca3-4879-a37b-f7960c9a9d86 and worker e14bd6ce-2434-4990-a9a5-1af7dc17db42, both BUILDING at the merge revision. No live alert sent yet.
+
+## Released and verified
+
+PR38 is merged at 8b0fc3462c2709788cfa730d2f80c3ffee014a30. Both Railway deployments report SUCCESS on that exact revision. Actual web and worker runtime readbacks confirm production/stubs 0, alerting enabled, correct Kenny recipient, configured Radar sender, registered alert job, and six source hashes matching the tested release. Worker startup was confirmed in its deployment log.
+
+One marked test alert was sent from the deployed worker: alert 26afa389-4d2f-4dae-a61f-2136e06e8cbf, Resend 01a1c226-8ec2-7a51-994c-58298a716fad. Resend confirms delivered to kenny@thally.io, with the exact expected alert ID/body. Independent live health/Chrome checks pass. No observed blocking defects remain; requested deployment and delivery verification are complete. No customer generation, publication or payment was triggered for testing.
+
+See release.md, release-qa.md and qa/release-test-alert.json. Provider-confirmed delivery is distinguished from a person opening the inbox.
