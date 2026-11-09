@@ -1,0 +1,12 @@
+{
+  "siteId": "19720951-1c2d-4155-81b1-ab20324c82fb",
+  "url": "https://thally.io",
+  "deploy": {
+    "id": "6af2407136be45d7f1b18623",
+    "state": "ready",
+    "commit": "c9a3b859cd208ff380d4737659ec536fb967c9a8",
+    "published": "2026-11-09T21:52:45.826Z",
+    "context": "production",
+    "url": "https://thally.io"
+  }
+}

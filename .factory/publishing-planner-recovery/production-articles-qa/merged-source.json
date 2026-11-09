@@ -1,0 +1,27 @@
+{
+  "mergedHead": "c9a3b859cd208ff380d4737659ec536fb967c9a8",
+  "articles": [
+    {
+      "pr": 137,
+      "slug": "migrate-markdown-docs-to-hosted-site",
+      "contentBytes": 10989,
+      "contentSha256": "217019262f442859ab5f3eb89a73fdde13a5e59684e98dbd227a3b913d9826b1",
+      "originalPayloadBytes": 10988,
+      "originalPayloadSha256": "89f145d9a33ef0fa757596b47c22f038a67061977a8d71d76bdb2929a20fbd34",
+      "unchangedFromAcceptedPrHead": true,
+      "registryEntries": 1,
+      "manualLlmsEntries": 1
+    },
+    {
+      "pr": 138,
+      "slug": "documentation-analytics-for-developer-docs",
+      "contentBytes": 10098,
+      "contentSha256": "27701cc5d5371f42ad92224a5d2c2bdd7d42f81508161569e89b04637c3a5bad",
+      "originalPayloadBytes": 10097,
+      "originalPayloadSha256": "7ecbeeb487ab9bb2de0eb676926636c33b3553b53139d33307eab6fee4664306",
+      "unchangedFromAcceptedPrHead": true,
+      "registryEntries": 1,
+      "manualLlmsEntries": 1
+    }
+  ]
+}

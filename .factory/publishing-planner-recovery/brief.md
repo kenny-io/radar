@@ -17,3 +17,7 @@ Start: origin/main 8b0fc3462c2709788cfa730d2f80c3ffee014a30. Existing dirty prim
 ## Live verification follow-up
 
 PPR-7: The analytics retry revealed a separate renderer defect: an internal Search Console research reference with url'#' was emitted as a public Sources link, including a title disallowed by destination audit. The repaired planner correctly rejected it and retained the original review issue. Filter only unusable public source URLs at shared sourcesList (HTML/Markdown/payload.sources); preserve stored body/source evidence and valid citations. Do not rewrite article punctuation or weaken source review/body insertion. Release this narrow follow-up, then retry analytics and complete its exact-head destination verification.
+
+## Publication continuation, November 10
+
+User explicitly requested merging both article PRs and verifying the articles live on Thally. This supersedes the earlier destination-merge exclusion. PPR-8: merge reviewed PR137 andPR138, preserve both complete source integrations, verify actual production routes/blog listings/full content/images/canonical/navigation/fresh+reload/mobile and generated discovery surfaces. No preview-only substitute for production acceptance.

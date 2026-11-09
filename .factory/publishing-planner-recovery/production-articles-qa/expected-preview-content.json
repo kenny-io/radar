@@ -1,0 +1,27 @@
+{
+  "basis": "Earlier independently accepted immutable-head Netlify previews; expected values only, not production evidence",
+  "articles": [
+    {
+      "pr": 137,
+      "head": "a8b33044653590327f0962c1ddeda89332efd05d",
+      "route": "/blog/migrate-markdown-docs-to-hosted-site",
+      "chars": 9987,
+      "expectedProseSha256": "3324129fc3b5896e311fa68ddd45af0d58391b339e5fc74b62b420e50bc230fe",
+      "expectedNormalizedProseCharacters": 9946,
+      "imageCount": 2,
+      "sourcesCount": 9,
+      "expectedCanonical": "https://thally.io/blog/migrate-markdown-docs-to-hosted-site"
+    },
+    {
+      "pr": 138,
+      "head": "75c11fb7049408abe4d4648a087865dedc9dbb6f",
+      "route": "/blog/documentation-analytics-for-developer-docs",
+      "chars": 9125,
+      "expectedProseSha256": "8dd3df7df324af7704397780128f7ae5021629f7fde227e5f365587ea47082c1",
+      "expectedNormalizedProseCharacters": 9091,
+      "imageCount": 2,
+      "sourcesCount": 8,
+      "expectedCanonical": "https://thally.io/blog/documentation-analytics-for-developer-docs"
+    }
+  ]
+}

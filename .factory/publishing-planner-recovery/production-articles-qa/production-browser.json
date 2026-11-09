@@ -1,0 +1,184 @@
+{
+  "at": "2026-11-09T21:54:20.049Z",
+  "base": "https://thally.io",
+  "mergedSourceSha": "c9a3b859cd208ff380d4737659ec536fb967c9a8",
+  "providerDeployId": "6af2407136be45d7f1b18623",
+  "deploymentRevisionEvidence": "Provider deploy association supplied by PM; browser independently verifies public output",
+  "results": [
+    {
+      "name": "canonical production blog lists both articles exactly once",
+      "pass": true,
+      "detail": {
+        "origin": "https://thally.io",
+        "bothCards": true,
+        "canonical": true
+      }
+    },
+    {
+      "name": "PR137 ordinary reader opens live article with pointer and keyboard",
+      "pass": true,
+      "detail": {
+        "hover": true,
+        "keyboard": true,
+        "finalPath": "/blog/migrate-markdown-docs-to-hosted-site"
+      }
+    },
+    {
+      "name": "PR137 live complete content matches accepted source rendering",
+      "pass": true,
+      "detail": {
+        "proseSha256": "3324129fc3b5896e311fa68ddd45af0d58391b339e5fc74b62b420e50bc230fe",
+        "bodyCharacters": 9987,
+        "images": [
+          {
+            "loaded": true,
+            "alt": true,
+            "width": 1200,
+            "height": 675
+          },
+          {
+            "loaded": true,
+            "alt": true,
+            "width": 1200,
+            "height": 675
+          }
+        ],
+        "sources": 9
+      }
+    },
+    {
+      "name": "PR137 live canonical OG byline and structured article metadata agree",
+      "pass": true,
+      "detail": {
+        "canonical": true,
+        "ogImageStatus": 200,
+        "ogImageType": "image/png",
+        "teamByline": true,
+        "structuredArticle": true
+      }
+    },
+    {
+      "name": "PR137 existing tab reload and fresh anonymous session preserve live content",
+      "pass": true,
+      "detail": {
+        "reload": true,
+        "freshAnonymous": true
+      }
+    },
+    {
+      "name": "PR137 mobile article fits and breadcrumb is keyboard accessible",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390,
+        "keyboardBackToBlog": true
+      }
+    },
+    {
+      "name": "PR138 ordinary reader opens live article with pointer and keyboard",
+      "pass": true,
+      "detail": {
+        "hover": true,
+        "keyboard": true,
+        "finalPath": "/blog/documentation-analytics-for-developer-docs"
+      }
+    },
+    {
+      "name": "PR138 live complete content matches accepted source rendering",
+      "pass": true,
+      "detail": {
+        "proseSha256": "8dd3df7df324af7704397780128f7ae5021629f7fde227e5f365587ea47082c1",
+        "bodyCharacters": 9125,
+        "images": [
+          {
+            "loaded": true,
+            "alt": true,
+            "width": 1200,
+            "height": 675
+          },
+          {
+            "loaded": true,
+            "alt": true,
+            "width": 1200,
+            "height": 675
+          }
+        ],
+        "sources": 8
+      }
+    },
+    {
+      "name": "PR138 live canonical OG byline and structured article metadata agree",
+      "pass": true,
+      "detail": {
+        "canonical": true,
+        "ogImageStatus": 200,
+        "ogImageType": "image/png",
+        "teamByline": true,
+        "structuredArticle": true
+      }
+    },
+    {
+      "name": "PR138 existing tab reload and fresh anonymous session preserve live content",
+      "pass": true,
+      "detail": {
+        "reload": true,
+        "freshAnonymous": true
+      }
+    },
+    {
+      "name": "PR138 mobile article fits and breadcrumb is keyboard accessible",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390,
+        "keyboardBackToBlog": true
+      }
+    },
+    {
+      "name": "live discovery surfaces include both article routes and full corpus content",
+      "pass": true,
+      "detail": {
+        "/sitemap.xml": {
+          "status": 200,
+          "bothRoutes": true
+        },
+        "/rss.xml": {
+          "status": 200,
+          "bothRoutes": true
+        },
+        "/llms.txt": {
+          "status": 200,
+          "bothRoutes": true
+        },
+        "/llms-full.txt": {
+          "status": 200,
+          "bothRoutes": true
+        }
+      }
+    },
+    {
+      "name": "production browser has no runtime or first-party asset failures",
+      "pass": true,
+      "detail": {
+        "runtimeErrors": 0,
+        "firstPartyFailures": 0
+      }
+    }
+  ],
+  "errors": [],
+  "firstPartyFailures": [],
+  "pageResponses": [
+    {
+      "pr": 137,
+      "status": 200,
+      "path": "/blog/migrate-markdown-docs-to-hosted-site",
+      "requestId": "01M714VCKAA6QA729C2QYS79ZD"
+    },
+    {
+      "pr": 138,
+      "status": 200,
+      "path": "/blog/documentation-analytics-for-developer-docs",
+      "requestId": "01M714VRVEMWYNFF4NM7ZAWEEB"
+    }
+  ]
+}
