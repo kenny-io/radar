@@ -16,6 +16,17 @@ Stopped the local QA server, confirmed port3120 closed, and restored release `ts
 
 ## Production smoke
 
-Pending PM confirmation of deployed merge SHA and successful web/worker rollout. Prepared `release-qa/live-smoke.mjs` for read-only desktop/mobile homepage, readiness GET, anonymous social-route protection, Next assets and runtime checks. It refuses to run without a full SHA supplied through `DEPLOYED_SHA` and blocks browser non-GET/HEAD/OPTIONS requests.
+**Passed 5/5** after PM confirmed both Railway deployments successful on merged revision `83f774769976dbb2c673e88090979f052bc48b81` (PR30): web `555f659e-eafe-432d-a00e-713aa3718133`, worker `3d3ee266-a6e2-4f91-a7e8-9a0898694f5f`. The public application does not expose a build SHA; deployment provenance is supplied by PM deployment/runtime verification, not inferred from HTTP200.
 
-No usable production authenticated session: Chrome DevTools connector reports its browser profile is already in use; fresh Playwright Chrome is anonymous. Therefore live authenticated library/settings, real daily generation, real AI quality, and actual provider publishing are not independently exercised by this smoke. PM owns worker runtime/source confirmation and aggregate job observations. No signup, email, payments, settings saves, social sends or paid AI calls authorized for this QA pass.
+Command: `DEPLOYED_SHA=83f774769976dbb2c673e88090979f052bc48b81 node .factory/daily-social-drafts/release-qa/live-smoke.mjs` against `https://radar.thally.io`.
+
+- Readiness GET `/api/health` returned **200** with `{ok:true}`.
+- Real Chrome anonymous homepage rendered at **1440px** and **390px**, with viewport-width document and no horizontal overflow.
+- Anonymous `/social` redirected to `/signup`, displaying the existing email-first Create account surface and no private library content.
+- **Zero** client runtime errors, **zero** failing Next asset responses, and **zero** attempted non-read requests. Browser route guard blocked any non-GET/HEAD/OPTIONS requests, but none were attempted.
+
+Results: `release-qa/live-results.json`; public screenshots `live-home-1440.png`, `live-home-390.png`, `live-anonymous-social-redirect.png`. Reviewed the mobile screenshot. Initial smoke contained a stale password-field assertion; current-main signup deliberately requests email first. Corrected only that harness assumption and reran the bounded smoke; final results all pass.
+
+PM independently reports actual production web hashes match all ten feature application files, worker hashes match all six server feature files, both environments use production mode with development stubs disabled, and no feature flags changed. Normal worker cron completed **3 jobs -> 3 packs / 6 platform posts**, with **zero automatic publication rows**, observed again on a second read. Those runtime/job observations are PM evidence, not direct QA database access.
+
+No usable production authenticated session: Chrome DevTools connector reports its browser profile is already in use; fresh Playwright Chrome is anonymous. Therefore live authenticated library/settings, real daily generation, real AI quality, and actual provider publishing were not independently exercised by this smoke; normal daily generation was separately observed by PM through aggregate runtime/job evidence. PM owns worker runtime/source confirmation and aggregate job observations. QA performed no signup, email, payments, settings saves, social sends or paid AI calls. Recommendation: deployment smoke passed within this explicit scope; no confirmed feature defect remains. Local stubs and matching-source prior QA provide the authenticated core-flow evidence.

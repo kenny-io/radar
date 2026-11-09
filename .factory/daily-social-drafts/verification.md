@@ -21,3 +21,9 @@ Integrated verification pending.
 - Real headless Chrome at desktop and 390px: **8 settings/UI scenarios +8 core flow scenarios passed**. Covered background cron generation without UI visit, same-day deduplication, default zero publication rows, provenance, manual generation, editing/autosave/reload, preserved edits on retry, schedule/refresh/unschedule, explicit confirmed stub X publication/refresh, mobile layout, failed settings save recovery, custom days, pause, keyboard disabled fields, Viewer/foreign-tenant boundaries and no runtime errors. See `qa.md` and `qa/` JSON/screenshots. All providers used development stubs; no real social posts or live AI quality claims.
 - Final production source matches tested build snapshot and fingerprints.json; only a stale existing test-description label changed after snapshot.
 - Delivery: workspace implementation verified; no merge/deploy requested or performed. The existing worker remains required.
+
+## Authorized production delivery
+
+Current-main release integration: 71 focused tests and typecheck passed; full suite had 996 passed, 65 skipped and the same single pre-existing raster golden failure. Production build, all 13 source/test fingerprint comparisons and bounded local UI QA passed.
+
+PR 30 merged as `83f77476`. Both Railway web and worker report SUCCESS on the exact merge SHA. Actual web source matches all ten production hashes; worker source matches all six backend hashes. Production mode, stubs off and billing on remain unchanged. Health returned 200/ok. Normal cron completed three jobs, creating three packs/six posts and zero automatic publication rows. No manual customer mutations were used. Independent live read-only browser smoke passed 5/5. See release.md, release-runtime.json and release-qa.md.

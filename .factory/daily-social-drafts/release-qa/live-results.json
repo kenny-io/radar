@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-09T16:34:10.897Z",
+  "deployedMergeSha": "83f774769976dbb2c673e88090979f052bc48b81",
+  "verificationOfDeployedSha": "Supplied by PM from deployment evidence; public app does not expose build SHA",
+  "auth": "Fresh anonymous browser; no usable authenticated production session",
+  "results": [
+    {
+      "name": "Production readiness GET is healthy",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "ok": true
+        }
+      }
+    },
+    {
+      "name": "Anonymous homepage renders with assets at 1440px",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "h1": "You built it\n.\n\nLet people and AI find it.",
+        "scroll": 1440,
+        "client": 1440
+      }
+    },
+    {
+      "name": "Anonymous homepage renders with assets at 390px",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "h1": "You built it\n.\n\nLet people and AI find it.",
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "Anonymous social route redirects to protected signup surface without writes",
+      "pass": true,
+      "detail": {
+        "finalPath": "/signup",
+        "status": 200,
+        "protectedWorkspace": true
+      }
+    },
+    {
+      "name": "No client runtime or Next asset failures",
+      "pass": true,
+      "detail": {
+        "errors": [],
+        "assetFailures": [],
+        "blockedWrites": []
+      }
+    }
+  ]
+}

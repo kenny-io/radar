@@ -22,4 +22,17 @@ Commit feature-only changes, open/attach PR, verify current checks/head, merge a
 ## Recovery
 Prior source and successful deployments above are the rollback reference for both services. No new schema exists to roll back. Keep stored packs and explicit user scheduling/publishing decisions intact.
 
-Release disposition: not merged/deployed yet.
+## Merged revision
+- PR https://github.com/kenny-io/radar/pull/30 merged at November 9, 20:30:44 Asia/Dubai.
+- Merge SHA `83f774769976dbb2c673e88090979f052bc48b81` exactly matches verified feature source and documentation.
+- Web deployment `555f659e-eafe-432d-a00e-713aa3718133` and worker `3d3ee266-a6e2-4f91-a7e8-9a0898694f5f` automatically started on the merge SHA.
+
+## Production verification
+- Both deployments SUCCESS on `83f774769976dbb2c673e88090979f052bc48b81`.
+- Actual web/worker runtime: production, development stubs0, billing on, correct APP_URL. No flags or secret values changed.
+- Actual worker server hashes match all six changed backend files; actual web hashes match all ten changed production files.
+- `/api/health`: HTTP200, `{ "ok": true }`.
+- Normal scheduler completed three `social.autoRun` jobs without skips: three new packs/six posts. Zero automatic social publication rows were created. No manual generation, bulk enqueue or customer preference mutation was used for verification.
+- Independent live read-only Chrome smoke: 5/5 passed (health, desktop/mobile homepage, anonymous social→signup guard, runtime/assets and zero attempted writes). See release-qa.md. No live authenticated editor mutation was performed; current-source local authenticated QA and actual production worker/database outcomes cover that scope.
+
+Release disposition: **released and verified** at https://radar.thally.io, revision `83f77476`.

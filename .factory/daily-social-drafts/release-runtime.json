@@ -1,0 +1,32 @@
+{
+  "mergeSha": "83f774769976dbb2c673e88090979f052bc48b81",
+  "url": "https://radar.thally.io",
+  "deployments": {
+    "web": {
+      "id": "555f659e-eafe-432d-a00e-713aa3718133",
+      "status": "SUCCESS",
+      "sourceMatches": 10
+    },
+    "worker": {
+      "id": "3d3ee266-a6e2-4f91-a7e8-9a0898694f5f",
+      "status": "SUCCESS",
+      "serverSourceMatches": 6
+    }
+  },
+  "runtime": {
+    "mode": "production",
+    "developmentStubs": false,
+    "billing": "on"
+  },
+  "health": {
+    "httpStatus": 200,
+    "ok": true
+  },
+  "dailyGeneration": {
+    "completedJobs": 3,
+    "skippedJobs": 0,
+    "packs": 3,
+    "posts": 6,
+    "automaticPublicationRows": 0
+  }
+}
