@@ -7,8 +7,11 @@ import { RadarError } from '../errors';
 import { env } from '../env';
 import { AI_DEFAULT, aiFind, MARKETS, langs } from '@/lib/constants';
 import { sendMail } from '../services/mail';
+import { setAutopilot, requestAutopilotRun } from '../services/autopilot/control';
 
 export const actions: ActionMap = {
+  'settings.autopilot': action({ role: 'Owner', input: z.object({ enabled: z.boolean() }), run: (ctx, { enabled }) => setAutopilot(ctx, enabled) }),
+  'settings.autopilotRun': action({ role: 'Owner', input: z.object({}), run: ctx => requestAutopilotRun(ctx) }),
   /** Settings → AI models. The only place model ids are chosen; never echoed in copy elsewhere. */
   'settings.ai': action({
     role: 'Admin',

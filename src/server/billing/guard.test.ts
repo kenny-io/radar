@@ -8,10 +8,10 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { Fixtures } from '../testing/fixtures';
 import type { OnboardingState } from '@/lib/types';
-import { cleanAutoDomain, destinationAfterAuth, onboardingGuard, openBusinessUrl, resolveEntry, safeNext, signupContext, startGuard, trialGuard } from './guard';
+import { cleanAutoDomain, destinationAfterAuth, onboardingGuard, openBusinessUrl, resolveEntry, safeNext, safeBusinessHop, signupContext, startGuard, trialGuard } from './guard';
 import { BIZ_COOKIE, getMe } from '../auth/users';
 import { env } from '../env';
-import { GET as CURRENT } from '@/app/api/b/current/route';
+import { GET as CURRENT, POST as POST_CURRENT } from '@/app/api/b/current/route';
 
 const ON = !!process.env.DATABASE_URL;
 const F = new Fixtures();
@@ -34,6 +34,15 @@ describe('cleanAutoDomain (AC-M3 cleaning)', () => {
     expect(cleanAutoDomain('localhost')).toBeNull();
     expect(cleanAutoDomain('')).toBeNull();
     expect(cleanAutoDomain(undefined)).toBeNull();
+  });
+});
+
+describe('safe authenticated business link', () => {
+  const id = 'eb0904d8-1006-407c-ab5d-c2dd4100e334';
+  it('allows only the exact current-business hop and canonicalizes a safe page destination', () => {
+    expect(safeBusinessHop(openBusinessUrl(id, '/settings?section=autopilot'))).toBe(openBusinessUrl(id, '/settings?section=autopilot'));
+    for (const n of ['/api/auth/signout', '/api/b/current/extra?id=' + id, '/api/b/current?id=invalid', '//evil.test/api/b/current?id=' + id, '/api/b/current?id=' + id + '#evil']) expect(safeBusinessHop(n), n).toBeNull();
+    for (const n of ['https://evil.test', '//evil.test', '/\\evil.test', '/api/auth/signout', '/\t/evil.test']) expect(safeBusinessHop(openBusinessUrl(id, n))).toBe(openBusinessUrl(id, '/dashboard'));
   });
 });
 
@@ -154,6 +163,28 @@ describe.skipIf(!ON)('resolveEntry and guards (database)', () => {
     expect((await go(`id=${b.id}`)).status).toBe(402);
     expect(H.jar.has(BIZ_COOKIE)).toBe(false);
     H.jar.clear();
-    expect((await go(`id=${b.id}`)).status).toBe(401);
+    const signedOut = await go(`id=${b.id}`);
+    expect(signedOut.status).toBe(303);
+    expect(new URL(signedOut.headers.get('location')!).pathname).toBe('/signin');
+    expect((await POST_CURRENT(new Request('http://t/api/b/current', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: b.id }) }))).status).toBe(401);
   });
+  it('signed-out owner email links survive login and select the intended business; unrelated APIs and outsiders stay refused', async () => {
+    const u = await F.user(); const a = await F.biz(u); const b = await F.biz(u);
+    const hop = openBusinessUrl(b.id, '/settings?section=autopilot');
+    const signedOut = await CURRENT(new Request('http://t' + hop));
+    expect(signedOut.status).toBe(303); expect(H.jar.has(BIZ_COOKIE)).toBe(false);
+    const login = new URL(signedOut.headers.get('location')!);
+    expect(login.pathname).toBe('/signin'); expect(login.searchParams.get('next')).toBe(hop);
+    await F.signIn(u, H.jar); H.jar.set(BIZ_COOKIE, a.id);
+    const after = await destinationAfterAuth(u, login.searchParams.get('next'));
+    expect(after).toBe(hop);
+    const opened = await CURRENT(new Request('http://t' + after));
+    expect(opened.headers.get('location')).toBe(`${env.appUrl}/settings?section=autopilot`); expect(H.jar.get(BIZ_COOKIE)).toBe(b.id);
+    expect(await destinationAfterAuth(u, '/api/auth/signout')).toBe('/dashboard');
+    const outsider = await F.user(); await F.biz(outsider); await F.signIn(outsider, H.jar); H.jar.delete(BIZ_COOKIE);
+    expect((await CURRENT(new Request('http://t' + hop))).status).toBe(404); expect(H.jar.has(BIZ_COOKIE)).toBe(false);
+    const malicious = await CURRENT(new Request('http://t' + openBusinessUrl(outsider.id, '//evil.test')));
+    expect(malicious.status).toBe(404); // not a business id owned by this user
+  });
+
 });

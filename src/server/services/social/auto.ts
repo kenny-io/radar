@@ -1,4 +1,6 @@
 // Proactive daily generation, local to each business. New defaults save editable drafts; explicit legacy scheduling survives.
+import { autopilotOf, effectiveSocial } from '../autopilot/policy';
+import { canRun } from '../autopilot/guard';
 import { desc, eq } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { socialAutoOf, getBiz, bizToday } from '../../workspace';
@@ -24,9 +26,10 @@ export function isDue(a: SocialAuto, tz: string, now: Date): { due: boolean; dat
 }
 
 export async function autoTick(now: Date) {
-  const rows = await db.select({ id: schema.businesses.id, tz: schema.businesses.timezone, auto: schema.businesses.socialAuto })
+  const rows = await db.select({ id: schema.businesses.id, tz: schema.businesses.timezone, auto: schema.businesses.socialAuto, autopilot: schema.businesses.autopilot })
     .from(schema.businesses).where(eq(schema.businesses.status, 'active'));
   for (const r of rows) {
+    if (autopilotOf(r).enabled) continue;
     const { due, date } = isDue(socialAutoOf({ socialAuto: r.auto } as any), r.tz || 'America/New_York', now);
     if (!due) continue;
     const key = `social.auto:${r.id}:${date}`;
@@ -39,9 +42,11 @@ export async function autoTick(now: Date) {
   }
 }
 
-export async function autoRun(bid: string, date?: string): Promise<string | null> {
-  const b = await getBiz(bid); const a = socialAutoOf(b); const today = bizToday(b);
+export async function autoRun(bid: string, date?: string, autopilotActivationId?: string): Promise<string | null> {
+  const b = await getBiz(bid); const a = autopilotActivationId ? effectiveSocial(socialAutoOf(b)) : socialAutoOf(b); const today = bizToday(b);
   const day = date || today;
+  if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) return null;
+  if (!autopilotActivationId && autopilotOf(b).enabled) return (await getPack(bid, dailyPackId(bid, day)))?.id || null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
   const id = dailyPackId(bid, day);
   // A completion retry returns the saved draft, preserving any edits or publication choices made since persistence.
@@ -50,15 +55,17 @@ export async function autoRun(bid: string, date?: string): Promise<string | null
   const packs = (await db.select({ data: schema.socialPacks.data }).from(schema.socialPacks).where(eq(schema.socialPacks.businessId, bid)).orderBy(desc(schema.socialPacks.createdAt)).limit(12)).map(r => r.data as SocialPack);
   const selection = await dailyContext(bid, { ...(b.profile as Profile), domain: b.domain }, day, packs);
   // Re-read preferences after source work so a pause during context gathering is honored.
-  const current = await getBiz(bid); const settings = socialAutoOf(current);
+  const current = await getBiz(bid); const settings = autopilotActivationId ? effectiveSocial(socialAutoOf(current)) : socialAutoOf(current);
+  if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) return null;
   if (current.status !== 'active' || !settings.on || !settings.platforms.length || bizToday(current) !== day) return null;
   let packId: string;
   try { packId = await createPack(bid, { platforms: settings.platforms, style: settings.style, auto: true, source: selection.source, idea: selection.idea }, undefined, { id, created: day, grounding: selection.grounding, context: selection.context, recent: selection.recent, beforeSave: async () => {
-    const latest = await getBiz(bid); const latestSettings = socialAutoOf(latest);
+    const latest = await getBiz(bid); const latestSettings = autopilotActivationId ? effectiveSocial(socialAutoOf(latest)) : socialAutoOf(latest);
+    if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) throw new DailyDraftCancelled();
     if (latest.status !== 'active' || !latestSettings.on || !latestSettings.platforms.length || bizToday(latest) !== day || (latestSettings.freq === 'custom' && !latestSettings.days.includes(dayName(day)))) throw new DailyDraftCancelled();
   } }); } catch (e) { if (e instanceof DailyDraftCancelled) return null; throw e; }
   // Only an already-explicit opt-in can schedule generated posts. The default never creates publication rows.
-  if (settings.post === 'schedule') {
+  if (!autopilotActivationId && settings.post === 'schedule') {
     try { await autoSchedule(bid, packId); } catch (e: any) { console.error('[social] auto schedule failed', e?.message || e); }
   }
   return packId;

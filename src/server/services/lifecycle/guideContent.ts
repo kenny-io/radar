@@ -20,14 +20,14 @@ export function renderGuide(id: GuideId, context: EducationContext): GuideConten
     preheader: 'Choose the topic, review the draft and decide when it belongs on your site.',
     heading: 'Start with one article you’d want a customer to find.',
     paragraphs: [
-      'Radar uses the Business Profile to research article ideas. You choose which ones are worth writing and check the draft before it goes out.',
+      'Radar uses the Business Profile to research article ideas. The steps below describe a review-first workflow, with Autopilot and Blog autopilot off. You choose which topics are worth writing and check each draft before publication.',
       ...(active ? [] : [context.access === 'restart' ? 'When you restart your Radar access, you can pick up this workflow from your account. You’ll see the amount due before confirming.' : context.access === 'setup' ? 'Finish reviewing and saving your Business Profile in Radar. When your workspace is active, you can follow this workflow in Content Calendar.' : 'Your saved profile carries into your Radar trial. You’ll see the price before starting, then you can follow this workflow in Content Calendar.']),
     ],
     steps: [
       'Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.',
       'Read the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.',
     ],
-    progress: 'You can follow the topic’s status in Content Calendar. Review comes first by default. Blog autopilot is a separate setting you can choose later.',
+    progress: 'You can follow the topic’s status in Content Calendar. Turning on Autopilot or Blog autopilot can allow articles to publish without a separate review.',
     ctaLabel: active ? 'Choose my first article' : context.access === 'restart' ? 'Reopen my Radar account' : context.access === 'setup' ? 'Continue setting up Radar' : 'Start my Radar trial',
   };
   if (id === 'search_refresh') return {

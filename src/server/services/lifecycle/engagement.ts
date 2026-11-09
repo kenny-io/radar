@@ -1,3 +1,4 @@
+import { authorized, autopilotOf } from '../autopilot/policy';
 // Optional work reminders. Sources store references only; useful current state is checked again before delivery.
 import { and, asc, eq, gt, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
@@ -22,8 +23,8 @@ const zone = (tz: string) => { try { new Intl.DateTimeFormat('en-US', { timeZone
 export async function recordEngagement(q: Q, input: { businessId: string; kind: EngagementKind; ref: string; entryIds?: string[]; now?: Date }) {
   const now = input.now || new Date();
   if (!input.ref || input.ref.length > 200 || (input.entryIds?.length || 0) > 100) throw new Error('Invalid work reminder source');
-  const [b] = await q.select({ ownerId: B.ownerId, status: B.status, timezone: B.timezone, guest: schema.users.guest, verified: schema.users.emailVerifiedAt }).from(B).innerJoin(schema.users, eq(schema.users.id, B.ownerId)).where(eq(B.id, input.businessId)).limit(1);
-  if (!b || b.status !== 'active' || b.guest || !b.verified) return;
+  const [b] = await q.select({ ownerId: B.ownerId, status: B.status, timezone: B.timezone, autopilot: B.autopilot, guest: schema.users.guest, verified: schema.users.emailVerifiedAt }).from(B).innerJoin(schema.users, eq(schema.users.id, B.ownerId)).where(eq(B.id, input.businessId)).limit(1);
+  if (!b || b.status !== 'active' || b.guest || !b.verified || authorized(b, autopilotOf(b).activationId)) return;
   const [p] = await q.select().from(P).where(eq(P.userId, b.ownerId)).limit(1);
   const key = engagementKey(input.kind), since = p?.[sinceKey(key)];
   if (p?.[key] === false || (since && since > now)) return;
@@ -49,7 +50,7 @@ async function activeOwner(q: Q, e: EngagementEvent) {
   const [r] = await q.select({ b: B, email: schema.users.email, guest: schema.users.guest, verified: schema.users.emailVerifiedAt }).from(B)
     .innerJoin(schema.users, eq(schema.users.id, B.ownerId)).innerJoin(schema.members, and(eq(schema.members.businessId, B.id), eq(schema.members.userId, e.userId), eq(schema.members.status, 'active')))
     .where(and(eq(B.id, e.businessId), eq(B.ownerId, e.userId), eq(B.status, 'active'))).limit(1);
-  if (!r || r.guest || !r.verified) return null;
+  if (!r || r.guest || !r.verified || authorized(r.b, autopilotOf(r.b).activationId)) return null;
   // A reminder must never reactivate billing or lazy-grandfather an account while checking eligibility.
   if (billingEnforced(r.email)) {
     const [account] = await q.select().from(schema.billingAccounts).where(eq(schema.billingAccounts.userId, e.userId)).limit(1);

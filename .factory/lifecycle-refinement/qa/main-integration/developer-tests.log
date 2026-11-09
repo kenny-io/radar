@@ -1,0 +1,77 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[brief.scan] reddit source failed: reddit (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/lifecycle/engagement.test.ts (15 tests) 10238ms
+   ✓ conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs  9664ms
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > manual replies are handed to owner with selected edits; repeated runs dedupe and late arrivals are delivered
+[mail:log] to=autopilot-ebfdd783-7376-493f-a286-b5aeb656d3b7@test.local subject=Radar Autopilot: 2 actions need you · Autopilot tests
+Autopilot found 2 actions for Autopilot tests that need your help. Review the saved work before taking the next step.
+
+1. Connect your publishing destination
+
+Radar can prepare articles. Connect a blog so Autopilot can publish them.
+
+Review in Radar: http://localhost:3950/api/b/current?id=830a158f-0729-4b0f-8455-58befc35a155&next=%2Fsettings%3Fsection%3Dpublishing
+
+2. reddit: Help with tracking
+
+Radar cannot post this comment. Open the conversation and send the prepared reply from your account.
+
+Open conversation: https://www.reddit.com/r/test/comments/1
+
+Review in Radar: http://localhost:3950/api/b/current?id=830a158f-0729-4b0f-8455-58befc35a155&next=%2Fbrief%3Fdate%3D2026-11-09
+
+Prepared draft:
+My prepared reply
+
+Manage Autopilot: http://localhost:3950/api/b/current?id=830a158f-0729-4b0f-8455-58befc35a155&next=%2Fsettings%3Fsection%3Dautopilot
+
+You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.
+
+Email preferences: http://localhost:3950/email-preferences
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates
+[social.send] pub c5023c54-2be3-4dd9-a5f3-4caeafc3e9c2 s:auto-830a158f-0729-4b0f-8455-58befc35a155-2026-11-09:x: posted (attempt 1)
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > revoking while media uploads prevents the remote create call
+[social.send] pub ff5033fc-8fc5-4ce3-b538-db2115681789 s:pmw9p6ze97-Kh5g:x: failed rejected after 1 attempt(s): Autopilot is off. Schedule this draft manually to publish it.
+
+ ✓ src/server/services/autopilot/autopilot.db.test.ts (11 tests) 5118ms
+   ✓ Autopilot program (database) > additive calendar generation preserves existing proposals, dates and edited article bodies  3780ms
+   ✓ Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates  389ms
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > keeps signup and resend responses generic and throttles an address across rotating IPs
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > shares a ten-attempt IP budget across signup and resend even when each route has attempts remaining
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[abuse] limit hit: auth:verification
+
+ ✓ src/server/auth/verification.test.ts (11 tests) 2836ms
+   ✓ mailbox confirmation security (database) > does not accept a registrant password or grant a session/admin capability before inbox confirmation  791ms
+   ✓ mailbox confirmation security (database) > recovers legacy account in place, preserves paid/business records and invalidates old sessions and all other links  987ms
+   ✓ mailbox confirmation security (database) > expires tokens, binds their email, validates password bytes and permits exactly one concurrent consume  799ms
+ ✓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests) 762ms
+   ✓ engagement settings, opt-out and work links (local database) > preserves the work destination through actual password and Google sign-in  468ms
+ ✓ src/server/billing/guard.test.ts (11 tests) 395ms
+ ✓ src/server/services/lifecycle/autopilotIntegration.test.ts (7 tests) 285ms
+stdout | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub b2d74cee-ff33-4d15-9c62-d02422cf26c1 s:work-pack-016b59b6-e929-4e2e-a052-e6f618d682c6:x: posted (attempt 1, now)
+
+stderr | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub b2d74cee-ff33-4d15-9c62-d02422cf26c1: work reminder resolution failed after posted save
+
+ ✓ src/server/services/lifecycle/engagementPublishing.test.ts (3 tests) 140ms
+ ✓ src/features/brief/redditCopy.test.ts (31 tests) 146ms
+ ✓ src/server/services/lifecycle/educationRoutes.test.ts (4 tests) 193ms
+ ✓ src/server/services/autopilot/policy.test.ts (20 tests) 45ms
+
+ Test Files  10 passed (10)
+      Tests  122 passed (122)
+   Start at  00:12:15
+   Duration  38.77s (transform 1.74s, setup 0ms, collect 14.72s, tests 20.16s, environment 1ms, prepare 951ms)
+

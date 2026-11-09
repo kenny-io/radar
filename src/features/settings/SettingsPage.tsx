@@ -12,6 +12,8 @@ import { PublishingSettings } from '@/features/publishing/PublishingSettings';
 import { SocialAccounts } from '@/features/social/channels/SocialAccounts';
 import { BillingSettings } from '@/features/billing/BillingSettings';
 import { EmailSettings } from './EmailSettings';
+import { AutopilotSettings } from './AutopilotSettings';
+
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
 import type { CalendarSettings, Member, Role, Workspace, Appearance } from '@/lib/types';
@@ -53,11 +55,12 @@ export function AISettings() {
 }
 
 const SET_KEY = 'radar.settings.tab';
-type SetKey = 'gsc' | 'publishing' | 'social' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'feedback';
+type SetKey = 'gsc' | 'publishing' | 'social' | 'autopilot' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'feedback';
 const SET_NAV: [string, [SetKey, string][]][] = [
   ['Connections', [['gsc', 'Search Console'], ['publishing', 'Publishing'], ['social', 'Social accounts']]],
-  ['Content', [['ai', 'AI models'], ['calendar', 'Calendar']]],
+  ['Content', [['autopilot', 'Autopilot'], ['ai', 'AI models'], ['calendar', 'Calendar']]],
   ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing'], ['emails', 'Emails']]],
+
   ['Support', [['feedback', 'Request a feature']]],
 ];
 
@@ -90,6 +93,7 @@ export function SettingsPage() {
   const tzs = tzList.includes(bl.tz) ? tzList : [bl.tz, ...tzList];
   const sched = (p: { time?: string; tz?: string }) => (b: Workspace): Workspace => ({ ...b, tz: p.tz || b.tz, blog: { ...b.blog, ...p } });
   const pane: Record<SetKey, React.ReactNode> = {
+    autopilot: <AutopilotSettings key={B.id} onSection={setTab} />,
     gsc: <Section title="Search Console" style={{ marginTop: 0 }}>
       <Row t="Connection" d="Read-only access to search performance.">
         {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <div className="row" style={{ gap: 14, flexWrap: 'wrap' }}>
@@ -106,7 +110,7 @@ export function SettingsPage() {
       <PublishingSettings />
       <Row t="Schedule"><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><input type="time" className="input" style={{ width: 130 }} value={bl.time} onChange={e => { const time = e.target.value; if (/^\d{2}:\d{2}$/.test(time)) app.actLater('blog.schedule', 'blog.schedule', { time }, { optimistic: sched({ time }) }); }} aria-label="Publish time" /><select className="input" style={{ width: 220 }} value={bl.tz} onChange={e => act('blog.schedule', { tz: e.target.value }, { optimistic: sched({ tz: e.target.value }) }).catch(() => {})} aria-label="Timezone">{tzs.map(t => <option key={t}>{t}</option>)}</select></div></Row>
     </Section>,
-    social: <Section title="Social accounts" sub="Nothing posts unless you post or schedule it." style={{ marginTop: 0 }}><SocialAccounts /></Section>,
+    social: <Section title="Social accounts" sub={B.autopilot?.enabled ? 'Autopilot can publish to your connected accounts.' : 'Posts publish when you choose or enable an automation.'} style={{ marginTop: 0 }}><SocialAccounts /></Section>,
     calendar: <Section title="Calendar defaults" style={{ marginTop: 0 }}>
       <Row t="Market & language"><div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><select className="input" style={{ width: 200 }} value={cs.market} onChange={e => setCs({ market: e.target.value }).catch(() => {})} aria-label="Market">{markets.map(m => <option key={m}>{m}</option>)}</select><select className="input" style={{ width: 200 }} value={cs.language} onChange={e => setCs({ language: e.target.value }).catch(() => {})} aria-label="Language">{languages.map(m => <option key={m}>{m}</option>)}</select></div></Row>
       <Row t="Frequency" d="Used for your next generated calendar."><FreqSetting cs={cs} set={p => { setCs(p).catch(() => {}); toast('Frequency saved · ' + cadenceLabel({ ...cs, ...p })); }} /></Row>

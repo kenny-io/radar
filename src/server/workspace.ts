@@ -1,4 +1,5 @@
 import { env } from './env';
+import { autopilotPublic } from './services/autopilot/policy';
 import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { notFound } from './errors';
@@ -126,6 +127,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
   const jobs: JobSummary[] = jobRows.map(j => ({ id: j.id, kind: j.kind, status: j.status, progress: j.progress, error: j.error, createdAt: j.createdAt.toISOString(), ref: j.ref }));
   return {
     id: b.id, rev: b.rev, role, status: b.status, today, tz: b.timezone, ...(proj ? { now: new Date().toISOString() } : {}),
+    autopilot: autopilotPublic(b),
     profile: { ...(b.profile as Profile), domain: b.domain }, edited: b.edited || {},
     gsc,
     calendar: { entries: calEntries, settings: calendarSettingsOf(b), generatedAt: b.calendarGeneratedAt ? b.calendarGeneratedAt.toISOString() : null },

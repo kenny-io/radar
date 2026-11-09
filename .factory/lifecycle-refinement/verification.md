@@ -1,4 +1,6 @@
-# Integrated verification
+# LC2 verification history
+
+**Final current-main integration:** see [main-integration-verification.md](main-integration-verification.md) and [independent report](qa/main-integration/report.md). Those records supersede this pre-Autopilot checkpoint, including migration numbering and catalogue counts.
 
 Source begins at `f616862c7dcefb1aabec9155972466f7b3aeaf36` on `kenny/weekly-education`. LC2 source/copy/frame is frozen for the final checks. No customer mail, external provider send, production mutation, merge, deployment or billing action was performed. Local Postgres on port 54329 and synthetic accounts/provider captures were used.
 

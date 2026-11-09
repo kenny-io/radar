@@ -1,3 +1,5 @@
+> Historical pre-main-integration evidence. Current migration numbering, runtime boundaries and verification are in `.factory/lifecycle-refinement/main-integration-runtime.md`.
+
 # Weekly education runtime handoff
 
 Engineer scope EDU-E1 completed on `kenny/weekly-education` in `/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push`. Starting revision was lifecycle PR25 `5183db55`, with an active merge from current main `1473f559`. Merge integration is committed as `bed41631544a7a484d132ca75679bbee146eae44`; education changes remain in the shared working tree for the PM's coherent final commit. PM copy/previews, architect decisions and independent QA evidence are separate ownership.

@@ -2,6 +2,8 @@
 // Never twice: a conditional claim gives each attempt a fresh attempt_key and every later write is conditional on it; only
 // the final create request is non-idempotent, and an unknown outcome there is read back (X) or failed (LinkedIn), never resent.
 // Logs carry the pub id and sid, never post text or tokens.
+import { socialOn } from '../../../flags';
+import { canRun } from '../../autopilot/guard';
 import { and, eq, lte, sql } from 'drizzle-orm';
 import { db, schema } from '../../../db';
 import { env } from '../../../env';
@@ -32,7 +34,7 @@ const log = (r: Pick<PubRow, 'id' | 'sid'>, msg: string) => console.log(`[social
 export async function claimScheduled(pubId: string): Promise<PubRow | null> {
   const [r] = await db.update(P).set({ status: 'sending', attemptKey: sql`gen_random_uuid()`, attempts: sql`${P.attempts} + 1`, claimedAt: sql`now()`, stage: 'media', err: null, errCode: null, updatedAt: sql`now()` })
     .where(and(eq(P.id, pubId), eq(P.status, 'scheduled'), lte(P.dueAt, sql`now()`), sql`${P.dueAt} > now() - ${`${STALE_MS / 1000} seconds`}::interval`,
-      sql`(${P.retryAt} IS NULL OR ${P.retryAt} <= now())`, sql`EXISTS (SELECT 1 FROM social_accounts a WHERE a.id = ${P.acctId} AND NOT a.expired)`))
+      sql`(${P.retryAt} IS NULL OR ${P.retryAt} <= now())`, sql`EXISTS (SELECT 1 FROM social_accounts a WHERE a.id = ${P.acctId} AND NOT a.expired)`, sql`(${P.autopilotActivationId} IS NULL OR EXISTS (SELECT 1 FROM businesses b WHERE b.id = ${P.businessId} AND b.status = 'active' AND b.autopilot->>'enabled' = 'true' AND b.autopilot->>'activationId' = ${P.autopilotActivationId}))`))
     .returning();
   return r || null;
 }
@@ -41,7 +43,7 @@ export async function claimScheduled(pubId: string): Promise<PubRow | null> {
  *  Returns null when someone else has the post. */
 export async function claimManual(o: { bid: string; t: Target; acct: AcctRow; userId: string | null; tz: string }): Promise<PubRow | null> {
   const now = Date.now(); const { date, time } = localParts(now, o.tz);
-  const v = { platform: o.t.platform, kind: o.t.kind, acctId: o.acct.id, ch: o.acct.ch, acctLabel: acctLabel(acctPublic(o.acct)), date, time, dueAt: new Date(now), updatedBy: o.userId };
+  const v = { platform: o.t.platform, kind: o.t.kind, acctId: o.acct.id, ch: o.acct.ch, acctLabel: acctLabel(acctPublic(o.acct)), date, time, dueAt: new Date(now), updatedBy: o.userId, autopilotActivationId: null };
   const [r] = await db.insert(P).values({ businessId: o.bid, sid: o.t.sid, src: o.t.src, ...v, status: 'sending', attempts: 1, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', createdBy: o.userId })
     .onConflictDoUpdate({
       target: [P.businessId, P.sid],
@@ -162,6 +164,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
   const acct = await loadAccount(r.acctId);
   if (!acct) return finishFailed(r, 'auth', 'account disconnected', manual, userId);
   const biz = await getBiz(r.businessId);
+  if (r.autopilotActivationId && (!(await canRun(r.businessId, r.autopilotActivationId)) || !(await socialOn(biz)))) return finishFailed(r, 'rejected', 'Autopilot is off. Schedule this draft manually to publish it.', manual, userId, 'Autopilot is off. Schedule this draft manually to publish it.');
   // The latest text and images, read now (edits are refused from 5 minutes before the send).
   let t = await loadTarget(r.businessId, r.sid);
   if (!t || t.platform !== r.platform) return finishFailed(r, 'rejected', CONTENT_MISSING, manual, userId);
@@ -198,6 +201,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
     if (ad.awaitMedia && ids.length) await ad.awaitMedia(a, ids);
     const go = await db.update(P).set({ stage: 'create', updatedAt: new Date() }).where(mine(r)).returning({ id: P.id });
     if (!go.length) return null;
+    if (r.autopilotActivationId && (!(await canRun(r.businessId, r.autopilotActivationId)) || !(await socialOn(biz)))) return finishFailed(r, 'rejected', 'Autopilot is off. Schedule this draft manually to publish it.', manual, userId, 'Autopilot is off. Schedule this draft manually to publish it.');
     try { created = await authed(() => ad.create(a, { text: t!.text, mediaIds: ids, aiMedia: !!t!.aiMedia })); }
     catch (e: any) {
       if (e instanceof SendError && e.kind === 'unknown') return verifyOrFail(r, ad, a, t.text, manual, userId, e.detail);

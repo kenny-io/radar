@@ -20,7 +20,7 @@ import { failToast } from '@/features/social/channels/PublishBox';
 import { compressToast, heldLines, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
 import { ConnectSocial } from '@/features/social/channels/ConnectSocial';
 import { useNowMs } from '@/features/social/channels/useSocial';
-import { copyRedditReply } from './redditCopy';
+import { copyRedditReply, redditCommentsUrl } from './redditCopy';
 
 type Act = { copying: boolean; copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
   /** Reply now opened X's reply box: mark it copied (then "I posted it"), carrying any unsaved edit, without touching the clipboard. */
@@ -141,6 +141,10 @@ export function DailyBrief() {
         return saved;
       });
       if (result === 'copied') toast('Copied. Open the Reddit thread and paste your reply in the comments.');
+      else if (result === 'open-needed') {
+        const destination = redditCommentsUrl(it.url);
+        toast('Reply copied. Open Reddit to paste it in the comments.', { action: destination ? { label: 'Open Reddit', fn: () => window.open(destination, '_blank', 'noopener,noreferrer') } : null });
+      }
       else if (result === 'save-failed') toast('Reply copied, but Radar couldn’t save it. Try copying again before opening Reddit.', { tone: 'bad' });
     } catch {
       toast('Couldn’t copy your reply. Allow clipboard access and try again, or select and copy the reply manually.', { tone: 'bad' });
@@ -352,6 +356,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const pl = k ? PLAT_L[k] : ''; const ppl = pub ? PLAT_L[pub.platform] : pl; const sid = briefSid(day, it.id);
   const label = acctLabel(sa) || pub?.acctLabel || '';
   const problems = (postDirect || (pubOn && it.kind === 'post' && it.st === 'scheduled')) && k ? preflight(k, briefPreflightInput(it, k, text)) : replyDirect ? preflight('x', { text, images: [] }) : [];
+  const issue = problems.find(p => p.code !== 'images_pending');
   const locked = isLocked(pub, now);
   const [cf, setCf] = useState(false); const [sc, setSc] = useState(false); const [pBusy, setPBusy] = useState(false); const [fixing, setFixing] = useState(false); const [recon, setRecon] = useState(false);
   const flushEdit = async () => { const pend = takePending(); if (pend) { await app.act('brief.item', { date: day, id: it.id, edit: pend }); clearOverlay(pend.v, pend.text); } };
@@ -458,7 +463,8 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     </div>}
     {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{co ? `Post from the ${name} account. Help first, product second.` : it.noMention ? `${it.where} doesn’t allow self-promotion, so this reply stays purely helpful.` : it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.${it.mention && it.rulesUnknown ? ` Check ${it.where}’s rules on self-promotion before posting this version.` : ''}` : it.mention ? `Plugs ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Plug ${name}” if it fits.`}</p>}
     {showHint && <p className="xs sub" style={{ marginTop: 10 }}>{sa?.expired ? <>{`${chOf(sa.ch).l} needs reconnecting to post from here. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Reconnect</a></> : <>{`Connect ${k === 'x' ? 'X' : co ? 'your LinkedIn page' : 'your LinkedIn profile'} to post or schedule from Radar. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Connect</a></>}</p>}
-    {((!past && live && (postDirect || (replyDirect && it.st === 'open'))) || it.st === 'scheduled') && problems.length > 0 && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{problems[0].msg}</span>{problems[0].fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{problems[0].fix.l}</Btn>}</p>}
+    {!past && live && vBusy && <p className="xs row" role="status" style={{ marginTop: 10, gap: 8, color: 'var(--serp)' }}><span className="spin" aria-hidden="true" style={{ width: 13, height: 13, flexShrink: 0 }} /><span>{(im?.pending?.n ?? im?.n ?? 1) > 1 ? 'Creating your images…' : 'Creating your image…'}</span></p>}
+    {((!past && live && (postDirect || (replyDirect && it.st === 'open'))) || it.st === 'scheduled') && issue && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{issue.msg}</span>{issue.fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{issue.fix.l}</Btn>}</p>}
     {postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${pl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa}
       initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('brief', k!, B.today)} onSave={schedule} />}
     {it.st === 'scheduled' && pub && !postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${ppl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa} lockTime={!!sa?.expired} initial={{ date: pub.date, time: pub.time }} onSave={schedule} />}

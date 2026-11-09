@@ -1,3 +1,5 @@
+> Historical pre-main-integration evidence. Current migration numbering, runtime boundaries and verification are in `.factory/lifecycle-refinement/main-integration-runtime.md`.
+
 # LC2-E runtime handoff
 
 Workspace `/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push`, branch `kenny/weekly-education`, starting clean revision `f616862c7dcefb1aabec9155972466f7b3aeaf36`. Read the refinement brief and complete architecture before dependent scheduling implementation. Read-only fetch observed main `60c68af3`; no unrelated merge was performed. This handoff covers engineer runtime/plumbing/tests only. PM owns revised email copy, legacy copy builders, preview/catalogue, original-checkout companion and the shared template text/frame after the documented plumbing handoff. QA is independent.

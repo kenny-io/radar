@@ -15,3 +15,5 @@ Delivery checkpoint: implementation `af58d7e4497c606c8535ff7433a849b09823bbf0`, 
 ## Lifecycle refinement checkpoint (November 10, 2026)
 
 The subsequent user request scheduled all seven former editorial drafts and rewrote the complete email inventory using the newly installed email/copy skills. `.factory/lifecycle-refinement/state.md` and `verification.md` supersede the earlier copy, draft-only mapping and validation counts while preserving this delivery history. Two new guide types use additive migration 0013; the five-step course remains unchanged in identity and progress. The exact report-copy companion remains separate from the lifecycle release. PR #25 receives the coherent refinement commit; no main merge/deployment/customer sends.
+
+Current-main Autopilot integration subsequently preserved canonical 0010 and moved the unpublished lifecycle migration chain to 0011–0014. Final verification and the 29-family/69-variant numbered catalogue are recorded in `.factory/lifecycle-refinement/main-integration-verification.md`; prior 0010–0013 references remain historical.

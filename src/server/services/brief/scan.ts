@@ -1,4 +1,5 @@
 // The Daily Brief research agent (02-system §9): discover → collect (per platform) → rank → select → draft → save.
+import { canRun } from '../autopilot/guard';
 import { and, desc, eq, lt } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { briefSettingsOf, bizToday, getBiz } from '@/server/workspace';
@@ -18,7 +19,7 @@ import './stubs';
 import { recordEngagement } from '../lifecycle/engagement';
 
 export interface ScanPayload {
-  mode: ScanMode; date?: string; fromJob?: string;
+  mode: ScanMode; date?: string; fromJob?: string; autopilotActivationId?: string;
   /** Automatic rescan (cron `brief.rescan`): quiet progress, a failing platform is skipped, members get the toast. */
   background?: boolean;
   /** Earlier `brief.scan` jobs for this date (query rotation, `queriesFor`). First scans always search round 0. */
@@ -32,6 +33,7 @@ const slim = (c: Candidate): Candidate => ({ ...c, body: clip(c.body, 400), comm
 export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult> {
   const bid = ctx.businessId!;
   const b = await getBiz(bid);
+  if (ctx.payload.autopilotActivationId && !(await canRun(bid, ctx.payload.autopilotActivationId))) return { mode: ctx.payload.mode, skipped: 'past', added: 0 };
   const profile = { ...(b.profile as Profile), domain: b.domain };
   const settings = briefSettingsOf(b) as BriefSettings;
   const date = ctx.payload.date || bizToday(b);
@@ -131,6 +133,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   ])).flat() : [];
 
   // ── Save ──
+  if (ctx.payload.autopilotActivationId && !(await canRun(bid, ctx.payload.autopilotActivationId))) return { mode, skipped: 'past', added: 0 };
   const scannedAt = nowHMIn(b.timezone || 'America/New_York');
   const at = new Date().toISOString();
   const tk = (c: Candidate) => { const k = threadKey(c); return k ? { tk: k } : {}; };
@@ -141,10 +144,11 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   if (mode === 'first') {
     await db.transaction(async tx => {
       const inserted = await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats, tx);
-      await tx.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
+      if (!ctx.payload.autopilotActivationId) await tx.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
       if (inserted && replies.some(i => i.st === 'open' && /^https?:\/\//i.test(i.url || ''))) await recordEngagement(tx, { businessId: bid, kind: 'brief_reply', ref: date });
     });
     addedIds = [...replies, ...posts].map(i => i.id);
+
   } else {
     addedIds = (await withDay(bid, date, row => {
       const items = row.items as BriefItem[];

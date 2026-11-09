@@ -1,0 +1,34 @@
+{
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_lc2_merge_clean_1794254909451",
+      "pass": true,
+      "migrations": 15,
+      "deployedSqlAndJournalUnchanged": true,
+      "noGuideEnrollment": true,
+      "autopilotAndMailPreserved": false,
+      "attemptedCourseAndExplicitOptoutPreserved": false
+    },
+    {
+      "mode": "deployed-main-0010",
+      "database": "radar_lc2_merge_deployed_main_0010_1794254910149",
+      "pass": true,
+      "migrations": 15,
+      "deployedSqlAndJournalUnchanged": true,
+      "noGuideEnrollment": true,
+      "autopilotAndMailPreserved": true,
+      "attemptedCourseAndExplicitOptoutPreserved": false
+    },
+    {
+      "mode": "pre-guide-0013",
+      "database": "radar_lc2_merge_pre_guide_0013_1794254910616",
+      "pass": true,
+      "migrations": 15,
+      "deployedSqlAndJournalUnchanged": true,
+      "noGuideEnrollment": true,
+      "autopilotAndMailPreserved": true,
+      "attemptedCourseAndExplicitOptoutPreserved": true
+    }
+  ]
+}

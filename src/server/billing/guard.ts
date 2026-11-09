@@ -91,6 +91,20 @@ function isWorkLanding(n: string) {
 }
 export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !/[\u0000-\u0020\u007f\\]/.test(n) ? n : null;
 
+/** Only this authenticated cookie-setting hop is allowed through login; its destination remains a safe page. */
+export function safeBusinessHop(next?: string | null): string | null {
+  const n = safeNext(next);
+  if (!n || /[\u0000-\u001f\u007f]/.test(n)) return null;
+  const url = new URL(n, 'https://radar.invalid');
+  if (url.origin !== 'https://radar.invalid' || url.pathname !== '/api/b/current' || url.hash) return null;
+  const id = url.searchParams.get('id') || '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
+  const candidate = safeNext(url.searchParams.get('next'));
+  const page = candidate && !candidate.startsWith('/api/') && !/[\u0000-\u001f\u007f]/.test(candidate) ? candidate : '/dashboard';
+  return openBusinessUrl(id, page);
+}
+
+
 /** After signup, signin or Google: invites first, then resolveEntry (claim already ran). `committed` is the business the
  *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */
 export async function entryAfterAuth(u: SessionUser, next?: string | null): Promise<{ next: string; committed: string | null }> {
@@ -100,10 +114,12 @@ export async function entryAfterAuth(u: SessionUser, next?: string | null): Prom
   if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);
   if ('redirect' in e) return { next: e.redirect, committed: null };
+  const hop = safeBusinessHop(n);
   const work = !!n && isWorkLanding(n);
-  const to = n && (APP_PATH.test(n) || work) ? n : '/dashboard';
+  const to = hop || (n && (APP_PATH.test(n) || work) ? n : '/dashboard');
+
   if (!e.committed) return { next: to, committed: null };
-  if (work) return { next: to, committed: e.committed };
+  if (work || hop) return { next: to, committed: e.committed };
   return { next: to + (to.includes('?') ? '&' : '?') + 'saved=profile', committed: e.committed };
 }
 export const destinationAfterAuth = async (u: SessionUser, next?: string | null) => (await entryAfterAuth(u, next)).next;

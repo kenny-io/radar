@@ -1,0 +1,27 @@
+Email #29A · Two owner actions
+Subject: Radar Autopilot: 2 actions need you · Fieldnote
+
+Autopilot found 2 actions for Fieldnote that need your help. Review the saved work before taking the next step.
+
+1. Connect your publishing destination
+
+Radar can prepare articles. Connect a blog so Autopilot can publish them.
+
+Review in Radar: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fsettings%3Fsection%3Dpublishing
+
+2. Reddit: Choosing design tools for a small studio
+
+Radar cannot post this comment. Open the conversation and send the prepared reply from your account.
+
+Open conversation: https://www.reddit.com/r/design/comments/example
+
+Review in Radar: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fbrief%3Fdate%3D2026-11-09
+
+Prepared draft:
+Start by comparing the tools against one project your studio runs often. Which part of the workflow is slowing you down?
+
+Manage Autopilot: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fsettings%3Fsection%3Dautopilot
+
+You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.
+
+Email preferences: https://radar.thally.io/email-preferences

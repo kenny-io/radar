@@ -1,0 +1,65 @@
+{
+  "canonicalMain": "b38b67a4d48c51f39bd5fc68e1fc4143a9633060",
+  "canonicalAutopilotSha256": "df6995cf7d0268cd918c917a28348f2049d879a8a8bf25a76d0b8c9a85888881",
+  "appended": [
+    {
+      "tag": "0011_lifecycle_emails",
+      "idx": 11,
+      "when": 1794254096993
+    },
+    {
+      "tag": "0012_engagement_updates",
+      "idx": 12,
+      "when": 1794254096994
+    },
+    {
+      "tag": "0013_weekly_education",
+      "idx": 13,
+      "when": 1794254096995
+    },
+    {
+      "tag": "0014_lifecycle_guides",
+      "idx": 14,
+      "when": 1794254096996
+    }
+  ],
+  "snapshotChain": "canonical10→11→12→13→14; all retain Autopilot columns",
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_integrated_clean_1794255147399",
+      "migrationCount": 15,
+      "addedEntries": 15,
+      "priorLedger": "unchanged",
+      "autopilotAndProvenance": "preserved",
+      "courseAndAttemptedBody": "not-applicable",
+      "readiness": "passed",
+      "secondMigrate": "no-op",
+      "migrationGuideEnrollmentCount": 0
+    },
+    {
+      "mode": "deployed-main10",
+      "database": "radar_integrated_deployed_main10_1794255147680",
+      "migrationCount": 15,
+      "addedEntries": 4,
+      "priorLedger": "unchanged",
+      "autopilotAndProvenance": "preserved",
+      "courseAndAttemptedBody": "not-applicable",
+      "readiness": "passed",
+      "secondMigrate": "no-op",
+      "migrationGuideEnrollmentCount": 0
+    },
+    {
+      "mode": "pre-guide13",
+      "database": "radar_integrated_pre_guide13_1794255147965",
+      "migrationCount": 15,
+      "addedEntries": 1,
+      "priorLedger": "unchanged",
+      "autopilotAndProvenance": "preserved",
+      "courseAndAttemptedBody": "preserved",
+      "readiness": "passed",
+      "secondMigrate": "no-op",
+      "migrationGuideEnrollmentCount": 0
+    }
+  ]
+}

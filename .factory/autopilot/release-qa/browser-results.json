@@ -1,0 +1,112 @@
+{
+  "at": "2026-11-09T19:57:53.949Z",
+  "results": [
+    {
+      "name": "AC1/7 Owner sees default-off Autopilot with explicit publication permission",
+      "pass": true,
+      "detail": {
+        "defaultOff": true,
+        "ownerEmail": true,
+        "explicitPermission": true
+      }
+    },
+    {
+      "name": "AC7 Save failure preserves off state and exposes actionable error",
+      "pass": true,
+      "detail": {
+        "errorVisible": true,
+        "statePreserved": true
+      }
+    },
+    {
+      "name": "AC1/2/7 Keyboard enables Autopilot and refresh retains persisted state",
+      "pass": true,
+      "detail": {
+        "keyboard": true,
+        "persistence": true,
+        "oneDurableJob": true,
+        "legacyPreferencesPreserved": true
+      }
+    },
+    {
+      "name": "AC7 Run-now state avoids duplicate active work and can queue a completed check again",
+      "pass": true,
+      "detail": {
+        "activeWorkDisabled": true,
+        "runNowQueues": true
+      }
+    },
+    {
+      "name": "AC7 Social preferences deep link honors active program with separate drafts paused",
+      "pass": true,
+      "detail": {
+        "deepLinkOpened": true,
+        "savedPauseRetained": true,
+        "programPreferencesEditable": true,
+        "closeRemovedParameter": true,
+        "libraryShowsAutonomy": true
+      }
+    },
+    {
+      "name": "AC1/8 Admin reads status but cannot change or run Autopilot",
+      "pass": true,
+      "detail": {
+        "readOnlyUI": true,
+        "toggle403": true,
+        "run403": true
+      }
+    },
+    {
+      "name": "AC1/8 Editor reads status but cannot change or run Autopilot",
+      "pass": true,
+      "detail": {
+        "readOnlyUI": true,
+        "toggle403": true,
+        "run403": true
+      }
+    },
+    {
+      "name": "AC1/8 Viewer reads status but cannot change or run Autopilot",
+      "pass": true,
+      "detail": {
+        "readOnlyUI": true,
+        "toggle403": true,
+        "run403": true
+      }
+    },
+    {
+      "name": "AC8 Outsider cannot read business or invoke Autopilot",
+      "pass": true,
+      "detail": {
+        "workspace404": true,
+        "toggle404": true,
+        "run404": true
+      }
+    },
+    {
+      "name": "AC7 Mobile settings fit without horizontal overflow and toggle remains usable",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "AC1/6/7 Disable is persisted; off run-now is refused",
+      "pass": true,
+      "detail": {
+        "disabledPersisted": true,
+        "legacyPreferencesPreserved": true,
+        "offRunRejected": true
+      }
+    },
+    {
+      "name": "AC7 No browser runtime exceptions",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ],
+  "browserErrors": []
+}

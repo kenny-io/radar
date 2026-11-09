@@ -1,5 +1,7 @@
 # State
 
+**Current checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.
+
 | Task | Owner | Status | Scope |
 | --- | --- | --- | --- |
 | LC2-A | factory-architect | verified | Seven-draft runtime mapping, lifecycle gates, data contracts and rollout design |
@@ -7,7 +9,7 @@
 | LC2-P | PM | review | All-family copy rewrite, actual-renderer previews, exhaustive inventory and coherent PR #25 update |
 | LC2-Q | factory-qa | verified | Independent backend/transport, browser, optimized build, rendering, stress, companion and migration acceptance; qa/report.md |
 
-Starting revision `f616862c7dcefb1aabec9155972466f7b3aeaf36`, branch `kenny/weekly-education`. Current delivery is the next coherent commit on existing PR #25, whose remote branch is `kenny/lifecycle-emails`. Final source/build fingerprints and detailed counts are in `verification.md` and `qa/report.md`. Installed email, copywriting and copy-editing skills were verified from the user's attachment and read from `~/.agents/skills`.
+Starting revision `f616862c7dcefb1aabec9155972466f7b3aeaf36`, branch `kenny/weekly-education`. The subsequent current-main integration and numbered catalogue are delivered on existing PR #25, whose remote branch is `kenny/lifecycle-emails`. Final source/build fingerprints and detailed counts are in `verification.md` and `qa/report.md`. Installed email, copywriting and copy-editing skills were verified from the user's attachment and read from `~/.agents/skills`.
 
 Every former unscheduled draft now maps to its existing event/lesson or one of two new one-time guides. Profile activation replaces welcome; founder and three feature drafts reuse existing identities. First-article guidance waits for an untouched workspace/profile; refresh guidance waits for actual measured data and Organic Search lesson acceptance. Shared daytime/cap/priority, default-on eligible recipients and recorded opt-outs are preserved. No second course, historical burst, replay or progress reset.
 
@@ -16,3 +18,9 @@ The rewritten inventory covers 28 user-facing families, including the separate l
 Node 22 build/typecheck pass. Full suite: 1,193 pass, 65 external skips and the unchanged independently established native-image golden failure. Final independent acceptance has no open product defects; mobile overflow was corrected and retested with identical inputs. Real inbox delivery/client rendering and hosted migration/activation remain unverified.
 
 No real recipient sends, production writes, billing actions, main merge, deployment or education-flag activation. PR #25 remains unmerged pending owner go-ahead under `.factory/production-launch/state.md:27`. Release must apply migrations through 0013 and use the matching guide-aware worker; pause/rollback must retain it or stop/drain dispatch before older binaries. Preserve ledgers, opt-outs, retry keys and encrypted bodies.
+
+## Final current-main integration and reading catalogue
+
+Source implementation `96b3d730` was pushed, then main advanced to Autopilot `b38b67a4` and conflicted. Architect/engineer/independent QA resolved and verified the coherent merge; final proof is in `main-integration-verification.md` and `qa/main-integration/report.md`. Canonical main 0010 is unchanged; unpublished files are now 0011–0014 with safe newer journal timestamps. Final current-main source fingerprint is `221182093a9776bc27d34d6bcef66e5ad3646b2e3eeae76604e271225482e53a` across 612 files.
+
+The requested numbered catalogue now has **29 families / 69 full variants** at `previews/catalogue.html`, `catalogue.md`, `all-emails.txt` and the visual `index.html`. #1–#29 stay fixed, with lettered alternates; #29 is the newly merged Autopilot owner-action family. Refined copy and new schedules remain unshipped. Current build/typecheck pass, full suite has 1,241 pass/65 skips plus the unchanged raster baseline, and all independently recorded affected tests/browser/render/migration checks pass. No open material integration defect remains. No customer sends, production write, charge, main merge or deployment.

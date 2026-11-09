@@ -1,5 +1,6 @@
 // Job + cron definitions for posting from Radar (architecture.md §9.1). Imported by src/server/jobs/all.ts.
 // Retry state lives on the row (retry_at, attempts), so `social.send` has maxAttempts 1 and every run is idempotent from the row.
+import { canRun } from '../../autopilot/guard';
 import { and, eq, lte, or, sql } from 'drizzle-orm';
 import { db, schema } from '../../../db';
 import { defineJob, enqueue } from '../../../jobs/queue';
@@ -20,6 +21,7 @@ defineJob<{ pubId: string }>({
     // Rollback switch: with the flag off nothing is sent; the row stays as it is.
     if (!b || b.status !== 'active' || !(await socialOn(b))) return { skipped: 'not_enabled' };
     if (r.status === 'sending') { const u = await recoverStuck(r.id); return { recovered: !!u, status: u?.status }; }
+    if (r.autopilotActivationId && !(await canRun(r.businessId, r.autopilotActivationId))) return { skipped: 'autopilot_off' };
     if (r.status !== 'scheduled') return { skipped: r.status };
     if (Date.now() - r.dueAt.getTime() > STALE_MS) { await failStale(r); return { status: 'failed', code: 'stale' }; }
     const c = await claimScheduled(r.id);
@@ -42,6 +44,7 @@ export async function publisherTick(now: Date) {
     )));
   const flag = new Map<string, boolean>();
   for (const { p, ownerId } of rows) {
+    if (p.status === 'scheduled' && p.autopilotActivationId && !(await canRun(p.businessId, p.autopilotActivationId))) continue;
     if (!flag.has(p.businessId)) flag.set(p.businessId, await socialOn({ id: p.businessId, ownerId }));
     if (!flag.get(p.businessId)) continue;
     if (p.status === 'scheduled' && now.getTime() - p.dueAt.getTime() > STALE_MS) { await failStale(p); continue; }

@@ -1,0 +1,19 @@
+Email #7B · Payment amount unavailable
+Subject: Your Radar payment didn’t go through
+Preview: Open Billing to check your card and pay the outstanding invoice.
+
+Hi Alex,
+
+Please check your payment method.
+
+Your Radar invoice payment didn’t go through.
+
+Open Billing to check or update your payment method and pay the invoice. Access may be paused while it remains unpaid.
+
+Review my payment: https://radar.thally.io/settings?section=billing
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences

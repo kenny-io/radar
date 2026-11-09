@@ -1,3 +1,4 @@
+Email #19D · setup
 Subject: Put Fieldnote’s article to work on social
 Preview: Create posts from an article, check each one and choose when to publish.
 

@@ -1,0 +1,54 @@
+{
+  "families": 29,
+  "variants": 69,
+  "testedVariants": 1,
+  "numbering": "contiguous family numbers; unique variant references",
+  "results": [
+    {
+      "reference": "17E",
+      "id": "lesson-backlinks-neutral",
+      "family": "lesson-backlinks",
+      "format": "HTML + plain text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi there,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something your business offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "17E",
+      "id": "lesson-backlinks-neutral",
+      "family": "lesson-backlinks",
+      "format": "HTML + plain text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "bodyText": "\tRadar by Thally\n\nHi there,\n\nGive the reader a useful next link.\n\nA reader on another founder’s site could be looking for something your business offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.\n\nAdd your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.\n\nOpen Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.\nWhen a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.\n\nCheck progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.\n\nContinue setting up Radar\n\nReply to this email or write to support@thally.io.\n\nPrivacy · Terms\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nEmail preferences\n\nStop Radar lessons and guides",
+      "images": [
+        {
+          "width": 28,
+          "natural": 224
+        }
+      ],
+      "preheaders": [
+        {
+          "text": "Review the page, the exact sentence and the destination before you approve a partner link.",
+          "hidden": true
+        }
+      ]
+    }
+  ]
+}

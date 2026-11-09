@@ -1,0 +1,38 @@
+{
+  "families": 29,
+  "variants": 69,
+  "checks": [
+    {
+      "name": "mobile reading catalogue is complete and fits viewport",
+      "pass": true
+    },
+    {
+      "name": "alternate variants are collapsed by default",
+      "pass": true
+    },
+    {
+      "name": "keyboard expands every alternate full email",
+      "pass": true
+    },
+    {
+      "name": "permanent family index reaches Autopilot full copy",
+      "pass": true
+    },
+    {
+      "name": "Markdown includes each numbered family and variant full text",
+      "pass": true
+    },
+    {
+      "name": "gallery defaults to one primary example per family",
+      "pass": true
+    },
+    {
+      "name": "keyboard exposes all numbered variants in visual gallery",
+      "pass": true
+    },
+    {
+      "name": "category control retains applicable visible variants",
+      "pass": true
+    }
+  ]
+}

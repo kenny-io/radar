@@ -72,3 +72,22 @@ export function backlinkLostEmail(p: { appUrl: string; page: string; displayPage
     'If the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.', footer(p.appUrl),
   ].join('\n\n') };
 }
+
+export interface AutopilotEmailItem { title: string; reason: string; href: string; text?: string; sourceUrl?: string }
+/** Action details come from the saved Autopilot handoff, never an invented completion claim. */
+export function autopilotHandoffEmail(p: { appUrl: string; businessName: string; items: AutopilotEmailItem[]; manageUrl: string }): LegacyEmail {
+  const business = name(p.businessName), count = p.items.length;
+  const source = (value?: string) => { try { const u = new URL(value || ''); return ['http:', 'https:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
+  return { subject: `Radar Autopilot: ${count} ${count === 1 ? 'action needs' : 'actions need'} you · ${business}`, text: [
+    `Autopilot found ${count === 1 ? 'an action' : `${count} actions`} for ${business} that ${count === 1 ? 'needs' : 'need'} your help. Review the saved work before taking the next step.`,
+    ...p.items.map((item, index) => [
+      `${index + 1}. ${item.title}`, item.reason,
+      ...(source(item.sourceUrl) ? [`Open conversation: ${source(item.sourceUrl)}`] : []),
+      `Review in Radar: ${item.href}`,
+      ...(item.text ? [`Prepared draft:\n${item.text}`] : []),
+    ].join('\n\n')),
+    `Manage Autopilot: ${p.manageUrl}`,
+    'You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.',
+    footer(p.appUrl),
+  ].join('\n\n') };
+}

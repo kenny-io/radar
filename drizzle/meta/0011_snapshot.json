@@ -1,6 +1,6 @@
 {
-  "id": "dba35dc0-6aca-41de-ae24-17095b57c4a4",
-  "prevId": "9fc088a5-2337-48d8-862d-330d778350aa",
+  "id": "9fc088a5-2337-48d8-862d-330d778350aa",
+  "prevId": "f8a87c96-ca3b-4b38-b7de-360db3a8c97a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -797,6 +797,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "autopilot": {
+          "name": "autopilot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
         }
       },
       "indexes": {},
@@ -950,6 +957,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "autopilot_activation_id": {
+          "name": "autopilot_activation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1263,177 +1276,6 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.engagement_events": {
-      "name": "engagement_events",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "business_id": {
-          "name": "business_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_key": {
-          "name": "source_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_ref": {
-          "name": "source_ref",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "occurred_at": {
-          "name": "occurred_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "eligible_at": {
-          "name": "eligible_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_reason": {
-          "name": "resolved_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lifecycle_email_id": {
-          "name": "lifecycle_email_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "engagement_source_uq": {
-          "name": "engagement_source_uq",
-          "columns": [
-            {
-              "expression": "source_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "engagement_due_idx": {
-          "name": "engagement_due_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "eligible_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "resolved_at IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "engagement_events_user_id_users_id_fk": {
-          "name": "engagement_events_user_id_users_id_fk",
-          "tableFrom": "engagement_events",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "engagement_events_business_id_businesses_id_fk": {
-          "name": "engagement_events_business_id_businesses_id_fk",
-          "tableFrom": "engagement_events",
-          "tableTo": "businesses",
-          "columnsFrom": [
-            "business_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "engagement_events_lifecycle_email_id_lifecycle_emails_id_fk": {
-          "name": "engagement_events_lifecycle_email_id_lifecycle_emails_id_fk",
-          "tableFrom": "engagement_events",
-          "tableTo": "lifecycle_emails",
-          "columnsFrom": [
-            "lifecycle_email_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -3387,6 +3229,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "autopilot_activation_id": {
+          "name": "autopilot_activation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3642,45 +3490,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
-        },
-        "daily_brief": {
-          "name": "daily_brief",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "calendar_reminders": {
-          "name": "calendar_reminders",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "article_social": {
-          "name": "article_social",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "daily_brief_since": {
-          "name": "daily_brief_since",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "calendar_reminders_since": {
-          "name": "calendar_reminders_since",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "article_social_since": {
-          "name": "article_social_since",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         },
         "updated_at": {
           "name": "updated_at",

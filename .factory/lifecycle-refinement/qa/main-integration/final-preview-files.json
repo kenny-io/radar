@@ -1,0 +1,416 @@
+[
+  {
+    "reference": "1A",
+    "id": "welcome",
+    "file": ".factory/lifecycle-refinement/previews/welcome.html",
+    "sha256": "f0255cc9e8b3a47d7b2abc7ec318f6fd31733d370dca2e83cd4e0a26d8db9c9c"
+  },
+  {
+    "reference": "1B",
+    "id": "welcome-neutral",
+    "file": ".factory/lifecycle-refinement/previews/welcome-neutral.html",
+    "sha256": "a84a6b9c9b743703e682145def27ce79ea9107a6261d28ccad535c1390f98c9d"
+  },
+  {
+    "reference": "2",
+    "id": "founder_note",
+    "file": ".factory/lifecycle-refinement/previews/founder_note.html",
+    "sha256": "ecc27bae66a1a9e73240a2dd32620176c591c79e16242cb5d99602737ff2585e"
+  },
+  {
+    "reference": "3",
+    "id": "password_reset",
+    "file": ".factory/lifecycle-refinement/previews/password_reset.html",
+    "sha256": "136f2613daafe3c92cac45eb3f1a3d967048e5c616f1916771a8386c41b645ec"
+  },
+  {
+    "reference": "4",
+    "id": "trial_started",
+    "file": ".factory/lifecycle-refinement/previews/trial_started.html",
+    "sha256": "d547f9388a3babecc6bfeee168da6875eecb94692c2e74df97db988182bce906"
+  },
+  {
+    "reference": "5",
+    "id": "trial_ending",
+    "file": ".factory/lifecycle-refinement/previews/trial_ending.html",
+    "sha256": "d42b4202b6e320f202a3ed4e9a2680059fc0047248a9aa8993eec6adad94478b"
+  },
+  {
+    "reference": "6",
+    "id": "invoice_paid",
+    "file": ".factory/lifecycle-refinement/previews/invoice_paid.html",
+    "sha256": "66bbe461fcad6da268c35f3b95c7671274ffeb869681f2c84db2bb8b8992eb10"
+  },
+  {
+    "reference": "6B",
+    "id": "invoice-paid-no-amount",
+    "file": ".factory/lifecycle-refinement/previews/invoice-paid-no-amount.html",
+    "sha256": "ece56e0dbd56512fb765d4b97c97dadf6fabd9dea87df05cd77ff13e14c3478e"
+  },
+  {
+    "reference": "7",
+    "id": "payment_failed",
+    "file": ".factory/lifecycle-refinement/previews/payment_failed.html",
+    "sha256": "c9a233c1a74482462c4d3638a815b477c60b83b193e93e4f7c9e6b5ca9a7dbbf"
+  },
+  {
+    "reference": "7B",
+    "id": "payment-failed-no-amount",
+    "file": ".factory/lifecycle-refinement/previews/payment-failed-no-amount.html",
+    "sha256": "0b394c45a6da9768ad09e5555a33ab4bea34d21d22753669060ab5e20b97ed31"
+  },
+  {
+    "reference": "8",
+    "id": "cancellation_scheduled",
+    "file": ".factory/lifecycle-refinement/previews/cancellation_scheduled.html",
+    "sha256": "ddcf7df8a5f02f2d3bd3b7bb127d657be8d131533ebfe643f691aca1fdbe1dde"
+  },
+  {
+    "reference": "9",
+    "id": "subscription_ended",
+    "file": ".factory/lifecycle-refinement/previews/subscription_ended.html",
+    "sha256": "72316c9a4917effe7e24c1169fe8ee887a323f4620de941d3017dd4058765c1a"
+  },
+  {
+    "reference": "9B",
+    "id": "subscription-setup-expired",
+    "file": ".factory/lifecycle-refinement/previews/subscription-setup-expired.html",
+    "sha256": "e3a6521edb025f2bec5c133bcc7c4cc9c0ad0785ba3c47571e5f8fc013c040f1"
+  },
+  {
+    "reference": "10",
+    "id": "work-brief_reply",
+    "file": ".factory/lifecycle-refinement/previews/work-brief_reply.html",
+    "sha256": "c11ffa8fa2b992b8fb1064cf4ced263b4ee388459a97184c9091f6d5ef6774f3"
+  },
+  {
+    "reference": "11",
+    "id": "work-calendar_review",
+    "file": ".factory/lifecycle-refinement/previews/work-calendar_review.html",
+    "sha256": "c29138801e7a9308c153083c2addf66b0310c5bff32bca64b809c167d0cd8166"
+  },
+  {
+    "reference": "12",
+    "id": "work-article_social",
+    "file": ".factory/lifecycle-refinement/previews/work-article_social.html",
+    "sha256": "f311e0c526b995e00b82605594b8a58ebece1ca242ae584316da03c5abe75f6d"
+  },
+  {
+    "reference": "13",
+    "id": "work-social_publish",
+    "file": ".factory/lifecycle-refinement/previews/work-social_publish.html",
+    "sha256": "75b80dc54e9bbfbe03d0427a19728b36b815fe5818e11b6f0e23f519b1ca8c68"
+  },
+  {
+    "reference": "14",
+    "id": "work-combined",
+    "file": ".factory/lifecycle-refinement/previews/work-combined.html",
+    "sha256": "ea17130200502e7b607d4b0b880dfb7635a6c818193ccb436625f62f4370e12a"
+  },
+  {
+    "reference": "15A",
+    "id": "lesson-ai_visibility-workspace",
+    "file": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-workspace.html",
+    "sha256": "45c5bb5580ddb3ea2ba04e029af24f2216d993c6c4bd90a03a32351867abef61"
+  },
+  {
+    "reference": "15B",
+    "id": "lesson-ai_visibility-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-start_trial.html",
+    "sha256": "f8c86d7f6657ee59fde29a79c12228253cca0f0d03b12094aa75a2ce1dc1984d"
+  },
+  {
+    "reference": "15C",
+    "id": "lesson-ai_visibility-restart",
+    "file": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-restart.html",
+    "sha256": "8e85139ecd944c252ec5abc645dcfa9b447753100460caea342d9f17404e7fc1"
+  },
+  {
+    "reference": "15D",
+    "id": "lesson-ai_visibility-setup",
+    "file": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-setup.html",
+    "sha256": "693624cc86e85dae8e2523f74ea049c2963990110686aaebf49ddbda896b31f9"
+  },
+  {
+    "reference": "15E",
+    "id": "lesson-ai_visibility-neutral",
+    "file": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-neutral.html",
+    "sha256": "e23ad744e9f1a10153b7ee4fd356fe4784568be1c980fe3d81168672af31215c"
+  },
+  {
+    "reference": "16A",
+    "id": "lesson-daily_brief-workspace",
+    "file": ".factory/lifecycle-refinement/previews/lesson-daily_brief-workspace.html",
+    "sha256": "8b337def58bbf7f972289fd1e1fb26c941c3a1aae70e1efd3aed59d6e36cc226"
+  },
+  {
+    "reference": "16B",
+    "id": "lesson-daily_brief-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/lesson-daily_brief-start_trial.html",
+    "sha256": "f7d801e17099a0983740d2d6130c967046cc647100e1b619ff16ad01806c228a"
+  },
+  {
+    "reference": "16C",
+    "id": "lesson-daily_brief-restart",
+    "file": ".factory/lifecycle-refinement/previews/lesson-daily_brief-restart.html",
+    "sha256": "0f229ed656e919acff8c03c8ab06d1d063cdeb7edc93e3417610bba342eae657"
+  },
+  {
+    "reference": "16D",
+    "id": "lesson-daily_brief-setup",
+    "file": ".factory/lifecycle-refinement/previews/lesson-daily_brief-setup.html",
+    "sha256": "9eba46225ee5938b5b683c1f879086ddbe1cbf1bd3c7263643de5d760dd520a5"
+  },
+  {
+    "reference": "16E",
+    "id": "lesson-daily_brief-neutral",
+    "file": ".factory/lifecycle-refinement/previews/lesson-daily_brief-neutral.html",
+    "sha256": "1ecbdddbab10e25cece54bfcfa98d1f1ef4606715e773f8439bd1fba74f32f9d"
+  },
+  {
+    "reference": "17A",
+    "id": "lesson-backlinks-workspace",
+    "file": ".factory/lifecycle-refinement/previews/lesson-backlinks-workspace.html",
+    "sha256": "80c5e2a5f6e2e3fde1d4c210b47e7c87929a1ca4c7c1d972163b63b87f7bf74c"
+  },
+  {
+    "reference": "17B",
+    "id": "lesson-backlinks-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/lesson-backlinks-start_trial.html",
+    "sha256": "2a6f1592282a091fbc2220b1718cd54cb2dbc7c42b44868f3dc5a46d22816942"
+  },
+  {
+    "reference": "17C",
+    "id": "lesson-backlinks-restart",
+    "file": ".factory/lifecycle-refinement/previews/lesson-backlinks-restart.html",
+    "sha256": "5bb3dcc80a5a100b8497b5e10aa58e87058b7378667cb333b54d42af189149a8"
+  },
+  {
+    "reference": "17D",
+    "id": "lesson-backlinks-setup",
+    "file": ".factory/lifecycle-refinement/previews/lesson-backlinks-setup.html",
+    "sha256": "ecb0a5fc203ace80cc22923af572e5016f5fa60014cb77a80d54a8ebbda98ff1"
+  },
+  {
+    "reference": "17E",
+    "id": "lesson-backlinks-neutral",
+    "file": ".factory/lifecycle-refinement/previews/lesson-backlinks-neutral.html",
+    "sha256": "c61d6dd2d8980f3bf753698bc6a2b802397b9f4702ced6918c9831cad6e39dc2"
+  },
+  {
+    "reference": "18A",
+    "id": "lesson-organic_search-workspace",
+    "file": ".factory/lifecycle-refinement/previews/lesson-organic_search-workspace.html",
+    "sha256": "51b36418866d6e619680542d988daa5f2a67031a48a792ec9aea8d6c5d5608cf"
+  },
+  {
+    "reference": "18B",
+    "id": "lesson-organic_search-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/lesson-organic_search-start_trial.html",
+    "sha256": "9bf86ce8c99be63d5d6b8c6924dc17cc99c1dbd5b823034c96322ec1c2b0ea4b"
+  },
+  {
+    "reference": "18C",
+    "id": "lesson-organic_search-restart",
+    "file": ".factory/lifecycle-refinement/previews/lesson-organic_search-restart.html",
+    "sha256": "ee33084c89c525087f33dfc099193153a0159223992ab9c0f05db8f367a7dc9e"
+  },
+  {
+    "reference": "18D",
+    "id": "lesson-organic_search-setup",
+    "file": ".factory/lifecycle-refinement/previews/lesson-organic_search-setup.html",
+    "sha256": "40145ba48d2796dabc8789d475231a42fe63cfe614c9c83f5994c070f0ae09c9"
+  },
+  {
+    "reference": "18E",
+    "id": "lesson-organic-search-disconnected",
+    "file": ".factory/lifecycle-refinement/previews/lesson-organic-search-disconnected.html",
+    "sha256": "1bf1b0944ed86bc245e8ec369ecdd1a17b72e35f88dc993591b0a9c078509811"
+  },
+  {
+    "reference": "18F",
+    "id": "lesson-organic_search-neutral",
+    "file": ".factory/lifecycle-refinement/previews/lesson-organic_search-neutral.html",
+    "sha256": "0e36907b933a77e67a320c303a1d27a00726f2f4a7d546d49b3dfbe04f754a0e"
+  },
+  {
+    "reference": "19A",
+    "id": "lesson-social_marketing-workspace",
+    "file": ".factory/lifecycle-refinement/previews/lesson-social_marketing-workspace.html",
+    "sha256": "34dbdbbcac628dc741cba10bb76886cf06fe927f3c0e54983c9f8f6a20272413"
+  },
+  {
+    "reference": "19B",
+    "id": "lesson-social_marketing-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/lesson-social_marketing-start_trial.html",
+    "sha256": "887baef7d14280dc4dc7f974757ba4389ad8b6b4ad1e7957a258c9780733b92a"
+  },
+  {
+    "reference": "19C",
+    "id": "lesson-social_marketing-restart",
+    "file": ".factory/lifecycle-refinement/previews/lesson-social_marketing-restart.html",
+    "sha256": "cfeb104a340712816aaba699e575bd0448e9e5629450234b1cae016b4480fd48"
+  },
+  {
+    "reference": "19D",
+    "id": "lesson-social_marketing-setup",
+    "file": ".factory/lifecycle-refinement/previews/lesson-social_marketing-setup.html",
+    "sha256": "67cdb679961920aceb43f8bc98f00f18acea22615351bb036d23d2dc6a9f0d2b"
+  },
+  {
+    "reference": "19E",
+    "id": "lesson-social_marketing-neutral",
+    "file": ".factory/lifecycle-refinement/previews/lesson-social_marketing-neutral.html",
+    "sha256": "cedaa9f8b5ac06ba4796d727c9a51e80a2be1895a66a73941f2b33e28b11c717"
+  },
+  {
+    "reference": "20A",
+    "id": "guide-article_workflow-workspace",
+    "file": ".factory/lifecycle-refinement/previews/guide-article_workflow-workspace.html",
+    "sha256": "efbc4aea93424a70077b28974810d218b93e3a6fcb130150886ee9c3b32b5f29"
+  },
+  {
+    "reference": "20B",
+    "id": "guide-article_workflow-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/guide-article_workflow-start_trial.html",
+    "sha256": "d7b30b231f1c2271b9ec08df1e6c0bd155323dce808a50bbeb1d69d4dcf54460"
+  },
+  {
+    "reference": "20C",
+    "id": "guide-article_workflow-restart",
+    "file": ".factory/lifecycle-refinement/previews/guide-article_workflow-restart.html",
+    "sha256": "8a986f119ae87c0d532495e479f80bace0acbc55fe56844472a6655a69389773"
+  },
+  {
+    "reference": "20D",
+    "id": "guide-article_workflow-setup",
+    "file": ".factory/lifecycle-refinement/previews/guide-article_workflow-setup.html",
+    "sha256": "0a34e562e3f3b9585299b731a174b004bdc1001d88391886a1c14029ed4f5d5d"
+  },
+  {
+    "reference": "21A",
+    "id": "guide-search_refresh-workspace",
+    "file": ".factory/lifecycle-refinement/previews/guide-search_refresh-workspace.html",
+    "sha256": "653cf79aa357b27d13bcee1f48ae769fbd860fd7255b9aea4bbca25b17456231"
+  },
+  {
+    "reference": "21B",
+    "id": "guide-search_refresh-start_trial",
+    "file": ".factory/lifecycle-refinement/previews/guide-search_refresh-start_trial.html",
+    "sha256": "aa8dddd4b9601456301e9ee5d7995cedcaa47c0acd2fcead6f4506114f1c5d7f"
+  },
+  {
+    "reference": "21C",
+    "id": "guide-search_refresh-restart",
+    "file": ".factory/lifecycle-refinement/previews/guide-search_refresh-restart.html",
+    "sha256": "aa8dddd4b9601456301e9ee5d7995cedcaa47c0acd2fcead6f4506114f1c5d7f"
+  },
+  {
+    "reference": "21D",
+    "id": "guide-search_refresh-setup",
+    "file": ".factory/lifecycle-refinement/previews/guide-search_refresh-setup.html",
+    "sha256": "aa8dddd4b9601456301e9ee5d7995cedcaa47c0acd2fcead6f4506114f1c5d7f"
+  },
+  {
+    "reference": "22",
+    "id": "confirmation",
+    "file": ".factory/lifecycle-refinement/previews/confirmation.html",
+    "sha256": "0009f5acd3b5fa3361325d82ce91c15199685116e429ee44cab0f2a5bc2535b4"
+  },
+  {
+    "reference": "23A",
+    "id": "invitation-Editor",
+    "file": ".factory/lifecycle-refinement/previews/invitation-Editor.html",
+    "sha256": "90fe5ef4608b9ff8348e3387f7a5709d0a0f5488ba80d67601465b61696c66f2"
+  },
+  {
+    "reference": "23B",
+    "id": "invitation-Admin",
+    "file": ".factory/lifecycle-refinement/previews/invitation-Admin.html",
+    "sha256": "760d9dbcfedc1d8276a103a3af115e0291854d8624b988689665b83af2a9e0c5"
+  },
+  {
+    "reference": "23C",
+    "id": "invitation-Viewer",
+    "file": ".factory/lifecycle-refinement/previews/invitation-Viewer.html",
+    "sha256": "4ea5255dbed911521ab4573f67e339fa0836650b826020178163860a87d30111"
+  },
+  {
+    "reference": "24A",
+    "id": "backlink-approved",
+    "file": ".factory/lifecycle-refinement/previews/backlink-approved.html",
+    "sha256": "b5524b1021cbc04cab86503c714062581cc72c68a274061e241fd48728162441"
+  },
+  {
+    "reference": "24B",
+    "id": "backlink-approved-manual",
+    "file": ".factory/lifecycle-refinement/previews/backlink-approved-manual.html",
+    "sha256": "7fee0c533ddf71a2a4c04eb11269f27bdec0d2d663c5ec5bf7f8158e876d050b"
+  },
+  {
+    "reference": "25",
+    "id": "backlink-declined",
+    "file": ".factory/lifecycle-refinement/previews/backlink-declined.html",
+    "sha256": "a4f0888390530af8817d53215fee10510becf5a0d632c20d84d21ab242c837a1"
+  },
+  {
+    "reference": "26",
+    "id": "backlink-removal",
+    "file": ".factory/lifecycle-refinement/previews/backlink-removal.html",
+    "sha256": "543ea6f14afacc922f8e1c4b3ac9738f4597d4f3ac9c51f97cc91ca163ae875e"
+  },
+  {
+    "reference": "27A",
+    "id": "backlink-lost-missing",
+    "file": ".factory/lifecycle-refinement/previews/backlink-lost-missing.html",
+    "sha256": "de871b9ba8ac33364ae166b0dd2668bd75987f749195a0f4fcd8edb1b7159b89"
+  },
+  {
+    "reference": "27B",
+    "id": "backlink-lost-rel",
+    "file": ".factory/lifecycle-refinement/previews/backlink-lost-rel.html",
+    "sha256": "8b57fcf08b823d770f07806b519a8faea2bccb285c55ee64072af61aad9f03c4"
+  },
+  {
+    "reference": "28A",
+    "id": "ai-weekly-report",
+    "file": ".factory/lifecycle-refinement/previews/ai-weekly-report.html",
+    "sha256": "7f00d73929a921a9d71493b5b9e2b0fcfc8a5d00bab739c92c631f551d275a79"
+  },
+  {
+    "reference": "28B",
+    "id": "ai-weekly-report-no-miss",
+    "file": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-miss.html",
+    "sha256": "a32539091ccf368c9ed8405d250c31905e91f8fb867ddcb7d790435ba8e50862"
+  },
+  {
+    "reference": "28C",
+    "id": "ai-weekly-report-no-comparison",
+    "file": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-comparison.html",
+    "sha256": "8fe5034065019db82103647a7564f84a48520c04d0d31a57517f8357df341930"
+  },
+  {
+    "reference": "28D",
+    "id": "ai-weekly-report-no-topic",
+    "file": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-topic.html",
+    "sha256": "509fd9b3d043605387d9dc2291d2e572768f517206a73ddf6e0e6a299b53b7e9"
+  },
+  {
+    "reference": "29A",
+    "id": "autopilot-actions",
+    "file": ".factory/lifecycle-refinement/previews/autopilot-actions.html",
+    "sha256": "3c684a0735e3090574e9d5b696f4d78500166c7df12e4e0bf874e3cd47bc7c7a"
+  },
+  {
+    "reference": "29B",
+    "id": "autopilot-reply",
+    "file": ".factory/lifecycle-refinement/previews/autopilot-reply.html",
+    "sha256": "89b939520e376e2a5ef9bba9f685da49b1d123b8c39ed1a97f860b17eb1cca50"
+  },
+  {
+    "reference": "29C",
+    "id": "autopilot-publication",
+    "file": ".factory/lifecycle-refinement/previews/autopilot-publication.html",
+    "sha256": "dfdf5f6182210cfb594f321dd634bfde0df55f90f0567a026e21da1f4edc9014"
+  }
+]

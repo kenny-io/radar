@@ -30,5 +30,6 @@ Actual current source, fictional sample details, no sends. The full catalogue in
 - [Link removal request from Fieldnote](backlink-removal.html)
 - [Partner link not found on partner.example/articles/design-tools](backlink-lost-missing.html)
 - [Recommendation share this week · fieldnote.example](ai-weekly-report.html)
+- [Radar Autopilot: 2 actions need you · Fieldnote](autopilot-actions.html)
 
 The workspace-ready message remains retired.

@@ -1,6 +1,6 @@
 {
-  "id": "8a06d4ac-9481-4a6a-b20e-bcd9be527f58",
-  "prevId": "6359dd8b-7e92-46a2-8f0f-f4ba12ab1706",
+  "id": "6359dd8b-7e92-46a2-8f0f-f4ba12ab1706",
+  "prevId": "dba35dc0-6aca-41de-ae24-17095b57c4a4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -797,6 +797,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "autopilot": {
+          "name": "autopilot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
         }
       },
       "indexes": {},
@@ -950,6 +957,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "autopilot_activation_id": {
+          "name": "autopilot_activation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2486,190 +2499,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.lifecycle_guide_states": {
-      "name": "lifecycle_guide_states",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "guide_id": {
-          "name": "guide_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "first_observed_at": {
-          "name": "first_observed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "due_at": {
-          "name": "due_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_email_id": {
-          "name": "pending_email_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "source_business_id": {
-          "name": "source_business_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'waiting'"
-        },
-        "sent_at": {
-          "name": "sent_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "lifecycle_guides_due_idx": {
-          "name": "lifecycle_guides_due_idx",
-          "columns": [
-            {
-              "expression": "due_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "status = 'waiting'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "lifecycle_guides_observe_idx": {
-          "name": "lifecycle_guides_observe_idx",
-          "columns": [
-            {
-              "expression": "updated_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "status = 'waiting'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "lifecycle_guide_states_user_id_users_id_fk": {
-          "name": "lifecycle_guide_states_user_id_users_id_fk",
-          "tableFrom": "lifecycle_guide_states",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "lifecycle_guide_states_pending_email_id_lifecycle_emails_id_fk": {
-          "name": "lifecycle_guide_states_pending_email_id_lifecycle_emails_id_fk",
-          "tableFrom": "lifecycle_guide_states",
-          "tableTo": "lifecycle_emails",
-          "columnsFrom": [
-            "pending_email_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "lifecycle_guide_states_source_business_id_businesses_id_fk": {
-          "name": "lifecycle_guide_states_source_business_id_businesses_id_fk",
-          "tableFrom": "lifecycle_guide_states",
-          "tableTo": "businesses",
-          "columnsFrom": [
-            "source_business_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "lifecycle_guide_states_user_id_guide_id_pk": {
-          "name": "lifecycle_guide_states_user_id_guide_id_pk",
-          "columns": [
-            "user_id",
-            "guide_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "lifecycle_guide_id_check": {
-          "name": "lifecycle_guide_id_check",
-          "value": "\"lifecycle_guide_states\".\"guide_id\" IN ('article_workflow', 'search_refresh')"
-        },
-        "lifecycle_guide_status_check": {
-          "name": "lifecycle_guide_status_check",
-          "value": "\"lifecycle_guide_states\".\"status\" IN ('waiting', 'queued', 'sent', 'skipped', 'blocked')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.live_links": {
       "name": "live_links",
       "schema": "",
@@ -3808,6 +3637,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "autopilot_activation_id": {
+          "name": "autopilot_activation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {

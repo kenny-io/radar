@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "database": "radar_lc2_main_integration_qa_20261110",
+      "ready": true,
+      "pass": true
+    },
+    {
+      "database": "radar_lc2_readiness_13_1794254928214",
+      "ready": false,
+      "pass": true
+    }
+  ]
+}

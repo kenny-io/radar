@@ -75,29 +75,36 @@
     {
       "idx": 10,
       "version": "7",
-      "when": 1793808223881,
-      "tag": "0010_lifecycle_emails",
+      "when": 1794254096992,
+      "tag": "0010_autopilot",
       "breakpoints": true
     },
     {
       "idx": 11,
       "version": "7",
-      "when": 1793808223882,
-      "tag": "0011_engagement_updates",
+      "when": 1794254096993,
+      "tag": "0011_lifecycle_emails",
       "breakpoints": true
     },
     {
       "idx": 12,
       "version": "7",
-      "when": 1794246365354,
-      "tag": "0012_weekly_education",
+      "when": 1794254096994,
+      "tag": "0012_engagement_updates",
       "breakpoints": true
     },
     {
       "idx": 13,
       "version": "7",
-      "when": 1794252984822,
-      "tag": "0013_lifecycle_guides",
+      "when": 1794254096995,
+      "tag": "0013_weekly_education",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794254096996,
+      "tag": "0014_lifecycle_guides",
       "breakpoints": true
     }
   ]
