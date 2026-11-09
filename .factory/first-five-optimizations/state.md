@@ -3,7 +3,7 @@
 | Task | Owner | Status | Covers | Next |
 | --- | --- | --- | --- | --- |
 | OPT-A1 architecture and ownership split | factory-architect | active | all | architecture.md |
-| OPT-E1 idle spend | factory-engineer | planned | IS-1..6 | after A1 |
+| OPT-E1 idle spend | factory-engineer | planned | IS-1..7 | after A1 |
 | OPT-E2 lighter saves | factory-engineer | planned | LS-1..4 | after A1 |
 | OPT-E3 billing edges + first session | factory-engineer | planned | BE-1..4, FS-1..4 | after A1 |
 | OPT-E4 review loop + activity | factory-engineer | planned | RL-1..6 | after E2 integrates |

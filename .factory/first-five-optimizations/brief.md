@@ -17,6 +17,8 @@ Source: product review of 2026-11-10 (code reading plus a local stub-data walkth
   brief unchanged. Idle 30+ days: rescans, visibility and social packs paused until the owner returns. Businesses
   with Autopilot on are never slowed. "Idle" = no signed-in app use and no email link click.
 - Failed renewal grace: **2 days** of full access with a banner, then the existing lock.
+- Rescans must be earned (added 2026-11-10): a 2-hour background rescan runs only if the owner has copied,
+  posted or discarded at least one of the day's recommendations since the previous scan. No action, no rescan.
 
 ## Acceptance criteria
 
@@ -40,6 +42,9 @@ Source: product review of 2026-11-10 (code reading plus a local stub-data walkth
   with at most one catch-up run per job kind (no backlog burst).
 - IS-4 A background rescan does no source collection or model call when no account/platform has a reply slot left
   for the day. Manual "Scan again" and the morning scan behave as today.
+- IS-7 A background rescan is due only when at least one of today's brief items was copied, marked posted or
+  skipped/discarded after the day's most recent scan started. With no such action it is not enqueued, however much
+  time has passed, in every tier. Manual "Scan again" and the morning scan are unaffected.
 - IS-5 AI visibility makes no extraction model call for an answer that cannot match the business (same
   normalisation the matcher uses), provided what is stored and shown is identical to today. If extraction output
   is used for anything else (e.g. competitor names shown in the UI), keep the call and say so.
