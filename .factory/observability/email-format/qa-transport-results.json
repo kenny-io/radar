@@ -1,0 +1,9 @@
+{
+  "pass": true,
+  "legacyBodyAndKeyExact": true,
+  "legacyHasNoHtml": true,
+  "newPlainAndHtmlPresent": true,
+  "persistedHtmlRetryExact": true,
+  "escapedHostileDiagnosticsInActualChrome": true,
+  "externalProviderRequests": 0
+}
