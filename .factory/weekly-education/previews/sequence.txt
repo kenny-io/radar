@@ -12,9 +12,11 @@ WEEK 1 — Does ChatGPT or Claude recommend Paper & Pixel?
 
 
 
-Read the answers to buyer questions.
+Let’s see what AI says about your business.
 
-Think of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.
+I want to help you see what someone might hear about Paper & Pixel before they ever reach your site. Start with a question they’d ask while choosing a product like yours.
+
+Radar can collect the answers from ChatGPT, Claude, Gemini, Perplexity and Grok. Read the answers and their sources to find a question your own experience could help answer.
 
 
 
@@ -24,7 +26,7 @@ Think of the question someone would ask before discovering Paper & Pixel. Radar 
 
 
 
-Check progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
+Here’s how I’d track it: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
 
 
 
@@ -40,9 +42,11 @@ WEEK 2 — Find a conversation Paper & Pixel can help with
 
 
 
-Start with someone’s question.
+Help one person with a question you know.
 
-Someone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.
+I built Daily Brief to help you find people already talking about problems you can solve. It brings relevant conversations from Reddit, X, LinkedIn and Hacker News into Radar, with a suggested reply you can make your own.
+
+I’d start with one thread where you have something useful to add. Give the person a good answer before thinking about whether to mention your product.
 
 
 
@@ -52,7 +56,7 @@ Someone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker
 
 
 
-Check progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.
+Here’s how I’d track it: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.
 
 
 
@@ -68,9 +72,11 @@ WEEK 3 — How Paper & Pixel could appear on another site
 
 
 
-Give the reader a useful next link.
+Help the right reader find you.
 
-A reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.
+Someone reading another founder’s site could be looking for exactly what Paper & Pixel offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
+
+My advice is to judge each suggestion as a reader. You can see the page and proposed sentence before deciding whether the link belongs there.
 
 
 
@@ -80,7 +86,7 @@ A reader on another founder’s site could be looking for something Paper & Pixe
 
 
 
-Check progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.
+Here’s how I’d track it: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.
 
 
 
@@ -96,9 +102,11 @@ WEEK 4 — What should Paper & Pixel publish next?
 
 
 
-Choose one question worth answering.
+Choose a question your next customer might ask.
 
-A search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.
+I’d start by choosing one question a potential customer needs help with. A useful answer gives them a reason to discover your business.
+
+In Radar, your target keywords sit alongside proposed topics in Content Calendar. Use them to choose a question you can answer well and a reader who has a reason to know your business.
 
 
 
@@ -108,7 +116,7 @@ A search term is useful to your business when the person searching could become 
 
 
 
-Check progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.
+Here’s how I’d track it: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.
 
 
 
@@ -124,9 +132,11 @@ WEEK 5 — Put Paper & Pixel’s article to work on social
 
 
 
-Share one idea from your article.
+Let’s get more use from what you’ve written.
 
-An article often contains more than one idea worth sharing. A practical example or an answer to a common question can stand on its own in a social post. Radar can prepare those posts for your connected X and LinkedIn accounts.
+I want to help you get more use from the work you’ve already put into an article. A practical example or an answer inside it can make a useful social post on its own.
+
+Radar can turn those ideas into posts for your connected X and LinkedIn accounts. I’d start with one point you’d want a potential customer to remember.
 
 
 
@@ -136,7 +146,7 @@ An article often contains more than one idea worth sharing. A practical example 
 
 
 
-Check progress: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.
+Here’s how I’d track it: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.
 
 
 

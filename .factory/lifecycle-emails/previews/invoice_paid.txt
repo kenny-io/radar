@@ -1,20 +1,27 @@
 Email #6 · Primary example
-Subject: Your Radar receipt
-Preview: Your payment details and where to download the invoice.
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Your Radar subscription receipt
+Preview: Your subscription invoice is paid. Here’s where to find the receipt.
 
 Hi Alex,
 
-Payment received. Thank you.
+Your subscription receipt
 
-We’ve received your $49.00 payment for Radar.
+Thanks for subscribing to Radar. I’m glad to have you here.
+
+Your Radar subscription invoice is paid: $49.00.
 
 Invoice: RADAR-DEMO-0001.
 
-To view or download your invoice, open Settings → Billing, then Manage billing.
+You can view or download the invoice in Settings → Billing, then Manage billing. I hope Radar helps you get useful work out there for your business.
 
 Open Billing: https://radar.thally.io/settings?section=billing
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

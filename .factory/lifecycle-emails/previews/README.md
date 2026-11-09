@@ -3,12 +3,11 @@
 Actual current source, fictional sample details, no sends. The full catalogue includes triggers, timing and access/role variants.
 
 - [Put your Business Profile to work](welcome.html)
-- [Why we built Radar](founder_note.html)
+- [Why I built Radar](founder_note.html)
 - [Reset your Radar password](password_reset.html)
 - [Your Radar trial is on](trial_started.html)
-- [Your Radar trial ends soon](trial_ending.html)
-- [Your Radar receipt](invoice_paid.html)
-- [Your Radar payment didn’t go through](payment_failed.html)
+- [Your Radar subscription receipt](invoice_paid.html)
+- [Your Radar subscription needs attention](payment_failed.html)
 - [Your Radar cancellation is confirmed](cancellation_scheduled.html)
 - [Your Radar subscription has ended](subscription_ended.html)
 - [Conversations worth joining](work-brief_reply.html)

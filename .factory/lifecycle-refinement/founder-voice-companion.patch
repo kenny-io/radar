@@ -1,0 +1,187 @@
+--- a/src/server/services/mail.ts
++++ b/src/server/services/mail.ts
+@@ -4,8 +4,9 @@
+ import { db, schema } from '../db';
+ import { env } from '../env';
+ import { sha256 } from '../crypto';
++import type { MailSenderMeta } from './mailIdentity';
+ 
+-export async function sendMail(to: string, subject: string, text: string, html?: string, opts: { idempotencyKey?: string } = {}) {
++export async function sendMail(to: string, subject: string, text: string, html?: string, opts: { idempotencyKey?: string; sender?: MailSenderMeta } = {}) {
+   try {
+     return await prepareAndSendMail(to, subject, text, html, opts);
+   } catch (error) {
+@@ -14,7 +15,7 @@
+   }
+ }
+ 
+-async function prepareAndSendMail(to: string, subject: string, text: string, html?: string, opts: { idempotencyKey?: string } = {}) {
++async function prepareAndSendMail(to: string, subject: string, text: string, html?: string, opts: { idempotencyKey?: string; sender?: MailSenderMeta } = {}) {
+   const hash = opts.idempotencyKey ? sha256(opts.idempotencyKey).slice(0, 32) : null;
+   const id = hash ? `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}` : undefined;
+   const [inserted] = await db.insert(schema.outboxEmails).values({ ...(id ? { id } : {}), to, subject, text, html: html || null }).onConflictDoNothing().returning();
+@@ -30,7 +31,7 @@
+     return;
+   }
+   try {
+-    const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { authorization: `Bearer ${env.resendKey}`, 'content-type': 'application/json', ...(opts.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : {}) }, signal: AbortSignal.timeout(20_000), body: JSON.stringify({ from: env.mailFrom, to: [to], subject, text, html }) });
++    const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { authorization: `Bearer ${env.resendKey}`, 'content-type': 'application/json', ...(opts.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : {}) }, signal: AbortSignal.timeout(20_000), body: JSON.stringify({ from: opts.sender?.from || env.mailFrom, to: [to], subject, text, html, ...(opts.sender?.replyTo ? { reply_to: opts.sender.replyTo } : {}) }) });
+     if (!r.ok) throw new Error(`Resend ${r.status}: ${await r.text()}`);
+     await db.update(schema.outboxEmails).set({ status: 'sent', sentAt: new Date() }).where(eq(schema.outboxEmails.id, row.id));
+   } catch (e: any) {
+--- /dev/null
++++ b/src/server/services/mailIdentity.ts
+@@ -0,0 +1,11 @@
++export interface MailSenderMeta { from: string; replyTo?: string }
++
++export const FOUNDER_REPLY_TO = 'team@thally.io';
++/** Change the display name only; the deployment's verified sending mailbox remains authoritative. */
++export function founderFrom(configuredFrom: string): string {
++  if (/[\u0000-\u001f\u007f]/.test(configuredFrom)) throw new Error('Invalid configured mail sender');
++  const configured = configuredFrom.trim();
++  const address = configured.match(/^[^<>]*<([^<>]+)>$/)?.[1] || configured;
++  if (!/^[^\s<>@,;]+@[^\s<>@,;]+$/.test(address) || (configured.includes('<') && /[^\s<>,;]+@[^\s<>,;]+/.test(configured.slice(0, configured.indexOf('<'))))) throw new Error('Invalid configured mail sender');
++  return `Ekene from Radar <${address}>`;
++}
+--- a/src/server/services/visibility/digest.ts
++++ b/src/server/services/visibility/digest.ts
+@@ -4,12 +4,13 @@
+ import { defineCron } from '@/server/jobs/cron';
+ import { defineJob } from '@/server/jobs/queue';
+ import { sendMail } from '@/server/services/mail';
++import { founderFrom, FOUNDER_REPLY_TO, type MailSenderMeta } from '@/server/services/mailIdentity';
+ import { digestPreferencesUrl } from './digestPreferences';
+ import { visibilitySummary } from './history';
+ import { recommendationDigestContent } from './digestContent';
+ export { recommendationDigestText } from './digestContent';
+ 
+-interface DigestPayload { bid: string; ownerId: string; to: string; subject: string; text: string; html?: string; key: string }
++interface DigestPayload { bid: string; ownerId: string; to: string; subject: string; text: string; html?: string; key: string; sender?: MailSenderMeta }
+ defineJob<DigestPayload>({ kind: 'visibility.digest', maxAttempts: 3, run: async ctx => {
+   const p = ctx.payload;
+   const [owner] = await db.select({ weekly: schema.visibilityPreferences.weeklyEmail, email: schema.users.email, guest: schema.users.guest })
+@@ -17,7 +18,7 @@
+     .leftJoin(schema.visibilityPreferences, eq(schema.visibilityPreferences.businessId, schema.businesses.id))
+     .where(and(eq(schema.businesses.id, p.bid), eq(schema.businesses.ownerId, p.ownerId), eq(schema.businesses.status, 'active'))).limit(1);
+   if (!owner || owner.weekly === false || owner.guest || owner.email !== p.to) return { skipped: 'preference_or_recipient_changed' };
+-  await sendMail(p.to, p.subject, p.text, p.html, { idempotencyKey: p.key });
++  await sendMail(p.to, p.subject, p.text, p.html, { idempotencyKey: p.key, ...(p.sender ? { sender: p.sender } : {}) });
+   return { sent: true };
+ } });
+ /** Monday after 08:00 UTC, with atomic schedule marks+job insertion and persisted, retry-stable mail payloads. */
+@@ -34,7 +35,7 @@
+     const key = `visibility-weekly:${row.id}:${summary.weekly.end}:${row.ownerId}`;
+     const preferencesUrl = digestPreferencesUrl(row.id, row.ownerId);
+     const { text, html } = recommendationDigestContent(summary, env.appUrl, preferencesUrl);
+-    const payload: DigestPayload = { bid: row.id, ownerId: row.ownerId, to: row.email, subject: `Recommendation share this week · ${row.domain}`, text, html, key };
++    const payload: DigestPayload = { bid: row.id, ownerId: row.ownerId, to: row.email, subject: `Recommendation share this week · ${row.domain}`, text, html, key, sender: { from: founderFrom(env.mailFrom), replyTo: FOUNDER_REPLY_TO } };
+     await db.transaction(async tx => {
+       const mark = await tx.insert(schema.cronMarks).values({ key }).onConflictDoNothing().returning();
+       if (!mark.length) return;
+--- a/src/server/services/visibility/digestContent.ts
++++ b/src/server/services/visibility/digestContent.ts
+@@ -1,8 +1,9 @@
+ import type { VisibilitySummary } from './history';
++import { FOUNDER_REPLY_TO } from '../mailIdentity';
+ 
+ type DigestSummary = Pick<VisibilitySummary, 'weekly' | 'weeklyBiggestMiss'>;
+ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+-const preheader = 'Your collected answers, the previous-week comparison and what to review next.';
++const preheader = 'I’m sending your collected answers and a next step to consider for your business.';
+ 
+ function paragraphs(summary: DigestSummary): string[] {
+   const { weekly: w, weeklyBiggestMiss: miss } = summary;
+@@ -10,24 +11,25 @@
+   const share = (period: typeof w.current) => period.share === null ? 'No answers were collected.' : `Your business was mentioned in ${period.mentioned} of ${period.collected} collected answers (${Math.round(period.share * 100)}%).`;
+   return [
+     'Your weekly AI recommendation report',
++    'I want to help you see how AI assistants describe your business. Use these collected answers to choose a question worth answering on your site.',
+     `This week covers ${w.start} through ${lastDay}, using completed UTC days.`,
+     `This week: ${share(w.current)}`,
+     `Previous week, using the same tracked questions: ${share(w.previous)}`,
+     w.delta === null ? 'There isn’t enough comparable data to show a change yet. Adding or changing tracked questions starts a new comparison.' : `That’s a change of ${w.delta >= 0 ? '+' : ''}${(w.delta * 100).toFixed(1)} percentage points.`,
+     miss ? `Most missed question: “${miss.prompt}”` : 'This report has no missed question to highlight.',
+-    miss?.entryId ? 'A topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.' : miss ? 'Review the answers to this question before choosing what to write or update.' : 'Review the answers to see how the assistants described your business.',
++    miss?.entryId ? 'A topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.' : miss ? 'I’d read the answers to this question before choosing what to write or update.' : 'I’d read the answers to see how the assistants described your business.',
+     'Missing or failed collections are excluded from these figures. AI answers can change between checks.',
+   ];
+ }
+ 
+ export function recommendationDigestText(summary: DigestSummary, appUrl: string, preferencesUrl?: string): string {
+   const sections = paragraphs(summary);
+-  return [...sections, `Review all answers: ${appUrl}/performance`, 'Radar by Thally', `Email preferences: ${preferencesUrl || `${appUrl}/performance`}`].join('\n\n');
++  return [...sections, `Review all answers: ${appUrl}/performance`, 'Ekene\nFounder, Radar', `Reply and tell me what you’d like help with: ${FOUNDER_REPLY_TO}`, `Email preferences: ${preferencesUrl || `${appUrl}/performance`}`].join('\n\n');
+ }
+ 
+ /** Pure formatter shared by the actual queue and local previews. URLs are supplied, never generated here. */
+ export function recommendationDigestContent(summary: DigestSummary, appUrl: string, preferencesUrl: string): { text: string; html: string; preheader: string } {
+   const sections = paragraphs(summary);
+-  const html = `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your weekly AI recommendation report</title></head><body style="margin:0;padding:0;overflow-wrap:anywhere;word-break:break-word"><div style="display:none;max-height:0;overflow:hidden;mso-hide:all" aria-hidden="true">${escapeHtml(preheader)}</div><main style="font-family:Arial,sans-serif;line-height:1.6;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:24px;color:#222"><h1 style="font-size:24px;line-height:1.3">${escapeHtml(sections[0])}</h1>${sections.slice(1).map(p => `<p>${escapeHtml(p)}</p>`).join('')}<p><a href="${escapeHtml(appUrl + '/performance')}" style="display:inline-block;padding:12px 18px;background:#222;color:#fff;border-radius:6px;text-decoration:none">Review all answers</a></p><p style="font-size:14px;color:#555">Radar by Thally</p><p><a href="${escapeHtml(preferencesUrl)}" style="display:inline-block;padding:10px 14px;border:1px solid #777;border-radius:6px;color:#333;font-size:14px">Email preferences</a></p></main></body></html>`;
++  const html = `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your weekly AI recommendation report</title></head><body style="margin:0;padding:0;overflow-wrap:anywhere;word-break:break-word"><div style="display:none;max-height:0;overflow:hidden;mso-hide:all" aria-hidden="true">${escapeHtml(preheader)}</div><main style="font-family:Arial,sans-serif;line-height:1.6;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:24px;color:#222"><h1 style="font-size:24px;line-height:1.3">${escapeHtml(sections[0])}</h1>${sections.slice(1).map(p => `<p>${escapeHtml(p)}</p>`).join('')}<p><a href="${escapeHtml(appUrl + '/performance')}" style="display:inline-block;padding:12px 18px;background:#222;color:#fff;border-radius:6px;text-decoration:none">Review all answers</a></p><p>Ekene<br><span style="font-size:14px;color:#555">Founder, Radar</span></p><p>Reply and tell me what you’d like help with: <a href="mailto:${escapeHtml(FOUNDER_REPLY_TO)}">${escapeHtml(FOUNDER_REPLY_TO)}</a></p><p><a href="${escapeHtml(preferencesUrl)}" style="display:inline-block;padding:10px 14px;border:1px solid #777;border-radius:6px;color:#333;font-size:14px">Email preferences</a></p></main></body></html>`;
+   return { text: recommendationDigestText(summary, appUrl, preferencesUrl), html, preheader };
+ }
+--- a/src/server/services/visibility/digest.test.ts
++++ b/src/server/services/visibility/digest.test.ts
+@@ -18,6 +18,7 @@
+   return { schema, db: { ...tx, transaction: (fn: any) => fn(tx) } };
+ });
+ import './digest';
++import { env } from '@/server/env';
+ const owner = { weekly: null, email: 'owner@example.test', guest: false };
+ const payload = { bid: 'b', ownerId: 'u', to: owner.email, subject: 'subject', text: 'old frozen text', key: 'existing-key' };
+ beforeEach(() => { m.rows = []; m.conditions = []; m.payloads = []; m.marks.clear(); m.send.mockClear(); m.leftJoin.mockClear(); m.summary.mockClear(); m.summary.mockResolvedValue({ weekly: { start: '2026-11-02', end: '2026-11-09', current: { share: 0.5, mentioned: 1, collected: 2 }, previous: { share: null, mentioned: 0, collected: 0 }, delta: null }, weeklyBiggestMiss: null }); });
+@@ -42,6 +43,21 @@
+     m.rows = [owner]; await m.run({ payload: m.payloads[0] });
+     expect(m.send.mock.calls[0][3]).toBe(m.payloads[0].html);
+   });
++  it('freezes founder identity on new jobs and reuses it after sender configuration changes', async () => {
++    m.rows = [{ id: 'b', ownerId: 'u', domain: 'example.test', email: owner.email, guest: false }];
++    await m.cron(new Date('2026-11-09T08:00:00Z'));
++    const queued = m.payloads[0];
++    expect(queued.sender.from).toMatch(/^Ekene from Radar <[^<>]+>$/);
++    expect(queued.sender.replyTo).toBe('team@thally.io');
++    const originalFrom = env.mailFrom;
++    try {
++      (env as any).mailFrom = 'Changed sender <changed@example.test>';
++      m.rows = [owner];
++      await m.run({ payload: queued });
++      expect(m.send).toHaveBeenLastCalledWith(queued.to, queued.subject, queued.text, queued.html, { idempotencyKey: queued.key, sender: queued.sender });
++      expect(queued.sender.from).not.toContain('changed@example.test');
++    } finally { (env as any).mailFrom = originalFrom; }
++  });
+   it('does not queue without collected answers or before Monday cadence', async () => {
+     m.rows = [{ id: 'b', ownerId: 'u', domain: 'test', email: owner.email, guest: false }];
+     await m.cron(new Date('2026-11-09T07:00:00Z')); expect(m.summary).not.toHaveBeenCalled();
+--- /dev/null
++++ b/src/server/services/visibility/digestSender.test.ts
+@@ -0,0 +1,30 @@
++import { afterEach, beforeEach, expect, it, vi } from 'vitest';
++const m = vi.hoisted(() => ({ row: null as any, posts: [] as any[], fail: true, env: { mailFrom: 'Radar <original@example.test>', resendKey: 'fake-local-key', isProd: false } }));
++vi.mock('@/server/env', () => ({ env: m.env }));
++vi.mock('@/server/observability/failures', () => ({ reportFailure: vi.fn() }));
++vi.mock('@/server/crypto', () => ({ sha256: () => 'a'.repeat(64) }));
++vi.mock('@/server/db', () => ({ schema: { outboxEmails: { id: 'id' } }, db: {
++  insert: () => ({ values: (value: any) => ({ onConflictDoNothing: () => ({ returning: async () => { if (m.row) return []; m.row = { id: 'row', status: 'queued', ...value }; return [m.row]; } }) }) }),
++  select: () => ({ from: () => ({ where: () => ({ limit: async () => m.row ? [m.row] : [] }) }) }),
++  update: () => ({ set: (value: any) => ({ where: async () => { Object.assign(m.row, value); } }) }),
++} }));
++import { sendMail } from '../mail';
++beforeEach(() => {
++  m.row = null; m.posts = []; m.fail = true; m.env.mailFrom = 'Radar <original@example.test>';
++  vi.stubGlobal('fetch', vi.fn(async (_url, init) => { m.posts.push(JSON.parse(init.body)); return m.fail ? new Response('temporary failure', { status: 503 }) : new Response('{"id":"accepted"}', { status: 200 }); }));
++});
++afterEach(() => vi.unstubAllGlobals());
++it('uses the report job sender snapshot for an identical retry after deployment sender changes', async () => {
++  const sender = { from: 'Ekene from Radar <original@example.test>', replyTo: 'team@thally.io' };
++  await expect(sendMail('owner@example.test', 'frozen subject', 'frozen body', '<p>frozen</p>', { idempotencyKey: 'key', sender })).rejects.toThrow('Resend 503');
++  m.env.mailFrom = 'Changed <changed@example.test>'; m.fail = false;
++  await sendMail('owner@example.test', 'new subject', 'new body', '<p>new</p>', { idempotencyKey: 'key', sender });
++  expect(m.posts).toHaveLength(2); expect(m.posts[1]).toEqual(m.posts[0]);
++  expect(m.posts[1]).toMatchObject({ from: sender.from, reply_to: sender.replyTo, subject: 'frozen subject', text: 'frozen body', html: '<p>frozen</p>' });
++});
++it('keeps old job envelopes without a sender snapshot on the legacy From and no Reply-To', async () => {
++  m.fail = false;
++  await sendMail('owner@example.test', 'old subject', 'old body', undefined, { idempotencyKey: 'old-key' });
++  expect(m.posts[0].from).toBe('Radar <original@example.test>');
++  expect(m.posts[0]).not.toHaveProperty('reply_to');
++});

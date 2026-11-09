@@ -2,19 +2,24 @@ How Paper & Pixel could appear on another site
 
 Hi Alex,
 
-Give the reader a useful next link.
+Help the right reader find you.
 
-A reader on another founder’s site could be looking for something Paper & Pixel offers. Radar’s optional Backlinks network proposes relevant mentions between participating businesses. You can see the proposed placement before deciding whether it belongs in the article.
+Someone reading another founder’s site could be looking for exactly what Paper & Pixel offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
+
+My advice is to judge each suggestion as a reader. You can see the page and proposed sentence before deciding whether the link belongs there.
 
 1. Open Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.
 
 2. When a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.
 
-Check progress: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.
+Here’s how I’d track it: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.
 
 Explore my backlink network: https://radar.thally.io/email/learn?lesson=backlinks&businessId=11111111-1111-4111-8111-111111111111
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

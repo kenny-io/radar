@@ -1,24 +1,31 @@
 Email #18F · Setup without profile details
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: What should you publish next?
-Preview: Compare search intent and keyword estimates before choosing your next topic.
+Preview: Here’s how I’d choose one useful question for your next article.
 
 Hi there,
 
-Choose one question worth answering.
+Choose a question your next customer might ask.
 
-A search term is useful to your business when the person searching could become a customer. Radar brings your target keywords into Content Calendar so you can choose an article for a specific search, audience and purpose.
+I’d start by choosing one question a potential customer needs help with. A useful answer gives them a reason to discover your business.
 
-Add your website in Radar and review the Business Profile it creates. Once your workspace is active, use the steps below.
+In Radar, your target keywords sit alongside proposed topics in Content Calendar. Use them to choose a question you can answer well and a reader who has a reason to know your business.
+
+Start by adding your website and checking the Business Profile Radar creates. That gives Radar the context to help with the steps below once your workspace is active.
 
 1. Open Content Calendar and compare two proposed topics that fit what you sell. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.
 
 2. Check whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. Connect Google Search Console in Settings when you want to compare the plan with measured search activity.
 
-Check progress: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.
+Here’s how I’d track it: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.
 
 Continue setting up Radar: https://radar.thally.io/onboarding
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

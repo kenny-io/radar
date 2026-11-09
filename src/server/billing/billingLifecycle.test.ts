@@ -37,16 +37,16 @@ afterEach(() => { delete process.env.RADAR_BILLING; H.jar.clear(); vi.restoreAll
 describe.skipIf(!process.env.DATABASE_URL)('billing lifecycle (database, no external sends)', () => {
   afterAll(async () => { await D.cleanup(); for (const uid of F.users) await clearLimits(uid); await clearLimits('10.88.'); await F.cleanup(); });
 
-  it('durably queues one trial and one future reminder without workspace mail across confirm/webhook replays', async () => {
+  it('durably queues one subscription-start confirmation without retired reminders or workspace mail across replays', async () => {
     const { u, draft, pi, sub } = await trial(true);
     await processEvent(D.event('payment_intent.succeeded', D.pi(pi)));
     expect((await billing.confirm({ paymentIntentId: pi })).status).toBe(200);
     const starts = await rows(u.id, 'trial_started'), reminders = await rows(u.id, 'trial_ending'), ready = await rows(u.id, 'workspace_ready');
-    expect([starts.length, reminders.length, ready.length]).toEqual([1, 1, 0]);
+    expect([starts.length, reminders.length, ready.length]).toEqual([1, 0, 0]);
     const a = await account(u.id);
     expect(payload(starts[0]).data).toMatchObject({ subscriptionId: sub, trialEnd: a.trialEnd!.toISOString() });
-    expect(reminders[0].nextAttemptAt.getTime()).toBe(a.trialEnd!.getTime() - 864e5);
-    expect(reminders[0].nextAttemptAt.getTime()).toBeGreaterThan(Date.now());
+    expect(a.trialEnd!.getTime()).toBe(stubState().subs.get(sub)!.trial_end! * 1000);
+    expect(a.trialEnd!.getTime()).toBeGreaterThan(Date.now());
     expect((await db.select().from(schema.businesses).where(eq(schema.businesses.id, draft!.id)))[0].status).toBe('active');
     expect(stubState().credits).toHaveLength(1);
   });
@@ -100,7 +100,7 @@ describe.skipIf(!process.env.DATABASE_URL)('billing lifecycle (database, no exte
     expect((await db.select().from(schema.businesses).where(eq(schema.businesses.id, b.id)))[0].status).toBe('onboarding');
     expect((await billing.confirm({ paymentIntentId: start.j.paymentIntentId })).status).toBe(200);
     expect(await rows(u.id, 'trial_started')).toHaveLength(1);
-    expect(await rows(u.id, 'trial_ending')).toHaveLength(1);
+    expect(await rows(u.id, 'trial_ending')).toHaveLength(0);
     expect(await rows(u.id, 'workspace_ready')).toHaveLength(0);
     expect(stubState().subs.size).toBe(1);
     expect(stubState().credits).toHaveLength(1);

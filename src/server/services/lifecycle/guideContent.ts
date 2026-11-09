@@ -17,11 +17,12 @@ export function renderGuide(id: GuideId, context: EducationContext): GuideConten
   const active = context.access === 'workspace';
   if (id === 'article_workflow') return {
     subject: 'What happens before an article goes live',
-    preheader: 'Choose the topic, review the draft and decide when it belongs on your site.',
-    heading: 'Start with one article you’d want a customer to find.',
+    preheader: 'I’ll walk you through choosing a topic and reviewing your first draft.',
+    heading: 'Let’s get your first useful article ready.',
     paragraphs: [
-      'Radar uses the Business Profile to research article ideas. The steps below describe a review-first workflow, with Autopilot and Blog autopilot off. You choose which topics are worth writing and check each draft before publication.',
-      ...(active ? [] : [context.access === 'restart' ? 'When you restart your Radar access, you can pick up this workflow from your account. You’ll see the amount due before confirming.' : context.access === 'setup' ? 'Finish reviewing and saving your Business Profile in Radar. When your workspace is active, you can follow this workflow in Content Calendar.' : 'Your saved profile carries into your Radar trial. You’ll see the price before starting, then you can follow this workflow in Content Calendar.']),
+      'I want to help you get an article onto your site that answers a real question for a potential customer. Radar uses your Business Profile to suggest topics, so you have somewhere to start.',
+      'Here’s how I’d work through the first one. These steps assume Autopilot and Blog autopilot are off, so you can choose the topic and review the draft before publication.',
+      ...(active ? [] : [context.access === 'restart' ? 'You can pick this up when you resume your subscription access. Your account is the place to start.' : context.access === 'setup' ? 'First, finish reviewing and saving your Business Profile. Once your workspace is active, you can follow these steps in Content Calendar.' : 'Your saved profile carries into your Radar trial. Start it when you’re ready to try these steps in Content Calendar.']),
     ],
     steps: [
       'Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.',
@@ -32,11 +33,11 @@ export function renderGuide(id: GuideId, context: EducationContext): GuideConten
   };
   if (id === 'search_refresh') return {
     subject: 'Your next article might be a page you already have',
-    preheader: 'Use your Search Console data to choose an existing page worth improving.',
-    heading: 'Look at the pages people already find.',
+    preheader: 'Before writing something new, I’d look at the pages people already find.',
+    heading: 'There may be a useful next step in an existing page.',
     paragraphs: [
-      'An existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.',
-      'Choose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.',
+      'Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.',
+      'I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results before deciding what to change. A clearer title, a better example or a missing answer might be a useful place to start.',
       ...(active ? [] : ['The guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.']),
     ],
     steps: [

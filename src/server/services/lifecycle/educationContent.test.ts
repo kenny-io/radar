@@ -10,14 +10,14 @@ describe('weekly feature lesson copy', () => {
       expect(copy.steps).toHaveLength(2);
       expect(copy.subject).toContain('Paper & Pixel');
       expect(copy.ctaLabel).toBeTruthy();
-      expect(educationProgress(lesson)).toMatch(/^Check progress:/);
+      expect(educationProgress(lesson)).toMatch(/^Here’s how I’d track it:/);
     }
   });
   it('keeps learning available across access states without pretending workflows have run', () => {
     for (const access of ['start_trial', 'restart', 'setup'] as const) {
       for (const lesson of EDUCATION_LESSONS) {
         const copy = renderEducationLesson(lesson, { ...context, access });
-        expect(copy.paragraphs.some(p => p.toLowerCase().includes(access === 'start_trial' ? 'start your radar trial' : access === 'restart' ? 'restart your radar access' : 'review the business profile'))).toBe(true);
+        expect(copy.paragraphs.some(p => p.toLowerCase().includes(access === 'start_trial' ? 'start your radar trial' : access === 'restart' ? 'resume your subscription access first' : 'checking the business profile'))).toBe(true);
         expect(copy.ctaLabel).toBe(access === 'start_trial' ? 'Start my Radar trial' : access === 'restart' ? 'Reopen my Radar account' : 'Continue setting up Radar');
       }
     }

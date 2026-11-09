@@ -1,6 +1,6 @@
 # State
 
-**Current checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.
+**Previous integration checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.
 
 | Task | Owner | Status | Scope |
 | --- | --- | --- | --- |
@@ -24,3 +24,7 @@ No real recipient sends, production writes, billing actions, main merge, deploym
 Source implementation `96b3d730` was pushed, then main advanced to Autopilot `b38b67a4` and conflicted. Architect/engineer/independent QA resolved and verified the coherent merge; final proof is in `main-integration-verification.md` and `qa/main-integration/report.md`. Canonical main 0010 is unchanged; unpublished files are now 0011–0014 with safe newer journal timestamps. Final current-main source fingerprint is `221182093a9776bc27d34d6bcef66e5ad3646b2e3eeae76604e271225482e53a` across 612 files.
 
 The requested numbered catalogue now has **29 families / 69 full variants** at `previews/catalogue.html`, `catalogue.md`, `all-emails.txt` and the visual `index.html`. #1–#29 stay fixed, with lettered alternates; #29 is the newly merged Autopilot owner-action family. Refined copy and new schedules remain unshipped. Current build/typecheck pass, full suite has 1,241 pass/65 skips plus the unchanged raster baseline, and all independently recorded affected tests/browser/render/migration checks pass. No open material integration defect remains. No customer sends, production write, charge, main merge or deployment.
+
+## Founder correction checkpoint
+
+User-directed personal founder voice, retired trial-ending reminder #5 and subscription wording are implemented and independently accepted. Current catalogue:28 active families/68 complete variants with29 permanent slots; #5 stays reserved. New founder identity snapshots use additive0015. Frozen source hash ec983db607f8540a6dbadf6fda21c088a4fc11e13a436d7c41e12402095d1d8e/617files; optimized build CiMpQWcgFPwNpn-YQxGIH; full suite1256pass/65skips plus established raster baseline. `founder-voice-verification.md` and independent `qa/founder-voice/report.md` record acceptance. No production/customer actions. Main advanced to observability PR38 during checks; final bounded shared-mailer integration is next before PR delivery, with no intended copy/schema change.

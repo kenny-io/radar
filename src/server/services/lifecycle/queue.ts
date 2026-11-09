@@ -1,3 +1,5 @@
+import { founderFrom } from '../mailIdentity';
+import { isRetiredLifecycle } from './retired';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
@@ -14,14 +16,14 @@ export function lifecyclePayload(type: LifecycleType, user: { id: string; email:
   const token = (type === 'weekly_education' || type === 'lifecycle_guide') ? educationPreferenceToken(user.id) : type === 'work_update' ? workPreferenceToken(user.id) : preferenceToken(user.id);
   const unsubscribeUrl = `${env.appUrl}/email-preferences?token=${encodeURIComponent(token)}`;
   const rendered = renderLifecycle(type, data, { appUrl: env.appUrl, unsubscribeUrl });
-  const senderEmail = env.mailFrom.match(/<([^<>]+)>/)?.[1] || env.mailFrom;
-  const from = type === 'founder_note' ? `Ekene at Radar <${senderEmail}>` : env.mailFrom;
+  const from = founderFrom(env.mailFrom);
   return { data, envelope: { from, to: [user.email], subject: rendered.subject, text: rendered.text, html: rendered.html, reply_to: rendered.replyTo,
     ...((type === 'work_update' || type === 'weekly_education' || type === 'lifecycle_guide') ? { headers: { 'List-Unsubscribe': `<${env.appUrl}/api/email-preferences?token=${encodeURIComponent(token)}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
   } };
 }
 /** Persist in the caller's transaction. Event key dedupes across workers, webhook replays and request races. */
 export async function queueLifecycle(q: Q, o: { type: LifecycleType; userId: string; eventKey: string; data: LifecycleData; sendAt?: Date; businessId?: string }): Promise<void> {
+  if (isRetiredLifecycle(o.type)) return;
   if (!o.eventKey || o.eventKey.length > 240) throw new Error('Invalid lifecycle event key');
   const [u] = await q.select({ email: schema.users.email, name: schema.users.name, guest: schema.users.guest }).from(schema.users).where(eq(schema.users.id, o.userId)).limit(1);
   if (!u || u.guest || u.email.endsWith('@guest.radar.invalid')) return;

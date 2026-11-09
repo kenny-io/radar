@@ -1,24 +1,27 @@
 Email #2 · Primary example
-Subject: Why we built Radar
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Why I built Radar
 Preview: Building is easier. Getting your product beyond your own network still takes work.
 
 Hi Alex,
 
-A note from Ekene
+Why I built Radar
 
 I’m Ekene, Radar’s founder.
 
 It’s never been easier to build a product. But getting it beyond your own network is still a full-time job.
 
-That’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.
+That’s why I built Radar. I wanted to help founders get the articles, posts and useful conversations out there that help people discover their businesses.
 
-If you get stuck or anything is unclear, reply and tell me what you’re trying to do. I’m happy to help.
-
-Ekene
+I’ll send you practical ways to use Radar, with a few steps you can try for your own business. If you get stuck, reply and tell me what you’re trying to do. I’m happy to help.
 
 Reply to Ekene: mailto:team@thally.io
 
-Reply to this email or write to team@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

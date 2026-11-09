@@ -1,12 +1,21 @@
 Email #26 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Link removal request from Fieldnote
 
 Fieldnote (fieldnote.example) has asked for this link to be removed from your site.
+
+I’m passing this along so you can update the page.
 
 Page: https://partner.example/articles/design-tools
 Destination: https://fieldnote.example
 Anchor: Fieldnote
 
 Please remove it within 7 days. Radar will re-check the page and update the link status in Backlinks.
+
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Email preferences: https://radar.thally.io/email-preferences

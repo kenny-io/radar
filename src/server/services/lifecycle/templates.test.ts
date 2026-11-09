@@ -12,7 +12,7 @@ describe('lifecycle templates', () => {
     expect(x.html).toContain('<table lang="en" dir="ltr" role="presentation"');
     expect(x.html).toContain('<html lang="en" dir="ltr">'); expect(x.html).toContain('role="presentation"'); expect(x.html).toContain('<h1');
     expect(x.text).toContain('Privacy: https://radar.thally.io/privacy'); expect(x.text).toContain('https://radar.thally.io/');
-    expect(x.replyTo).toBe(type === 'founder_note' ? 'team@thally.io' : 'support@thally.io');
+    expect(x.replyTo).toBe('team@thally.io');
     expect(x.html).not.toContain('<script');
     expect(x.html).toContain('>Email preferences</a>');
     expect(x.text).toContain('Email preferences:');
@@ -25,7 +25,7 @@ describe('lifecycle templates', () => {
     expect(rendered.html).not.toContain('<img src=x');
     expect(rendered.html).toContain('&lt;img src=x');
     expect(rendered.html.match(/<li /g)).toHaveLength(2);
-    expect(rendered.html.indexOf('Check progress:')).toBeGreaterThan(rendered.html.indexOf('</ol>'));
+    expect(rendered.html.indexOf('Here’s how I’d track it:')).toBeGreaterThan(rendered.html.indexOf('</ol>'));
     expect(rendered.text).toContain('/email/learn?lesson=daily_brief');
     expect(renderLifecycle('weekly_education', { education: { ...d.education!, context: { ...d.education!.context, access: 'restart' } } }, ctx).text).toContain('https://radar.thally.io/start-trial');
     expect(rendered.html).toContain('>Email preferences</a>');
@@ -50,7 +50,7 @@ describe('lifecycle templates', () => {
     expect(welcome.text).toContain('Continue with my profile: https://radar.thally.io/dashboard');
     expect(welcome.text).not.toMatch(/start with your website|add your website|connect.*search console/i);
     const direct = renderLifecycle('welcome', { ...data, profileAnalyzed: false }, ctx);
-    expect(direct.text).toContain('Your Radar account is ready');
+    expect(direct.text).toContain('Your account is ready');
     expect(direct.text).not.toContain('Business Profile is ready');
     expect(direct.text).not.toContain('has analyzed');
   });
@@ -72,7 +72,7 @@ describe('lifecycle templates', () => {
     expect(renderLifecycle('password_reset', data, ctx).text).toContain('one hour');
   });
   it('does not describe expired subscription setup as a voluntary cancellation', () => {
-    expect(renderLifecycle('subscription_ended', { status: 'incomplete_expired' }, ctx).text).toContain('setup expired before payment');
+    expect(renderLifecycle('subscription_ended', { status: 'incomplete_expired' }, ctx).text).toContain('subscription setup expired before it was completed');
   });
   it.each(['brief_reply', 'calendar_review', 'article_social', 'social_publish'] as const)('makes %s useful without inventing outcomes', kind => {
     const section = { ...data.workSections![0], kind, title: 'How to plan your first product launch' };

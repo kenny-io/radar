@@ -1,5 +1,6 @@
 import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, check, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { MailSenderMeta } from '../services/mailIdentity';
 import type { OnboardingState, SubStatus } from '@/lib/types';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
@@ -292,6 +293,8 @@ export const outboxEmails = pgTable('outbox_emails', {
   subject: text('subject').notNull(),
   text: text('text').notNull(),
   html: text('html'),
+  /** NULL retains historical transport identity; new records freeze their full sender metadata. */
+  senderMeta: jsonb('sender_meta').$type<MailSenderMeta>(),
   status: text('status').$type<'queued' | 'sent' | 'failed' | 'logged'>().notNull().default('queued'),
   error: text('error'),
   createdAt: created(),

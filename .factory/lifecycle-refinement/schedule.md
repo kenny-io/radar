@@ -5,7 +5,7 @@ These are runtime schedules in pending PR #25, not a Resend broadcast or a produ
 | Purpose / former draft | Current subject | Trigger / earliest timing | Audience and exits |
 | --- | --- | --- | --- |
 | Profile activation | Put your Business Profile to work | Verified account created/confirmed, immediate welcome | Analyzed-profile variant; direct/unfinished signup gets neutral Welcome to Radar. Existing welcome key prevents a second welcome. |
-| Founder story | Why we built Radar | Existing founder event, planned +24 hours | Effective optional setup permission; once/account. Existing queued/sent founder mail stays intact. |
+| Founder story | Why I built Radar | Existing founder event, planned +24 hours | Effective optional setup permission; once/account. Existing queued/sent founder mail stays intact. |
 | First article workflow | What happens before an article goes live | First observed accessible untouched workspace+24 hours, or eligible saved/analyzed pre-trial profile+3 days. Later access can shorten, never postpone, the remaining delay. | Owner has not approved a topic, entered drafting/review/scheduling/publication, or generated an article in any owned business. Proposed calendar topics alone do not resolve it. Meaningful work permanently skips it. |
 | AI questions | Does ChatGPT or Claude recommend {Business}? | Existing weekly lesson 1, first eligible slot | All eligible verified course accounts; setup/pre-trial/lapsed copy and CTA adapt. No duplicate nurture campaign. |
 | Useful conversations | Find a conversation {Business} can help with | Existing weekly lesson 2, at least7 days after lesson 1 provider acceptance | Same account-wide course; separate from new Brief missing-action reminders. |
@@ -22,10 +22,14 @@ These are runtime schedules in pending PR #25, not a Resend broadcast or a produ
 - One durable state/event per account/guide. Progress survives sign-in, subscription transitions and preference toggles; source changes and meaningful completion do not reopen a guide. Retries retain attempted bodies/keys and bounded deduplication windows.
 - The separate weekly AI recommendation-share report keeps its own per-business Monday cadence and dedicated opt-out. The copy-only companion remains local to the unmerged measurement feature and does not inherit the lifecycle cap or new guide ledger.
 
-Core trial/payment/cancellation, confirmation, invitations and partner notices remain event-based; copy edits do not add recurring sends. Internal support/feature forwards remain operational. The redundant workspace-ready message remains removed.
+Remaining core trial/subscription/cancellation, confirmation, invitations and partner notices remain event-based; copy edits do not add recurring sends. Internal support/feature forwards remain operational. The redundant workspace-ready message remains removed.
 
 ## Rollout
 
 Preserve canonical main migration 0010_autopilot. Apply the unpublished lifecycle/engagement/course migrations as 0011–0013, then the guide migration as 0014; journal timestamps must increase after main 0010. Run matching guide-aware web/worker with existing education activation flag after approved release review. Pausing the flag retains history. Do not roll an older guide-unaware dispatcher over queued guide rows; keep the guide-aware worker paused or stop/drain dispatch before rollback. No historical catch-up, old customer mail replay, new service, marketing list or provider campaign.
 
 The numbered catalogue covers #1–#29, with lettered audience/data variants. Main’s Autopilot owner-action handoff is #29: it requires explicit per-business activation and a current eligible owner. It remains operational service mail outside this optional lifecycle cap/category; its footer explains Autopilot management separately from Email preferences. New handoff content is refined in the actual pure builder. Final main-integration evidence supersedes the pre-Autopilot migration numbering above.
+
+## Founder correction
+
+Trial-ending reminder #5 is retired: no new schedule or direct queue, pending reminders held by dispatch, no replacement reminder. The trial-start confirmation is about getting useful work ready, with trial end/automatic continuation/credit facts and no cancellation prompt or routine price. Receipts retain useful actual amounts. All new user copy is from Ekene, with founder display/reply routing and retry-stable identity; current catalogue has 28 active families / 68 variants plus the reserved retired slot. General-outbox sender metadata is additive migration 0015 after the unchanged 0011–0014 chain.

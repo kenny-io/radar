@@ -1,11 +1,13 @@
 Subject: What happens before an article goes live
-Preview: Choose the topic, review the draft and decide when it belongs on your site.
+Preview: I’ll walk you through choosing a topic and reviewing your first draft.
 
 Hi Alex,
 
-Start with one article you’d want a customer to find.
+Let’s get your first useful article ready.
 
-Radar uses the Business Profile to research article ideas. The steps below describe a review-first workflow, with Autopilot and Blog autopilot off. You choose which topics are worth writing and check each draft before publication.
+I want to help you get an article onto your site that answers a real question for a potential customer. Radar uses your Business Profile to suggest topics, so you have somewhere to start.
+
+Here’s how I’d work through the first one. These steps assume Autopilot and Blog autopilot are off, so you can choose the topic and review the draft before publication.
 
 1. Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.
 
@@ -15,7 +17,10 @@ You can follow the topic’s status in Content Calendar. Turning on Autopilot or
 
 Choose my first article: https://radar.thally.io/email/learn?lesson=organic_search
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

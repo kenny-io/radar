@@ -1,14 +1,16 @@
 Email #21A · workspace
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Your next article might be a page you already have
-Preview: Use your Search Console data to choose an existing page worth improving.
+Preview: Before writing something new, I’d look at the pages people already find.
 
 Hi Alex,
 
-Look at the pages people already find.
+There may be a useful next step in an existing page.
 
-An existing page may be a useful place to spend your next writing session. Search Console can show which pages appear in search and what people were looking for when they saw them.
+Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
 
-Choose a page by reading that evidence. A page with impressions and few clicks, or a query around positions 10–20, is worth investigating. The explanation might be in the title, the search intent or an answer the page hasn’t covered well.
+I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results before deciding what to change. A clearer title, a better example or a missing answer might be a useful place to start.
 
 1. Open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.
 
@@ -18,7 +20,10 @@ Record the date of the update. Compare clicks and impressions once more data is 
 
 Read the page refresh guide: https://radar.thally.io/blog/page-two-refresh
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

@@ -1,4 +1,6 @@
 Email #14 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: A few things to pick up in Radar
 Preview: Choose one useful next step from the work already saved in your account.
 
@@ -6,7 +8,7 @@ Hi Alex,
 
 Pick up where you left off.
 
-There’s work saved in your account that you can pick up. Choose one next step when you open Radar.
+I’m sending you a few next steps from the work saved in your account. I’d choose one to follow through on today.
 
 Fieldnote · Daily Brief
 
@@ -26,7 +28,10 @@ Fieldnote · Article to social
 
 Make posts from my article: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=article_social&ref=preview-resource
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

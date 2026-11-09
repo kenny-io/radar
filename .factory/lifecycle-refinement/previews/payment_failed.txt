@@ -1,18 +1,25 @@
 Email #7 · Primary example
-Subject: Your Radar payment didn’t go through
-Preview: Open Billing to check your card and pay the outstanding invoice.
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Your Radar subscription needs attention
+Preview: The latest subscription charge didn’t go through. You can check it in Billing.
 
 Hi Alex,
 
-Please check your payment method.
+Let’s get your subscription sorted.
 
-Your $49.00 invoice payment for Radar didn’t go through.
+I wanted to let you know the latest charge for your Radar subscription didn’t go through.
 
-Open Billing to check or update your payment method and pay the invoice. Access may be paused while it remains unpaid.
+Open Billing to check your payment method and the outstanding invoice. Your workspace access may be paused while it remains unpaid.
 
-Review my payment: https://radar.thally.io/settings?section=billing
+If something looks wrong or you need a hand, reply and tell me what you’re seeing.
 
-Reply to this email or write to support@thally.io.
+Review my subscription: https://radar.thally.io/settings?section=billing
+
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

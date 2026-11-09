@@ -40,14 +40,7 @@ export async function writeSubscription(tx: Tx, later: Later, a: Account, s: Sub
     await queueLifecycle(tx, { type: 'subscription_ended', userId: a.userId,
       eventKey: `subscription-ended:${s.id}:${s.status}:${randomUUID()}`, data: { subscriptionId: s.id, status: s.status, periodEnd } });
   }
-  if (s.status === 'trialing' && !s.cancel_at_period_end && s.trial_end) {
-    const trialEnd = new Date(s.trial_end * 1000);
-    const reminderAt = new Date(trialEnd.getTime() - 864e5);
-    // Don't issue historical or overdue reminders when adopting/reconciling an existing subscription.
-    if (reminderAt.getTime() > Date.now()) await queueLifecycle(tx, { type: 'trial_ending', userId: a.userId,
-      eventKey: `trial-ending:${s.id}:${trialEnd.toISOString()}`, sendAt: reminderAt,
-      data: { subscriptionId: s.id, trialEnd: trialEnd.toISOString() } });
-  }
+  // Trial-ending marketing mail is retired; trial/subscription state and essential notices remain unchanged.
   if (a.status !== s.status) later.push(() => track('sub.status_changed', { uid: a.userId, ref: s.id, props: { from: a.status, to: s.status } }));
   console.info(`[billing] ${a.userId} subscription ${s.id} ${a.status} → ${s.status}`);
 }

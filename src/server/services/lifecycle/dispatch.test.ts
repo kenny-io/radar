@@ -46,7 +46,7 @@ describe.skipIf(!ON)('durable lifecycle dispatch (database, fake provider only)'
     await db.update(M).set({ type: 'workspace_ready' }).where(eq(M.userId, u.id));
     await send(fetcher);
     expect(fetcher).not.toHaveBeenCalled();
-    expect(await row(u.id)).toMatchObject({ status: 'suppressed', attempts: 0, lastError: 'no_longer_applicable' });
+    expect(await row(u.id)).toMatchObject({ status: 'suppressed', attempts: 0, lastError: 'retired_type' });
   });
   it('stub mode never calls a provider even when a key exists; missing real credentials keep mail queued', async () => {
     const u = await welcome(), fetcher = ack(); env.resendKey = ''; await send(fetcher);
@@ -58,7 +58,7 @@ describe.skipIf(!ON)('durable lifecycle dispatch (database, fake provider only)'
     const u = await welcome(), fetcher = ack(); await send(fetcher); await send(fetcher);
     expect(fetcher).toHaveBeenCalledTimes(1); expect(await row(u.id)).toMatchObject({ status: 'sent', providerId: 'provider-test-id', attempts: 1 });
     const init = fetcher.mock.calls[0] as unknown as [string, RequestInit];
-    expect(init[1].signal).toBeInstanceOf(AbortSignal); expect(JSON.parse(init[1].body as string)).toMatchObject({ to: [u.email], reply_to: 'support@thally.io' });
+    expect(init[1].signal).toBeInstanceOf(AbortSignal); expect(JSON.parse(init[1].body as string)).toMatchObject({ to: [u.email], reply_to: 'team@thally.io' });
   });
   it('retries transient errors with exactly the same key and body, respecting Retry-After', async () => {
     const u = await welcome(), now = new Date();
@@ -103,10 +103,10 @@ describe.skipIf(!ON)('durable lifecycle dispatch (database, fake provider only)'
     await queueLifecycle(db, { type: 'founder_note', userId: v.id, eventKey: `founder:${v.id}`, data: {} });
     await send(fetcher); expect(await row(v.id)).toMatchObject({ status: 'suppressed' }); expect(fetcher).not.toHaveBeenCalled();
   });
-  it('suppresses stale trial/cancel notices after account state changes', async () => {
+  it('suppresses stale subscription-start/cancellation notices after account state changes', async () => {
     const u = await F.user(), end = new Date(Date.now() + 864e5), sub = 'sub-test';
     await F.account(u.id, { stripeSubscriptionId: sub, status: 'trialing', trialEnd: end });
-    await queueLifecycle(db, { type: 'trial_ending', userId: u.id, eventKey: `ending:${u.id}`, data: { trialEnd: end.toISOString(), subscriptionId: sub } });
+    await queueLifecycle(db, { type: 'trial_started', userId: u.id, eventKey: `started:${u.id}`, data: { trialEnd: end.toISOString(), subscriptionId: sub } });
     const r = await row(u.id); expect(await lifecycleEligible(r, payload(r))).toBe(true);
     await F.account(u.id, { status: 'active' }); expect(await lifecycleEligible(r, payload(r))).toBe(false);
     await db.delete(M).where(eq(M.userId, u.id));

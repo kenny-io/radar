@@ -120,7 +120,7 @@ describe.skipIf(!process.env.DATABASE_URL)('weekly education (real PostgreSQL; f
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(fetcher.mock.calls[0][1]?.method).toBe('POST');
     const sent = JSON.parse(fetcher.mock.calls[0][1]?.body as string);
-    expect(sent.subject).toBe(type === 'welcome' ? 'Welcome to Radar' : 'Your Radar receipt');
+    expect(sent.subject).toBe(type === 'welcome' ? 'Welcome to Radar' : 'Your Radar subscription receipt');
     expect((await db.select().from(M).where(eq(M.eventKey, eventKey)))[0].status).toBe('sent');
     expect((await messages(u.id))[0]).toMatchObject({ status: 'queued', attempts: 0, firstAttemptAt: null });
     expect((await enrollment(u.id)).nextLesson).toBe(0);

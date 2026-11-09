@@ -1,5 +1,6 @@
+import { isRetiredLifecycle, RETIRED_LIFECYCLE_TYPES } from './retired';
 import { randomUUID } from 'node:crypto';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull } from 'drizzle-orm';
 import { db, pool, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { decrypt, encrypt, sha256 } from '@/server/crypto';
@@ -18,6 +19,7 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /** Time-sensitive notices are checked against current authoritative application/provider state before delivery. */
 export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, now = new Date(), signal?: AbortSignal): Promise<boolean> {
+  if (isRetiredLifecycle(row.type)) return false;
   // Retire previously frozen workspace notices as well as removing new enqueueing.
   if (row.type === 'workspace_ready') return false;
   const [u] = await db.select().from(schema.users).where(eq(schema.users.id, row.userId)).limit(1);
@@ -152,6 +154,11 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
   try {
     held = !!(await c.query('SELECT pg_try_advisory_lock(424251) AS ok')).rows[0].ok;
     if (!held) return { processed: 0 };
+    // Retire future queued messages as well as due ones, even if delivery credentials are absent.
+    // An active provider request cannot be recalled; only a recoverable stale lease is claimed below.
+    await db.update(M).set({ status: 'suppressed', lastError: 'retired_type', claimedAt: null, claimToken: null }).where(and(
+      inArray(M.type, [...RETIRED_LIFECYCLE_TYPES]), eq(M.status, 'queued'), ...(options.userIds ? [inArray(M.userId, options.userIds)] : []),
+    ));
     // Missing credentials are operationally visible and retain the durable queue; no deceptive "logged" production sends.
     if (!env.devStubs && !env.resendKey) { console.error('[lifecycle] RESEND_API_KEY missing; queued mail retained'); return { processed: 0, blocked: 'missing_key' }; }
     const fetcher = options.fetch || globalThis.fetch;
@@ -162,6 +169,7 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
       const row = await claim(now, options.userIds);
       if (!row) break;
       processed++;
+      if (isRetiredLifecycle(row.type)) { await terminal(row, 'suppressed', 'retired_type'); continue; }
       let payload: LifecyclePayload;
       try {
         const p = decrypt<LifecyclePayload>(row.payloadEnc);

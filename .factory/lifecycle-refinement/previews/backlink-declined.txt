@@ -1,7 +1,11 @@
 Email #25 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Fieldnote passed on a partner link
 
 Fieldnote (fieldnote.example) declined the proposed link on https://partner.example/articles/design-tools.
+
+I’m passing their note along so you have the context for their decision.
 
 Proposed sentence:
 
@@ -11,5 +15,10 @@ Their note:
 This article covers a different audience, so the link doesn’t fit here.
 
 You can review your other proposals in Radar → Backlinks.
+
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Email preferences: https://radar.thally.io/email-preferences

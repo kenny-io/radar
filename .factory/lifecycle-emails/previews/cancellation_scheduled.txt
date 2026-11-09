@@ -1,4 +1,6 @@
 Email #8 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Your Radar cancellation is confirmed
 Preview: Your access continues until the end date shown in this email.
 
@@ -6,13 +8,18 @@ Hi Alex,
 
 Your cancellation is confirmed.
 
-You can keep using Radar until December 12, 2026 at 12:00 PM UTC. Your subscription won’t renew after that date.
+Your Radar subscription cancellation is confirmed. You can keep using your workspace until December 12, 2026 at 12:00 PM UTC, and your subscription won’t renew after that date.
 
-If you decide to continue, open Settings → Billing before it ends to manage the cancellation.
+Thanks for giving Radar a try. If something got in your way, I’d like to hear about it. Reply and tell me what you were hoping to do.
+
+You can review your subscription in Settings → Billing if you decide to continue.
 
 Manage subscription: https://radar.thally.io/settings?section=billing
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

@@ -1,4 +1,6 @@
 Email #13 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Your social posts are ready to schedule
 Preview: Check your saved posts and choose when to share them.
 
@@ -6,13 +8,18 @@ Hi Alex,
 
 Your social posts are ready to schedule
 
+I want to help you put the work saved in Radar to use for your business. Here’s one next step to try.
+
 Fieldnote · Social posts
 
 Your social posts for “How to choose a design tool for your studio” are saved in Radar. Check the wording, image and link, then publish one or choose a time to schedule it.
 
 Review and schedule my posts: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=social_publish&ref=preview-resource
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

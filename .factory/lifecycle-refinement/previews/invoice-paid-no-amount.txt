@@ -1,18 +1,25 @@
 Email #6B · Invoice details unavailable
-Subject: Your Radar receipt
-Preview: Your payment details and where to download the invoice.
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Your Radar subscription receipt
+Preview: Your subscription invoice is paid. Here’s where to find the receipt.
 
 Hi Alex,
 
-Payment received. Thank you.
+Your subscription receipt
 
-Your Radar invoice is paid.
+Thanks for subscribing to Radar. I’m glad to have you here.
 
-To view or download your invoice, open Settings → Billing, then Manage billing.
+Your Radar subscription invoice is paid.
+
+You can view or download the invoice in Settings → Billing, then Manage billing. I hope Radar helps you get useful work out there for your business.
 
 Open Billing: https://radar.thally.io/settings?section=billing
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

@@ -1,12 +1,19 @@
 Email #22 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Confirm your email for Radar
 
-Confirm this email address to finish creating your Radar account and choose your password.
+I’m Ekene, the founder of Radar. Here’s your link to finish creating your account and choose your password.
 
 Confirm my email: https://radar.thally.io/verify-email#token=preview-only-not-valid
 
 This link works once and expires in 30 minutes. Account access starts after you confirm.
 
 If you didn’t request this, you can ignore the email.
+
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Email preferences: https://radar.thally.io/email-preferences

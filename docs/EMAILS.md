@@ -9,12 +9,12 @@ The distinct weekly recommendation-share report lives in the original checkout�
 | Number | Status | Revised subject | Trigger | Cadence | Content |
 | --- | --- | --- | --- | --- | --- |
 | #1 | Local: PR #25 | Put your Business Profile to work / Welcome to Radar | Account confirmed or new verified Google account created | Once/account | Continue from existing analyzed Business Profile, or neutral account-ready next step |
-| #2 | Local: PR #25 | Why we built Radar | New verified account | Planned24h later; optional cap/daytime can delay | Ekene’s reason for building Radar and offer to help |
+| #2 | Local: PR #25 | Why I built Radar | New verified account | Planned24h later; optional cap/daytime can delay | Ekene’s reason for building Radar and offer to help |
 | #3 | Local: PR #25 | Reset your Radar password | Valid password-reset request | Per request; one-hour single-use link | Password reset and session-security guidance |
-| #4 | Local: PR #25 | Your Radar trial is on | Trial successfully activated | Once/trial | End date, confirmation credit, billing amounts and cancellation path |
-| #5 | Local: PR #25 | Your Radar trial ends soon | Trial remains active and isn’t scheduled to cancel |24h before trial end; no overdue historical backfill | End date, automatic renewal and how to cancel |
-| #6 | Local: PR #25 | Your Radar receipt | Qualifying invoice-paid webhook | Per qualifying invoice | Actual amount/currency and invoice download path |
-| #7 | Local: PR #25 | Your Radar payment didn’t go through | Invoice payment-failure webhook; still unpaid at send | Per eligible failure event | Update card/pay invoice and access implications |
+| #4 | Local: PR #25 | Your Radar trial is on | Trial successfully activated | Once/trial | Founder’s first-use advice, trial end date, subscription continuation and card-confirmation credit; no cancellation prompt or routine price |
+| #5 | Retired | Trial-ending reminder | No trigger | Never sent | New queueing is disabled; pending reminders are suppressed without replay or deleting history |
+| #6 | Local: PR #25 | Your Radar subscription receipt | Qualifying invoice-paid webhook | Per qualifying invoice | Actual amount/currency and invoice download path |
+| #7 | Local: PR #25 | Your Radar subscription needs attention | Invoice payment-failure webhook; still unpaid at send | Per eligible failure event | Update card/pay invoice and access implications |
 | #8 | Local: PR #25 | Your Radar cancellation is confirmed | Current subscription changes to cancel at period end | Once/actual transition | Access end date and no renewal; resume link |
 | #9 | Local: PR #25 | Your Radar subscription has ended | Current subscription enters canceled/incomplete_expired | Once/actual transition | Ended/expired setup state and account restart path |
 | #10 | Local: work reminder | Conversations worth joining | New Daily Brief remains without copied/posted reply | After1h; same-day relevance window | Review conversations, edit a reply and participate |
@@ -45,7 +45,7 @@ The seven former drafts now have runtime destinations. Copy is imported from act
 | Former draft | Actual destination | Cadence |
 | --- | --- | --- |
 | Put your Business Profile to work | Analyzed-profile welcome replacement | Immediate after confirmed account creation |
-| Why we built Radar | Existing founder event | Planned +24 hours; cap/daytime can defer |
+| Why I built Radar | Existing founder event | Planned +24 hours; cap/daytime can defer |
 | What happens before an article goes live | article_workflow guide | Untouched workspace +24 hours; pre-trial profile +3 days |
 | Would an AI assistant recommend your product? | Existing AI Visibility lesson | Course lesson 1 |
 | Find one conversation you can help with | Existing Daily Brief lesson | Course lesson 2 |
@@ -67,8 +67,16 @@ There is no dedicated multi-email expired-trial win-back campaign, new-backlink-
 
 Evidence: `.factory/weekly-education/production-inventory.json`, `email-inventory-scout.md` (20worktrees searched), current source/QA records and the separate local report companion record. All live/local labels describe the state at this checkpoint; merging/deploying the pending release changes those labels.
 
-Current rewrite and scheduling evidence: `.factory/lifecycle-refinement/`. The complete current catalogue is `previews/index.html`, `all-emails.txt` and `catalogue.json` there (29 families / 69 access, role and data variants, with permanent review numbers). The separate AI report uses a copy-only companion patch and keeps its earlier release limitations.
+Current rewrite and scheduling evidence: `.factory/lifecycle-refinement/`. The complete current catalogue is `previews/index.html`, `all-emails.txt` and `catalogue.json` there (28 active families / 68 variants plus retired #5, with permanent review numbers). The separate AI report uses a copy-only companion patch and keeps its earlier release limitations.
 
 The numbered reading catalogue is `.factory/lifecycle-refinement/previews/catalogue.html` (or `catalogue.md`); numbers #1–#29 stay fixed for review feedback. #29 is the Autopilot owner handoff, which requires explicit per-business activation and does not share the lifecycle education/work opt-out or optional cap. Its footer links to both Email preferences and Autopilot management. Turning education off does not disable the owner-enabled marketing program.
 
 Current-main integration must preserve canonical `0010_autopilot.sql`; the unpublished lifecycle migrations are renumbered to 0011–0014 with newer ordered journal timestamps. Earlier 0010–0013 references in the historical QA records describe the pre-Autopilot branch, not the final rollout order. See `main-integration-architecture.md` and `main-integration-runtime.md` under `.factory/lifecycle-refinement/` for the final integration proof.
+
+## Founder voice correction
+
+New user-facing messages use **Ekene from Radar** as the display name, keeping the configured verified sending address. Replies go to the existing founder mailbox `team@thally.io`. Actual copy is personal advice from Ekene with an Ekene / Founder, Radar sign-off. The founder story is “Why I built Radar”. Third-party invitations/partner actions and automated Radar findings retain their actual attribution. Internal support/feature forwards keep their operational identity and reply routing.
+
+Trial-ending reminder **#5 is retired**, including the collector, direct queue path and pending dispatch. Its number stays reserved; the other references are unchanged. Actual subscription cancellation confirmations remain event-driven. Routine prices and cancellation prompts were removed from trial confirmation; renewal/end-date/credit facts remain. Billing speaks about the Radar subscription. Actual amounts remain on subscription receipts when present, while failed-subscription notices omit them.
+
+Final numbered catalogue: 28 active families, 68 full variants and retired slot #5. Migration 0015 adds nullable general-outbox sender metadata for new envelopes so founder From/Reply-To remains stable across retries; historical NULL metadata and already-frozen lifecycle envelopes are not rewritten. No messages are replayed to deliver the new copy. See `.factory/lifecycle-refinement/founder-voice-verification.md` for this correction’s current acceptance and release boundary.

@@ -1,6 +1,17 @@
 {
-  "families": 29,
-  "variants": 69,
+  "families": 28,
+  "variants": 68,
+  "numberedSlots": 29,
+  "retired": [
+    {
+      "number": 5,
+      "reference": "5",
+      "family": "trial_ending",
+      "subject": "Trial-ending reminder",
+      "status": "Retired",
+      "reason": "Removed at your request. Radar does not queue or send a reminder to cancel before the trial ends."
+    }
+  ],
   "entries": [
     {
       "id": "welcome",
@@ -15,8 +26,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "welcome.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Put your Business Profile to work",
-      "preheader": "Your website analysis is saved. Pick up from your Business Profile."
+      "preheader": "I’m Ekene, Radar’s founder. Here’s where I’d start with your saved profile."
     },
     {
       "id": "welcome-neutral",
@@ -31,8 +44,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "welcome-neutral.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Welcome to Radar",
-      "preheader": "Your account is ready. Continue from where you left off."
+      "preheader": "I’m Ekene, Radar’s founder. Let’s get your business set up."
     },
     {
       "id": "founder_note",
@@ -47,7 +62,9 @@
       "status": "Local lifecycle release in PR #25",
       "file": "founder_note.html",
       "format": "HTML + plain text",
-      "subject": "Why we built Radar",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Why I built Radar",
       "preheader": "Building is easier. Getting your product beyond your own network still takes work."
     },
     {
@@ -63,6 +80,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "password_reset.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Reset your Radar password",
       "preheader": "Use your one-time link within an hour to choose a new password."
     },
@@ -79,24 +98,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "trial_started.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your Radar trial is on",
-      "preheader": "Your trial end date, first-month credit and subscription controls."
-    },
-    {
-      "id": "trial_ending",
-      "family": "trial_ending",
-      "group": "billing",
-      "trigger": "Current uncancelled trial is approaching its end",
-      "cadence": "24 hours before trial ends",
-      "scenario": "Primary example",
-      "primary": true,
-      "number": 5,
-      "reference": "5",
-      "status": "Local lifecycle release in PR #25",
-      "file": "trial_ending.html",
-      "format": "HTML + plain text",
-      "subject": "Your Radar trial ends soon",
-      "preheader": "Check the renewal date and amount, or manage your subscription before it renews."
+      "preheader": "I’d use the trial to get one useful article, post or reply ready for your business."
     },
     {
       "id": "invoice_paid",
@@ -111,8 +116,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "invoice_paid.html",
       "format": "HTML + plain text",
-      "subject": "Your Radar receipt",
-      "preheader": "Your payment details and where to download the invoice."
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Your Radar subscription receipt",
+      "preheader": "Your subscription invoice is paid. Here’s where to find the receipt."
     },
     {
       "id": "invoice-paid-no-amount",
@@ -127,8 +134,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "invoice-paid-no-amount.html",
       "format": "HTML + plain text",
-      "subject": "Your Radar receipt",
-      "preheader": "Your payment details and where to download the invoice."
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Your Radar subscription receipt",
+      "preheader": "Your subscription invoice is paid. Here’s where to find the receipt."
     },
     {
       "id": "payment_failed",
@@ -143,8 +152,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "payment_failed.html",
       "format": "HTML + plain text",
-      "subject": "Your Radar payment didn’t go through",
-      "preheader": "Open Billing to check your card and pay the outstanding invoice."
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Your Radar subscription needs attention",
+      "preheader": "The latest subscription charge didn’t go through. You can check it in Billing."
     },
     {
       "id": "payment-failed-no-amount",
@@ -159,8 +170,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "payment-failed-no-amount.html",
       "format": "HTML + plain text",
-      "subject": "Your Radar payment didn’t go through",
-      "preheader": "Open Billing to check your card and pay the outstanding invoice."
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Your Radar subscription needs attention",
+      "preheader": "The latest subscription charge didn’t go through. You can check it in Billing."
     },
     {
       "id": "cancellation_scheduled",
@@ -175,6 +188,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "cancellation_scheduled.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your Radar cancellation is confirmed",
       "preheader": "Your access continues until the end date shown in this email."
     },
@@ -191,6 +206,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "subscription_ended.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your Radar subscription has ended",
       "preheader": "Open your account if you’d like to restart access."
     },
@@ -207,8 +224,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "subscription-setup-expired.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your Radar subscription has ended",
-      "preheader": "Subscription setup expired before payment was completed."
+      "preheader": "Your subscription setup expired before it was completed."
     },
     {
       "id": "work-brief_reply",
@@ -223,6 +242,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "work-brief_reply.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Conversations worth joining",
       "preheader": "Read a thread, edit the reply and add something useful to the conversation."
     },
@@ -239,6 +260,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "work-calendar_review.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Choose the topics you want to publish",
       "preheader": "Pick a proposed topic you want Radar to draft."
     },
@@ -255,6 +278,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "work-article_social.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Turn your article into social posts",
       "preheader": "Use an idea from your article in a post you can review and share."
     },
@@ -271,6 +296,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "work-social_publish.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your social posts are ready to schedule",
       "preheader": "Check your saved posts and choose when to share them."
     },
@@ -287,6 +314,8 @@
       "status": "Local lifecycle release in PR #25",
       "file": "work-combined.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "A few things to pick up in Radar",
       "preheader": "Choose one useful next step from the work already saved in your account."
     },
@@ -303,8 +332,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-ai_visibility-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "Track two buyer questions, read the answers and choose one topic to answer on your site."
+      "preheader": "I’d start with two questions a potential customer might ask."
     },
     {
       "id": "lesson-ai_visibility-start_trial",
@@ -319,8 +350,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-ai_visibility-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "Track two buyer questions, read the answers and choose one topic to answer on your site."
+      "preheader": "I’d start with two questions a potential customer might ask."
     },
     {
       "id": "lesson-ai_visibility-restart",
@@ -335,8 +368,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-ai_visibility-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "Track two buyer questions, read the answers and choose one topic to answer on your site."
+      "preheader": "I’d start with two questions a potential customer might ask."
     },
     {
       "id": "lesson-ai_visibility-setup",
@@ -351,8 +386,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-ai_visibility-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "Track two buyer questions, read the answers and choose one topic to answer on your site."
+      "preheader": "I’d start with two questions a potential customer might ask."
     },
     {
       "id": "lesson-ai_visibility-neutral",
@@ -367,8 +404,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-ai_visibility-neutral.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend your business?",
-      "preheader": "Track two buyer questions, read the answers and choose one topic to answer on your site."
+      "preheader": "I’d start with two questions a potential customer might ask."
     },
     {
       "id": "lesson-daily_brief-workspace",
@@ -383,8 +422,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-daily_brief-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "Read the thread, make the reply your own and join in where you can add something useful."
+      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
     },
     {
       "id": "lesson-daily_brief-start_trial",
@@ -399,8 +440,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-daily_brief-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "Read the thread, make the reply your own and join in where you can add something useful."
+      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
     },
     {
       "id": "lesson-daily_brief-restart",
@@ -415,8 +458,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-daily_brief-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "Read the thread, make the reply your own and join in where you can add something useful."
+      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
     },
     {
       "id": "lesson-daily_brief-setup",
@@ -431,8 +476,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-daily_brief-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "Read the thread, make the reply your own and join in where you can add something useful."
+      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
     },
     {
       "id": "lesson-daily_brief-neutral",
@@ -447,8 +494,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-daily_brief-neutral.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Find one conversation you can help with",
-      "preheader": "Read the thread, make the reply your own and join in where you can add something useful."
+      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
     },
     {
       "id": "lesson-backlinks-workspace",
@@ -463,8 +512,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-backlinks-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "How Fieldnote could appear on another site",
-      "preheader": "Review the page, the exact sentence and the destination before you approve a partner link."
+      "preheader": "I’d look for a mention that helps the other site’s reader."
     },
     {
       "id": "lesson-backlinks-start_trial",
@@ -479,8 +530,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-backlinks-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "How Fieldnote could appear on another site",
-      "preheader": "Review the page, the exact sentence and the destination before you approve a partner link."
+      "preheader": "I’d look for a mention that helps the other site’s reader."
     },
     {
       "id": "lesson-backlinks-restart",
@@ -495,8 +548,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-backlinks-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "How Fieldnote could appear on another site",
-      "preheader": "Review the page, the exact sentence and the destination before you approve a partner link."
+      "preheader": "I’d look for a mention that helps the other site’s reader."
     },
     {
       "id": "lesson-backlinks-setup",
@@ -511,8 +566,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-backlinks-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "How Fieldnote could appear on another site",
-      "preheader": "Review the page, the exact sentence and the destination before you approve a partner link."
+      "preheader": "I’d look for a mention that helps the other site’s reader."
     },
     {
       "id": "lesson-backlinks-neutral",
@@ -527,8 +584,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-backlinks-neutral.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "How your business could appear on another site",
-      "preheader": "Review the page, the exact sentence and the destination before you approve a partner link."
+      "preheader": "I’d look for a mention that helps the other site’s reader."
     },
     {
       "id": "lesson-organic_search-workspace",
@@ -543,8 +602,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-organic_search-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Compare search intent and keyword estimates before choosing your next topic."
+      "preheader": "Here’s how I’d choose one useful question for your next article."
     },
     {
       "id": "lesson-organic_search-start_trial",
@@ -559,8 +620,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-organic_search-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Compare search intent and keyword estimates before choosing your next topic."
+      "preheader": "Here’s how I’d choose one useful question for your next article."
     },
     {
       "id": "lesson-organic_search-restart",
@@ -575,8 +638,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-organic_search-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Compare search intent and keyword estimates before choosing your next topic."
+      "preheader": "Here’s how I’d choose one useful question for your next article."
     },
     {
       "id": "lesson-organic_search-setup",
@@ -591,8 +656,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-organic_search-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Compare search intent and keyword estimates before choosing your next topic."
+      "preheader": "Here’s how I’d choose one useful question for your next article."
     },
     {
       "id": "lesson-organic-search-disconnected",
@@ -607,8 +674,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-organic-search-disconnected.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Compare search intent and keyword estimates before choosing your next topic."
+      "preheader": "Here’s how I’d choose one useful question for your next article."
     },
     {
       "id": "lesson-organic_search-neutral",
@@ -623,8 +692,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-organic_search-neutral.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What should you publish next?",
-      "preheader": "Compare search intent and keyword estimates before choosing your next topic."
+      "preheader": "Here’s how I’d choose one useful question for your next article."
     },
     {
       "id": "lesson-social_marketing-workspace",
@@ -639,8 +710,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-social_marketing-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "Create posts from an article, check each one and choose when to publish."
+      "preheader": "I’d give a useful article another chance to reach someone."
     },
     {
       "id": "lesson-social_marketing-start_trial",
@@ -655,8 +728,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-social_marketing-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "Create posts from an article, check each one and choose when to publish."
+      "preheader": "I’d give a useful article another chance to reach someone."
     },
     {
       "id": "lesson-social_marketing-restart",
@@ -671,8 +746,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-social_marketing-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "Create posts from an article, check each one and choose when to publish."
+      "preheader": "I’d give a useful article another chance to reach someone."
     },
     {
       "id": "lesson-social_marketing-setup",
@@ -687,8 +764,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-social_marketing-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "Create posts from an article, check each one and choose when to publish."
+      "preheader": "I’d give a useful article another chance to reach someone."
     },
     {
       "id": "lesson-social_marketing-neutral",
@@ -703,8 +782,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "lesson-social_marketing-neutral.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Put your article to work on social",
-      "preheader": "Create posts from an article, check each one and choose when to publish."
+      "preheader": "I’d give a useful article another chance to reach someone."
     },
     {
       "id": "guide-article_workflow-workspace",
@@ -719,8 +800,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-article_workflow-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What happens before an article goes live",
-      "preheader": "Choose the topic, review the draft and decide when it belongs on your site."
+      "preheader": "I’ll walk you through choosing a topic and reviewing your first draft."
     },
     {
       "id": "guide-article_workflow-start_trial",
@@ -735,8 +818,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-article_workflow-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What happens before an article goes live",
-      "preheader": "Choose the topic, review the draft and decide when it belongs on your site."
+      "preheader": "I’ll walk you through choosing a topic and reviewing your first draft."
     },
     {
       "id": "guide-article_workflow-restart",
@@ -751,8 +836,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-article_workflow-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What happens before an article goes live",
-      "preheader": "Choose the topic, review the draft and decide when it belongs on your site."
+      "preheader": "I’ll walk you through choosing a topic and reviewing your first draft."
     },
     {
       "id": "guide-article_workflow-setup",
@@ -767,8 +854,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-article_workflow-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "What happens before an article goes live",
-      "preheader": "Choose the topic, review the draft and decide when it belongs on your site."
+      "preheader": "I’ll walk you through choosing a topic and reviewing your first draft."
     },
     {
       "id": "guide-search_refresh-workspace",
@@ -783,8 +872,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-search_refresh-workspace.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your next article might be a page you already have",
-      "preheader": "Use your Search Console data to choose an existing page worth improving."
+      "preheader": "Before writing something new, I’d look at the pages people already find."
     },
     {
       "id": "guide-search_refresh-start_trial",
@@ -799,8 +890,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-search_refresh-start_trial.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your next article might be a page you already have",
-      "preheader": "Use your Search Console data to choose an existing page worth improving."
+      "preheader": "Before writing something new, I’d look at the pages people already find."
     },
     {
       "id": "guide-search_refresh-restart",
@@ -815,8 +908,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-search_refresh-restart.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your next article might be a page you already have",
-      "preheader": "Use your Search Console data to choose an existing page worth improving."
+      "preheader": "Before writing something new, I’d look at the pages people already find."
     },
     {
       "id": "guide-search_refresh-setup",
@@ -831,8 +926,10 @@
       "status": "Local lifecycle release in PR #25",
       "file": "guide-search_refresh-setup.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Your next article might be a page you already have",
-      "preheader": "Use your Search Console data to choose an existing page worth improving."
+      "preheader": "Before writing something new, I’d look at the pages people already find."
     },
     {
       "id": "confirmation",
@@ -847,6 +944,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "confirmation.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Confirm your email for Radar",
       "preheader": null
     },
@@ -863,6 +962,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "invitation-Editor.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Alex invited you to Fieldnote on Radar",
       "preheader": null
     },
@@ -879,6 +980,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "invitation-Admin.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Alex invited you to Fieldnote on Radar",
       "preheader": null
     },
@@ -895,6 +998,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "invitation-Viewer.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Alex invited you to Fieldnote on Radar",
       "preheader": null
     },
@@ -911,6 +1016,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "backlink-approved.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Fieldnote approved a partner link on partner.example/articles/design-tools",
       "preheader": null
     },
@@ -927,6 +1034,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "backlink-approved-manual.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Fieldnote approved a partner link on partner.example/articles/design-tools",
       "preheader": null
     },
@@ -943,6 +1052,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "backlink-declined.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Fieldnote passed on a partner link",
       "preheader": null
     },
@@ -959,6 +1070,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "backlink-removal.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Link removal request from Fieldnote",
       "preheader": null
     },
@@ -975,6 +1088,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "backlink-lost-missing.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Partner link not found on partner.example/articles/design-tools",
       "preheader": null
     },
@@ -991,6 +1106,8 @@
       "status": "Existing live sender; refined copy pending release",
       "file": "backlink-lost-rel.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Partner link attribute changed on partner.example/articles/design-tools",
       "preheader": null
     },
@@ -1007,8 +1124,10 @@
       "status": "Separate local AI measurement feature; not released",
       "file": "ai-weekly-report.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "Your collected answers, the previous-week comparison and what to review next."
+      "preheader": "I’m sending your collected answers and a next step to consider for your business."
     },
     {
       "id": "ai-weekly-report-no-miss",
@@ -1023,8 +1142,10 @@
       "status": "Separate local AI measurement feature; not released",
       "file": "ai-weekly-report-no-miss.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "Your collected answers, the previous-week comparison and what to review next."
+      "preheader": "I’m sending your collected answers and a next step to consider for your business."
     },
     {
       "id": "ai-weekly-report-no-comparison",
@@ -1039,8 +1160,10 @@
       "status": "Separate local AI measurement feature; not released",
       "file": "ai-weekly-report-no-comparison.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "Your collected answers, the previous-week comparison and what to review next."
+      "preheader": "I’m sending your collected answers and a next step to consider for your business."
     },
     {
       "id": "ai-weekly-report-no-topic",
@@ -1055,8 +1178,10 @@
       "status": "Separate local AI measurement feature; not released",
       "file": "ai-weekly-report-no-topic.html",
       "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "Your collected answers, the previous-week comparison and what to review next."
+      "preheader": "I’m sending your collected answers and a next step to consider for your business."
     },
     {
       "id": "autopilot-actions",
@@ -1071,6 +1196,8 @@
       "status": "New main Autopilot sender; refined copy pending release",
       "file": "autopilot-actions.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Radar Autopilot: 2 actions need you · Fieldnote",
       "preheader": null
     },
@@ -1087,6 +1214,8 @@
       "status": "New main Autopilot sender; refined copy pending release",
       "file": "autopilot-reply.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Radar Autopilot: 1 action needs you · Fieldnote",
       "preheader": null
     },
@@ -1103,6 +1232,8 @@
       "status": "New main Autopilot sender; refined copy pending release",
       "file": "autopilot-publication.html",
       "format": "Plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
       "subject": "Radar Autopilot: 1 action needs you · Fieldnote",
       "preheader": null
     }

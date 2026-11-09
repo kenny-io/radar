@@ -2,21 +2,26 @@ Does ChatGPT or Claude recommend Paper & Pixel?
 
 Hi Alex,
 
-Read the answers to buyer questions.
+Let’s see what AI says about your business.
 
-Think of the question someone would ask before discovering Paper & Pixel. Radar can collect answers to that question from ChatGPT, Claude, Gemini, Perplexity and Grok. You can read each answer and inspect the sources it cites.
+I want to help you see what someone might hear about Paper & Pixel before they ever reach your site. Start with a question they’d ask while choosing a product like yours.
 
-You can use these steps when you restart your Radar access. Open your account to review the amount before confirming.
+Radar can collect the answers from ChatGPT, Claude, Gemini, Perplexity and Grok. Read the answers and their sources to find a question your own experience could help answer.
+
+You can pick this up when your Radar workspace is available again. Open your account to resume your subscription access first.
 
 1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
 
 2. Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.
 
-Check progress: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
+Here’s how I’d track it: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
 
 Reopen my Radar account: https://radar.thally.io/start-trial
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

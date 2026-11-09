@@ -58,7 +58,7 @@ export const actions: ActionMap = {
       if (to) {
         const body = [`From: ${ctx.user.name} <${ctx.user.email}>`, `Business: ${(ctx.biz.profile as any)?.business?.name || ''} (${ctx.biz.domain})`, `Role: ${ctx.role}`, `Request id: ${row.id}`, '', t].join('\n');
         // Stored first; a mail hiccup must not lose or fail the request (the inbox can be re-sent from feature_requests).
-        await sendMail(to, `Feature request — ${ctx.biz.domain}`, body).catch(e => console.error('[feature.request] mail failed', e?.message || e));
+        await sendMail(to, `Feature request — ${ctx.biz.domain}`, body, undefined, { identity: 'service' }).catch(e => console.error('[feature.request] mail failed', e?.message || e));
       } else console.warn('[feature.request] SUPPORT_INBOX is not set; request stored only', row.id);
       return { id: row.id };
     },

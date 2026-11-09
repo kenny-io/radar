@@ -1,0 +1,154 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+ ✓ src/server/services/lifecycle/educationContent.test.ts (4 tests) 4ms
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > keeps signup and resend responses generic and throttles an address across rotating IPs
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > shares a ten-attempt IP budget across signup and resend even when each route has attempts remaining
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[abuse] limit hit: auth:verification
+
+ ✓ src/server/auth/verification.test.ts (11 tests) 1486ms
+   ✓ mailbox confirmation security (database) > does not accept a registrant password or grant a session/admin capability before inbox confirmation  505ms
+   ✓ mailbox confirmation security (database) > recovers legacy account in place, preserves paid/business records and invalidates old sessions and all other links  455ms
+   ✓ mailbox confirmation security (database) > expires tokens, binds their email, validates password bytes and permits exactly one concurrent consume  445ms
+ ✓ src/server/auth/signupEmails.test.ts (6 tests) 867ms
+   ✓ new-account lifecycle emails (database) > queues welcome and founder only after mailbox confirmation, once across concurrent signup/confirmation and never sign-in  493ms
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > durably queues one subscription-start confirmation without retired reminders or workspace mail across replays
+[billing] 146b666e-41d6-47fe-b290-414ce3a3ba05 trial check pi_stub_2anh090 created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > durably queues one subscription-start confirmation without retired reminders or workspace mail across replays
+[billing] 146b666e-41d6-47fe-b290-414ce3a3ba05 subscription sub_stub_4eoiey1 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a trial check pi_stub_29mdplv created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr trialing → unpaid
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr unpaid → canceled
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] 1115932a-c339-4d73-b472-ea184716f81a subscription sub_stub_40u5vwr canceled → canceled
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 42fc21c1-5972-4412-8b6d-b39e059ff43e trial check pi_stub_2p6k7x7 created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 42fc21c1-5972-4412-8b6d-b39e059ff43e subscription sub_stub_4d6acs2 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 42fc21c1-5972-4412-8b6d-b39e059ff43e subscription sub_stub_4d6acs2 trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] f181bdd3-70c0-4f7c-91b9-516088efaf14 trial check pi_stub_2i3twfn created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] f181bdd3-70c0-4f7c-91b9-516088efaf14 subscription sub_stub_48wu3qf none → trialing
+
+stderr | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] activation of pi_stub_2i3twfn failed: credit unavailable
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] f181bdd3-70c0-4f7c-91b9-516088efaf14 subscription sub_stub_48wu3qf none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] be01f51a-b63c-4c12-abf1-d733da9a1ebf trial check pi_stub_2fozfuk created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] be01f51a-b63c-4c12-abf1-d733da9a1ebf subscription sub_stub_4fry9as none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] be01f51a-b63c-4c12-abf1-d733da9a1ebf subscription sub_stub_4fry9as trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] be01f51a-b63c-4c12-abf1-d733da9a1ebf subscription sub_stub_4fry9as trialing → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] be01f51a-b63c-4c12-abf1-d733da9a1ebf subscription sub_stub_4fry9as active → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] be01f51a-b63c-4c12-abf1-d733da9a1ebf subscription sub_stub_4fry9as active → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 9973493d-9397-4709-9862-6d72a38114d6 trial check pi_stub_25ti3ts created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 9973493d-9397-4709-9862-6d72a38114d6 subscription sub_stub_4wr3hi8 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 9973493d-9397-4709-9862-6d72a38114d6 subscription sub_stub_4wr3hi8 trialing → past_due
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 9973493d-9397-4709-9862-6d72a38114d6 subscription sub_stub_4wr3hi8 past_due → past_due
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 9973493d-9397-4709-9862-6d72a38114d6 subscription sub_stub_4wr3hi8 past_due → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 9973493d-9397-4709-9862-6d72a38114d6 subscription sub_stub_4wr3hi8 active → active
+
+ ✓ src/server/billing/billingLifecycle.test.ts (8 tests) 223ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: 'e2c2a96a-521d-45e3-9c19-a174c1a2f62e', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: '7170ba4a-79a0-4774-8211-de7f2b0e299e',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: 'b77ac6b8-903a-4ba3-add4-6ef7526cfd49',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: '1c7e6489-026c-40d8-9a03-d10452e04046',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 156ms
+ ✓ src/server/services/lifecycle/autopilotIntegration.test.ts (7 tests) 111ms
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted trial_ending rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted workspace_ready rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+ ✓ src/server/services/lifecycle/founderIdentity.test.ts (16 tests) 91ms
+ ✓ src/server/services/lifecycle/templates.test.ts (24 tests) 27ms
+ ✓ src/server/services/support/mail.test.ts (7 tests) 7ms
+
+ Test Files  9 passed (9)
+      Tests  97 passed (97)
+   Start at  01:19:53
+   Duration  7.09s (transform 455ms, setup 0ms, collect 2.80s, tests 2.97s, environment 1ms, prepare 308ms)
+

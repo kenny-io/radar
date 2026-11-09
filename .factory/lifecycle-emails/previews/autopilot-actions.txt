@@ -1,7 +1,11 @@
 Email #29A · Two owner actions
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Radar Autopilot: 2 actions need you · Fieldnote
 
-Autopilot found 2 actions for Fieldnote that need your help. Review the saved work before taking the next step.
+I want to help you follow through on the work Radar has prepared for Fieldnote. Autopilot found 2 actions that need your help.
+
+I’d open the saved work first, then choose the next step below. Review any prepared draft before you share it.
 
 1. Connect your publishing destination
 
@@ -23,5 +27,10 @@ Start by comparing the tools against one project your studio runs often. Which p
 Manage Autopilot: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fsettings%3Fsection%3Dautopilot
 
 You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.
+
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Email preferences: https://radar.thally.io/email-preferences

@@ -2,19 +2,24 @@ Find a conversation Paper & Pixel can help with
 
 Hi Alex,
 
-Start with someone’s question.
+Help one person with a question you know.
 
-Someone is asking for advice or comparing tools on Reddit, X, LinkedIn or Hacker News. You may have an answer that helps. Daily Brief finds relevant conversations and brings a suggested reply into Radar for you to review.
+I built Daily Brief to help you find people already talking about problems you can solve. It brings relevant conversations from Reddit, X, LinkedIn and Hacker News into Radar, with a suggested reply you can make your own.
+
+I’d start with one thread where you have something useful to add. Give the person a good answer before thinking about whether to mention your product.
 
 1. Open Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.
 
 2. Copy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.
 
-Check progress: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.
+Here’s how I’d track it: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.
 
 Open my Daily Brief: https://radar.thally.io/email/learn?lesson=daily_brief&businessId=11111111-1111-4111-8111-111111111111
 
-Reply to this email or write to support@thally.io.
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

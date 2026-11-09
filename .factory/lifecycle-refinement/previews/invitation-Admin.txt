@@ -1,12 +1,19 @@
 Email #23B · Admin
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
 Subject: Alex invited you to Fieldnote on Radar
 
-Alex invited you to join Fieldnote (fieldnote.example) on Radar.
+Alex invited you to join Fieldnote (fieldnote.example) on Radar. I’m sending you the link so you can join them and help with the business’s marketing.
 
 As an Admin, you can manage business settings, publishing and the team.
 
 Accept invitation: https://radar.thally.io/api/invites/preview-only-not-valid
 
 Your invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.
+
+Ekene
+Founder, Radar
+
+Reply and tell me where you’re stuck, or write to team@thally.io.
 
 Email preferences: https://radar.thally.io/email-preferences
