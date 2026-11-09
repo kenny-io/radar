@@ -9,17 +9,13 @@ import { cleanBrand, cleanPost, stripLinks, cleanReply, dropUnsupportedFigures, 
 import type { Scored } from './rank';
 
 /** Tone sample approved by the owner: casual, typed-on-the-bus, still high quality. Copy the register, never the content. */
-export const TONE_SAMPLE = `I think the hard part is figuring out which docs a change actually affects. Comparing an entire PR against entire pages could get noisy pretty quickly.
+export const TONE_SAMPLE = `I'd start with specific things like endpoint names, config keys and CLI flags. When one changes, check it against the pages that mention it.
 
-I'd start with specific things like endpoint names, config keys, env vars and CLI flags. If one changes, you have something concrete to check against wherever it's mentioned.
+Keep each flag simple: what the docs say, what changed, and who owns the fix. That gives someone enough context to act without digging through the whole PR.
 
-Then keep the flag really simple. Here's what the docs say, here's the code change, here's why they might disagree. If someone has to go digging to work out whether the flag is valid, they'll probably stop checking after a while.
+Full disclosure, I'm building Thally. We connect those pieces and suggest docs updates with the evidence attached.`;
 
-This is actually what I'm building with Thally, I'm the founder. We use a knowledge graph to connect those pieces and open suggested updates as PRs with the evidence attached.
-
-Also give each flag an owner. Dropping it in a shared channel is an easy way for everyone to assume someone else has it covered.
-
-Are you thinking of putting the flags on the original PR or opening separate docs PRs?`;
+const REPLY_LENGTH_RULES = 'Keep each reply concise: aim for 60–120 words in two short paragraphs. Never exceed three paragraphs or 150 words, including any product mention and disclosure. Use one to three short sentences per paragraph, with at most 50 words in each. Focus on the most useful point instead of answering every angle. X replies may be one paragraph and must still fit 280 characters.';
 
 const VOICE_RULES = (p: Profile) => `Language: ${p.brand.language || 'English (US)'}. The brand voice (${p.brand.voice || 'plain, warm and practical'}) guides word choice, but community writing must sound like a person, not a company.
 Write like someone typing a reply on their phone on the bus: relaxed, conversational, short sentences, contractions ("I'd", "you'll"), plain everyday words, first person. Still genuinely useful and specific, never sloppy.
@@ -37,7 +33,7 @@ const PLAT_RULES: Record<BriefPlatform, string> = {
   quora: 'Quora: conversational, like explaining it to a friend, and genuinely helpful.',
 };
 
-export const ReplyDraft = z.object({ tag: z.string(), why: z.string(), help: z.string(), mention: z.string() });
+export const ReplyDraft = z.object({ tag: z.string(), why: z.string(), help: z.string().describe(REPLY_LENGTH_RULES), mention: z.string().describe(REPLY_LENGTH_RULES) });
 
 /** Starting variant from the user's mention policy (02-system §9.5). */
 export const startMention = (policy: BriefSettings['mention'], asks: boolean, promoBanned?: boolean) => !promoBanned && (policy === 'relevant' || (policy === 'asked' && asks));
@@ -46,6 +42,7 @@ export async function draftReply(p: Profile, s: Scored, settings: BriefSettings,
   const name = p.business.name;
   const replyTo = s.replyToIdx != null && s.comments ? s.comments[s.replyToIdx] : null;
   const system = `You draft replies to public community threads for someone who works at ${name}. ${VOICE_RULES(p)}
+${REPLY_LENGTH_RULES}
 Write TWO variants:
 - "help": purely helpful. Do not mention ${name} or any product, and do not hint at one.
 - "mention": the same help, plus a natural plug for ${name}. After the useful part, say in one or two sentences how ${name} handles exactly the problem in this thread, using what ${name} actually does (from the profile below), the way a peer mentions a tool they build. Name ${name} and disclose plainly that you work on it (e.g. "Full disclosure, I work on ${name}: …"). Lead with the help, not the plug; no hype, no calls to action.
@@ -90,12 +87,13 @@ const CO_PLAT_RULES: Partial<Record<BriefPlatform, string>> = {
 const coAllowed = (p: Profile, extra = '') => `${profileContext(p)}
 ${extra}`;
 
-export const BrandDraft = z.object({ tag: z.string(), why: z.string(), brand: z.string() });
+export const BrandDraft = z.object({ tag: z.string(), why: z.string(), brand: z.string().describe(REPLY_LENGTH_RULES) });
 
 export async function draftCompanyReply(p: Profile, s: Scored, bid: string, fresh: boolean): Promise<BriefItem> {
   const name = p.business.name;
   const replyTo = s.replyToIdx != null && s.comments ? s.comments[s.replyToIdx] : null;
   const system = `You draft replies to public threads from the official ${name} company account (${p.business.description}). ${CO_RULES(p)}
+${REPLY_LENGTH_RULES}
 ${CO_PLAT_RULES[s.plat] || ''}
 Never mention or praise competitors (${p.audience.competitors.join(', ') || 'none'}).
 Return "brand": the reply. Also "tag": a 2–6 word reason the company should reply (e.g. "Asking for your exact product"), and "why": one sentence telling the user why a reply from the company account fits here, grounded in the thread itself.
@@ -232,8 +230,8 @@ export async function rewriteItem(p: Profile, it: BriefItem, text: string, instr
   const plat = (reply ? it.plat : it.pl) as BriefPlatform;
   const co = it.acct === 'company';
   const system = co
-    ? `You write ${reply ? 'replies to public threads' : 'posts'} from the official ${n} company account (${p.business.description}). ${CO_RULES(p)}\n${CO_PLAT_RULES[plat] || ''}\n${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`
-    : `You write ${reply ? 'replies to public threads' : 'posts for their personal feed'} for the founder of ${n} (${p.business.description}), in first person. ${VOICE_RULES(p)}\n${PLAT_RULES[plat]}\nNo links. ${reply ? (mention ? `Keep a natural plug for ${n}: how it handles this exact problem, in one or two sentences after the help, with a plain disclosure that you work on it.` : `Do not mention ${n} or any product.`) : ''} ${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`;
+    ? `You write ${reply ? 'replies to public threads' : 'posts'} from the official ${n} company account (${p.business.description}). ${CO_RULES(p)}\n${CO_PLAT_RULES[plat] || ''}\n${reply ? REPLY_LENGTH_RULES : ''}\n${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`
+    : `You write ${reply ? 'replies to public threads' : 'posts for their personal feed'} for the founder of ${n} (${p.business.description}), in first person. ${VOICE_RULES(p)}\n${PLAT_RULES[plat]}\n${reply ? REPLY_LENGTH_RULES : ''}\nNo links. ${reply ? (mention ? `Keep a natural plug for ${n}: how it handles this exact problem, in one or two sentences after the help, with a plain disclosure that you work on it.` : `Do not mention ${n} or any product.`) : ''} ${plat === 'x' ? `Stay under ${X_LIMIT} characters.` : ''} Return only the new text.\n\n${profileContext(p)}`;
   const ctx = reply
     ? `Platform: ${BPLAT[plat]} (${it.where})\nThread: ${it.title}\n${it.body || ''}\n${it.replyTo ? `Replying to ${it.replyTo.who}: ${it.replyTo.text}` : ''}`
     : `Platform: ${BPLAT[plat]}\nTopic: ${it.title}`;
