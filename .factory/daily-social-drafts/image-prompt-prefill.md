@@ -13,6 +13,8 @@ Validation on current production base `83f77476`:
 - The local stub environment has no image model: the submission correctly returned its existing unavailable error and retained the prompt. No real image-provider call or customer change was made. UI fixture restored, QA server stopped and generated tsconfig edits removed.
 - Initial harness selector mismatches were corrected using the incumbent label/tab markup; no product defect was found.
 
-Production rollout pending.
+PR https://github.com/kenny-io/radar/pull/31 merged as `d8ac2d3a537c9d970e493d2e3940e8b6aba33c11`. Railway web `da936ae3-dfc3-419e-9040-b7503612b28a` and worker `3afcb73e-68f6-489e-bedf-929f97cba0de` both report SUCCESS on the merged revision. No configuration changes.
 
 Source SHA-256: `665150ea765b6c38534eb6ecb1d83e20a7b79c52b2d51786de4e27b08bcbf52a`.
+
+Production verification: actual web source hash matches the tested component, and the compiled client bundle contains the prefill change. Production mode and stubs off confirmed. Read-only live browser smoke passed 5/5, including readiness 200, desktop/mobile assets and anonymous route protection. No live image generation or authenticated customer mutation was performed; local browser checks verified the exact submitted prompt. Released and verified.
