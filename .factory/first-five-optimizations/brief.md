@@ -24,22 +24,25 @@ Source: product review of 2026-11-10 (code reading plus a local stub-data walkth
 
 ### FS — first session
 - FS-1 When a business first becomes active *and* has access (trialing/active, comp, or billing off), Radar queues
-  a calendar generation, a first Daily Brief scan with default settings, and an AI visibility run. Exactly once per
-  business, safe under retries and double commits. Applies to the first business and to "Add a business".
+  a calendar generation, a first Daily Brief scan with default settings, and an AI visibility run. Started
+  automatically at most once per business, safe under retries and double commits; if starting fails, the Dashboard
+  shows the affected rows as failed with Retry. Applies to the first business and to "Add a business".
 - FS-2 While any of those is queued or running, the Dashboard shows a "Radar is preparing your first week" state
   with one live row per job (label, step/progress, link to its screen) instead of the two start tiles. It survives
   reload and leaves by itself when the jobs finish.
 - FS-3 One job failing does not block the others or the commit. The failed row says what failed and offers Retry.
+  A failed row stays until it is retried successfully, dismissed, or 7 days pass.
 - FS-4 Businesses that were already active before this ships are untouched (no backfill, no surprise jobs).
 
 ### IS — idle spend
-- IS-1 Each business records when a member last used the signed-in app or clicked a Radar email link, written at
-  most hourly. Background jobs never count as activity. Existing businesses start as "active now" at migration.
+- IS-1 Each business records when a member last used the signed-in app (opened or navigated it, or made a change)
+  or clicked a Radar email link, written at most hourly. Background refreshes of an open tab do not count. Background jobs never count as activity. Existing businesses start as "active now" at migration.
 - IS-2 Tiers: *active* (activity < 7 days ago, or Autopilot enabled, or became active < 7 days ago), *idle*
   (7–30 days), *dormant* (30+ days). Brief 2-hour rescans: active only. Nightly AI visibility and automatic social
   packs: active as today; idle at most once per 7 days; dormant paused. Morning brief scan: unchanged in all tiers.
 - IS-3 When an idle or dormant business becomes active again, normal cadence resumes on the next scheduler tick
-  with at most one catch-up run per job kind (no backlog burst).
+  with at most one catch-up run per job kind (no backlog burst). AI visibility: one catch-up run on return if the
+  last run is over 24 h old; the nightly cadence resumes at the next 02:00 window.
 - IS-4 A background rescan does no source collection or model call when no account/platform has a reply slot left
   for the day. Manual "Scan again" and the morning scan behave as today.
 - IS-7 A background rescan is due only when at least one of today's brief items was copied, marked posted or
@@ -48,7 +51,8 @@ Source: product review of 2026-11-10 (code reading plus a local stub-data walkth
 - IS-5 AI visibility makes no extraction model call for an answer that cannot match the business (same
   normalisation the matcher uses), provided what is stored and shown is identical to today. If extraction output
   is used for anything else (e.g. competitor names shown in the UI), keep the call and say so.
-- IS-6 A visibility run bumps the workspace revision once per run, not once per cell.
+- IS-6 A visibility run bumps the workspace revision once per run, not once per cell. The AI Visibility grid still
+  fills in while a run is in progress.
 - Thresholds live in one place and are unit-tested.
 
 ### LS — lighter saves
@@ -68,20 +72,25 @@ Source: product review of 2026-11-10 (code reading plus a local stub-data walkth
 - RL-2 Calendar view, filter and open entry live in the URL; Back from an article returns to the view it came from.
 - RL-3 Clicking a calendar entry that is ready for review opens the article directly.
 - RL-4 A persistent Activity list in the shell (bell with unread count) shows Radar's notifications for the
-  business, newest first, each with its action link; it survives reload, and items can be marked read.
+  business, newest first, each with its action link; it survives reload. The list is marked read per member, all
+  at once (opening it, or Mark all read).
 - RL-5 A failed article draft or calendar generation shows an inline failed state naming the item, with Retry, on
   its screen, for as long as the job record exists; the same failure appears in Activity.
 - RL-6 Error toasts stay until dismissed, have a close button and use `role="alert"`. Other toasts are unchanged.
 
 ### BE — billing edges
 - BE-1 A subscription that goes `past_due` keeps full access (app and background jobs) for 2 days from when it
-  became past due, then locks exactly as today. The period is one constant, overridable by env.
+  became past due, then locks exactly as today. The period is one constant, overridable by env. Grace applies only
+  to a subscription that was `active` (has paid) when the payment failed: a first charge that fails at the end of a
+  trial locks as today (PM reading of "paying customer"; one condition to flip if the owner wants otherwise).
+  Accounts already past due when this ships get no retroactive grace.
 - BE-2 During grace every app screen shows a banner: payment failed, the date access ends, and a button to update
   the card (owner). Members see the same message without the button.
 - BE-3 While trialing, the shell shows "Trial · N days left" linking to Settings → Billing, which states the
   charge amount and date. Hidden for comp, grandfathered and billing-off accounts and for non-owners.
-- BE-4 `/start-trial` and the onboarding stage show "Signed in as {email} · Sign out · Need help?". Sign out works
-  and lands on the public home page; help opens the existing support contact.
+- BE-4 `/start-trial` and the onboarding stage show "Signed in as {email} · Sign out · Need help?" to signed-in
+  users (a guest sees only "Need help?"). Sign out works and lands on the public home page; help is the existing
+  support email link.
 
 ## Design
 Extend the existing system in `src/components/ui.tsx` and `src/app/radar.css` (no new dependencies, no new visual
