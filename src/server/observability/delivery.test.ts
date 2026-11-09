@@ -17,7 +17,8 @@ describe('immediate and durable failure alert delivery', () => {
     await persistAndDeliverAlert(event(), 'radar-failure/key');
     const insert = query.mock.calls[0][0]; expect(insert.text).toContain('INSERT INTO jobs'); expect(insert.text).not.toContain('business_id');
     expect(insert.values[1]).toBe('observability.alert');
-    const body = JSON.parse(fetcher.mock.calls[0][1].body); expect(body.to).toEqual(['kenny@thally.io']); expect(body.text).toContain('HTTP status: 402');
+    const body = JSON.parse(fetcher.mock.calls[0][1].body); expect(body.to).toEqual(['kenny@thally.io']); expect(body.text).toContain('HTTP status: 402'); expect(body.html).toContain('<h1');
+    expect(JSON.parse(insert.values[2]).html).toBe(body.html);
     expect(query.mock.calls[1][0].text).toContain("status='done'");
     expect(query.mock.invocationCallOrder[0]).toBeLessThan(fetcher.mock.invocationCallOrder[0]);
   });
@@ -49,6 +50,20 @@ describe('immediate and durable failure alert delivery', () => {
     expect(fetcher.mock.calls[0][1].body).toBe(fetcher.mock.calls[1][1].body);
     expect(fetcher.mock.calls[1][1].headers['Idempotency-Key']).toBe('stable-key');
     expect(fetcher.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+  it('keeps legacy queued envelopes exactly text-only without rendering new presentation', async () => {
+    const { html: _html, ...envelope } = alertEnvelope(event(), 'legacy-key');
+    envelope.subject = '[Radar production] Failure: article.outline (openrouter)'; envelope.text = 'Original persisted legacy text\nwith original spacing';
+    await deliverAlert(envelope);
+    const payload = JSON.parse(fetcher.mock.calls[0][1].body);
+    expect(payload).toEqual({ from: envelope.from, to: [envelope.to], subject: envelope.subject, text: envelope.text });
+    expect(payload).not.toHaveProperty('html');
+  });
+  it('sends the exact stored HTML on every replay even if event data changes afterward', async () => {
+    const envelope = alertEnvelope(event(), 'html-key'); const originalHtml = envelope.html;
+    await deliverAlert(envelope); envelope.event.error.message = 'Do not re-render this new message'; await deliverAlert(envelope);
+    expect(fetcher.mock.calls[0][1].body).toBe(fetcher.mock.calls[1][1].body); expect(JSON.parse(fetcher.mock.calls[1][1].body).html).toBe(originalHtml);
+    expect(fetcher.mock.calls[1][1].headers['Idempotency-Key']).toBe('html-key');
   });
   it('refuses expired replays before the provider idempotency window ends', async () => {
     const old = event(); old.timestamp = new Date(Date.now() - ALERT_MAX_AGE_MS - 1).toISOString();

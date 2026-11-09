@@ -2,8 +2,9 @@
 
 Radar attempts an operational email to `kenny@thally.io` as soon as a running action or configured provider attempt
 fails, before existing retries or fallback. This includes failures that otherwise return partial success. Reporting
-never replaces the existing result, user-safe error, retry or publishing safeguards. The alert is plain text and
-contains UTC time, environment/service, operation, available business/user/job/resource/request IDs,
+never replaces the existing result, user-safe error, retry or publishing safeguards. New alerts include a formatted
+HTML email and a sectioned plain-text alternative. They contain UTC time, environment/service, operation, available
+business/user/job/resource/request IDs,
 provider/model/status/code, sanitized diagnostic cause and a suggested response. Customer prompts, action payloads,
 email bodies and generated content are not added to the alert context.
 
@@ -52,8 +53,10 @@ If the reporting process exits after persistence, a worker can still deliver the
 still attempts direct email and logs the persistence failure.
 
 The first queued retry is due after 30 seconds; subsequent retries back off to 15 minutes. Actual processing depends
-on worker availability and queue load. Attempts use the same persisted sender, recipient, subject, body and Resend
-idempotency key. If the original sender was absent or a known local/example placeholder, Radar atomically binds
+on worker availability and queue load. Attempts use the same persisted sender, recipient, subject, text, optional
+HTML and Resend
+idempotency key. Previously queued text-only envelopes remain text-only on replay; HTML is never added to an
+existing idempotency key. If the original sender was absent or a known local/example placeholder, Radar atomically binds
 the corrected configured sender before the first provider attempt; concurrent retries use the winning payload. Automatic delivery stops when the alert is 23 hours old, within Resend's documented
 [24-hour idempotency window](https://resend.com/changelog/idempotency-keys). Failed rows are retained by the existing
 14-day housekeeping policy. Missing credentials or sender are failures, never a successful log-only delivery.

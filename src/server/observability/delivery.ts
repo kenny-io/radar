@@ -1,22 +1,15 @@
 import type { QueryConfig } from 'pg';
 import { createHash } from 'node:crypto';
+import { renderFailureEmail } from './email';
 import { failureAlertsEnabled, sanitizeDiagnostic, type FailureEvent } from './failures';
 
 export const ALERT_JOB_KIND = 'observability.alert';
 export const ALERT_MAX_AGE_MS = 23 * 60 * 60_000;
-export interface AlertEnvelope { event: FailureEvent; key: string; to: string; from: string; subject: string; text: string }
+export interface AlertEnvelope { event: FailureEvent; key: string; to: string; from: string; subject: string; text: string; html?: string }
 const uuid = (key: string) => { const h = createHash('sha256').update(key).digest('hex').slice(0, 32); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`; };
 
 export function alertEnvelope(event: FailureEvent, key: string): AlertEnvelope {
-  const subject = `[Radar ${event.environment}] ${event.context.degraded ? 'Degraded' : 'Failure'}: ${event.context.operation}${event.context.provider ? ` (${event.context.provider})` : ''}`.replace(/[\r\n]/g, ' ').slice(0, 220);
-  return { event, key, to: process.env.RADAR_FAILURE_ALERT_EMAIL || 'kenny@thally.io', from: process.env.MAIL_FROM || '', subject,
-    text: [
-      `Radar detected an operation failure at ${event.timestamp} (UTC).`,
-      `Environment: ${event.environment}`, `Service: ${event.service}`, `Operation: ${event.context.operation}`, `Root operation: ${event.rootOperation}`,
-      ...Object.entries(event.context).filter(([k, v]) => k !== 'source' && k !== 'operation' && k !== 'incidentKey' && v != null).map(([k, v]) => `${k}: ${v}`),
-      `Error: ${event.error.name}: ${event.error.message}`, event.error.status ? `HTTP status: ${event.error.status}` : '', event.error.code ? `Code: ${event.error.code}` : '', event.error.cause ? `Cause: ${event.error.cause}` : '',
-      '', `Suggested response: ${event.hint}`, '', 'A degraded result means Radar is trying a fallback; it does not establish that the overall action failed.', `Alert ID: ${event.id}`,
-    ].filter(Boolean).join('\n') };
+  return { event, key, to: process.env.RADAR_FAILURE_ALERT_EMAIL || 'kenny@thally.io', from: process.env.MAIL_FROM || '', ...renderFailureEmail(event) };
 }
 const validSender = (sender: string) => !!sender.trim() && !/@(?:radar\.local|yourdomain\.com)>?$/i.test(sender.trim());
 
@@ -44,7 +37,7 @@ export async function deliverAlert(envelope: AlertEnvelope): Promise<{ providerM
   if (!validSender(envelope.from)) throw new Error('Failure alert email requires RESEND_API_KEY and a verified MAIL_FROM');
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json', 'Idempotency-Key': envelope.key },
-    signal: AbortSignal.timeout(8000), body: JSON.stringify({ from: envelope.from, to: [envelope.to], subject: envelope.subject, text: envelope.text }),
+    signal: AbortSignal.timeout(8000), body: JSON.stringify({ from: envelope.from, to: [envelope.to], subject: envelope.subject, text: envelope.text, ...(envelope.html !== undefined ? { html: envelope.html } : {}) }),
   });
   if (!response.ok) throw new Error(`Failure alert transport rejected the email (HTTP ${response.status})`);
   const receipt = await response.json().catch(() => null);
