@@ -1,0 +1,17 @@
+RADAR · TEST ALERT
+
+Your test alert has arrived
+
+This is a test of Radar’s operational alerts. No customer action or AI provider failed.
+
+NO ACTION NEEDED
+No action needed. This confirms Radar can send alerts from radar-worker in production.
+
+AT A GLANCE
+Environment: production
+Service: radar-worker
+Time: 10 Nov 2026, 10:14:32 UTC
+
+DETAILS
+Operation: observability.smoke
+Alert ID: 95b2f3d4-09c7-4fc1-8139-c4a07b5f9001

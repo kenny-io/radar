@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import { chromium } from 'playwright';
+
+process.env.NODE_ENV = 'test';
+process.env.RADAR_FAILURE_ALERTS = 'on';
+process.env.RADAR_DEV_STUBS = '0';
+process.env.RESEND_API_KEY = 'qa-only-no-real-provider-request';
+process.env.MAIL_FROM = 'Radar <radar@thally.io>';
+process.env.RADAR_FAILURE_ALERT_EMAIL = 'kenny@thally.io';
+process.env.APP_URL = 'https://radar.thally.io';
+const calls: { key: string; body: string }[] = [];
+globalThis.fetch = async (_url, init) => {
+  calls.push({ key: String((init?.headers as Record<string,string>)['Idempotency-Key']), body: String(init?.body) });
+  return Response.json({ id: 'qa-receipt-no-external-email' });
+};
+const { alertEnvelope, deliverAlert } = await import('../../../src/server/observability/delivery');
+const { renderFailureEmail } = await import('../../../src/server/observability/email');
+const event = { id: 'qa-envelope-id', timestamp: new Date().toISOString(), environment: 'production', service: 'worker', rootOperation: 'article.draft', context: { source: 'ai' as const, operation: 'article.draft', provider: 'openrouter', model: 'model-test', jobId: 'qa-job-id' }, error: { name: 'Error', message: 'Provider credits exhausted', status: 402 }, hint: 'Add provider credits and retry when ready.' };
+const legacy = { event, key: 'qa-legacy-stable-key', to: 'kenny@thally.io', from: 'Radar <radar@thally.io>', subject: '[Radar production] Failure: article.draft (openrouter)', text: 'Original persisted legacy payload.\n\nKeep exact text, line breaks, and original subject.' };
+await deliverAlert(legacy);
+const expectedLegacyBody = JSON.stringify({ from: legacy.from, to: [legacy.to], subject: legacy.subject, text: legacy.text });
+assert.equal(calls[0].body, expectedLegacyBody);
+assert.equal(calls[0].key, legacy.key);
+assert(!Object.hasOwn(JSON.parse(calls[0].body), 'html'));
+const branded = alertEnvelope(event, 'qa-new-stable-key');
+assert.equal(typeof branded.html, 'string');
+assert(branded.html!.length > 100);
+assert(branded.text.length > 0);
+await deliverAlert(branded);
+process.env.MAIL_FROM = 'Changed <changed@example.com>';
+process.env.APP_URL = 'https://changed.example.com';
+await deliverAlert(JSON.parse(JSON.stringify(branded)));
+assert.deepEqual(calls[1], calls[2]);
+assert.equal(JSON.parse(calls[1].body).html, branded.html);
+assert.equal(JSON.parse(calls[1].body).text, branded.text);
+await deliverAlert(JSON.parse(JSON.stringify(legacy)));
+assert.equal(calls[3].body, expectedLegacyBody);
+const attack = '<img src=x onerror="globalThis.__qaInjected=true"> & "quoted" <script>globalThis.__qaInjected=true</script>';
+const hostile = renderFailureEmail({ ...event, id: 'qa-escaping-id', context: { ...event.context, provider: attack, ref: '<unsafe-resource>' }, error: { ...event.error, message: attack, cause: attack }, hint: attack });
+assert(hostile.html.includes('&lt;img'));
+assert(!hostile.html.includes('<script>globalThis'));
+await fs.writeFile('.factory/observability/email-format/previews/qa-escaping.html', hostile.html);
+await fs.mkdir('.factory/observability/email-format/screenshots', { recursive: true });
+const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+try {
+  const context = await browser.newContext({ viewport: { width: 375, height: 1000 }, reducedMotion: 'reduce' });
+  await context.route(/^https?:/, route => route.abort());
+  const page = await context.newPage();
+  await page.setContent(hostile.html);
+  assert.equal(await page.locator('script,[onerror],[onclick]').count(), 0);
+  assert.equal(await page.evaluate(() => (globalThis as any).__qaInjected), undefined);
+  assert((await page.locator('body').innerText()).includes('<img src=x'));
+  await page.screenshot({ path: '.factory/observability/email-format/screenshots/escaping-light-375.png', fullPage: true, animations: 'disabled' });
+} finally { await browser.close(); }
+const result = { pass: true, legacyBodyAndKeyExact: true, legacyHasNoHtml: true, newPlainAndHtmlPresent: true, persistedHtmlRetryExact: true, escapedHostileDiagnosticsInActualChrome: true, externalProviderRequests: 0 };
+await fs.writeFile('.factory/observability/email-format/qa-transport-results.json', JSON.stringify(result, null, 2) + '\n');
+console.log(JSON.stringify(result, null, 2));

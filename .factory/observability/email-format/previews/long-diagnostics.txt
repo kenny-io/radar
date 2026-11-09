@@ -1,0 +1,30 @@
+RADAR · ACTION FAILED
+
+Article draft failed
+
+Radar could not complete this action. The issue is recorded below so you can investigate.
+
+WHAT HAPPENED
+Provider: OpenRouter
+HTTP status: 402
+Code: insufficient_quota
+Issue: The provider rejected the generation request. Diagnostic reference: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef. Check the provider account and quota before retrying.
+Cause: Upstream service returned insufficient_quota after validating the requested model. The original draft and saved content are preserved.
+
+NEXT STEP
+Check the OpenRouter account balance and spending limits. Add credits, then retry the article when the provider is available.
+
+AT A GLANCE
+Environment: production
+Service: radar-worker
+Time: 10 Nov 2026, 10:14:32 UTC
+
+DETAILS
+Operation: article.draft
+Business ID: 8ea91e96-93e7-4f03-a9dd-c4f99c459001
+Job ID: job_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+Request ID: request_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+Model: openai/gpt-6-sol
+Attempt: 1 of 3
+Retry planned: No
+Alert ID: 95b2f3d4-09c7-4fc1-8139-c4a07b5f9001
