@@ -1,0 +1,13 @@
+{
+  "pr": 137,
+  "head": "a8b33044653590327f0962c1ddeda89332efd05d",
+  "base": "b84a3485731cd5e01957b865a9405e2a4dbbbfcd",
+  "filesChanged": 6,
+  "articlePath": "src/app/blog/migrate-markdown-docs-to-hosted-site/content.mdx",
+  "articleFileBytes": 10989,
+  "originalBodyBytes": 10988,
+  "originalBodySha256": "89f145d9a33ef0fa757596b47c22f038a67061977a8d71d76bdb2929a20fbd34",
+  "completeOriginalPreserved": true,
+  "addedFileTerminatorBytes": 1,
+  "preview": "https://deploy-preview-137--thally-web.netlify.app"
+}
