@@ -1,0 +1,11 @@
+{
+  "simulator": true,
+  "replacementRequestIssuedOnce": true,
+  "httpResponseMetadataRecorded": false,
+  "reason": "The smoke script read native Response.status as a function after the request; corrected without replay. Sent row and provider delivered status independently verified.",
+  "initialInvalidFixtureLocalPartLength": 66,
+  "maximumLocalPartLength": 64,
+  "initialFixtureDeleted": true,
+  "replacementFixtureDeleted": true,
+  "credentialFileRemoved": true
+}

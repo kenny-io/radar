@@ -7,7 +7,7 @@ try{
  const migrations=(await client.query('SELECT id,hash,created_at FROM drizzle.__drizzle_migrations ORDER BY created_at')).rows;
  const present=new Set(tables.map(r=>r.table_name)); const counts={};
  for(const name of ['lifecycle_emails','engagement_events','education_enrollments','lifecycle_guide_states','ai_observations']) if(present.has(name)){
-  const grouping=name==='lifecycle_emails'?'type,status':name==='engagement_events'?'status':name==='education_enrollments'?'status':name==='lifecycle_guide_states'?'guide_id,status':null;
+  const grouping=name==='lifecycle_emails'?'type,status':name==='engagement_events'?'kind,resolved_reason':name==='education_enrollments'?'status':name==='lifecycle_guide_states'?'guide_id,status':null;
   counts[name]=(await client.query(grouping?`SELECT ${grouping},count(*)::int AS count FROM ${name} GROUP BY ${grouping} ORDER BY ${grouping}`:`SELECT count(*)::int AS count FROM ${name}`)).rows;
  }
  const verified=(await client.query('SELECT count(*)::int AS accounts,count(*) FILTER(WHERE NOT guest AND email_verified_at IS NOT NULL)::int AS verified_accounts FROM users')).rows[0];
