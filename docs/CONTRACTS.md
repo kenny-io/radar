@@ -43,6 +43,8 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 ### social area
 - Component `PackThumb` (props in placeholder).
 - Generate flow opens from `app.go('social', { generate: true })`.
+- Unset `B.social.auto` preferences default to daily library drafts at 08:00 in `B.tz`, for LinkedIn/X with branded images. Explicit saved preferences remain authoritative. Draft settings can pause or customize generation.
+- Daily packs use a stable `auto-${businessId}-${date}` ID; retries never replace existing pack data. The worker uses profile, calendar, published articles, cached blog content and search suggestions, with profile-only fallback.
 
 ### platform area (Dashboard, Settings, Team, Backlinks)
 - `settings.ai` `{ task: 'writing'|'research', model }` · `settings.calendarDefaults` `{ market?, language?, cadence?, perWeek? }`
@@ -62,6 +64,7 @@ See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `
 - `gsc.backfill` (ref = businessId) — progress `{ pct }`
 - `brief.scan` (ref = date, one per business and day: Scan again during a running scan joins it) — payload `{ mode: 'first'|'again'|'keep', date, fromJob?, background?: true, round? }`; progress `{ step, threadsRead, failed?: platform, steps, mode, quiet? }` (`quiet`: Keep runs and background rescans, never shown as the scan view unless joined); result `{ mode, added, addedIds, since, failed?, partial?, notified?: true, skipped?: 'no_day'|'past', skippedPlats?: platform[] }` (`skippedPlats`: background runs, the platforms that failed and were skipped) (`notified`: the server already toasted the members, so the client shows no toast of its own)
 - `social.generate` (ref = client token) — progress `{ done: number }`, result `{ packId }`
+- `social.autoRun` — payload `{ date: string }` (business-local day), result `{ packId: string | null }`; cron atomically marks/enqueues once per business/day and catches up after the due time until midnight. Library drafts are the default; legacy explicit scheduling remains opt-in.
 - `visibility.collect` (ref = resultId)
 
 ## Social channels (connected X / LinkedIn accounts: post now, schedule, calendar)
@@ -141,9 +144,13 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 - `resolveEntry(user)` — used by `(app)/layout.tsx`: renders, or redirects to `/onboarding` (no business, or a draft not saved) or `/start-trial` (saved draft or owned business without access). A guest on an app route goes to `/signup`.
 
 ### Auth endpoints
-- `POST /api/auth/signup` `{ name, email, password, next? }` and `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }`. Navigate to `next`. Both claim this browser's guest draft first. When the claimed profile is committed there (the account already has access), they also set `radar_biz` to it, so `/dashboard?saved=profile` opens that profile.
-- Google: the callback redirects to the same destination. Dev stub (not production): `/api/auth/google/start?dev_as=<email>` signs in as that email.
-- `POST /api/auth/signout` clears the session and the guest cookie.
+- `POST /api/auth/signup` `{ name, email, turnstileToken, next? }` → generic `{ ok: true, verificationRequired: true }`. Creates no session and does not claim the guest draft. Password is chosen by the mailbox holder after confirmation.
+- `POST /api/auth/verification/resend` `{ email, turnstileToken, next? }` → the same generic response for unknown, verified and unverified addresses. Sends only to unverified accounts within shared IP/email/global budgets. Also provides existing password-account recovery without the old password.
+- `/verify-email#token=<opaque>` → explicit password setup form; client scrubs fragment immediately. GET never verifies an account. `POST /api/auth/verify-email` `{ token, password }` consumes an unexpired, single-use token, verifies mailbox ownership, replaces the password, revokes old sessions/tokens, then claims this browser's guest draft and returns `{ ok: true, next }`. Invalid/expired/reused links return `400 verification_invalid`.
+- `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }` for verified password accounts. Unverified legacy accounts must complete email confirmation before authenticated access. Session/draft/invite access requires verified identity.
+- Google requires a verified provider identity and looks up the stable Google subject. Matching email alone never merges accounts; conflicting identities return `/signin?error=google_link`. Existing Google accounts retain Google access; legacy attached passwords are revoked by migration. Dev stub (not production): `/api/auth/google/start?dev_as=<email>`.
+- Signup and resend always share10/IP/hour,3/address/hour and300global/hour mail budgets, plus their route IP limits. Default protection is rate-only. `RADAR_SIGNUP_TURNSTILE=1` additionally requires server-validated Turnstile with action `turnstile-spin-v2` and hostname matching APP_URL; enabled bot protection never silently falls back. Missing production mail configuration always fails closed. Missing/invalid human check → 403; limits → 429; unavailable provider/config → 503.
+- `POST /api/auth/signout` clears the session and guest cookie. Password verification and successful Google sign-in claim guest drafts; pending signup does not.
 
 ### Business endpoints
 - `POST /api/b` `{ domain, turnstileToken? }` → `{ ok, id, guest }` — creates a guest when nobody is signed in (429 `rate_limited`, 403 `human_check_failed`). Same domain as the draft: reset, keep Search Console; another domain: also clears GSC, crawl pages and `onboarding`.

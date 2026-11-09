@@ -1,11 +1,11 @@
 import { cookies } from 'next/headers';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { eq, and, gt, lt, sql } from 'drizzle-orm';
+import { eq, and, gt, lt, sql, isNotNull } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { randomToken, sha256 } from '../crypto';
 import { env } from '../env';
-import { RadarError } from '../errors';
+import { RadarError, unauthorized } from '../errors';
 import type { User } from '@/lib/types';
 
 export const SESSION_COOKIE = 'radar_session';
@@ -31,8 +31,9 @@ export async function createSession(userId: string, expectedPasswordHash?: strin
   await db.transaction(async tx => {
     // Password reset holds this same row lock while changing the hash and revoking sessions. A sign-in that
     // verified an old hash must not create a new session after that reset has committed.
-    const [u] = await tx.select({ hash: schema.users.passwordHash }).from(schema.users).where(eq(schema.users.id, userId)).for('update');
-    if (!u || (expectedPasswordHash !== undefined && u.hash !== expectedPasswordHash))
+    const [u] = await tx.select({ hash: schema.users.passwordHash, verified: schema.users.emailVerifiedAt, guest: schema.users.guest }).from(schema.users).where(eq(schema.users.id, userId)).for('update');
+    if (!u?.verified || u.guest) throw unauthorized();
+    if (expectedPasswordHash !== undefined && u.hash !== expectedPasswordHash)
       throw new RadarError('That email and password don’t match. Sign in again.', 401, 'invalid_credentials');
     await tx.insert(schema.sessions).values({ id: sha256(token), userId, expiresAt });
   });
@@ -57,7 +58,7 @@ export async function currentUser(): Promise<SessionUser | null> {
   if (!t) return null;
   const rows = await db.select(userCols)
     .from(schema.sessions).innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
-    .where(and(eq(schema.sessions.id, sha256(t)), gt(schema.sessions.expiresAt, new Date()), eq(schema.users.guest, false))).limit(1);
+    .where(and(eq(schema.sessions.id, sha256(t)), gt(schema.sessions.expiresAt, new Date()), eq(schema.users.guest, false), isNotNull(schema.users.emailVerifiedAt))).limit(1);
   return rows[0] || null;
 }
 

@@ -15,8 +15,8 @@ export function assertAuthOrigin(req: Request) {
   if (req.headers.get('sec-fetch-site') === 'cross-site' || (origin && origin !== new URL(env.appUrl).origin)) throw forbidden();
 }
 
-export async function limitAuthIp(req: Request, mode: 'signup' | 'signin' | 'google') {
-  const signup = mode === 'signup';
+export async function limitAuthIp(req: Request, mode: 'signup' | 'signin' | 'google' | 'verification' | 'confirm') {
+  const signup = mode === 'signup' || mode === 'verification';
   await enforce([{ key: `auth:${mode}:ip:${clientIp(req)}`, limit: signup ? 10 : 30, windowSec: signup ? HOUR : 900,
     error: signup ? () => new RadarError('Too many account creation attempts. Try again in an hour.', 429, 'rate_limited') : tooMany }]);
 }

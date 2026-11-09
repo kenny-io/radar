@@ -135,6 +135,7 @@ export const actions: ActionMap = {
     input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(5), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), post: z.enum(['library', 'schedule']).optional() }) }),
     run: async (ctx, { auto }) => {
       if (auto.on && !auto.platforms.length) throw new RadarError('Pick at least one platform.');
+      if (auto.on && auto.freq === 'custom' && !auto.days.length) throw new RadarError('Pick at least one day.');
       // When a pack is ready → Schedule posts needs a live account; with publishing off it is always Save to library.
       const publishing = await socialOn(ctx.biz);
       const post = !publishing ? (auto.post ? 'library' as const : undefined) : auto.post;

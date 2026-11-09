@@ -1,0 +1,33 @@
+{
+  "status": "accepted-by-final-host-offline-replay",
+  "plannerSha256": "c94c066afec620714c5e75bf5735547197cd1625edfd375fc20e7f8eb38b28ac",
+  "sourceRevision": "c44cde2f12d5170a2fbaf4e038b467b12efb161f",
+  "replayedActualResponses": 8,
+  "newProviderRequests": 0,
+  "rawModelResponsesUnchanged": true,
+  "filesMatchActualProductionBuild": true,
+  "filesMatchActualFreshReviewProposal": true,
+  "originalArticleBodyBytesPreservedExactlyOnce": true,
+  "routeAndListingRolesGrounded": true,
+  "sourceElisionProofsResolved": 2,
+  "draft": true,
+  "runtimeVerifiedByPlanner": false,
+  "route": "/blog/reliable-publishing",
+  "paths": [
+    "src/lib/blog.ts",
+    "public/llms.txt",
+    "src/app/blog/reliable-publishing/content.mdx",
+    "src/app/blog/reliable-publishing/body.tsx",
+    "src/app/blog/reliable-publishing/page.tsx",
+    "src/app/blog/reliable-publishing/opengraph-image.tsx"
+  ],
+  "proposedSourceSha256": {
+    "src/lib/blog.ts": "2e83b2ce2f2515d20c1c24d1fc63bb73b6a8d6d256a1cd830f7a9715c1c354aa",
+    "public/llms.txt": "7edc8c2fec142ade1bfa34b6c3e14572b21e8412c993dfc22227ae0f5844b10e",
+    "src/app/blog/reliable-publishing/content.mdx": "f872e66b7aba015226dea1a8822c7305f4840b54aa7570528a55c26086e7a069",
+    "src/app/blog/reliable-publishing/body.tsx": "d652186bb6820ecfa95298f0522242b38fae1e67e2edaf574667154ff8e61e9d",
+    "src/app/blog/reliable-publishing/page.tsx": "ec964ebb7a60cb5699364ec7a7a9786e8bbbae528ac81bb914da6044f4a4235d",
+    "src/app/blog/reliable-publishing/opengraph-image.tsx": "e9635d17250f248edbf7fc0e27dc2c7ab93beda191b3d503c6385eccdd718469"
+  },
+  "scope": "Actual real-model discovery/proposal/repair responses plus the actual fresh approved reviewer response passed through final host guards. No new provider-run claim. Normal production build,149targettests and8Chromechecks cover these identical file bytes separately."
+}

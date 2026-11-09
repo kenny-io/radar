@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { Fixtures } from '../testing/fixtures';
 import type { OnboardingState } from '@/lib/types';
-import { cleanAutoDomain, destinationAfterAuth, onboardingGuard, openBusinessUrl, resolveEntry, signupContext, startGuard, trialGuard } from './guard';
+import { cleanAutoDomain, destinationAfterAuth, onboardingGuard, openBusinessUrl, resolveEntry, safeNext, signupContext, startGuard, trialGuard } from './guard';
 import { BIZ_COOKIE, getMe } from '../auth/users';
 import { env } from '../env';
 import { GET as CURRENT } from '@/app/api/b/current/route';
@@ -18,6 +18,13 @@ const F = new Fixtures();
 const SAVED: OnboardingState = { step: 'save', savedAt: '2026-10-25T10:00:00.000Z', tz: 'America/Chicago' };
 const status = async (bid: string) => (await db.select().from(schema.businesses).where(eq(schema.businesses.id, bid)))[0];
 afterEach(() => { delete process.env.RADAR_BILLING; H.jar.clear(); });
+
+describe('authentication return paths', () => {
+  it('allows relative app and invite destinations but rejects browser-normalized external redirects', () => {
+    for (const path of ['/dashboard', '/api/invites/opaque-token', '/settings?tab=billing']) expect(safeNext(path)).toBe(path);
+    for (const path of [undefined, '', 'https://evil.test', '//evil.test', '/\\evil.test', '/\n/evil.test', '/\t/evil.test', '/dashboard\u0000', '/dashboard\\other']) expect(safeNext(path)).toBeNull();
+  });
+});
 
 describe('cleanAutoDomain (AC-M3 cleaning)', () => {
   it('trims, lowercases, strips scheme and www., cuts at / ? # or space, validates', () => {

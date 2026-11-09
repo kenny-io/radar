@@ -11,6 +11,8 @@ export const users = pgTable('users', {
   email: text('email').notNull(),
   passwordHash: text('password_hash'),
   googleSub: text('google_sub'),
+  /** Mailbox ownership, separate from knowledge of a password. */
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   /** Settings → Account → Appearance */
   appearance: text('appearance').$type<'system' | 'light' | 'dark'>().notNull().default('system'),
   /** Anonymous onboarding visitor (architecture B1): synthetic `guest+<uuid>@guest.radar.invalid` email, empty name, own cookie. */
@@ -24,6 +26,16 @@ export const sessions = pgTable('sessions', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: created(),
 });
+
+/** Only hashes of the bearer token are stored. Token-bearing email bodies are redacted in production. */
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  next: text('next'),
+  createdAt: created(),
+}, t => [index('email_verification_user_idx').on(t.userId), index('email_verification_expiry_idx').on(t.expiresAt)]);
 
 export const businesses = pgTable('businesses', {
   id: id(),

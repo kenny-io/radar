@@ -1,0 +1,72 @@
+{
+  "releaseBase": "13f0697321302b2cc47384eb58520950c342985c",
+  "priorQAFingerprint": "e782085b183649dbd30ed5e127338cfb60d6d5b848d46d3c260ccdd7b3e109b8",
+  "matched": 13,
+  "files": [
+    {
+      "path": "src/features/social/AutoModal.tsx",
+      "sha256": "170ad068353c2bbe10070572af91d7f657c5fe610ebfe2ac54bd4eb826b15156",
+      "releaseSha256": "170ad068353c2bbe10070572af91d7f657c5fe610ebfe2ac54bd4eb826b15156"
+    },
+    {
+      "path": "src/features/social/PackThumb.tsx",
+      "sha256": "b56bd38474ea5fca6b46a347941cb72d840372bac2bf594ea95508a1a9bfb92b",
+      "releaseSha256": "b56bd38474ea5fca6b46a347941cb72d840372bac2bf594ea95508a1a9bfb92b"
+    },
+    {
+      "path": "src/features/social/PackView.tsx",
+      "sha256": "b51eae25d0695c4606750b4827d38856a7207478228e46cb501ef361b95ae221",
+      "releaseSha256": "b51eae25d0695c4606750b4827d38856a7207478228e46cb501ef361b95ae221"
+    },
+    {
+      "path": "src/features/social/SocialMarketing.tsx",
+      "sha256": "a10a1d95a2514dc22922ef742026dc44edb7124000dfb5816cf3c88cca83e400",
+      "releaseSha256": "a10a1d95a2514dc22922ef742026dc44edb7124000dfb5816cf3c88cca83e400"
+    },
+    {
+      "path": "src/server/actions/social.ts",
+      "sha256": "99a1cce9c58399036f42d579eb5625afa00058baea86580a5c35102ee00aafa7",
+      "releaseSha256": "99a1cce9c58399036f42d579eb5625afa00058baea86580a5c35102ee00aafa7"
+    },
+    {
+      "path": "src/server/services/social/auto.ts",
+      "sha256": "8f2b726b8b97271c7513941852d458ca486ef40574a6f9b6e9bb5637a27f9aae",
+      "releaseSha256": "8f2b726b8b97271c7513941852d458ca486ef40574a6f9b6e9bb5637a27f9aae"
+    },
+    {
+      "path": "src/server/services/social/generate.ts",
+      "sha256": "ec211fe8dc8f913dc65edb0e993d07633eaab48428494cca1d546f1a495ad317",
+      "releaseSha256": "ec211fe8dc8f913dc65edb0e993d07633eaab48428494cca1d546f1a495ad317"
+    },
+    {
+      "path": "src/server/services/social/jobs.ts",
+      "sha256": "15b6d12ba28a8adb52229942d5d18388d49bd12647ff53475d22b29490e16f52",
+      "releaseSha256": "15b6d12ba28a8adb52229942d5d18388d49bd12647ff53475d22b29490e16f52"
+    },
+    {
+      "path": "src/server/services/social/proactive.ts",
+      "sha256": "ec76c41a347d2e1cffc08e1ffc8d90b593846dd19d369a4ff38b6958e750ea01",
+      "releaseSha256": "ec76c41a347d2e1cffc08e1ffc8d90b593846dd19d369a4ff38b6958e750ea01"
+    },
+    {
+      "path": "src/server/services/social/proactive.db.test.ts",
+      "sha256": "cf64c364817f8352fdfb4e539c366a4b25213f6ba8a248a7d0f65a6549d6ed9b",
+      "releaseSha256": "cf64c364817f8352fdfb4e539c366a4b25213f6ba8a248a7d0f65a6549d6ed9b"
+    },
+    {
+      "path": "src/server/services/social/proactive.test.ts",
+      "sha256": "b76626ea894294efd98808e366381f125b4928d0b803c5393cdd8bc6ef7229c1",
+      "releaseSha256": "b76626ea894294efd98808e366381f125b4928d0b803c5393cdd8bc6ef7229c1"
+    },
+    {
+      "path": "src/server/services/social/social.test.ts",
+      "sha256": "39eedc965b7767e461d33423ad58320e45e977c63376ea86119d877b5d184504",
+      "releaseSha256": "39eedc965b7767e461d33423ad58320e45e977c63376ea86119d877b5d184504"
+    },
+    {
+      "path": "src/server/workspace.ts",
+      "sha256": "e19cc300164ae4b2e5a51889e898e96583e8fca0ec932373e951bda3e4074246",
+      "releaseSha256": "e19cc300164ae4b2e5a51889e898e96583e8fca0ec932373e951bda3e4074246"
+    }
+  ]
+}

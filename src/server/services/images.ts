@@ -101,21 +101,26 @@ export function imagePrompt(r: Pick<ImageReq, 'style' | 'prompt' | 'headline' | 
 export async function generatePhoto(r: ImageReq): Promise<Buffer> {
   const prompt = imagePrompt(r);
   const providers: [string, () => Promise<Buffer>][] = [];
-  // The OpenRouter breaker (repeated timeouts/5xx) only skips it when another image provider is configured.
-  if (env.openrouterKey && !openrouterDown() && !(openrouterTripped() && (env.openaiKey || env.xaiKey))) providers.push(['openrouter', () => openrouterImage(prompt, r.w, r.h)]);
+  // Keep every configured route so account cooldowns can be distinguished from transient breaker skips.
+  if (env.openrouterKey) providers.push(['openrouter', () => openrouterImage(prompt, r.w, r.h)]);
   if (env.openaiKey) providers.push(['openai', () => openaiImage(prompt, r.w, r.h)]);
   if (env.xaiKey) providers.push(['xai', () => xaiImage(prompt, r.w, r.h)]);
-  let raw: Buffer | null = null; let last: any = null;
+  let raw: Buffer | null = null; let last: any = null; let accountBlocked = 0;
   for (const [name, run] of providers) {
-    if ((imgDown.get(name) || 0) > Date.now()) continue;
+    if ((name === 'openrouter' && openrouterDown()) || (imgDown.get(name) || 0) > Date.now()) { accountBlocked++; continue; }
+    // The OpenRouter breaker is transient, and only skips its route when an alternative is configured.
+    if (name === 'openrouter' && openrouterTripped() && (env.openaiKey || env.xaiKey)) continue;
     try { raw = await run(); if (name === 'openrouter') noteOpenrouterOutcome(); break; } catch (e: any) {
       last = e; console.warn('[images]', e?.message);
       if (name === 'openrouter') noteOpenrouterOutcome(e);
       // OpenRouter is one account for text and images: its account failures use the shared OpenRouter cooldown.
-      if (e?.account) { if (name === 'openrouter') markOpenrouterDown(String(e?.message || '')); else imgDown.set(name, Date.now() + 10 * 60e3); }
+      if (e?.account) { accountBlocked++; if (name === 'openrouter') markOpenrouterDown(String(e?.message || '')); else imgDown.set(name, Date.now() + 10 * 60e3); }
     }
   }
-  if (!raw) throw last || new Error('no image provider available');
+  if (!raw) {
+    if (providers.length && accountBlocked === providers.length) throw new RadarError('Image generation is temporarily unavailable. Your previous image is kept. Please contact support.', 503, 'image_unavailable');
+    throw last || new Error('no image provider available');
+  }
   // Cover-crop to the exact aspect ratio
   const img = await loadImage(raw);
   const c = createCanvas(r.w, r.h); const ctx = c.getContext('2d');

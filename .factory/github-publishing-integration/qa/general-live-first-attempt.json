@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "fixture": "astro",
+      "status": "failed-safely",
+      "http": 502,
+      "kind": "http",
+      "reason": "Provider/planning call did not complete; diagnostics suppressed",
+      "elapsedMs": 1051
+    }
+  ],
+  "providerRequests": 1,
+  "aiCalls": 1,
+  "modelCalls": [],
+  "halted": true,
+  "diagnosticsSuppressed": 2,
+  "scope": "Synthetic local source only, real configured provider through production ai.run; DB connection isolated to unreachable loopback; no GitHub or remote publishing writes."
+}

@@ -46,12 +46,25 @@ Then add credentials for the integrations you want — every one is optional and
 
 Run `npm run db:migrate` on deploy.
 
+### Daily social drafts
+
+The worker prepares one social pack per active business each day, from 08:00 in the business timezone. Unconfigured
+businesses default to LinkedIn and X drafts with branded visuals. Radar uses the Business Profile, content calendar,
+published Radar articles, cached blog content and search ideas, with profile-based topics when other sources run out.
+Drafts appear in Social Marketing for review and editing; manual generation remains available at any time.
+
+Social Marketing → Draft settings controls time, platforms, selected days and pause. Explicitly saved preferences
+are preserved, including an existing opt-in to automatic scheduling. New defaults save to the library; connecting a
+social account alone never enables automatic publishing. The worker catches up later the same day after downtime;
+daily packs are deduplicated across retries. No schema migration is needed for daily drafts.
+
 ## Docs
 - `ARCHITECTURE.md` — code layout, the client `app` object, actions, jobs, AI layer, dev stubs
 - `DIVERGENCES.md` — every divergence from the design, with status (some need product approval)
 - `docs/LAUNCH.md` — everything to set up to run Radar live (accounts, keys, OAuth apps, hosting)
 - `docs/webhook.md` — the signed webhook payload for the Webhook connector
 - `docs/CONTRACTS.md` — actions, components and job kinds shared between feature areas
+- `docs/SUPPORT.md` — dashboard AI assistant, email handoff, configuration and verification
 
 ## Scripts
 `npm run typecheck` · `npm test` · `npm run db:generate` (after schema changes) · `npm run db:migrate`

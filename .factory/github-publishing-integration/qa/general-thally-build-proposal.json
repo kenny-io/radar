@@ -1,0 +1,27 @@
+{
+  "destinationRevision": "c44cde2f12d5170a2fbaf4e038b467b12efb161f",
+  "proposalStage": "Initial generic proposal rejected by static reviewer; runtime verification performed independently without overriding review",
+  "proposedSourceSha256": {
+    "src/app/blog/reliable-publishing/content.mdx": "f872e66b7aba015226dea1a8822c7305f4840b54aa7570528a55c26086e7a069",
+    "src/app/blog/reliable-publishing/body.tsx": "d652186bb6820ecfa95298f0522242b38fae1e67e2edaf574667154ff8e61e9d",
+    "src/app/blog/reliable-publishing/page.tsx": "ed07cd65233a0e79e3ec0ec08f64ea61f86296b4057508a19c66d63855a4c532",
+    "src/app/blog/reliable-publishing/opengraph-image.tsx": "e9635d17250f248edbf7fc0e27dc2c7ab93beda191b3d503c6385eccdd718469",
+    "src/lib/blog.ts": "a1eee8bd3c5d577e759c277ce4068b484d77d0fbcd105700330681ea62eac887",
+    "public/llms.txt": "7edc8c2fec142ade1bfa34b6c3e14572b21e8412c993dfc22227ae0f5844b10e"
+  },
+  "checks": {
+    "normalPnpmBuild": "passed",
+    "repoTests": {
+      "passed": 149,
+      "files": 16
+    },
+    "generatedCatalogContainsRoute": true,
+    "generatedCatalogContainsOriginalBody": true,
+    "generatedCorpusContainsRoute": true
+  },
+  "notes": [
+    "No manual generated-catalog/corpus patches; normal build regenerated them.",
+    "Initial temp dependency symlink hit Turbopack filesystem restriction; isolated copy-on-write dependency copy fixed environment without source/build flag changes.",
+    "Git provenance warnings occur because source is an archive without .git; build/test exit status0."
+  ]
+}

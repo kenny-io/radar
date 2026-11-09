@@ -68,15 +68,22 @@
     {
       "idx": 9,
       "version": "7",
-      "when": 1793718547093,
-      "tag": "0009_lifecycle_emails",
+      "when": 1793808223880,
+      "tag": "0009_signup_security",
       "breakpoints": true
     },
     {
       "idx": 10,
       "version": "7",
-      "when": 1793745533158,
-      "tag": "0010_engagement_updates",
+      "when": 1793808223881,
+      "tag": "0010_lifecycle_emails",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793808223882,
+      "tag": "0011_engagement_updates",
       "breakpoints": true
     }
   ]

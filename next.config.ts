@@ -9,11 +9,12 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@napi-rs/canvas', 'pg', 'framer-api'],
   images: { unoptimized: true },
   async headers() {
-    const privateRoutes = ['signup', 'signin', 'login', 'start-trial', 'start', 'onboarding', 'dashboard', 'calendar', 'settings', 'brief', 'article', 'performance', 'backlinks', 'profile', 'api'];
+    const privateRoutes = ['signup', 'signin', 'verify-email', 'login', 'start-trial', 'start', 'onboarding', 'dashboard', 'calendar', 'settings', 'brief', 'article', 'performance', 'backlinks', 'profile', 'api'];
     return [
       { source: '/:path*', headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }, { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' }] },
       // Headers also cover redirect responses, which do not render layout metadata. HTML remains crawlable.
       ...privateRoutes.map(route => ({ source: `/${route}/:path*`, headers: [{ key: 'X-Robots-Tag', value: route === 'api' ? 'noindex, nofollow' : 'noindex, follow' }] })),
+      ...['/verify-email', '/api/auth/:path*'].map(source => ({ source, headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'Cache-Control', value: 'no-store' }] })),
       // The workspace page shares a prefix with public /social/*.png preview assets.
       { source: '/social', headers: [{ key: 'X-Robots-Tag', value: 'noindex, follow' }] },
       ...['forgot-password', 'reset-password'].map(route => ({ source: `/${route}/:path*`, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }, { key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'Cache-Control', value: 'no-store' }] })),

@@ -82,7 +82,7 @@ describe('analyzeIdeas core (02-system §8.3)', () => {
     expect(factByWords(P, 'project profitability')?.text).toMatch(/project/i);
     expect(factByWords(P, 'raise freelance rates')).toBeNull();
   });
-  it('auto schedule: daily / custom weekdays in the business timezone, 1h window', () => {
+  it('auto schedule: daily / custom weekdays after the local due time', () => {
     const a = { on: true, freq: 'custom' as const, days: ['Mon'], platforms: ['x' as const], style: 'branded' as const, time: '08:00' };
     expect(isDue(a, 'America/New_York', new Date('2026-10-19T12:10:00Z')).due).toBe(true); // Mon 08:10 ET
     expect(isDue(a, 'America/New_York', new Date('2026-10-20T12:10:00Z')).due).toBe(false); // Tue
