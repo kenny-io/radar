@@ -1,0 +1,12 @@
+{
+  "deployedCommit": "2d41a8015effc35fb90d0af12875ebb3963adaa5",
+  "localSourceFingerprint": "6b306cdbe23ff549130e05c078773aeb0730164cb9130c17fc7dae4f1a1b8a15",
+  "localFingerprintFiles": 641,
+  "all640TrackedSourceFilesMatchDeployedCommitGitArchive": true,
+  "generatedFileNotInGitArchive": [
+    "next-env.d.ts"
+  ],
+  "webDeployment": "537c66bc-28e6-440e-a065-e31c4ce35d25",
+  "workerDeployment": "31629ac4-d8a5-4627-99b0-e30dd7ba18b4",
+  "deploymentSuccessAndConfigProvenance": "PM Railway inspection and core-schema-verified.json; not inferred from public health"
+}

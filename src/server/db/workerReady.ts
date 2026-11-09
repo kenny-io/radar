@@ -16,10 +16,11 @@ export async function waitForWorkerSchema(options: ReadyOptions = {}): Promise<v
     p.onboarding, p.education, p.daily_brief, p.calendar_reminders, p.article_social,
     p.daily_brief_since, p.calendar_reminders_since, p.article_social_since,
     e.id, e.source_ref, e.resolved_at, e.resolved_reason, e.lifecycle_email_id,
-    m.payload_enc, m.claim_token, ed.next_lesson, ed.pending_email_id, u.email_verified_at, g.guide_id, g.first_observed_at, g.pending_email_id, g.source_business_id, b.autopilot, c.autopilot_activation_id, sp.autopilot_activation_id, o.sender_meta
-    FROM user_email_preferences p CROSS JOIN engagement_events e CROSS JOIN lifecycle_emails m CROSS JOIN education_enrollments ed CROSS JOIN users u CROSS JOIN lifecycle_guide_states g CROSS JOIN businesses b CROSS JOIN calendar_entries c CROSS JOIN social_pubs sp CROSS JOIN outbox_emails o LIMIT 0`, query_timeout: 5000 };
+    m.payload_enc, m.claim_token, ed.next_lesson, ed.pending_email_id, u.email_verified_at, g.guide_id, g.first_observed_at, g.pending_email_id, g.source_business_id, b.autopilot, c.autopilot_activation_id, sp.autopilot_activation_id, o.sender_meta, obs.series, obs.measured_at, vp.weekly_email, mt.entry_id
+    FROM user_email_preferences p CROSS JOIN engagement_events e CROSS JOIN lifecycle_emails m CROSS JOIN education_enrollments ed CROSS JOIN users u CROSS JOIN lifecycle_guide_states g CROSS JOIN businesses b CROSS JOIN calendar_entries c CROSS JOIN social_pubs sp CROSS JOIN outbox_emails o CROSS JOIN ai_observations obs CROSS JOIN visibility_preferences vp CROSS JOIN ai_miss_topics mt LIMIT 0`, query_timeout: 5000 };
   const probe = options.probe || (async () => {
     await pool.query(query);
+    await pool.query("SELECT 'ai_observations_series_day'::regclass, 'ai_observations_business_day'::regclass, 'lifecycle_report_business_sent_idx'::regclass");
     // Guide IDs are a checked allowlist: identical columns from0015 alone cannot admit the new guide safely.
     const constraintQuery = { text: `SELECT pg_get_constraintdef(oid) AS definition
       FROM pg_constraint WHERE conrelid = 'lifecycle_guide_states'::regclass

@@ -320,7 +320,7 @@ export const lifecycleEmails = pgTable('lifecycle_emails', {
   lastError: text('last_error'),
   createdAt: created(),
   sentAt: timestamp('sent_at', { withTimezone: true }),
-}, t => [uniqueIndex('lifecycle_event_uq').on(t.eventKey), index('lifecycle_due_idx').on(t.status, t.nextAttemptAt)]);
+}, t => [uniqueIndex('lifecycle_event_uq').on(t.eventKey), index('lifecycle_due_idx').on(t.status, t.nextAttemptAt), index('lifecycle_report_business_sent_idx').on(t.businessId,t.sentAt).where(sql`type = 'ai_weekly_report' AND status = 'sent'`)]);
 
 export const passwordResetTokens = pgTable('password_reset_tokens', {
   tokenHash: text('token_hash').primaryKey(),
@@ -553,3 +553,27 @@ export const lifecycleGuideStates = pgTable('lifecycle_guide_states', {
   index('lifecycle_guides_observe_idx').on(t.updatedAt, t.userId).where(sql`status = 'waiting'`),
   check('lifecycle_guide_id_check', sql`${t.guideId} IN ('article_workflow', 'search_refresh', 'autopilot_intro')`),
   check('lifecycle_guide_status_check', sql`${t.status} IN ('waiting', 'queued', 'sent', 'skipped', 'blocked')`)]);
+
+/** Append-only observations: failed attempts are explicit; stale successes are never copied to a new day. */
+export const aiObservations = pgTable('ai_observations', {
+  id: id(), businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  promptId: uuid('prompt_id').notNull().references(() => aiPrompts.id, { onDelete: 'cascade' }),
+  prompt: text('prompt').notNull(), engine: text('engine').notNull(), series: text('series').notNull(),
+  day: date('day').notNull(), status: text('status').$type<'mentioned' | 'not-mentioned' | 'not-collected'>().notNull(),
+  pos: integer('pos'), cites: jsonb('cites').$type<string[]>().notNull().default([]), measuredAt: timestamp('measured_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [index('ai_observations_series_day').on(t.businessId, t.series, t.day), index('ai_observations_business_day').on(t.businessId,t.day)]);
+
+/** A real, proposed calendar entry for a missed buyer question. One topic per prompt/series, across assistants. */
+export const aiMissTopics = pgTable('ai_miss_topics', {
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  promptId: uuid('prompt_id').notNull().references(() => aiPrompts.id, { onDelete: 'cascade' }),
+  series: text('series').notNull(),
+  entryId: text('entry_id').notNull().references(() => calendarEntries.id, { onDelete: 'cascade' }), createdAt: created(),
+}, t => [primaryKey({ columns: [t.businessId, t.promptId, t.series] })]);
+
+/** Independent optional weekly measurement report; missing preference is on. */
+export const visibilityPreferences = pgTable('visibility_preferences', {
+  businessId: uuid('business_id').primaryKey().references(() => businesses.id, { onDelete: 'cascade' }),
+  weeklyEmail: boolean('weekly_email').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

@@ -1,0 +1,21 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stdout | src/server/services/visibility/digest.integration.test.ts > weekly AI report actual database and lifecycle integration (fake transports) > registers and runs the real weekly report cron hook through the scheduler
+[visibility.weeklyDigest] { queued: 1, scanned: 1, skipped: 0, failed: 0 }
+
+stderr | src/server/services/visibility/digest.integration.test.ts > weekly AI report actual database and lifecycle integration (fake transports) > holds ambiguous report retries at23hours under the same body and key
+[lifecycle] delivery failed {
+  id: 'e0856705-5e1c-4899-b921-61b3f299aff0',
+  type: 'ai_weekly_report',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/visibility/digest.integration.test.ts (40 tests) 1377ms
+   ✓ weekly AI report actual database and lifecycle integration (fake transports) > pages beyond100 stale-series businesses during the same hour instead of starving a ready business  503ms
+
+ Test Files  1 passed (1)
+      Tests  40 passed (40)
+   Start at  03:11:40
+   Duration  2.14s (transform 225ms, setup 0ms, collect 610ms, tests 1.38s, environment 0ms, prepare 39ms)
+

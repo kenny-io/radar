@@ -1,0 +1,7 @@
+{
+  "hostedEvidence": "../production-core-after.json (PM read-only transaction)",
+  "all17HashesAndTimestampsMatchIndependentLocalComparison": true,
+  "canonicalFirst11LedgerRowsUnchanged": true,
+  "correctTableValidatedThreeGuideCheck": true,
+  "retiredTypesInAggregate": false
+}

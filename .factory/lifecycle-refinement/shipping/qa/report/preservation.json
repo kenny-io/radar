@@ -1,0 +1,18 @@
+{
+  "baseline": "034cb242",
+  "families": 29,
+  "variants": 72,
+  "slots": 30,
+  "all72ActiveZeroH1": true,
+  "allReferencesAndNumbersUnchanged": true,
+  "retired5HasNoActiveEntry": true,
+  "unchangedNonReportVariants": 68,
+  "unchangedNonReportHtmlTextFiles": 136,
+  "canonicalLegacyAliasFilesIdentical": 151,
+  "newReportVariants": [
+    "28A",
+    "28B",
+    "28C",
+    "28D"
+  ]
+}

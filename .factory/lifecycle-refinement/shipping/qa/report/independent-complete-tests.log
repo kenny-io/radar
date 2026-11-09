@@ -1,0 +1,18 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stderr | .factory/lifecycle-refinement/shipping/qa/report/behavior.test.ts > independent report evidence, bounded purpose and delivery > freezes full request body and identity after ambiguous attempt, then refuses changed recipient and23-hour expiry without rekey
+[lifecycle] delivery failed {
+  id: '57ccc1f6-6a95-4f12-89f6-364e28bc4120',
+  type: 'ai_weekly_report',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ .factory/lifecycle-refinement/shipping/qa/report/behavior.test.ts (13 tests) 607ms
+ ✓ .factory/lifecycle-refinement/shipping/qa/report/preferences.test.ts (5 tests) 101ms
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  03:14:24
+   Duration  2.17s (transform 255ms, setup 0ms, collect 1.14s, tests 708ms, environment 0ms, prepare 91ms)
+

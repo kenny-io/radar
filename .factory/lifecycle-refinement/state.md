@@ -1,5 +1,7 @@
 # State
 
+**Authorized shipping:** On2026-11-10 Dubai the user instructed shipping all designed emails/triggers. Core PR25 is merged and deployed as2d41a8015, migrations0011–0016 verified, education flag1 and actual scheduled sends accepted. The bounded canonical #28 follow-up adds0017. Current release state and evidence are in [shipping/state.md](shipping/state.md); it supersedes older unmerged/local-only release boundaries below.
+
 **Current checkpoint:** Autopilot introduction #30 and removal of redundant email-body headings. See [autopilot-intro-verification.md](autopilot-intro-verification.md), independent [qa/autopilot-intro/report.md](qa/autopilot-intro/report.md) and prior [qa/no-headings/report.md](qa/no-headings/report.md). Current catalogue:29 active families /72 variants /30 permanent slots, #5 retired. Migration0016 follows unchanged0011–0015. New introduction is once per eligible verified owner at first observation +48hours, skipping any owned current/past Autopilot use, under existing education defaults/opt-outs/cap/daytime. Five core lessons remain finite and independent. PR25 remains unmerged/undeployed. Earlier checkpoints below retain historical evidence.
 
 **Previous integration checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.

@@ -1,0 +1,11 @@
+{
+  "providerId": "01a1c286-36c5-77cf-9a75-915273b8433f",
+  "from": "Ekene from Radar <radar@thally.io>",
+  "replyTo": "team@thally.io",
+  "subject": "Reset your Radar password",
+  "providerStatus": "delivered",
+  "bodyH1Count": 0,
+  "onlySimulatorRecipient": true,
+  "attempts": 1,
+  "humanInboxPlacementVerified": false
+}

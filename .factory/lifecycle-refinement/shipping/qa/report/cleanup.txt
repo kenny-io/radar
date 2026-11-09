@@ -1,0 +1,7 @@
+users|0
+businesses|0
+outbox|0
+observations|0
+preferences|0
+topics|0
+jobs|0

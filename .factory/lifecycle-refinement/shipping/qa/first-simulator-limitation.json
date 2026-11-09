@@ -1,0 +1,10 @@
+{
+  "source": "PM provider inspection after QA browser request",
+  "firstAliasLocalPartLength": 66,
+  "providerStatus": 422,
+  "providerIdCreated": false,
+  "classification": "Invalid nonhuman test fixture; browser generic200 does not establish provider acceptance",
+  "qaWillNotRetryOrReuseOldFixture": true,
+  "replacementTriggerOwner": "PM",
+  "credentialsAndAddressExcluded": true
+}

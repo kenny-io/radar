@@ -1,0 +1,163 @@
+{
+  "checkedAt": "2026-11-09T22:59:13.979Z",
+  "tables": [
+    {
+      "table_name": "education_enrollments"
+    },
+    {
+      "table_name": "email_verification_tokens"
+    },
+    {
+      "table_name": "lifecycle_emails"
+    },
+    {
+      "table_name": "lifecycle_guide_states"
+    },
+    {
+      "table_name": "outbox_emails"
+    },
+    {
+      "table_name": "user_email_preferences"
+    }
+  ],
+  "migrations": [
+    {
+      "id": 1,
+      "hash": "b162f1b788c4e56d321c2da5b45e3d63387b6c288bd2f403133a68078926a47e",
+      "created_at": "1792374073281"
+    },
+    {
+      "id": 2,
+      "hash": "3e21923cd1f04ba7c086f626e00220cdcfaa17501676957695942c82d77ca4c7",
+      "created_at": "1792426844558"
+    },
+    {
+      "id": 3,
+      "hash": "2b7a15e0b5c3f06824f4e69c30bb9bb4fa69192632580b1ef1a78d9215b3d75c",
+      "created_at": "1792436820092"
+    },
+    {
+      "id": 4,
+      "hash": "e1c3ed1aa0b9f62b9f6077eabb30078b0b2ecaa2c532b05e1acb515e011491f2",
+      "created_at": "1792438536552"
+    },
+    {
+      "id": 5,
+      "hash": "5a14c8498a168c0440a62e6d769cbfba2b29d8db51ecf2ac4dc7257de7bc9123",
+      "created_at": "1792453791564"
+    },
+    {
+      "id": 6,
+      "hash": "8bf21783ad26781f71f5652a0aa05fad2258e3161147c955b18f227aa9f016c5",
+      "created_at": "1792591112480"
+    },
+    {
+      "id": 7,
+      "hash": "16b9b0e34032434515a7a9c669da8f0ecc8dc7ef3884a2a010af551c34a84c49",
+      "created_at": "1792766860153"
+    },
+    {
+      "id": 8,
+      "hash": "e206b1cee9f65d236f4574035c62c2c2622fb922a3e2a248d73e609548de7752",
+      "created_at": "1792896627850"
+    },
+    {
+      "id": 9,
+      "hash": "a8b3f14fc633172887a55de8356a7dde386a9076009412c1c0dcfc66bfaaca4d",
+      "created_at": "1792896628517"
+    },
+    {
+      "id": 10,
+      "hash": "8d86dadf2209699bbd4c6e3a67d2b5ea2c766c36e13bf308e18066de2ea1ed5b",
+      "created_at": "1793808223880"
+    },
+    {
+      "id": 11,
+      "hash": "df6995cf7d0268cd918c917a28348f2049d879a8a8bf25a76d0b8c9a85888881",
+      "created_at": "1794254096992"
+    },
+    {
+      "id": 12,
+      "hash": "a91aa6c8cd95bd02ba46e8147977efe142e3962cc16988c5a2e7099a124ace8e",
+      "created_at": "1794254096993"
+    },
+    {
+      "id": 13,
+      "hash": "0da601d21eb36bc576cf22ff5b5945d706c079f96d990d589496202125e2324f",
+      "created_at": "1794254096994"
+    },
+    {
+      "id": 14,
+      "hash": "01e37f79634f2553457a7e2b5ff8ef8eb8ba794a97ea7281964f1896eb12daab",
+      "created_at": "1794254096995"
+    },
+    {
+      "id": 15,
+      "hash": "ee864aa2adcb4e13015a8f1da1b402d834f9cc57a57205fdf40f2898915fdb13",
+      "created_at": "1794254096996"
+    },
+    {
+      "id": 16,
+      "hash": "ce22df74af30b42b6b66bf14834a34396e27f46a7c270ec099b3b04175fcd5a6",
+      "created_at": "1794258891387"
+    },
+    {
+      "id": 17,
+      "hash": "37c60ce4866ea5b09269ae7dfd16c3c0200ed13705acef023d8623736293a56f",
+      "created_at": "1794263253046"
+    }
+  ],
+  "counts": {
+    "lifecycle_emails": [
+      {
+        "type": "weekly_education",
+        "status": "queued",
+        "count": 2
+      },
+      {
+        "type": "weekly_education",
+        "status": "sent",
+        "count": 3
+      }
+    ],
+    "education_enrollments": [
+      {
+        "status": "active",
+        "count": 5
+      }
+    ],
+    "lifecycle_guide_states": [
+      {
+        "guide_id": "article_workflow",
+        "status": "skipped",
+        "count": 1
+      },
+      {
+        "guide_id": "article_workflow",
+        "status": "waiting",
+        "count": 4
+      },
+      {
+        "guide_id": "autopilot_intro",
+        "status": "skipped",
+        "count": 1
+      },
+      {
+        "guide_id": "autopilot_intro",
+        "status": "waiting",
+        "count": 4
+      }
+    ]
+  },
+  "verified": {
+    "accounts": 5,
+    "verified_accounts": 5
+  },
+  "constraints": [
+    {
+      "conname": "lifecycle_guide_id_check",
+      "convalidated": true,
+      "definition": "CHECK ((guide_id = ANY (ARRAY['article_workflow'::text, 'search_refresh'::text, 'autopilot_intro'::text])))"
+    }
+  ]
+}
