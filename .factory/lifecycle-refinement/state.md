@@ -1,6 +1,6 @@
 # State
 
-**Current copy:** [distinct-copy-verification.md](distinct-copy-verification.md); current runtime/release constraints: [founder-release-verification.md](founder-release-verification.md). Personal founder copy;28 active families/68 variants; #5 retired; migrations through 0015. Final source a8f27eee…/636 files, build bv5te1pvkwPdSan9Pwrfw. PR #25 remains unmerged/undeployed. Earlier checkpoints below retain their historical evidence.
+**Current checkpoint:** Autopilot introduction #30 and removal of redundant email-body headings. See [autopilot-intro-verification.md](autopilot-intro-verification.md), independent [qa/autopilot-intro/report.md](qa/autopilot-intro/report.md) and prior [qa/no-headings/report.md](qa/no-headings/report.md). Current catalogue:29 active families /72 variants /30 permanent slots, #5 retired. Migration0016 follows unchanged0011–0015. New introduction is once per eligible verified owner at first observation +48hours, skipping any owned current/past Autopilot use, under existing education defaults/opt-outs/cap/daytime. Five core lessons remain finite and independent. PR25 remains unmerged/undeployed. Earlier checkpoints below retain historical evidence.
 
 **Previous integration checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.
 
@@ -42,3 +42,14 @@ At00a32602 the user identified duplicated #11/#13 and required the correction ac
 ## No body-headline checkpoint
 
 User requested removing the redundant body H1s. The minimal point edit is accepted in qa/no-headings/report.md:68 exact body comparisons,136 renders,34 pure checks/typecheck/11 catalogue controls pass. No other copy/links/sender/schedule/schema change. Source7a0614cd…/636files; gallery04c51411…/354files. Preserved before the subsequent new Autopilot-intro feature request; same numbering and #5 retired.
+
+## Autopilot introduction checkpoint
+
+| Task | Owner | Status | Evidence |
+| --- | --- | --- | --- |
+| AI-A | factory-architect | verified | autopilot-intro-architecture.md; observed48h clock, account-wide use tombstones, explicit Settings activation |
+| AI-E | factory-engineer | verified | autopilot-intro-runtime.md;164 lifecycle/readiness tests and migration proofs |
+| AI-P | PM | verified | Founder copy, bound Settings CTA, four #30 variants, complete catalogue/docs and integrated build/full-suite verification |
+| AI-Q | factory-qa | verified | Independent backend/browser/render/migration acceptance in qa/autopilot-intro |
+
+Optimized build tf8NPjH3mJSdrM-Of5Leo and persisted-source typecheck pass. Fresh full suite:1371 passed,65 external skips; sole unchanged independently established native-raster golden mismatch. No production/provider/customer actions, activation, charge, merge or deployment. Release requires matching migrations through0016 and guide-ID-aware worker; preserve histories/keys/snapshots on pause/rollback. See current verification for exact fingerprint and final acceptance.

@@ -1,0 +1,49 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+ ✓ src/server/services/lifecycle/guides.test.ts (15 tests) 1123ms
+ ✓ src/server/services/lifecycle/autopilotIntro.test.ts (17 tests) 719ms
+stderr | src/server/services/lifecycle/education.test.ts > weekly education (real PostgreSQL; fake provider) > retains frozen body and key after an ambiguous provider failure and blocks expired retries
+[lifecycle] delivery failed {
+  id: 'a7a7e480-373e-4f99-ac48-6a1970829511',
+  type: 'weekly_education',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/lifecycle/education.test.ts (27 tests) 578ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: '5d6f6eac-4535-4941-94e8-06a148150c4f', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: '9922657c-b799-4cfa-bb05-e151743b8526',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: 'e1205dcc-d4fc-4581-b3c5-076e410007c6',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: 'e9f85458-e549-4b75-978d-45b77593438d',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 167ms
+ ✓ src/server/services/lifecycle/templates.test.ts (26 tests) 35ms
+ ✓ src/server/db/workerReady.test.ts (6 tests) 5ms
+
+ Test Files  6 passed (6)
+      Tests  105 passed (105)
+   Start at  02:40:09
+   Duration  5.53s (transform 206ms, setup 0ms, collect 1.82s, tests 2.63s, environment 1ms, prepare 259ms)
+

@@ -1,0 +1,82 @@
+{
+  "base": "http://localhost:3951",
+  "buildId": "tf8NPjH3mJSdrM-Of5Leo",
+  "environment": "Actual optimized production; ordinary synthetic accounts; no worker/provider; all external browser requests aborted",
+  "externalAborted": 0,
+  "actionPosts": 0,
+  "checks": [
+    {
+      "name": "actual #30 has no body headline and one fixed business-scoped Settings destination",
+      "pass": true
+    },
+    {
+      "name": "owner email link selects its business despite a different current business",
+      "pass": true
+    },
+    {
+      "name": "owner sees an off explicit toggle without activation",
+      "pass": true
+    },
+    {
+      "name": "publication without review authority is visible before any toggle",
+      "pass": true
+    },
+    {
+      "name": "business and consumed Settings section survive refresh",
+      "pass": true
+    },
+    {
+      "name": "foreign business denied without changing selected business cookie",
+      "pass": true
+    },
+    {
+      "name": "signed-out email preserves the intended owner business through signin",
+      "pass": true
+    },
+    {
+      "name": "member can view business settings but cannot use the owner toggle",
+      "pass": true
+    },
+    {
+      "name": "preference description supports all one-time guides without obsolete two-guide count",
+      "pass": true
+    },
+    {
+      "name": "education optout persists by keyboard and preserves work categories",
+      "pass": true
+    },
+    {
+      "name": "start_trial copy uses truthful public access gate without private business ID",
+      "pass": true
+    },
+    {
+      "name": "start_trial CTA reaches a usable gate without payment or activation",
+      "pass": true
+    },
+    {
+      "name": "restart copy uses truthful public access gate without private business ID",
+      "pass": true
+    },
+    {
+      "name": "restart CTA reaches a usable gate without payment or activation",
+      "pass": true
+    },
+    {
+      "name": "setup copy uses truthful public access gate without private business ID",
+      "pass": true
+    },
+    {
+      "name": "setup CTA reaches a usable gate without payment or activation",
+      "pass": true
+    },
+    {
+      "name": "all read-only email arrivals leave program disabled and enqueue no actions",
+      "pass": true
+    },
+    {
+      "name": "owner/Viewer/settings controls fit mobile width",
+      "pass": true
+    }
+  ],
+  "errors": []
+}

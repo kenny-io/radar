@@ -1,0 +1,18 @@
+{
+  "base": "22267d421851bde1504282a9b0375d2e1713ecbf",
+  "migration": "0016_autopilot_intro",
+  "checks": {
+    "clean17": true,
+    "upgrade15to16": true,
+    "oldReadinessRejected": true,
+    "newReadinessAccepted": true,
+    "oldCheckRejectsIntro": true,
+    "newCheckAdmitsIntro": true,
+    "completedCoursePreserved": true,
+    "bothGuideHistoriesAndFrozenAttemptPreserved": true,
+    "explicitOptoutPreserved": true,
+    "prior16LedgerRowsUnchanged": true,
+    "rerunNoop": true
+  },
+  "migrationSha256": "37c60ce4866ea5b09269ae7dfd16c3c0200ed13705acef023d8623736293a56f"
+}

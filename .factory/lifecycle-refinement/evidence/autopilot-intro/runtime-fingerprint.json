@@ -1,0 +1,16 @@
+{
+  "base": "22267d421851bde1504282a9b0375d2e1713ecbf",
+  "sha256": {
+    "src/server/db/schema.ts": "2eada4c4a8e321ef643b4abc3d0850745686e5178bec7de630d3f1964da0458c",
+    "src/server/db/workerReady.ts": "b5daf67abc9beef94bf2223ca723b80bca92fcf8824a00af57ceddd6c787835f",
+    "src/server/db/workerReady.test.ts": "1856949824b51b3295e04a02c26276ed09cf40aa7555d105b5de14d8e694804d",
+    "src/server/services/lifecycle/guides.ts": "d6808a8f82fb29c1869c11fcc09c41e1d9cccd1eff4ee69a8d86bbe396c385ef",
+    "src/server/services/lifecycle/guides.test.ts": "39cee8769618d1e8dfa02d40867ffcceacd9e855a48e529c5b1f7176cc002452",
+    "src/server/services/lifecycle/autopilotIntro.test.ts": "cb2c58aeea960c7a4d4ae504ebef89dfa38ef21ad1cb478528c7252fc5015a13",
+    "drizzle/0016_autopilot_intro.sql": "37c60ce4866ea5b09269ae7dfd16c3c0200ed13705acef023d8623736293a56f",
+    "drizzle/meta/0016_snapshot.json": "1dcebec1e67bc0f150a4d0aba692a348f386f90a91f1ef6eef7fefc9d968e2d7",
+    "drizzle/meta/_journal.json": "151dbf5518b517be3a9917fc13f20b00a5e102be469d155b61fe6649b5065e4a"
+  },
+  "snapshotAncestryAndOnlyGuideCheckChanged": true,
+  "priorMigrationsUnchanged": true
+}

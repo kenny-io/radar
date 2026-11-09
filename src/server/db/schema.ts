@@ -539,7 +539,7 @@ export const educationEnrollments = pgTable('education_enrollments', {
 /** Account-wide one-time guide history, independent of the five-lesson course. */
 export const lifecycleGuideStates = pgTable('lifecycle_guide_states', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  guideId: text('guide_id').$type<'article_workflow' | 'search_refresh'>().notNull(),
+  guideId: text('guide_id').$type<'article_workflow' | 'search_refresh' | 'autopilot_intro'>().notNull(),
   firstObservedAt: timestamp('first_observed_at', { withTimezone: true }).notNull().defaultNow(),
   dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
@@ -551,5 +551,5 @@ export const lifecycleGuideStates = pgTable('lifecycle_guide_states', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => [primaryKey({ columns: [t.userId, t.guideId] }), index('lifecycle_guides_due_idx').on(t.dueAt, t.userId).where(sql`status = 'waiting'`),
   index('lifecycle_guides_observe_idx').on(t.updatedAt, t.userId).where(sql`status = 'waiting'`),
-  check('lifecycle_guide_id_check', sql`${t.guideId} IN ('article_workflow', 'search_refresh')`),
+  check('lifecycle_guide_id_check', sql`${t.guideId} IN ('article_workflow', 'search_refresh', 'autopilot_intro')`),
   check('lifecycle_guide_status_check', sql`${t.status} IN ('waiting', 'queued', 'sent', 'skipped', 'blocked')`)]);

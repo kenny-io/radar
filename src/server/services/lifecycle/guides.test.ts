@@ -52,7 +52,7 @@ describe.skipIf(!process.env.DATABASE_URL)('one-time lifecycle guides (Postgres;
   it('permanently skips meaningful workflow in any owned business without per-business duplicates', async () => {
     const {u} = await owner(), other = await F.biz(u);
     await db.insert(schema.calendarEntries).values({ id: 'approved-' + u.id, businessId: other.id, title: 'Existing topic', kw: 'topic', type: 'Guide', date: '2026-11-09', status: 'approved' });
-    await collectGuides(now, [u.id]); expect((await state(u.id)).status).toBe('skipped'); await db.delete(B).where(eq(B.id, other.id)); await collectGuides(new Date(now.getTime() + 10 * DAY), [u.id]); expect(await mails(u.id)).toHaveLength(0);
+    await collectGuides(now, [u.id]); expect((await state(u.id)).status).toBe('skipped'); await db.delete(B).where(eq(B.id, other.id)); await collectGuides(new Date(now.getTime() + 10 * DAY), [u.id]); expect((await mails(u.id)).filter(m => unpack(m).data.guide?.id === 'article_workflow')).toHaveLength(0);
   });
   it('excludes guests, unverified, opted-out and member-only users without borrowing a profile', async () => {
     const {u,b} = await owner(), guest = await F.user({guest:true}), unverified = await F.user({verified:false}), member = await F.user(); await F.member(b.id, member); await updateEducationPreference(u.id, false);
@@ -72,7 +72,7 @@ describe.skipIf(!process.env.DATABASE_URL)('one-time lifecycle guides (Postgres;
     const fake = provider(503); await send(u.id,due,fake); const [first] = await mails(u.id); expect(first.businessId).toBeNull(); expect(unpack(first).envelope.headers?.['List-Unsubscribe']).toContain(encodeURIComponent(educationPreferenceToken(u.id)));
     const retry = first.nextAttemptAt; vi.setSystemTime(retry); const ack = provider(); await send(u.id,retry,ack);
     expect(fake.mock.calls.filter(([,i])=>i?.method==='POST')[0][1]?.body).toBe(ack.mock.calls.filter(([,i])=>i?.method==='POST')[0][1]?.body);
-    expect(await state(u.id)).toMatchObject({status:'sent',pendingEmailId:null,sentAt:retry}); await collectGuides(new Date(retry.getTime()+100*DAY),[u.id]); expect(await mails(u.id)).toHaveLength(1);
+    expect(await state(u.id)).toMatchObject({status:'sent',pendingEmailId:null,sentAt:retry}); await collectGuides(new Date(retry.getTime()+100*DAY),[u.id]); expect((await mails(u.id)).filter(m => unpack(m).data.guide?.id === 'article_workflow')).toHaveLength(1);
   });
   it('defers stale search before first attempt, then renders current data when it is useful again', async () => {
     const {u,b} = await owner(); await organic(u.id,new Date(now.getTime()-10*DAY)); await gsc(b.id); await collectGuides(now,[u.id]); const due = new Date(now.getTime()+DAY); vi.setSystemTime(due);

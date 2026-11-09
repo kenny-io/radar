@@ -1,0 +1,626 @@
+{
+  "baseline": "22267d421851bde1504282a9b0375d2e1713ecbf",
+  "previousVariants": 68,
+  "unchangedHtmlAndTextFiles": 136,
+  "previousMetadataUnchanged": true,
+  "newVariants": [
+    {
+      "id": "guide-autopilot_intro-workspace",
+      "family": "guide-autopilot_intro",
+      "group": "education",
+      "trigger": "Eligible verified owner/profile; no current or previous Autopilot use in any owned business",
+      "cadence": "Once per account; first eligible observation +48 hours; education opt-out, daytime and shared optional cap apply",
+      "scenario": "workspace",
+      "primary": true,
+      "number": 30,
+      "reference": "30A",
+      "status": "Local lifecycle release in PR #25",
+      "file": "guide-autopilot_intro-workspace.html",
+      "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Too busy to keep up with publishing?",
+      "preheader": "Put Radar on Autopilot and hand over the day-to-day content and social work."
+    },
+    {
+      "id": "guide-autopilot_intro-start_trial",
+      "family": "guide-autopilot_intro",
+      "group": "education",
+      "trigger": "Eligible verified owner/profile; no current or previous Autopilot use in any owned business",
+      "cadence": "Once per account; first eligible observation +48 hours; education opt-out, daytime and shared optional cap apply",
+      "scenario": "start_trial",
+      "primary": false,
+      "number": 30,
+      "reference": "30B",
+      "status": "Local lifecycle release in PR #25",
+      "file": "guide-autopilot_intro-start_trial.html",
+      "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Too busy to keep up with publishing?",
+      "preheader": "Put Radar on Autopilot and hand over the day-to-day content and social work."
+    },
+    {
+      "id": "guide-autopilot_intro-restart",
+      "family": "guide-autopilot_intro",
+      "group": "education",
+      "trigger": "Eligible verified owner/profile; no current or previous Autopilot use in any owned business",
+      "cadence": "Once per account; first eligible observation +48 hours; education opt-out, daytime and shared optional cap apply",
+      "scenario": "restart",
+      "primary": false,
+      "number": 30,
+      "reference": "30C",
+      "status": "Local lifecycle release in PR #25",
+      "file": "guide-autopilot_intro-restart.html",
+      "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Too busy to keep up with publishing?",
+      "preheader": "Put Radar on Autopilot and hand over the day-to-day content and social work."
+    },
+    {
+      "id": "guide-autopilot_intro-setup",
+      "family": "guide-autopilot_intro",
+      "group": "education",
+      "trigger": "Eligible verified owner/profile; no current or previous Autopilot use in any owned business",
+      "cadence": "Once per account; first eligible observation +48 hours; education opt-out, daytime and shared optional cap apply",
+      "scenario": "setup",
+      "primary": false,
+      "number": 30,
+      "reference": "30D",
+      "status": "Local lifecycle release in PR #25",
+      "file": "guide-autopilot_intro-setup.html",
+      "format": "HTML + plain text",
+      "from": "Ekene from Radar <notifications@radar.example>",
+      "replyTo": "team@thally.io",
+      "subject": "Too busy to keep up with publishing?",
+      "preheader": "Put Radar on Autopilot and hand over the day-to-day content and social work."
+    }
+  ],
+  "files": [
+    {
+      "path": ".factory/lifecycle-refinement/previews/welcome.html",
+      "sha256": "968945e0f8eeeb74eb383738345ff0cc986d649522917ecd5e4f768bc2fbfabe"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/welcome.txt",
+      "sha256": "221f28dc469551f4ac34582e50b03a6947846a8db635683360496ee3530a69ad"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/welcome-neutral.html",
+      "sha256": "ddebf2852186a4ab04992c1b1b1271748ffb288b0c2b537acadb7978e078f132"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/welcome-neutral.txt",
+      "sha256": "0671b008049a65c5726562adebb9e72687c3bcd880900bbbbbbef5e9c0691402"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/founder_note.html",
+      "sha256": "5f86a3e62046c0bc48539f117b1e0d742e3e0a242ae1cfad14bdefa6b7bb8557"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/founder_note.txt",
+      "sha256": "8808f227ea200a48312490e5111285aad8b99166cfee42173615ab22e73e770f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/password_reset.html",
+      "sha256": "22556447c18b7894b3c5c74be6b54881f43a980d42b1a23b7571ea01c2e62dd6"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/password_reset.txt",
+      "sha256": "602373b30b6abb262226ec9eda30fd783761d1c606eff53666a5da2985ffc474"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/trial_started.html",
+      "sha256": "1e460a2b012f1b72e0539655577e0a8c110097619db476d1c8e1da7f426fc0ed"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/trial_started.txt",
+      "sha256": "f7f5d45c9bdeb204ff9631f42c2cb864463662baec4f2f824b4c1b234b31a625"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invoice_paid.html",
+      "sha256": "9258db73cda7f9f20ec59c6194a49805e17e3ed4de53461ad638ed69b2e883ba"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invoice_paid.txt",
+      "sha256": "274d98327d9d37c1c1e6e44b1b8d071fa6c15aaf9fe46b581b7ca4d50646bc3e"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invoice-paid-no-amount.html",
+      "sha256": "e8ed9be0d190b100fab1f5a547edfc4338a7d36d5c6ddbe03f989d6fe4d1223e"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invoice-paid-no-amount.txt",
+      "sha256": "164020fef8b1fb314eac37005dcabcc63d8d843e75abaa39dbd662aadbc1688f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/payment_failed.html",
+      "sha256": "460f9e2e61ce18c66ccd69403f5d88bbdfb3a68e945bc3a9e8cff9cdb4a52407"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/payment_failed.txt",
+      "sha256": "baf2fa04219f4ea8b98c16fb8fc4723895d828c395cce0141d15a67c20545d5f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/payment-failed-no-amount.html",
+      "sha256": "460f9e2e61ce18c66ccd69403f5d88bbdfb3a68e945bc3a9e8cff9cdb4a52407"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/payment-failed-no-amount.txt",
+      "sha256": "9edb91ab03ba19f96e6b393187b93b2e7704046ea304cfebb5535b968037100f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/cancellation_scheduled.html",
+      "sha256": "17adca4d5e83eb20163278c4bd2e205357e662aa59bd4ecce0d9c268759cf3fc"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/cancellation_scheduled.txt",
+      "sha256": "f29e763e5de8c60aa87b27057c07e713576e3701c4decd0013fc90c7bd5b243f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/subscription_ended.html",
+      "sha256": "56d00c4b535b5b481c2337561a189afd1db35c6480635d091c6642a6a4f084b0"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/subscription_ended.txt",
+      "sha256": "4725dc884424bfa41773872f2c7d846ceab28320f72c5e809d43db7eb6346bf5"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/subscription-setup-expired.html",
+      "sha256": "3628846a7ded75e1286da406d35d99df6c2ab940fe3ce0fc3cb4af9ffff6262d"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/subscription-setup-expired.txt",
+      "sha256": "919010984397972e23b119b388806078733f275ed125a6dc3db98333db5c55e9"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-brief_reply.html",
+      "sha256": "2e562e8e505c2d35c8b610731f9d82b3057a20b4e5e3e899d2a39c39960b4550"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-brief_reply.txt",
+      "sha256": "d4bd4ad092add0db960f761fbe79eb385ddb9afc9495d7edb7d141c44cca86bc"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-calendar_review.html",
+      "sha256": "66ff6912e7bd0b14f47247d84d130b6d04e57774cbc9cc7daedbad165db1fc13"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-calendar_review.txt",
+      "sha256": "2f7af32a385d05bae3a135b7627ee27d73f5190148fd194ff673e3d5cea6d3ad"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-article_social.html",
+      "sha256": "345491c726bb29f18f062a15c67f0557fb6be098d76a006bfa6ecf269beafe9f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-article_social.txt",
+      "sha256": "3036d4ed2c603cd602c3e6b44c301ef4c92636dbcff2b8a752c474a13f6725dc"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-social_publish.html",
+      "sha256": "109693d001a65e998eb5f60692ffe786043402019917ab312495e728051b3144"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-social_publish.txt",
+      "sha256": "c04d0c4cc39ccaa6c3a9c6934388f5709e972494980f46015b2d476e48f41942"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-combined.html",
+      "sha256": "06b5122ad0cf27ef5a3b9f195a4cabd159f009bed2fab6f8c058fa1d78dd2a2a"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/work-combined.txt",
+      "sha256": "b5c440e74bbe5bc0367974b56471fd4c51398ccee0c9281818792d39bdf8e59c"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-workspace.html",
+      "sha256": "f384bf854341c63bee99ed8c593f019b1767ba095dbf7689dd9a33b7518e813d"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-workspace.txt",
+      "sha256": "ad0f27b369a7ae74d7dada2560468f6d70264bc04d8729f652d0d251442ed53f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-start_trial.html",
+      "sha256": "41fa12211714b040dd5a98df00ff0bc5a73d1d89ab5b8715f03dad8bc2d39436"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-start_trial.txt",
+      "sha256": "5a106cd7761f13fbe5a0b93172a4264f9add362799d8f2ae2fd4459990a08aa4"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-restart.html",
+      "sha256": "2e3242f7d3ef3844a1ef5c825284d7efb5dcf90d8c14a108b1f53fc66cdbbc88"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-restart.txt",
+      "sha256": "1494e62864307acbf03da685db5ce50c6cf45b4e17347bead203df14a7def6a2"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-setup.html",
+      "sha256": "a6972e9c1bd4a827783052838ceb1c07091f73687f910a62273b64d56584ebcb"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-setup.txt",
+      "sha256": "75d5ac05b706e6e9592e3b60de8d77fdffd9f62fe43bf90105737182291926a2"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-neutral.html",
+      "sha256": "c646a86833af2870e13f632b7d830e109d26f739bd246f6b30548734c0a32610"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-neutral.txt",
+      "sha256": "4989dcebf7c990430a68347b12d11f411011e3f88dd368b906b61d78c3936e3c"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-workspace.html",
+      "sha256": "13242682dea0a1b41f4484f53334fbdabb905fc5e149cc0929e858281b87053e"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-workspace.txt",
+      "sha256": "b37b4f2222fe987327273ea80e9c73639618886df086d0d381564fe8dcc2b313"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-start_trial.html",
+      "sha256": "e2d7e4f3f9b69ec2887db0e6fa8ad62637f299967186b7544000e9d5e6e12647"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-start_trial.txt",
+      "sha256": "7491404460ba65db4574ba37f8bf721de553db757e4f5d85fbe24143796e807a"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-restart.html",
+      "sha256": "960ee60d30d57bcbfc70291113fa4c31ce326ab9c881ef59ddbc12a9eeb15848"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-restart.txt",
+      "sha256": "329d37774846159326f9d78f1fc91ab1afc4768478d263cd8da0e0a3a9135a30"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-setup.html",
+      "sha256": "456c211c9f7f3f2077873aefc3d46570fcfe42f624841c3846da5c66a251e182"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-setup.txt",
+      "sha256": "130ebe06c79573215efcb84c0f59a4778f92130bca85fb99d25f9cf6edabeabe"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-neutral.html",
+      "sha256": "ba70aa8b727b9b2b1d03edf01a34bfae28aaa973c71029ed1943b97491a8842b"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-neutral.txt",
+      "sha256": "589ac864d00b7e49439758165ce4aa2ecc34d498bb71801be5c4131234195db7"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-workspace.html",
+      "sha256": "276e377ba9d98cc84767c33acf89c1bc8d93041e7c89db2de7a147e4b7f9d260"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-workspace.txt",
+      "sha256": "ad5945c8b902ec5f5b2f34aea099a0e6b945e6c54f4bd4fe77c2bd1e9b96e10d"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-start_trial.html",
+      "sha256": "7313cdef08c214086b1c69b8bbf14b63527a936bf6714641b4b432fd569907f6"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-start_trial.txt",
+      "sha256": "bc58a06e207942d432cf84c601eb324b1b49414fa74a5b0aa952a03b9f61135b"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-restart.html",
+      "sha256": "e3c0b662c2ddd1218d274e80f74acf8d3f564e3305893c9cccd9e066d20d17f8"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-restart.txt",
+      "sha256": "405de7ab1a508852a4d56e44c2fc068169c2746dd4bd430ea05907238cb26830"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-setup.html",
+      "sha256": "e1e8b10ebb48e922f749bf1a745859295064151b6a5551a43bb4f4bc16ae7f75"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-setup.txt",
+      "sha256": "00b2f68cd3f0f3eb8de713a05ef033323d90812f44a7758217ab476becf5ca88"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-neutral.html",
+      "sha256": "a050716e28a9c7968423361072b6d3aba039c6aefd27680f24831335f058ff83"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-neutral.txt",
+      "sha256": "6046db0232ecb14bb9feec034d26af49ee876009aee79132b0aadcf9555f3ca1"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-workspace.html",
+      "sha256": "0d4ca832579abbc152c5661fca1ebff135e0784629d46ca23899fa9aadbbfbb0"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-workspace.txt",
+      "sha256": "6e08c57c5b0a5d8d8bdf3d0c13e65ba84fa66e003c193d69f2b8d8d1234d716b"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-start_trial.html",
+      "sha256": "661fd676d6081ac2fdf8db876351b76c272d9370068294bf5772ec21198cfcb4"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-start_trial.txt",
+      "sha256": "ca8eb0f81ab1be6149046c23908af058d71b71ecfd8a0485eb36ca3fad19c0d1"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-restart.html",
+      "sha256": "ccc50b52a46937a3ea5c83a7aad55f48781ad6ba796f3b182fd2e6e94029e754"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-restart.txt",
+      "sha256": "af31bf7e97eda4124d60d5d10f5691736503e7a0dd1f36ba1dfab8b9af3c7a5e"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-setup.html",
+      "sha256": "7d6ce9c2ff8db777f736757e0781abb9eb1b9ab172d29cbd3c08494a66f8e7b5"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-setup.txt",
+      "sha256": "22d8255cb9fda0378abf2f47193745600215c5a9e71dad73c6186f2caec37b51"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic-search-disconnected.html",
+      "sha256": "dc0bfdaec38cdda516bb18b39ce2223dcc0cc08ce85f3d341a88142b91970882"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic-search-disconnected.txt",
+      "sha256": "6351aec77d029f3e2f836634c4cd1c26974e093ea1fe2659376022eecdd6c397"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-neutral.html",
+      "sha256": "6bab939eb37bf029285de0352f8be99641b58b3878ff5a10d0ea697859b20fbe"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-neutral.txt",
+      "sha256": "7e8acae0675fe427094fa02031dcffcbd672d03e84b77f3082a8ae6d9ae588af"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-workspace.html",
+      "sha256": "065ff049d31437c0328d4a3c35278fe01275c7112e3d718877eb257f8b4645b1"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-workspace.txt",
+      "sha256": "fc6d1dfcf408d50930001a9ef7eb3acb1cd659b5070390235dac3531321adadb"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-start_trial.html",
+      "sha256": "90bec0ec56d43a81401ed3f6c4433ad30f185b835c5a60bebfb5112876283430"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-start_trial.txt",
+      "sha256": "a7fc7e6aa3e1f63595513a5a9140b7281d2b20076dc5f0c7df1fdc5c313953ed"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-restart.html",
+      "sha256": "ab9901bcd25f662e51e024931d1bac57e760eac97fc3240c46b8d3d9bd1c1f90"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-restart.txt",
+      "sha256": "b3e9a7a1999b9633c13a180474ec03b83fb159ea020290291d97cc3d2addec20"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-setup.html",
+      "sha256": "4b18de015acd5d8f9133531ddd086a2b44e0f7a7f40555ee4b8746f85c6422cd"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-setup.txt",
+      "sha256": "a94ba6d44bd5cf6b58b24687f47024dd8e382b8e593dfa003b0075dc1aba1e11"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-neutral.html",
+      "sha256": "956cb0e51f608fa31372c4687eb3b4541d5e8ed2b30ed3f5a75ef5a258f0086b"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-neutral.txt",
+      "sha256": "d4111262804ad070ac5cc414f9fb181e55bf32fa1b7cb9eb6a74848eaa72c291"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-workspace.html",
+      "sha256": "8a37b60e7520482603755f0bca2203b0eab9552330f38d01f91a592dad9a9c36"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-workspace.txt",
+      "sha256": "017d303f90c619129d5c7d80e4421a163e1d93b1299c3bd3836da8c42b62a9c4"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-start_trial.html",
+      "sha256": "9027b9b7102a92b0723adcd6f4395c2cf81c3fc1458594988dd66abafa229c2e"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-start_trial.txt",
+      "sha256": "b3910ea791e961c40340197f23d684e2a0df81b07ae9b7afa573906c1ebb3d26"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-restart.html",
+      "sha256": "c9a9843f4f4a53c73e25816b70dca21ec3dd3c9b7a38496d615b371924a49645"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-restart.txt",
+      "sha256": "310117d23dd287fda10742bc96cf944ec6c1e0afb900e9db280c109dab1a382c"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-setup.html",
+      "sha256": "5800d47d19e5cd495fde21cbbc7bcefd34232824a6a92146ca0682a226d8a538"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-setup.txt",
+      "sha256": "104b967cd37eb95638aebb3bd331530a0f1eac8e858a6b9763573f53ef10363e"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-workspace.html",
+      "sha256": "5982a737a514ed75185f0924f81bffc5a8cd856d7b3a7a470fae2cf82d554a2f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-workspace.txt",
+      "sha256": "7a25b034fcd945436179cb268354216d778370adf1c6ee6479df8a02e46121a9"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-start_trial.html",
+      "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-start_trial.txt",
+      "sha256": "7b6bb5cff82151a540ae79efde4d41da808073f71f4997d4b65c03417631762f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-restart.html",
+      "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-restart.txt",
+      "sha256": "d4a8b7b4ace1ddb187bd2c8f3ada5d88ab4a43ca9812e68dfb7bec2fb45a459d"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-setup.html",
+      "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-setup.txt",
+      "sha256": "3c5b3a4f9e817af4f5c392b2effb55d56b75bdb8d711eca9da2a698b768781a6"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/confirmation.html",
+      "sha256": "22c8fe281c4de20e361d001bb7f370997ac547be5e10ca7c29e65cdadf9e9a8c"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/confirmation.txt",
+      "sha256": "32e35e14c2daf28e1c0a0364d59185e6d998795f9df54c32fe2e0d15df11d893"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invitation-Editor.html",
+      "sha256": "053a8a94963c3db5391b80dc3f6761ccd6bbd2b8fad579e78536d02d289b8fd3"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invitation-Editor.txt",
+      "sha256": "840148052be809c329d23d890f504e4b15b5679fdb48ca4e14ffa7fe49f61550"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invitation-Admin.html",
+      "sha256": "3264d7ec387f152e808009b54598de652adf59b371f6f4eb7e6f1158b11d91cd"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invitation-Admin.txt",
+      "sha256": "e2366b398c92800e50f213d2fee2d2b414feaa6b003956dd0622b94c45a3e794"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invitation-Viewer.html",
+      "sha256": "512adf8c226da72624f0ad58b8c08334ab3fdc2ae8a668bc336ad096ddd6e07f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/invitation-Viewer.txt",
+      "sha256": "79651aa6c6e26126ea8a0c8a39bcb88483a363180a10a5ef0023cbed0bc6c1af"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-approved.html",
+      "sha256": "a521f453ee8c7372845b76b6374e6df8bb37f53230e2fea049cbd17ed0941629"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-approved.txt",
+      "sha256": "6cf0b06c13670cd23f256bd36a2223e30e1a50631c685a2e7664dd5ca23d80d2"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-approved-manual.html",
+      "sha256": "16de456e34e64094dfae4ea9645e3e3a39a0317bca7b1e4456398c675fed1af2"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-approved-manual.txt",
+      "sha256": "014a70cc61f611a126325f5927f6e8a05146e73083d7bfe5307517884beab310"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-declined.html",
+      "sha256": "ea96914aaa216213d2ab1317ed1c92b215d6e2bc12262c7ff546147865c02c05"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-declined.txt",
+      "sha256": "0be23f7c0ab522d55dd425756297c474bbdb597956a530bc1b320f9a46c41d1b"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-removal.html",
+      "sha256": "8bab389fc9c7e7bf3e3fa3e080f386a8f16723d6ad4f8062a6af566a2b8ec8d9"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-removal.txt",
+      "sha256": "cb1f6f1afbac9d20b75ac3b604e7e1502ae14956e769979c8442fd924c3c1400"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-lost-missing.html",
+      "sha256": "eb75cc8abb9448230b48b113fc6e1514df05613f368ee722465543a722af3eb2"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-lost-missing.txt",
+      "sha256": "9f2a62a12e721601a473e3596daf293151f8eaae9febee068be407dc200416a6"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-lost-rel.html",
+      "sha256": "03e26ea66d412012cfcc987cd41939d8033207c837d5eb6737914bc784cc0d9d"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/backlink-lost-rel.txt",
+      "sha256": "03c56d6ed77431988df763aeeb74850d5bf868abf5dd8db0636b2105a44543b3"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report.html",
+      "sha256": "d534d3bc07b3d1e8d553e5da1bf3d6db02bdeb63ce06234a1b1086adb66d8443"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report.txt",
+      "sha256": "315586b17ad133ba38e5fe1b39940dcfe8d1ac7e38e2a4b610175ee5f43cca1f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-miss.html",
+      "sha256": "0fa05647c1344daee00f8591622314e01f00f14b37ecd7cc03dd33d6dfdbd1e6"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-miss.txt",
+      "sha256": "084ca84324dd13bc8473b5e98924b869319418e1c81550cd82a6e8a36646ac7c"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-comparison.html",
+      "sha256": "e3710463589ae00d1d9c007fca9f5b70b3cacef2143a824b8b4fb3c5d2c73589"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-comparison.txt",
+      "sha256": "4ebeed3ea4e77c81fc47189bf07ea4e01d544d776fedb4bf4ca2d9d821f40a43"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-topic.html",
+      "sha256": "c6c056031da27fc6bf5c6e4d9825ac804dc95e6712be85e010465a817722ab47"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-topic.txt",
+      "sha256": "1280ec277a42238f840d8db7e79d362371a04122332b5a0dcbafcdd8dfc7fbd8"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/autopilot-actions.html",
+      "sha256": "3ee4054c2ea67e9440ee06b8225740f7b7f9b09b7970f47bff8ff83e7c444e25"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/autopilot-actions.txt",
+      "sha256": "e564098b4eba888818f26823c98216a5fe31ee54957f33023beeb0eb28facb3f"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/autopilot-reply.html",
+      "sha256": "d676ddcf5c231718f20c932453f7a5fbc030f9ef72c2d110b8acbd428dc04c68"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/autopilot-reply.txt",
+      "sha256": "b1bd4657ea477e22e296fedfdbfa24cd70726235d2ee64185d2debb077510ff1"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/autopilot-publication.html",
+      "sha256": "e8533ea6c43afb63664160ec7b48c0aeaed2631bef555ba89c15c26f548c01a6"
+    },
+    {
+      "path": ".factory/lifecycle-refinement/previews/autopilot-publication.txt",
+      "sha256": "9d983f8087691282ec7b741f0f3c57a95464d9fac5a4ad875086cbba10b63a62"
+    }
+  ]
+}

@@ -53,13 +53,14 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
       if (!ctx.unsubscribeUrl || g?.version !== 1 || !GUIDE_IDS.includes(g.id) ||
         !['workspace', 'start_trial', 'restart', 'setup'].includes(g.context?.access) || typeof g.context?.gscConnected !== 'boolean' ||
         ['businessName', 'industry', 'offering', 'audience', 'keyword'].some(key => { const value = g.context[key as keyof EducationContext]; return value !== undefined && (typeof value !== 'string' || value.length > 200); }) ||
-        (g.businessId && !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(g.businessId))) throw new Error('Invalid lifecycle guide');
+        (g.businessId && !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(g.businessId)) ||
+        (g.id === 'autopilot_intro' && g.context.access === 'workspace' && !g.businessId)) throw new Error('Invalid lifecycle guide');
       const content = renderGuide(g.id, g.context);
       ({ subject, heading, paragraphs, preheader } = content);
       steps = content.steps || [];
       progress = content.progress || '';
       cta = content.ctaLabel;
-      href = g.id === 'search_refresh' ? app('/blog/page-two-refresh') : g.context.access === 'workspace'
+      href = g.id === 'autopilot_intro' && g.context.access === 'workspace' ? app('/api/b/current?' + new URLSearchParams({ id: g.businessId!, next: '/settings?section=autopilot' })) : g.id === 'search_refresh' ? app('/blog/page-two-refresh') : g.context.access === 'workspace'
         ? app('/email/learn?' + new URLSearchParams({ lesson: 'organic_search', ...(g.businessId ? { businessId: g.businessId } : {}) }))
         : app(g.context.access === 'setup' ? '/onboarding' : '/start-trial');
       break;

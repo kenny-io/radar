@@ -48,8 +48,13 @@ lifecycle('work-combined', 'work_update', 'work', 'Two or three unfinished work 
 for (const [index, lesson] of EDUCATION_LESSONS.entries()) for (const access of ['workspace', 'start_trial', 'restart', 'setup'] as const) {
   lifecycle(`lesson-${lesson}-${access}`, 'weekly_education', 'education', `Core feature lesson ${index + 1} of five`, index ? 'At least 7 days after previous accepted lesson' : 'First eligible slot after enrollment', { ...data, education: { version: 1, lesson, context: { ...context, access }, businessId } }, `lesson-${lesson}`, access, access === 'workspace');
 }
+const guideSchedule = {
+  article_workflow: { trigger: 'Own saved/analyzed profile or workspace; no approved/generated content workflow', cadence: '+24 hours of workspace access; +3 days pre-trial' },
+  search_refresh: { trigger: 'Real Search Console page data and accepted Organic Search lesson', cadence: 'Later of readiness +24 hours and Organic Search lesson +7 days' },
+  autopilot_intro: { trigger: 'Eligible verified owner/profile; no current or previous Autopilot use in any owned business', cadence: 'Once per account; first eligible observation +48 hours; education opt-out, daytime and shared optional cap apply' },
+};
 for (const guide of GUIDE_IDS) for (const access of ['workspace', 'start_trial', 'restart', 'setup'] as const) {
-  lifecycle(`guide-${guide}-${access}`, 'lifecycle_guide', 'education', guide === 'article_workflow' ? 'Own saved/analyzed profile or workspace; no approved/generated content workflow' : 'Real Search Console page data and accepted Organic Search lesson', guide === 'article_workflow' ? '+24 hours of workspace access; +3 days pre-trial' : 'Later of readiness +24 hours and Organic Search lesson +7 days', { ...data, guide: { version: 1, id: guide, context: { ...context, access }, businessId } }, `guide-${guide}`, access, access === 'workspace');
+  lifecycle(`guide-${guide}-${access}`, 'lifecycle_guide', 'education', guideSchedule[guide].trigger, guideSchedule[guide].cadence, { ...data, guide: { version: 1, id: guide, context: { ...context, access }, businessId } }, `guide-${guide}`, access, access === 'workspace');
 }
 lifecycle('lesson-organic-search-disconnected', 'weekly_education', 'education', 'Organic Search lesson; Search Console is not connected', 'Existing fourth course lesson; no extra send', { ...data, education: { version: 1, lesson: 'organic_search', context: { ...context, gscConnected: false }, businessId } }, 'lesson-organic_search', 'Workspace without Search Console', false);
 for (const lesson of EDUCATION_LESSONS) lifecycle(`lesson-${lesson}-neutral`, 'weekly_education', 'education', 'Existing course lesson for an eligible account without saved profile details', 'Same lesson event; neutral setup fallback', { ...data, name: undefined, businessName: undefined, businessId: undefined, education: { version: 1, lesson, context: { access: 'setup', gscConnected: false } } }, `lesson-${lesson}`, 'Setup without profile details', false);
@@ -96,6 +101,7 @@ const familyNumbers: Record<string, number> = {
   'lesson-social_marketing': 19, 'guide-article_workflow': 20, 'guide-search_refresh': 21,
   confirmation: 22, invitation: 23, 'backlink-approved': 24, 'backlink-declined': 25,
   'backlink-removal': 26, 'backlink-lost': 27, 'ai-weekly-report': 28, 'autopilot-handoff': 29,
+  'guide-autopilot_intro': 30,
 };
 const existing = new Set(['confirmation', 'invitation', 'backlink-approved', 'backlink-declined', 'backlink-removal', 'backlink-lost']);
 const preserveBareReference = new Set(['founder_note', 'password_reset', 'trial_started', 'trial_ending', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work-brief_reply', 'work-calendar_review', 'work-article_social', 'work-social_publish', 'work-combined', 'confirmation', 'backlink-declined', 'backlink-removal']);

@@ -40,6 +40,27 @@ describe('lifecycle templates', () => {
       expect(rendered.html).not.toContain('<img src=x'); expect(rendered.text).not.toContain('onerror=bad');
     } finally { mock.mockRestore(); }
   });
+  it('opens Autopilot settings for the bound business without putting activation in the email URL', () => {
+    const businessId = '00000000-0000-4000-8000-000000000002';
+    const guide = { version: 1 as const, id: 'autopilot_intro' as const, businessId, context: { access: 'workspace' as const, gscConnected: false } };
+    const mail = renderLifecycle('lifecycle_guide', { guide }, ctx);
+    const target = new URL('/api/b/current', ctx.appUrl);
+    target.searchParams.set('id', businessId);
+    target.searchParams.set('next', '/settings?section=autopilot');
+    expect(mail.text).toContain(`Open Autopilot settings: ${target.href}`);
+    expect(mail.html).not.toMatch(/<h1[\s>]/i);
+    expect(mail.text).not.toMatch(/enabled=true|autopilot\.set|api\/.*act/);
+    expect(() => renderLifecycle('lifecycle_guide', { guide: { ...guide, businessId: undefined } }, ctx)).toThrow('Invalid lifecycle guide');
+    expect(() => renderLifecycle('lifecycle_guide', { guide: { ...guide, businessId: 'https://foreign.example' } }, ctx)).toThrow('Invalid lifecycle guide');
+  });
+  it('keeps the Autopilot introduction truthful and gated outside an active workspace', () => {
+    for (const access of ['start_trial', 'restart', 'setup'] as const) {
+      const mail = renderLifecycle('lifecycle_guide', { guide: { version: 1, id: 'autopilot_intro', context: { access, gscConnected: false } } }, ctx);
+      expect(mail.text).toContain(access === 'setup' ? '/onboarding' : '/start-trial');
+      expect(mail.text).not.toContain('/api/b/current');
+      expect(mail.html).not.toMatch(/<h1[\s>]/i);
+    }
+  });
   it('escapes all user-controlled values without corrupting plain text', () => {
     const x = renderLifecycle('welcome', { profileAnalyzed: true, name: '<script>bad()</script>', businessName: 'A&B "<test>"' }, ctx);
     expect(x.html).not.toContain('<script>'); expect(x.html).toContain('&lt;script&gt;'); expect(x.html).toContain('A&amp;B &quot;&lt;test&gt;&quot;');

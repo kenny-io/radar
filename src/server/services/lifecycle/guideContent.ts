@@ -1,6 +1,6 @@
 import type { EducationContext } from './educationContent';
 
-export const GUIDE_IDS = ['article_workflow', 'search_refresh'] as const;
+export const GUIDE_IDS = ['article_workflow', 'search_refresh', 'autopilot_intro'] as const;
 export type GuideId = typeof GUIDE_IDS[number];
 export interface GuideContent {
   subject: string;
@@ -15,6 +15,18 @@ export interface GuideContent {
 /** Editorial content only. Scheduling, eligibility and fixed destinations belong to the runtime. */
 export function renderGuide(id: GuideId, context: EducationContext): GuideContent {
   const active = context.access === 'workspace';
+  if (id === 'autopilot_intro') return {
+    subject: 'Too busy to keep up with publishing?',
+    preheader: 'Put Radar on Autopilot and hand over the day-to-day content and social work.',
+    heading: '',
+    paragraphs: [
+      'If choosing topics, reviewing calendars and finding time to publish still feels like too much work, I’d put Radar on Autopilot.',
+      'Radar handles your content calendar, prepares articles and creates social posts. Through connections that support automatic publishing, it can schedule and publish them without waiting for your review. Your SEO content and social work can keep moving while you focus on the business.',
+      'Some publishing destinations still need their own approval. Radar emails you the action when a community reply or a connection needs your help.',
+      active ? 'Enable it in Settings → Autopilot for this business. You can turn it off from the same place.' : context.access === 'restart' ? 'Resume your subscription access first, then open Settings → Autopilot to enable it for your business. You can turn it off there whenever you want.' : context.access === 'setup' ? 'Finish setting up your Business Profile and activate your workspace first. Then open Settings → Autopilot to enable it for your business.' : 'Start your Radar trial, then open Settings → Autopilot to enable it for your business. You can turn it off there whenever you want.',
+    ],
+    ctaLabel: active ? 'Open Autopilot settings' : context.access === 'restart' ? 'Reopen my Radar account' : context.access === 'setup' ? 'Continue setting up Radar' : 'Start my Radar trial',
+  };
   if (id === 'article_workflow') return {
     subject: 'What happens before an article goes live',
     preheader: 'I’ll walk you through choosing a topic and reviewing your first draft.',

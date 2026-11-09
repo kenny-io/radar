@@ -30,5 +30,6 @@ Actual current source, fictional sample details, no sends. The full catalogue in
 - [Partner link not found on partner.example/articles/design-tools](backlink-lost-missing.html)
 - [Recommendation share this week · fieldnote.example](ai-weekly-report.html)
 - [Radar Autopilot: 2 actions need you · Fieldnote](autopilot-actions.html)
+- [Too busy to keep up with publishing?](guide-autopilot_intro-workspace.html)
 
 The workspace-ready message remains retired.

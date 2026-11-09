@@ -1,5 +1,6 @@
-// Two finite guides captured at useful observed states, never historical signup/connection timestamps.
-import { and, asc, eq, inArray, isNotNull, lte, sql } from 'drizzle-orm';
+import { autopilotOf } from '../autopilot/policy';
+// Finite guides captured at useful observed states, never historical signup/connection timestamps.
+import { and, asc, eq, inArray, isNotNull, lte, or, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import type { Q } from '@/server/billing/draft';
 import { addDays, todayIn } from '@/lib/format';
@@ -17,6 +18,16 @@ const key = (uid: string, id: GuideId) => `guide:v1:${uid}:${id}`;
 const whereState = (state: Pick<State, 'userId' | 'guideId'>) => and(eq(G.userId, state.userId), eq(G.guideId, state.guideId));
 const lock = (q: Q, uid: string) => q.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`radar-education:${uid}`}, 0))`);
 const zone = (tz: string) => { try { new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(); return tz; } catch { return 'UTC'; } };
+/** Any currently owned program use makes an account-level introduction redundant, including a later disable. */
+async function autopilotAlreadyEnabled(uid: string, q: Q) {
+  const [candidate] = await q.select({ autopilot: B.autopilot }).from(B).where(and(eq(B.ownerId, uid), or(
+    sql`${B.autopilot}->'enabled' = 'true'::jsonb`,
+    sql`jsonb_typeof(${B.autopilot}->'enabledAt') = 'string' AND length(${B.autopilot}->>'enabledAt') > 0`,
+  ))).limit(1);
+  if (!candidate) return false;
+  const normalized = autopilotOf(candidate);
+  return normalized.enabled || !!normalized.enabledAt;
+}
 async function completedWorkflow(uid: string, q: Q) {
   const topics = await q.select({ id: schema.calendarEntries.id }).from(schema.calendarEntries).innerJoin(B, eq(B.id, schema.calendarEntries.businessId))
     .where(and(eq(B.ownerId, uid), inArray(schema.calendarEntries.status, ['approved', 'drafting', 'draft', 'review', 'scheduled', 'publishing', 'published']))).limit(1);
@@ -27,11 +38,12 @@ async function completedWorkflow(uid: string, q: Q) {
 async function organicAccepted(uid: string, q: Q) {
   return (await q.select({ at: M.sentAt }).from(M).where(and(eq(M.userId, uid), eq(M.eventKey, `education:v1:${uid}:organic_search`), eq(M.type, 'weekly_education'), eq(M.status, 'sent'), isNotNull(M.sentAt))).limit(1))[0]?.at || null;
 }
-async function source(uid: string, q: Q) {
+async function source(uid: string, q: Q, id: GuideId) {
   const current = await educationContext(uid, q);
   const [business] = current.businessId ? await q.select().from(B).where(and(eq(B.id, current.businessId), eq(B.ownerId, uid))).limit(1) : [];
   const usable = !!business && (business.status === 'active' || !!business.onboarding?.savedAt || (typeof business.site?.analyzedAt === 'string' && !!business.site.analyzedAt.trim()));
-  return { ...current, business: usable ? business : undefined };
+  const ownerRole = id !== 'autopilot_intro' || !!(business && (await q.select({ id: schema.members.id }).from(schema.members).where(and(eq(schema.members.businessId, business.id), eq(schema.members.userId, uid), eq(schema.members.status, 'active'), eq(schema.members.role, 'Owner'))).limit(1)).length);
+  return { ...current, business: usable && ownerRole ? business : undefined };
 }
 async function searchReady(b: typeof B.$inferSelect, now: Date, q: Q) {
   const [conn] = await q.select({ status: schema.gscConnections.status, property: schema.gscConnections.property, through: schema.gscConnections.lastSyncedThrough }).from(schema.gscConnections).where(eq(schema.gscConnections.businessId, b.id)).limit(1);
@@ -55,6 +67,7 @@ async function candidates(id: GuideId, now: Date, onlyUsers?: string[]) {
     ) b ON true
     WHERE NOT u.guest AND u.email_verified_at IS NOT NULL AND coalesce(p.education,p.onboarding,true)
       AND NOT EXISTS(SELECT 1 FROM lifecycle_guide_states g WHERE g.user_id=u.id AND g.guide_id=${id})
+      ${id === 'autopilot_intro' ? sql`AND EXISTS(SELECT 1 FROM members own WHERE own.business_id=b.id AND own.user_id=u.id AND own.status='active' AND own.role='Owner')` : sql``}
       AND (b.status='active' OR coalesce(b.onboarding->>'savedAt','')<>'' OR coalesce(b.site->>'analyzedAt','')<>'')
       ${onlyUsers ? sql`AND u.id IN (${sql.join(onlyUsers.map(uid => sql`${uid}::uuid`), sql`,`)})` : sql``}
       ${id === 'search_refresh' ? sql`AND EXISTS(SELECT 1 FROM lifecycle_emails m WHERE m.user_id=u.id AND m.type='weekly_education' AND m.event_key='education:v1:'||u.id::text||':organic_search' AND m.status='sent' AND m.sent_at IS NOT NULL)
@@ -72,13 +85,15 @@ export async function collectGuides(now = new Date(), onlyUsers?: string[]) {
     await lock(tx, uid);
     const [u] = await tx.select().from(U).where(eq(U.id, uid)).limit(1);
     if (!u || u.guest || !u.emailVerifiedAt || !await educationAllowed(uid, tx)) return;
-    const current = await source(uid, tx);
+    const current = await source(uid, tx, id);
     if (!current.business) return;
     const accepted = id === 'search_refresh' ? await organicAccepted(uid, tx) : null;
     if (id === 'search_refresh' && (!accepted || !await searchReady(current.business, now, tx))) return;
-    const done = id === 'article_workflow' && await completedWorkflow(uid, tx);
-    const dueAt = id === 'article_workflow' ? new Date(now.getTime() + (current.context.access === 'workspace' ? DAY : 3 * DAY)) : new Date(Math.max(now.getTime() + DAY, accepted!.getTime() + EDUCATION_WEEK));
-    const inserted = await tx.insert(G).values({ userId: uid, guideId: id, firstObservedAt: now, dueAt, sourceBusinessId: current.business.id, status: done ? 'skipped' : 'waiting', reason: done ? 'workflow_already_started' : null, updatedAt: now }).onConflictDoNothing().returning({ id: G.userId });
+    const reason = id === 'article_workflow' && await completedWorkflow(uid, tx) ? 'workflow_already_started'
+      : id === 'autopilot_intro' && await autopilotAlreadyEnabled(uid, tx) ? 'autopilot_already_enabled' : null;
+    const dueAt = id === 'search_refresh' ? new Date(Math.max(now.getTime() + DAY, accepted!.getTime() + EDUCATION_WEEK))
+      : new Date(now.getTime() + (id === 'autopilot_intro' ? 2 * DAY : current.context.access === 'workspace' ? DAY : 3 * DAY));
+    const inserted = await tx.insert(G).values({ userId: uid, guideId: id, firstObservedAt: now, dueAt, sourceBusinessId: current.business.id, status: reason ? 'skipped' : 'waiting', reason, updatedAt: now }).onConflictDoNothing().returning({ id: G.userId });
     observed += inserted.length;
   });
   // Refresh bounded waiting states, including newly accessible workspaces before their three-day due time.
@@ -89,8 +104,9 @@ export async function collectGuides(now = new Date(), onlyUsers?: string[]) {
     await lock(tx, g.userId);
     const [state] = await tx.select().from(G).where(whereState(g)).for('update');
     if (!state || state.status !== 'waiting' || !await educationAllowed(g.userId, tx)) return;
-    const current = await source(g.userId, tx);
+    const current = await source(g.userId, tx, g.guideId);
     if (!state.sourceBusinessId || current.business?.id !== state.sourceBusinessId) { await tx.update(G).set({ status: 'skipped', reason: 'source_changed', updatedAt: now }).where(whereState(state)); return; }
+    if (state.guideId === 'autopilot_intro' && await autopilotAlreadyEnabled(state.userId, tx)) { await tx.update(G).set({ status: 'skipped', reason: 'autopilot_already_enabled', updatedAt: now }).where(whereState(state)); return; }
     if (state.guideId === 'article_workflow' && await completedWorkflow(state.userId, tx)) { await tx.update(G).set({ status: 'skipped', reason: 'workflow_already_started', updatedAt: now }).where(whereState(state)); return; }
     const dueAt = state.guideId === 'article_workflow' && current.context.access === 'workspace' ? new Date(Math.min(state.dueAt.getTime(), now.getTime() + DAY)) : state.dueAt;
     if (dueAt > now) { await tx.update(G).set({ dueAt, updatedAt: now }).where(whereState(state)); return; }
@@ -117,8 +133,9 @@ export async function prepareGuide(row: Mail, payload: LifecyclePayload, now = n
   // Pauses above preserve the window; unavailable source data below must not defer forever past it.
   if (row.expiresAt <= now) return { kind: 'suppress', reason: 'expired_delivery_window' };
   if (state.dueAt > now) return { kind: 'defer', until: state.dueAt, reason: 'guide_original_delay' };
-  const current = await source(row.userId, db);
+  const current = await source(row.userId, db, d.id);
   if (!state.sourceBusinessId || current.business?.id !== state.sourceBusinessId || d.businessId !== state.sourceBusinessId) return { kind: 'suppress', reason: 'source_changed' };
+  if (d.id === 'autopilot_intro' && await autopilotAlreadyEnabled(u.id, db)) return { kind: 'suppress', reason: 'autopilot_already_enabled' };
   if (d.id === 'article_workflow' && await completedWorkflow(u.id, db)) return { kind: 'suppress', reason: 'workflow_already_started' };
   if (d.id === 'search_refresh') {
     const accepted = await organicAccepted(u.id, db);
@@ -126,7 +143,7 @@ export async function prepareGuide(row: Mail, payload: LifecyclePayload, now = n
     if (accepted.getTime() + EDUCATION_WEEK > now.getTime()) return { kind: 'defer', until: new Date(accepted.getTime() + EDUCATION_WEEK), reason: 'organic_lesson_gap' };
   }
   if (row.firstAttemptAt) {
-    if (d.context.access !== current.context.access || d.context.gscConnected !== current.context.gscConnected) return { kind: 'suppress', reason: 'unsafe_retry_context' };
+    if (d.context.access !== current.context.access || (d.id !== 'autopilot_intro' && d.context.gscConnected !== current.context.gscConnected)) return { kind: 'suppress', reason: 'unsafe_retry_context' };
     return { kind: 'send', payload };
   }
   return { kind: 'send', payload: lifecyclePayload('lifecycle_guide', u, { guide: { version: 1, id: d.id, context: current.context, businessId: current.business.id } }) };
@@ -137,6 +154,6 @@ export async function acknowledgeGuide(q: Q, row: Mail, acceptedAt: Date) {
   if (changed.length !== 1) throw new Error('Guide acknowledgment state changed');
 }
 export async function finishGuide(q: Q, row: Mail, reason: string, now = new Date()) {
-  const skipped = !row.firstAttemptAt && ['source_changed', 'workflow_already_started'].includes(reason);
+  const skipped = !row.firstAttemptAt && ['source_changed', 'workflow_already_started', 'autopilot_already_enabled'].includes(reason);
   await q.update(G).set({ status: skipped ? 'skipped' : 'blocked', reason, updatedAt: now }).where(and(eq(G.userId, row.userId), eq(G.pendingEmailId, row.id)));
 }
