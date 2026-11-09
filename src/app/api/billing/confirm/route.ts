@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { requireUser } from '@/server/access';
 import { setCurrentBusiness } from '@/server/auth/users';
-import { handle, json } from '@/server/http/handle';
+import { handle, json, requestJson } from '@/server/http/handle';
 import { businessToOpen, confirmSubscription, confirmTrial } from '@/server/billing/confirm';
 import { BillingError } from '@/server/billing/errors';
 import { billingState } from '@/server/billing/state';
@@ -17,7 +17,7 @@ const Body = z.object({ paymentIntentId: z.string().min(1).max(255).optional(), 
   .refine(b => !!b.paymentIntentId !== !!b.subscriptionId, 'Send paymentIntentId or subscriptionId');
 export const POST = handle(async (req: Request) => {
   const u = await requireUser();
-  const b = Body.parse(await req.json());
+  const b = Body.parse(await requestJson(req));
   let committed: string | null = null;
   if (b.paymentIntentId) committed = await confirmTrial(u, b.paymentIntentId);
   else await confirmSubscription(u, b.subscriptionId!);

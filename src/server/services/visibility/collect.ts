@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // AI Visibility: prompt generation, per-cell collection and parsing (02-system.md §11).
 // Parse rules: mentioned = the business is named in the answer; position = its order among the products the answer names
 // (the writing model extracts the ordered list; Radar matches the business name/domain). Citations are URLs; own-domain ones count
@@ -119,7 +120,10 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     return { status: mentioned ? 'mentioned' : 'not-mentioned' };
   } catch (e: any) {
     const msg = e instanceof EngineUnavailable ? 'not_configured' : String(e?.message || e).slice(0, 300);
-    if (!(e instanceof EngineUnavailable)) console.error(`[visibility] ${engine} failed`, msg);
+    if (!(e instanceof EngineUnavailable)) {
+      await reportFailure(e, { source: 'visibility', operation: 'visibility.collect', businessId: bid, ref: resultId, provider: engine, degraded: true });
+      console.error(`[visibility] ${engine} failed`, msg);
+    }
     // Keep an earlier real measurement if there is one; otherwise the cell stays "not collected".
     await db.update(A).set({ error: msg, attemptedAt: new Date() }).where(eq(A.id, resultId));
     await bump(bid);

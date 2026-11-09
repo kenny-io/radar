@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { env } from '../env';
+import { reportFailure } from '../observability/failures';
 import { RadarError, GENERIC_AI_ERROR } from '../errors';
 import { AI_DEFAULT, aiFind } from '@/lib/constants';
 import { anthropicRun } from './adapters/anthropic';
@@ -207,7 +208,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         if (input.schema) {
           const raw = fitToSchema(res.json ?? extractJson(res.text), jsonSchema);
           const parsed = (input.schema as z.ZodType<T>).safeParse(raw);
-          if (!parsed.success) throw new Error('Structured output failed validation: ' + parsed.error.message.slice(0, 300));
+          if (!parsed.success) throw new Error('Structured output failed validation: ' + parsed.error.issues.map(issue => issue.code).slice(0, 8).join(', '));
           json = parsed.data;
         }
         log(opts.businessId, task, input.purpose, modelId, logProvider, Date.now() - t0, res, true, null);
@@ -216,6 +217,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         return { text: res.text, json, citations: res.citations || [], model: modelId, provider: logProvider };
       } catch (e: any) {
         lastErr = e;
+        await reportFailure(e, { source: 'ai', operation: input.purpose, businessId: opts.businessId, provider: logProvider, model: call.apiModel, attempt: attempt + 1, maxAttempts: tries + 1, retrying: ri < plan.length - 1 || (!e?.permanent && !isAccountError(e) && attempt < tries), degraded: ri < plan.length - 1 });
         log(opts.businessId, task, input.purpose, modelId, logProvider, Date.now() - t0, null, false, String(e?.message || e));
         if (viaOr) {
           noteOpenrouterOutcome(e);
@@ -228,7 +230,10 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
     }
   }
   console.error(`[ai] ${input.purpose} failed`, lastErr?.message || lastErr);
-  throw new RadarError(GENERIC_AI_ERROR, 502, 'ai_failed');
+  const failure = new RadarError(GENERIC_AI_ERROR, 502, 'ai_failed');
+  // Keep operational diagnostics internal; HTTP responses still expose only the safe userMessage/code.
+  Object.defineProperty(failure, 'cause', { value: lastErr, enumerable: false });
+  throw failure;
 }
 
 function log(businessId: string | null | undefined, task: string, purpose: string, model: string, provider: string, ms: number, res: ProviderResult | null, ok: boolean, error: string | null) {

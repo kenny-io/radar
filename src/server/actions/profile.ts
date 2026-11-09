@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Business Profile actions (CONTRACTS.md · onboarding area).
 //   profile.update    { profile, editedKeys } — saves, marks keys edited, uploads logo data URLs, enqueues keywords.estimate.
 //   profile.reanalyze {} → { jobId }         — re-runs analysis keeping edited fields (and any uploaded logo).
@@ -35,7 +36,7 @@ export async function saveProfile(bid: string, cur: Profile, curEdited: Edited, 
   const logo = p.brand.logo;
   if (logo && logo.startsWith('data:')) {
     if (!/^data:image\/(png|jpe?g|svg\+xml|webp|gif);base64,/i.test(logo)) throw new RadarError('Use an SVG or PNG image for your logo.');
-    try { p.brand.logo = await putDataUrl(bid, 'logo', logo); } catch (e: any) { throw new RadarError(/large/i.test(e?.message) ? 'That image is over 5 MB. Use a smaller logo.' : 'Radar couldn’t save that image. Try again.'); }
+    try { p.brand.logo = await putDataUrl(bid, 'logo', logo); } catch (e: any) { if (!/large/i.test(e?.message)) await reportFailure(e, { source: 'action', operation: 'profile.logo', businessId: bid }); throw new RadarError(/large/i.test(e?.message) ? 'That image is over 5 MB. Use a smaller logo.' : 'Radar couldn’t save that image. Try again.'); }
     p.brand.logoUploaded = true;
   } else if (logo == null) { p.brand.logo = null; p.brand.logoUploaded = false; }
   else if (logo !== cur.brand.logo) { p.brand.logo = cur.brand.logo; p.brand.logoUploaded = !!cur.brand.logoUploaded; }

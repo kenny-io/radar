@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Proactive daily generation, local to each business. New defaults save editable drafts; explicit legacy scheduling survives.
 import { autopilotOf, effectiveSocial } from '../autopilot/policy';
 import { canRun } from '../autopilot/guard';
@@ -66,7 +67,10 @@ export async function autoRun(bid: string, date?: string, autopilotActivationId?
   } }); } catch (e) { if (e instanceof DailyDraftCancelled) return null; throw e; }
   // Only an already-explicit opt-in can schedule generated posts. The default never creates publication rows.
   if (!autopilotActivationId && settings.post === 'schedule') {
-    try { await autoSchedule(bid, packId); } catch (e: any) { console.error('[social] auto schedule failed', e?.message || e); }
+    try { await autoSchedule(bid, packId); } catch (e: any) {
+      await reportFailure(e, { source: 'social', operation: 'social.autoSchedule', businessId: bid, ref: packId, degraded: true });
+      console.error('[social] auto schedule failed', e?.message || e);
+    }
   }
   return packId;
 }

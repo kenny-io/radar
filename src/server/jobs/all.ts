@@ -16,3 +16,5 @@ import './maintenance';
 import './guestCleanup';
 
 import '../services/autopilot/jobs';
+
+import '../observability/jobs';

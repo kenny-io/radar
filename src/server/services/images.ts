@@ -8,6 +8,7 @@ import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
 import { drawVisual } from '@/lib/visual';
 import { env } from '../env';
 import { RadarError } from '../errors';
+import { reportFailure } from '../observability/failures';
 import { OPENROUTER_BASE, openrouterHeaders, openrouterImageModel, openrouterDown, markOpenrouterDown, openrouterTripped, isOpenrouterAccountError, noteOpenrouterOutcome } from '../ai/adapters/openrouter';
 import { objectKey, putObject } from './storage';
 
@@ -67,14 +68,14 @@ async function openrouterImage(prompt: string, w: number, h: number): Promise<Bu
 async function openaiImage(prompt: string, w: number, h: number): Promise<Buffer> {
   const size = w / h > 1.2 ? '1536x1024' : w / h < 0.83 ? '1024x1536' : '1024x1024';
   const res = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { authorization: `Bearer ${env.openaiKey}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1', prompt, size, n: 1 }) });
-  if (!res.ok) { const t = await res.text(); throw Object.assign(new Error(`openai image ${res.status}: ${t.slice(0, 200)}`), { account: accountFail(res.status, t) }); }
+  if (!res.ok) { const t = await res.text(); throw Object.assign(new Error(`openai image ${res.status}: ${t.slice(0, 200)}`), { status: res.status, account: accountFail(res.status, t) }); }
   const b64 = (await res.json()).data?.[0]?.b64_json; if (!b64) throw new Error('openai image: empty');
   return Buffer.from(b64, 'base64');
 }
 async function xaiImage(prompt: string, w: number, h: number): Promise<Buffer> {
   const ratio = w / h > 1.6 ? '2:1' : w / h > 1.2 ? '16:9' : w / h < 0.7 ? '9:16' : w / h < 0.9 ? '3:4' : '1:1';
   const res = await fetch('https://api.x.ai/v1/images/generations', { method: 'POST', headers: { authorization: `Bearer ${env.xaiKey}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: process.env.XAI_IMAGE_MODEL || 'grok-imagine-image', prompt, n: 1, aspect_ratio: ratio, response_format: 'b64_json' }) });
-  if (!res.ok) { const t = await res.text(); throw Object.assign(new Error(`xai image ${res.status}: ${t.slice(0, 200)}`), { account: accountFail(res.status, t) }); }
+  if (!res.ok) { const t = await res.text(); throw Object.assign(new Error(`xai image ${res.status}: ${t.slice(0, 200)}`), { status: res.status, account: accountFail(res.status, t) }); }
   const b64 = (await res.json()).data?.[0]?.b64_json; if (!b64) throw new Error('xai image: empty');
   return Buffer.from(b64, 'base64');
 }
@@ -106,12 +107,15 @@ export async function generatePhoto(r: ImageReq): Promise<Buffer> {
   if (env.openaiKey) providers.push(['openai', () => openaiImage(prompt, r.w, r.h)]);
   if (env.xaiKey) providers.push(['xai', () => xaiImage(prompt, r.w, r.h)]);
   let raw: Buffer | null = null; let last: any = null; let accountBlocked = 0;
-  for (const [name, run] of providers) {
+  for (const [index, [name, run]] of providers.entries()) {
     if ((name === 'openrouter' && openrouterDown()) || (imgDown.get(name) || 0) > Date.now()) { accountBlocked++; continue; }
     // The OpenRouter breaker is transient, and only skips its route when an alternative is configured.
     if (name === 'openrouter' && openrouterTripped() && (env.openaiKey || env.xaiKey)) continue;
     try { raw = await run(); if (name === 'openrouter') noteOpenrouterOutcome(); break; } catch (e: any) {
-      last = e; console.warn('[images]', e?.message);
+      last = e;
+      const model = name === 'openrouter' ? openrouterImageModel() : name === 'openai' ? process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1' : process.env.XAI_IMAGE_MODEL || 'grok-imagine-image';
+      await reportFailure(e, { source: 'image', operation: 'image.generate', businessId: r.bid, provider: name, model, retrying: providers.slice(index + 1).some(([next]) => !(next === 'openrouter' && (openrouterDown() || openrouterTripped() && (env.openaiKey || env.xaiKey))) && (imgDown.get(next) || 0) <= Date.now()), degraded: !r.modelRequired });
+      console.warn('[images]', e?.message);
       if (name === 'openrouter') noteOpenrouterOutcome(e);
       // OpenRouter is one account for text and images: its account failures use the shared OpenRouter cooldown.
       if (e?.account) { accountBlocked++; if (name === 'openrouter') markOpenrouterDown(String(e?.message || '')); else imgDown.set(name, Date.now() + 10 * 60e3); }
@@ -132,15 +136,27 @@ export async function generatePhoto(r: ImageReq): Promise<Buffer> {
 /** Render or generate a visual and store it. Returns the public URL plus the stored file's size and type (social posting
  *  checks them against each platform's limits without fetching the file). */
 export async function renderImageFile(r: ImageReq): Promise<{ url: string; bytes: number; type: string }> {
-  let png: Buffer;
-  if (r.modelRequired) {
-    if (!imageModelConfigured()) throw new RadarError('Image generation is unavailable right now. Please contact support to enable it.', 503, 'image_unavailable');
-    png = await generatePhoto(r);
-  } else if (MODEL_STYLES.includes(r.style) && imageModelConfigured()) {
-    try { png = await generatePhoto(r); } catch (e: any) { console.error('[images] generation failed, using template', e.message); png = renderTemplatePng(r); }
-  } else png = renderTemplatePng(r);
-  const url = await putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');
-  return { url, bytes: png.length, type: 'image/png' };
+  let operation = 'image.render';
+  try {
+    let png: Buffer;
+    if (r.modelRequired) {
+      operation = 'image.generate';
+      if (!imageModelConfigured()) throw new RadarError('Image generation is unavailable right now. Please contact support to enable it.', 503, 'image_unavailable');
+      png = await generatePhoto(r);
+    } else if (MODEL_STYLES.includes(r.style) && imageModelConfigured()) {
+      try { png = await generatePhoto(r); } catch (e: any) {
+        // Includes decoding/cropping errors after an otherwise successful provider call.
+        await reportFailure(e, { source: 'image', operation: 'image.generate', businessId: r.bid, degraded: true });
+        console.error('[images] generation failed, using template', e.message); png = renderTemplatePng(r);
+      }
+    } else png = renderTemplatePng(r);
+    operation = 'image.store';
+    const url = await putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');
+    return { url, bytes: png.length, type: 'image/png' };
+  } catch (error) {
+    await reportFailure(error, { source: 'image', operation, businessId: r.bid });
+    throw error;
+  }
 }
 /** Render or generate a visual and store it. Returns a public URL. */
 export async function renderImage(r: ImageReq): Promise<string> { return (await renderImageFile(r)).url; }

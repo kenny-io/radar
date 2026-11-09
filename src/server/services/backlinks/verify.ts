@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Link verification (02-system.md §13): the weekly crawler confirms each live link exists with the right rel (else lost,
 // reported to both sides); approved placements become live once the link is found; removal requests become removed once
 // the link is gone. Re-check runs the same check on demand.
@@ -66,7 +67,7 @@ export async function verifyLink(l: LiveRow, opts: { notify: boolean }): Promise
   if (ok) { await setLinkStatus(l.fromUrl, l.toUrl, { status: 'live', lastCheckedAt: now }); return 'live'; }
   // Missing, or present without the required qualifier → lost; both sides hear about it (once per transition, or on Re-check).
   await setLinkStatus(l.fromUrl, l.toUrl, { status: 'lost', lastCheckedAt: now });
-  if (opts.notify || l.status === 'live') await sendLostNotice({ from: l.fromUrl, to: l.toUrl, anchor: l.anchor, rel: l.rel }, l.businessId, res.found ? 'rel' : 'missing').catch(e => console.error('[backlinks] lost notice failed', e?.message));
+  if (opts.notify || l.status === 'live') await sendLostNotice({ from: l.fromUrl, to: l.toUrl, anchor: l.anchor, rel: l.rel }, l.businessId, res.found ? 'rel' : 'missing').catch(async e => { await reportFailure(e, { source: 'system', operation: 'backlinks.lostNotice', businessId: l.businessId }); console.error('[backlinks] lost notice failed', e?.message); });
   return 'lost';
 }
 
@@ -117,6 +118,6 @@ export async function requestRemoval(b: BizRow, id: string) {
   // Any approved outbound insertion for this link must not come back on the next publish.
   const props = await db.select().from(schema.proposals).where(and(sql`${schema.proposals.data}->>'page' = ${l.fromUrl}`, sql`${schema.proposals.data}->>'target' = ${l.toUrl}`));
   for (const p of props) if (!p.data?.removedAt) await db.update(schema.proposals).set({ data: { ...p.data, removedAt: new Date().toISOString() } }).where(eq(schema.proposals.id, p.id));
-  await sendRemovalRequest({ from: l.fromUrl, to: l.toUrl, anchor: l.anchor }, b).catch(e => console.error('[backlinks] removal mail failed', e?.message));
+  await sendRemovalRequest({ from: l.fromUrl, to: l.toUrl, anchor: l.anchor }, b).catch(async e => { await reportFailure(e, { source: 'system', operation: 'backlinks.removalNotice', businessId: b.id }); console.error('[backlinks] removal mail failed', e?.message); });
   return { status: 'removal' as const };
 }

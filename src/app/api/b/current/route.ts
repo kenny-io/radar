@@ -5,7 +5,7 @@ import { setCurrentBusiness } from '@/server/auth/users';
 import { currentUser } from '@/server/auth/session';
 import { safeNext, openBusinessUrl } from '@/server/billing/guard';
 import { env } from '@/server/env';
-import { handle, json } from '@/server/http/handle';
+import { handle, json, requestJson } from '@/server/http/handle';
 
 /** Make a business current for this browser: a member's business that isn't locked (402), else 404/403 as everywhere. */
 async function makeCurrent(u: Awaited<ReturnType<typeof requireUser>>, id: string) {
@@ -16,7 +16,7 @@ async function makeCurrent(u: Awaited<ReturnType<typeof requireUser>>, id: strin
 
 export const POST = handle(async (req: Request) => {
   const u = await requireUser();
-  const { id } = z.object({ id: z.string() }).parse(await req.json());
+  const { id } = z.object({ id: z.string() }).parse(await requestJson(req));
   await makeCurrent(u, id);
   return json({ ok: true });
 });

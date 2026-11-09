@@ -94,7 +94,10 @@ describe('billing overview and portal routes', () => {
     const logs = vi.spyOn(console, 'error').mockImplementation(() => {});
     H.portal.mockRejectedValueOnce(new Error('sk_test_private https://billing.stripe.com/secret=private'));
     const r = await POST(req());
-    expect(r.status).toBe(503); expect(await r.text()).not.toContain('private'); expect(logs).not.toHaveBeenCalled();
+    expect(r.status).toBe(503); expect(await r.text()).not.toContain('private');
+    // Operational failures now emit sanitized telemetry; provider secrets and portal URLs stay private.
+    expect(logs).toHaveBeenCalledWith('[radar.failure]', expect.any(String));
+    expect(JSON.stringify(logs.mock.calls)).not.toMatch(/private|billing\.stripe\.com|sk_test/);
     expect((await POST(req())).status).toBe(200);
     H.portal.mockResolvedValue({ url: 'https://evil.example/p/session' });
     expect((await POST(req())).status).toBe(503);

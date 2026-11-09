@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { requireUser } from '@/server/access';
 import { notFound } from '@/server/errors';
-import { handle, json } from '@/server/http/handle';
+import { handle, json, requestJson } from '@/server/http/handle';
 import { SUB_STATUSES } from '@/lib/billing';
 import { accountOf } from '@/server/billing/access';
 import { providerName } from '@/server/billing/config';
@@ -19,7 +19,7 @@ const Body = z.object({ status: z.enum(SUB_STATUSES).refine(s => s !== 'none', '
 export const POST = handle(async (req: Request) => {
   if (providerName() !== 'stub') throw notFound();
   const u = await requireUser();
-  const { status } = Body.parse(await req.json());
+  const { status } = Body.parse(await requestJson(req));
   const acct = await accountOf(u.id);
   if (!acct?.stripeSubscriptionId) throw BillingError.noSubscription();
   const stub = await import('@/server/billing/stub');

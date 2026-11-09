@@ -35,10 +35,10 @@ export const searchSource = (plat: BriefPlatform): Source => async (ctx) => {
       method: 'POST', timeoutMs: 30000,
       headers: { authorization: `Bearer ${env.perplexityKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({ query: queries, max_results: 20, search_domain_filter: [domain], search_recency_filter: 'week' }),
-    }));
+    }), 2, { source: 'brief', operation: 'brief.search', businessId: ctx.bid, provider: 'Perplexity', degraded: true });
   } catch (e: any) {
     console.error(`[brief.search] ${plat}`, e?.message || e);
-    throw new SourceError(`${BPLAT[plat]} search failed`);
+    throw new SourceError(`${BPLAT[plat]} search failed`, e);
   }
   // A multi-query request returns one result list per query.
   const rows: any[] = Array.isArray(j?.results?.[0]) ? j.results.flat() : (j?.results || []);

@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Actions for Search Console, the Performance → Search tab and What to improve (CONTRACTS.md · performance area).
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
@@ -22,6 +23,7 @@ export const actions: ActionMap = {
   'gsc.properties': action({ read: true, role: 'Editor', input: z.object({}).optional(), run: async ctx => {
     try { return { properties: await propertiesFor(ctx.bid, ctx.biz.domain) }; }
     catch (e: any) {
+      await reportFailure(e, { source: 'action', operation: 'gsc.properties', businessId: ctx.bid, provider: 'Google Search Console' });
       if (e instanceof GscApiError && !e.transient) throw new RadarError(NOT_AUTH, 403, 'gsc_denied');
       throw new RadarError('Search Console didn’t respond. Try again.', 502, 'gsc_unavailable');
     }
@@ -31,7 +33,7 @@ export const actions: ActionMap = {
   'gsc.connect': action({ input: z.object({ property: z.string().min(3).max(300) }), run: async (ctx, { property }) => {
     const tokens = await loadTokens(ctx.bid);
     if (!tokens) throw new RadarError(NOT_AUTH, 403, 'gsc_denied');
-    let props; try { props = await propertiesFor(ctx.bid, ctx.biz.domain); } catch { throw new RadarError('Search Console didn’t respond. Try again.', 502, 'gsc_unavailable'); }
+    let props; try { props = await propertiesFor(ctx.bid, ctx.biz.domain); } catch (error) { await reportFailure(error, { source: 'action', operation: 'gsc.connect', businessId: ctx.bid, provider: 'Google Search Console' }); throw new RadarError('Search Console didn’t respond. Try again.', 502, 'gsc_unavailable'); }
     if (!props.some(p => p.v === property)) throw new RadarError('That property isn’t available on this Google account.', 400, 'gsc_property');
     const prev = await getConn(ctx.bid);
     // A different property means different data: don't mix it with rows from the old one.
