@@ -46,7 +46,7 @@ export const webSource = (plat: BriefPlatform): Source => async (ctx) => {
   let res;
   try {
     res = await ai.run('research', { purpose: 'brief.web', system: 'You are a careful research assistant. You report only what your search actually returned.', prompt, schema: Threads, schemaName: 'threads', webSearch: true, maxTokens: 3000, timeoutMs: 150000 }, { businessId: ctx.bid, retries: 1 });
-  } catch { throw new SourceError(`${plat} web search failed`); }
+  } catch (error) { throw new SourceError(`${plat} web search failed`, error); }
   const found = new Set(res.citations.map(c => norm(c.url)));
   const out: Candidate[] = [];
   const list = res.json?.threads || [];

@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // CONTRACT (CONTRACTS.md, platform area): called by the publishing service right before it sends an article's HTML.
 // Inserts approved outbound network links ("Links from you") into the exact sentence the user approved, with the rel and
 // the disclosure. Only when the partner (the link target) has approved its side too, and never after a removal request.
@@ -56,6 +57,7 @@ export async function applyApprovedOutboundLinks(bid: string, entryUrl: string |
     return out;
   } catch (e: any) {
     // Never block a publish because of a partner link.
+    await reportFailure(e, { source: 'publishing', operation: 'backlinks.outbound', businessId: bid, degraded: true });
     console.error('[backlinks] applyApprovedOutboundLinks failed', e?.message || e);
     return html;
   }

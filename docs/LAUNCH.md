@@ -339,7 +339,7 @@ A successful configuration check verifies shapes and settings, not an actual del
 - [ ] Generate a calendar, draft one article, publish to a test blog on each connector you offer.
 - [ ] Run a Daily Brief scan, generate a social pack, collect one AI-visibility cell.
 - [ ] Invite a teammate (email arrives, link works).
-- [ ] Error monitoring (Sentry or similar) and uptime checks on web + worker; Postgres backups on.
+- [ ] Enable built-in failure emails on web + worker, run the marked smoke test and confirm receipt at `kenny@thally.io` ([operations guide](OBSERVABILITY.md)). Configure external uptime/worker heartbeat checks and Postgres backups separately.
 
 ## 12. November 2026 launch verification
 

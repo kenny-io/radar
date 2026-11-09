@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Actions for the "publishing" area (CONTRACTS.md): blog connections, mode, schedule, publish now / retry.
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
@@ -126,7 +127,7 @@ export const actions: ActionMap = {
       const targets = await conn.targets(ctxOf(ctx.biz, { type, fields, creds }));
       return { targets };
     } catch (e: any) {
-      if (e instanceof PublishError) return { targets: [], error: failCopy(input.type, e) };
+      if (e instanceof PublishError) { await reportFailure(e, { source: 'publishing', operation: 'blog.targets', businessId: ctx.bid, provider: input.type, status: e.http }); return { targets: [], error: failCopy(input.type, e) }; }
       throw e;
     }
   } }),
@@ -146,7 +147,7 @@ export const actions: ActionMap = {
       if (r.existing && r.existing.status !== 'ok') { await db.update(schema.connections).set({ status: 'ok', lastError: null }).where(eq(schema.connections.id, r.existing.id)); }
       return { ok: true };
     } catch (e: any) {
-      if (e instanceof PublishError) { console.warn('[blog.test]', input.type, e.message); return { ok: false, http: e.http, message: failCopy(input.type, e) }; }
+      if (e instanceof PublishError) { await reportFailure(e, { source: 'publishing', operation: 'blog.test', businessId: ctx.bid, provider: input.type, status: e.http }); console.warn('[blog.test]', input.type, e.message); return { ok: false, http: e.http, message: failCopy(input.type, e) }; }
       throw e;
     }
   } }),

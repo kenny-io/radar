@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Claim and send one pub (architecture.md §9). One code path for the worker (scheduled) and Post now / Try again (manual).
 // Never twice: a conditional claim gives each attempt a fresh attempt_key and every later write is conditional on it; only
 // the final create request is non-idempotent, and an unknown outcome there is read back (X) or failed (LinkedIn), never resent.
@@ -73,6 +74,7 @@ async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, man
       if (!x) return null; // another attempt owns the row
       u = x;
     } catch (e: any) {
+      await reportFailure(e, { source: 'social', operation: 'social.persistPosted', businessId: r.businessId, userId, ref: r.id, provider: r.platform, attempt: i + 1, maxAttempts: 3, retrying: i < 2, degraded: true });
       console.error(`[social.send] pub ${r.id} ${r.sid}: posted as ${c.remoteId} but saving failed (try ${i + 1}): ${e?.message || e}`);
       if (i < 2) await new Promise(res => setTimeout(res, 500 * (i + 1)));
     }
@@ -80,7 +82,10 @@ async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, man
   if (!u) { console.error(`[social.send] pub ${r.id} ${r.sid}: LIVE as ${c.remoteId} (${c.url}) but not saved; left 'sending' for verify`); return null; }
   log(r, `posted (attempt ${r.attempts}${manual ? ', now' : ''})`);
   try { await sendHooks.afterPosted(r, c, manual, userId, text); }
-  catch (e: any) { console.error(`[social.send] pub ${r.id} ${r.sid}: posted; follow-up failed: ${e?.message || e}`); }
+  catch (e: any) {
+    await reportFailure(e, { source: 'social', operation: 'social.afterPosted', businessId: r.businessId, userId, ref: r.id, provider: r.platform, degraded: true });
+    console.error(`[social.send] pub ${r.id} ${r.sid}: posted; follow-up failed: ${e?.message || e}`);
+  }
   return u;
 }
 async function afterPostedDefault(r: PubRow, c: { remoteId: string; url: string }, manual: boolean, userId: string | null, text: string) {
@@ -102,6 +107,9 @@ async function afterPostedDefault(r: PubRow, c: { remoteId: string; url: string 
 async function finishFailed(r: PubRow, code: PubErrCode, detail: string, manual: boolean, userId: string | null, userMsg?: string | null): Promise<PubRow | null> {
   const [u] = await db.update(P).set({ status: 'failed', err: userMsg || errCopy(code, r.platform), errCode: code, errDetail: detail.slice(0, 500), stage: null, retryAt: null, updatedAt: new Date() }).where(mine(r)).returning();
   if (!u) return null;
+  // Revoking Autopilot intentionally stops a claimed send; this is an authorization outcome.
+  if (!(code === 'rejected' && detail === 'Autopilot is off. Schedule this draft manually to publish it.'))
+    await reportFailure(new Error(detail), { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code, attempt: r.attempts, maxAttempts: manual ? r.attempts : MAX_ATTEMPTS, retrying: false });
   log(r, `failed ${code} after ${r.attempts} attempt(s): ${detail.slice(0, 200)}`);
   if (detail !== CONTENT_MISSING) {
     await track('social.failed', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, code, attempts: r.attempts, scheduled: !manual } });
@@ -117,9 +125,10 @@ async function transient(r: PubRow, e: SendError, manual: boolean, userId: strin
   const at = Math.max(Date.now() + backoffMs(r.attempts), e.retryAt || 0);
   const [u] = await db.update(P).set({ status: 'scheduled', stage: null, retryAt: new Date(at), errDetail: e.detail.slice(0, 500), updatedAt: new Date() }).where(mine(r)).returning();
   if (!u) return null;
+  await reportFailure(e, { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: e.code, attempt: r.attempts, maxAttempts: MAX_ATTEMPTS, retrying: true });
   log(r, `retry ${r.attempts}/${MAX_ATTEMPTS - 1} at ${new Date(at).toISOString()} (${e.code})`);
   // A per-attempt key: the running job still holds `social.send:{id}`. The claim decides who sends.
-  await enqueue('social.send', { pubId: r.id }, { businessId: r.businessId, ref: r.sid, runAt: new Date(at), singletonKey: `social.send:${r.id}:${r.attempts}`, maxAttempts: 1 }).catch(() => {});
+  await enqueue('social.send', { pubId: r.id }, { businessId: r.businessId, ref: r.sid, runAt: new Date(at), singletonKey: `social.send:${r.id}:${r.attempts}`, maxAttempts: 1 }).catch(async error => { await reportFailure(error, { source: 'social', operation: 'social.enqueueRetry', businessId: r.businessId, ref: r.id, provider: r.platform, attempt: r.attempts }); });
   await bump(r.businessId);
   return u;
 }
@@ -128,12 +137,16 @@ async function transient(r: PubRow, e: SendError, manual: boolean, userId: strin
 async function hold(r: PubRow, manual: boolean, userId: string | null): Promise<PubRow | null> {
   if (manual) return finishFailed(r, 'auth', 'account expired', manual, userId);
   const [u] = await db.update(P).set({ status: 'scheduled', stage: null, retryAt: null, updatedAt: new Date() }).where(mine(r)).returning();
-  if (u) { log(r, 'held: account needs reconnecting'); await bump(r.businessId); }
+  if (u) {
+    await reportFailure(new Error('Scheduled publication is held because its account expired'), { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: 'auth', attempt: r.attempts, retrying: false });
+    log(r, 'held: account needs reconnecting'); await bump(r.businessId);
+  }
   return u || null;
 }
 
 /** Unknown outcome after create: read back on X; LinkedIn can't, so it fails as `unknown`. Never resends. */
 async function verifyOrFail(r: PubRow, ad: Adapter, a: AcctCtx, text: string, manual: boolean, userId: string | null, why: string): Promise<PubRow | null> {
+  await reportFailure(new Error(why), { source: 'social', operation: 'social.verifyUnknown', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: 'unknown', attempt: r.attempts, retrying: false, degraded: true });
   if (ad.verify && text) {
     try {
       if (ad.verifyDelayMs) await new Promise(res => setTimeout(res, ad.verifyDelayMs));
@@ -235,6 +248,7 @@ export async function failStale(r: PubRow): Promise<boolean> {
   const [u] = await db.update(P).set({ status: 'failed', err: errCopy('stale', r.platform), errCode: 'stale', errDetail: 'more than 24 h late', stage: null, retryAt: null, updatedAt: new Date() })
     .where(and(eq(P.id, r.id), eq(P.status, 'scheduled'), sql`${P.dueAt} <= now() - ${`${STALE_MS / 1000} seconds`}::interval`)).returning();
   if (!u) return false;
+  await reportFailure(new Error('Scheduled publication is more than 24 hours late'), { source: 'social', operation: 'social.publish', businessId: r.businessId, ref: r.id, provider: r.platform, code: 'stale', attempt: r.attempts, retrying: false });
   log(r, 'failed stale');
   await track('social.failed', { bid: r.businessId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, code: 'stale', attempts: r.attempts, scheduled: true } });
   await notify(r.businessId, `${r.platform === 'x' ? 'An' : 'A'} ${PLAT_L[r.platform]} post didn’t go out.`, { tone: 'bad', action: { label: 'Open', href: packHref(r, r.platform) } });

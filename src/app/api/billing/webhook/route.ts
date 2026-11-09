@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // POST raw body, Stripe-Signature → 200 {received: true} (architecture §7.3). 400 on a bad or missing signature (and
 // when STRIPE_WEBHOOK_SECRET is unset: never verify against an empty secret); 500 on a handler failure so Stripe retries.
 import { env } from '@/server/env';
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
     console.info(`[billing] webhook ${ev.type} ${ev.id}: ${r}`);
     return json({ received: true });
   } catch (e: any) {
+    await reportFailure(e, { source: 'http', operation: 'billing.webhook', provider: 'Stripe', ref: ev.id });
     console.error(`[billing] webhook ${ev.type} ${ev.id} failed:`, e?.message || e);
     return json({ ok: false, error: 'Handler failed' }, 500);
   }

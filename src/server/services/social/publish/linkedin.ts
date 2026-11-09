@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // LinkedIn REST adapter (developer-apps-guide.md §4, architecture.md §7, §9). Two apps: the profile app (OpenID Connect + Share
 // on LinkedIn; 60-day token, no refresh token) and the page app (Community Management only; refresh token for 365 days).
 // Every REST call sends LinkedIn-Version and X-Restli-Protocol-Version 2.0.0. Member posts can't be read back, so an unknown
@@ -101,7 +102,7 @@ export function liAdapter(app: LiApp): Adapter {
     },
     async revoke(t) {
       const c = liCreds(app);
-      await call('https://www.linkedin.com/oauth/v2/revoke', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ client_id: c.id, client_secret: c.secret, token: t.access_token }) }, 'auth').catch(() => null);
+      await call('https://www.linkedin.com/oauth/v2/revoke', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ client_id: c.id, client_secret: c.secret, token: t.access_token }) }, 'auth').then(async r => { if (r.status >= 400) await reportFailure(new Error('Social token revocation failed'), { source: 'social', operation: 'social.revoke', provider: 'LinkedIn', status: r.status, degraded: true }); }).catch(async error => { await reportFailure(error, { source: 'social', operation: 'social.revoke', provider: 'LinkedIn', degraded: true }); });
     },
     async upload(a, m) {
       const init = await call(`${REST}/images?action=initializeUpload`, { method: 'POST', headers: rest(a.token), body: JSON.stringify({ initializeUploadRequest: { owner: authorUrn(a.ch, a.remoteId) } }) }, 'media');

@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Transactional email (invites, partner notices, feature requests). Resend when RESEND_API_KEY is set; otherwise logged to the outbox table + console.
 import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
@@ -5,6 +6,15 @@ import { env } from '../env';
 import { sha256 } from '../crypto';
 
 export async function sendMail(to: string, subject: string, text: string, html?: string, opts: { idempotencyKey?: string } = {}) {
+  try {
+    return await prepareAndSendMail(to, subject, text, html, opts);
+  } catch (error) {
+    await reportFailure(error, { source: 'system', operation: 'mail.send', provider: 'Resend' });
+    throw error;
+  }
+}
+
+async function prepareAndSendMail(to: string, subject: string, text: string, html?: string, opts: { idempotencyKey?: string } = {}) {
   const hash = opts.idempotencyKey ? sha256(opts.idempotencyKey).slice(0, 32) : null;
   const id = hash ? `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}` : undefined;
   const [inserted] = await db.insert(schema.outboxEmails).values({ ...(id ? { id } : {}), to, subject, text, html: html || null }).onConflictDoNothing().returning();
@@ -14,6 +24,7 @@ export async function sendMail(to: string, subject: string, text: string, html?:
   // A retry always sends the persisted payload with the same provider key.
   to = row.to; subject = row.subject; text = row.text; html = row.html || undefined;
   if (!env.resendKey) {
+    if (env.isProd) await reportFailure(new Error('Transactional email is log-only because RESEND_API_KEY is missing'), { source: 'system', operation: 'mail.send', provider: 'Resend', code: 'mail_unconfigured', degraded: true });
     console.log(`[mail:log] to=${to} subject=${subject}\n${text}`);
     await db.update(schema.outboxEmails).set({ status: 'logged' }).where(eq(schema.outboxEmails.id, row.id));
     return;
@@ -31,6 +42,15 @@ export async function sendMail(to: string, subject: string, text: string, html?:
 /** Security mail never persists bearer links in plaintext or logs provider responses.
  * Development stubs retain an encrypted capture solely for local verification/browser QA. */
 export async function sendAuthMail(to: string, text: string) {
+  try { return await prepareAndSendAuthMail(to, text); }
+  catch (error) {
+    // Security email diagnostics never include recipient, bearer links or provider response bodies.
+    await reportFailure(new Error('Security email delivery unavailable'), { source: 'system', operation: 'mail.auth', provider: 'Resend' });
+    throw error;
+  }
+}
+
+async function prepareAndSendAuthMail(to: string, text: string) {
   const { encrypt } = await import('../crypto');
   const subject = 'Confirm your email for Radar';
   const [row] = await db.insert(schema.outboxEmails).values({ to, subject,

@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { requireUser } from '@/server/access';
 import { setCurrentBusiness } from '@/server/auth/users';
-import { handle, json } from '@/server/http/handle';
+import { handle, json, requestJson } from '@/server/http/handle';
 import { clientIp } from '@/server/abuse/ip';
 import { start } from '@/server/billing/activate';
 import { businessToOpen } from '@/server/billing/confirm';
@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 const Body = z.object({ paymentMethodId: z.string().min(1).max(255) });
 export const POST = handle(async (req: Request) => {
   const u = await requireUser();
-  const { paymentMethodId } = Body.parse(await req.json());
+  const { paymentMethodId } = Body.parse(await requestJson(req));
   const r = await start(u, paymentMethodId, clientIp(req));
   if ('activated' in r) {
     const bid = await businessToOpen(u.id, r.committed);

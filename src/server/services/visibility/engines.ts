@@ -3,6 +3,7 @@
 // With OPENROUTER_API_KEY set, each engine is asked through OpenRouter first (same model family, web search on) and
 // falls back to its official API on any failure (OPENROUTER_VIS_MODELS overrides the models).
 import { env } from '../../env';
+import { reportFailure } from '../../observability/failures';
 import { openrouterChat, openrouterEnabled, openrouterDown, markOpenrouterDown, isOpenrouterAccountError, openrouterMessage, WEB_SEARCH_TOOL, openrouterTripped, noteOpenrouterOutcome } from '../../ai/adapters/openrouter';
 import type { AiEngine } from '@/lib/types';
 import { stubEngine } from './stub';
@@ -16,7 +17,7 @@ async function post(url: string, headers: Record<string, string>, body: any, tim
   try {
     const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body), signal: ctl.signal });
     const txt = await r.text();
-    if (!r.ok) throw new Error(`HTTP ${r.status}: ${txt.slice(0, 300)}`);
+    if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}: ${txt.slice(0, 300)}`), { status: r.status });
     return JSON.parse(txt);
   } finally { clearTimeout(t); }
 }
@@ -82,6 +83,7 @@ export async function askEngine(engine: AiEngine, prompt: string, ctx: { stub: {
   if (model && !openrouterDown() && !(openrouterTripped() && hasDirect(engine))) {
     try { return await askOpenrouter(model, prompt); } catch (e: any) {
       orErr = e;
+      await reportFailure(e, { source: 'visibility', operation: 'visibility.collect', businessId: ctx.stub.bid, provider: 'openrouter', model, retrying: hasDirect(engine), degraded: true });
       if (isOpenrouterAccountError(e)) markOpenrouterDown(String(e?.message || e));
       console.warn(`[visibility] ${engine} via OpenRouter failed, trying its official API: ${String(e?.message || e).slice(0, 200)}`);
     }
@@ -90,10 +92,12 @@ export async function askEngine(engine: AiEngine, prompt: string, ctx: { stub: {
     // OpenRouter was tried and failed, and the official API isn't configured: report the real failure. The cell still
     // stays "not collected" (never "not mentioned"); EngineUnavailable is reserved for "nothing configured".
     if (e instanceof EngineUnavailable && orErr) throw orErr;
+    if (!(e instanceof EngineUnavailable)) await reportFailure(e, { source: 'visibility', operation: 'visibility.collect', businessId: ctx.stub.bid, provider: engine, model: directModel(engine) });
     throw e;
   }
 }
 
+const directModel = (engine: AiEngine) => ({ ChatGPT: env.visChatgptModel, Perplexity: env.visPerplexityModel, Gemini: env.visGeminiModel, Claude: env.visClaudeModel, Grok: env.visGrokModel })[engine];
 const hasDirect = (engine: AiEngine) => !!({ ChatGPT: env.openaiKey, Perplexity: env.perplexityKey, Gemini: env.geminiKey, Claude: env.anthropicKey, Grok: env.xaiKey } as Record<AiEngine, string>)[engine];
 
 async function askDirect(engine: AiEngine, prompt: string): Promise<EngineAnswer> {

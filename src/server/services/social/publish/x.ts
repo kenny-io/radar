@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // X API v2 adapter (developer-apps-guide.md §3, architecture.md §7, §9). OAuth 2.0 + PKCE as a confidential client: the token
 // endpoint takes HTTP Basic (client_secret_post is rejected). Access tokens last 2 hours; refresh tokens are single-use and rotate.
 // Replies are never posted through the API (architecture.md §14): Reply now opens X's own reply box on the client.
@@ -66,7 +67,7 @@ export const xAdapter: Adapter = {
     return tokensFrom(r.json, t);
   },
   async revoke(t) {
-    await call(`${API}/oauth2/revoke`, { method: 'POST', headers: { authorization: auth(), 'content-type': 'application/x-www-form-urlencoded' }, body: form({ token: t.refresh_token || t.access_token, token_type_hint: t.refresh_token ? 'refresh_token' : 'access_token' }) }, 'auth').catch(() => null);
+    await call(`${API}/oauth2/revoke`, { method: 'POST', headers: { authorization: auth(), 'content-type': 'application/x-www-form-urlencoded' }, body: form({ token: t.refresh_token || t.access_token, token_type_hint: t.refresh_token ? 'refresh_token' : 'access_token' }) }, 'auth').then(async r => { if (r.status >= 400) await reportFailure(new Error('Social token revocation failed'), { source: 'social', operation: 'social.revoke', provider: 'X', status: r.status, degraded: true }); }).catch(async error => { await reportFailure(error, { source: 'social', operation: 'social.revoke', provider: 'X', degraded: true }); });
   },
   async upload(a, m) {
     const fd = new FormData();

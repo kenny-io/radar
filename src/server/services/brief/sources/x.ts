@@ -23,7 +23,7 @@ export const xSource: Source = async (ctx) => {
   const query = `(${parts.join(' OR ')}) -is:retweet -is:reply lang:en`;
   const start = new Date(xStartMs(ctx.sinceMs, ctx.newSinceMs)).toISOString();
   const qs = new URLSearchParams({ query, max_results: '100', start_time: start, 'tweet.fields': 'created_at,public_metrics,author_id,lang', expansions: 'author_id', 'user.fields': 'username,name' });
-  const j = await withRetry(() => fetchJson(`https://api.x.com/2/tweets/search/recent?${qs}`, { headers: { authorization: `Bearer ${env.xBearer}` }, timeoutMs: 20000 }));
+  const j = await withRetry(() => fetchJson(`https://api.x.com/2/tweets/search/recent?${qs}`, { headers: { authorization: `Bearer ${env.xBearer}` }, timeoutMs: 20000 }), 2, { source: 'brief', operation: 'brief.xSearch', businessId: ctx.bid, provider: 'X', degraded: true });
   const users = new Map<string, any>((j?.includes?.users || []).map((u: any) => [u.id, u]));
   const tweets: any[] = j?.data || [];
   ctx.onRead(tweets.length);
