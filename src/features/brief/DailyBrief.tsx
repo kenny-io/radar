@@ -20,7 +20,7 @@ import { failToast } from '@/features/social/channels/PublishBox';
 import { compressToast, heldLines, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
 import { ConnectSocial } from '@/features/social/channels/ConnectSocial';
 import { useNowMs } from '@/features/social/channels/useSocial';
-import { copyRedditReply } from './redditCopy';
+import { copyRedditReply, redditCommentsUrl } from './redditCopy';
 
 type Act = { copying: boolean; copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
   /** Reply now opened X's reply box: mark it copied (then "I posted it"), carrying any unsaved edit, without touching the clipboard. */
@@ -141,6 +141,10 @@ export function DailyBrief() {
         return saved;
       });
       if (result === 'copied') toast('Copied. Open the Reddit thread and paste your reply in the comments.');
+      else if (result === 'open-needed') {
+        const destination = redditCommentsUrl(it.url);
+        toast('Reply copied. Open Reddit to paste it in the comments.', { action: destination ? { label: 'Open Reddit', fn: () => window.open(destination, '_blank', 'noopener,noreferrer') } : null });
+      }
       else if (result === 'save-failed') toast('Reply copied, but Radar couldn’t save it. Try copying again before opening Reddit.', { tone: 'bad' });
     } catch {
       toast('Couldn’t copy your reply. Allow clipboard access and try again, or select and copy the reply manually.', { tone: 'bad' });

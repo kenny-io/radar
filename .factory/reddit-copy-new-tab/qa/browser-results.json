@@ -1,0 +1,143 @@
+{
+  "at": "2026-11-09T17:48:25.470Z",
+  "base": "http://localhost:3134",
+  "fixture": "local synthetic workspace/action interception; real clipboard except injected denial/delay; native popup policy enabled",
+  "fingerprint": {
+    "src/features/brief/DailyBrief.tsx": "676d5264f414dccf50f1fc574eef2353e708c67639eaa0922df4e4ddcec8b706",
+    "src/features/brief/redditCopy.ts": "067c96e255af40889ca7e6e15a1e3ea276b2509e081a4d7dfd80c026ddf2fed0",
+    "src/features/brief/redditCopy.test.ts": "9354c25ce924dd8d59ef10ab57398dd3a0d71cf2946031ebc271d192a2e93fd3"
+  },
+  "results": [
+    {
+      "name": "Footer real clipboard opens a separate Reddit tab and leaves edited Radar response",
+      "pass": true,
+      "detail": {
+        "actualClipboard": true,
+        "actualPaste": true,
+        "newTab": true,
+        "radarPreserved": true,
+        "openerNull": true
+      }
+    },
+    {
+      "name": "Header Copy reply opens selected edited Plug variant in a new tab",
+      "pass": true,
+      "detail": {
+        "topOrder": true,
+        "variant": true,
+        "edit": true
+      }
+    },
+    {
+      "name": "Copy again uses a new tab and current real clipboard text",
+      "pass": true,
+      "detail": {
+        "copyAgain": true
+      }
+    },
+    {
+      "name": "Keyboard C opens new tab using selected variant",
+      "pass": true,
+      "detail": {
+        "keyboard": true,
+        "selectedVariant": true
+      }
+    },
+    {
+      "name": "Keyboard C uses just-edited response and preserves original Radar",
+      "pass": true,
+      "detail": {
+        "keyboardEdit": true
+      }
+    },
+    {
+      "name": "Mobile top copy opens new tab with real clipboard text",
+      "pass": true,
+      "detail": {
+        "mobile": true
+      }
+    },
+    {
+      "name": "Delayed clipboard keeps reserved tab blank until successful write",
+      "pass": true,
+      "detail": {
+        "reservedBlank": true,
+        "noEarlyExternalNavigation": true
+      }
+    },
+    {
+      "name": "Delayed save keeps reserved tab blank until persistence completes",
+      "pass": true,
+      "detail": {
+        "awaitedSave": true
+      }
+    },
+    {
+      "name": "Clipboard denial closes reserved tab without copied state or navigation",
+      "pass": true,
+      "detail": {
+        "reservedTabClosed": true,
+        "editKept": true,
+        "noCopiedMutation": true
+      }
+    },
+    {
+      "name": "Save failure closes reserved tab and retains response with recovery",
+      "pass": true,
+      "detail": {
+        "reservedTabClosed": true,
+        "noExternalNavigation": true
+      }
+    },
+    {
+      "name": "Popup blocking never navigates Radar; explicit fallback opens Reddit in a new tab",
+      "pass": true,
+      "detail": {
+        "noSameTabFallback": true,
+        "manualRecovery": true
+      }
+    },
+    {
+      "name": "Missing destination copies without opening any tab",
+      "pass": true,
+      "detail": {
+        "copyOnly": true
+      }
+    },
+    {
+      "name": "Invalid destination copies without opening any tab",
+      "pass": true,
+      "detail": {
+        "copyOnly": true
+      }
+    },
+    {
+      "name": "Non-Reddit reply retains copy-only behavior",
+      "pass": true,
+      "detail": {
+        "unchanged": true
+      }
+    },
+    {
+      "name": "A user-closed reserved tab leaves copied Radar state and manual recovery",
+      "pass": true,
+      "detail": {
+        "closedTabRecovery": true
+      }
+    },
+    {
+      "name": "Repeated C during a pending write reserves only one new tab",
+      "pass": true,
+      "detail": {
+        "singleReservedTab": true
+      }
+    },
+    {
+      "name": "No browser runtime exceptions",
+      "pass": true,
+      "detail": {
+        "errors": []
+      }
+    }
+  ]
+}
