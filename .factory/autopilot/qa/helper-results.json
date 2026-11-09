@@ -1,0 +1,77 @@
+{
+  "at": "2026-11-09T19:47:32.900Z",
+  "businessId": "e123257f-ee2a-4cd8-84e2-6abc2cf68b66",
+  "results": [
+    {
+      "name": "AC1/8 Owner toggle preserves separate preferences and canRun obeys activation",
+      "pass": true,
+      "detail": {
+        "authorizedActiveOnly": true,
+        "storedPreferencesUnchanged": true
+      }
+    },
+    {
+      "name": "AC3 Additive calendar creates researched topics while preserving existing proposed work and article edits",
+      "pass": true,
+      "detail": {
+        "researchedTopics": 1,
+        "exactOwnerProposalAndArticlePreserved": true,
+        "repeatStable": true
+      }
+    },
+    {
+      "name": "AC5 Durable handoff preserves prepared text, source and owner-only recipient; repeat and late arrivals dedupe",
+      "pass": true,
+      "detail": {
+        "exactTextAndSource": true,
+        "onlyOwnerRecipient": true,
+        "repeatedDeliveryOneOutbox": true,
+        "lateArrivalNewBatch": true
+      }
+    },
+    {
+      "name": "AC5 Failed email retries the same persisted outbox payload",
+      "pass": true,
+      "detail": {
+        "interceptedOutage": true,
+        "retriedSameOutboxId": true,
+        "persistedPayloadUnchanged": true,
+        "noExternalMail": true
+      }
+    },
+    {
+      "name": "AC5 Email link opens correct owned business even with another business selected",
+      "pass": true,
+      "detail": {
+        "previouslyOtherBusiness": true,
+        "emailLinkSwitchedToIntended": true
+      }
+    },
+    {
+      "name": "AC4 Supported active autonomous publication sends exactly once through existing worker",
+      "pass": true,
+      "detail": {
+        "posted": true,
+        "duplicateClaimRefused": true
+      }
+    },
+    {
+      "name": "AC6 Disable revokes claimed autonomous work and preserves manual queued publication",
+      "pass": true,
+      "detail": {
+        "blockedClaimedAutoBeforeCreate": true,
+        "manualSchedulePublished": true,
+        "oldActivationRemainsRevoked": true
+      }
+    },
+    {
+      "name": "AC6 Disable during media upload blocks final social create",
+      "pass": true,
+      "detail": {
+        "realStoredMedia": true,
+        "pausedInsideUpload": true,
+        "createCount": 0
+      }
+    }
+  ]
+}

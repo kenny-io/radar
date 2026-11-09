@@ -23,9 +23,9 @@ defineJob<PackInput>({
 });
 
 /** Automatic generation for one business (enqueued by the cron, once per day). Never posts. */
-defineJob<{ date: string }>({
+defineJob<{ date: string; autopilotActivationId?: string }>({
   kind: 'social.autoRun', maxAttempts: 3, timeoutMs: 10 * 60e3,
-  run: async ctx => { const packId = await autoRun(ctx.businessId!, ctx.payload.date); if (packId) await ctx.touch(); return { packId }; },
+  run: async ctx => { const packId = await autoRun(ctx.businessId!, ctx.payload.date, ctx.payload.autopilotActivationId); if (packId) await ctx.touch(); return { packId }; },
 });
 
 defineCron('social.auto', autoTick);

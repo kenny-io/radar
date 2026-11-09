@@ -1,4 +1,5 @@
 // The publisher: scheduled entry → payload → draft on the platform → publish (02-system.md §7, §12).
+import { canRun } from '../autopilot/guard';
 import { trackSoon } from '@/server/events';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -100,6 +101,8 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   if (!row) return { status: 'skipped', reason: 'missing' };
   if (row.status !== 'scheduled' && row.status !== 'publishing') return { status: 'skipped', reason: 'status ' + row.status };
   const b = await getBiz(row.businessId);
+  const programAllowed = async () => !!o.manual || !row.autopilotActivationId || (await canRun(b.id, row.autopilotActivationId) && !(await getBiz(b.id)).blog?.paused);
+  if (!(await programAllowed())) return { status: 'skipped', reason: 'autopilot_off' };
   if ((b.blog || {}).paused && !o.manual && row.status === 'scheduled') return { status: 'skipped', reason: 'paused' };
   // Read the publish snapshot under the same lock that admits generation, saving and approval.
   const admitted = await db.transaction(async tx => {
@@ -131,10 +134,17 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   try {
     const payload = await buildPayload(b, e, art);
     let draft: RemoteDraft | null = admitted.row.publishRemote && admitted.row.publishRemote.connId === conn.id ? admitted.row.publishRemote : null;
+    const holdProgram = async () => {
+      if (await programAllowed()) return false;
+      await db.update(schema.calendarEntries).set({ status: 'review' }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.status, 'publishing')));
+      await bump(b.id); return true;
+    };
     if (!draft) {
+      if (await holdProgram()) return { status: 'skipped', reason: 'autopilot_off' };
       draft = { ...(await connector.createDraft(c, payload)), connId: conn.id };
       await db.update(schema.calendarEntries).set({ publishRemote: draft }).where(eq(schema.calendarEntries.id, entryId));
     }
+    if (await holdProgram()) return { status: 'skipped', reason: 'autopilot_off' };
     const { url } = await connector.publish(c, payload, draft);
     await setEntry({ status: 'published', publishedUrl: url, publishError: null, publishRemote: null, publishAttempts: o.attempt });
     if (conn.status !== 'ok') await db.update(schema.connections).set({ status: 'ok', lastError: null }).where(eq(schema.connections.id, conn.id));

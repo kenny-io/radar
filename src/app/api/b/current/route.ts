@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { gateBusiness, requireRole, requireUser } from '@/server/access';
 import { setCurrentBusiness } from '@/server/auth/users';
-import { safeNext } from '@/server/billing/guard';
+import { currentUser } from '@/server/auth/session';
+import { safeNext, openBusinessUrl } from '@/server/billing/guard';
 import { env } from '@/server/env';
 import { handle, json } from '@/server/http/handle';
 
@@ -24,10 +25,11 @@ export const POST = handle(async (req: Request) => {
  *  the (app) layout's self-heal), which can't set radar_biz themselves. 303 to `next` when it's a same-site page path
  *  (starts with one /, no control characters, not /api/), else /dashboard. */
 export const GET = handle(async (req: Request) => {
-  const u = await requireUser();
   const q = new URL(req.url).searchParams;
-  await makeCurrent(u, q.get('id') || '');
   const n = safeNext(q.get('next'));
   const to = n && !n.startsWith('/api/') && !/[\u0000-\u001f\u007f]/.test(n) ? n : '/dashboard';
+  const u = await currentUser();
+  if (!u) return NextResponse.redirect(`${env.appUrl}/signin?next=${encodeURIComponent(openBusinessUrl(q.get('id') || '', to))}`, 303);
+  await makeCurrent(u, q.get('id') || '');
   return NextResponse.redirect(`${env.appUrl}${to}`, 303);
 });

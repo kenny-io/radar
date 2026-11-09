@@ -58,6 +58,24 @@ are preserved, including an existing opt-in to automatic scheduling. New default
 social account alone never enables automatic publishing. The worker catches up later the same day after downtime;
 daily packs are deduplicated across retries. No schema migration is needed for daily drafts.
 
+### Marketing Autopilot
+
+Settings → Autopilot lets a workspace owner delegate Radar's supported marketing work. It is off by default.
+Turning it on authorizes calendar planning, article drafting and publication, and social post generation and
+publication without individual review. The program uses the Business Profile, saved cadence and business timezone.
+It retains existing calendar entries, drafts, edits, manual schedules and individual automation preferences.
+
+Blog publication needs a connected publishing destination. Social publication uses connected X and LinkedIn
+accounts and requires `RADAR_SOCIAL_PUBLISHING` for the business. Comments and replies, including Reddit comments,
+require the owner; Radar emails prepared text and actionable links, together with missing-connection or failure
+handoffs. Configure `RESEND_API_KEY` and `MAIL_FROM` to deliver email; without Resend, messages remain in the local
+outbox log. Search/visibility monitoring and separately opted-in backlink workflows retain their existing behavior.
+
+Deploy migration `0010_autopilot` with `npm run db:migrate` before updating both web and worker processes. The worker
+runs the program continuously; no browser session is required. Disabling stops future Autopilot work, including
+pending publications from earlier activations. Manual schedules and separate automations continue; an external send
+already in progress may finish. See `.factory/autopilot/architecture.md` for authorization and recovery details.
+
 ## Docs
 - `ARCHITECTURE.md` — code layout, the client `app` object, actions, jobs, AI layer, dev stubs
 - `DIVERGENCES.md` — every divergence from the design, with status (some need product approval)
