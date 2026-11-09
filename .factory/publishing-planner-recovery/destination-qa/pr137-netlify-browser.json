@@ -1,0 +1,54 @@
+{
+  "at": "2026-11-09T21:32:14.488Z",
+  "base": "https://deploy-preview-137--thally-web.netlify.app",
+  "route": "/blog/migrate-markdown-docs-to-hosted-site",
+  "head": "a8b33044653590327f0962c1ddeda89332efd05d",
+  "results": [
+    {
+      "name": "ordinary reader follows blog listing into article",
+      "pass": true,
+      "detail": {
+        "listingLink": true,
+        "hover": true,
+        "keyboard": true
+      }
+    },
+    {
+      "name": "article renders one title, body, canonical, byline, and public navigation",
+      "pass": true,
+      "detail": {
+        "title": "Migrate Markdown Docs to a Hosted Site",
+        "bodyCharacters": 9987,
+        "headings": 6,
+        "canonicalPath": "/blog/migrate-markdown-docs-to-hosted-site",
+        "authorPath": "/authors/thally-team"
+      }
+    },
+    {
+      "name": "existing tab reload and fresh tab retain full article",
+      "pass": true,
+      "detail": {
+        "reload": true,
+        "fresh": true
+      }
+    },
+    {
+      "name": "mobile article fits and blog breadcrumb remains keyboard reachable",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "no browser runtime or first-party asset failures",
+      "pass": true,
+      "detail": {
+        "runtimeErrors": 0,
+        "failedFirstPartyAssets": 0
+      }
+    }
+  ],
+  "errors": [],
+  "failedAssets": []
+}

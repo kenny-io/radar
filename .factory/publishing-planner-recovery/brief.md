@@ -13,3 +13,7 @@ Acceptance criteria:
 - PPR-6: Deploy reviewed fix through existing GitHub/Railway workflow, retry e_2UQxRIMM and e_2Qcpo76u, and confirm each creates one complete source-reviewed draft PR. Verify article body, route/listing integration and destination build/preview; distinguish opening a PR from a live destination publication. User's request authorizes Radar release and real retry; destination PR merges remain outside scope.
 
 Start: origin/main 8b0fc3462c2709788cfa730d2f80c3ffee014a30. Existing dirty primary checkout preserved; isolated managed worktree on kenny/publishing-planner-recovery.
+
+## Live verification follow-up
+
+PPR-7: The analytics retry revealed a separate renderer defect: an internal Search Console research reference with url'#' was emitted as a public Sources link, including a title disallowed by destination audit. The repaired planner correctly rejected it and retained the original review issue. Filter only unusable public source URLs at shared sourcesList (HTML/Markdown/payload.sources); preserve stored body/source evidence and valid citations. Do not rewrite article punctuation or weaken source review/body insertion. Release this narrow follow-up, then retry analytics and complete its exact-head destination verification.

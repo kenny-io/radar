@@ -14,3 +14,7 @@ Architecture approved: metadata-aware bounded skips (not truncated source), exac
 Integrated source frozen; architect approves;328publishing tests and independent396broad/17probes/10browser checks pass. PM production build passed. Final Node22 evidence and release pending.
 
 Final Node 22 QA accepted: 397 broad tests passed, 85 skipped; 17 independent probes, 150 focused tests, typecheck, and 10 browser scenarios passed. Build passed. Release authorized by user request to fix and verify real publishing.
+
+## Live verification follow-up
+
+PR39 merged/deployed4908694f; both services verified. First real article e_2UQxRIMM recovered as draftPR137 and destination build/live-preview accepted. Second e_2Qcpo76u safely rejected an invalid generated public source citation with full reason. ARCH-2/ENG-2/QA-3 narrow public-citation export fix accepted locally, source frozen; Node22 build/tests passed. Branch kenny/publishing-public-sources based on4908694f; release and second retry next. Stored original article body/source hashes retained for post-retry comparison.
