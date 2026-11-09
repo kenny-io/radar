@@ -1,0 +1,14 @@
+{
+  "marker": "radar-email-format",
+  "service": "web",
+  "commit": "108d6e1ae70f82f3fdfd854ca79fcc4579b2a172",
+  "alertsEnabled": true,
+  "recipient": "kenny@thally.io",
+  "subject": "[Radar] Test alert",
+  "html": true,
+  "text": true,
+  "hashes": {
+    "src/server/observability/email.ts": "860013ce60dbfd995b226da2ec41184d5f1e9ea7c983ce806cec41e68cb50e92",
+    "src/server/observability/delivery.ts": "12a46866c8d10afefa6ba8d1b92a9b31eb593c0cb9af76377beee543275860b1"
+  }
+}

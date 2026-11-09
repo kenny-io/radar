@@ -1,0 +1,14 @@
+{
+  "commit": "108d6e1ae70f82f3fdfd854ca79fcc4579b2a172",
+  "recipient": "kenny@thally.io",
+  "subject": "[Radar] Test alert",
+  "exitCode": 0,
+  "alertId": "fd238249-1efb-4a1c-bbb6-490439214a2d",
+  "providerMessageId": "01a1c244-41a5-7078-b018-8d64c9eec7ff",
+  "delivered": true,
+  "htmlVerified": true,
+  "titleVerified": true,
+  "providerStatus": "delivered",
+  "providerCreatedAt": "2026-11-09T21:43:35.774000+00:00",
+  "verifiedAt": "2026-11-09T21:44:41.404401+00:00"
+}
