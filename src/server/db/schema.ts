@@ -52,6 +52,7 @@ export const businesses = pgTable('businesses', {
   calendarSettings: jsonb('calendar_settings').$type<any>().notNull().default({}),
   calendarGeneratedAt: timestamp('calendar_generated_at', { withTimezone: true }),
   blog: jsonb('blog').$type<any>().notNull().default({}),
+  autopilot: jsonb('autopilot').$type<any>().notNull().default({}),
   socialAuto: jsonb('social_auto').$type<any>().notNull().default({}),
   socialImg: jsonb('social_img').$type<any>(),
   briefSettings: jsonb('brief_settings').$type<any>().notNull().default({}),
@@ -131,6 +132,7 @@ export const calendarEntries = pgTable('calendar_entries', {
   status: text('status').notNull().default('proposed'),
   publishError: jsonb('publish_error').$type<any>(),
   publishedUrl: text('published_url'),
+  autopilotActivationId: text('autopilot_activation_id'),
   publishAttempts: integer('publish_attempts').notNull().default(0),
   /** publishing area: the remote draft created for this entry ({ connId, id, url }) so retries reuse it instead of duplicating */
   publishRemote: jsonb('publish_remote').$type<any>(),
@@ -392,6 +394,7 @@ export const socialPubs = pgTable('social_pubs', {
   /** Provider status/body excerpt: logs only, never shown, never in events. */
   errDetail: text('err_detail'),
   auto: boolean('auto').notNull().default(false),
+  autopilotActivationId: text('autopilot_activation_id'),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: created(),

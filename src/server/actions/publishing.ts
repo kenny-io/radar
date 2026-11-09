@@ -235,7 +235,7 @@ async function startPublish(ctx: ActCtx, entryId: string) {
     const row = await lockArticle(tx, ctx.bid, entryId);
     await assertNoArticleWork(tx, ctx.bid, entryId);
     if (!['scheduled', 'failed'].includes(row.status)) throw new RadarError('Approve the article before publishing it.', 400, 'not_scheduled');
-    await tx.update(schema.calendarEntries).set({ status: 'publishing', publishError: null }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.businessId, ctx.bid)));
+    await tx.update(schema.calendarEntries).set({ status: 'publishing', publishError: null, autopilotActivationId: null }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.businessId, ctx.bid)));
     const [job] = await tx.insert(schema.jobs).values({ kind: 'publish.entry', payload: { entryId, manual: true }, businessId: ctx.bid, ref: entryId, singletonKey: 'publish:' + entryId, maxAttempts: 4 }).returning({ id: schema.jobs.id });
     return { jobId: job.id };
   });

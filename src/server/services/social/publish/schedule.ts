@@ -78,17 +78,17 @@ export async function scheduleChecks(biz: BizRow, r: Resolved, date: string, tim
 type Q = Pick<typeof db, 'insert'>;
 /** Upsert the row as `scheduled` (resetting attempts and errors). Never takes over a row that is posted, sending, or scheduled
  *  inside the lock window — except a held one (its account expired), which may always be moved. null = not written. */
-export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: string; time: string; userId: string | null; auto?: boolean }): Promise<PubRow | null> {
+export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: string; time: string; userId: string | null; auto?: boolean; autopilotActivationId?: string }): Promise<PubRow | null> {
   const a = o.r.acct!;
   const v = {
     platform: o.r.t.platform, kind: o.r.t.kind, acctId: a.id, ch: a.ch, acctLabel: acctLabel(acctPublic(a)), status: 'scheduled' as const,
     date: o.date, time: o.time, dueAt: new Date(zonedTimeToUtc(o.date, o.time, o.biz.timezone)), attempts: 0, attemptKey: null, stage: null,
-    retryAt: null, err: null, errCode: null, errDetail: null, auto: !!o.auto, updatedBy: o.userId,
+    retryAt: null, err: null, errCode: null, errDetail: null, autopilotActivationId: o.autopilotActivationId || null, auto: !!o.auto, updatedBy: o.userId,
   };
   const [row] = await q.insert(P).values({ businessId: o.biz.id, sid: o.r.t.sid, src: o.r.t.src, ...v, createdBy: o.userId })
     .onConflictDoUpdate({
       target: [P.businessId, P.sid], set: { ...v, updatedAt: sql`now()` },
-      setWhere: sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`,
+      setWhere: o.autopilotActivationId ? sql`false` : sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`,
     }).returning();
   return row || null;
 }

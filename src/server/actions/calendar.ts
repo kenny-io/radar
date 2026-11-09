@@ -33,18 +33,18 @@ export const actions: ActionMap = {
   } }),
 
   'calendar.approve': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
-    await db.update(E).set({ status: 'approved' }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'proposed')));
+    await db.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'proposed')));
     return { ok: true };
   } }),
 
   'calendar.approveAll': action({ input: z.object({}).optional(), run: async (ctx) => {
-    const r = await db.update(E).set({ status: 'approved' }).where(and(eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+    const r = await db.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
     return { count: r.length };
   } }),
 
   /** approved ("Scheduled") → proposed */
   'calendar.unschedule': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
-    await db.update(E).set({ status: 'proposed' }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'approved')));
+    await db.update(E).set({ status: 'proposed', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'approved')));
     return { ok: true };
   } }),
 

@@ -96,7 +96,7 @@ RULES
 - Use the primary keyword in the introduction and in at least one heading, naturally.`;
 }
 
-export interface DraftPayload { entryId: string; source: 'user' | 'cron' | 'autopilot'; batchId?: string; batch?: string[] }
+export interface DraftPayload { entryId: string; source: 'user' | 'cron' | 'autopilot'; autopilotActivationId?: string; batchId?: string; batch?: string[] }
 
 export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, a0: Article | null, profile: Profile, gsc: boolean, name: string): Promise<Article> {
   const bid = ctx.businessId!;

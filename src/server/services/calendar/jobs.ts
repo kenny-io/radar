@@ -1,5 +1,7 @@
 // Job + cron definitions for "calendar". Imported by src/server/jobs/all.ts.
 // calendar.generate (ref = businessId): the 7 research phases of 01-screens.md §5, streamed as { phase, results, keep, gsc }.
+import { canRun } from '../autopilot/guard';
+import { authorized } from '../autopilot/policy';
 import { defaultArticleImageStyle } from '@/server/services/images';
 import { keywordProviderIssue } from '../keywords/provider';
 import { and, eq, ne } from 'drizzle-orm';
@@ -16,7 +18,7 @@ import { slotDates } from './schedule';
 import { clusterCandidates, difficultyCeiling, existingArticles, gscHasData, gscQueryStats, refreshCandidates, researchCandidates, writeTopics, type Candidate, type Topic } from './research';
 import type { CalendarSettings, Profile } from '@/lib/types';
 
-export interface CalGenPayload { settings: CalendarSettings; keep: boolean }
+export interface CalGenPayload { settings: CalendarSettings; keep: boolean; autopilotActivationId?: string }
 export interface CalGenProgress { phase: number; results: string[]; keep: boolean; gsc: boolean }
 /** Leftover researched topics for "Replace topic" (stored on the job result). */
 export type PoolItem = Pick<Candidate, 'kw' | 'vol' | 'kd' | 'facts' | 'measured' | 'priority' | 'seed' | 'src' | 'score'>;
@@ -26,7 +28,8 @@ const MIN_PHASE_MS = 520; // lets each real phase register visually; never fakes
 defineJob<CalGenPayload>({
   kind: 'calendar.generate', maxAttempts: 2, timeoutMs: 10 * 60e3,
   run: async (ctx) => {
-    const bid = ctx.businessId!; const { settings, keep } = ctx.payload;
+    const bid = ctx.businessId!; const { settings, keep, autopilotActivationId } = ctx.payload;
+    if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) return { skipped: 'autopilot_off' };
     try {
       const biz = await getBiz(bid); const profile = biz.profile as Profile; profile.domain = biz.domain;
       const g = (await db.select().from(schema.gscConnections).where(eq(schema.gscConnections.businessId, bid)).limit(1))[0];
@@ -61,7 +64,7 @@ defineJob<CalGenPayload>({
       });
 
       // Entries that stay where they are (everything not proposed).
-      const keptRows = await db.select().from(schema.calendarEntries).where(and(eq(schema.calendarEntries.businessId, bid), ne(schema.calendarEntries.status, 'proposed')));
+      const keptRows = await db.select().from(schema.calendarEntries).where(and(eq(schema.calendarEntries.businessId, bid), ...(autopilotActivationId ? [] : [ne(schema.calendarEntries.status, 'proposed')])));
       const keptKw = new Set(keptRows.map(r => normKw(r.kw)));
       const slots = slotDates(settings, 30);
       const keptDates = new Set(keptRows.map(r => String(r.date)));
@@ -88,22 +91,29 @@ defineJob<CalGenPayload>({
       });
 
       const generatedAt = new Date();
-      await db.transaction(async (tx) => {
-        await tx.delete(schema.calendarEntries).where(and(eq(schema.calendarEntries.businessId, bid), eq(schema.calendarEntries.status, 'proposed')));
+      const saved = await db.transaction(async (tx) => {
+        if (autopilotActivationId) {
+          const [latest] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, bid)).for('update');
+          if (!latest || !authorized(latest, autopilotActivationId)) return false;
+        } else await tx.delete(schema.calendarEntries).where(and(eq(schema.calendarEntries.businessId, bid), eq(schema.calendarEntries.status, 'proposed')));
+        const occupied = autopilotActivationId ? await tx.select({ date: schema.calendarEntries.date, kw: schema.calendarEntries.kw }).from(schema.calendarEntries).where(eq(schema.calendarEntries.businessId, bid)) : [];
+        const occupiedDates = new Set(occupied.map(r => String(r.date))); const occupiedKw = new Set(occupied.map(r => normKw(r.kw)));
         const rows = topics.map((t: Topic, i) => ({
           id: shortId('e_'), businessId: bid, title: t.title, kw: t.kw, type: t.type, vol: t.vol, kd: t.kd, date: open[i], mode: t.mode, url: t.url,
-          measured: t.measured, audience: t.audience, relevance: t.relevance, status: 'proposed',
-        }));
+          measured: t.measured, audience: t.audience, relevance: t.relevance, status: 'proposed', autopilotActivationId: autopilotActivationId || null,
+        })).filter(r => !occupiedDates.has(String(r.date)) && !occupiedKw.has(normKw(r.kw)));
         if (rows.length) {
           await tx.insert(schema.calendarEntries).values(rows);
           await tx.insert(schema.articles).values(rows.map((r, i) => ({
             entryId: r.id, businessId: bid,
-            data: { entryId: r.id, generated: false, body: [], brief: { angle: r.relevance, outline: topics[i].outline, words: 1400 }, seo: { title: r.title, meta: '', slug: slugify(r.kw) }, img: { style: defaultArticleImageStyle(), seed: 1, prompt: 'Calm, editorial image about ' + r.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null },
+            data: { entryId: r.id, generated: false, body: [], brief: { angle: r.relevance, outline: topics.find(t => t.kw === r.kw)?.outline || [], words: 1400 }, seo: { title: r.title, meta: '', slug: slugify(r.kw) }, img: { style: defaultArticleImageStyle(), seed: 1, prompt: 'Calm, editorial image about ' + r.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null },
           })));
         }
-        await tx.update(schema.businesses).set({ calendarGeneratedAt: generatedAt, calendarSettings: settings }).where(eq(schema.businesses.id, bid));
+        await tx.update(schema.businesses).set({ calendarGeneratedAt: generatedAt, ...(!autopilotActivationId ? { calendarSettings: settings } : {}) }).where(eq(schema.businesses.id, bid));
+        return true;
       });
-      await notify(bid, keep ? `Calendar refreshed. ${keptRows.length} approved topics kept in place.` : `${topics.length} topics proposed. Approve the ones you like.`, { tone: 'ok' });
+      if (!saved) return { skipped: 'autopilot_off' };
+      await notify(bid, autopilotActivationId ? 'Autopilot added researched topics to your calendar.' : keep ? `Calendar refreshed. ${keptRows.length} approved topics kept in place.` : `${topics.length} topics proposed. Approve the ones you like.`, { tone: 'ok' });
       // Say why the month isn't full, or why volumes are missing, instead of leaving a quietly short calendar.
       const issue = keywordProviderIssue();
       const unverified = topics.filter((t: Topic) => t.src === 'idea').length;

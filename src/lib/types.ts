@@ -213,6 +213,14 @@ export interface JobSummary { id: string; kind: string; status: 'queued' | 'runn
 
 export interface SiteStats { pages: number | null; articles: number | null; ranking: number | null; analyzedAt: string | null }
 
+export interface AutopilotState {
+  enabled: boolean;
+  enabledAt: string | null;
+  lastRunAt: string | null;
+  lastError: string | null;
+  summary?: string;
+}
+
 /** Per-business workspace — the client's "B". Loaded by GET /api/b/:bid/workspace. */
 export interface Workspace {
   id: string; rev: number; role: Role; status: 'onboarding' | 'active';
@@ -220,6 +228,7 @@ export interface Workspace {
   today: string; tz: string;
   /** Server time when this workspace was built (ISO). Clients may use it to correct clock skew for lock/past checks. */
   now?: string;
+  autopilot?: AutopilotState;
   profile: Profile; edited: Edited;
   gsc: GscState;
   calendar: CalendarState;

@@ -1,6 +1,7 @@
 // Job + cron definitions for "publishing". Register with defineJob()/defineCron(); imported by src/server/jobs/all.ts.
 //  - job  publish.entry {entryId, manual?}  (ref = entryId) — publish one scheduled entry; up to 3 retries with backoff
 //  - cron publishing.scheduler (every minute) — at blog.time (business timezone) on entry.date, enqueue scheduled entries
+import { canRun } from '../autopilot/guard';
 import { and, eq, inArray, lte } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
@@ -29,7 +30,7 @@ export const enqueuePublish = (businessId: string, entryId: string, manual = fal
 /** Idempotent: only `scheduled` entries are picked, and the singleton key prevents a second job while one is queued/running. */
 export async function runScheduler(now: Date) {
   const horizon = addDays(todayIn('UTC', now), 1); // no timezone is more than a day ahead of UTC
-  const rows = await db.select({ id: schema.calendarEntries.id, date: schema.calendarEntries.date, bid: schema.calendarEntries.businessId, tz: schema.businesses.timezone, blog: schema.businesses.blog })
+  const rows = await db.select({ id: schema.calendarEntries.id, date: schema.calendarEntries.date, bid: schema.calendarEntries.businessId, tz: schema.businesses.timezone, blog: schema.businesses.blog, activation: schema.calendarEntries.autopilotActivationId })
     .from(schema.calendarEntries).innerJoin(schema.businesses, eq(schema.businesses.id, schema.calendarEntries.businessId))
     .where(and(eq(schema.calendarEntries.status, 'scheduled'), lte(schema.calendarEntries.date, horizon), eq(schema.businesses.status, 'active')));
   if (!rows.length) return 0;
@@ -38,6 +39,7 @@ export async function runScheduler(now: Date) {
   let n = 0;
   for (const r of rows) {
     const blog = r.blog || {};
+    if (r.activation && !(await canRun(r.bid, r.activation))) continue;
     if (blog.paused || !withConn.has(r.bid)) continue; // held; the UI shows "Paused · …"
     const tz = r.tz || 'America/New_York';
     const today = todayIn(tz, now); const date = String(r.date);

@@ -1,0 +1,40 @@
+{
+  "at": "2026-11-09T19:57:46.495Z",
+  "businesses": [
+    {
+      "id": "4e0fb81b-d90d-4b0b-b526-8a0d4604b423",
+      "name": "Thally QA"
+    },
+    {
+      "id": "c4d5beac-6f61-4ac4-ba35-3757644a117c",
+      "name": "Lived QA"
+    }
+  ],
+  "results": [
+    {
+      "name": "AC1/8 Real business switcher keeps Autopilot and saved preferences independent",
+      "pass": true,
+      "detail": {
+        "aOff": true,
+        "bOn": true,
+        "refreshPersisted": true,
+        "preferencesAndJobsBusinessScoped": true
+      }
+    },
+    {
+      "name": "AC7 Switching business during pending save cannot apply the old business response to the new workspace",
+      "pass": true,
+      "detail": {
+        "oldResponseDidNotChangeNewWorkspace": true,
+        "newBusinessControlsNotStuck": true
+      }
+    },
+    {
+      "name": "AC7 Multi-business browser has no runtime errors",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ]
+}
