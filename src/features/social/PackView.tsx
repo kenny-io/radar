@@ -39,7 +39,15 @@ export function PackView({ pack }: { pack: SocialPack }) {
   const dlAll = async () => { const txt = keys.map(k => `— ${plat(k).l} —\n\n${pack.posts[k]!.text}\n`).join('\n'); downloadBlob(new Blob([txt], { type: 'text/plain' }), fname('copy') + '.txt'); let got = 0; for (const k of keys) { await sleep(250); if (await dlOne(k)) got++; } if (got) toast(`Downloaded copy and ${got} visual${got > 1 ? 's' : ''}. Nothing was posted.`); };
   const len = p ? (pubOn ? charCount('x', p.text) : p.text.length) : 0;
   const locked = B.role === 'Viewer' || (pubOn && !!p && isLocked(p.pub, now));
-  const direction = directions[cur] ?? p?.imagePrompt ?? '';
+  const topic = String(headline || pack.name).replace(/\s+/g, ' ').trim().slice(0, 160);
+  const postContext = (p?.text || '').replace(/https?:\/\/\S+/gi, '').replace(/\s+/g, ' ').trim().slice(0, 260);
+  const imageStyle = (STYLES.find(s => s.k === p?.style)?.l || 'Illustration').toLowerCase();
+  const suggestedDirection = [
+    `Create an image for ${B.profile.business.name.slice(0, 80) || 'our brand'}’s ${plat(cur)?.l || 'social media'} post about “${topic}”. Visual style: ${imageStyle}.`,
+    postContext && `Visualize the main idea with one clear scene or visual metaphor. Post context: ${postContext}`,
+    `Use brand colors ${brand.primary} and ${brand.secondary}, a simple background and one strong focal point. Keep it readable at social-feed size. No text, logos, watermarks or invented charts.`,
+  ].filter(Boolean).join('\n\n');
+  const direction = directions[cur] ?? (p?.imagePrompt?.trim() ? p.imagePrompt : pack.custom?.trim() || suggestedDirection);
   const imageDisabled = locked || busy.image;
   return <div className="page">
     <Btn kind="ghost" size="sm" icon="back" onClick={() => go('social')} style={{ marginLeft: -10, marginBottom: 18 }}>Content library</Btn>
@@ -69,7 +77,7 @@ export function PackView({ pack }: { pack: SocialPack }) {
           <div className="row" style={{ padding: '14px 0' }}><span className="grow small">Style</span><select className="input" style={{ width: 170, height: 34, fontSize: 13 }} value={p.style} disabled={imageDisabled} aria-label="Image style" onChange={async e => { const style = e.target.value as SocialPost['style']; setBusy(b => ({ ...b, image: true })); try { await app.act('social.style', { packId: pack.id, platform: cur, style }); setImageErrors(x => ({ ...x, [cur]: '' })); } catch (error: any) { setImageErrors(x => ({ ...x, [cur]: error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous image is kept. Try again.' })); } finally { setBusy(b => ({ ...b, image: false })); } }}>{STYLES.filter(s => s.k !== 'custom').map(s => <option key={s.k} value={s.k}>{s.l}</option>)}</select></div>
         </div>
         <div className="col" style={{ gap: 12 }}>
-          <Field label="Describe your image" hint="For example: Sobha Sapphire in Dubai at sunset. Generated scenes may differ from the real subject.">
+          <Field label="Describe your image" hint="Start with this suggested prompt or edit it, then generate your image. Generated scenes may differ from real subjects.">
             <textarea className="input" rows={3} maxLength={1000} value={direction} disabled={imageDisabled} placeholder="Describe the subject, scene and details you want" onChange={e => setDirections(x => ({ ...x, [cur]: e.target.value }))} />
           </Field>
           <Btn icon="image" loading={busy.image} disabled={locked || !direction.trim() || direction.trim().length > 1000} onClick={() => regen('image', direction)}>Generate image</Btn>
