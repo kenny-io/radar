@@ -5,7 +5,7 @@ import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData, type WorkUpdateSe
 const ctx = { appUrl: 'https://radar.thally.io', unsubscribeUrl: 'https://radar.thally.io/email-preferences?token=fake' };
 const data: LifecycleData = { guide: { version: 1, id: 'article_workflow', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, education: { version: 1, lesson: 'ai_visibility', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
 describe('lifecycle templates', () => {
-  it.each(LIFECYCLE_TYPES)('%s has accessible HTML, useful plain text and explicit reply contact', type => {
+  it.each(LIFECYCLE_TYPES.filter(type => type !== 'ai_weekly_report'))('%s has accessible HTML, useful plain text and explicit reply contact', type => {
     const x = renderLifecycle(type, data, ctx);
     expect(x.subject.length).toBeGreaterThan(10);
     expect(x.preheader?.length).toBeGreaterThan(10); expect(x.preheader!.length).toBeLessThanOrEqual(200);

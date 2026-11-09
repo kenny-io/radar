@@ -1,0 +1,18 @@
+{
+  "base": "9b40b8a2a05495be663b36b9570af22986efdd8a",
+  "migration": "0017_ai_weekly_report",
+  "checks": {
+    "core16to17Upgrade": true,
+    "oldWorkerRejected": true,
+    "newWorkerAccepted": true,
+    "allPrior17LedgerRowsUnchanged": true,
+    "allPriorSqlAndJournalUnchanged": true,
+    "courseGuidesSenderMetadataAndAttemptsPreserved": true,
+    "noFakeHistoryFromLatestResults": true,
+    "noAutoEnrollmentOrPreferenceBackfill": true,
+    "storedFalseSurvivesNoop": true,
+    "noOpLedgerStable": true,
+    "snapshotAncestry": true
+  },
+  "migrationSha256": "24a2afb5543673793f3a0feb2fd77b2ff01519296cdaa7e015b0e6416833e018"
+}

@@ -110,7 +110,7 @@ export async function engagementSection(e: EngagementEvent, now = new Date(), q:
 
 /** All optional mail shares a rolling cap. Ambiguous attempts count, even when their acknowledgment was lost. */
 export async function optionalDeliveryAfter(userId: string, now = new Date(), excludeId?: string, q: Q = db, type = 'work_update'): Promise<Date | null> {
-  const rows = await q.select({ at: M.firstAttemptAt, sent: M.sentAt, created: M.createdAt, status: M.status }).from(M).where(and(eq(M.userId, userId), inArray(M.type, ['work_update', 'founder_note', 'weekly_education', 'lifecycle_guide']), ...(excludeId ? [ne(M.id, excludeId)] : []), or(gt(M.firstAttemptAt, new Date(now.getTime() - DAY)), gt(M.sentAt, new Date(now.getTime() - DAY)), and(eq(M.status, 'logged'), gt(M.createdAt, new Date(now.getTime() - DAY))))));
+  const rows = await q.select({ at: M.firstAttemptAt, sent: M.sentAt, created: M.createdAt, status: M.status }).from(M).where(and(eq(M.userId, userId), inArray(M.type, ['work_update', 'founder_note', 'weekly_education', 'lifecycle_guide', 'ai_weekly_report']), ...(excludeId ? [ne(M.id, excludeId)] : []), or(gt(M.firstAttemptAt, new Date(now.getTime() - DAY)), gt(M.sentAt, new Date(now.getTime() - DAY)), and(eq(M.status, 'logged'), gt(M.createdAt, new Date(now.getTime() - DAY))))));
   const latest = rows.reduce((t, r) => Math.max(t, r.sent?.getTime() || 0, r.at?.getTime() || 0, r.status === 'logged' ? r.created.getTime() : 0), 0);
   if (latest && latest + DAY > now.getTime()) return new Date(latest + DAY);
   // One stable owner timezone across all businesses, rather than allowing another workspace to evade quiet hours.

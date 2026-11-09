@@ -8,14 +8,14 @@ describe('worker rollout readiness', () => {
     ["CHECK (guide_id IN ('article_workflow','search_refresh','autopilot_intro'))", true],
     ["CHECK (guide_id IN ('article_workflow','search_refresh','autopilot_intro_wrong'))", false],
   ])('checks the validated guide allowlist capability before starting: %s', async (definition, ready) => {
-    const probe = vi.spyOn(pool, 'query').mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [{ definition }] } as never);
+    const probe = vi.spyOn(pool, 'query').mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [{ definition }] } as never);
     try {
       const result = waitForWorkerSchema({ timeoutMs: 0, log: () => {} });
       if (ready) await expect(result).resolves.toBeUndefined();
       else await expect(result).rejects.toThrow('schema is not ready');
-      expect(probe).toHaveBeenCalledTimes(2);
-      expect(probe.mock.calls[1][0]).toMatchObject({ text: expect.stringContaining("conname = 'lifecycle_guide_id_check'") });
-      expect(probe.mock.calls[1][0]).toMatchObject({ text: expect.stringContaining("conrelid = 'lifecycle_guide_states'::regclass") });
+      expect(probe).toHaveBeenCalledTimes(3);
+      expect(probe.mock.calls[2][0]).toMatchObject({ text: expect.stringContaining("conname = 'lifecycle_guide_id_check'") });
+      expect(probe.mock.calls[2][0]).toMatchObject({ text: expect.stringContaining("conrelid = 'lifecycle_guide_states'::regclass") });
     } finally { probe.mockRestore(); }
   });
   it('waits through old-schema failures before allowing job startup, with one bounded diagnostic', async () => {
