@@ -132,6 +132,33 @@ describe.skipIf(!process.env.DATABASE_URL)('weekly AI report actual database and
     expect(await managedDigestPreferences(u.id)).toContainEqual(expect.objectContaining({id:b.id,weeklyEmail:true}));expect(await updateDigestPreference(admin.id,b.id,false)).toBe(true);expect(await updateDigestPreference(viewer.id,b.id,true)).toBe(false);expect(await updateDigestPreference(foreign.id,b.id,true)).toBe(false);
     const token=digestPreferencesToken(b.id,u.id);expect(readDigestPreferencesToken(token+'x')).toBeNull();expect(await disableDigestEmail(token)).toBe(true);await db.update(B).set({ownerId:foreign.id}).where(eq(B.id,b.id));expect(await disableDigestEmail(token)).toBe(false);
   });
+  it.each([
+    {label:'explicit same-origin',origin:'app',site:'same-origin',mode:'navigate',dest:'document',status:303},
+    {label:'native opaque same-origin navigation',origin:'null',site:'same-origin',mode:'navigate',dest:'document',status:303},
+    {label:'hostile origin despite same-origin metadata',origin:'https://hostile.example',site:'same-origin',mode:'navigate',dest:'document',status:403},
+    {label:'opaque cross-site',origin:'null',site:'cross-site',mode:'navigate',dest:'document',status:403},
+    {label:'opaque same-site sibling',origin:'null',site:'same-site',mode:'navigate',dest:'document',status:403},
+    {label:'opaque missing metadata',origin:'null',site:undefined,mode:undefined,dest:undefined,status:403},
+    {label:'opaque non-navigation',origin:'null',site:'same-origin',mode:'cors',dest:'document',status:403},
+    {label:'opaque iframe navigation',origin:'null',site:'same-origin',mode:'navigate',dest:'iframe',status:403},
+    {label:'explicit same-origin marked cross-site',origin:'app',site:'cross-site',mode:'navigate',dest:'document',status:403},
+  ])('handles actual signed form Request origin policy: $label',async scenario=>{
+    const {u,b}=await owner(),token=digestPreferencesToken(b.id,u.id);
+    const headers=new Headers({'content-type':'application/x-www-form-urlencoded',origin:scenario.origin==='app'?new URL(env.appUrl).origin:scenario.origin});
+    for(const [key,value] of [['sec-fetch-site',scenario.site],['sec-fetch-mode',scenario.mode],['sec-fetch-dest',scenario.dest]])if(value!==undefined)headers.set(key!,value);
+    const response=await normalOptout(new Request(`${env.appUrl}/ai-email-preferences`,{method:'POST',headers,body:new URLSearchParams({token})}));
+    expect(response.status).toBe(scenario.status);expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    expect((await managedDigestPreferences(u.id))[0].weeklyEmail).toBe(scenario.status!==303);
+  });
+  it('keeps native opaque-origin form authorization and streamed size bounds after the origin exception',async()=>{
+    const {u,b}=await owner(),token=digestPreferencesToken(b.id,u.id),headers={'content-type':'application/x-www-form-urlencoded',origin:'null','sec-fetch-site':'same-origin','sec-fetch-mode':'navigate','sec-fetch-dest':'document'};
+    const post=(body:URLSearchParams)=>normalOptout(new Request(`${env.appUrl}/ai-email-preferences`,{method:'POST',headers,body}));
+    expect((await post(new URLSearchParams({token:token+'tampered'}))).status).toBe(400);
+    expect((await post(new URLSearchParams({token,extra:'wrong'}))).status).toBe(400);
+    expect((await post(new URLSearchParams({token:'x'.repeat(2049)}))).status).toBe(413);
+    const next=await F.user();await db.update(B).set({ownerId:next.id}).where(eq(B.id,b.id));expect((await post(new URLSearchParams({token}))).status).toBe(400);
+    expect((await db.select().from(schema.visibilityPreferences).where(eq(schema.visibilityPreferences.businessId,b.id)))).toHaveLength(0);
+  });
   it('never mutates on preference GET, supports strict form and oneclick POST without changing education',async()=>{
     const {u,b}=await owner(), token=digestPreferencesToken(b.id,u.id);await db.insert(schema.userEmailPreferences).values({userId:u.id,education:true});const url=`${env.appUrl}/ai-email-preferences?token=${encodeURIComponent(token)}`;
     expect((await preferencePage(new Request(url))).status).toBe(200);expect((await managedDigestPreferences(u.id))[0].weeklyEmail).toBe(true);

@@ -15,7 +15,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   let form: URLSearchParams;
   try {
-    assertAuthOrigin(request);
+    // Chrome's native form navigation can send an opaque Origin under no-referrer.
+    // This signed disable-only route accepts that case only with exact same-origin navigation metadata.
+    const nativeSameOrigin = request.headers.get('origin') === 'null' &&
+      request.headers.get('sec-fetch-site') === 'same-origin' &&
+      request.headers.get('sec-fetch-mode') === 'navigate' &&
+      request.headers.get('sec-fetch-dest') === 'document';
+    if (!nativeSameOrigin) assertAuthOrigin(request);
     form = await preferenceForm(request);
   } catch (error) {
     if (error instanceof RadarError) return page(`<p>${escapeHtml(error.userMessage)}</p>`, error.status);
