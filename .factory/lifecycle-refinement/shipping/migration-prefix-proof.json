@@ -1,0 +1,12 @@
+{
+  "canonicalMigrations": 11,
+  "exactHashesAndTimestampsMatch": true,
+  "pending": [
+    "0011_lifecycle_emails",
+    "0012_engagement_updates",
+    "0013_weekly_education",
+    "0014_lifecycle_guides",
+    "0015_mail_sender_identity",
+    "0016_autopilot_intro"
+  ]
+}

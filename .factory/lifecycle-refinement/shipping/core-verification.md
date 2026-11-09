@@ -1,0 +1,7 @@
+# Core release gate
+
+Frozen core integration9b40b8a2 combines accepted ebd34ae8 with current main108d6e1a, no manual conflicts or customer copy/schema changes. Independent QA incoming operator/publishing seams44/44pass. Integrated affected lifecycle/readiness/observability/publishing20files228tests pass. Node22 optimized build passes, BUILD_ID FQkCp_OGZc_SQ_8jReY-Z; persisted-config typecheck passes. Existing full-suite1371pass/65external skips/known native raster mismatch remains baseline; no all-green full-suite claim.
+
+Production before release: web0da3581e-6ec4-46a9-98f9-84d839314bb8 and worker6e5bdfed-f01a-453a-ab1c-bee3bd65450c both successful108d6e1a. Hosted canonical11migration rows exactly match local0000–0010 hashes/timestamps; additive0011–0016 pending. Existing5accounts all verified. No lifecycle/course/guide tables exist yet. Credentials exist on both services, configured MAIL_FROM preserved, APP_URL correct, stubs0 and existing billing on unchanged. Education flag unset before release; root stages worker1 without triggering an old-code redeploy.
+
+User explicitly authorizes shipping. This removes the prior owner-go-ahead blocker. Migrations run through normal web predeploy; worker checks actual guide allowlist and restarts until ready. Matching services/worker activity and schema must be verified after merge. No real human test email, charge or customer preference change is part of this gate. Separate #28 remains tracked for the following bounded release.
