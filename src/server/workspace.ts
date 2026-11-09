@@ -44,7 +44,7 @@ export function blogOf(b: BizRow, conns: ConnectionPublic[]): BlogState {
   return { conns, defaultId: def, mode: bl.mode || 'review', autopilotAckAt: bl.autopilotAckAt || null, paused: !!bl.paused, tz: b.timezone, time: bl.time || '09:00', available: availablePlatforms() };
 }
 export function socialAutoOf(b: BizRow): SocialAuto {
-  return { on: false, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', ...(b.socialAuto || {}) };
+  return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}) };
 }
 export function briefSettingsOf(b: BizRow) { return { ...BRIEF_DEFAULT, ...(b.briefSettings || {}) }; }
 export function aiPrefsOf(b: BizRow) { return { ...AI_DEFAULT, ...(b.ai || {}) }; }
