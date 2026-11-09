@@ -1,0 +1,18 @@
+Email #27B · rel
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Partner link attribute changed on partner.example/articles/design-tools
+
+The link is present, but it no longer has rel="sponsored". Network links require that attribute.
+
+Page: https://partner.example/articles/design-tools
+Destination: https://fieldnote.example
+Anchor: Fieldnote
+
+If the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Email preferences: https://radar.thally.io/email-preferences

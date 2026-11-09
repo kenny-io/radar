@@ -1,0 +1,11 @@
+# Founder voice independent QA
+
+Baseline HEAD5f7c56ab56cdd60099b032e8003dc178c05d4708. PM owns user-facing copy, engineer owns retired reminder and transport metadata, architect resolves contract. QA owns this directory only. No implementation edits, external sends, deployment, commits or production writes.
+
+Check intended behavior: all current user-facing email speaks personally as Ekene helping the reader; creator attribution uses I rather than we; no invented personal review of automated results. Trial-ending reminder family5 is retired, with its number reserved, not reassigned. Subscription wording remains factual and avoids unnecessary pricing; actual paid receipt amount/currency and adjustment facts remain accurate when necessary. Founder From display and usable reply-to must preserve the configured sending mailbox across lifecycle, confirmation, invitation, backlink and Autopilot paths. Existing attempted mail should retain immutable provider key/body/metadata; accepted history remains unchanged.
+
+Adversarial runtime cases: retired type cannot newly enqueue or be collected from trials; legacy queued unattempted and attempted/failed rows cannot POST; stale claimed rows are stopped; recent live claim cannot be stolen; accepted/sent history retained. Confirm unrelated billing/security/education behavior still works, category/cap independence persists, and delivery errors do not regenerate a retired email. Check suppression without relying on incidental billing ineligibility.
+
+Copy review: use actual renderer/source builders and complete numbered69-variant baseline; compare all remaining families, preheaders, primary/alternate access and data states. Verify reserved5, stable other references, factual current destination, single-user voice and action usefulness, billing amounts only where the reader needs them. Render all current HTML/plaintext samples at390/600, including actual founder signature/reply footer and mobile overflow. Real Chrome catalogue controls and relevant account email-preference/CTA smoke. Reuse prior unchanged auth/tenant/migration evidence explicitly, not as a new run.
+
+Record final source/build fingerprints and exact limitations. No real provider or inbox/delivery claim. Both local servers stopped and application fixtures cleaned on completion.

@@ -1,0 +1,409 @@
+{
+  "sourceHead": "9b40b8a2a05495be663b36b9570af22986efdd8a",
+  "activeFamilies": 29,
+  "variants": 72,
+  "numberedSlots": 30,
+  "slots": [
+    {
+      "number": 1,
+      "status": "source accepted; deployment unverified",
+      "family": "welcome",
+      "subject": "Put your Business Profile to work",
+      "variants": [
+        "1A",
+        "1B"
+      ],
+      "trigger": "After successful mailbox confirmation or new verified Google account",
+      "cadence": "Once, immediately",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 2,
+      "status": "source accepted; deployment unverified",
+      "family": "founder_note",
+      "subject": "Why I built Radar",
+      "variants": [
+        "2"
+      ],
+      "trigger": "New verified account, using the existing founder event",
+      "cadence": "Planned +24 hours; optional cap/daytime apply",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 3,
+      "status": "source accepted; deployment unverified",
+      "family": "password_reset",
+      "subject": "Reset your Radar password",
+      "variants": [
+        "3"
+      ],
+      "trigger": "Valid password-reset request",
+      "cadence": "Per request; one-hour link",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 4,
+      "status": "source accepted; deployment unverified",
+      "family": "trial_started",
+      "subject": "Your Radar trial is on",
+      "variants": [
+        "4"
+      ],
+      "trigger": "Successful trial activation",
+      "cadence": "Once per trial",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 5,
+      "status": "retired",
+      "family": "trial_ending",
+      "subject": "Trial-ending reminder (retired)",
+      "variants": [],
+      "trigger": "none",
+      "cadence": "never",
+      "liveAcceptance": "no pending or new trial_ending can dispatch; preserve history"
+    },
+    {
+      "number": 6,
+      "status": "source accepted; deployment unverified",
+      "family": "invoice_paid",
+      "subject": "Your Radar subscription receipt",
+      "variants": [
+        "6",
+        "6B"
+      ],
+      "trigger": "Qualifying paid invoice webhook",
+      "cadence": "Per qualifying invoice",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 7,
+      "status": "source accepted; deployment unverified",
+      "family": "payment_failed",
+      "subject": "Your Radar subscription needs attention",
+      "variants": [
+        "7",
+        "7B"
+      ],
+      "trigger": "Eligible invoice failure; still unpaid at send",
+      "cadence": "Per eligible failure",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 8,
+      "status": "source accepted; deployment unverified",
+      "family": "cancellation_scheduled",
+      "subject": "Your Radar cancellation is confirmed",
+      "variants": [
+        "8"
+      ],
+      "trigger": "Subscription newly set to cancel at period end",
+      "cadence": "Per real transition",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 9,
+      "status": "source accepted; deployment unverified",
+      "family": "subscription_ended",
+      "subject": "Your Radar subscription has ended",
+      "variants": [
+        "9",
+        "9B"
+      ],
+      "trigger": "Current subscription becomes canceled or setup expires",
+      "cadence": "Per real transition",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 10,
+      "status": "source accepted; deployment unverified",
+      "family": "work-brief_reply",
+      "subject": "New conversations in your Daily Brief",
+      "variants": [
+        "10"
+      ],
+      "trigger": "New relevant work remains without its expected next action",
+      "cadence": "After 1 hour",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 11,
+      "status": "source accepted; deployment unverified",
+      "family": "work-calendar_review",
+      "subject": "Your content plan is ready for a decision",
+      "variants": [
+        "11"
+      ],
+      "trigger": "New relevant work remains without its expected next action",
+      "cadence": "After 24 hours",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 12,
+      "status": "source accepted; deployment unverified",
+      "family": "work-article_social",
+      "subject": "Make a social pack from a saved article",
+      "variants": [
+        "12"
+      ],
+      "trigger": "New relevant work remains without its expected next action",
+      "cadence": "After 2 hours",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 13,
+      "status": "source accepted; deployment unverified",
+      "family": "work-social_publish",
+      "subject": "Give your saved social posts a publishing time",
+      "variants": [
+        "13"
+      ],
+      "trigger": "New relevant work remains without its expected next action",
+      "cadence": "After 24 hours",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 14,
+      "status": "source accepted; deployment unverified",
+      "family": "work-combined",
+      "subject": "Your open decisions in Radar",
+      "variants": [
+        "14"
+      ],
+      "trigger": "Two or three unfinished work items are eligible together",
+      "cadence": "Combined; shared optional 24-hour cap",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 15,
+      "status": "source accepted; deployment unverified",
+      "family": "lesson-ai_visibility",
+      "subject": "Does ChatGPT or Claude recommend Fieldnote?",
+      "variants": [
+        "15A",
+        "15B",
+        "15C",
+        "15D",
+        "15E"
+      ],
+      "trigger": "Core feature lesson 1 of five",
+      "cadence": "First eligible slot after enrollment",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 16,
+      "status": "source accepted; deployment unverified",
+      "family": "lesson-daily_brief",
+      "subject": "Add a real example to Fieldnote\u2019s replies",
+      "variants": [
+        "16A",
+        "16B",
+        "16C",
+        "16D",
+        "16E"
+      ],
+      "trigger": "Core feature lesson 2 of five",
+      "cadence": "At least 7 days after previous accepted lesson",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 17,
+      "status": "source accepted; deployment unverified",
+      "family": "lesson-backlinks",
+      "subject": "How Fieldnote could appear on another site",
+      "variants": [
+        "17A",
+        "17B",
+        "17C",
+        "17D",
+        "17E"
+      ],
+      "trigger": "Core feature lesson 3 of five",
+      "cadence": "At least 7 days after previous accepted lesson",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 18,
+      "status": "source accepted; deployment unverified",
+      "family": "lesson-organic_search",
+      "subject": "What should Fieldnote publish next?",
+      "variants": [
+        "18A",
+        "18B",
+        "18C",
+        "18D",
+        "18E",
+        "18F"
+      ],
+      "trigger": "Core feature lesson 4 of five",
+      "cadence": "At least 7 days after previous accepted lesson",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 19,
+      "status": "source accepted; deployment unverified",
+      "family": "lesson-social_marketing",
+      "subject": "What could Fieldnote teach in one social post?",
+      "variants": [
+        "19A",
+        "19B",
+        "19C",
+        "19D",
+        "19E"
+      ],
+      "trigger": "Core feature lesson 5 of five",
+      "cadence": "At least 7 days after previous accepted lesson",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 20,
+      "status": "source accepted; deployment unverified",
+      "family": "guide-article_workflow",
+      "subject": "What happens before an article goes live",
+      "variants": [
+        "20A",
+        "20B",
+        "20C",
+        "20D"
+      ],
+      "trigger": "Own saved/analyzed profile or workspace; no approved/generated content workflow",
+      "cadence": "+24 hours of workspace access; +3 days pre-trial",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 21,
+      "status": "source accepted; deployment unverified",
+      "family": "guide-search_refresh",
+      "subject": "Your next article might be a page you already have",
+      "variants": [
+        "21A",
+        "21B",
+        "21C",
+        "21D"
+      ],
+      "trigger": "Real Search Console page data and accepted Organic Search lesson",
+      "cadence": "Later of readiness +24 hours and Organic Search lesson +7 days",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 22,
+      "status": "source accepted; deployment unverified",
+      "family": "confirmation",
+      "subject": "Confirm your email for Radar",
+      "variants": [
+        "22"
+      ],
+      "trigger": "Password signup or requested confirmation resend",
+      "cadence": "Per request; 30-minute link",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 23,
+      "status": "source accepted; deployment unverified",
+      "family": "invitation",
+      "subject": "Alex invited you to Fieldnote on Radar",
+      "variants": [
+        "23A",
+        "23B",
+        "23C"
+      ],
+      "trigger": "Owner/Admin invites a team member",
+      "cadence": "Per invitation; 14-day acceptance link",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 24,
+      "status": "source accepted; deployment unverified",
+      "family": "backlink-approved",
+      "subject": "Fieldnote approved a partner link on partner.example/articles/design-tools",
+      "variants": [
+        "24A",
+        "24B"
+      ],
+      "trigger": "Incoming partner-link proposal approved",
+      "cadence": "After the 20-second Undo window",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 25,
+      "status": "source accepted; deployment unverified",
+      "family": "backlink-declined",
+      "subject": "Fieldnote passed on a partner link",
+      "variants": [
+        "25"
+      ],
+      "trigger": "Proposal declined with a note",
+      "cadence": "After the 20-second Undo window",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 26,
+      "status": "source accepted; deployment unverified",
+      "family": "backlink-removal",
+      "subject": "Link removal request from Fieldnote",
+      "variants": [
+        "26"
+      ],
+      "trigger": "Removal requested for a live backlink",
+      "cadence": "Per request; asks for removal within seven days",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 27,
+      "status": "source accepted; deployment unverified",
+      "family": "backlink-lost",
+      "subject": "Partner link not found on partner.example/articles/design-tools",
+      "variants": [
+        "27A",
+        "27B"
+      ],
+      "trigger": "Verification finds a previously live link missing",
+      "cadence": "On detected transition or manual Re-check",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 28,
+      "status": "separate feature blocked",
+      "family": "ai-weekly-report",
+      "subject": "Recommendation share this week \u00b7 fieldnote.example",
+      "variants": [
+        "28A",
+        "28B",
+        "28C",
+        "28D"
+      ],
+      "trigger": "Active business has collected AI answers for the week",
+      "cadence": "Mondays after 08:00 UTC; separate local feature",
+      "liveAcceptance": "integrated measurement scheduling/verified owner/current transport and migration proof required before live claim"
+    },
+    {
+      "number": 29,
+      "status": "source accepted; deployment unverified",
+      "family": "autopilot-handoff",
+      "subject": "Radar Autopilot: 2 actions need you \u00b7 Fieldnote",
+      "variants": [
+        "29A",
+        "29B",
+        "29C"
+      ],
+      "trigger": "Owner-enabled Autopilot finds new actions requiring the owner",
+      "cadence": "Per new deduplicated action batch; activation required; separate from lifecycle cadence",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    },
+    {
+      "number": 30,
+      "status": "source accepted; deployment unverified",
+      "family": "guide-autopilot_intro",
+      "subject": "Too busy to keep up with publishing?",
+      "variants": [
+        "30A",
+        "30B",
+        "30C",
+        "30D"
+      ],
+      "trigger": "Eligible verified owner/profile; no current or previous Autopilot use in any owned business",
+      "cadence": "Once per account; first eligible observation +48 hours; education opt-out, daytime and shared optional cap apply",
+      "liveAcceptance": "matching web/worker revision and schema, source registration, production configuration, recipient eligibility and safe observed evidence"
+    }
+  ]
+}

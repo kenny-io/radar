@@ -34,7 +34,7 @@ const topic = (id: string, day = addDays(date, 1)) => ({ id, businessId: bid, da
 // Opt-in database coverage uses only generated fixture businesses in the configured isolated test DB.
 describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () => {
   beforeAll(async () => {
-    [{ id: uid }] = await db.insert(S.users).values({ name: 'Autopilot tests', email: `autopilot-${randomUUID()}@test.local` }).returning();
+    [{ id: uid }] = await db.insert(S.users).values({ name: 'Autopilot tests', email: `autopilot-${randomUUID()}@test.local`, emailVerifiedAt: new Date() }).returning();
     [{ id: bid }] = await db.insert(S.businesses).values({ ownerId: uid, domain: profile.domain, profile, timezone: 'UTC', status: 'active' }).returning();
     [{ id: foreign }] = await db.insert(S.businesses).values({ ownerId: uid, domain: 'autopilot-foreign.test', profile, timezone: 'UTC', status: 'active' }).returning();
   });

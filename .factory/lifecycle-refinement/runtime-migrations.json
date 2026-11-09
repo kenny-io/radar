@@ -1,0 +1,24 @@
+{
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_lc2_clean_1794253238435",
+      "migrations": 14,
+      "readiness": "passed",
+      "migrationEnrollmentCount": 0,
+      "pendingDelete": "restricted",
+      "accountCascade": "passed",
+      "oldProgressAndAttemptedPayload": "not-applicable"
+    },
+    {
+      "mode": "upgrade",
+      "database": "radar_lc2_upgrade_1794253238666",
+      "migrations": 14,
+      "readiness": "passed",
+      "migrationEnrollmentCount": 0,
+      "pendingDelete": "restricted",
+      "accountCascade": "passed",
+      "oldProgressAndAttemptedPayload": "unchanged"
+    }
+  ]
+}

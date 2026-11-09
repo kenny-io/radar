@@ -4,12 +4,17 @@ import '../server/jobs/all';
 import { startWorker } from '../server/jobs/queue';
 import { reportFailure } from '../server/observability/failures';
 import { startScheduler } from '../server/jobs/cron';
+import { startLifecycleDispatcher } from '../server/services/lifecycle/worker';
+import { waitForWorkerSchema } from '../server/db/workerReady';
 
 async function main() {
+  await waitForWorkerSchema();
   const w = await startWorker();
   const s = startScheduler();
+  const mail = startLifecycleDispatcher();
   console.log('[worker] started');
-  const stop = async () => { s.stop(); await w.stop(); process.exit(0); };
+  let stopping = false;
+  const stop = async () => { if (stopping) return; stopping = true; s.stop(); await Promise.all([mail.stop(), w.stop()]); process.exit(0); };
   process.on('SIGINT', stop); process.on('SIGTERM', stop);
 }
 const fatal = async (error: unknown, operation: string) => { await reportFailure(error, { source: 'system', operation }); process.exit(1); };

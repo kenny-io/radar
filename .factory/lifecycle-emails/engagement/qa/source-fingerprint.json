@@ -1,0 +1,11 @@
+{
+  "baseCommit": "a96ebd9dd326c088fb4847bfc8e9104c2691677e",
+  "scope": [
+    "src/**",
+    "drizzle/**",
+    "next.config.ts"
+  ],
+  "algorithm": "SHA256 of relative POSIX path UTF8 + NUL + raw bytes + NUL for each file sorted by full relative POSIX string",
+  "files": 488,
+  "sha256": "036e3bd7c87d8cde09acaf00694df4418fa5fdd13501f6049614d741fa87f784"
+}

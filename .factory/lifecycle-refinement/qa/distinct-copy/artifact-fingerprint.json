@@ -1,0 +1,11 @@
+{
+  "sha256": "9a6509c4d38f444c6c105610f28741e19137ac0c2c59714fc9b134f0d417580a",
+  "fileCount": 354,
+  "scope": "HTML, TXT, JSON and Markdown email/catalogue artifacts below lifecycle-refinement/previews, lifecycle-emails/previews (including nurture), weekly-education/previews; README excluded; relative path NUL raw-file SHA256 newline in lexical order.",
+  "galleryEntrypoints": [
+    ".factory/lifecycle-refinement/previews/index.html",
+    ".factory/lifecycle-emails/previews/index.html",
+    ".factory/lifecycle-emails/previews/nurture/index.html",
+    ".factory/weekly-education/previews/index.html"
+  ]
+}

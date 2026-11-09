@@ -1,0 +1,19 @@
+Your Radar receipt
+
+Hi Alex,
+
+Payment received. Thank you.
+
+We’ve received your $50.00 payment for Radar.
+
+Invoice: QA-001.
+
+To view or download your invoice, open Settings → Billing, then Manage billing.
+
+Open Billing: https://radar.example.test/settings?section=billing
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.example.test/privacy · Terms: https://radar.example.test/terms
+
+Email preferences: https://radar.example.test/email-preferences

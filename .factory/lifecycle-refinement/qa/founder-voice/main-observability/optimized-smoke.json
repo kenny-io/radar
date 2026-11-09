@@ -1,0 +1,30 @@
+{
+  "buildId": "bv5te1pvkwPdSan9Pwrfw",
+  "environment": "Actual NODE_ENVproduction; devstubsdisabled; nonfunctional local Stripekey; ordinary verified synthetic password user; no worker/provider",
+  "checks": [
+    {
+      "name": "ordinary production-mode signin reaches workspace",
+      "pass": true
+    },
+    {
+      "name": "configured production billing gate uses local comp fixture",
+      "pass": true
+    },
+    {
+      "name": "final lessons-and-guides preference saves by keyboard and survives refresh",
+      "pass": true
+    },
+    {
+      "name": "final actual article guide CTA reaches authorized calendar",
+      "pass": true
+    },
+    {
+      "name": "final public refresh destination renders",
+      "pass": true
+    },
+    {
+      "name": "read-only arrivals issue no generation or payment POST",
+      "pass": true
+    }
+  ]
+}

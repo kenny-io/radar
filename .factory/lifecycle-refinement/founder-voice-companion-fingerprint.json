@@ -1,0 +1,37 @@
+{
+  "workspace": "/Users/ekene/Downloads/design_handoff_radar/radar-push",
+  "scope": "Exact six-file founder correction only, against captured current dirty original source; prior unrelated work unchanged",
+  "patchSha256": "d4a1d17ff843bd8ab5afe907837112c7a4a3515881ab0c81ddcb1b23843411a6",
+  "files": [
+    {
+      "path": "src/server/services/mail.ts",
+      "beforeSha256": "c77d40adbf3fd07175702e75c060d3237375d627b8c39dfbedfa5ede5b076406",
+      "afterSha256": "66b81389b962260df848302c086a3f0c020db703ee55bd14cd9e51fed3e78b85"
+    },
+    {
+      "path": "src/server/services/mailIdentity.ts",
+      "beforeSha256": null,
+      "afterSha256": "89087e02302157b23c61e99fa764406708a11df09012e9b160da1335139bd813"
+    },
+    {
+      "path": "src/server/services/visibility/digest.ts",
+      "beforeSha256": "a16f8f7916180ffcbf82425a541ea92f95e1931357b00d80f57e5a928b96900c",
+      "afterSha256": "13217ba7c5f0ce38fdd431dfa6015d9e4f7ca094bb461c5f9d679562f420e407"
+    },
+    {
+      "path": "src/server/services/visibility/digestContent.ts",
+      "beforeSha256": "b1463aca4c7d5e4db05f7608ecda3c1d95fcda0b28b66bc378d1e567a712b360",
+      "afterSha256": "24ac46c54c5f9672627308e3e3fc231d57412a6c9894b336468ab9d922d7de45"
+    },
+    {
+      "path": "src/server/services/visibility/digest.test.ts",
+      "beforeSha256": "9ed30c0f78cc7d3ced4e53844297e814475bba9c79db26e300e10818c68aaffe",
+      "afterSha256": "ee74515f55e4559d22226660ae6327ce72f636f6ed979b11bb6abbc2c787cf72"
+    },
+    {
+      "path": "src/server/services/visibility/digestSender.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "319a24b510b409dbc5f5694ccc5b90868343e75772b82191a5fd3a29ae079c85"
+    }
+  ]
+}

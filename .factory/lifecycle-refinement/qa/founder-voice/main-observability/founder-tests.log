@@ -1,0 +1,30 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stdout | .factory/lifecycle-refinement/qa/founder-voice/legacy-transport.test.ts > LC2 actual legacy senders with fake provider transport > actual invitation uses the signed single-use link, preserves Viewer authorization, and escapes dynamic HTML/header data
+[team] invite c9381338-b438-4038-8134-f8e18172b723 accepted by user 330d1bac-7aeb-46c3-8028-253dc56b7560
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/legacy-transport.test.ts (3 tests) 314ms
+stdout | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > subscription sync and trial extensions never create a reminder
+[billing] 312b5c5d-1c6b-4ab2-aa1e-ea00fbf7b0d9 subscription sub_local none → trialing
+
+stdout | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > subscription sync and trial extensions never create a reminder
+[billing] 312b5c5d-1c6b-4ab2-aa1e-ea00fbf7b0d9 subscription sub_local trialing → trialing
+
+stdout | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > subscription sync and trial extensions never create a reminder
+[billing] 312b5c5d-1c6b-4ab2-aa1e-ea00fbf7b0d9 subscription sub_local trialing → trialing
+
+stderr | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > retires queued history even when delivery credentials are absent
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts (13 tests) 98ms
+stderr | .factory/lifecycle-refinement/qa/founder-voice/sender-metadata.test.ts > Independent founder transport identity > ordinary new mail uses and persists founder metadata, and its failed retry never rewrites identity/body/key
+[radar.failure] {"id":"499eb31c-42ad-4708-b136-c72712bfd5bb","timestamp":"2026-11-09T21:28:35.285Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/sender-metadata.test.ts (6 tests) 76ms
+
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+   Start at  01:28:32
+   Duration  2.88s (transform 364ms, setup 0ms, collect 1.81s, tests 488ms, environment 0ms, prepare 151ms)
+

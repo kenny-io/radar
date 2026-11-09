@@ -1,0 +1,13 @@
+import {eq,inArray} from 'drizzle-orm';import {vi} from 'vitest';import {db,schema as S} from '@/server/db';import {Fixtures} from '@/server/testing/fixtures';import {decrypt} from '@/server/crypto';import {dispatchLifecycleBatch} from '@/server/services/lifecycle/dispatch';import type {LifecyclePayload} from '@/server/services/lifecycle/queue';
+export const BASE=new Date('2026-11-11T12:00:00Z'),DAY=864e5,INTRO='autopilot_intro' as any;
+export function requireLocal(){if(!process.env.DATABASE_URL?.endsWith('/radar_autopilot_intro_qa_20261110'))throw Error('Fresh intro QA DB only');}
+export const states=(uid:string)=>db.select().from(S.lifecycleGuideStates).where(eq(S.lifecycleGuideStates.userId,uid));
+export const introState=async(uid:string)=>(await states(uid)).find(g=>g.guideId===INTRO);
+export const mails=(uid:string)=>db.select().from(S.lifecycleEmails).where(eq(S.lifecycleEmails.userId,uid));
+export const introMail=async(uid:string)=>(await mails(uid)).find(m=>m.eventKey===`guide:v1:${uid}:autopilot_intro`)!;
+export const unpack=(m:typeof S.lifecycleEmails.$inferSelect)=>decrypt<LifecyclePayload>(m.payloadEnc)!;
+export async function owner(F:Fixtures,mode:'workspace'|'start_trial'|'restart'|'setup'='workspace',resolved=true){const u=await F.user();if(mode==='workspace')await F.account(u.id,{comp:true});if(mode==='restart')await F.account(u.id,{status:'canceled',everSubscribed:true});const b=await F.biz(u,{status:mode==='workspace'||mode==='restart'?'active':'onboarding',...(mode==='start_trial'?{onboarding:{savedAt:'2000-01-01'}}:mode==='setup'?{site:{analyzedAt:'2000-01-01'}}:{})});await db.update(S.businesses).set({timezone:'UTC'}).where(eq(S.businesses.id,b.id));if(resolved)for(const guideId of ['article_workflow','search_refresh'] as const)await db.insert(S.lifecycleGuideStates).values({userId:u.id,guideId,sourceBusinessId:b.id,status:'skipped',reason:'prior_resolved_history',firstObservedAt:new Date(BASE.getTime()-30*DAY),dueAt:new Date(BASE.getTime()-29*DAY)});return{u,b};}
+export const fake=()=>vi.fn(async(_url:any,init?:RequestInit)=>init?.method==='GET'?new Response('',{status:404}):new Response('{"id":"qa-acceptance-not-delivery"}'));
+export const posts=(f:ReturnType<typeof fake>)=>f.mock.calls.filter(([,i])=>i?.method==='POST');
+export const dispatch=(uid:string,now:Date,f=fake(),limit=50)=>dispatchLifecycleBatch({userIds:[uid],now,clock:()=>now,fetch:f as typeof fetch,sleep:async()=>{},limit});
+export async function cleanup(F:Fixtures){if(F.users.length){await db.delete(S.lifecycleGuideStates).where(inArray(S.lifecycleGuideStates.userId,F.users));await db.delete(S.educationEnrollments).where(inArray(S.educationEnrollments.userId,F.users));}await F.cleanup();}

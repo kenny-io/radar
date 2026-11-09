@@ -1,0 +1,19 @@
+{
+  "environment": "Local Nextdev, configured but nonfunctional Stripekey; ordinary synthetic verified password owner; read-only navigation only",
+  "checks": [
+    {
+      "status": "past_due",
+      "pass": true,
+      "url": "http://localhost:3950/start-trial",
+      "paymentPosts": 0,
+      "providerIdentity": "Synthetic local account has no external customer/subscription identifiers; no amount lookup/portal/provider operation attempted"
+    },
+    {
+      "status": "canceled",
+      "pass": true,
+      "url": "http://localhost:3950/start-trial",
+      "paymentPosts": 0,
+      "providerIdentity": "Synthetic local account has no external customer/subscription identifiers; no amount lookup/portal/provider operation attempted"
+    }
+  ]
+}

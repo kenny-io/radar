@@ -1,0 +1,22 @@
+{
+  "checks": [],
+  "auth": [
+    {
+      "status": 200,
+      "origin": "http://127.0.0.1:3950",
+      "site": "same-origin",
+      "requestOrigin": "http://127.0.0.1:3950",
+      "pageOrigin": "http://127.0.0.1:3950"
+    },
+    {
+      "status": 403,
+      "origin": "http://localhost:3950",
+      "site": "same-origin",
+      "requestOrigin": "http://localhost:3950",
+      "pageOrigin": "http://localhost:3950",
+      "code": "forbidden",
+      "error": "You don’t have permission to do that."
+    }
+  ],
+  "failure": "Error: Authfailure {\"status\":403,\"origin\":\"http://localhost:3950\",\"site\":\"same-origin\",\"requestOrigin\":\"http://localhost:3950\",\"pageOrigin\":\"http://localhost:3950\",\"code\":\"forbidden\",\"error\":\"You don’t have permission to do that.\"}"
+}

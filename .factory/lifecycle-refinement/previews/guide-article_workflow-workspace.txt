@@ -1,0 +1,29 @@
+Email #20A · workspace
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: What happens before an article goes live
+Preview: I’ll walk you through choosing a topic and reviewing your first draft.
+
+Hi Alex,
+
+Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
+
+1. Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.
+
+2. Read the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.
+
+Follow the topic’s status in Content Calendar after approval and again after scheduling, so you can see where it is in the publishing process.
+
+Choose my first article: https://radar.thally.io/email/learn?lesson=organic_search&businessId=11111111-1111-4111-8111-111111111111
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

@@ -1,0 +1,28 @@
+{
+  "checkpoint": "5b4f946226535cf323031fd099e538cc068c2381",
+  "incomingMergeHead": "4908694fb6c63ce618e83843d30203af739fe9dd",
+  "manualResolution": [
+    "src/server/services/mail.ts"
+  ],
+  "mailSha256": "a315bc51a7350690da135584591c7c53490f1ce4a2ea24078b6d3062a996a76f",
+  "unchangedFVFilesSha256": {
+    "src/server/services/mailIdentity.ts": "89087e02302157b23c61e99fa764406708a11df09012e9b160da1335139bd813",
+    "src/server/services/lifecycle/retired.ts": "6f9d10f38256214349e1799b6c086051680b989e6892e1e4f8a0b90252ac6ade",
+    "src/server/services/lifecycle/dispatch.ts": "b66407eceff63cad19218167600bb6e4181c04cd238d0268c3f8ad9461c28ff6",
+    "src/server/services/lifecycle/queue.ts": "42f64748cd25903a051e1eae586a10b5cbce7cf66e61dfb90839394d2c11c28c",
+    "src/server/services/lifecycle/templates.ts": "d2ca943c4906b0b843fa2e55762dcaf52027cb9e5db50cde4a8de9b62d1f60f4",
+    "src/server/services/lifecycle/educationContent.ts": "cc3e7162b6ecb1aa8753aadef1b40d6735667b71cbbb4ad7451738bf36404766",
+    "src/server/services/lifecycle/guideContent.ts": "d90d331ba21904eb676578ee4c9efbfe321778bac6ea3d817a75348fef1e8da6",
+    "src/server/services/legacyContent.ts": "d4c3ad93e85558ef00e466a34c36d5d207f15141982827e91b4e36aa580e36d4",
+    "src/server/db/schema.ts": "2959cc0e631ceb665256c1cb851605c277cfa494914f3330d1cb1fd897416270",
+    "src/server/db/workerReady.ts": "f4b15056066c1a61ab5ff9f534211ddec6eb8136c61197f5bfb3964afa67fa70",
+    "drizzle/meta/_journal.json": "2d82e50ac8e2e4a9e0a90644701d69cf0636731daf4eefea69936b303dbd9bf8"
+  },
+  "focusedTests": {
+    "files": 19,
+    "passed": 246,
+    "skipped": 0
+  },
+  "typecheck": "passed",
+  "committed": false
+}

@@ -1,0 +1,25 @@
+{
+  "canonicalSignupChecksum": "byte-identical to origin/main",
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_education_clean_1794246628139",
+      "migrations": 13,
+      "readiness": "passed",
+      "storedOptouts": "not-applicable",
+      "newWorkDefaults": "on",
+      "pendingDeletion": "restricted",
+      "accountCascade": "passed"
+    },
+    {
+      "mode": "upgrade",
+      "database": "radar_education_upgrade_1794246628139",
+      "migrations": 13,
+      "readiness": "passed",
+      "storedOptouts": "preserved",
+      "newWorkDefaults": "on",
+      "pendingDeletion": "restricted",
+      "accountCascade": "passed"
+    }
+  ]
+}

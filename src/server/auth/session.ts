@@ -5,7 +5,7 @@ import { eq, and, gt, lt, sql, isNotNull } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { randomToken, sha256 } from '../crypto';
 import { env } from '../env';
-import { unauthorized } from '../errors';
+import { RadarError, unauthorized } from '../errors';
 import type { User } from '@/lib/types';
 
 export const SESSION_COOKIE = 'radar_session';
@@ -25,12 +25,18 @@ export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, h
 const cookieOpts = (expires: Date) => ({ httpOnly: true, sameSite: 'lax' as const, secure: env.isProd, path: '/', expires });
 const userCols = { id: schema.users.id, name: schema.users.name, email: schema.users.email, appearance: schema.users.appearance };
 
-export async function createSession(userId: string) {
-  const [user] = await db.select({ verified: schema.users.emailVerifiedAt, guest: schema.users.guest }).from(schema.users).where(eq(schema.users.id, userId)).limit(1);
-  if (!user?.verified || user.guest) throw unauthorized();
+export async function createSession(userId: string, expectedPasswordHash?: string) {
   const token = randomToken();
   const expiresAt = new Date(Date.now() + DAYS * 864e5);
-  await db.insert(schema.sessions).values({ id: sha256(token), userId, expiresAt });
+  await db.transaction(async tx => {
+    // Password reset holds this same row lock while changing the hash and revoking sessions. A sign-in that
+    // verified an old hash must not create a new session after that reset has committed.
+    const [u] = await tx.select({ hash: schema.users.passwordHash, verified: schema.users.emailVerifiedAt, guest: schema.users.guest }).from(schema.users).where(eq(schema.users.id, userId)).for('update');
+    if (!u?.verified || u.guest) throw unauthorized();
+    if (expectedPasswordHash !== undefined && u.hash !== expectedPasswordHash)
+      throw new RadarError('That email and password don’t match. Sign in again.', 401, 'invalid_credentials');
+    await tx.insert(schema.sessions).values({ id: sha256(token), userId, expiresAt });
+  });
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, cookieOpts(expiresAt));
 }

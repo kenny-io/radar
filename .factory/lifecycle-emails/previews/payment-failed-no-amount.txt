@@ -1,0 +1,23 @@
+Email #7B · Payment amount unavailable
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Your Radar subscription needs attention
+Preview: The latest subscription charge didn’t go through. You can check it in Billing.
+
+Hi Alex,
+
+The latest charge for your Radar subscription didn’t go through.
+
+Open Billing to check your payment method and the outstanding invoice. Your workspace access may be paused while it remains unpaid.
+
+If something looks wrong or you need a hand, reply and tell me what you’re seeing.
+
+Review my subscription: https://radar.thally.io/settings?section=billing
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences

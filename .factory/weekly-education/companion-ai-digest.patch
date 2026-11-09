@@ -1,0 +1,381 @@
+--- a/src/server/services/visibility/digest.ts
++++ b/src/server/services/visibility/digest.ts
+@@ -1,13 +1,14 @@
+-import { and, eq } from 'drizzle-orm';
++import { and, eq, sql } from 'drizzle-orm';
+ import { db, schema } from '@/server/db';
+ import { env } from '@/server/env';
+ import { defineCron } from '@/server/jobs/cron';
+ import { defineJob } from '@/server/jobs/queue';
+ import { sendMail } from '@/server/services/mail';
++import { digestPreferencesUrl } from './digestPreferences';
+ import { visibilitySummary, type VisibilitySummary } from './history';
+ 
+ const formatShare = (share: number | null, mentioned: number, collected: number) => share === null ? 'No answers collected' : `${Math.round(share * 100)}% (${mentioned} of ${collected} answers)`;
+-export function recommendationDigestText(summary: VisibilitySummary, appUrl: string): string {
++export function recommendationDigestText(summary: VisibilitySummary, appUrl: string, preferencesUrl?: string): string {
+   const { weekly: w, weeklyBiggestMiss: miss } = summary;
+   return [
+     'Radar by Thally — your weekly recommendation share',
+@@ -21,18 +22,18 @@
+     '',
+     `Review all answers: ${appUrl}/performance`,
+     'Missing or failed collections are excluded, never counted as zero. Honest signals, no guarantees.',
+-    `Manage weekly emails and study participation in Performance → AI Visibility: ${appUrl}/performance`,
++    preferencesUrl ? `Email preferences: ${preferencesUrl}` : `Manage weekly emails and study participation in Performance → AI Visibility: ${appUrl}/performance`,
+   ].filter(Boolean).join('\n');
+ }
+-interface DigestPayload { bid: string; ownerId: string; to: string; subject: string; text: string; key: string }
++interface DigestPayload { bid: string; ownerId: string; to: string; subject: string; text: string; html?: string; key: string }
+ defineJob<DigestPayload>({ kind: 'visibility.digest', maxAttempts: 3, run: async ctx => {
+   const p = ctx.payload;
+   const [owner] = await db.select({ weekly: schema.visibilityPreferences.weeklyEmail, email: schema.users.email, guest: schema.users.guest })
+     .from(schema.businesses).innerJoin(schema.users, eq(schema.users.id, schema.businesses.ownerId))
+-    .innerJoin(schema.visibilityPreferences, eq(schema.visibilityPreferences.businessId, schema.businesses.id))
+-    .where(and(eq(schema.businesses.id, p.bid), eq(schema.businesses.ownerId, p.ownerId))).limit(1);
+-  if (!owner?.weekly || owner.guest || owner.email !== p.to) return { skipped: 'preference_or_recipient_changed' };
+-  await sendMail(p.to, p.subject, p.text, undefined, { idempotencyKey: p.key });
++    .leftJoin(schema.visibilityPreferences, eq(schema.visibilityPreferences.businessId, schema.businesses.id))
++    .where(and(eq(schema.businesses.id, p.bid), eq(schema.businesses.ownerId, p.ownerId), eq(schema.businesses.status, 'active'))).limit(1);
++  if (!owner || owner.weekly === false || owner.guest || owner.email !== p.to) return { skipped: 'preference_or_recipient_changed' };
++  await sendMail(p.to, p.subject, p.text, p.html, { idempotencyKey: p.key });
+   return { sent: true };
+ } });
+ /** Monday after 08:00 UTC, with atomic schedule marks+job insertion and persisted, retry-stable mail payloads. */
+@@ -40,14 +41,17 @@
+   if (now.getUTCDay() !== 1 || now.getUTCHours() < 8) return;
+   const rows = await db.select({ id: schema.businesses.id, ownerId: schema.businesses.ownerId, domain: schema.businesses.domain, email: schema.users.email, guest: schema.users.guest }).from(schema.businesses)
+     .innerJoin(schema.users, eq(schema.users.id, schema.businesses.ownerId))
+-    .innerJoin(schema.visibilityPreferences, eq(schema.visibilityPreferences.businessId, schema.businesses.id))
+-    .where(and(eq(schema.businesses.status, 'active'), eq(schema.visibilityPreferences.weeklyEmail, true)));
++    .leftJoin(schema.visibilityPreferences, eq(schema.visibilityPreferences.businessId, schema.businesses.id))
++    .where(and(eq(schema.businesses.status, 'active'), sql`coalesce(${schema.visibilityPreferences.weeklyEmail}, true)`));
+   for (const row of rows) {
+     if (row.guest) continue;
+     const summary = await visibilitySummary(row.id, now);
+     if (!summary.weekly.current.collected) continue;
+     const key = `visibility-weekly:${row.id}:${summary.weekly.end}:${row.ownerId}`;
+-    const payload: DigestPayload = { bid: row.id, ownerId: row.ownerId, to: row.email, subject: `Recommendation share this week · ${row.domain}`, text: recommendationDigestText(summary, env.appUrl), key };
++    const preferencesUrl = digestPreferencesUrl(row.id, row.ownerId);
++    const text = recommendationDigestText(summary, env.appUrl, preferencesUrl);
++    const html = `<div style="font-family:Arial,sans-serif;line-height:1.6"><p>${escapeHtml(text.split('\nEmail preferences:')[0]).replace(/\n/g, '<br>')}</p><p><a style="display:inline-block;padding:12px 18px;border:1px solid #555;border-radius:6px;color:#222" href="${escapeHtml(preferencesUrl)}">Email preferences</a></p></div>`;
++    const payload: DigestPayload = { bid: row.id, ownerId: row.ownerId, to: row.email, subject: `Recommendation share this week · ${row.domain}`, text, html, key };
+     await db.transaction(async tx => {
+       const mark = await tx.insert(schema.cronMarks).values({ key }).onConflictDoNothing().returning();
+       if (!mark.length) return;
+@@ -55,3 +59,5 @@
+     });
+   }
+ });
++
++const escapeHtml = (s: string) => s.replace(/[&<>"\']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "\'": "&#39;" }[c]!));
+--- a/src/server/services/visibility/history.ts
++++ b/src/server/services/visibility/history.ts
+@@ -57,7 +57,7 @@
+   return { overall, weekly, series,
+     weeklyBiggestMiss: weeklyPrompt && weeklyMisses ? { promptId: weeklyPrompt.id, prompt: weeklyPrompt.prompt, misses: weeklyMisses[1], entryId: links[weeklyPrompt.id] || null } : null,
+     biggestMiss: prompt && largest ? { promptId: prompt.id, prompt: prompt.prompt, misses: largest[1], entryId: links[prompt.id] || null } : null,
+-    preferences: { weeklyEmail: prefs?.weeklyEmail || false, studyConsentedAt: prefs?.studyConsentedAt?.toISOString() || null,
++    preferences: { weeklyEmail: prefs?.weeklyEmail ?? true, studyConsentedAt: prefs?.studyConsentedAt?.toISOString() || null,
+       studyWithdrawnAt: prefs?.studyWithdrawnAt?.toISOString() || null, studySeriesMatches: prefs?.studySeries === series,
+       studyActive: !!prefs?.studyConsentedAt && !prefs.studyWithdrawnAt && prefs.studySeries === series },
+   };
+--- a/src/server/db/schema.ts
++++ b/src/server/db/schema.ts
+@@ -470,7 +470,7 @@
+ 
+ export const visibilityPreferences = pgTable('visibility_preferences', {
+   businessId: uuid('business_id').primaryKey().references(() => businesses.id, { onDelete: 'cascade' }),
+-  weeklyEmail: boolean('weekly_email').notNull().default(false),
++  weeklyEmail: boolean('weekly_email').notNull().default(true),
+   studyConsentedAt: timestamp('study_consented_at', { withTimezone: true }),
+   studyWithdrawnAt: timestamp('study_withdrawn_at', { withTimezone: true }),
+   studyConsentedBy: uuid('study_consented_by').references(() => users.id, { onDelete: 'set null' }),
+--- a/drizzle/0009_recommendation_share.sql
++++ b/drizzle/0009_recommendation_share.sql
+@@ -35,7 +35,7 @@
+ --> statement-breakpoint
+ CREATE TABLE "visibility_preferences" (
+ 	"business_id" uuid PRIMARY KEY NOT NULL,
+-	"weekly_email" boolean DEFAULT false NOT NULL,
++	"weekly_email" boolean DEFAULT true NOT NULL,
+ 	"study_consented_at" timestamp with time zone,
+ 	"study_withdrawn_at" timestamp with time zone,
+ 	"study_consented_by" uuid,
+--- a/drizzle/meta/0009_snapshot.json
++++ b/drizzle/meta/0009_snapshot.json
+@@ -3655,7 +3655,7 @@
+           "type": "boolean",
+           "primaryKey": false,
+           "notNull": true,
+-          "default": false
++          "default": true
+         },
+         "study_consented_at": {
+           "name": "study_consented_at",
+--- /dev/null
++++ b/src/server/services/visibility/digestPreferences.ts
+@@ -0,0 +1,40 @@
++import { createHmac, timingSafeEqual } from 'node:crypto';
++import { and, eq } from 'drizzle-orm';
++import { db, schema } from '@/server/db';
++import { env } from '@/server/env';
++
++function signature(body: string): string {
++  if (!env.secretKey && env.isProd) throw new Error('RADAR_SECRET_KEY is required in production');
++  return createHmac('sha256', env.secretKey || 'radar-dev-only-key').update(`visibility-weekly-preferences:${body}`).digest('base64url');
++}
++export function digestPreferencesToken(bid: string, ownerId: string): string {
++  const body = Buffer.from(JSON.stringify({ bid, ownerId })).toString('base64url');
++  return `${body}.${signature(body)}`;
++}
++export function readDigestPreferencesToken(token: string): { bid: string; ownerId: string } | null {
++  if (token.length > 2048) return null;
++  const parts = token.split('.');
++  if (parts.length !== 2) return null;
++  const [body, sig] = parts;
++  const expected = signature(body);
++  if (!/^[A-Za-z0-9_-]{43}$/.test(sig) || sig.length !== expected.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
++  try {
++    const value = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
++    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++    return uuid.test(value.bid) && uuid.test(value.ownerId) ? { bid: value.bid, ownerId: value.ownerId } : null;
++  } catch { return null; }
++}
++export const digestPreferencesUrl = (bid: string, ownerId: string) => `${env.appUrl}/ai-email-preferences?token=${encodeURIComponent(digestPreferencesToken(bid, ownerId))}`;
++/** The signed token only authorizes disabling this report. Lock ownership until the update commits. */
++export async function disableDigestEmail(token: string): Promise<boolean> {
++  const identity = readDigestPreferencesToken(token);
++  if (!identity) return false;
++  return db.transaction(async tx => {
++    const [business] = await tx.select({ id: schema.businesses.id }).from(schema.businesses)
++      .where(and(eq(schema.businesses.id, identity.bid), eq(schema.businesses.ownerId, identity.ownerId))).limit(1).for('update');
++    if (!business) return false;
++    await tx.insert(schema.visibilityPreferences).values({ businessId: identity.bid, weeklyEmail: false })
++      .onConflictDoUpdate({ target: schema.visibilityPreferences.businessId, set: { weeklyEmail: false, updatedAt: new Date() } });
++    return true;
++  });
++}
+--- /dev/null
++++ b/src/app/ai-email-preferences/route.ts
+@@ -0,0 +1,55 @@
++import { assertAuthOrigin } from '@/server/auth/requests';
++import { RadarError } from '@/server/errors';
++import { disableDigestEmail, readDigestPreferencesToken } from '@/server/services/visibility/digestPreferences';
++
++export const runtime = 'nodejs';
++const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
++const page = (content: string, status = 200) => new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Email preferences · Radar</title></head><body style="font-family:system-ui;max-width:36rem;margin:3rem auto;padding:1rem;line-height:1.6"><main><h1>Email preferences</h1>${content}</main></body></html>`, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" } });
++export async function GET(request: Request) {
++  const url = new URL(request.url);
++  if (url.searchParams.get('saved') === '1') return page('<p>Weekly AI recommendation reports are turned off for this business. Your other email and research study preferences are unchanged.</p>');
++  const token = url.searchParams.get('token') || '';
++  if (!readDigestPreferencesToken(token)) return page('<p>This preference link is invalid. Open Email preferences from a recent weekly AI recommendation report.</p>', 400);
++  return page(`<p>Turn off weekly AI recommendation reports for the business in this email. Your other email and research study preferences are unchanged.</p><form method="post" action="/ai-email-preferences"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit" style="font:inherit;padding:12px 18px">Turn off weekly AI reports</button></form>`);
++}
++export async function POST(request: Request) {
++  let form: URLSearchParams;
++  try {
++    assertAuthOrigin(request);
++    form = await preferenceForm(request);
++  } catch (error) {
++    if (error instanceof RadarError) return page(`<p>${escapeHtml(error.userMessage)}</p>`, error.status);
++    throw error;
++  }
++  const token = form.get('token');
++  if (typeof token !== 'string' || !await disableDigestEmail(token)) return page('<p>This preference link is invalid or the business owner has changed. Open Email preferences from a recent report.</p>', 400);
++  return new Response(null, { status: 303, headers: { location: '/ai-email-preferences?saved=1', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' } });
++}
++
++/** A fixed, small HTML form; enforce the cap while streaming even without Content-Length. */
++async function preferenceForm(request: Request): Promise<URLSearchParams> {
++  const maxBytes = 2048;
++  if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/x-www-form-urlencoded') {
++    throw new RadarError('Submit the email preferences form.', 415, 'unsupported_media_type');
++  }
++  const oversized = () => new RadarError('This request is too large.', 413, 'payload_too_large');
++  if (Number(request.headers.get('content-length')) > maxBytes) throw oversized();
++  const reader = request.body?.getReader();
++  if (!reader) throw new RadarError('This preference form is invalid.', 400, 'invalid');
++  const chunks: Uint8Array[] = [];
++  let bytes = 0;
++  try {
++    for (;;) {
++      const { done, value } = await reader.read();
++      if (done) break;
++      bytes += value.byteLength;
++      if (bytes > maxBytes) { await reader.cancel(); throw oversized(); }
++      chunks.push(value);
++    }
++  } finally { reader.releaseLock(); }
++  const form = new URLSearchParams(Buffer.concat(chunks).toString('utf8'));
++  if ([...form.keys()].some(key => key !== 'token') || form.getAll('token').length !== 1) {
++    throw new RadarError('This preference form is invalid.', 400, 'invalid');
++  }
++  return form;
++}
+--- /dev/null
++++ b/src/server/services/visibility/digest.test.ts
+@@ -0,0 +1,51 @@
++import { beforeEach, describe, expect, it, vi } from 'vitest';
++import { PgDialect } from 'drizzle-orm/pg-core';
++const m = vi.hoisted(() => ({ rows: [] as any[], run: null as any, cron: null as any, send: vi.fn(), summary: vi.fn(), payloads: [] as any[], marks: new Set<string>(), leftJoin: vi.fn(), conditions: [] as any[] }));
++vi.mock('@/server/jobs/queue', () => ({ defineJob: (j: any) => { m.run = j.run; } }));
++vi.mock('@/server/jobs/cron', () => ({ defineCron: (_: string, run: any) => { m.cron = run; } }));
++vi.mock('@/server/services/mail', () => ({ sendMail: m.send }));
++vi.mock('./history', () => ({ visibilitySummary: m.summary }));
++vi.mock('@/server/db', async () => {
++  const schema = await import('@/server/db/schema');
++  const query = () => {
++    const q: any = { from: () => q, innerJoin: () => q, leftJoin: (...a: any[]) => { m.leftJoin(...a); return q; }, where: (condition: any) => { m.conditions.push(condition); return q; }, limit: () => q, then: (resolve: any) => Promise.resolve(m.rows).then(resolve) };
++    return q;
++  };
++  const tx: any = { select: query, insert: (table: any) => ({ values: (value: any) => {
++    if (table === schema.jobs) m.payloads.push(value.payload);
++    return { onConflictDoNothing: () => ({ returning: async () => { if (m.marks.has(value.key)) return []; m.marks.add(value.key); return [value]; } }) };
++  } }) };
++  return { schema, db: { ...tx, transaction: (fn: any) => fn(tx) } };
++});
++import './digest';
++const owner = { weekly: null, email: 'owner@example.test', guest: false };
++const payload = { bid: 'b', ownerId: 'u', to: owner.email, subject: 'subject', text: 'old frozen text', key: 'existing-key' };
++beforeEach(() => { m.rows = []; m.conditions = []; m.payloads = []; m.marks.clear(); m.send.mockClear(); m.leftJoin.mockClear(); m.summary.mockClear(); m.summary.mockResolvedValue({ weekly: { start: '2026-11-02', end: '2026-11-09', current: { share: 0.5, mentioned: 1, collected: 2 }, previous: { share: null, mentioned: 0, collected: 0 }, delta: null }, weeklyBiggestMiss: null }); });
++describe('weekly report default-on dispatch', () => {
++  it('allows missing preferences and preserves old retry payload and key', async () => {
++    m.rows = [owner]; await m.run({ payload });
++    expect(m.send).toHaveBeenCalledWith(payload.to, payload.subject, payload.text, undefined, { idempotencyKey: payload.key });
++    expect(m.leftJoin).toHaveBeenCalledOnce();
++    const where = new PgDialect().sqlToQuery(m.conditions[0]);
++    expect(where.sql).toContain('"businesses"."owner_id"');
++    expect(where.params).toEqual(['b', 'u', 'active']);
++  });
++  it.each([[{ ...owner, weekly: false }], [{ ...owner, guest: true }], [{ ...owner, email: 'new@example.test' }], []])('suppresses explicit optout, guest, recipient or ownership change: %j', async (...rows) => {
++    m.rows = rows[0] ? rows : []; await m.run({ payload }); expect(m.send).not.toHaveBeenCalled();
++  });
++  it('uses default-on query, freezes both bodies and dedupes repeated Monday ticks', async () => {
++    m.rows = [{ id: 'b', ownerId: 'u', domain: 'example.test', email: owner.email, guest: false }];
++    await m.cron(new Date('2026-11-09T08:00:00Z')); await m.cron(new Date('2026-11-09T09:00:00Z'));
++    expect(new PgDialect().sqlToQuery(m.conditions[0]).sql).toContain('coalesce("visibility_preferences"."weekly_email", true)');
++    expect(m.leftJoin).toHaveBeenCalledTimes(2); expect(m.payloads).toHaveLength(1);
++    expect(m.payloads[0].text).toContain('Email preferences:'); expect(m.payloads[0].html).toContain('>Email preferences</a>');
++    m.rows = [owner]; await m.run({ payload: m.payloads[0] });
++    expect(m.send.mock.calls[0][3]).toBe(m.payloads[0].html);
++  });
++  it('does not queue without collected answers or before Monday cadence', async () => {
++    m.rows = [{ id: 'b', ownerId: 'u', domain: 'test', email: owner.email, guest: false }];
++    await m.cron(new Date('2026-11-09T07:00:00Z')); expect(m.summary).not.toHaveBeenCalled();
++    m.summary.mockResolvedValueOnce({ weekly: { current: { collected: 0 } } });
++    await m.cron(new Date('2026-11-09T08:00:00Z')); expect(m.payloads).toEqual([]);
++  });
++});
+--- /dev/null
++++ b/src/server/services/visibility/digestPreferences.test.ts
+@@ -0,0 +1,72 @@
++import { beforeEach, expect, it, vi } from 'vitest';
++import { PgDialect } from 'drizzle-orm/pg-core';
++const m = vi.hoisted(() => ({ exists: true, insert: vi.fn(), condition: null as any, locked: vi.fn() }));
++vi.mock('@/server/db', async () => {
++  const schema = await import('@/server/db/schema');
++  const tx = { select: () => ({ from: () => ({ where: (condition: any) => { m.condition = condition; return { limit: () => ({ for: (lock: string) => { m.locked(lock); return Promise.resolve(m.exists ? [{ id: 'business' }] : []); } }) }; } }) }), insert: () => ({ values: (value: any) => { m.insert(value); return { onConflictDoUpdate: async () => {} }; } }) };
++  return { schema, db: { transaction: (fn: any) => fn(tx) } };
++});
++import { digestPreferencesToken, readDigestPreferencesToken, disableDigestEmail } from './digestPreferences';
++import { env } from '@/server/env';
++import { GET, POST } from '@/app/ai-email-preferences/route';
++const bid = '11111111-1111-4111-8111-111111111111';
++const ownerId = '22222222-2222-4222-8222-222222222222';
++beforeEach(() => { m.exists = true; m.insert.mockClear(); m.locked.mockClear(); });
++it('rejects forgery, malformed tokens and cross-purpose signatures', () => {
++  const token = digestPreferencesToken(bid, ownerId);
++  expect(readDigestPreferencesToken(token)).toEqual({ bid, ownerId });
++  expect(readDigestPreferencesToken(token + '.extra')).toBeNull();
++  expect(readDigestPreferencesToken('invite.fake')).toBeNull();
++  expect(readDigestPreferencesToken(token.split('.')[0] + '.' + 'é'.repeat(43))).toBeNull();
++  expect(readDigestPreferencesToken(token.replace(token[0], token[0] === 'a' ? 'b' : 'a'))).toBeNull();
++});
++it('GET renders a confirmation form without changing state', async () => {
++  const token = digestPreferencesToken(bid, ownerId);
++  const response = await GET(new Request(`https://example.test/ai-email-preferences?token=${token}`));
++  expect(await response.text()).toContain('method="post"'); expect(m.insert).not.toHaveBeenCalled();
++  expect(response.headers.get('referrer-policy')).toBe('no-referrer');
++});
++it('POST only disables weekly email for the signed current owner, with fixed redirect', async () => {
++  const form = new URLSearchParams({ token: digestPreferencesToken(bid, ownerId) });
++  const response = await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', body: form }));
++  expect(response.status).toBe(303); expect(response.headers.get('location')).toBe('/ai-email-preferences?saved=1');
++  expect(new PgDialect().sqlToQuery(m.condition).params).toEqual([bid, ownerId]);
++  expect(m.locked).toHaveBeenCalledWith('update');
++  expect(m.insert).toHaveBeenCalledWith({ businessId: bid, weeklyEmail: false });
++});
++it('ownership change/deletion invalidates an otherwise authentic token', async () => {
++  m.exists = false;
++  expect(await disableDigestEmail(digestPreferencesToken(bid, ownerId))).toBe(false);
++  expect(m.insert).not.toHaveBeenCalled();
++});
++it('invalid POST never reaches the database', async () => {
++  const form = new URLSearchParams({ token: 'bad' });
++  expect((await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', body: form }))).status).toBe(400);
++  expect(m.locked).not.toHaveBeenCalled(); expect(m.insert).not.toHaveBeenCalled();
++});
++
++it.each([
++  { origin: 'https://foreign.example', 'sec-fetch-site': 'same-origin' },
++  { origin: new URL(env.appUrl).origin, 'sec-fetch-site': 'cross-site' },
++])('rejects foreign browser submissions before any mutation: %j', async headers => {
++  const response = await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', headers, body: new URLSearchParams({ token: digestPreferencesToken(bid, ownerId) }) }));
++  expect(response.status).toBe(403); expect(m.locked).not.toHaveBeenCalled(); expect(m.insert).not.toHaveBeenCalled();
++});
++it('accepts the configured app origin', async () => {
++  const response = await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', headers: { origin: new URL(env.appUrl).origin }, body: new URLSearchParams({ token: digestPreferencesToken(bid, ownerId) }) }));
++  expect(response.status).toBe(303);
++});
++it.each(['application/json', 'multipart/form-data; boundary=fake', 'text/plain'])('refuses unsupported content type %s', async contentType => {
++  const response = await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', headers: { 'content-type': contentType }, body: 'token=anything' }));
++  expect(response.status).toBe(415); expect(m.locked).not.toHaveBeenCalled();
++});
++it.each([undefined, '1', '9999'])('caps streamed or declared bodies at 2KB: %j', async contentLength => {
++  const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' };
++  if (contentLength) headers['content-length'] = contentLength;
++  const response = await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', headers, body: 'token=' + 'a'.repeat(2048) }));
++  expect(response.status).toBe(413); expect(m.locked).not.toHaveBeenCalled();
++});
++it.each(['ownerId=attacker', 'redirect=https://attacker.example', 'token=duplicate'])('refuses extra or duplicate fields: %s', async extra => {
++  const response = await POST(new Request('https://example.test/ai-email-preferences', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: `token=${digestPreferencesToken(bid, ownerId)}&${extra}` }));
++  expect(response.status).toBe(400); expect(m.locked).not.toHaveBeenCalled();
++});
+--- /dev/null
++++ b/src/server/services/visibility/history.test.ts
+@@ -0,0 +1,33 @@
++import { beforeEach, expect, it, vi } from 'vitest';
++const m = vi.hoisted(() => ({ prefs: [] as any[], values: vi.fn() }));
++vi.mock('@/server/db', async () => {
++  const schema = await import('@/server/db/schema');
++  function query() {
++    let table: any;
++    const q: any = { from: (t: any) => { table = t; return q; }, where: () => q, limit: () => q, orderBy: () => q, then: (resolve: any) => Promise.resolve(table === schema.visibilityPreferences ? m.prefs : table === schema.businesses ? [{ domain: 'example.test' }] : []).then(resolve) };
++    return q;
++  }
++  return { schema, db: { select: query, selectDistinctOn: query, insert: () => ({ values: (value: any) => { m.values(value); return { onConflictDoUpdate: async () => {} }; } }) } };
++});
++import { visibilitySummary, saveVisibilityPreferences } from './history';
++import { visibilityPreferences } from '@/server/db/schema';
++beforeEach(() => { m.prefs = []; m.values.mockClear(); });
++it('missing preferences default weekly on without consenting to research', async () => {
++  const summary = await visibilitySummary('business');
++  expect(summary.preferences.weeklyEmail).toBe(true);
++  expect(summary.preferences.studyActive).toBe(false);
++  expect(visibilityPreferences.weeklyEmail.default).toBe(true);
++  expect(visibilityPreferences.studyConsentedAt.hasDefault).toBe(false);
++});
++it('stored false remains off on reload', async () => {
++  m.prefs = [{ weeklyEmail: false }]; expect((await visibilitySummary('business')).preferences.weeklyEmail).toBe(false);
++});
++it('study-only saves leave weekly preference to its default or retained stored value', async () => {
++  await saveVisibilityPreferences({ bid: 'business', role: 'Owner', user: { id: 'owner' } } as any, { studyConsent: true });
++  expect(m.values.mock.calls[0][0]).not.toHaveProperty('weeklyEmail');
++  expect(m.values.mock.calls[0][0].studyConsentedAt).toBeInstanceOf(Date);
++});
++it('viewers cannot change preferences', async () => {
++  await expect(saveVisibilityPreferences({ bid: 'business', role: 'Viewer' } as any, { weeklyEmail: false })).rejects.toThrow();
++  expect(m.values).not.toHaveBeenCalled();
++});

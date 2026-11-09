@@ -11,6 +11,8 @@ import { env } from '@/server/env';
 import { attachInvites } from '@/server/auth/users';
 import { finishAuth } from '@/server/auth/claim';
 import { consumeGoogleState } from '@/server/auth/googleState';
+import { queueSignupEmails } from '@/server/auth/signupEmails';
+import { currentGuest } from '@/server/auth/session';
 
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
@@ -46,7 +48,12 @@ export async function GET(req: Request) {
   let user: typeof schema.users.$inferSelect;
   if (found) user = found;
   else {
-    const [created] = await db.insert(schema.users).values({ name, email, googleSub: sub, emailVerifiedAt: new Date() }).onConflictDoNothing().returning();
+    const guest = await currentGuest();
+    const created = await db.transaction(async tx => {
+      const [u] = await tx.insert(schema.users).values({ name, email, googleSub: sub, emailVerifiedAt: new Date() }).onConflictDoNothing().returning();
+      if (u) await queueSignupEmails(tx, u, guest?.id);
+      return u;
+    });
     if (created) { user = created; await track('user.signed_up', { uid: user.id, props: { method: 'google' } }); }
     else {
       // A concurrent callback may have inserted the same provider identity. Email-only collisions are refused.

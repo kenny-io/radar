@@ -1,0 +1,9 @@
+{
+  "head": "5905e559aa87141980381cce1a7ca03b101c08e7",
+  "branch": "kenny/lifecycle-emails",
+  "scope": "src/** + next.config.ts + drizzle/**",
+  "files": 476,
+  "sha256": "8da069a6563db18e50d9c9c5b7a1f2fcdfcbe1f5ef42646b80379b972cb50f04",
+  "priorFullFlowFingerprint": "3beebabab50b13b7629a49df808231ee6e52cc6b8232f55220817e3c432b2d50",
+  "verificationScope": "copy-only HTML previews at390/600; prior fullflow evidence belongs to prior fingerprint"
+}

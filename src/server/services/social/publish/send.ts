@@ -13,8 +13,9 @@ import { notify } from '../../../notify';
 import { bump, getBiz } from '../../../workspace';
 import { enqueue } from '../../../jobs/queue';
 import { withDay } from '../../brief/store';
+import { resolveEngagement } from '../../lifecycle/engagement';
 import { acctOf } from '@/features/brief/model';
-import { LOCK_MS, PLAT_L, STALE_MS, acctLabel, errCopy, localParts, publishCostUsd, type PostPlatform } from '@/lib/socialPublish';
+import { LOCK_MS, PLAT_L, STALE_MS, acctLabel, parseSid, errCopy, localParts, publishCostUsd, type PostPlatform } from '@/lib/socialPublish';
 import type { BriefItem, PubErrCode } from '@/lib/types';
 import { type AcctCtx, type Adapter, SendError } from './api';
 import { AccountExpired, acctPublic, adapterFor, ensureToken, type AcctRow } from './accounts';
@@ -80,6 +81,12 @@ async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, man
     }
   }
   if (!u) { console.error(`[social.send] pub ${r.id} ${r.sid}: LIVE as ${c.remoteId} (${c.url}) but not saved; left 'sending' for verify`); return null; }
+  // A reminder failure must never prevent saving a live post or cause a second provider create.
+  try {
+    const source = parseSid(u.sid);
+    if (source?.src === 'pack') await resolveEngagement(db, u.businessId, 'social_publish', source.packId);
+    else if (source?.src === 'brief' && u.kind === 'reply') await resolveEngagement(db, u.businessId, 'brief_reply', source.day);
+  } catch { console.error(`[social.send] pub ${r.id}: work reminder resolution failed after posted save`); }
   log(r, `posted (attempt ${r.attempts}${manual ? ', now' : ''})`);
   try { await sendHooks.afterPosted(r, c, manual, userId, text); }
   catch (e: any) {

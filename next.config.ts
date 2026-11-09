@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
       ...['/verify-email', '/api/auth/:path*'].map(source => ({ source, headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'Cache-Control', value: 'no-store' }] })),
       // The workspace page shares a prefix with public /social/*.png preview assets.
       { source: '/social', headers: [{ key: 'X-Robots-Tag', value: 'noindex, follow' }] },
+      ...['forgot-password', 'reset-password', 'email-preferences', 'email/learn', 'email/open'].map(route => ({ source: `/${route}/:path*`, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }, { key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'Cache-Control', value: 'no-store' }] })),
     ];
   },
 };

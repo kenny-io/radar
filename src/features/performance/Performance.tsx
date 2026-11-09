@@ -48,6 +48,7 @@ function LineChart({ data, k, fmt, height = 240 }: { data: Pt[]; k: MK; fmt: (v:
 export function Performance() {
   const app = useApp();
   const [tab, setTab] = useState<'search' | 'ai'>('search');
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('tab') === 'ai') setTab('ai'); }, []);
   if (!app.B) return null;
   return <div className="page">
     <PageHead title="Performance" sub={tab === 'search' ? 'How people find you in Google, and what to improve next.' : 'How AI assistants answer the questions your customers ask.'} />

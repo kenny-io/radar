@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/main-observability/wrapper.test.ts (5 tests) 29ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  01:28:16
+   Duration  557ms (transform 84ms, setup 0ms, collect 384ms, tests 29ms, environment 0ms, prepare 34ms)
+

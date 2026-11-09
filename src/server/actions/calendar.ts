@@ -12,6 +12,7 @@ import { ENTRY_TYPES } from '@/lib/constants';
 import { kwIntentHeuristic } from '@/lib/constants';
 import { slugify } from '@/lib/format';
 import type { Keyword, Profile } from '@/lib/types';
+import { resolveCalendarForEntries } from '../services/lifecycle/engagement';
 
 const E = schema.calendarEntries;
 const ISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -33,12 +34,21 @@ export const actions: ActionMap = {
   } }),
 
   'calendar.approve': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
-    await db.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'proposed')));
+    await db.transaction(async tx => {
+      const rows = await tx.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+      await resolveCalendarForEntries(tx, ctx.bid, rows.map(r => r.id));
+    });
+
     return { ok: true };
   } }),
 
   'calendar.approveAll': action({ input: z.object({}).optional(), run: async (ctx) => {
-    const r = await db.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+    const r = await db.transaction(async tx => {
+      const rows = await tx.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+      await resolveCalendarForEntries(tx, ctx.bid, rows.map(r => r.id));
+      return rows;
+    });
+
     return { count: r.length };
   } }),
 

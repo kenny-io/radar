@@ -1,0 +1,31 @@
+Email #15E · Setup without profile details
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Does ChatGPT or Claude recommend your business?
+Preview: A mention and a citation tell you different things. Here’s what to look for.
+
+Hi there,
+
+An assistant can name your business without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
+
+Save your Business Profile and activate your workspace before following these steps.
+
+1. Open Performance → AI Visibility and add two buyer questions. Try a question someone would ask when choosing a product like yours. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
+
+2. Open a collected answer and follow its citations. Look for whether your business is named, how it is described and which sources support that description. Compare those details with the information on your own site.
+
+Keep the questions stable and compare their Mentioned and Cited your site counts next week. Not collected means an answer is missing; it is different from an answer that didn’t mention you.
+
+Continue setting up Radar: https://radar.thally.io/onboarding
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

@@ -20,6 +20,6 @@ export const POST = handle(async (req: Request) => {
   if (!u || !u.passwordHash || !(await verifyPassword(b.password, u.passwordHash))) return json({ ok: false, errors: { pw: 'That email and password don’t match.' } }, 401);
   if (!u.emailVerifiedAt) return json({ ok: false, error: 'Confirm your email to secure your account. Request a confirmation email to continue.', code: 'verification_required' }, 403);
   await attachInvites(u.id, email);
-  const f = await finishAuth({ id: u.id, name: u.name, email: u.email, appearance: u.appearance }, b.next);
+  const f = await finishAuth({ id: u.id, name: u.name, email: u.email, appearance: u.appearance }, b.next, u.passwordHash);
   return json({ ok: true, next: f.next });
 });

@@ -1,3 +1,4 @@
+import { isEducationLanding } from '../services/lifecycle/educationLinks';
 // Every page-level gating decision (architecture §4.3, §3.4 of the handoff). Pages and auth endpoints call only these.
 import { currentGuest, currentUser, type SessionUser } from '../auth/session';
 import { env } from '../env';
@@ -79,6 +80,15 @@ export async function signupContext(): Promise<{ pending: PendingProfile | null 
 }
 
 const APP_PATH = /^\/(dashboard|calendar|article|performance|profile|settings|social|brief|backlinks)(\/|\?|#|$)/;
+/** Work emails may return through this one landing route after authentication. No generic /email or /api allowance. */
+function isWorkLanding(n: string) {
+  if (!n.startsWith('/email/open?') || n.includes('#') || /[\\\u0000-\u001f\u007f]/.test(n)) return false;
+  const params = new URLSearchParams(n.slice('/email/open?'.length));
+  if ([...params].length !== 3 || [...params.keys()].some(key => !['businessId', 'kind', 'ref'].includes(key))) return false;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.get('businessId') || '')) return false;
+  if (!['brief_reply', 'calendar_review', 'article_social', 'social_publish'].includes(params.get('kind') || '')) return false;
+  return /^[A-Za-z0-9_.:-]{1,120}$/.test(params.get('ref') || '');
+}
 export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !/[\u0000-\u0020\u007f\\]/.test(n) ? n : null;
 
 /** Only this authenticated cookie-setting hop is allowed through login; its destination remains a safe page. */
@@ -99,11 +109,17 @@ export function safeBusinessHop(next?: string | null): string | null {
  *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */
 export async function entryAfterAuth(u: SessionUser, next?: string | null): Promise<{ next: string; committed: string | null }> {
   const n = safeNext(next);
+  if (n === '/email-preferences') return { next: n, committed: null };
+  if (n && isEducationLanding(n)) return { next: n, committed: null };
   if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);
   if ('redirect' in e) return { next: e.redirect, committed: null };
-  const to = safeBusinessHop(n) || (n && APP_PATH.test(n) ? n : '/dashboard');
+  const hop = safeBusinessHop(n);
+  const work = !!n && isWorkLanding(n);
+  const to = hop || (n && (APP_PATH.test(n) || work) ? n : '/dashboard');
+
   if (!e.committed) return { next: to, committed: null };
+  if (work || hop) return { next: to, committed: e.committed };
   return { next: to + (to.includes('?') ? '&' : '?') + 'saved=profile', committed: e.committed };
 }
 export const destinationAfterAuth = async (u: SessionUser, next?: string | null) => (await entryAfterAuth(u, next)).next;

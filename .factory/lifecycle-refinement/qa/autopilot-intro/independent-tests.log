@@ -1,0 +1,19 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stderr | .factory/lifecycle-refinement/qa/autopilot-intro/delivery.test.ts > Independent #30 delivery relevance and retry safety > expires an unattempted window and an ambiguous23h retry without creating a fresh key
+[lifecycle] delivery failed {
+  id: 'e68c2873-f4c3-42a6-8910-7aef924559a6',
+  type: 'lifecycle_guide',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ .factory/lifecycle-refinement/qa/autopilot-intro/delivery.test.ts (9 tests) 759ms
+ ✓ .factory/lifecycle-refinement/qa/autopilot-intro/policy.test.ts (7 tests) 587ms
+   ✓ Independent #30 observation, ownership and finite identity > anchors new/old owners in every access state to first observation +48h, with no historical catchup  319ms
+
+ Test Files  2 passed (2)
+      Tests  16 passed (16)
+   Start at  02:41:29
+   Duration  2.58s (transform 204ms, setup 0ms, collect 908ms, tests 1.35s, environment 0ms, prepare 82ms)
+

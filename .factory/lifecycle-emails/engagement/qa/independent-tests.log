@@ -1,0 +1,17 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-seo-ai-discovery/radar-push
+
+ ✓ .factory/lifecycle-emails/engagement/qa/dispatch-policy.test.ts (5 tests) 372ms
+ ✓ .factory/lifecycle-emails/engagement/qa/core-policy.test.ts (7 tests) 216ms
+ ✓ .factory/lifecycle-emails/engagement/qa/api-boundaries.test.ts (5 tests) 116ms
+stderr | .factory/lifecycle-emails/engagement/qa/source-hooks.test.ts > independent real brief-job source hook with billing enabled > does not create a reminder for an empty or handled failed run
+[brief.scan] reddit source failed: reddit (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ .factory/lifecycle-emails/engagement/qa/source-hooks.test.ts (2 tests) 9679ms
+   ✓ independent real brief-job source hook with billing enabled > captures one successful initial run, not a rescan, and a copied/reopened reply never revives the reminder  8875ms
+   ✓ independent real brief-job source hook with billing enabled > does not create a reminder for an empty or handled failed run  795ms
+
+ Test Files  4 passed (4)
+      Tests  19 passed (19)
+   Start at  02:48:54
+   Duration  12.81s (transform 356ms, setup 0ms, collect 1.86s, tests 10.38s, environment 0ms, prepare 143ms)

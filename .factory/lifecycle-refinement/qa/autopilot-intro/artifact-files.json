@@ -1,0 +1,1482 @@
+[
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report-no-comparison.html",
+    "sha256": "e3710463589ae00d1d9c007fca9f5b70b3cacef2143a824b8b4fb3c5d2c73589"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report-no-comparison.txt",
+    "sha256": "4ebeed3ea4e77c81fc47189bf07ea4e01d544d776fedb4bf4ca2d9d821f40a43"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report-no-miss.html",
+    "sha256": "0fa05647c1344daee00f8591622314e01f00f14b37ecd7cc03dd33d6dfdbd1e6"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report-no-miss.txt",
+    "sha256": "084ca84324dd13bc8473b5e98924b869319418e1c81550cd82a6e8a36646ac7c"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report-no-topic.html",
+    "sha256": "c6c056031da27fc6bf5c6e4d9825ac804dc95e6712be85e010465a817722ab47"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report-no-topic.txt",
+    "sha256": "1280ec277a42238f840d8db7e79d362371a04122332b5a0dcbafcdd8dfc7fbd8"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report.html",
+    "sha256": "d534d3bc07b3d1e8d553e5da1bf3d6db02bdeb63ce06234a1b1086adb66d8443"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/ai-weekly-report.txt",
+    "sha256": "315586b17ad133ba38e5fe1b39940dcfe8d1ac7e38e2a4b610175ee5f43cca1f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/all-emails.txt",
+    "sha256": "b0be06839bd0fc4bd5fd57c547a92e0ae50b3377f2fc9f24bf2590cdfd31f0c5"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/autopilot-actions.html",
+    "sha256": "3ee4054c2ea67e9440ee06b8225740f7b7f9b09b7970f47bff8ff83e7c444e25"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/autopilot-actions.txt",
+    "sha256": "e564098b4eba888818f26823c98216a5fe31ee54957f33023beeb0eb28facb3f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/autopilot-publication.html",
+    "sha256": "e8533ea6c43afb63664160ec7b48c0aeaed2631bef555ba89c15c26f548c01a6"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/autopilot-publication.txt",
+    "sha256": "9d983f8087691282ec7b741f0f3c57a95464d9fac5a4ad875086cbba10b63a62"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/autopilot-reply.html",
+    "sha256": "d676ddcf5c231718f20c932453f7a5fbc030f9ef72c2d110b8acbd428dc04c68"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/autopilot-reply.txt",
+    "sha256": "b1bd4657ea477e22e296fedfdbfa24cd70726235d2ee64185d2debb077510ff1"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-approved-manual.html",
+    "sha256": "16de456e34e64094dfae4ea9645e3e3a39a0317bca7b1e4456398c675fed1af2"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-approved-manual.txt",
+    "sha256": "014a70cc61f611a126325f5927f6e8a05146e73083d7bfe5307517884beab310"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-approved.html",
+    "sha256": "a521f453ee8c7372845b76b6374e6df8bb37f53230e2fea049cbd17ed0941629"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-approved.txt",
+    "sha256": "6cf0b06c13670cd23f256bd36a2223e30e1a50631c685a2e7664dd5ca23d80d2"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-declined.html",
+    "sha256": "ea96914aaa216213d2ab1317ed1c92b215d6e2bc12262c7ff546147865c02c05"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-declined.txt",
+    "sha256": "0be23f7c0ab522d55dd425756297c474bbdb597956a530bc1b320f9a46c41d1b"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-lost-missing.html",
+    "sha256": "eb75cc8abb9448230b48b113fc6e1514df05613f368ee722465543a722af3eb2"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-lost-missing.txt",
+    "sha256": "9f2a62a12e721601a473e3596daf293151f8eaae9febee068be407dc200416a6"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-lost-rel.html",
+    "sha256": "03e26ea66d412012cfcc987cd41939d8033207c837d5eb6737914bc784cc0d9d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-lost-rel.txt",
+    "sha256": "03c56d6ed77431988df763aeeb74850d5bf868abf5dd8db0636b2105a44543b3"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-removal.html",
+    "sha256": "8bab389fc9c7e7bf3e3fa3e080f386a8f16723d6ad4f8062a6af566a2b8ec8d9"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/backlink-removal.txt",
+    "sha256": "cb1f6f1afbac9d20b75ac3b604e7e1502ae14956e769979c8442fd924c3c1400"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/cancellation_scheduled.html",
+    "sha256": "17adca4d5e83eb20163278c4bd2e205357e662aa59bd4ecce0d9c268759cf3fc"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/cancellation_scheduled.txt",
+    "sha256": "f29e763e5de8c60aa87b27057c07e713576e3701c4decd0013fc90c7bd5b243f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/catalogue.html",
+    "sha256": "ae8c61940b45717c98c86c239a514645add6a9e71d53dff7d410f1398be72760"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/catalogue.json",
+    "sha256": "4f6446926bad5c86854e44f3137823042a96c5ad057d65744caf5f54ae284889"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/catalogue.md",
+    "sha256": "e47618d8957d73f3d858efbafd7afd5a67b36e2645dd05e38154eff96a74601e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/confirmation.html",
+    "sha256": "22c8fe281c4de20e361d001bb7f370997ac547be5e10ca7c29e65cdadf9e9a8c"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/confirmation.txt",
+    "sha256": "32e35e14c2daf28e1c0a0364d59185e6d998795f9df54c32fe2e0d15df11d893"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/founder_note.html",
+    "sha256": "5f86a3e62046c0bc48539f117b1e0d742e3e0a242ae1cfad14bdefa6b7bb8557"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/founder_note.txt",
+    "sha256": "8808f227ea200a48312490e5111285aad8b99166cfee42173615ab22e73e770f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-restart.html",
+    "sha256": "c9a9843f4f4a53c73e25816b70dca21ec3dd3c9b7a38496d615b371924a49645"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-restart.txt",
+    "sha256": "310117d23dd287fda10742bc96cf944ec6c1e0afb900e9db280c109dab1a382c"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-setup.html",
+    "sha256": "5800d47d19e5cd495fde21cbbc7bcefd34232824a6a92146ca0682a226d8a538"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-setup.txt",
+    "sha256": "104b967cd37eb95638aebb3bd331530a0f1eac8e858a6b9763573f53ef10363e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-start_trial.html",
+    "sha256": "9027b9b7102a92b0723adcd6f4395c2cf81c3fc1458594988dd66abafa229c2e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-start_trial.txt",
+    "sha256": "b3910ea791e961c40340197f23d684e2a0df81b07ae9b7afa573906c1ebb3d26"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-workspace.html",
+    "sha256": "8a37b60e7520482603755f0bca2203b0eab9552330f38d01f91a592dad9a9c36"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-article_workflow-workspace.txt",
+    "sha256": "017d303f90c619129d5c7d80e4421a163e1d93b1299c3bd3836da8c42b62a9c4"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-restart.html",
+    "sha256": "969450829c228e3bc6d21d2d47e698ee56e086dcb6bb70580c5897a63d0f7fea"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-restart.txt",
+    "sha256": "53128dbe2c07f802ffc3a30d9d0efdbe8afa5627c326b5f242b591c0f691310d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-setup.html",
+    "sha256": "f99a4ae6ad9821334cfafccf49df634b53500cc1d62fa315c820123745cf6c09"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-setup.txt",
+    "sha256": "3195c2cc3f3c82b23c77be5e061cc824e63f143629befa83bc779b936abe91f8"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-start_trial.html",
+    "sha256": "db7b752a130bc8a34c5b02fa75c42d83a85b6cc37d3122b53da34391a859beed"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-start_trial.txt",
+    "sha256": "e4868e451463ebff83383733b9ebcd88d205a3d643b775a8d317adba3c985689"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-workspace.html",
+    "sha256": "fad758a90a138f0223ab6968638fb19fb245a67f34c075fc074466f6ede5d59d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-autopilot_intro-workspace.txt",
+    "sha256": "bca57e1cc7f6e58cf11e73b5e42d4e4d4ef45e1f3c9af5efd8c7434ee46f3933"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-restart.html",
+    "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-restart.txt",
+    "sha256": "d4a8b7b4ace1ddb187bd2c8f3ada5d88ab4a43ca9812e68dfb7bec2fb45a459d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-setup.html",
+    "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-setup.txt",
+    "sha256": "3c5b3a4f9e817af4f5c392b2effb55d56b75bdb8d711eca9da2a698b768781a6"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-start_trial.html",
+    "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-start_trial.txt",
+    "sha256": "7b6bb5cff82151a540ae79efde4d41da808073f71f4997d4b65c03417631762f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-workspace.html",
+    "sha256": "5982a737a514ed75185f0924f81bffc5a8cd856d7b3a7a470fae2cf82d554a2f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/guide-search_refresh-workspace.txt",
+    "sha256": "7a25b034fcd945436179cb268354216d778370adf1c6ee6479df8a02e46121a9"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/index.html",
+    "sha256": "ce1edcec7ebaae2b04a247aa885d5dfede855a7a6e6007cb410e34d6c80598f2"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invitation-Admin.html",
+    "sha256": "3264d7ec387f152e808009b54598de652adf59b371f6f4eb7e6f1158b11d91cd"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invitation-Admin.txt",
+    "sha256": "e2366b398c92800e50f213d2fee2d2b414feaa6b003956dd0622b94c45a3e794"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invitation-Editor.html",
+    "sha256": "053a8a94963c3db5391b80dc3f6761ccd6bbd2b8fad579e78536d02d289b8fd3"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invitation-Editor.txt",
+    "sha256": "840148052be809c329d23d890f504e4b15b5679fdb48ca4e14ffa7fe49f61550"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invitation-Viewer.html",
+    "sha256": "512adf8c226da72624f0ad58b8c08334ab3fdc2ae8a668bc336ad096ddd6e07f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invitation-Viewer.txt",
+    "sha256": "79651aa6c6e26126ea8a0c8a39bcb88483a363180a10a5ef0023cbed0bc6c1af"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invoice-paid-no-amount.html",
+    "sha256": "e8ed9be0d190b100fab1f5a547edfc4338a7d36d5c6ddbe03f989d6fe4d1223e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invoice-paid-no-amount.txt",
+    "sha256": "164020fef8b1fb314eac37005dcabcc63d8d843e75abaa39dbd662aadbc1688f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invoice_paid.html",
+    "sha256": "9258db73cda7f9f20ec59c6194a49805e17e3ed4de53461ad638ed69b2e883ba"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/invoice_paid.txt",
+    "sha256": "274d98327d9d37c1c1e6e44b1b8d071fa6c15aaf9fe46b581b7ca4d50646bc3e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-neutral.html",
+    "sha256": "c646a86833af2870e13f632b7d830e109d26f739bd246f6b30548734c0a32610"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-neutral.txt",
+    "sha256": "4989dcebf7c990430a68347b12d11f411011e3f88dd368b906b61d78c3936e3c"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-restart.html",
+    "sha256": "2e3242f7d3ef3844a1ef5c825284d7efb5dcf90d8c14a108b1f53fc66cdbbc88"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-restart.txt",
+    "sha256": "1494e62864307acbf03da685db5ce50c6cf45b4e17347bead203df14a7def6a2"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-setup.html",
+    "sha256": "a6972e9c1bd4a827783052838ceb1c07091f73687f910a62273b64d56584ebcb"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-setup.txt",
+    "sha256": "75d5ac05b706e6e9592e3b60de8d77fdffd9f62fe43bf90105737182291926a2"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-start_trial.html",
+    "sha256": "41fa12211714b040dd5a98df00ff0bc5a73d1d89ab5b8715f03dad8bc2d39436"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-start_trial.txt",
+    "sha256": "5a106cd7761f13fbe5a0b93172a4264f9add362799d8f2ae2fd4459990a08aa4"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-workspace.html",
+    "sha256": "f384bf854341c63bee99ed8c593f019b1767ba095dbf7689dd9a33b7518e813d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-ai_visibility-workspace.txt",
+    "sha256": "ad0f27b369a7ae74d7dada2560468f6d70264bc04d8729f652d0d251442ed53f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-neutral.html",
+    "sha256": "a050716e28a9c7968423361072b6d3aba039c6aefd27680f24831335f058ff83"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-neutral.txt",
+    "sha256": "6046db0232ecb14bb9feec034d26af49ee876009aee79132b0aadcf9555f3ca1"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-restart.html",
+    "sha256": "e3c0b662c2ddd1218d274e80f74acf8d3f564e3305893c9cccd9e066d20d17f8"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-restart.txt",
+    "sha256": "405de7ab1a508852a4d56e44c2fc068169c2746dd4bd430ea05907238cb26830"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-setup.html",
+    "sha256": "e1e8b10ebb48e922f749bf1a745859295064151b6a5551a43bb4f4bc16ae7f75"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-setup.txt",
+    "sha256": "00b2f68cd3f0f3eb8de713a05ef033323d90812f44a7758217ab476becf5ca88"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-start_trial.html",
+    "sha256": "7313cdef08c214086b1c69b8bbf14b63527a936bf6714641b4b432fd569907f6"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-start_trial.txt",
+    "sha256": "bc58a06e207942d432cf84c601eb324b1b49414fa74a5b0aa952a03b9f61135b"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-workspace.html",
+    "sha256": "276e377ba9d98cc84767c33acf89c1bc8d93041e7c89db2de7a147e4b7f9d260"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-backlinks-workspace.txt",
+    "sha256": "ad5945c8b902ec5f5b2f34aea099a0e6b945e6c54f4bd4fe77c2bd1e9b96e10d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-neutral.html",
+    "sha256": "ba70aa8b727b9b2b1d03edf01a34bfae28aaa973c71029ed1943b97491a8842b"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-neutral.txt",
+    "sha256": "589ac864d00b7e49439758165ce4aa2ecc34d498bb71801be5c4131234195db7"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-restart.html",
+    "sha256": "960ee60d30d57bcbfc70291113fa4c31ce326ab9c881ef59ddbc12a9eeb15848"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-restart.txt",
+    "sha256": "329d37774846159326f9d78f1fc91ab1afc4768478d263cd8da0e0a3a9135a30"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-setup.html",
+    "sha256": "456c211c9f7f3f2077873aefc3d46570fcfe42f624841c3846da5c66a251e182"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-setup.txt",
+    "sha256": "130ebe06c79573215efcb84c0f59a4778f92130bca85fb99d25f9cf6edabeabe"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-start_trial.html",
+    "sha256": "e2d7e4f3f9b69ec2887db0e6fa8ad62637f299967186b7544000e9d5e6e12647"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-start_trial.txt",
+    "sha256": "7491404460ba65db4574ba37f8bf721de553db757e4f5d85fbe24143796e807a"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-workspace.html",
+    "sha256": "13242682dea0a1b41f4484f53334fbdabb905fc5e149cc0929e858281b87053e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-daily_brief-workspace.txt",
+    "sha256": "b37b4f2222fe987327273ea80e9c73639618886df086d0d381564fe8dcc2b313"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic-search-disconnected.html",
+    "sha256": "dc0bfdaec38cdda516bb18b39ce2223dcc0cc08ce85f3d341a88142b91970882"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic-search-disconnected.txt",
+    "sha256": "6351aec77d029f3e2f836634c4cd1c26974e093ea1fe2659376022eecdd6c397"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-neutral.html",
+    "sha256": "6bab939eb37bf029285de0352f8be99641b58b3878ff5a10d0ea697859b20fbe"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-neutral.txt",
+    "sha256": "7e8acae0675fe427094fa02031dcffcbd672d03e84b77f3082a8ae6d9ae588af"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-restart.html",
+    "sha256": "ccc50b52a46937a3ea5c83a7aad55f48781ad6ba796f3b182fd2e6e94029e754"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-restart.txt",
+    "sha256": "af31bf7e97eda4124d60d5d10f5691736503e7a0dd1f36ba1dfab8b9af3c7a5e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-setup.html",
+    "sha256": "7d6ce9c2ff8db777f736757e0781abb9eb1b9ab172d29cbd3c08494a66f8e7b5"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-setup.txt",
+    "sha256": "22d8255cb9fda0378abf2f47193745600215c5a9e71dad73c6186f2caec37b51"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-start_trial.html",
+    "sha256": "661fd676d6081ac2fdf8db876351b76c272d9370068294bf5772ec21198cfcb4"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-start_trial.txt",
+    "sha256": "ca8eb0f81ab1be6149046c23908af058d71b71ecfd8a0485eb36ca3fad19c0d1"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-workspace.html",
+    "sha256": "0d4ca832579abbc152c5661fca1ebff135e0784629d46ca23899fa9aadbbfbb0"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-organic_search-workspace.txt",
+    "sha256": "6e08c57c5b0a5d8d8bdf3d0c13e65ba84fa66e003c193d69f2b8d8d1234d716b"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-neutral.html",
+    "sha256": "956cb0e51f608fa31372c4687eb3b4541d5e8ed2b30ed3f5a75ef5a258f0086b"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-neutral.txt",
+    "sha256": "d4111262804ad070ac5cc414f9fb181e55bf32fa1b7cb9eb6a74848eaa72c291"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-restart.html",
+    "sha256": "ab9901bcd25f662e51e024931d1bac57e760eac97fc3240c46b8d3d9bd1c1f90"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-restart.txt",
+    "sha256": "b3e9a7a1999b9633c13a180474ec03b83fb159ea020290291d97cc3d2addec20"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-setup.html",
+    "sha256": "4b18de015acd5d8f9133531ddd086a2b44e0f7a7f40555ee4b8746f85c6422cd"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-setup.txt",
+    "sha256": "a94ba6d44bd5cf6b58b24687f47024dd8e382b8e593dfa003b0075dc1aba1e11"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-start_trial.html",
+    "sha256": "90bec0ec56d43a81401ed3f6c4433ad30f185b835c5a60bebfb5112876283430"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-start_trial.txt",
+    "sha256": "a7fc7e6aa3e1f63595513a5a9140b7281d2b20076dc5f0c7df1fdc5c313953ed"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-workspace.html",
+    "sha256": "065ff049d31437c0328d4a3c35278fe01275c7112e3d718877eb257f8b4645b1"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/lesson-social_marketing-workspace.txt",
+    "sha256": "fc6d1dfcf408d50930001a9ef7eb3acb1cd659b5070390235dac3531321adadb"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/before-anything-publishes.html",
+    "sha256": "df5313f70056af71582f2f69fd90b01aad329f93f5324bd38e955223351745d5"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/before-anything-publishes.txt",
+    "sha256": "728f4747952c4ecf576dda87ef78efedc0b9485116c8779eea1f7fa23f6989cc"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/drafts.txt",
+    "sha256": "bf5f835ae4fa05c416e654f11ad2807395f8ea8fab6068e5d245be6074dd6540"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/find-the-page-worth-refreshing.html",
+    "sha256": "5982a737a514ed75185f0924f81bffc5a8cd856d7b3a7a470fae2cf82d554a2f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/find-the-page-worth-refreshing.txt",
+    "sha256": "bd3d21b208c1e1ab7513e6623ebb2494368ef46ae3ab5bd591d2234cbb6debbe"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/index.html",
+    "sha256": "97986672d398692c952a5d4791af35ae04391273c86fe0f2d2450a11e6274ef9"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/join-a-useful-conversation.html",
+    "sha256": "0e3914331790498ab821a248f008915bde7cb4c3ff9b2a5ed65558e5e39b82a4"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/join-a-useful-conversation.txt",
+    "sha256": "b5a968e506c094a09bd9d32c305fa681730836f8bbc71b1465c36abf9e0103be"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/links-you-can-review.html",
+    "sha256": "e66f782ff945ba8699aacba01754007097b721ba30b06b4e94ed559d93221b65"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/links-you-can-review.txt",
+    "sha256": "12bfe73b94f4faecaf105e8bf599cea79eace12b5936578a40b74aaf48849f55"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/put-your-profile-to-work.html",
+    "sha256": "968945e0f8eeeb74eb383738345ff0cc986d649522917ecd5e4f768bc2fbfabe"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/put-your-profile-to-work.txt",
+    "sha256": "bfcc39d033625a19543d7fecddb650f13b5209cae54871e521ae48d2ffeb1657"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/see-the-ai-answer.html",
+    "sha256": "fea7b926f66988c532366ab7e48781710def9ce1e980e252e1684d82919e393f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/see-the-ai-answer.txt",
+    "sha256": "75731c4bd523b279b9d4ea81703bbe48dfe61017298582fdd94836873c61d2c0"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/why-we-built-radar.html",
+    "sha256": "5f86a3e62046c0bc48539f117b1e0d742e3e0a242ae1cfad14bdefa6b7bb8557"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/nurture/why-we-built-radar.txt",
+    "sha256": "f92eb8770f50983e38d2b8511fd18798040e1a1e1b7eeb8da293f41197a7946e"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/password_reset.html",
+    "sha256": "22556447c18b7894b3c5c74be6b54881f43a980d42b1a23b7571ea01c2e62dd6"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/password_reset.txt",
+    "sha256": "602373b30b6abb262226ec9eda30fd783761d1c606eff53666a5da2985ffc474"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/payment-failed-no-amount.html",
+    "sha256": "460f9e2e61ce18c66ccd69403f5d88bbdfb3a68e945bc3a9e8cff9cdb4a52407"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/payment-failed-no-amount.txt",
+    "sha256": "9edb91ab03ba19f96e6b393187b93b2e7704046ea304cfebb5535b968037100f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/payment_failed.html",
+    "sha256": "460f9e2e61ce18c66ccd69403f5d88bbdfb3a68e945bc3a9e8cff9cdb4a52407"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/payment_failed.txt",
+    "sha256": "baf2fa04219f4ea8b98c16fb8fc4723895d828c395cce0141d15a67c20545d5f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/subscription-setup-expired.html",
+    "sha256": "3628846a7ded75e1286da406d35d99df6c2ab940fe3ce0fc3cb4af9ffff6262d"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/subscription-setup-expired.txt",
+    "sha256": "919010984397972e23b119b388806078733f275ed125a6dc3db98333db5c55e9"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/subscription_ended.html",
+    "sha256": "56d00c4b535b5b481c2337561a189afd1db35c6480635d091c6642a6a4f084b0"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/subscription_ended.txt",
+    "sha256": "4725dc884424bfa41773872f2c7d846ceab28320f72c5e809d43db7eb6346bf5"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/trial_ending.html",
+    "sha256": "e7b7a54f8aa5ae53e669ca1c8697e03cb2f8457a422669b607781db2315db3b5"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/trial_ending.txt",
+    "sha256": "a15b8c71b81f393b8f11c7b41ee11668c12fcf55fe9f0d87e1307d9bcb600606"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/trial_started.html",
+    "sha256": "1e460a2b012f1b72e0539655577e0a8c110097619db476d1c8e1da7f426fc0ed"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/trial_started.txt",
+    "sha256": "f7f5d45c9bdeb204ff9631f42c2cb864463662baec4f2f824b4c1b234b31a625"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/welcome-neutral.html",
+    "sha256": "ddebf2852186a4ab04992c1b1b1271748ffb288b0c2b537acadb7978e078f132"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/welcome-neutral.txt",
+    "sha256": "0671b008049a65c5726562adebb9e72687c3bcd880900bbbbbbef5e9c0691402"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/welcome.html",
+    "sha256": "968945e0f8eeeb74eb383738345ff0cc986d649522917ecd5e4f768bc2fbfabe"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/welcome.txt",
+    "sha256": "221f28dc469551f4ac34582e50b03a6947846a8db635683360496ee3530a69ad"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-article_social.html",
+    "sha256": "345491c726bb29f18f062a15c67f0557fb6be098d76a006bfa6ecf269beafe9f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-article_social.txt",
+    "sha256": "3036d4ed2c603cd602c3e6b44c301ef4c92636dbcff2b8a752c474a13f6725dc"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-brief_reply.html",
+    "sha256": "2e562e8e505c2d35c8b610731f9d82b3057a20b4e5e3e899d2a39c39960b4550"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-brief_reply.txt",
+    "sha256": "d4bd4ad092add0db960f761fbe79eb385ddb9afc9495d7edb7d141c44cca86bc"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-calendar_review.html",
+    "sha256": "66ff6912e7bd0b14f47247d84d130b6d04e57774cbc9cc7daedbad165db1fc13"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-calendar_review.txt",
+    "sha256": "2f7af32a385d05bae3a135b7627ee27d73f5190148fd194ff673e3d5cea6d3ad"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-combined.html",
+    "sha256": "06b5122ad0cf27ef5a3b9f195a4cabd159f009bed2fab6f8c058fa1d78dd2a2a"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-combined.txt",
+    "sha256": "b5c440e74bbe5bc0367974b56471fd4c51398ccee0c9281818792d39bdf8e59c"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-social_publish.html",
+    "sha256": "109693d001a65e998eb5f60692ffe786043402019917ab312495e728051b3144"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work-social_publish.txt",
+    "sha256": "c04d0c4cc39ccaa6c3a9c6934388f5709e972494980f46015b2d476e48f41942"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_article_social.html",
+    "sha256": "345491c726bb29f18f062a15c67f0557fb6be098d76a006bfa6ecf269beafe9f"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_article_social.txt",
+    "sha256": "3036d4ed2c603cd602c3e6b44c301ef4c92636dbcff2b8a752c474a13f6725dc"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_brief_reply.html",
+    "sha256": "2e562e8e505c2d35c8b610731f9d82b3057a20b4e5e3e899d2a39c39960b4550"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_brief_reply.txt",
+    "sha256": "d4bd4ad092add0db960f761fbe79eb385ddb9afc9495d7edb7d141c44cca86bc"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_calendar_review.html",
+    "sha256": "66ff6912e7bd0b14f47247d84d130b6d04e57774cbc9cc7daedbad165db1fc13"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_calendar_review.txt",
+    "sha256": "2f7af32a385d05bae3a135b7627ee27d73f5190148fd194ff673e3d5cea6d3ad"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_social_publish.html",
+    "sha256": "109693d001a65e998eb5f60692ffe786043402019917ab312495e728051b3144"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_social_publish.txt",
+    "sha256": "c04d0c4cc39ccaa6c3a9c6934388f5709e972494980f46015b2d476e48f41942"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_update.html",
+    "sha256": "06b5122ad0cf27ef5a3b9f195a4cabd159f009bed2fab6f8c058fa1d78dd2a2a"
+  },
+  {
+    "path": ".factory/lifecycle-emails/previews/work_update.txt",
+    "sha256": "b5c440e74bbe5bc0367974b56471fd4c51398ccee0c9281818792d39bdf8e59c"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-comparison.html",
+    "sha256": "e3710463589ae00d1d9c007fca9f5b70b3cacef2143a824b8b4fb3c5d2c73589"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-comparison.txt",
+    "sha256": "4ebeed3ea4e77c81fc47189bf07ea4e01d544d776fedb4bf4ca2d9d821f40a43"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-miss.html",
+    "sha256": "0fa05647c1344daee00f8591622314e01f00f14b37ecd7cc03dd33d6dfdbd1e6"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-miss.txt",
+    "sha256": "084ca84324dd13bc8473b5e98924b869319418e1c81550cd82a6e8a36646ac7c"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-topic.html",
+    "sha256": "c6c056031da27fc6bf5c6e4d9825ac804dc95e6712be85e010465a817722ab47"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report-no-topic.txt",
+    "sha256": "1280ec277a42238f840d8db7e79d362371a04122332b5a0dcbafcdd8dfc7fbd8"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report.html",
+    "sha256": "d534d3bc07b3d1e8d553e5da1bf3d6db02bdeb63ce06234a1b1086adb66d8443"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/ai-weekly-report.txt",
+    "sha256": "315586b17ad133ba38e5fe1b39940dcfe8d1ac7e38e2a4b610175ee5f43cca1f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/all-emails.txt",
+    "sha256": "b0be06839bd0fc4bd5fd57c547a92e0ae50b3377f2fc9f24bf2590cdfd31f0c5"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/autopilot-actions.html",
+    "sha256": "3ee4054c2ea67e9440ee06b8225740f7b7f9b09b7970f47bff8ff83e7c444e25"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/autopilot-actions.txt",
+    "sha256": "e564098b4eba888818f26823c98216a5fe31ee54957f33023beeb0eb28facb3f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/autopilot-publication.html",
+    "sha256": "e8533ea6c43afb63664160ec7b48c0aeaed2631bef555ba89c15c26f548c01a6"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/autopilot-publication.txt",
+    "sha256": "9d983f8087691282ec7b741f0f3c57a95464d9fac5a4ad875086cbba10b63a62"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/autopilot-reply.html",
+    "sha256": "d676ddcf5c231718f20c932453f7a5fbc030f9ef72c2d110b8acbd428dc04c68"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/autopilot-reply.txt",
+    "sha256": "b1bd4657ea477e22e296fedfdbfa24cd70726235d2ee64185d2debb077510ff1"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-approved-manual.html",
+    "sha256": "16de456e34e64094dfae4ea9645e3e3a39a0317bca7b1e4456398c675fed1af2"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-approved-manual.txt",
+    "sha256": "014a70cc61f611a126325f5927f6e8a05146e73083d7bfe5307517884beab310"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-approved.html",
+    "sha256": "a521f453ee8c7372845b76b6374e6df8bb37f53230e2fea049cbd17ed0941629"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-approved.txt",
+    "sha256": "6cf0b06c13670cd23f256bd36a2223e30e1a50631c685a2e7664dd5ca23d80d2"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-declined.html",
+    "sha256": "ea96914aaa216213d2ab1317ed1c92b215d6e2bc12262c7ff546147865c02c05"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-declined.txt",
+    "sha256": "0be23f7c0ab522d55dd425756297c474bbdb597956a530bc1b320f9a46c41d1b"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-lost-missing.html",
+    "sha256": "eb75cc8abb9448230b48b113fc6e1514df05613f368ee722465543a722af3eb2"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-lost-missing.txt",
+    "sha256": "9f2a62a12e721601a473e3596daf293151f8eaae9febee068be407dc200416a6"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-lost-rel.html",
+    "sha256": "03e26ea66d412012cfcc987cd41939d8033207c837d5eb6737914bc784cc0d9d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-lost-rel.txt",
+    "sha256": "03c56d6ed77431988df763aeeb74850d5bf868abf5dd8db0636b2105a44543b3"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-removal.html",
+    "sha256": "8bab389fc9c7e7bf3e3fa3e080f386a8f16723d6ad4f8062a6af566a2b8ec8d9"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/backlink-removal.txt",
+    "sha256": "cb1f6f1afbac9d20b75ac3b604e7e1502ae14956e769979c8442fd924c3c1400"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/cancellation_scheduled.html",
+    "sha256": "17adca4d5e83eb20163278c4bd2e205357e662aa59bd4ecce0d9c268759cf3fc"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/cancellation_scheduled.txt",
+    "sha256": "f29e763e5de8c60aa87b27057c07e713576e3701c4decd0013fc90c7bd5b243f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/catalogue.html",
+    "sha256": "ae8c61940b45717c98c86c239a514645add6a9e71d53dff7d410f1398be72760"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/catalogue.json",
+    "sha256": "4f6446926bad5c86854e44f3137823042a96c5ad057d65744caf5f54ae284889"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/catalogue.md",
+    "sha256": "e47618d8957d73f3d858efbafd7afd5a67b36e2645dd05e38154eff96a74601e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/confirmation.html",
+    "sha256": "22c8fe281c4de20e361d001bb7f370997ac547be5e10ca7c29e65cdadf9e9a8c"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/confirmation.txt",
+    "sha256": "32e35e14c2daf28e1c0a0364d59185e6d998795f9df54c32fe2e0d15df11d893"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/founder_note.html",
+    "sha256": "5f86a3e62046c0bc48539f117b1e0d742e3e0a242ae1cfad14bdefa6b7bb8557"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/founder_note.txt",
+    "sha256": "8808f227ea200a48312490e5111285aad8b99166cfee42173615ab22e73e770f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-restart.html",
+    "sha256": "c9a9843f4f4a53c73e25816b70dca21ec3dd3c9b7a38496d615b371924a49645"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-restart.txt",
+    "sha256": "310117d23dd287fda10742bc96cf944ec6c1e0afb900e9db280c109dab1a382c"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-setup.html",
+    "sha256": "5800d47d19e5cd495fde21cbbc7bcefd34232824a6a92146ca0682a226d8a538"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-setup.txt",
+    "sha256": "104b967cd37eb95638aebb3bd331530a0f1eac8e858a6b9763573f53ef10363e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-start_trial.html",
+    "sha256": "9027b9b7102a92b0723adcd6f4395c2cf81c3fc1458594988dd66abafa229c2e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-start_trial.txt",
+    "sha256": "b3910ea791e961c40340197f23d684e2a0df81b07ae9b7afa573906c1ebb3d26"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-workspace.html",
+    "sha256": "8a37b60e7520482603755f0bca2203b0eab9552330f38d01f91a592dad9a9c36"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-article_workflow-workspace.txt",
+    "sha256": "017d303f90c619129d5c7d80e4421a163e1d93b1299c3bd3836da8c42b62a9c4"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-restart.html",
+    "sha256": "969450829c228e3bc6d21d2d47e698ee56e086dcb6bb70580c5897a63d0f7fea"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-restart.txt",
+    "sha256": "53128dbe2c07f802ffc3a30d9d0efdbe8afa5627c326b5f242b591c0f691310d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-setup.html",
+    "sha256": "f99a4ae6ad9821334cfafccf49df634b53500cc1d62fa315c820123745cf6c09"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-setup.txt",
+    "sha256": "3195c2cc3f3c82b23c77be5e061cc824e63f143629befa83bc779b936abe91f8"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-start_trial.html",
+    "sha256": "db7b752a130bc8a34c5b02fa75c42d83a85b6cc37d3122b53da34391a859beed"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-start_trial.txt",
+    "sha256": "e4868e451463ebff83383733b9ebcd88d205a3d643b775a8d317adba3c985689"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-workspace.html",
+    "sha256": "fad758a90a138f0223ab6968638fb19fb245a67f34c075fc074466f6ede5d59d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-autopilot_intro-workspace.txt",
+    "sha256": "bca57e1cc7f6e58cf11e73b5e42d4e4d4ef45e1f3c9af5efd8c7434ee46f3933"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-restart.html",
+    "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-restart.txt",
+    "sha256": "d4a8b7b4ace1ddb187bd2c8f3ada5d88ab4a43ca9812e68dfb7bec2fb45a459d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-setup.html",
+    "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-setup.txt",
+    "sha256": "3c5b3a4f9e817af4f5c392b2effb55d56b75bdb8d711eca9da2a698b768781a6"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-start_trial.html",
+    "sha256": "8565d92e1bc7785716c2725a2ec7b3bac1eb1b9abe4dc4eacd757cfa52d49411"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-start_trial.txt",
+    "sha256": "7b6bb5cff82151a540ae79efde4d41da808073f71f4997d4b65c03417631762f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-workspace.html",
+    "sha256": "5982a737a514ed75185f0924f81bffc5a8cd856d7b3a7a470fae2cf82d554a2f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/guide-search_refresh-workspace.txt",
+    "sha256": "7a25b034fcd945436179cb268354216d778370adf1c6ee6479df8a02e46121a9"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/index.html",
+    "sha256": "ce1edcec7ebaae2b04a247aa885d5dfede855a7a6e6007cb410e34d6c80598f2"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invitation-Admin.html",
+    "sha256": "3264d7ec387f152e808009b54598de652adf59b371f6f4eb7e6f1158b11d91cd"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invitation-Admin.txt",
+    "sha256": "e2366b398c92800e50f213d2fee2d2b414feaa6b003956dd0622b94c45a3e794"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invitation-Editor.html",
+    "sha256": "053a8a94963c3db5391b80dc3f6761ccd6bbd2b8fad579e78536d02d289b8fd3"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invitation-Editor.txt",
+    "sha256": "840148052be809c329d23d890f504e4b15b5679fdb48ca4e14ffa7fe49f61550"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invitation-Viewer.html",
+    "sha256": "512adf8c226da72624f0ad58b8c08334ab3fdc2ae8a668bc336ad096ddd6e07f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invitation-Viewer.txt",
+    "sha256": "79651aa6c6e26126ea8a0c8a39bcb88483a363180a10a5ef0023cbed0bc6c1af"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invoice-paid-no-amount.html",
+    "sha256": "e8ed9be0d190b100fab1f5a547edfc4338a7d36d5c6ddbe03f989d6fe4d1223e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invoice-paid-no-amount.txt",
+    "sha256": "164020fef8b1fb314eac37005dcabcc63d8d843e75abaa39dbd662aadbc1688f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invoice_paid.html",
+    "sha256": "9258db73cda7f9f20ec59c6194a49805e17e3ed4de53461ad638ed69b2e883ba"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/invoice_paid.txt",
+    "sha256": "274d98327d9d37c1c1e6e44b1b8d071fa6c15aaf9fe46b581b7ca4d50646bc3e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-neutral.html",
+    "sha256": "c646a86833af2870e13f632b7d830e109d26f739bd246f6b30548734c0a32610"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-neutral.txt",
+    "sha256": "4989dcebf7c990430a68347b12d11f411011e3f88dd368b906b61d78c3936e3c"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-restart.html",
+    "sha256": "2e3242f7d3ef3844a1ef5c825284d7efb5dcf90d8c14a108b1f53fc66cdbbc88"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-restart.txt",
+    "sha256": "1494e62864307acbf03da685db5ce50c6cf45b4e17347bead203df14a7def6a2"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-setup.html",
+    "sha256": "a6972e9c1bd4a827783052838ceb1c07091f73687f910a62273b64d56584ebcb"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-setup.txt",
+    "sha256": "75d5ac05b706e6e9592e3b60de8d77fdffd9f62fe43bf90105737182291926a2"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-start_trial.html",
+    "sha256": "41fa12211714b040dd5a98df00ff0bc5a73d1d89ab5b8715f03dad8bc2d39436"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-start_trial.txt",
+    "sha256": "5a106cd7761f13fbe5a0b93172a4264f9add362799d8f2ae2fd4459990a08aa4"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-workspace.html",
+    "sha256": "f384bf854341c63bee99ed8c593f019b1767ba095dbf7689dd9a33b7518e813d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-ai_visibility-workspace.txt",
+    "sha256": "ad0f27b369a7ae74d7dada2560468f6d70264bc04d8729f652d0d251442ed53f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-neutral.html",
+    "sha256": "a050716e28a9c7968423361072b6d3aba039c6aefd27680f24831335f058ff83"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-neutral.txt",
+    "sha256": "6046db0232ecb14bb9feec034d26af49ee876009aee79132b0aadcf9555f3ca1"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-restart.html",
+    "sha256": "e3c0b662c2ddd1218d274e80f74acf8d3f564e3305893c9cccd9e066d20d17f8"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-restart.txt",
+    "sha256": "405de7ab1a508852a4d56e44c2fc068169c2746dd4bd430ea05907238cb26830"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-setup.html",
+    "sha256": "e1e8b10ebb48e922f749bf1a745859295064151b6a5551a43bb4f4bc16ae7f75"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-setup.txt",
+    "sha256": "00b2f68cd3f0f3eb8de713a05ef033323d90812f44a7758217ab476becf5ca88"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-start_trial.html",
+    "sha256": "7313cdef08c214086b1c69b8bbf14b63527a936bf6714641b4b432fd569907f6"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-start_trial.txt",
+    "sha256": "bc58a06e207942d432cf84c601eb324b1b49414fa74a5b0aa952a03b9f61135b"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-workspace.html",
+    "sha256": "276e377ba9d98cc84767c33acf89c1bc8d93041e7c89db2de7a147e4b7f9d260"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-backlinks-workspace.txt",
+    "sha256": "ad5945c8b902ec5f5b2f34aea099a0e6b945e6c54f4bd4fe77c2bd1e9b96e10d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-neutral.html",
+    "sha256": "ba70aa8b727b9b2b1d03edf01a34bfae28aaa973c71029ed1943b97491a8842b"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-neutral.txt",
+    "sha256": "589ac864d00b7e49439758165ce4aa2ecc34d498bb71801be5c4131234195db7"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-restart.html",
+    "sha256": "960ee60d30d57bcbfc70291113fa4c31ce326ab9c881ef59ddbc12a9eeb15848"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-restart.txt",
+    "sha256": "329d37774846159326f9d78f1fc91ab1afc4768478d263cd8da0e0a3a9135a30"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-setup.html",
+    "sha256": "456c211c9f7f3f2077873aefc3d46570fcfe42f624841c3846da5c66a251e182"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-setup.txt",
+    "sha256": "130ebe06c79573215efcb84c0f59a4778f92130bca85fb99d25f9cf6edabeabe"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-start_trial.html",
+    "sha256": "e2d7e4f3f9b69ec2887db0e6fa8ad62637f299967186b7544000e9d5e6e12647"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-start_trial.txt",
+    "sha256": "7491404460ba65db4574ba37f8bf721de553db757e4f5d85fbe24143796e807a"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-workspace.html",
+    "sha256": "13242682dea0a1b41f4484f53334fbdabb905fc5e149cc0929e858281b87053e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-daily_brief-workspace.txt",
+    "sha256": "b37b4f2222fe987327273ea80e9c73639618886df086d0d381564fe8dcc2b313"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic-search-disconnected.html",
+    "sha256": "dc0bfdaec38cdda516bb18b39ce2223dcc0cc08ce85f3d341a88142b91970882"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic-search-disconnected.txt",
+    "sha256": "6351aec77d029f3e2f836634c4cd1c26974e093ea1fe2659376022eecdd6c397"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-neutral.html",
+    "sha256": "6bab939eb37bf029285de0352f8be99641b58b3878ff5a10d0ea697859b20fbe"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-neutral.txt",
+    "sha256": "7e8acae0675fe427094fa02031dcffcbd672d03e84b77f3082a8ae6d9ae588af"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-restart.html",
+    "sha256": "ccc50b52a46937a3ea5c83a7aad55f48781ad6ba796f3b182fd2e6e94029e754"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-restart.txt",
+    "sha256": "af31bf7e97eda4124d60d5d10f5691736503e7a0dd1f36ba1dfab8b9af3c7a5e"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-setup.html",
+    "sha256": "7d6ce9c2ff8db777f736757e0781abb9eb1b9ab172d29cbd3c08494a66f8e7b5"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-setup.txt",
+    "sha256": "22d8255cb9fda0378abf2f47193745600215c5a9e71dad73c6186f2caec37b51"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-start_trial.html",
+    "sha256": "661fd676d6081ac2fdf8db876351b76c272d9370068294bf5772ec21198cfcb4"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-start_trial.txt",
+    "sha256": "ca8eb0f81ab1be6149046c23908af058d71b71ecfd8a0485eb36ca3fad19c0d1"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-workspace.html",
+    "sha256": "0d4ca832579abbc152c5661fca1ebff135e0784629d46ca23899fa9aadbbfbb0"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-organic_search-workspace.txt",
+    "sha256": "6e08c57c5b0a5d8d8bdf3d0c13e65ba84fa66e003c193d69f2b8d8d1234d716b"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-neutral.html",
+    "sha256": "956cb0e51f608fa31372c4687eb3b4541d5e8ed2b30ed3f5a75ef5a258f0086b"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-neutral.txt",
+    "sha256": "d4111262804ad070ac5cc414f9fb181e55bf32fa1b7cb9eb6a74848eaa72c291"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-restart.html",
+    "sha256": "ab9901bcd25f662e51e024931d1bac57e760eac97fc3240c46b8d3d9bd1c1f90"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-restart.txt",
+    "sha256": "b3e9a7a1999b9633c13a180474ec03b83fb159ea020290291d97cc3d2addec20"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-setup.html",
+    "sha256": "4b18de015acd5d8f9133531ddd086a2b44e0f7a7f40555ee4b8746f85c6422cd"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-setup.txt",
+    "sha256": "a94ba6d44bd5cf6b58b24687f47024dd8e382b8e593dfa003b0075dc1aba1e11"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-start_trial.html",
+    "sha256": "90bec0ec56d43a81401ed3f6c4433ad30f185b835c5a60bebfb5112876283430"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-start_trial.txt",
+    "sha256": "a7fc7e6aa3e1f63595513a5a9140b7281d2b20076dc5f0c7df1fdc5c313953ed"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-workspace.html",
+    "sha256": "065ff049d31437c0328d4a3c35278fe01275c7112e3d718877eb257f8b4645b1"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/lesson-social_marketing-workspace.txt",
+    "sha256": "fc6d1dfcf408d50930001a9ef7eb3acb1cd659b5070390235dac3531321adadb"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/password_reset.html",
+    "sha256": "22556447c18b7894b3c5c74be6b54881f43a980d42b1a23b7571ea01c2e62dd6"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/password_reset.txt",
+    "sha256": "602373b30b6abb262226ec9eda30fd783761d1c606eff53666a5da2985ffc474"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/payment-failed-no-amount.html",
+    "sha256": "460f9e2e61ce18c66ccd69403f5d88bbdfb3a68e945bc3a9e8cff9cdb4a52407"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/payment-failed-no-amount.txt",
+    "sha256": "9edb91ab03ba19f96e6b393187b93b2e7704046ea304cfebb5535b968037100f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/payment_failed.html",
+    "sha256": "460f9e2e61ce18c66ccd69403f5d88bbdfb3a68e945bc3a9e8cff9cdb4a52407"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/payment_failed.txt",
+    "sha256": "baf2fa04219f4ea8b98c16fb8fc4723895d828c395cce0141d15a67c20545d5f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/subscription-setup-expired.html",
+    "sha256": "3628846a7ded75e1286da406d35d99df6c2ab940fe3ce0fc3cb4af9ffff6262d"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/subscription-setup-expired.txt",
+    "sha256": "919010984397972e23b119b388806078733f275ed125a6dc3db98333db5c55e9"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/subscription_ended.html",
+    "sha256": "56d00c4b535b5b481c2337561a189afd1db35c6480635d091c6642a6a4f084b0"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/subscription_ended.txt",
+    "sha256": "4725dc884424bfa41773872f2c7d846ceab28320f72c5e809d43db7eb6346bf5"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/trial_ending.html",
+    "sha256": "e7b7a54f8aa5ae53e669ca1c8697e03cb2f8457a422669b607781db2315db3b5"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/trial_ending.txt",
+    "sha256": "a15b8c71b81f393b8f11c7b41ee11668c12fcf55fe9f0d87e1307d9bcb600606"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/trial_started.html",
+    "sha256": "1e460a2b012f1b72e0539655577e0a8c110097619db476d1c8e1da7f426fc0ed"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/trial_started.txt",
+    "sha256": "f7f5d45c9bdeb204ff9631f42c2cb864463662baec4f2f824b4c1b234b31a625"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/welcome-neutral.html",
+    "sha256": "ddebf2852186a4ab04992c1b1b1271748ffb288b0c2b537acadb7978e078f132"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/welcome-neutral.txt",
+    "sha256": "0671b008049a65c5726562adebb9e72687c3bcd880900bbbbbbef5e9c0691402"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/welcome.html",
+    "sha256": "968945e0f8eeeb74eb383738345ff0cc986d649522917ecd5e4f768bc2fbfabe"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/welcome.txt",
+    "sha256": "221f28dc469551f4ac34582e50b03a6947846a8db635683360496ee3530a69ad"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-article_social.html",
+    "sha256": "345491c726bb29f18f062a15c67f0557fb6be098d76a006bfa6ecf269beafe9f"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-article_social.txt",
+    "sha256": "3036d4ed2c603cd602c3e6b44c301ef4c92636dbcff2b8a752c474a13f6725dc"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-brief_reply.html",
+    "sha256": "2e562e8e505c2d35c8b610731f9d82b3057a20b4e5e3e899d2a39c39960b4550"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-brief_reply.txt",
+    "sha256": "d4bd4ad092add0db960f761fbe79eb385ddb9afc9495d7edb7d141c44cca86bc"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-calendar_review.html",
+    "sha256": "66ff6912e7bd0b14f47247d84d130b6d04e57774cbc9cc7daedbad165db1fc13"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-calendar_review.txt",
+    "sha256": "2f7af32a385d05bae3a135b7627ee27d73f5190148fd194ff673e3d5cea6d3ad"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-combined.html",
+    "sha256": "06b5122ad0cf27ef5a3b9f195a4cabd159f009bed2fab6f8c058fa1d78dd2a2a"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-combined.txt",
+    "sha256": "b5c440e74bbe5bc0367974b56471fd4c51398ccee0c9281818792d39bdf8e59c"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-social_publish.html",
+    "sha256": "109693d001a65e998eb5f60692ffe786043402019917ab312495e728051b3144"
+  },
+  {
+    "path": ".factory/lifecycle-refinement/previews/work-social_publish.txt",
+    "sha256": "c04d0c4cc39ccaa6c3a9c6934388f5709e972494980f46015b2d476e48f41942"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-restart.html",
+    "sha256": "2ddaf2bba5eca2818982907b31a4a2f81617c28e7eac482f038c240d700a2932"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-restart.txt",
+    "sha256": "e00966fc2b0b4d3e1864bb19db812b01084473618d55f18558f31bceba1fff85"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-setup.html",
+    "sha256": "d686285f896705a0247d920f9676438782f89e908d645997901c6921e873c232"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-setup.txt",
+    "sha256": "c47b1486b5d56718bb1dba8a619c800c19a7dc73c14315ced782640a927cc8c1"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-start_trial.html",
+    "sha256": "2529a5823a6fbae46cf49154297cd6d73b653c87e2e1f2109ed724402c3fa1b3"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-start_trial.txt",
+    "sha256": "c2d5c9cbc67054793e375c70404b5cd759c2fb1509c932cd76c4bcaa9e93c0f3"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-workspace.html",
+    "sha256": "668bea20f07c7f6836cf017d02b7e13c6e0b1cca030e080c0f3907673205f04f"
+  },
+  {
+    "path": ".factory/weekly-education/previews/1-ai_visibility-workspace.txt",
+    "sha256": "3c99264f11c93f53c6c387faf98f5fc7d9d5efb2e57e194a6390f6315afdbb7a"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-restart.html",
+    "sha256": "6fb4a91559114258f9299da27c280422fc7c8ee4199b97cd950ba76a0d5fb22b"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-restart.txt",
+    "sha256": "22063743cd184ca5ee0aa2e9fe533873d7ca4cf5dc920555117dba1de8f989eb"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-setup.html",
+    "sha256": "4c30b1f1c1882db3df45b7ce18142a815c7da7e54cbee17e17a8356f916303c6"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-setup.txt",
+    "sha256": "c395c9cec61fb2e35d7aa9e21bc7e00029cfc687791a431f41c0abfd39586fc3"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-start_trial.html",
+    "sha256": "dae1b81314835ccb2b7ea8766870647942f33891bdc5a859b46385d431c48f8d"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-start_trial.txt",
+    "sha256": "cff5cbdfc374359593c2561bbcd12b6399efa7017f4b52693b34f4712296200f"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-workspace.html",
+    "sha256": "c16c1e917f858cd2a9f993e48f37670d234f72bf061663482bfb955822ee6daf"
+  },
+  {
+    "path": ".factory/weekly-education/previews/2-daily_brief-workspace.txt",
+    "sha256": "9722ae9eb92641c789848a7437074b1b8a97d4a44c495bfcc77ab38bf4e4b1b3"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-restart.html",
+    "sha256": "367f1473a8886ec6b49f1c957d64aca36d23ecee2aafa4390b2369aef7029ad5"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-restart.txt",
+    "sha256": "c20931d734b243c550f47986b2de07e5b8dc0929ca1c1fbd0cce49af3e43319a"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-setup.html",
+    "sha256": "f03ea364667a8c4d01b79abb72c634f2701f5222ef9102c63f98d35b347f72bd"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-setup.txt",
+    "sha256": "375ee900622f638198ebc91e6181c4223463ce7f7abfb541b83746440fd70d7b"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-start_trial.html",
+    "sha256": "f440f2d16c911d604120997ddb50eebff0505aeddaf865e757bab258b4ce4815"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-start_trial.txt",
+    "sha256": "9efc93bf97563dd59f6354e5688ddf32f2907b52f008436e7bcb4f6f59e8acb9"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-workspace.html",
+    "sha256": "1ce1f3f196eff530710dbcc8abac739ebcf5e12a63748b9f6bcf7d9796dd89ea"
+  },
+  {
+    "path": ".factory/weekly-education/previews/3-backlinks-workspace.txt",
+    "sha256": "a01475ea1400874c2b0cf0043e41f2d5bd683b36bfa963cc006b6da7c288313f"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-restart.html",
+    "sha256": "9d9b2a393e4a09056a079bbf95130c1853d9fa57a9261a27f4923c3148f04bc8"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-restart.txt",
+    "sha256": "198742414bc2e7a70cf7c9738e837515be5d93b8429f3cdac11fbb4eeee49d65"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-setup.html",
+    "sha256": "0901aa0c9b2113904e5513ec3df7e99808ceb405bf79596dcaab77e6f36896fe"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-setup.txt",
+    "sha256": "df4bb6a47cbeb5151d717139c1d85b0aa71e8410c1b7d328b0647ba4724700cf"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-start_trial.html",
+    "sha256": "0dba56ffc93f1330435a86deedda221f0193539f01f6af2ae2b023e331ecc2c6"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-start_trial.txt",
+    "sha256": "43edc10106a968082d2767839190ac1924db19785777a9aae11857f7da5b3843"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-workspace.html",
+    "sha256": "0ef136b7db385461191ebd6b3090ab61ae924b3801f4c997f840fa24eeb89064"
+  },
+  {
+    "path": ".factory/weekly-education/previews/4-organic_search-workspace.txt",
+    "sha256": "9028eba94853bcf98f08111f2e563445e8c9842ae7c3836d8f8a2ab7854f7e37"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-restart.html",
+    "sha256": "700a7c07d7ec0819119ea21d8d9087706f34d335ea8f6147ec1913999f6a4df5"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-restart.txt",
+    "sha256": "9f9991d3b365a53fab967b27f4bf7e36d4b6e984a2f4c10dcb35abefc817a005"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-setup.html",
+    "sha256": "b5d3412ce71d0a1409fe87bc678703eaf2e655c2e1abfb7b39d93b9be081f528"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-setup.txt",
+    "sha256": "403b6dc051a58adaf7cb368ef1c31ae0a8a27537e8e07f1800d4bd961c95a4c9"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-start_trial.html",
+    "sha256": "44bffb5f2b4b4f5ea112e4045d3bfbc0e4a919fa6a8de7b55a09773ce72cbfe8"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-start_trial.txt",
+    "sha256": "4bbfbe1e0f0b2cef7ab429803f2c93150126a3f0166a7fc10eb10cf35ca23ae3"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-workspace.html",
+    "sha256": "a6f743144950cbcddd14366d11422349e8205cf630484aeb0a314141e427d666"
+  },
+  {
+    "path": ".factory/weekly-education/previews/5-social_marketing-workspace.txt",
+    "sha256": "aa4272976d0da2c0913a1673f989b4936bfc919c3d4429791f0829c88430e080"
+  },
+  {
+    "path": ".factory/weekly-education/previews/index.html",
+    "sha256": "861674c2de96dd0ce7f41ffdb5bc7d44c1c69e3cf1089464a98362cc5a44ad63"
+  },
+  {
+    "path": ".factory/weekly-education/previews/sequence.txt",
+    "sha256": "e5d9b2ec49e6b38a4404d330cbe4d486f5fe046050d987d2d9fabdde828b6d2d"
+  }
+]

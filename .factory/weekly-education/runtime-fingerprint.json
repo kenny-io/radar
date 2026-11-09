@@ -1,0 +1,138 @@
+{
+  "baseHead": "bed41631544a7a484d132ca75679bbee146eae44",
+  "aggregateSha256": "86437925dc93878739c1b200301f72e1dd4135abd5cb52a1ed0f6a179615dab6",
+  "files": [
+    {
+      "path": ".env.example",
+      "sha256": "97abfa74c10d50eb7f8a72c05114dff4f18e1f936ec4fdcbb846850f5e3ed2e8"
+    },
+    {
+      "path": "drizzle/0012_weekly_education.sql",
+      "sha256": "01e37f79634f2553457a7e2b5ff8ef8eb8ba794a97ea7281964f1896eb12daab"
+    },
+    {
+      "path": "drizzle/meta/0012_snapshot.json",
+      "sha256": "885b1b98d37fee2b92048aa9d67d20972b3550d666cd17bda190fe5e120b2ed0"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "af513195cb5176791727b311991fc6d5fa8c5cfc408d9c2236b2dd9fa221b172"
+    },
+    {
+      "path": "next.config.ts",
+      "sha256": "43ed590ec193b12057e90864e0159d7e503f433c636952ccdef54b8d9ce0f8e0"
+    },
+    {
+      "path": "src/app/api/email-preferences/route.ts",
+      "sha256": "5386cf62ebe489e308f9a4ac56a27a1f106144d0479ef29f7ff25dcc34f12978"
+    },
+    {
+      "path": "src/app/api/me/education-preferences/route.ts",
+      "sha256": "8bc989962e78d87acb07f36e14aa679f7502b351fc0ba72527cacee3350cc28b"
+    },
+    {
+      "path": "src/app/email-preferences/PreferenceForm.tsx",
+      "sha256": "68a5f38cd6dd05d739140b1ac7ca878b56ff6cda58a1c9fbda26a8b4360e38e2"
+    },
+    {
+      "path": "src/app/email-preferences/page.tsx",
+      "sha256": "b9ae60d43216b1728e36d0414ba27703384160e33845fc3b045573b42bbfec61"
+    },
+    {
+      "path": "src/app/email/learn/route.ts",
+      "sha256": "2a3aec5bb9ab873cf98da06bf04c03c04a914c65402f6b5b29200938b297fd41"
+    },
+    {
+      "path": "src/features/performance/Performance.tsx",
+      "sha256": "608d91deb9dd0677db789b6cd99ba988c2a18bbf2c5597fb2b4d394ef12a66f5"
+    },
+    {
+      "path": "src/features/settings/EducationPreference.tsx",
+      "sha256": "c6973fe07d19971b25c75a55041123efc5ea321bf1c0b6114b1fa2a6deb01659"
+    },
+    {
+      "path": "src/features/settings/EmailSettings.tsx",
+      "sha256": "d9edf8df9eab8088f3e47510ac2a690ebf6e4b636122e66c621e508cc166f242"
+    },
+    {
+      "path": "src/server/auth/signupEmails.test.ts",
+      "sha256": "4492e300398ea56f6e0d67c83a6811c12f250ddb22935498ac7e7ca0e0707ecc"
+    },
+    {
+      "path": "src/server/billing/guard.ts",
+      "sha256": "36250cf8e25297f98753b0f018389f88e04302ee837b40bfea311d59cea78266"
+    },
+    {
+      "path": "src/server/db/schema.ts",
+      "sha256": "5ccf83e4472c92520b79f6e8418c772afd6896e7598d487061831d21b2fdbde1"
+    },
+    {
+      "path": "src/server/db/workerReady.ts",
+      "sha256": "8a316749456ed2407ae8d61b40d9a40d8f027e57bc0b09faae275ec037918d5c"
+    },
+    {
+      "path": "src/server/services/lifecycle/dispatch.ts",
+      "sha256": "3edfae8f7e99b0461cce253633c40ed1e835c8205f8190733b3d1bf74ae7e5d9"
+    },
+    {
+      "path": "src/server/services/lifecycle/education.test.ts",
+      "sha256": "252b70ea14deccdcb45442ec95374a3a1cd3afaa89288632bfc8bbd393bf6e22"
+    },
+    {
+      "path": "src/server/services/lifecycle/education.ts",
+      "sha256": "82d074edc184c6079f5db3dbcf1c0bb23d8ebbb45ae971e426672304757f4ec4"
+    },
+    {
+      "path": "src/server/services/lifecycle/educationContent.test.ts",
+      "sha256": "20255092d0eb1f71b1924cc2eee818e759386d71a602f61c071755419d5b7941"
+    },
+    {
+      "path": "src/server/services/lifecycle/educationContent.ts",
+      "sha256": "b00607ef0c931d92df601097b55c9a6d01d2e8df14fef3926fea5cb222119172"
+    },
+    {
+      "path": "src/server/services/lifecycle/educationLinks.ts",
+      "sha256": "d53bde2725a0040cb9f0d316bc1ed8a642cd954d926e9c9020ad11c8dfe807f8"
+    },
+    {
+      "path": "src/server/services/lifecycle/educationRoutes.test.ts",
+      "sha256": "386a4c6a102bc3bd3b6acfaadf43185e715e02d57ec9371c1c012f6823db2014"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagement.test.ts",
+      "sha256": "93b42de2923efc31d4bb27768aae77b430e9413d33f737a3a1785bff290efa3c"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagement.ts",
+      "sha256": "f7d4f41aadded1de1da3573dbe167b167305d7e047cd336b3c681f34b6403c4b"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagementJobs.ts",
+      "sha256": "10cba1d63d3852114327b527aed433d49047d6d47425e0d50ffe87b5de6aa155"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagementRoutes.test.ts",
+      "sha256": "d3dc41000a5d76877df1a89757476f3c9d16017727bed7976ee1302caca54d81"
+    },
+    {
+      "path": "src/server/services/lifecycle/preferences.ts",
+      "sha256": "3d205f6cdfa9e17c39d11b99ecf649b899df5139e56b101bb5d286c09526b058"
+    },
+    {
+      "path": "src/server/services/lifecycle/queue.ts",
+      "sha256": "9366b7c1f13e5b9b6621c233a0d84017b487b096deec73409b87dc7ce2a001f1"
+    },
+    {
+      "path": "src/server/services/lifecycle/templates.test.ts",
+      "sha256": "abbab3d5f16c02c55a0ca7c0f5c80fec4ba155a0c85512f71b96914c94fc093f"
+    },
+    {
+      "path": "src/server/services/lifecycle/templates.ts",
+      "sha256": "f2d0d4734de318cd21d1b95fbc3e7496d55a51daae25f9716908f39ab7e943fe"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "37c9a39ec27ee89589c9b813554749b72b833f3d62beddfff82690e898636026"
+    }
+  ]
+}

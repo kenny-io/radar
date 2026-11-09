@@ -1,0 +1,3 @@
+{"check":"migrated schema ready","pass":true}
+[worker] waiting for database migrations before processing jobs
+{"check":"empty schema refused","pass":true}

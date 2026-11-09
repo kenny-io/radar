@@ -1,0 +1,117 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[radar.failure] {"id":"41df8b07-451b-4ad5-af77-5f9a9bbe2022","timestamp":"2026-11-04T12:00:00.000Z","environment":"test","service":"web","context":{"source":"brief","operation":"brief.source","businessId":"54fa1eb2-55ba-4289-b470-652717aab70f","ref":"2026-11-04","provider":"reddit","attempt":0,"maxAttempts":1,"degraded":false,"jobId":"afa7fc34-7ac9-4842-b6cd-97f81f2598a8"},"rootOperation":"brief.scan","error":{"name":"Error","message":"reddit (stub) failed on purpose (BRIEF_STUB_FAIL)"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[brief.scan] reddit source failed: reddit (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/lifecycle/engagement.test.ts (15 tests) 9884ms
+   ✓ conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs  9559ms
+ ✓ src/server/services/lifecycle/guides.test.ts (15 tests) 1072ms
+ ✓ src/server/services/lifecycle/autopilotIntro.test.ts (17 tests) 726ms
+stderr | src/server/services/lifecycle/education.test.ts > weekly education (real PostgreSQL; fake provider) > retains frozen body and key after an ambiguous provider failure and blocks expired retries
+[lifecycle] delivery failed {
+  id: '22e0afa0-e83b-4f8e-8750-7d2bb44abec2',
+  type: 'weekly_education',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/lifecycle/education.test.ts (27 tests) 528ms
+ ✓ src/server/observability/qa.test.ts (8 tests) 664ms
+   ✓ independent durable failure delivery against PostgreSQL > persists a failed operation before sending, retries the same immutable envelope, and never recursively alerts on email failure  335ms
+ ✓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests) 435ms
+   ✓ engagement settings, opt-out and work links (local database) > preserves the work destination through actual password and Google sign-in  319ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: 'f02e9aac-0597-403e-9409-246809162b03', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: '9ec4558d-5c2e-47e3-9e73-1ef954cb65a9',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: 'fe62f2c8-4ef0-45c3-b7c4-c0860b455b19',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: '986eaf08-73a4-4c6d-bcf9-d7cfd2e6c738',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 183ms
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > retries the same recipient inside the window using the original body, subject and provider key
+[radar.failure] {"id":"c1bbf44f-a654-46ba-8697-acf646af63d9","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > blocks an unsent idempotent row at exactly23hours without another POST or key/body change
+[radar.failure] {"id":"8dac012e-a088-4398-8c64-f221f79c8ecd","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > blocks an unsent idempotent row at exactly23hours without another POST or key/body change
+[radar.failure] {"id":"becd5d23-8bd0-4704-bb24-c9621c567209","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"The email retry window expired. Delivery was held.","status":409,"code":"mail_retry_expired"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > turns stale-recipient and expired handoff retries into controlled permanent failures
+[radar.failure] {"id":"7290310a-5255-4800-95cd-61d441d14efe","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > turns stale-recipient and expired handoff retries into controlled permanent failures
+[radar.failure] {"id":"d6411012-f086-49e1-ae5f-b6ed8f3cf4f3","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"The email recipient changed. Delivery was held.","status":409,"code":"mail_recipient_changed"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | src/server/services/lifecycle/autopilotIntegration.test.ts > deployed Autopilot and lifecycle integration (fake mail only) > turns stale-recipient and expired handoff retries into controlled permanent failures
+[radar.failure] {"id":"60e3e263-a276-44ab-a5e5-2dabeaa40946","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"The email retry window expired. Delivery was held.","status":409,"code":"mail_retry_expired"},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+ ✓ src/server/services/lifecycle/autopilotIntegration.test.ts (7 tests) 133ms
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted trial_ending rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > retires future/due/expired/malformed/attempted workspace_ready rows even without credentials, preserving history
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes
+[radar.failure] {"id":"ba63314f-b178-49b8-894a-90c56185e943","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes
+[radar.failure] {"id":"f60bcf17-434f-4242-a255-c472cf2de128","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > keeps new internal service forwards separate and does not let retries override the stored identity
+[radar.failure] {"id":"a7efcba9-bb00-4ace-97c4-de5e5959c2da","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/lifecycle/founderIdentity.test.ts > founder transport and retired-message safety (fake provider only) > keeps new internal service forwards separate and does not let retries override the stored identity
+[radar.failure] {"id":"a4b3d122-2721-40de-a6ff-a80cdc5fcb3d","timestamp":"2026-11-10T12:00:00.000Z","environment":"test","service":"web","context":{"source":"system","operation":"mail.send","provider":"Resend"},"rootOperation":"mail.send","error":{"name":"Error","message":"Resend 503: ","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/lifecycle/founderIdentity.test.ts (16 tests) 93ms
+stdout | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub 60c88f2f-4ab3-4b5e-a4fe-efbe03e8b336 s:work-pack-9b6f5d19-6db3-48e8-ba78-878f4b4aa780:x: posted (attempt 1, now)
+
+stderr | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub 60c88f2f-4ab3-4b5e-a4fe-efbe03e8b336: work reminder resolution failed after posted save
+
+ ✓ src/server/services/lifecycle/engagementPublishing.test.ts (3 tests) 78ms
+ ✓ src/server/services/lifecycle/educationRoutes.test.ts (4 tests) 66ms
+ ✓ src/server/services/lifecycle/templates.test.ts (26 tests) 29ms
+ ✓ src/server/observability/failures.test.ts (8 tests) 20ms
+ ✓ src/server/observability/delivery.test.ts (13 tests) 29ms
+ ✓ src/server/services/publishing/render.test.ts (25 tests) 19ms
+ ✓ src/server/observability/email.test.ts (6 tests) 36ms
+ ✓ src/server/db/workerReady.test.ts (6 tests) 5ms
+ ✓ src/server/services/lifecycle/educationContent.test.ts (4 tests) 3ms
+stderr | src/server/services/lifecycle/worker.test.ts > dedicated lifecycle dispatch loop > retains the loop after one failed iteration
+[lifecycle] dispatcher iteration failed; durable queue retained
+
+ ✓ src/server/services/lifecycle/worker.test.ts (3 tests) 3ms
+ ✓ src/server/observability/jobs.test.ts (2 tests) 3ms
+
+ Test Files  20 passed (20)
+      Tests  228 passed (228)
+   Start at  02:47:43
+   Duration  22.67s (transform 693ms, setup 0ms, collect 5.70s, tests 14.01s, environment 2ms, prepare 743ms)
+

@@ -1,0 +1,117 @@
+
+> radar@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.28
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 19.5s
+   Linting and checking validity of types ...
+
+   We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+   The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+   	- include was updated to add '.next-email-release/types/**/*.ts'
+
+   Collecting page data ...
+   Generating static pages (0/39) ...
+   Generating static pages (9/39) 
+   Generating static pages (19/39) 
+   Generating static pages (29/39) 
+ ✓ Generating static pages (39/39)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                   Size  First Load JS
+┌ ƒ /                                      4.82 kB         130 kB
+├ ƒ /_not-found                              999 B         104 kB
+├ ƒ /api/admin/metrics                       242 B         103 kB
+├ ƒ /api/auth/forgot-password                242 B         103 kB
+├ ƒ /api/auth/google/callback                242 B         103 kB
+├ ƒ /api/auth/google/start                   242 B         103 kB
+├ ƒ /api/auth/reset-password                 242 B         103 kB
+├ ƒ /api/auth/signin                         242 B         103 kB
+├ ƒ /api/auth/signout                        242 B         103 kB
+├ ƒ /api/auth/signup                         242 B         103 kB
+├ ƒ /api/auth/verification/resend            242 B         103 kB
+├ ƒ /api/auth/verify-email                   242 B         103 kB
+├ ƒ /api/b                                   242 B         103 kB
+├ ƒ /api/b/[bid]/act                         242 B         103 kB
+├ ƒ /api/b/[bid]/events                      242 B         103 kB
+├ ƒ /api/b/[bid]/media                       242 B         103 kB
+├ ƒ /api/b/[bid]/support                     242 B         103 kB
+├ ƒ /api/b/[bid]/workspace                   242 B         103 kB
+├ ƒ /api/b/current                           242 B         103 kB
+├ ƒ /api/billing/confirm                     242 B         103 kB
+├ ƒ /api/billing/dev/confirm-intent          242 B         103 kB
+├ ƒ /api/billing/dev/simulate                242 B         103 kB
+├ ƒ /api/billing/overview                    242 B         103 kB
+├ ƒ /api/billing/portal                      242 B         103 kB
+├ ƒ /api/billing/restart                     242 B         103 kB
+├ ƒ /api/billing/start                       242 B         103 kB
+├ ƒ /api/billing/state                       242 B         103 kB
+├ ƒ /api/billing/webhook                     242 B         103 kB
+├ ƒ /api/email-preferences                   242 B         103 kB
+├ ƒ /api/files/[...key]                      242 B         103 kB
+├ ƒ /api/health                              242 B         103 kB
+├ ƒ /api/invites/[token]                     242 B         103 kB
+├ ƒ /api/me                                  242 B         103 kB
+├ ƒ /api/me/education-preferences            242 B         103 kB
+├ ƒ /api/me/email-preferences                242 B         103 kB
+├ ƒ /api/oauth/[provider]/callback           242 B         103 kB
+├ ƒ /api/oauth/[provider]/start              242 B         103 kB
+├ ○ /apple-icon.png                            0 B            0 B
+├ ƒ /article/[id]                          10.5 kB         161 kB
+├ ƒ /backlinks                               11 kB         120 kB
+├ ○ /blog                                    690 B         126 kB
+├ ● /blog/[slug]                             690 B         126 kB
+├   ├ /blog/does-chatgpt-recommend-you
+├   ├ /blog/rank-a-new-website
+├   ├ /blog/reddit-without-getting-banned
+├   └ [+2 more paths]
+├ ○ /blog/rss.xml                            242 B         103 kB
+├ ƒ /bot                                   3.77 kB         116 kB
+├ ƒ /brief                                   16 kB         156 kB
+├ ƒ /calendar                              3.45 kB         142 kB
+├ ƒ /dashboard                             7.24 kB         143 kB
+├ ƒ /email-preferences                     2.52 kB         131 kB
+├ ƒ /email/learn                             242 B         103 kB
+├ ƒ /email/open                              242 B         103 kB
+├ ○ /features/ai-visibility                  194 B         128 kB
+├ ○ /features/backlinks                      194 B         128 kB
+├ ○ /features/daily-brief                    200 B         133 kB
+├ ○ /features/organic-search                 193 B         128 kB
+├ ○ /features/performance                    194 B         130 kB
+├ ○ /features/social-marketing               194 B         130 kB
+├ ƒ /forgot-password                        2.1 kB         131 kB
+├ ○ /icon.svg                                  0 B            0 B
+├ ○ /llms-full.txt                           242 B         103 kB
+├ ○ /llms.txt                                242 B         103 kB
+├ ƒ /login                                   242 B         103 kB
+├ ○ /manifest.webmanifest                    242 B         103 kB
+├ ƒ /onboarding                              635 B         141 kB
+├ ƒ /performance                           12.9 kB         134 kB
+├ ○ /pricing.md                              242 B         103 kB
+├ ƒ /privacy                               3.77 kB         116 kB
+├ ƒ /profile                                4.8 kB         120 kB
+├ ƒ /reset-password                         2.1 kB         131 kB
+├ ○ /robots.txt                              242 B         103 kB
+├ ƒ /settings                              13.4 kB         147 kB
+├ ƒ /signin                                  173 B         129 kB
+├ ƒ /signup                                  173 B         129 kB
+├ ○ /sitemap.xml                             242 B         103 kB
+├ ƒ /social                                11.9 kB         152 kB
+├ ƒ /start                                   635 B         141 kB
+├ ƒ /start-trial                           6.98 kB         136 kB
+├ ƒ /terms                                 3.77 kB         116 kB
+└ ƒ /verify-email                          2.03 kB         131 kB
++ First Load JS shared by all               103 kB
+  ├ chunks/1255-dc3ddf72a1dc71a7.js        46.6 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js    54.2 kB
+  └ other shared chunks (total)            1.99 kB
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

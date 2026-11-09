@@ -8,7 +8,9 @@ import { clientIp } from '../abuse/ip';
 import { enforce, HOUR } from '../abuse/rateLimit';
 import { verifySignupHuman } from '../abuse/human';
 import { sendAuthMail } from '../services/mail';
+import { confirmationEmail } from '../services/legacyContent';
 import { safeNext } from '../billing/guard';
+import { queueSignupEmails } from './signupEmails';
 import { hashPassword } from './session';
 
 export const VERIFICATION_MINUTES = 30;
@@ -43,7 +45,8 @@ export async function sendVerification(user: Pick<typeof schema.users.$inferSele
     expiresAt: new Date(Date.now() + VERIFICATION_MINUTES * 60000), next: safeNext(next),
   });
   try {
-    await sendAuthMail(user.email, `Confirm your email for Radar\n\nOpen this link to confirm your email and choose your password:\n${env.appUrl}/verify-email#token=${token}\n\nThis link works once and expires in ${VERIFICATION_MINUTES} minutes. If you did not request this, you can ignore this email. No account access is granted until you confirm.`);
+    const mail = confirmationEmail({ appUrl: env.appUrl, link: `${env.appUrl}/verify-email#token=${token}`, minutes: VERIFICATION_MINUTES });
+    await sendAuthMail(user.email, mail.text);
   } catch {
     await db.delete(schema.emailVerificationTokens).where(eq(schema.emailVerificationTokens.tokenHash, hash));
     throw new RadarError('Radar couldn’t send the confirmation email. Please try again.', 503, 'mail_unavailable');
@@ -51,7 +54,7 @@ export async function sendVerification(user: Pick<typeof schema.users.$inferSele
 }
 
 /** Locks identity before token consumption. Multiple distinct links and double submissions cannot activate twice. */
-export async function confirmEmail(token: string, password: string) {
+export async function confirmEmail(token: string, password: string, guestId?: string) {
   const tokenHash = sha256(token);
   // Do not spend bcrypt CPU on unknown or expired tokens.
   const [candidate] = await db.select().from(schema.emailVerificationTokens).where(and(eq(schema.emailVerificationTokens.tokenHash, tokenHash), gt(schema.emailVerificationTokens.expiresAt, new Date()))).limit(1);
@@ -66,6 +69,7 @@ export async function confirmEmail(token: string, password: string) {
     const [verified] = await tx.update(schema.users).set({ passwordHash, emailVerifiedAt: new Date() }).where(eq(schema.users.id, user.id)).returning();
     await tx.delete(schema.sessions).where(eq(schema.sessions.userId, user.id));
     await tx.delete(schema.emailVerificationTokens).where(eq(schema.emailVerificationTokens.userId, user.id));
+    await queueSignupEmails(tx, verified, guestId);
     return { user: verified, next: consumed.next };
   });
 }

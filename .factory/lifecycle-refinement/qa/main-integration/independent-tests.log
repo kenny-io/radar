@@ -1,0 +1,23 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stdout | .factory/lifecycle-refinement/qa/main-integration/guide-delivery.test.ts > LC2 independent in-flight compatibility, dispatch and atomicity > fails closed on unknown preflight errors, honors optout after restricted-key lookup and never advances simulated mail
+[lifecycle] dev-stub logged { id: '09518e69-a76b-421c-b0aa-38a498d76277', type: 'lifecycle_guide' }
+
+ ✓ .factory/lifecycle-refinement/qa/main-integration/guide-delivery.test.ts (8 tests) 1397ms
+   ✓ LC2 independent in-flight compatibility, dispatch and atomicity > fails closed on unknown preflight errors, honors optout after restricted-key lookup and never advances simulated mail  348ms
+ ✓ .factory/lifecycle-refinement/qa/main-integration/guide-policy.test.ts (12 tests) 2217ms
+   ✓ LC2 independent guide timing, relevance and history > requires measured completed-day page data plus actual Organic acceptance, not logged or attempted rows  617ms
+   ✓ LC2 independent guide timing, relevance and history > excludes zero, stale, current, future, query-only and disconnected measurements  372ms
+stdout | .factory/lifecycle-refinement/qa/main-integration/legacy-transport.test.ts > LC2 actual legacy senders with fake provider transport > actual invitation uses the signed single-use link, preserves Viewer authorization, and escapes dynamic HTML/header data
+[team] invite 1ef08a6c-3157-460c-9591-016f94097b0c accepted by user c4ece592-ac80-449b-9eb0-42ff3f15fa37
+
+ ✓ .factory/lifecycle-refinement/qa/main-integration/legacy-transport.test.ts (3 tests) 351ms
+ ✓ .factory/lifecycle-refinement/qa/main-integration/autopilot-mail.test.ts (6 tests) 165ms
+ ✓ .factory/lifecycle-refinement/qa/main-integration/autopilot-work.test.ts (2 tests) 259ms
+
+ Test Files  5 passed (5)
+      Tests  31 passed (31)
+   Start at  00:09:59
+   Duration  9.88s (transform 748ms, setup 0ms, collect 4.35s, tests 4.39s, environment 0ms, prepare 227ms)
+

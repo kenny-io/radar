@@ -1,0 +1,29 @@
+Email #24A · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Fieldnote approved a partner link on partner.example/articles/design-tools
+
+Fieldnote (fieldnote.example) approved the proposed mention linking to their site from your page.
+
+Page: https://partner.example/articles/design-tools
+
+Proposed sentence:
+
+For small studios, [Fieldnote](https://fieldnote.example) is another option to review.
+
+Destination: https://fieldnote.example
+Anchor: Fieldnote
+Attribute: sponsored
+Disclosure: Partner link
+
+I’d read the sentence in context before adding it. You can use it as written, adjust it or skip the placement. Keep the link attribute and disclosure.
+
+For an article published through Radar, you can approve the proposal in Backlinks → Links from you. Radar adds the approved placement the next time that article publishes.
+
+After placement, check Backlinks → Live links for verification status.
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Email preferences: https://radar.thally.io/email-preferences

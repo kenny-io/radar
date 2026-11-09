@@ -4,6 +4,7 @@ import { assertAuthOrigin, authBody, limitAuthIp, NEW_PASSWORD_BYTES } from '@/s
 import { confirmEmail } from '@/server/auth/verification';
 import { attachInvites } from '@/server/auth/users';
 import { finishAuth } from '@/server/auth/claim';
+import { currentGuest } from '@/server/auth/session';
 import { track } from '@/server/events';
 const Body = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), password: z.string().max(256) });
 export const POST = handle(async (req: Request) => {
@@ -15,9 +16,9 @@ export const POST = handle(async (req: Request) => {
   const b = parsed.data;
   if (b.password.length < 8 || Buffer.byteLength(b.password, 'utf8') > NEW_PASSWORD_BYTES)
     return json({ ok: false, errors: { pw: b.password.length < 8 ? 'Use at least 8 characters' : 'Use a password of 72 bytes or fewer (some characters use more than one byte).' } }, 400);
-  const { user, next } = await confirmEmail(b.token, b.password);
+  const { user, next } = await confirmEmail(b.token, b.password, (await currentGuest())?.id);
   await track('user.signed_up', { uid: user.id, props: { method: 'password' } });
   await attachInvites(user.id, user.email);
-  const r = await finishAuth({ id: user.id, name: user.name, email: user.email, appearance: user.appearance }, next);
+  const r = await finishAuth({ id: user.id, name: user.name, email: user.email, appearance: user.appearance }, next, user.passwordHash || undefined);
   return json({ ok: true, next: r.next });
 });

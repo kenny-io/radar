@@ -1,0 +1,12 @@
+{
+  "head": "5b4f946226535cf323031fd099e538cc068c2381",
+  "branch": "kenny/weekly-education",
+  "workspace": "/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push",
+  "sha256": "a8f27eee95956569e06bfda1b8259e1b44b087a3a64034685bfc6848560b1282",
+  "fileCount": 636,
+  "scope": "src/**, drizzle/**, public/**, scripts/**; package.json, package-lock.json, next.config.ts, tsconfig.json, next-env.d.ts, vitest.config.ts, drizzle.config.ts, .env.example. Relative POSIX lexical order; hash each raw file; final SHA256 of path + NUL + hex SHA256 + newline per file. Excludes QA/docs/build caches and unmerged companion in original checkout.",
+  "baseline": "5b4f946226535cf323031fd099e538cc068c2381",
+  "task": "founder correction plus main observability/recovery integration",
+  "founderCheckpoint": "ec983db607f8540a6dbadf6fda21c088a4fc11e13a436d7c41e12402095d1d8e",
+  "incomingMain": "4908694fb6c63ce618e83843d30203af739fe9dd"
+}

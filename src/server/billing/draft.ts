@@ -31,6 +31,12 @@ export async function draftOf(ownerId: string, q: Q = db): Promise<BizRow | null
  *  `business.onboarded` tracked once. Idempotent (only the call that flips the status does anything). Bumps the revision in
  *  the same UPDATE. Returns the bid when this call committed it, else null. Pass `q` + `later` inside a transaction. */
 export async function commitDraft(bid: string, q: Q = db, later?: Later): Promise<string | null> {
+  if (q === db) {
+    const deferred: Later = later || [];
+    const result = await db.transaction(tx => commitDraft(bid, tx, deferred));
+    if (!later) await runLater(deferred);
+    return result;
+  }
   const B = schema.businesses;
   const cur = (await q.select({ onboarding: B.onboarding, timezone: B.timezone }).from(B).where(and(eq(B.id, bid), eq(B.status, 'onboarding'))).limit(1))[0];
   if (!cur) return null;

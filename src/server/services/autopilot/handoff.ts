@@ -2,6 +2,9 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { sha256 } from '@/server/crypto';
 import { env } from '@/server/env';
+import { RadarError } from '@/server/errors';
+import { PermanentJobError } from '@/server/jobs/queue';
+import { autopilotHandoffEmail } from '../legacyContent';
 import { sendMail } from '../mail';
 import { canRun } from './guard';
 import { authorized } from './policy';
@@ -39,16 +42,19 @@ export async function deliverHandoff(ctx: JobCtx<HandoffPayload>) {
   if (!(await canRun(bid, p.activationId))) return { skipped: 'autopilot_off' };
   const b = await getBiz(bid);
   if (b.ownerId !== p.ownerId) return { skipped: 'owner_changed' };
-  const [owner] = await db.select({ email: schema.users.email, guest: schema.users.guest }).from(schema.users).where(eq(schema.users.id, b.ownerId));
+  const [owner] = await db.select({ email: schema.users.email, guest: schema.users.guest, verified: schema.users.emailVerifiedAt }).from(schema.users).where(eq(schema.users.id, b.ownerId));
   if (!owner || owner.guest) return { skipped: 'no_owner' };
-  const body = [`Autopilot is running marketing for ${p.name}. These actions need your help:`, '', ...p.items.flatMap((it, i) => [
-    `${i + 1}. ${it.title}`, it.reason, safeSource(it.sourceUrl) ? `Open conversation: ${safeSource(it.sourceUrl)}` : '', `Open in Radar: ${it.href}`, it.text ? `Prepared draft:\n${it.text}` : '', '',
-  ].filter(Boolean)), `Manage Autopilot: ${businessHref(bid, '/settings?section=autopilot')}`].join('\n');
+  if (!owner.verified) return { skipped: 'unverified_owner' };
+  const email = autopilotHandoffEmail({ appUrl: env.appUrl, businessName: p.name, items: p.items.map(it => ({ ...it, sourceUrl: safeSource(it.sourceUrl) || undefined })), manageUrl: businessHref(bid, '/settings?section=autopilot') });
   try {
-    await sendMail(owner.email, `Radar Autopilot — ${p.items.length} ${p.items.length === 1 ? 'action needs' : 'actions need'} you · ${p.name}`, body, undefined, { idempotencyKey: `autopilot-handoff:${ctx.job.id}` });
+    await sendMail(owner.email, email.subject, email.text, undefined, { idempotencyKey: `autopilot-handoff:${ctx.job.id}` });
     return { count: p.items.length };
   } catch (e) {
-    await db.update(schema.businesses).set({ autopilot: sql`${schema.businesses.autopilot} || ${JSON.stringify({ lastError: ctx.attempt >= ctx.job.maxAttempts ? 'The owner email could not be delivered after retrying. Run Autopilot again to retry delivery.' : 'The owner email could not be delivered. Radar will retry automatically.' })}::jsonb` }).where(and(eq(schema.businesses.id, bid), sql`${schema.businesses.autopilot}->>'activationId' = ${p.activationId}`));
+    const recipientChanged = e instanceof RadarError && e.code === 'mail_recipient_changed';
+    const retryExpired = e instanceof RadarError && e.code === 'mail_retry_expired';
+    const message = retryExpired ? 'The owner email retry window expired. Contact support before retrying delivery.' : recipientChanged ? 'The owner email was held because the account email address changed. Contact support before retrying delivery.' : ctx.attempt >= ctx.job.maxAttempts ? 'The owner email could not be delivered after retrying. Run Autopilot again to retry delivery.' : 'The owner email could not be delivered. Radar will retry automatically.';
+    await db.update(schema.businesses).set({ autopilot: sql`${schema.businesses.autopilot} || ${JSON.stringify({ lastError: message })}::jsonb` }).where(and(eq(schema.businesses.id, bid), sql`${schema.businesses.autopilot}->>'activationId' = ${p.activationId}`));
+    if (recipientChanged || retryExpired) throw new PermanentJobError(message);
     throw e;
   }
 }

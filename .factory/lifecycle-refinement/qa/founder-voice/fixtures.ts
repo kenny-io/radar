@@ -1,0 +1,3 @@
+import {db,schema} from '@/server/db';import {eq} from 'drizzle-orm';import {decrypt} from '@/server/crypto';import type {LifecyclePayload} from '@/server/services/lifecycle/queue';
+export const NOW=new Date(),DAY=864e5;export function requireLocalDatabase(){if(!process.env.DATABASE_URL?.endsWith('/radar_founder_voice_qa_20261110'))throw Error('Fresh founder QA DB required');}
+export const messages=(uid:string)=>db.select().from(schema.lifecycleEmails).where(eq(schema.lifecycleEmails.userId,uid));export const payload=(row:typeof schema.lifecycleEmails.$inferSelect)=>decrypt<LifecyclePayload>(row.payloadEnc)!;

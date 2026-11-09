@@ -1,0 +1,23 @@
+Email #9B · Incomplete subscription setup expired
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Your Radar subscription has ended
+Preview: Your subscription setup expired before it was completed.
+
+Hi Alex,
+
+Your Radar subscription setup expired before it was completed.
+
+If you’d like to pick up where you left off, open your account to review the subscription options.
+
+If you couldn’t get Radar to do what you needed, reply and tell me. I’d like to help you work through it.
+
+Review restart options: https://radar.thally.io/start-trial
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences

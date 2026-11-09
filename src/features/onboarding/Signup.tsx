@@ -67,6 +67,7 @@ export function Signup({ mode = 'signup', pending = null, turnstileRequired, tur
       <Field label="Work email" hint={hint('email')}><input id="signup-email" aria-label="Work email" aria-invalid={!!err.email} className={'input' + (err.email ? ' err' : '')} disabled={!mounted} type="email" autoComplete="email" maxLength={320} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
       {signin && <Field label="Password" hint={hint('pw')}><input id="signin-password" aria-label="Password" aria-invalid={!!err.pw} className={'input' + (err.pw ? ' err' : '')} disabled={!mounted} type="password" maxLength={signin ? 1024 : 256} autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>}
       {!signin && <><p className="small sub">We’ll email you a link to confirm your address and choose your password.</p>{turnstileRequired && <Turnstile siteKey={turnstileSiteKey} devStubs={devStubs} resetKey={humanReset} onToken={setHumanToken} />}</>}
+      {signin && <a href="/forgot-password" className="small" style={{ alignSelf: 'flex-end' }}>Forgot your password?</a>}
       <Btn kind="primary" size="lg" className="btn-block" type="submit" disabled={!mounted || (!signin && turnstileRequired && !humanToken)} loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
       {signin && <Btn kind="link" disabled={!mounted || busy} onClick={() => setVerification('request')}>Need to confirm your email?</Btn>}
       {signin

@@ -1,0 +1,2 @@
+ALTER TABLE "lifecycle_guide_states" DROP CONSTRAINT "lifecycle_guide_id_check";--> statement-breakpoint
+ALTER TABLE "lifecycle_guide_states" ADD CONSTRAINT "lifecycle_guide_id_check" CHECK ("lifecycle_guide_states"."guide_id" IN ('article_workflow', 'search_refresh', 'autopilot_intro'));

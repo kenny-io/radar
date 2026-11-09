@@ -1,0 +1,25 @@
+Email #13 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Give your saved social posts a publishing time
+Preview: Choose when and where one saved draft should go out.
+
+Hi Alex,
+
+Fieldnote · Social posts
+
+Your social pack for “How to choose a design tool for your studio” is saved. When you’re happy with one of the drafts, schedule it to a supported connected account or copy it to share from the platform yourself.
+
+Open my saved social pack: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=social_publish&ref=preview-resource
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Turn off work reminders: https://radar.thally.io/email-preferences?token=preview-only-not-valid

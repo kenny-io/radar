@@ -1,0 +1,8 @@
+{"name":"merged Settings retains email preferences and Autopilot navigation","pass":true}
+{"name":"actual handoff manage URL selects the owned business","pass":true}
+{"name":"Autopilot UI warns about publication without review","pass":true}
+{"name":"foreign handoff hop denied without switching selected business","pass":true}
+{"name":"signed-out handoff keeps business-scoped destination through login","pass":true}
+{"name":"handoff selected business and consumed section survive refresh","pass":true}
+{"name":"read-only handoff arrivals do not invoke generation/payment/Autopilot actions","pass":true}
+[{"name":"merged Settings retains email preferences and Autopilot navigation","pass":true},{"name":"actual handoff manage URL selects the owned business","pass":true},{"name":"Autopilot UI warns about publication without review","pass":true},{"name":"foreign handoff hop denied without switching selected business","pass":true},{"name":"signed-out handoff keeps business-scoped destination through login","pass":true},{"name":"handoff selected business and consumed section survive refresh","pass":true},{"name":"read-only handoff arrivals do not invoke generation/payment/Autopilot actions","pass":true}]

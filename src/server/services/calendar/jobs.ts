@@ -17,6 +17,7 @@ import { normKw } from '../gsc/metrics';
 import { slotDates } from './schedule';
 import { clusterCandidates, difficultyCeiling, existingArticles, gscHasData, gscQueryStats, refreshCandidates, researchCandidates, writeTopics, type Candidate, type Topic } from './research';
 import type { CalendarSettings, Profile } from '@/lib/types';
+import { recordEngagement } from '../lifecycle/engagement';
 
 export interface CalGenPayload { settings: CalendarSettings; keep: boolean; autopilotActivationId?: string }
 export interface CalGenProgress { phase: number; results: string[]; keep: boolean; gsc: boolean }
@@ -110,7 +111,9 @@ defineJob<CalGenPayload>({
           })));
         }
         await tx.update(schema.businesses).set({ calendarGeneratedAt: generatedAt, ...(!autopilotActivationId ? { calendarSettings: settings } : {}) }).where(eq(schema.businesses.id, bid));
+        if (rows.length) await recordEngagement(tx, { businessId: bid, kind: 'calendar_review', ref: generatedAt.toISOString(), entryIds: rows.map(r => r.id), now: generatedAt });
         return true;
+
       });
       if (!saved) return { skipped: 'autopilot_off' };
       await notify(bid, autopilotActivationId ? 'Autopilot added researched topics to your calendar.' : keep ? `Calendar refreshed. ${keptRows.length} approved topics kept in place.` : `${topics.length} topics proposed. Approve the ones you like.`, { tone: 'ok' });

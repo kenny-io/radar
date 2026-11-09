@@ -1,0 +1,27 @@
+What should Paper & Pixel publish next?
+
+Hi Alex,
+
+Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
+
+Save your Business Profile and activate your workspace before following these steps.
+
+1. Open Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read each topic’s search intent and keyword estimates. Decide which reader you can help and what the article should answer.
+
+2. Connect Google Search Console in Settings. Once data is available, read the Queries and Pages tables in Performance to see which searches already bring impressions and clicks. Keep those measurements separate from keyword estimates.
+
+After publication, give Search Console time to collect data before comparing the page’s clicks and impressions. An estimate helped you choose the topic; measured activity tells you what happened afterward.
+
+Continue setting up Radar: https://radar.thally.io/onboarding
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid

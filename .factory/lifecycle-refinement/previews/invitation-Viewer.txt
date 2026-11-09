@@ -1,0 +1,18 @@
+Email #23C · Viewer
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Alex invited you to Fieldnote on Radar
+
+Alex invited you to join Fieldnote (fieldnote.example) on Radar.
+
+As a Viewer, you can review the workspace. Approval and publishing controls are available to editors and admins.
+
+Accept invitation: https://radar.thally.io/api/invites/preview-only-not-valid
+
+Your invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Email preferences: https://radar.thally.io/email-preferences

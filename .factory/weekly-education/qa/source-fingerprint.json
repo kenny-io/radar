@@ -1,0 +1,8 @@
+{
+  "head": "bed41631544a7a484d132ca75679bbee146eae44",
+  "branch": "kenny/weekly-education",
+  "workspace": "/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push",
+  "sha256": "f1f650cd20efdde03258a9c8ac279c576afc1916e14e9e82e06ab15c412593fd",
+  "fileCount": 592,
+  "scope": "src/**, drizzle/**, public/**, scripts/**; package.json, package-lock.json, next.config.ts, tsconfig.json, next-env.d.ts, vitest.config.ts, .env.example. Relative POSIX lexical order; hash each raw file; final SHA256 of path + NUL + hex SHA256 + newline per file. Excludes QA/docs/build caches and unmerged companion in original checkout."
+}
