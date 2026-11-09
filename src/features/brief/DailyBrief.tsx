@@ -468,20 +468,29 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 6 }}><Btn kind="ghost" onClick={() => setCf(false)}>Cancel</Btn><Btn kind="primary" onClick={postNow}><LogoLabel k={k!}>Post now</LogoLabel></Btn></div>
     </div></Modal>}
     {held && pubAcct && <ConnectSocial ch={recon ? pubAcct.ch : null} reconnect={pubAcct} open={recon} onClose={() => setRecon(false)} />}
-    {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} initial={visInitial} onCreate={createVis} />}
+    {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} name={name} title={it.title} text={text} platform={plat} initial={visInitial} onCreate={createVis} />}
   </article>;
 }
 
 /** Add visuals window: style tiles and the number of images. */
-function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; n: ImgCount; prompt?: string }; onCreate: (x: { style: StyleKey; n: ImgCount; prompt?: string }) => void }) {
-  const [im, setIm] = useState(initial); useEffect(() => { if (open) setIm(initial); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+function BriefVisualsModal({ open, onClose, brand, name, title, text, platform, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; name: string; title: string; text: string; platform?: BriefPlatform | null; initial: { style: StyleKey; n: ImgCount; prompt?: string }; onCreate: (x: { style: StyleKey; n: ImgCount; prompt?: string }) => void }) {
+  const defaults = () => ({ ...initial, prompt: initial.prompt?.trim() ? initial.prompt : undefined });
+  const [im, setIm] = useState(defaults); useEffect(() => { if (open) setIm(defaults()); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const topic = title.replace(/\s+/g, ' ').trim().slice(0, 160);
+  const postContext = text.replace(/https?:\/\/\S+/gi, '').replace(/\s+/g, ' ').trim().slice(0, 260);
+  const suggestedPrompt = [
+    `Create an image for ${name.slice(0, 80) || 'our brand'}’s ${platform ? BPLAT[platform] : 'social media'} post about “${topic}”. Visual style: ${styleL(im.style).toLowerCase()}.`,
+    postContext && `Visualize the main idea with one clear scene or visual metaphor. Post context: ${postContext}`,
+    `Use brand colors ${brand.primary} and ${brand.secondary}, a simple background and one strong focal point. Keep it readable at social-feed size. No text, logos, watermarks or invented charts.`,
+  ].filter(Boolean).join('\n\n');
+  const prompt = im.prompt ?? suggestedPrompt;
   return <Modal open={open} onClose={onClose} width={640} label="Add visuals to this post"><div className="col" style={{ padding: '32px clamp(20px,5vw,32px) 26px', gap: 22 }}>
     <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>Add visuals to this post</h2><p className="sub">Radar creates images to go with the post. You can regenerate, download or remove them.</p></div>
     <Field label="Visual style"><div role="radiogroup" aria-label="Visual style" className="vis-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(104px,1fr))', gap: 12 }}>{STYLES.map(st => { const on = im.style === st.k; return <button key={st.k} type="button" role="radio" aria-checked={on} onClick={() => setIm({ ...im, style: st.k })} className="col" style={{ gap: 6, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}><span style={{ borderRadius: 12, boxShadow: on ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', padding: 2, transition: 'box-shadow .2s' }}><Visual style={st.k} brand={brand} headline="" seed={5} name="" radius={9} ratio={1} /></span><span className="xs" style={{ fontWeight: on ? 500 : 400, color: on ? 'var(--ink)' : 'var(--ink2)', lineHeight: 1.3 }}>{st.l}</span></button>; })}</div>
       <span className="small sub" style={{ marginTop: 10, display: 'block' }}>{(STYLES.find(st => st.k === im.style) || STYLES[0]).d}</span></Field>
-    <Field label="Describe your image" hint="Optional. For example: Sobha Sapphire in Dubai at sunset. Generated scenes may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} placeholder="Describe the subject, scene and details you want" value={im.prompt || ''} onChange={e => setIm({ ...im, prompt: e.target.value })} /></Field>
+    <Field label="Describe your image" hint="Edit this suggested prompt, or clear it to use the post’s context. Generated scenes may differ from real subjects."><textarea className="input" rows={3} maxLength={1000} placeholder="Describe the subject, scene and details you want" value={prompt} onChange={e => setIm({ ...im, prompt: e.target.value })} /></Field>
     <Field label="Number of images" hint="X allows up to 4."><Seg value={im.n} onChange={v => setIm({ ...im, n: v })} options={IMG_COUNTS} /></Field>
-    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" disabled={!!im.prompt && (!im.prompt.trim() || im.prompt.trim().length > 1000)} onClick={() => onCreate(im)}>Create images</Btn></div>
+    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" disabled={!!prompt && (!prompt.trim() || prompt.trim().length > 1000)} onClick={() => onCreate({ ...im, prompt })}>Create images</Btn></div>
   </div></Modal>;
 }
 
