@@ -1,0 +1,139 @@
+
+> thally@1.0.0 build /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push/.data/publishing-planner-recovery/destination
+> node scripts/build-website.mjs
+
+generate-image-variants: all variants up to date.
+▲ Next.js 16.3.5 (Turbopack)
+⚠ Warning: Next.js ignored package-lock.json in /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push because it is outside the current Git repository (/Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push/.data/publishing-planner-recovery/destination).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+✓ Running next.config.ts took 205ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.4s
+  Running TypeScript ...
+  Finished TypeScript in 6.4s ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/109) ...
+  Generating static pages using 9 workers (27/109)
+  Generating static pages using 9 workers (54/109)
+  Generating static pages using 9 workers (81/109)
+✓ Generating static pages using 9 workers (109/109) in 1692ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /about
+├ ○ /about/opengraph-image
+├ ○ /agent-readiness-methodology
+├ ○ /agent-readiness-methodology/opengraph-image
+├ ○ /authors/thally-team
+├ ○ /authors/thally-team/opengraph-image
+├ ○ /blog
+├ ○ /blog/agent-ready-docs-llms-txt-mcp
+├ ○ /blog/agent-ready-docs-llms-txt-mcp/opengraph-image
+├ ○ /blog/ai-coding-assistants-outdated-api-docs
+├ ○ /blog/ai-coding-assistants-outdated-api-docs/opengraph-image
+├ ○ /blog/automatically-update-docs-after-pull-request-merges
+├ ○ /blog/automatically-update-docs-after-pull-request-merges/opengraph-image
+├ ○ /blog/best-ai-documentation-tools-2026
+├ ○ /blog/best-ai-documentation-tools-2026/opengraph-image
+├ ○ /blog/ci-documentation-updates-on-code-changes
+├ ○ /blog/ci-documentation-updates-on-code-changes/opengraph-image
+├ ○ /blog/docs-as-code-workflow-for-startups
+├ ○ /blog/docs-as-code-workflow-for-startups/opengraph-image
+├ ○ /blog/documentation-analytics-for-developer-docs
+├ ○ /blog/documentation-analytics-for-developer-docs/opengraph-image
+├ ○ /blog/documentation-automation-software
+├ ○ /blog/documentation-automation-software/opengraph-image
+├ ○ /blog/documentation-maintenance-tools
+├ ○ /blog/documentation-maintenance-tools/opengraph-image
+├ ○ /blog/documentation-migration-checklist
+├ ○ /blog/documentation-migration-checklist/opengraph-image
+├ ○ /blog/export-mintlify-docs
+├ ○ /blog/export-mintlify-docs/opengraph-image
+├ ○ /blog/free-hosted-documentation-site
+├ ○ /blog/free-hosted-documentation-site/opengraph-image
+├ ○ /blog/gitbook-alternative
+├ ○ /blog/gitbook-alternative/opengraph-image
+├ ○ /blog/how-ai-assistants-find-and-cite-sources
+├ ○ /blog/how-ai-assistants-find-and-cite-sources/opengraph-image
+├ ○ /blog/improve-ai-answers-about-my-product
+├ ○ /blog/improve-ai-answers-about-my-product/opengraph-image
+├ ○ /blog/introducing-thally
+├ ○ /blog/keep-docs-in-sync-with-code
+├ ○ /blog/keep-docs-in-sync-with-code/opengraph-image
+├ ○ /blog/keep-help-center-articles-up-to-date
+├ ○ /blog/keep-help-center-articles-up-to-date/opengraph-image
+├ ○ /blog/llms-txt-generator-for-docs
+├ ○ /blog/llms-txt-generator-for-docs/opengraph-image
+├ ○ /blog/migrate-from-docusaurus
+├ ○ /blog/migrate-from-docusaurus/opengraph-image
+├ ○ /blog/migrate-from-mintlify
+├ ○ /blog/migrate-from-mintlify/opengraph-image
+├ ○ /blog/migrating-documentation-from-a-url
+├ ○ /blog/migrating-documentation-from-a-url/opengraph-image
+├ ○ /blog/opengraph-image
+├ ○ /blog/swimm-alternatives
+├ ○ /blog/swimm-alternatives/opengraph-image
+├ ○ /blog/technical-authoring-software
+├ ○ /blog/technical-authoring-software/opengraph-image
+├ ○ /blog/technical-documentation-platforms
+├ ○ /blog/technical-documentation-platforms/opengraph-image
+├ ○ /blog/thally-pricing
+├ ○ /blog/thally-pricing/opengraph-image
+├ ○ /blog/thally-vs-docusaurus
+├ ○ /blog/thally-vs-docusaurus/opengraph-image
+├ ○ /blog/thally-vs-gitbook
+├ ○ /blog/thally-vs-gitbook/opengraph-image
+├ ○ /blog/thally-vs-mintlify
+├ ○ /blog/thally-vs-mintlify/opengraph-image
+├ ○ /blog/track-ai-crawler-traffic-on-docs
+├ ○ /blog/track-ai-crawler-traffic-on-docs/opengraph-image
+├ ○ /blog/webmcp-for-thally-sites
+├ ○ /blog/webmcp-for-thally-sites/opengraph-image
+├ ○ /blog/what-is-ai-native-documentation
+├ ○ /blog/what-is-ai-native-documentation/opengraph-image
+├ ○ /careers
+├   /careers/[slug]
+│ └ ● /careers/senior-developer-experience-documentation-engineer
+├ ○ /contact
+├ ○ /contact/opengraph-image
+├ ○ /editorial-policy
+├ ○ /editorial-policy/opengraph-image
+├ ○ /faq
+├ ○ /faq/opengraph-image
+├ ○ /features/agent-layer
+├ ○ /features/agent-layer/opengraph-image
+├ ○ /features/automation
+├ ○ /features/automation/opengraph-image
+├ ○ /features/cloud-dashboard
+├ ○ /features/cloud-dashboard/opengraph-image
+├ ○ /features/content-graph
+├ ○ /features/content-graph/opengraph-image
+├ ○ /features/migration-hosting
+├ ○ /features/migration-hosting/opengraph-image
+├ ○ /features/track
+├ ○ /features/track/opengraph-image
+├ ○ /login
+├ ○ /login/opengraph-image
+├ ○ /manifest.webmanifest
+├ ○ /pricing
+├ ○ /pricing/opengraph-image
+├ ○ /privacy
+├ ○ /privacy/opengraph-image
+├ ○ /robots.txt
+├ ○ /rss.xml
+├ ○ /signup
+├ ○ /signup/opengraph-image
+├ ○ /sitemap.xml
+├ ○ /terms
+├ ○ /terms/opengraph-image
+└ ○ /unsubscribe
+
+
+○  (Static)  prerendered as static content
+●  (SSG)     prerendered as static HTML (uses generateStaticParams)
+
+Generated shared website catalog for 54 pages.

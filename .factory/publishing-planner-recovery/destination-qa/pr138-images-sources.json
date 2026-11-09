@@ -1,0 +1,61 @@
+{
+  "head": "75c11fb7049408abe4d4648a087865dedc9dbb6f",
+  "articleImages": 2,
+  "imageResults": [
+    {
+      "alt": true,
+      "loaded": true,
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "alt": true,
+      "loaded": true,
+      "width": 1200,
+      "height": 675
+    }
+  ],
+  "publicSources": 8,
+  "sourceResults": [
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    },
+    {
+      "protocol": "https:",
+      "validHost": true,
+      "noCredentials": true
+    }
+  ]
+}

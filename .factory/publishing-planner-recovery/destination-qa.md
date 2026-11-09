@@ -1,6 +1,8 @@
 # Destination publishing independent QA
 
-QA-2 preparation. Owned clone: `.data/publishing-planner-recovery/destination`, clean main `1c13e59821aba0013aeac8c9fab9e3206b18563b` from `thallylabs/thally-website`. Radar release is separate commit `4908694fb6c63ce618e83843d30203af739fe9dd`. Awaiting the two actual draft PR URLs and immutable heads. No destination writes, merges or manual patches authorized or performed.
+Final QA-2 verdict: ACCEPT both independently tested draft PR integrations. PR137 and PR138 each passed exact-head source/body checks, unmodified production build, destination tests/audit and actual Netlify browser verification. Neither destination PR was merged.
+
+Owned clone: `.data/publishing-planner-recovery/destination`, clean main `1c13e59821aba0013aeac8c9fab9e3206b18563b` from `thallylabs/thally-website`. Radar release is separate commit `4908694fb6c63ce618e83843d30203af739fe9dd`. Both immutable PR heads are recorded below. No destination remote writes, merges or manual source patches were performed.
 
 Read destination AGENTS, package.json, netlify.toml, build script, image generator, catalog generator, llms generator, blog registry/index/PostShell and sitemap/feed conventions. Netlify explicitly runs `pnpm run build`, whose ordered steps are image variants → Next static export → rendered catalog → full corpus. This establishes regeneration after the exported article exists, before deployed MCP/full corpus consumers. It does not establish a missing manual registry or overview entry can be skipped.
 
@@ -23,3 +25,17 @@ Draft [PR137](https://github.com/thallylabs/thally-website/pull/137), exact head
 Two inline article images also loaded with nonzero natural dimensions and nonempty alt text (`pr137-images.json`); mobile viewport screenshot visually inspected.
 
 No product defects observed. Passed local build plus actual Netlify preview; destination production remains unchanged because PR is still draft/unmerged. No authorization/tenant boundary applies to this public static article; no private account or mutating destination flow was exercised.
+
+## PR138: e_2Qcpo76u — ACCEPT
+
+Draft [PR138](https://github.com/thallylabs/thally-website/pull/138), exact head `75c11fb7049408abe4d4648a087865dedc9dbb6f`, actual base `b84a3485731cd5e01957b865a9405e2a4dbbbfcd`. Both draft article PRs independently branch from this base; no combined destination merge was performed. GitHub API readback: drafttrue,6changed files, mergeableclean.
+
+- Exact source diff: content.mdx/body.tsx/page.tsx/opengraph-image.tsx plus one new shared blog registry entry and one manual llms.txt overview link. Route `/blog/documentation-analytics-for-developer-docs`, registry-supplied metadata/dates, shared PostShell and existing team byline. No unrelated source, dependency, build, security or generated-artifact patch.
+- Full corrected public Markdown10097bytes independently matches SHA256 `7ecbeeb487ab9bb2de0eb676926636c33b3553b53139d33307eab6fee4664306` byte-for-byte at file start; content file10098bytes includes one final newline. Eightpublic Sources links, internal no-scheme research reference absent. `pr138-source.json`. This is the corrected renderer payload, not an assertion that stored research was deleted. PM's production readback separately confirms saved body SHA `9cf750712ea220565a9b131cab9b3c3ccc3f424f1ea10fa131a05efe809483fc` and nine-source research SHA `5515a32d8311b6bd146ca9e4a7a468cca74a9805a07326ce091bdc3035aef952` unchanged; QA did not mutate/read production directly.
+- Actual unchanged-head Node22.18/Corepack pnpm10.26production build passed,54exported/catalog pages. Same inspected package build sequence; no manual patches. `pr138-build.log`.
+- After regeneration, selected destination build/blog-discovery/catalog-route tests13/13 passed; SEO/AEO conformance54rendered pages/13public files passed, including destination punctuation audit. `pr138-tests.log`, `pr138-seo-audit.log`.
+- Exactly1generated catalog entry for route; full article opening/final source text present, internal citation omitted, route present in exported blog/sitemap/RSS/manual overview/public and exportedfullcorpus. `pr138-generated.json`.
+- Netlify deploy `6af23ee66b2e8af890eb7c06` reports SUCCESS at exacthead, preview discovered from its Netlify bot/check metadata: [PR138 preview](https://deploy-preview-138--thally-web.netlify.app). Actual nativeChrome5/5 groups passed: pointer hover and keyboardEnter from bloglisting into article; oneH1/full prose9125characters/canonical/working team byline; existing-tabreload and freshtab identical;390pxmobilefit/focusedbreadcrumb; zero runtime and first-party asset failures. Mobile viewport screenshot visually inspected. `pr138-netlify-browser.json`, `pr138-browser.log`, `pr138-netlify-*.png`.
+- Additional deployed browser check:2inlinearticleimages loaded with nonzero natural dimensions and alt text; all8renderedcitationlinks are absoluteHTTP(S), havehostname and no embeddedcredentials. `pr138-images-sources.json`.
+
+No product defects observed; no blocked acceptance checks remain for the requested draft-PR/build/preview recovery. Both source integrations are accepted at their exact recorded heads. This does not establish destination production publication: both PRs remain draft/unmerged. Passing these checks does not prove all future merged behavior correct.

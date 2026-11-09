@@ -1,20 +1,21 @@
-# State
+# Publishing planner recovery: delivered
 
-| Task | Owner | Status | Coverage |
+User request completed. Radar fixes merged and deployed; both actual failed articles recovered through normal publishing and independently verified as complete draft PRs. Destination merges remain outside scope.
+
+| Task | Owner | Status | Evidence |
 |---|---|---|---|
-| ARCH-1 bounded discovery and diagnosis contract | factory-architect planner_architecture | verified | PPR-1–4 |
-| ENG-1 implementation and regressions | factory-engineer planner_implementation | verified | PPR-1–4 |
-| QA-1 independent regressions and browser | factory-qa planner_qa | verified | PPR-1–5 |
-| REL-1 release and two real retries | PM | active | PPR-6 |
+| ARCH-1 bounded discovery, diagnostics, deadline | factory-architect | verified | architecture.md; exact source/SHA/atomicity retained |
+| ENG-1 planner/transport/error/UI implementation | factory-engineer | verified | Radar PR39; Node22 broad397passed/85skipped, typecheck/build |
+| QA-1 independent safety/persistence/browser | factory-qa | verified | qa.md;17 probes,10 browser scenarios |
+| ARCH-2/ENG-2 public citation eligibility | architect/engineer | verified | Radar PR41; original stored article/research preserved |
+| QA-3 source rendering | factory-qa | verified |37 probes,357 regression tests/51skipped, typecheck/Node22build |
+| REL-1 production release and real retries | PM | verified | current108d6e1a contains PR39+PR41; both services healthy/exact renderer hash |
+| QA-2 actual destination build/preview | factory-qa | verified | destination-qa.md; both exact-head builds/tests/audits/live previews passed |
 
-Repository: /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push. Base main 8b0fc346. Design before implementation. Production connection healthy; two failed entries have no remote draft/URL. Preserve all unrelated primary checkout work.
+Released Radar PRs: https://github.com/kenny-io/radar/pull/39 (4908694f) and https://github.com/kenny-io/radar/pull/41 (518eb6db). Current deployed main108d6e1ae70f82f3fdfd854ca79fcc4579b2a172 also contains separately authorized email-formatPR40; publishing source unchanged from tested versions. Web0da3581e and worker6e5bdfed SUCCESS; health{ok:true}; Node22.23.4 renderer hash47b378f6 matches verified source.
 
-Architecture approved: metadata-aware bounded skips (not truncated source), exact generator/build evidence, specific safe diagnostics with repair provenance, local-vs-provider UI attribution, and nonpersisted270s per-attempt deadline against the existing5min job timer. QA baseline314passed/51skipped; typecheck passed. Implementing; no production write yet.
+Recovered articles:
+- e_2UQxRIMM: https://github.com/thallylabs/thally-website/pull/137, draft head a8b33044653590327f0962c1ddeda89332efd05d. Complete original10,988-byte Markdown and saved research unchanged.
+- e_2Qcpo76u: https://github.com/thallylabs/thally-website/pull/138, draft head75c11fb7049408abe4d4648a087865dedc9dbb6f. Complete10,097-byte public Markdown retained; saved body/all9research references unchanged,8usable public citations exported. Previously hidden invalid internal citation now omitted from public output only.
 
-Integrated source frozen; architect approves;328publishing tests and independent396broad/17probes/10browser checks pass. PM production build passed. Final Node22 evidence and release pending.
-
-Final Node 22 QA accepted: 397 broad tests passed, 85 skipped; 17 independent probes, 150 focused tests, typecheck, and 10 browser scenarios passed. Build passed. Release authorized by user request to fix and verify real publishing.
-
-## Live verification follow-up
-
-PR39 merged/deployed4908694f; both services verified. First real article e_2UQxRIMM recovered as draftPR137 and destination build/live-preview accepted. Second e_2Qcpo76u safely rejected an invalid generated public source citation with full reason. ARCH-2/ENG-2/QA-3 narrow public-citation export fix accepted locally, source frozen; Node22 build/tests passed. Branch kenny/publishing-public-sources based on4908694f; release and second retry next. Stored original article body/source hashes retained for post-retry comparison.
+Final production receipt: both entries published, errors cleared, no saved remote draft/active job, healthy connection; one draft PR per article. Both destination PRs currently mergeable, unmerged, and not marked ready by this work. Draft PR creation and preview verification do not publish the articles on the destination's main site; review/merge is the next owner step. No remaining task blocker or required implementation/verification work.

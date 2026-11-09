@@ -1,0 +1,5 @@
+{"name":"ordinary reader follows blog listing into article","pass":true,"detail":{"listingLink":true,"hover":true,"keyboard":true}}
+{"name":"article renders one title, body, canonical, byline, and public navigation","pass":true,"detail":{"title":"Documentation Analytics for Developer Docs","bodyCharacters":9125,"headings":6,"canonicalPath":"/blog/documentation-analytics-for-developer-docs","authorPath":"/authors/thally-team"}}
+{"name":"existing tab reload and fresh tab retain full article","pass":true,"detail":{"reload":true,"fresh":true}}
+{"name":"mobile article fits and blog breadcrumb remains keyboard reachable","pass":true,"detail":{"scroll":390,"client":390}}
+{"name":"no browser runtime or first-party asset failures","pass":true,"detail":{"runtimeErrors":0,"failedFirstPartyAssets":0}}

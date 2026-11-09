@@ -1,0 +1,11 @@
+
+ RUN  v5.0.0 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push/.data/publishing-planner-recovery/destination
+
+
+ Test Files  3 passed (3)
+      Tests  13 passed (13)
+   Start at  01:46:45
+   Duration  2.86s (environment 52%, tests 25%, setup 11%, transform 8%, import 3%)
+
+    Isolate  3 workers spawned · ~527ms startup each (spawn + environment, per file)
+             at least ~1.05s faster with isolate: false — reuses workers across files instead of one per file

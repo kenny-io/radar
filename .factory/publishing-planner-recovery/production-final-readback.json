@@ -1,0 +1,44 @@
+{
+  "sha": "108d6e1ae70f82f3fdfd854ca79fcc4579b2a172",
+  "entries": [
+    {
+      "id": "e_2Qcpo76u",
+      "status": "published",
+      "error": null,
+      "url": "https://github.com/thallylabs/thally-website/pull/138",
+      "publishRemote": null
+    },
+    {
+      "id": "e_2UQxRIMM",
+      "status": "published",
+      "error": null,
+      "url": "https://github.com/thallylabs/thally-website/pull/137",
+      "publishRemote": null
+    }
+  ],
+  "activeJobs": 0,
+  "latestJobs": [
+    {
+      "id": "4a38176f-e92e-4b23-966d-b580ff34bb1e",
+      "ref": "e_2Qcpo76u",
+      "status": "done",
+      "result": {
+        "url": "https://github.com/thallylabs/thally-website/pull/138",
+        "status": "published"
+      },
+      "attempts": 1,
+      "finished": "2026-11-09T21:45:07.399Z"
+    },
+    {
+      "id": "07ed12c2-954e-442c-8058-d6652e69aebb",
+      "ref": "e_2UQxRIMM",
+      "status": "done",
+      "result": {
+        "url": "https://github.com/thallylabs/thally-website/pull/137",
+        "status": "published"
+      },
+      "attempts": 1,
+      "finished": "2026-11-09T21:30:21.472Z"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "pr": 138,
+  "head": "75c11fb7049408abe4d4648a087865dedc9dbb6f",
+  "base": "b84a3485731cd5e01957b865a9405e2a4dbbbfcd",
+  "filesChanged": 6,
+  "articlePath": "src/app/blog/documentation-analytics-for-developer-docs/content.mdx",
+  "articleFileBytes": 10098,
+  "correctedPayloadBytes": 10097,
+  "correctedPayloadSha256": "7ecbeeb487ab9bb2de0eb676926636c33b3553b53139d33307eab6fee4664306",
+  "completeCorrectedPayloadPreserved": true,
+  "trailingFileTerminatorBytes": 1,
+  "exportedPublicSources": 8,
+  "internalNoSchemeSourceOmitted": true
+}
