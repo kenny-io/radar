@@ -1,0 +1,97 @@
+{
+  "observedAt": "2026-11-09T23:20:16.818Z",
+  "origin": "https://radar.thally.io",
+  "expectedDeploymentCommit": "93be7642a7a880bca6f9c40dbc9619ff6684f5b1",
+  "deploymentIdentityProvenance": "PM matching Railway service evidence, not public health",
+  "scope": "Invalid/missing tokens only; no authenticated identity, valid token, customer send or preference mutation",
+  "results": [
+    {
+      "name": "live database health",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "name": "actual invalid landing renders useful error in Chrome",
+      "pass": true,
+      "status": 400
+    },
+    {
+      "name": "signed landing privacy headers",
+      "pass": true
+    },
+    {
+      "name": "mobile invalid landing fits",
+      "pass": true
+    },
+    {
+      "name": "oneclick GET is not a mutation",
+      "pass": true,
+      "status": 405,
+      "privacyHeaders": true
+    },
+    {
+      "name": "canonical oneclick requires valid token",
+      "pass": true,
+      "status": 400,
+      "privacyHeaders": true
+    },
+    {
+      "name": "oneclick rejects extra fields",
+      "pass": true,
+      "status": 400,
+      "privacyHeaders": true
+    },
+    {
+      "name": "oneclick rejects oversize",
+      "pass": true,
+      "status": 400,
+      "privacyHeaders": true
+    },
+    {
+      "name": "oneclick rejects wrong content type",
+      "pass": true,
+      "status": 400,
+      "privacyHeaders": true
+    },
+    {
+      "name": "normal form requires valid token",
+      "pass": true,
+      "status": 400,
+      "privacyHeaders": true
+    },
+    {
+      "name": "normal form rejects duplicate token",
+      "pass": true,
+      "status": 400,
+      "privacyHeaders": true
+    },
+    {
+      "name": "normal form rejects oversize",
+      "pass": true,
+      "status": 413,
+      "privacyHeaders": true
+    },
+    {
+      "name": "normal form rejects wrong content type",
+      "pass": true,
+      "status": 415,
+      "privacyHeaders": true
+    },
+    {
+      "name": "hostile normal origin refused",
+      "pass": true,
+      "status": 403
+    },
+    {
+      "name": "unauthenticated report settings remain private",
+      "pass": true,
+      "status": 401
+    },
+    {
+      "name": "public browser had no page errors or attempted writes",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "blockedBrowserWrites": 0
+}

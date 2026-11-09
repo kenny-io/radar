@@ -1,0 +1,16 @@
+{
+  "hostedEvidence": "PM read-only transaction in production-final.json",
+  "all18LocalSqlHashesAndJournalTimestampsMatch": true,
+  "prior17HostedLedgerRowsUnchanged": true,
+  "requiredThreeReportTablesPresent": true,
+  "coreCourseAndGuideStatusCountsUnchanged": true,
+  "observationCounts": [
+    {
+      "count": 0
+    }
+  ],
+  "verifiedAccountCounts": {
+    "accounts": 5,
+    "verified_accounts": 5
+  }
+}

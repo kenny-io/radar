@@ -1,0 +1,12 @@
+{
+  "mergedCommit": "93be7642a7a880bca6f9c40dbc9619ff6684f5b1",
+  "all656TrackedSourceFilesMatchAcceptedRawHashes": true,
+  "acceptedLocalFingerprint": "1cee02f75468e0468dddc800f5a3afeb977590d0c11474e874d23e3326c6813f",
+  "localFingerprintCount": 657,
+  "generatedNotInGitArchive": [
+    "next-env.d.ts"
+  ],
+  "webDeployment": "dc0c65a0-43d5-466d-86a6-d63966a25efd",
+  "workerDeployment": "ca5180f9-89e8-4de9-b2c7-92985c6f24ef",
+  "status": "Both services SUCCESS confirmed by PM Railway inspection; worker image commit/config/cron registration read-only proof in worker-final.json"
+}

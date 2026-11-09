@@ -1,0 +1,1 @@
+{"commit":"93be7642a7a880bca6f9c40dbc9619ff6684f5b1","education":"1","stubs":"0","appUrl":"https://radar.thally.io","hasSender":true,"hasResend":true,"hasSecret":true,"expectedCrons":["lifecycle.work-updates","lifecycle.weekly-education","lifecycle.guides","visibility.weeklyDigest","visibility.nightly"],"allExpectedRegistered":true}

@@ -1,0 +1,30 @@
+{
+  "dateDubai": "2026-11-10",
+  "commit": "93be7642a7a880bca6f9c40dbc9619ff6684f5b1",
+  "corePr": 25,
+  "reportPr": 42,
+  "webDeployment": "dc0c65a0-43d5-466d-86a6-d63966a25efd",
+  "workerDeployment": "ca5180f9-89e8-4de9-b2c7-92985c6f24ef",
+  "bothSuccessful": true,
+  "exactMigrationCount": 18,
+  "workerEducationEnabled": true,
+  "devStubs": false,
+  "expectedCronsRegistered": true,
+  "activeEmailFamilies": 29,
+  "variants": 72,
+  "retiredSlots": [
+    5
+  ],
+  "aiHistoryFabricated": false,
+  "humanInboxPlacementVerified": false,
+  "postDeployQa": {
+    "accepted": true,
+    "publicChecks": 16,
+    "authenticatedChecks": 11,
+    "report": "qa/report/production/report.md",
+    "finalSimulatorDeleted": true,
+    "credentialFileRemoved": true
+  },
+  "originalVerifiedAccountsAfterCleanup": 5,
+  "cleanupVerifiedAt": "2026-11-09T23:22:26.844216+00:00"
+}

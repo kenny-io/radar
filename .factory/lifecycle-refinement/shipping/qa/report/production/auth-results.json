@@ -1,0 +1,54 @@
+{
+  "observedAt": "2026-11-09T23:20:24.722Z",
+  "origin": "https://radar.thally.io",
+  "expectedDeploymentCommit": "93be7642a7a880bca6f9c40dbc9619ff6684f5b1",
+  "account": "PM-created nonhuman simulator; credentials and recipient excluded",
+  "checks": [
+    {
+      "name": "account preference return preserved through sign-in",
+      "pass": true
+    },
+    {
+      "name": "new report section and no-business empty state work outside paid gate",
+      "pass": true
+    },
+    {
+      "name": "authenticated new report API returns empty owned/admin list",
+      "pass": true
+    },
+    {
+      "name": "authenticated report preference API is uncached",
+      "pass": true
+    },
+    {
+      "name": "existing account categories remain readable",
+      "pass": true
+    },
+    {
+      "name": "empty report state survives reload",
+      "pass": true
+    },
+    {
+      "name": "mobile account report page fits viewport",
+      "pass": true
+    },
+    {
+      "name": "desktop report section remains visible",
+      "pass": true
+    },
+    {
+      "name": "no account preference changed",
+      "pass": true
+    },
+    {
+      "name": "no email trigger or other mutation attempted",
+      "pass": true
+    },
+    {
+      "name": "no browser page errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "forbiddenWrites": 0
+}

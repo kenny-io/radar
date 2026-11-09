@@ -1,0 +1,289 @@
+{
+  "commit": "93be7642a7a880bca6f9c40dbc9619ff6684f5b1",
+  "activeFamilies": 29,
+  "variants": 72,
+  "slots": [
+    {
+      "number": 1,
+      "family": "welcome",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "1A",
+        "1B"
+      ]
+    },
+    {
+      "number": 2,
+      "family": "founder_note",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "2"
+      ]
+    },
+    {
+      "number": 3,
+      "family": "password_reset",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "3"
+      ]
+    },
+    {
+      "number": 4,
+      "family": "trial_started",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "4"
+      ]
+    },
+    {
+      "number": 5,
+      "family": "trial_ending",
+      "status": "intentionally retired; no send",
+      "variants": []
+    },
+    {
+      "number": 6,
+      "family": "invoice_paid",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "6",
+        "6B"
+      ]
+    },
+    {
+      "number": 7,
+      "family": "payment_failed",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "7",
+        "7B"
+      ]
+    },
+    {
+      "number": 8,
+      "family": "cancellation_scheduled",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "8"
+      ]
+    },
+    {
+      "number": 9,
+      "family": "subscription_ended",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "9",
+        "9B"
+      ]
+    },
+    {
+      "number": 10,
+      "family": "work-brief_reply",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "10"
+      ]
+    },
+    {
+      "number": 11,
+      "family": "work-calendar_review",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "11"
+      ]
+    },
+    {
+      "number": 12,
+      "family": "work-article_social",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "12"
+      ]
+    },
+    {
+      "number": 13,
+      "family": "work-social_publish",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "13"
+      ]
+    },
+    {
+      "number": 14,
+      "family": "work-combined",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "14"
+      ]
+    },
+    {
+      "number": 15,
+      "family": "lesson-ai_visibility",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "15A",
+        "15B",
+        "15C",
+        "15D",
+        "15E"
+      ]
+    },
+    {
+      "number": 16,
+      "family": "lesson-daily_brief",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "16A",
+        "16B",
+        "16C",
+        "16D",
+        "16E"
+      ]
+    },
+    {
+      "number": 17,
+      "family": "lesson-backlinks",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "17A",
+        "17B",
+        "17C",
+        "17D",
+        "17E"
+      ]
+    },
+    {
+      "number": 18,
+      "family": "lesson-organic_search",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "18A",
+        "18B",
+        "18C",
+        "18D",
+        "18E",
+        "18F"
+      ]
+    },
+    {
+      "number": 19,
+      "family": "lesson-social_marketing",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "19A",
+        "19B",
+        "19C",
+        "19D",
+        "19E"
+      ]
+    },
+    {
+      "number": 20,
+      "family": "guide-article_workflow",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "20A",
+        "20B",
+        "20C",
+        "20D"
+      ]
+    },
+    {
+      "number": 21,
+      "family": "guide-search_refresh",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "21A",
+        "21B",
+        "21C",
+        "21D"
+      ]
+    },
+    {
+      "number": 22,
+      "family": "confirmation",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "22"
+      ]
+    },
+    {
+      "number": 23,
+      "family": "invitation",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "23A",
+        "23B",
+        "23C"
+      ]
+    },
+    {
+      "number": 24,
+      "family": "backlink-approved",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "24A",
+        "24B"
+      ]
+    },
+    {
+      "number": 25,
+      "family": "backlink-declined",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "25"
+      ]
+    },
+    {
+      "number": 26,
+      "family": "backlink-removal",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "26"
+      ]
+    },
+    {
+      "number": 27,
+      "family": "backlink-lost",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "27A",
+        "27B"
+      ]
+    },
+    {
+      "number": 28,
+      "family": "ai-weekly-report",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "28A",
+        "28B",
+        "28C",
+        "28D"
+      ]
+    },
+    {
+      "number": 29,
+      "family": "autopilot-handoff",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "29A",
+        "29B",
+        "29C"
+      ]
+    },
+    {
+      "number": 30,
+      "family": "guide-autopilot_intro",
+      "status": "deployed runtime/source at93be7642; actual eligibility/trigger required",
+      "variants": [
+        "30A",
+        "30B",
+        "30C",
+        "30D"
+      ]
+    }
+  ],
+  "limits": "Runtime registration/source/deployment verified; individual customer events and natural future reports were not manufactured."
+}
