@@ -1,0 +1,25 @@
+{
+  "commit": "1473f55971273a85df22165dee011b943de0311d",
+  "sourceAndClientBundleMatched": true,
+  "health": {
+    "status": 200,
+    "ok": true
+  },
+  "realRender": {
+    "attempted": true,
+    "verified": true,
+    "modelRequired": true,
+    "production": true,
+    "developmentStubs": false,
+    "width": 1200,
+    "height": 675,
+    "bytes": 782680,
+    "storageReadback": true,
+    "verificationObjectRemoved": true,
+    "customerDataChanged": false
+  },
+  "accountCooldownEvents": {
+    "web": 0,
+    "worker": 0
+  }
+}
