@@ -7,10 +7,10 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<
 const page = (content: string, status = 200) => new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Email preferences · Radar</title></head><body style="font-family:system-ui;max-width:36rem;margin:3rem auto;padding:1rem;line-height:1.6"><main><h1>Email preferences</h1>${content}</main></body></html>`, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" } });
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  if (url.searchParams.get('saved') === '1') return page('<p>Weekly AI recommendation reports are turned off for this business. Your other email and research study preferences are unchanged.</p>');
+  if (url.searchParams.get('saved') === '1') return page('<p>Weekly AI recommendation reports are turned off for this business. Your other email preferences are unchanged.</p>');
   const token = url.searchParams.get('token') || '';
   if (!readDigestPreferencesToken(token)) return page('<p>This preference link is invalid. Open Email preferences from a recent weekly AI recommendation report.</p>', 400);
-  return page(`<p>Turn off weekly AI recommendation reports for the business in this email. Your other email and research study preferences are unchanged.</p><form method="post" action="/ai-email-preferences"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit" style="font:inherit;padding:12px 18px">Turn off weekly AI reports</button></form>`);
+  return page(`<p>Turn off weekly AI recommendation reports for the business in this email. Your other email preferences are unchanged.</p><form method="post" action="/ai-email-preferences"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit" style="font:inherit;padding:12px 18px">Turn off weekly AI reports</button></form>`);
 }
 export async function POST(request: Request) {
   let form: URLSearchParams;

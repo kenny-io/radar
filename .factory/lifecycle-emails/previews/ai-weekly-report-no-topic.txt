@@ -18,7 +18,7 @@ I’d read the answers to this question before choosing what to write or update.
 
 Missing or failed collections are excluded from these figures. AI answers can change between checks.
 
-Review all answers: https://radar.thally.io/performance
+Review all answers: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fperformance%3Ftab%3Dai
 
 Ekene
 Founder, Radar

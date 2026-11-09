@@ -27,7 +27,7 @@ export function AiReportPreferences() {
   };
   return <section aria-label="Weekly AI recommendation reports" aria-busy={loading||busy} style={{marginBottom:24}}>
     <h2 className="h3">Weekly AI recommendation reports</h2>
-    <p className="small sub">A weekly report for each business with collected AI answers. Reports share the daily optional-email limit and don’t require research participation.</p>
+    <p className="small sub">Reports start on Mondays when there are collected AI answers to review. If another Radar email is due, your report may arrive later.</p>
     {loading && !rows ? <p className="xs sub" role="status">Loading report preferences…</p> : rows?.map(row => <label key={row.id} className="row" style={{gap:12,padding:'12px 0',alignItems:'flex-start'}}><input type="checkbox" checked={row.weeklyEmail} disabled={loading||busy} onChange={e => void change(row,e.target.checked)} style={{width:18,height:18,accentColor:'var(--ink)'}}/><span className="small" style={{overflowWrap:'anywhere'}}>Weekly AI report for {row.domain}</span></label>)}
     {rows?.length === 0 && <p className="xs sub">Report preferences appear here for businesses you own or administer.</p>}
     <div aria-live="polite">{busy ? <p role="status" className="xs sub">Saving…</p> : saved ? <p role="status" className="xs sub">Report preferences saved.</p> : null}</div>

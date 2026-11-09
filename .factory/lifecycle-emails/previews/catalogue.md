@@ -6,7 +6,7 @@ Fieldnote, Alex, invoice details, dates, links and conversation drafts are ficti
 
 New emails come from **Ekene from Radar**, with replies going to **team@thally.io**. The @radar.example address shown below is a preview stand-in; the configured verified sending address stays unchanged.
 
-All active copy is written from Ekene, Radar’s founder. Trial-ending reminder #5 is retired. Revised copy and new lifecycle schedules await release. The separate AI report is independently local. Existing queued messages keep their original frozen body.
+All active copy is written from Ekene, Radar’s founder. Trial-ending reminder #5 is retired. All families use the app’s actual renderers, including the weekly AI report. See docs/EMAILS.md and the shipping records for deployment evidence. Existing queued messages keep their original frozen body.
 
 Optional lifecycle mail is default-on for eligible verified users, preserving recorded opt-outs. Daytime and the shared 24-hour cap may delay its nominal due time. Weekly lessons are at least seven days apart and finish after five. Autopilot handoffs are triggered by the owner-enabled business program and use their separate delivery path.
 
@@ -51,7 +51,7 @@ Optional lifecycle mail is default-on for eligible verified users, preserving re
 
 ## #1 — Put your Business Profile to work
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #1A — Primary example
 
@@ -133,7 +133,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #2 — Why I built Radar
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #2 — Primary example
 
@@ -179,7 +179,7 @@ Stop optional setup emails: https://radar.thally.io/email-preferences?token=prev
 
 ## #3 — Reset your Radar password
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #3 — Primary example
 
@@ -223,7 +223,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #4 — Your Radar trial is on
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #4 — Primary example
 
@@ -277,7 +277,7 @@ This number stays reserved. No email body is scheduled or sent.
 
 ## #6 — Your Radar subscription receipt
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #6 — Primary example
 
@@ -357,7 +357,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #7 — Your Radar subscription needs attention
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #7 — Primary example
 
@@ -439,7 +439,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #8 — Your Radar cancellation is confirmed
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #8 — Primary example
 
@@ -481,7 +481,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #9 — Your Radar subscription has ended
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #9 — Primary example
 
@@ -563,7 +563,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #10 — New conversations in your Daily Brief
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #10 — Primary example
 
@@ -609,7 +609,7 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 ## #11 — Your content plan is ready for a decision
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #11 — Primary example
 
@@ -655,7 +655,7 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 ## #12 — Make a social pack from a saved article
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #12 — Primary example
 
@@ -701,7 +701,7 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 ## #13 — Give your saved social posts a publishing time
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #13 — Primary example
 
@@ -747,7 +747,7 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 ## #14 — Your open decisions in Radar
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #14 — Primary example
 
@@ -807,7 +807,7 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 ## #15 — Does ChatGPT or Claude recommend Fieldnote?
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #15A — workspace
 
@@ -1041,7 +1041,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #16 — Add a real example to Fieldnote’s replies
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #16A — workspace
 
@@ -1275,7 +1275,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #17 — How Fieldnote could appear on another site
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #17A — workspace
 
@@ -1509,7 +1509,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #18 — What should Fieldnote publish next?
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #18A — workspace
 
@@ -1787,7 +1787,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #19 — What could Fieldnote teach in one social post?
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #19A — workspace
 
@@ -2021,7 +2021,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #20 — What happens before an article goes live
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #20A — workspace
 
@@ -2209,7 +2209,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #21 — Your next article might be a page you already have
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #21A — workspace
 
@@ -2405,7 +2405,7 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 ## #22 — Confirm your email for Radar
 
-**Status:** Existing live sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #22 — Primary example
 
@@ -2443,7 +2443,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #23 — Alex invited you to Fieldnote on Radar
 
-**Status:** Existing live sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #23A — Editor
 
@@ -2545,7 +2545,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #24 — Fieldnote approved a partner link on partner.example/articles/design-tools
 
-**Status:** Existing live sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #24A — Primary example
 
@@ -2635,7 +2635,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #25 — Fieldnote passed on a partner link
 
-**Status:** Existing live sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #25 — Primary example
 
@@ -2676,7 +2676,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #26 — Link removal request from Fieldnote
 
-**Status:** Existing live sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #26 — Primary example
 
@@ -2714,7 +2714,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #27 — Partner link not found on partner.example/articles/design-tools
 
-**Status:** Existing live sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #27A — missing
 
@@ -2784,7 +2784,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #28 — Recommendation share this week · fieldnote.example
 
-**Status:** Separate local AI measurement feature; not released
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #28A — Primary example
 
@@ -2796,9 +2796,9 @@ Email preferences: https://radar.thally.io/email-preferences
 
 **Preview text:** This week’s collected answers, with the previous period alongside.
 
-**Trigger:** Active business has collected AI answers for the week
+**Trigger:** Active owned business has real collected AI answers for the completed UTC week
 
-**Cadence:** Mondays after 08:00 UTC; separate local feature
+**Cadence:** Monday after 08:00 UTC; once/business/week; shared daytime and optional cap apply
 
 **Format:** HTML + plain text
 
@@ -2818,7 +2818,7 @@ A topic based on this question is saved in your Content Calendar for review. Rev
 
 Missing or failed collections are excluded from these figures. AI answers can change between checks.
 
-Review all answers: https://radar.thally.io/performance
+Review all answers: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fperformance%3Ftab%3Dai
 
 Ekene
 Founder, Radar
@@ -2860,7 +2860,7 @@ I’d read the answers to see how the assistants described your business.
 
 Missing or failed collections are excluded from these figures. AI answers can change between checks.
 
-Review all answers: https://radar.thally.io/performance
+Review all answers: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fperformance%3Ftab%3Dai
 
 Ekene
 Founder, Radar
@@ -2902,7 +2902,7 @@ A topic based on this question is saved in your Content Calendar for review. Rev
 
 Missing or failed collections are excluded from these figures. AI answers can change between checks.
 
-Review all answers: https://radar.thally.io/performance
+Review all answers: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fperformance%3Ftab%3Dai
 
 Ekene
 Founder, Radar
@@ -2944,7 +2944,7 @@ I’d read the answers to this question before choosing what to write or update.
 
 Missing or failed collections are excluded from these figures. AI answers can change between checks.
 
-Review all answers: https://radar.thally.io/performance
+Review all answers: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fperformance%3Ftab%3Dai
 
 Ekene
 Founder, Radar
@@ -2958,7 +2958,7 @@ Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-on
 
 ## #29 — Radar Autopilot: 2 actions need you · Fieldnote
 
-**Status:** New main Autopilot sender; refined copy pending release
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #29A — Two owner actions
 
@@ -3088,7 +3088,7 @@ Email preferences: https://radar.thally.io/email-preferences
 
 ## #30 — Too busy to keep up with publishing?
 
-**Status:** Local lifecycle release in PR #25
+**Status:** Implemented runtime email; deployment evidence: docs/EMAILS.md
 
 ### #30A — workspace
 
