@@ -8,6 +8,6 @@ Scope: DailyBrief.tsx and this record. Typecheck, production build, diff check p
 
 Build log /tmp/radar-image-progress-build.log; local browser evidence .data/image-progress/. No new mirrored unit tests for this reversible UI change.
 
-Production rollout pending.
+[PR35](https://github.com/kenny-io/radar/pull/35) merged as `8bc73298a9d9273a172e2806afa138e66e932794`. Railway web `99271c2b-bf78-4f0f-9fc1-2ca597fcf154` and worker `615b3da3-1c34-4919-8726-202dcf50b804` both report SUCCESS on the merged revision. Actual web source hash matches the tested component, compiled client bundle contains the progress status, production/stubs off confirmed and live health returned200/ok. Released and verified.
 
 DailyBrief.tsx SHA-256: `f12928bad5d3f40d91af868216ac3f90a571a9ef6fffba9a9a7ebfa93bf1db53`.
