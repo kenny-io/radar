@@ -8,20 +8,17 @@ Hi Alex,
 
 Your subscription receipt
 
-Thanks for subscribing to Radar. I’m glad to have you here.
-
 Your Radar subscription invoice is paid: $49.00.
 
 Invoice: RADAR-DEMO-0001.
 
-You can view or download the invoice in Settings → Billing, then Manage billing. I hope Radar helps you get useful work out there for your business.
+You can view or download the invoice in Settings → Billing, then Manage billing.
 
 Open Billing: https://radar.thally.io/settings?section=billing
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

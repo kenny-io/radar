@@ -2,24 +2,21 @@ Does ChatGPT or Claude recommend Paper & Pixel?
 
 Hi Alex,
 
-Let’s see what AI says about your business.
+Read what the assistant actually says.
 
-I want to help you see what someone might hear about Paper & Pixel before they ever reach your site. Start with a question they’d ask while choosing a product like yours.
-
-Radar can collect the answers from ChatGPT, Claude, Gemini, Perplexity and Grok. Read the answers and their sources to find a question your own experience could help answer.
+An assistant can name Paper & Pixel without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
 1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
 
-2. Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.
+2. Open a collected answer and follow its citations. Look for whether your business is named, how it is described and which sources support that description. Compare those details with the information on your own site.
 
-Here’s how I’d track it: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.
+Keep the questions stable and compare their Mentioned and Cited your site counts next week. Not collected means an answer is missing; it is different from an answer that didn’t mention you.
 
 Check my AI visibility: https://radar.thally.io/email/learn?lesson=ai_visibility&businessId=11111111-1111-4111-8111-111111111111
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

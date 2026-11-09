@@ -2,24 +2,23 @@ Email #1A · Primary example
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
 Subject: Put your Business Profile to work
-Preview: I’m Ekene, Radar’s founder. Here’s where I’d start with your saved profile.
+Preview: Check the offering, audience and voice in your saved profile.
 
 Hi Alex,
 
 Your Business Profile is ready.
 
-I’m Ekene, the founder of Radar. I built it to help you get your business in front of the people who need it.
+I’m Ekene, Radar’s founder.
 
-Your website analysis and Business Profile for Fieldnote are saved. I’d start by checking what Radar learned about your business, audience and voice.
+Your website analysis and Business Profile for Fieldnote are saved. Open the profile and check the description of what you sell, who it’s for and how you want to sound.
 
-That profile shapes the articles, posts and replies Radar prepares for you. Once it looks right, choose one question you’d like your next customer to find an answer to.
+Correct anything Radar misunderstood before generating content. This is the context it will use for your business.
 
 Continue with my profile: https://radar.thally.io/dashboard
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

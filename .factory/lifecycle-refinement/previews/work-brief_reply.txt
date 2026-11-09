@@ -1,25 +1,22 @@
 Email #10 · Primary example
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
-Subject: Conversations worth joining
-Preview: Read a thread, edit the reply and add something useful to the conversation.
+Subject: New conversations in your Daily Brief
+Preview: The discussion may have moved on. Read the latest replies before jumping in.
 
 Hi Alex,
 
-Conversations worth joining
-
-I want to help you put the work saved in Radar to use for your business. Here’s one next step to try.
+A few threads to look at today.
 
 Fieldnote · Daily Brief
 
-4 conversations are ready to review. Read the original thread for one you can help with, edit the suggested reply and join in.
+4 conversations have been brought into today’s brief. I’d open a promising thread while it’s current; read the latest replies before deciding whether to join in.
 
-Review a conversation: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=brief_reply&ref=2026-11-09
+See today’s conversations: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=brief_reply&ref=2026-11-09
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

@@ -8,9 +8,7 @@ Hi Alex,
 
 Your cancellation is confirmed.
 
-Your Radar subscription cancellation is confirmed. You can keep using your workspace until December 12, 2026 at 12:00 PM UTC, and your subscription won’t renew after that date.
-
-Thanks for giving Radar a try. If something got in your way, I’d like to hear about it. Reply and tell me what you were hoping to do.
+You can keep using your workspace until December 12, 2026 at 12:00 PM UTC. Your Radar subscription won’t renew after that date.
 
 You can review your subscription in Settings → Billing if you decide to continue.
 
@@ -18,8 +16,7 @@ Manage subscription: https://radar.thally.io/settings?section=billing
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

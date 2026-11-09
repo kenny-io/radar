@@ -29,7 +29,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Put your Business Profile to work",
-      "preheader": "I’m Ekene, Radar’s founder. Here’s where I’d start with your saved profile."
+      "preheader": "Check the offering, audience and voice in your saved profile."
     },
     {
       "id": "welcome-neutral",
@@ -47,7 +47,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Welcome to Radar",
-      "preheader": "I’m Ekene, Radar’s founder. Let’s get your business set up."
+      "preheader": "Continue setting up your Business Profile."
     },
     {
       "id": "founder_note",
@@ -101,7 +101,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Your Radar trial is on",
-      "preheader": "I’d use the trial to get one useful article, post or reply ready for your business."
+      "preheader": "Your workspace is open. Here are the trial dates and subscription details."
     },
     {
       "id": "invoice_paid",
@@ -244,8 +244,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Conversations worth joining",
-      "preheader": "Read a thread, edit the reply and add something useful to the conversation."
+      "subject": "New conversations in your Daily Brief",
+      "preheader": "The discussion may have moved on. Read the latest replies before jumping in."
     },
     {
       "id": "work-calendar_review",
@@ -262,8 +262,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Choose the topics you want to publish",
-      "preheader": "Pick a proposed topic you want Radar to draft."
+      "subject": "Your content plan is ready for a decision",
+      "preheader": "Decide which proposed topic you want Radar to turn into a draft."
     },
     {
       "id": "work-article_social",
@@ -280,8 +280,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Turn your article into social posts",
-      "preheader": "Use an idea from your article in a post you can review and share."
+      "subject": "Make a social pack from a saved article",
+      "preheader": "Choose the article as the source for a new pack."
     },
     {
       "id": "work-social_publish",
@@ -298,8 +298,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Your social posts are ready to schedule",
-      "preheader": "Check your saved posts and choose when to share them."
+      "subject": "Give your saved social posts a publishing time",
+      "preheader": "Choose when and where one saved draft should go out."
     },
     {
       "id": "work-combined",
@@ -316,8 +316,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "A few things to pick up in Radar",
-      "preheader": "Choose one useful next step from the work already saved in your account."
+      "subject": "Your open decisions in Radar",
+      "preheader": "A short list of what’s waiting, with a direct link to each item."
     },
     {
       "id": "lesson-ai_visibility-workspace",
@@ -335,7 +335,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "I’d start with two questions a potential customer might ask."
+      "preheader": "A mention and a citation tell you different things. Here’s what to look for."
     },
     {
       "id": "lesson-ai_visibility-start_trial",
@@ -353,7 +353,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "I’d start with two questions a potential customer might ask."
+      "preheader": "A mention and a citation tell you different things. Here’s what to look for."
     },
     {
       "id": "lesson-ai_visibility-restart",
@@ -371,7 +371,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "I’d start with two questions a potential customer might ask."
+      "preheader": "A mention and a citation tell you different things. Here’s what to look for."
     },
     {
       "id": "lesson-ai_visibility-setup",
@@ -389,7 +389,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend Fieldnote?",
-      "preheader": "I’d start with two questions a potential customer might ask."
+      "preheader": "A mention and a citation tell you different things. Here’s what to look for."
     },
     {
       "id": "lesson-ai_visibility-neutral",
@@ -407,7 +407,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Does ChatGPT or Claude recommend your business?",
-      "preheader": "I’d start with two questions a potential customer might ask."
+      "preheader": "A mention and a citation tell you different things. Here’s what to look for."
     },
     {
       "id": "lesson-daily_brief-workspace",
@@ -424,8 +424,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
+      "subject": "Add a real example to Fieldnote’s replies",
+      "preheader": "Bring an example from your own work into the conversation."
     },
     {
       "id": "lesson-daily_brief-start_trial",
@@ -442,8 +442,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
+      "subject": "Add a real example to Fieldnote’s replies",
+      "preheader": "Bring an example from your own work into the conversation."
     },
     {
       "id": "lesson-daily_brief-restart",
@@ -460,8 +460,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
+      "subject": "Add a real example to Fieldnote’s replies",
+      "preheader": "Bring an example from your own work into the conversation."
     },
     {
       "id": "lesson-daily_brief-setup",
@@ -478,8 +478,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Find a conversation Fieldnote can help with",
-      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
+      "subject": "Add a real example to Fieldnote’s replies",
+      "preheader": "Bring an example from your own work into the conversation."
     },
     {
       "id": "lesson-daily_brief-neutral",
@@ -496,8 +496,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Find one conversation you can help with",
-      "preheader": "One useful reply is a good place to start. Here’s how I’d use Daily Brief."
+      "subject": "Add a real example to your replies",
+      "preheader": "Bring an example from your own work into the conversation."
     },
     {
       "id": "lesson-backlinks-workspace",
@@ -605,7 +605,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Here’s how I’d choose one useful question for your next article."
+      "preheader": "Use search intent to judge which proposed article fits your business."
     },
     {
       "id": "lesson-organic_search-start_trial",
@@ -623,7 +623,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Here’s how I’d choose one useful question for your next article."
+      "preheader": "Use search intent to judge which proposed article fits your business."
     },
     {
       "id": "lesson-organic_search-restart",
@@ -641,7 +641,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Here’s how I’d choose one useful question for your next article."
+      "preheader": "Use search intent to judge which proposed article fits your business."
     },
     {
       "id": "lesson-organic_search-setup",
@@ -659,7 +659,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Here’s how I’d choose one useful question for your next article."
+      "preheader": "Use search intent to judge which proposed article fits your business."
     },
     {
       "id": "lesson-organic-search-disconnected",
@@ -677,7 +677,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "What should Fieldnote publish next?",
-      "preheader": "Here’s how I’d choose one useful question for your next article."
+      "preheader": "Use search intent to judge which proposed article fits your business."
     },
     {
       "id": "lesson-organic_search-neutral",
@@ -695,7 +695,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "What should you publish next?",
-      "preheader": "Here’s how I’d choose one useful question for your next article."
+      "preheader": "Use search intent to judge which proposed article fits your business."
     },
     {
       "id": "lesson-social_marketing-workspace",
@@ -712,8 +712,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "I’d give a useful article another chance to reach someone."
+      "subject": "What could Fieldnote teach in one social post?",
+      "preheader": "Turn a recurring customer question into a post with an example of your own."
     },
     {
       "id": "lesson-social_marketing-start_trial",
@@ -730,8 +730,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "I’d give a useful article another chance to reach someone."
+      "subject": "What could Fieldnote teach in one social post?",
+      "preheader": "Turn a recurring customer question into a post with an example of your own."
     },
     {
       "id": "lesson-social_marketing-restart",
@@ -748,8 +748,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "I’d give a useful article another chance to reach someone."
+      "subject": "What could Fieldnote teach in one social post?",
+      "preheader": "Turn a recurring customer question into a post with an example of your own."
     },
     {
       "id": "lesson-social_marketing-setup",
@@ -766,8 +766,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Put Fieldnote’s article to work on social",
-      "preheader": "I’d give a useful article another chance to reach someone."
+      "subject": "What could Fieldnote teach in one social post?",
+      "preheader": "Turn a recurring customer question into a post with an example of your own."
     },
     {
       "id": "lesson-social_marketing-neutral",
@@ -784,8 +784,8 @@
       "format": "HTML + plain text",
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
-      "subject": "Put your article to work on social",
-      "preheader": "I’d give a useful article another chance to reach someone."
+      "subject": "What could you teach in one social post?",
+      "preheader": "Turn a recurring customer question into a post with an example of your own."
     },
     {
       "id": "guide-article_workflow-workspace",
@@ -1127,7 +1127,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "I’m sending your collected answers and a next step to consider for your business."
+      "preheader": "This week’s collected answers, with the previous period alongside."
     },
     {
       "id": "ai-weekly-report-no-miss",
@@ -1145,7 +1145,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "I’m sending your collected answers and a next step to consider for your business."
+      "preheader": "This week’s collected answers, with the previous period alongside."
     },
     {
       "id": "ai-weekly-report-no-comparison",
@@ -1163,7 +1163,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "I’m sending your collected answers and a next step to consider for your business."
+      "preheader": "This week’s collected answers, with the previous period alongside."
     },
     {
       "id": "ai-weekly-report-no-topic",
@@ -1181,7 +1181,7 @@
       "from": "Ekene from Radar <notifications@radar.example>",
       "replyTo": "team@thally.io",
       "subject": "Recommendation share this week · fieldnote.example",
-      "preheader": "I’m sending your collected answers and a next step to consider for your business."
+      "preheader": "This week’s collected answers, with the previous period alongside."
     },
     {
       "id": "autopilot-actions",

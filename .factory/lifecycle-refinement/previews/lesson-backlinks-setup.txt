@@ -10,22 +10,19 @@ Help the right reader find you.
 
 Someone reading another founder’s site could be looking for exactly what Fieldnote offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
 
-My advice is to judge each suggestion as a reader. You can see the page and proposed sentence before deciding whether the link belongs there.
-
-Start by adding your website and checking the Business Profile Radar creates. That gives Radar the context to help with the steps below once your workspace is active.
+Save your Business Profile and activate your workspace before following these steps.
 
 1. Open Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.
 
 2. When a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.
 
-Here’s how I’d track it: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.
+Approval and live placement are separate. Backlinks → Live links shows placement and verification status, with Re-check when you need it. Search rankings and AI recommendations can vary.
 
 Continue setting up Radar: https://radar.thally.io/onboarding
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

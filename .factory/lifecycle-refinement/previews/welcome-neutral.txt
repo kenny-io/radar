@@ -2,24 +2,23 @@ Email #1B · Direct signup / unfinished analysis
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
 Subject: Welcome to Radar
-Preview: I’m Ekene, Radar’s founder. Let’s get your business set up.
+Preview: Continue setting up your Business Profile.
 
 Hi Alex,
 
 Welcome to Radar.
 
-I’m Ekene, the founder of Radar. I built it to help you get your business in front of the people who need it.
+I’m Ekene, Radar’s founder.
 
-Your account is ready. I’d start by adding your website and checking the Business Profile Radar creates for you.
+Add your website to create your Business Profile, then check that Radar has understood what you sell and who it’s for.
 
-That gives Radar the context to suggest useful articles, posts and conversations for your business. Open your account to pick up from where you left off.
+Correct the profile before generating content so Radar starts with the right context.
 
 Open Radar: https://radar.thally.io/dashboard
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

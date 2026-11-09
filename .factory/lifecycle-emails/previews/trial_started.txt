@@ -2,24 +2,23 @@ Email #4 · Primary example
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
 Subject: Your Radar trial is on
-Preview: I’d use the trial to get one useful article, post or reply ready for your business.
+Preview: Your workspace is open. Here are the trial dates and subscription details.
 
 Hi Alex,
 
 3 days to try Radar
 
-Your Radar trial is ready. I’d start with one thing you can put to use: an article that answers a customer’s question, a social post or a helpful reply to a conversation.
+Your trial is active. Thanks for giving Radar a try.
 
-Your trial runs until November 12, 2026 at 12:00 PM UTC. Your Radar subscription starts after the trial and continues automatically. The card-confirmation credit goes toward your first subscription invoice.
+It runs until November 12, 2026 at 12:00 PM UTC. Your Radar subscription starts after the trial and continues automatically. The card-confirmation credit goes toward your first subscription invoice.
 
-You can review your subscription details in Settings → Billing. For now, open Radar and choose the first thing you’d like it to help you with.
+Your subscription details are in Settings → Billing.
 
 Open my Radar workspace: https://radar.thally.io/dashboard
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

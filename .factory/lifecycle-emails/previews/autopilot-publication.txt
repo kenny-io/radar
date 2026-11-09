@@ -3,9 +3,7 @@ From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
 Subject: Radar Autopilot: 1 action needs you · Fieldnote
 
-I want to help you follow through on the work Radar has prepared for Fieldnote. Autopilot found an action that needs your help.
-
-I’d open the saved work first, then choose the next step below. Review any prepared draft before you share it.
+Autopilot needs your help with this action for Fieldnote:
 
 1. A LinkedIn post needs attention
 
@@ -19,7 +17,6 @@ You’re receiving this because Autopilot is on for this business. You can turn 
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Email preferences: https://radar.thally.io/email-preferences

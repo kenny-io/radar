@@ -24,9 +24,9 @@ const clean = (value: string | undefined, max = 80) => value?.replace(/[\u0000-\
 const accessNote = (access: EducationContext['access']) => {
   switch (access) {
     case 'workspace': return [];
-    case 'start_trial': return ['Your saved Business Profile gives you a starting point. When you’re ready, start your Radar trial and try the steps below.'];
-    case 'restart': return ['You can pick this up when your Radar workspace is available again. Open your account to resume your subscription access first.'];
-    case 'setup': return ['Start by adding your website and checking the Business Profile Radar creates. That gives Radar the context to help with the steps below once your workspace is active.'];
+    case 'start_trial': return ['Start your Radar trial to try this in your workspace.'];
+    case 'restart': return ['Resume your subscription access before trying these steps.'];
+    case 'setup': return ['Save your Business Profile and activate your workspace before following these steps.'];
   }
 };
 
@@ -45,27 +45,25 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
     case 'ai_visibility':
       return {
         subject: named ? `Does ChatGPT or Claude recommend ${named}?` : 'Does ChatGPT or Claude recommend your business?',
-        preheader: 'I’d start with two questions a potential customer might ask.',
-        heading: 'Let’s see what AI says about your business.',
+        preheader: 'A mention and a citation tell you different things. Here’s what to look for.',
+        heading: 'Read what the assistant actually says.',
         paragraphs: [
-          `I want to help you see what someone might hear about ${business} before they ever reach your site. Start with a question they’d ask while choosing a product like yours.`,
-          'Radar can collect the answers from ChatGPT, Claude, Gemini, Perplexity and Grok. Read the answers and their sources to find a question your own experience could help answer.',
+          `An assistant can name ${business} without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.`,
           ...intro,
         ],
         steps: [
           `Open Performance → AI Visibility and add two buyer questions. Try ${question}. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.`,
-          'Read one answer and its citations. Pick a question where your experience would add something useful, then add it to Content Calendar. Review the article before publishing it on your site.',
+          'Open a collected answer and follow its citations. Look for whether your business is named, how it is described and which sources support that description. Compare those details with the information on your own site.',
         ],
         ctaLabel: cta('Check my AI visibility'),
       };
     case 'daily_brief':
       return {
-        subject: named ? `Find a conversation ${named} can help with` : 'Find one conversation you can help with',
-        preheader: 'One useful reply is a good place to start. Here’s how I’d use Daily Brief.',
-        heading: 'Help one person with a question you know.',
+        subject: named ? `Add a real example to ${named}’s replies` : 'Add a real example to your replies',
+        preheader: 'Bring an example from your own work into the conversation.',
+        heading: 'Make the reply worth posting.',
         paragraphs: [
-          'I built Daily Brief to help you find people already talking about problems you can solve. It brings relevant conversations from Reddit, X, LinkedIn and Hacker News into Radar, with a suggested reply you can make your own.',
-          'I’d start with one thread where you have something useful to add. Give the person a good answer before thinking about whether to mention your product.',
+          'A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.',
           ...intro,
         ],
         steps: [
@@ -81,7 +79,6 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
         heading: 'Help the right reader find you.',
         paragraphs: [
           `Someone reading another founder’s site could be looking for exactly what ${business} offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.`,
-          'My advice is to judge each suggestion as a reader. You can see the page and proposed sentence before deciding whether the link belongs there.',
           ...intro,
         ],
         steps: [
@@ -93,32 +90,30 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
     case 'organic_search':
       return {
         subject: named ? `What should ${named} publish next?` : 'What should you publish next?',
-        preheader: 'Here’s how I’d choose one useful question for your next article.',
-        heading: 'Choose a question your next customer might ask.',
+        preheader: 'Use search intent to judge which proposed article fits your business.',
+        heading: 'What is the searcher trying to do?',
         paragraphs: [
-          'I’d start by choosing one question a potential customer needs help with. A useful answer gives them a reason to discover your business.',
-          'In Radar, your target keywords sit alongside proposed topics in Content Calendar. Use them to choose a question you can answer well and a reader who has a reason to know your business.',
+          'Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.',
           ...intro,
         ],
         steps: [
-          `Open Content Calendar and compare two proposed topics${keyword ? `, including one around “${keyword}”` : ' that fit what you sell'}. Read the search intent and keyword estimates. Pick the question where you have a useful answer and a clear reason for that reader to know your business.`,
-          `Check whether your site already answers that question. Approve & schedule a suitable topic, or add one that fits better. ${context.gscConnected ? 'Use the Queries and Pages tables in Performance to compare your plan with measured search activity.' : 'Connect Google Search Console in Settings when you want to compare the plan with measured search activity.'}`,
+          `Open Content Calendar and compare two proposed topics${keyword ? `, including one around “${keyword}”` : ' that fit what you sell'}. Read each topic’s search intent and keyword estimates. Decide which reader you can help and what the article should answer.`,
+          context.gscConnected ? 'Open Performance and read the Queries and Pages tables over the same period. Use the measured impressions and clicks as context for your choice; keep them separate from the estimates attached to proposed topics.' : 'Connect Google Search Console in Settings. Once data is available, read the Queries and Pages tables in Performance to see which searches already bring impressions and clicks. Keep those measurements separate from keyword estimates.',
         ],
         ctaLabel: cta('Review my Content Calendar'),
       };
     case 'social_marketing':
       return {
-        subject: named ? `Put ${named}’s article to work on social` : 'Put your article to work on social',
-        preheader: 'I’d give a useful article another chance to reach someone.',
-        heading: 'Let’s get more use from what you’ve written.',
+        subject: named ? `What could ${named} teach in one social post?` : 'What could you teach in one social post?',
+        preheader: 'Turn a recurring customer question into a post with an example of your own.',
+        heading: 'Put your own experience into the draft.',
         paragraphs: [
-          'I want to help you get more use from the work you’ve already put into an article. A practical example or an answer inside it can make a useful social post on its own.',
-          'Radar can turn those ideas into posts for your connected X and LinkedIn accounts. I’d start with one point you’d want a potential customer to remember.',
+          'Think of a question customers ask you repeatedly. I’d use your answer as the basis for a social post, then add an example from your own work. That gives someone a reason to read it and remember your business.',
           ...intro,
         ],
         steps: [
-          'Open Social Marketing and generate a pack from an article you want to share. If you haven’t written one yet, choose Suggest ideas for ideas based on your Business Profile. Read each post as someone who hasn’t seen the article.',
-          'Check the wording, image and destination link. Publish one post now or schedule it for a time you choose. You can also copy it to share yourself. Review automatic posting settings separately before turning them on.',
+          'Open Social Marketing and choose An idea. Enter one recurring customer question and ask for a post that answers it with a practical example. Generate a pack for the platforms you use.',
+          'Edit one draft to include a detail from your business: a choice you made, a trade-off or a real example. Check its image and link, then share it when it’s ready. Review automatic posting settings separately before turning them on.',
         ],
         ctaLabel: cta('Create my social posts'),
       };
@@ -129,11 +124,11 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
 /** A progress check closes each lesson without implying any result already exists. */
 export function educationProgress(lesson: EducationLessonId): string {
   switch (lesson) {
-    case 'ai_visibility': return 'Here’s how I’d track it: note the Mentioned and Cited your site counts, then compare the same questions next week. Keep the questions stable. Not collected means an answer is still missing; it is separate from an answer that didn’t mention you.';
-    case 'daily_brief': return 'Here’s how I’d track it: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.';
-    case 'backlinks': return 'Here’s how I’d track it: open Backlinks → Live links for placement and verification status. Use Re-check if a link needs attention. Judge each link by its relevance to readers; search rankings and AI recommendations can vary.';
-    case 'organic_search': return 'Here’s how I’d track it: follow the article’s status in Content Calendar. When Search Console data is available, compare the page’s clicks and impressions over time. Keep keyword estimates separate from measured results.';
-    case 'social_marketing': return 'Here’s how I’d track it: check the post’s scheduled, posted or failed state in Radar. Once it’s posted, open it on the platform to read reactions and replies.';
+    case 'ai_visibility': return 'Keep the questions stable and compare their Mentioned and Cited your site counts next week. Not collected means an answer is missing; it is different from an answer that didn’t mention you.';
+    case 'daily_brief': return 'Mark a reply posted only after you’ve published it. The copied and posted states show your follow-through; the original thread is where you’ll find responses and follow-up questions.';
+    case 'backlinks': return 'Approval and live placement are separate. Backlinks → Live links shows placement and verification status, with Re-check when you need it. Search rankings and AI recommendations can vary.';
+    case 'organic_search': return 'After publication, give Search Console time to collect data before comparing the page’s clicks and impressions. An estimate helped you choose the topic; measured activity tells you what happened afterward.';
+    case 'social_marketing': return 'Use Radar’s scheduled, posted and failed states to follow the post’s progress. Once it’s posted, read the responses on the platform; a follow-up question can become your next topic.';
     default: throw new Error('Unknown education lesson');
   }
 }

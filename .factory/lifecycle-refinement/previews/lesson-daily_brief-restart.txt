@@ -1,31 +1,28 @@
 Email #16C · restart
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
-Subject: Find a conversation Fieldnote can help with
-Preview: One useful reply is a good place to start. Here’s how I’d use Daily Brief.
+Subject: Add a real example to Fieldnote’s replies
+Preview: Bring an example from your own work into the conversation.
 
 Hi Alex,
 
-Help one person with a question you know.
+Make the reply worth posting.
 
-I built Daily Brief to help you find people already talking about problems you can solve. It brings relevant conversations from Reddit, X, LinkedIn and Hacker News into Radar, with a suggested reply you can make your own.
+A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
 
-I’d start with one thread where you have something useful to add. Give the person a good answer before thinking about whether to mention your product.
-
-You can pick this up when your Radar workspace is available again. Open your account to resume your subscription access first.
+Resume your subscription access before trying these steps.
 
 1. Open Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.
 
 2. Copy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.
 
-Here’s how I’d track it: use the copied and posted states to track your follow-through. Return to the original threads for replies and follow-up questions. Mark a reply posted after you’ve published it.
+Mark a reply posted only after you’ve published it. The copied and posted states show your follow-through; the original thread is where you’ll find responses and follow-up questions.
 
 Reopen my Radar account: https://radar.thally.io/start-trial
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

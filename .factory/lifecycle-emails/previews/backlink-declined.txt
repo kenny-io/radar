@@ -5,8 +5,6 @@ Subject: Fieldnote passed on a partner link
 
 Fieldnote (fieldnote.example) declined the proposed link on https://partner.example/articles/design-tools.
 
-I’m passing their note along so you have the context for their decision.
-
 Proposed sentence:
 
 For small studios, [Fieldnote](https://fieldnote.example) is another option to review.
@@ -18,7 +16,6 @@ You can review your other proposals in Radar → Backlinks.
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Email preferences: https://radar.thally.io/email-preferences

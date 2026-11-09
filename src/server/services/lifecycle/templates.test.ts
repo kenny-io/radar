@@ -1,4 +1,5 @@
 import * as guideCopy from './guideContent';
+import { educationProgress } from './educationContent';
 import { describe, expect, it, vi } from 'vitest';
 import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData, type WorkUpdateSection } from './templates';
 const ctx = { appUrl: 'https://radar.thally.io', unsubscribeUrl: 'https://radar.thally.io/email-preferences?token=fake' };
@@ -25,7 +26,7 @@ describe('lifecycle templates', () => {
     expect(rendered.html).not.toContain('<img src=x');
     expect(rendered.html).toContain('&lt;img src=x');
     expect(rendered.html.match(/<li /g)).toHaveLength(2);
-    expect(rendered.html.indexOf('Here’s how I’d track it:')).toBeGreaterThan(rendered.html.indexOf('</ol>'));
+    expect(rendered.html.indexOf(educationProgress('daily_brief'))).toBeGreaterThan(rendered.html.indexOf('</ol>'));
     expect(rendered.text).toContain('/email/learn?lesson=daily_brief');
     expect(renderLifecycle('weekly_education', { education: { ...d.education!, context: { ...d.education!.context, access: 'restart' } } }, ctx).text).toContain('https://radar.thally.io/start-trial');
     expect(rendered.html).toContain('>Email preferences</a>');
@@ -50,7 +51,7 @@ describe('lifecycle templates', () => {
     expect(welcome.text).toContain('Continue with my profile: https://radar.thally.io/dashboard');
     expect(welcome.text).not.toMatch(/start with your website|add your website|connect.*search console/i);
     const direct = renderLifecycle('welcome', { ...data, profileAnalyzed: false }, ctx);
-    expect(direct.text).toContain('Your account is ready');
+    expect(direct.text).toContain('Add your website to create your Business Profile');
     expect(direct.text).not.toContain('Business Profile is ready');
     expect(direct.text).not.toContain('has analyzed');
   });

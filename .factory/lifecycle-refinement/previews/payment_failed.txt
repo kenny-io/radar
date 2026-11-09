@@ -8,7 +8,7 @@ Hi Alex,
 
 Let’s get your subscription sorted.
 
-I wanted to let you know the latest charge for your Radar subscription didn’t go through.
+The latest charge for your Radar subscription didn’t go through.
 
 Open Billing to check your payment method and the outstanding invoice. Your workspace access may be paused while it remains unpaid.
 
@@ -18,8 +18,7 @@ Review my subscription: https://radar.thally.io/settings?section=billing
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

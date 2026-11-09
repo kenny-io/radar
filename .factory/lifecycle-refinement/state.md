@@ -1,6 +1,6 @@
 # State
 
-**Current:** [founder-release-verification.md](founder-release-verification.md). Personal founder copy;28 active families/68 variants; #5 retired; migrations through 0015. Final source a8f27eee…/636 files, build bv5te1pvkwPdSan9Pwrfw. PR #25 remains unmerged/undeployed. Earlier checkpoints below retain their historical evidence.
+**Current copy:** [distinct-copy-verification.md](distinct-copy-verification.md); current runtime/release constraints: [founder-release-verification.md](founder-release-verification.md). Personal founder copy;28 active families/68 variants; #5 retired; migrations through 0015. Final source a8f27eee…/636 files, build bv5te1pvkwPdSan9Pwrfw. PR #25 remains unmerged/undeployed. Earlier checkpoints below retain their historical evidence.
 
 **Previous integration checkpoint:** [main-integration-verification.md](main-integration-verification.md), 29 numbered families / 69 variants, migrations 0011–0014 after canonical main 0010. Earlier paragraphs below retain the pre-Autopilot delivery history; the final checkpoint supersedes their counts and rollout numbering.
 
@@ -34,3 +34,7 @@ User-directed personal founder voice, retired trial-ending reminder #5 and subsc
 ## Final founder delivery
 
 The accepted founder correction 5b4f9462 is integrated with frozen main 4908694f, preserving both mail identity and observability. All 68 email artifact hashes/copy/schema are unchanged. Final source hash a8f27eee95956569e06bfda1b8259e1b44b087a3a64034685bfc6848560b1282/636 files. Full suite 1349 pass/65 skips with established raster baseline; build/typecheck pass; fresh independent wrapper5/founder22/developer77/optimized6 all pass. See founder-release-verification.md and independent final report. No new material defects, customer/provider/production actions or deployment. Current PR metadata and rollout docs reflect #5 retirement, founder replies, subscription language and0015.
+
+## Sequence-wide editorial correction
+
+At00a32602 the user identified duplicated #11/#13 and required the correction across every affected email. All 28 active families were audited as one recipient’s sequence. Copy was rewritten/trimmed wherever the same job, intro, advice or ask repeated, including welcome/founder/trial, work10–14, lessons15–19, guides20–21, receipt/partner notices and report/Autopilot. Runtime/schema/identity/URL/pref/cadence files are unchanged. Current source f4fd8880a0074b641881669aa77953bd4f4618cebdb76bdd6e119ea0780a3fe5/636 files, four-gallery artifact9a6509c4d38f444c6c105610f28741e19137ac0c2c59714fc9b134f0d417580a/354 files.136 fresh renders,11 catalogue controls,28 pure main checks and typecheck pass; final independent sequential review in qa/distinct-copy/report.md. Separate formatter-only companion patch preserves previous local-only boundaries. #5 retired, other references unchanged, no sends/production actions.

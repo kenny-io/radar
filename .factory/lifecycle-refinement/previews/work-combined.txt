@@ -1,37 +1,36 @@
 Email #14 · Primary example
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
-Subject: A few things to pick up in Radar
-Preview: Choose one useful next step from the work already saved in your account.
+Subject: Your open decisions in Radar
+Preview: A short list of what’s waiting, with a direct link to each item.
 
 Hi Alex,
 
-Pick up where you left off.
+Which one will you move forward?
 
-I’m sending you a few next steps from the work saved in your account. I’d choose one to follow through on today.
+These items need different decisions. Pick one below; each link opens the saved work in the right business.
 
 Fieldnote · Daily Brief
 
-4 conversations are ready to review. Read the original thread for one you can help with, edit the suggested reply and join in.
+4 conversations have been brought into today’s brief. I’d open a promising thread while it’s current; read the latest replies before deciding whether to join in.
 
-Review a conversation: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=brief_reply&ref=2026-11-09
+See today’s conversations: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=brief_reply&ref=2026-11-09
 
 Fieldnote · Content Calendar
 
-8 proposed topics are waiting in your content plan. Open one, check the question it should answer and approve it if it’s useful. You can review the draft when it’s ready.
+Your plan has 8 proposed topics awaiting a decision. Open a title, check the proposed angle and approve the one you want Radar to draft. Leave the others for later if they don’t fit.
 
-Choose my next topic: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=calendar_review&ref=2026-11-09T06%3A00%3A00Z
+Choose a topic to draft: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=calendar_review&ref=2026-11-09T06%3A00%3A00Z
 
 Fieldnote · Article to social
 
-“How to choose a design tool for your studio” is ready to use in a social pack. Choose an idea from it, let Radar prepare the posts and check each one before sharing.
+“How to choose a design tool for your studio” is available in your saved articles. Select it as the source in Social Marketing to turn its ideas into a post pack.
 
-Make posts from my article: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=article_social&ref=preview-resource
+Make a pack from this article: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=article_social&ref=preview-resource
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 

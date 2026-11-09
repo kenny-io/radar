@@ -1,0 +1,7 @@
+{
+  "path": "src/server/services/visibility/digestContent.ts",
+  "beforeSha256": "24ac46c54c5f9672627308e3e3fc231d57412a6c9894b336468ab9d922d7de45",
+  "afterSha256": "54b07d6ba9b6ac169ff8038a5a1594dc065f4d1fa4866ececb87891f2ec5ad0a",
+  "patchSha256": "b1c54acb5c2e66f0fd58ce96b063269839ef2530c599d2b9ab6a601df101161c",
+  "scope": "Only recurring-report formatter intro, preheader and repeated reply prompt; no sender/runtime/schema changes"
+}

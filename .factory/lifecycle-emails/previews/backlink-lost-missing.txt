@@ -3,19 +3,16 @@ From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
 Subject: Partner link not found on partner.example/articles/design-tools
 
-I’m sending this so you can check a change to one of your partner links.
+Radar couldn’t find the link on the page during its latest check.
 
 Page: https://partner.example/articles/design-tools
 Destination: https://fieldnote.example
 Anchor: Fieldnote
 
-Radar couldn’t find the link on the page during its latest check.
-
 If the change was intentional, you can leave it as it is. Otherwise, restore the link and its required attribute, then use Re-check in Backlinks to check it again.
 
 Ekene
 Founder, Radar
-
-Reply and tell me where you’re stuck, or write to team@thally.io.
+team@thally.io
 
 Email preferences: https://radar.thally.io/email-preferences

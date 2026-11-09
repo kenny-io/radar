@@ -1,0 +1,629 @@
+{
+  "baseline": "00a32602d12fcf0056483b02ccb8c0713c33eb98",
+  "activeFamilies": 28,
+  "variants": 68,
+  "retired": [
+    {
+      "number": 5,
+      "reference": "5",
+      "family": "trial_ending",
+      "subject": "Trial-ending reminder",
+      "status": "Retired",
+      "reason": "Removed at your request. Radar does not queue or send a reminder to cancel before the trial ends."
+    }
+  ],
+  "entries": [
+    {
+      "id": "welcome",
+      "reference": "1A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "92da8063663b6179c867a6ef4f47bfe9ca35ea1784fea06a36d6c056f88db67a",
+      "textSha256": "4f6139567dbbbe09a52eec31a123d28a64beb425d52844d5cbfc7dc79d051e41"
+    },
+    {
+      "id": "welcome-neutral",
+      "reference": "1B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "880b702dab8e5e3f197840eb905ca4c1dd3d682ee9cf6a82e66622edb44701d9",
+      "textSha256": "0e2a5eb2e5f4d9f0d4964c721b59aa388bc17d5d709e28f73c8e6a4a65fc7e71"
+    },
+    {
+      "id": "founder_note",
+      "reference": "2",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "fcdc78cfad721dd1b6ae4db93278bd837d0807066267251c37cbe52815078307",
+      "textSha256": "903b6590f8da2d33469905d39e2bdba497ca8c0bccc416caa5db8df9f7d33e10"
+    },
+    {
+      "id": "password_reset",
+      "reference": "3",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "9a67bf5f002031c1185960d93ff6c42d662b53841afadccd04d2fb52aeb8392a",
+      "textSha256": "6c9a1b0df383f71cb20b3e3e607a83f62b707443039041979e4c60df8481060d"
+    },
+    {
+      "id": "trial_started",
+      "reference": "4",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "42842f29770efba5183d7cea61ecb7894524ba26fb974a4ad81b68f6c84ef458",
+      "textSha256": "7f06cb0929c2d63ee49d65667a02caca4a115621d00245687e6856d9fef87aa2"
+    },
+    {
+      "id": "invoice_paid",
+      "reference": "6",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "736d05c92e98373e29498bf8b5bf46aa352176b720cc27ab99a7bdd0e26cf0d8",
+      "textSha256": "bbfbf26e4f5d2d8d2abdc74c3ce4d5ba6b4a61c98e365700b704efb3cc71293f"
+    },
+    {
+      "id": "invoice-paid-no-amount",
+      "reference": "6B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "72642948ebd329a2ae6d0db3793c756643b35488bd462e66eb4ad335568b7db0",
+      "textSha256": "a08352976038850bcb4a55fc6c1d4075b98467dc79c4372068f30dc38e8c294b"
+    },
+    {
+      "id": "payment_failed",
+      "reference": "7",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "acbe4f499d13783c0e7150105efa627f90f4837e2f25a73ea0a1497ba04e5fcf",
+      "textSha256": "ef1777177e2f154fd027f9eca7f8e4beda86be5335891c9cd817f275b423e80e"
+    },
+    {
+      "id": "payment-failed-no-amount",
+      "reference": "7B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "acbe4f499d13783c0e7150105efa627f90f4837e2f25a73ea0a1497ba04e5fcf",
+      "textSha256": "222e2ca57ee5a25216ed2e077d7460d5d66dcd9e1b6d1cccf97d1127304b857a"
+    },
+    {
+      "id": "cancellation_scheduled",
+      "reference": "8",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "cfb1aa2d24acc5b8cfc21a6db9588226e5c41a40fd4ffb0e50bfe66395cbdec4",
+      "textSha256": "2acddbc3119e45d02d5ccc1559531531fb7eb38141fee788c3e239d7327f4d13"
+    },
+    {
+      "id": "subscription_ended",
+      "reference": "9",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "0ec7b8b98521eea385d71062ae811cbfa956b20e50885c78b1420c49cfe5903a",
+      "textSha256": "df8edece36d89be3b1e54e75935929afb0c22b77d49be98a12567fb8059f045c"
+    },
+    {
+      "id": "subscription-setup-expired",
+      "reference": "9B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "b946602b7559f876c1dedaf08c69cba51ca95d2be0044efd237b2eeee5781e1d",
+      "textSha256": "ad678c1baf4c11777619f5e8956a9c85f7b391a8f1f0d47487e0e4f32f8e9bce"
+    },
+    {
+      "id": "work-brief_reply",
+      "reference": "10",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "a548437ab135527782f9c54240fe9ccf3a70030b803379986d4299422a8e8c77",
+      "textSha256": "82f7a6bb0fdeae96fcfe3854481609b42899e246700ae4a1fb5cecf69c7b54e0"
+    },
+    {
+      "id": "work-calendar_review",
+      "reference": "11",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "70551d2728c8b8e120139a0cbbd33355c8d98c5c59cde112cd73952ead18f464",
+      "textSha256": "f130c14c914c7429e4292cac8cab4e594a320492dc553d173e7e92956c42b63b"
+    },
+    {
+      "id": "work-article_social",
+      "reference": "12",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "c7bba199386f87a60fc19da57ea266dd655493d373d27080fa16c5d64ad720a4",
+      "textSha256": "bbad5e8e4bca1c2772fe650374c88b2b0b8ec6e0c9bd87a3935cd3e23d9598c2"
+    },
+    {
+      "id": "work-social_publish",
+      "reference": "13",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "3b47407a6bf2480b61f74fdcf3216643216b1ff9c6f4e0346652c4f5316623c9",
+      "textSha256": "d41037e0866e7d33ddb61a22f1cd5dc5ba9093753f2bb8773a9b35dff84e1fda"
+    },
+    {
+      "id": "work-combined",
+      "reference": "14",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "81f5186655eb792e4dde8d0c9310e2e0802b32feadea8f072fdb547328575b94",
+      "textSha256": "eb6ca1e54358eb0bd9b9b7ed4998589d2da79f6e852df738a54427552e0f058f"
+    },
+    {
+      "id": "lesson-ai_visibility-workspace",
+      "reference": "15A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "ef784ec661db0b1d197e2c29d8b1f3d48f9aa71135db151983fffdc49b62e9e8",
+      "textSha256": "7e4dd022645a241b7088e2094d5ee7152ceb70e92439ec4b2fa994e36f9fa7eb"
+    },
+    {
+      "id": "lesson-ai_visibility-start_trial",
+      "reference": "15B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "06d79410aa0cadc1445dafe637d301ecb2276fa83268a904bdf3edd05acc0abf",
+      "textSha256": "d8f9c2fd70fde3e02b77e91667f49e07feff467114ce74feca153c962969e561"
+    },
+    {
+      "id": "lesson-ai_visibility-restart",
+      "reference": "15C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "f3796b0c869b777a9064d51a5269ce6a4b1946b78b98f8ce0589f6c558229ae8",
+      "textSha256": "8ee7b831cdd9d909db329598e4b74fd66c2a735212a5db2a9621cf2e0dc1c852"
+    },
+    {
+      "id": "lesson-ai_visibility-setup",
+      "reference": "15D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "2df2c542ecef2f8df3bc51ae10d27cd07be04a0ada8fbc10e302abd1267acc45",
+      "textSha256": "fd35e1547260a80ee86078e6abbd4900a7ccf65f803bbd0413a171f2f56c7685"
+    },
+    {
+      "id": "lesson-ai_visibility-neutral",
+      "reference": "15E",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "ec924d58b4d17e6d4694b52a413b019681b879b6f5acf5470c3e7fde8ceb3b80",
+      "textSha256": "30296fcb109104f70de8e7b296e2831d16873db1dc8588abd6fe9d27999c3f29"
+    },
+    {
+      "id": "lesson-daily_brief-workspace",
+      "reference": "16A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "b7ac636aebf2796c2103253d1c43cd25f696317f3357bf76d68ecac67f2d0aeb",
+      "textSha256": "8d0efdebc6c72783a24ebacd873945e7df934039bcac76325e3300fb9f4c1932"
+    },
+    {
+      "id": "lesson-daily_brief-start_trial",
+      "reference": "16B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "a0d5f66188eacfbae5f83a89fdadbb35599673ee1e3b5e994ef2576d2e193f1f",
+      "textSha256": "e0f970dc6a0744c02351196ca128f3fc4813c3e6afeea77b4f64a4b4fb619306"
+    },
+    {
+      "id": "lesson-daily_brief-restart",
+      "reference": "16C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "2562c92b70fa09b2d41d06be50d5f4ed0278bdb7974333c8afe1a4f13f9d55b0",
+      "textSha256": "46e829908c4515d3d04c93d48f998117dfed7cd0cc90dd7bb6c5ca08e44caa52"
+    },
+    {
+      "id": "lesson-daily_brief-setup",
+      "reference": "16D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "b91e4ad344322bc56c2fc8b1f745fd32ea32ef88da86003313d1943c96aeb0c5",
+      "textSha256": "34c6fbac26b70e419f4420f74945c38c80aec2190170ab3ce62504f5be2cbede"
+    },
+    {
+      "id": "lesson-daily_brief-neutral",
+      "reference": "16E",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "63bf811e1b8553f931a468f2383f364f20474afd909b051c1819d5d946c34bb1",
+      "textSha256": "12fc8f5d91afcceb9b5eed7a43a70337ae656f7d4b20c91960ff992143e31bfd"
+    },
+    {
+      "id": "lesson-backlinks-workspace",
+      "reference": "17A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "b1b8ef53a88757c17ea68e54aa0f751a04f94f031333dfde4abbead922b6ae8d",
+      "textSha256": "c0684e01a9498ce15be082037015679dc9de05b321b8b267a9d0238d69170d7b"
+    },
+    {
+      "id": "lesson-backlinks-start_trial",
+      "reference": "17B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "64a176c4cbf0832b66646d7645864015d0e98794d0a2240a7f6fdedcb955da37",
+      "textSha256": "71744ca621d15a7c8334a6b903db5ea686d7dcef3d3c64ceb8c9ff4668f90435"
+    },
+    {
+      "id": "lesson-backlinks-restart",
+      "reference": "17C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "a645110c8939ef8d14b1fa44e3cc004b845b2facf0a70871ec3492cd00b35f85",
+      "textSha256": "99bdc0ad01707220e25b1176ac7707b5aa86e51c9521b789b1ca763147e6ba26"
+    },
+    {
+      "id": "lesson-backlinks-setup",
+      "reference": "17D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "af07cef298f37c03c9485ffeac0dad831dc3cfba3c2818f520b1a68e8bc1b892",
+      "textSha256": "f298ca3b050c8b6c8a01d321649dd15e68e1f8d2ef7a729beec4f455c3ab36d3"
+    },
+    {
+      "id": "lesson-backlinks-neutral",
+      "reference": "17E",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "14577fbccda47897db89ff3ece61b54111d9d25b121ece31a8c9046f7517d3bb",
+      "textSha256": "33f22a5fd2945ad06d4ba1665c231c7a36227633f7757ec71eb5048560cde497"
+    },
+    {
+      "id": "lesson-organic_search-workspace",
+      "reference": "18A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "5a9d0f57755dd3e0ef255419a6ee9292c948d37b86407e4aa01c7fa097a8abdf",
+      "textSha256": "4d4ae50440f9c2855ea64b3be76d3982ec48c8869ac4c7d36db2ac450fe7b9fd"
+    },
+    {
+      "id": "lesson-organic_search-start_trial",
+      "reference": "18B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "83d5d832b55ec62ff9f5a11817374ab48f03a830124d17ca75644f5bafa0ad20",
+      "textSha256": "411db49aa1287d2116c69ff4411f02ab006ccdca91d672d1bb1923e0ef906ef9"
+    },
+    {
+      "id": "lesson-organic_search-restart",
+      "reference": "18C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "05fc370e6f52ae033353f5ddd9677e5c897a1c5414670287e1087e3433e221a7",
+      "textSha256": "bd36529fcd3abf4ff5763992f2470812f73d7f708e5a3a974f9d992cfeff9a4a"
+    },
+    {
+      "id": "lesson-organic_search-setup",
+      "reference": "18D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "33454f6c82988565a0d66ce62f0820322b63d19848807a1c1520ab1903e7b39c",
+      "textSha256": "7d755a69bf9e1a0069c591500609e0c4d72059f16d581f19faae69cb7e5edeff"
+    },
+    {
+      "id": "lesson-organic-search-disconnected",
+      "reference": "18E",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "c5365e82b00c3ea6c5265180ba8213a7d2d1c7eb73e5a098c0dfc8c90da75f17",
+      "textSha256": "e081ecd4781647990bb5a74a88cd2ac9df80fb050b6294a7b0e740588f3dd926"
+    },
+    {
+      "id": "lesson-organic_search-neutral",
+      "reference": "18F",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "dc9eaeedf70732b04a3edc280ec92cad87fbdb45d1601ff31414cc2f91c723da",
+      "textSha256": "dfc37d6f9f4814eb04fc0dc0e02f859c2b20d0cf937b60ca23fe70a5f3784a40"
+    },
+    {
+      "id": "lesson-social_marketing-workspace",
+      "reference": "19A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "1c219ad06353c30063197e24872e64cfaab4475779989617d5b91d2314d958e1",
+      "textSha256": "43a9afdd5131e333a6cc3fad8a7ea7d1641163708f28893923733ef675d827eb"
+    },
+    {
+      "id": "lesson-social_marketing-start_trial",
+      "reference": "19B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "e9cb9e9b2f29ec0726b76db48aecb4eeacd150f7f94f9597857961a0c7b71f37",
+      "textSha256": "62954d6876a7125e23d26d9d9d8042a5587342f2d03e96015e53f6df72555f99"
+    },
+    {
+      "id": "lesson-social_marketing-restart",
+      "reference": "19C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "aebf3b219ca94b2239d1c1ef8fae09e84c166422a999bc15d6f3c0d5a4301354",
+      "textSha256": "a94a3e659d1da15316e2503d36e8df636bfa323cf7f044f33a1211c82b98bf4d"
+    },
+    {
+      "id": "lesson-social_marketing-setup",
+      "reference": "19D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "570a5c8be2c09bb7bf18cf04be7d64f03c5b6fcf086e0170793b6e7bdb2742b7",
+      "textSha256": "5f2be43e540e527d8303171df813602cb592e814cf6ed7bedbcd61b3a292b3e0"
+    },
+    {
+      "id": "lesson-social_marketing-neutral",
+      "reference": "19E",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "29385fa09e29ed80304603c67f5acfbc1e4b6c023707636274764a94072b1524",
+      "textSha256": "3dd186f7ca802c5310958214e4cea1d9f1e9cc4ac868858186eee539ab8ebd69"
+    },
+    {
+      "id": "guide-article_workflow-workspace",
+      "reference": "20A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "ea45a686b997dd9bd83bc4b367fb2cfeddfd6dc5c9d46de1aa2c024595c83793",
+      "textSha256": "93b198e28d5f9f1575f1ce9b027464a5bc6ce9b76a71890d622c470e9592a9e9"
+    },
+    {
+      "id": "guide-article_workflow-start_trial",
+      "reference": "20B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "af4307438e047ec028b49047ef07014abe657b8ddb3d255ebd3537eb62ffc159",
+      "textSha256": "92772ecde2863e11e85daa9908dc0ab02095b9fe397bb2005b9312f1cc7210c2"
+    },
+    {
+      "id": "guide-article_workflow-restart",
+      "reference": "20C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "c84c507cfa575a62a67c24ffbd7299972955dddadf6bf2442c5ab397355c11c7",
+      "textSha256": "bac0d86c0d02ef790c3bbb040e4311f7e7e5344974d056f2c3627ee4ee06ed54"
+    },
+    {
+      "id": "guide-article_workflow-setup",
+      "reference": "20D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "25a86be64df84d43d4e625ab30ef4658ee09c34b197a5298175016257c7be234",
+      "textSha256": "60dde1b86c779f4fcde0115380e24ecd2711d930264f0a1f5fc01a9f47792315"
+    },
+    {
+      "id": "guide-search_refresh-workspace",
+      "reference": "21A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "c0458fbd9798e471cf133fa81d5e3e33c48288856917f56bed3efa9e05ab8be6",
+      "textSha256": "ded5100fbc8050a06b343fbf040a3b8d491b790930b9263a13829b7bb5690a25"
+    },
+    {
+      "id": "guide-search_refresh-start_trial",
+      "reference": "21B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "673e6f6a85e7bb52b78db70025c551022d60248e8ae88e68eb0790729aa009a7",
+      "textSha256": "c93a155c4d84720c5f74e25aef2402ffe25154bec0fae484b53ae94438279dce"
+    },
+    {
+      "id": "guide-search_refresh-restart",
+      "reference": "21C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "673e6f6a85e7bb52b78db70025c551022d60248e8ae88e68eb0790729aa009a7",
+      "textSha256": "2c364209c714ad6bc33953d54f2d68b1523f79578ba7eda79153a29c338fdb8d"
+    },
+    {
+      "id": "guide-search_refresh-setup",
+      "reference": "21D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "673e6f6a85e7bb52b78db70025c551022d60248e8ae88e68eb0790729aa009a7",
+      "textSha256": "25050b27bd0977c55eda9f159ec3845625e83168109113d83a7f5bf1161cff4a"
+    },
+    {
+      "id": "confirmation",
+      "reference": "22",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "22c8fe281c4de20e361d001bb7f370997ac547be5e10ca7c29e65cdadf9e9a8c",
+      "textSha256": "32e35e14c2daf28e1c0a0364d59185e6d998795f9df54c32fe2e0d15df11d893"
+    },
+    {
+      "id": "invitation-Editor",
+      "reference": "23A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "b99b75a7df850662c040d1efb502ce17b68e0d5bcac9491c7ffb6c29d2819d79",
+      "textSha256": "840148052be809c329d23d890f504e4b15b5679fdb48ca4e14ffa7fe49f61550"
+    },
+    {
+      "id": "invitation-Admin",
+      "reference": "23B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "9c0ae568206758d9f1689fc27d355e4696d1fd9a21cfd7e7109093b6dadbdfa7",
+      "textSha256": "e2366b398c92800e50f213d2fee2d2b414feaa6b003956dd0622b94c45a3e794"
+    },
+    {
+      "id": "invitation-Viewer",
+      "reference": "23C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "641a2606520eeb6da1d56c334cb7c2536aaeb1f6ae619d2b783998ae735bc3ac",
+      "textSha256": "79651aa6c6e26126ea8a0c8a39bcb88483a363180a10a5ef0023cbed0bc6c1af"
+    },
+    {
+      "id": "backlink-approved",
+      "reference": "24A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "a521f453ee8c7372845b76b6374e6df8bb37f53230e2fea049cbd17ed0941629",
+      "textSha256": "6cf0b06c13670cd23f256bd36a2223e30e1a50631c685a2e7664dd5ca23d80d2"
+    },
+    {
+      "id": "backlink-approved-manual",
+      "reference": "24B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "16de456e34e64094dfae4ea9645e3e3a39a0317bca7b1e4456398c675fed1af2",
+      "textSha256": "014a70cc61f611a126325f5927f6e8a05146e73083d7bfe5307517884beab310"
+    },
+    {
+      "id": "backlink-declined",
+      "reference": "25",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "ea96914aaa216213d2ab1317ed1c92b215d6e2bc12262c7ff546147865c02c05",
+      "textSha256": "0be23f7c0ab522d55dd425756297c474bbdb597956a530bc1b320f9a46c41d1b"
+    },
+    {
+      "id": "backlink-removal",
+      "reference": "26",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "8bab389fc9c7e7bf3e3fa3e080f386a8f16723d6ad4f8062a6af566a2b8ec8d9",
+      "textSha256": "cb1f6f1afbac9d20b75ac3b604e7e1502ae14956e769979c8442fd924c3c1400"
+    },
+    {
+      "id": "backlink-lost-missing",
+      "reference": "27A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "eb75cc8abb9448230b48b113fc6e1514df05613f368ee722465543a722af3eb2",
+      "textSha256": "9f2a62a12e721601a473e3596daf293151f8eaae9febee068be407dc200416a6"
+    },
+    {
+      "id": "backlink-lost-rel",
+      "reference": "27B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "03e26ea66d412012cfcc987cd41939d8033207c837d5eb6737914bc784cc0d9d",
+      "textSha256": "03c56d6ed77431988df763aeeb74850d5bf868abf5dd8db0636b2105a44543b3"
+    },
+    {
+      "id": "ai-weekly-report",
+      "reference": "28A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "f1e7960ef742edf8a83646ab01e08fc5e14757475b339eeaa692c854a7b90478",
+      "textSha256": "01b28fa540a72ba3578cac0a0c16bbaaaa892805d807f0f8f2b001e9b4a79a6e"
+    },
+    {
+      "id": "ai-weekly-report-no-miss",
+      "reference": "28B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "3f598d6496174ccfb449eba8219e834fcf7f61bf40247b2a5e4a3d66730d3a1f",
+      "textSha256": "151b078c0acab0cb6b071ea9c432c5fad3019cd02b3275d84f1a81bbd3e488b7"
+    },
+    {
+      "id": "ai-weekly-report-no-comparison",
+      "reference": "28C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "4152cb2464c64b6cac5acbd9e5022e2477e9e98114e61b1b18dc7ab502919262",
+      "textSha256": "fce1f32443bf879b4f645862becce988ff187e486bb8a3ab28d22db1ab66bf08"
+    },
+    {
+      "id": "ai-weekly-report-no-topic",
+      "reference": "28D",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "45b1c61df54b3bca00e9baf19f20dd203a1ec64263f3dd704cafca97214b0f63",
+      "textSha256": "3a2b8afac3d30411118e3b6cf9ff03d6502da1410d718d6da1abd8637005bbdc"
+    },
+    {
+      "id": "autopilot-actions",
+      "reference": "29A",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "3ee4054c2ea67e9440ee06b8225740f7b7f9b09b7970f47bff8ff83e7c444e25",
+      "textSha256": "e564098b4eba888818f26823c98216a5fe31ee54957f33023beeb0eb28facb3f"
+    },
+    {
+      "id": "autopilot-reply",
+      "reference": "29B",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "d676ddcf5c231718f20c932453f7a5fbc030f9ef72c2d110b8acbd428dc04c68",
+      "textSha256": "b1bd4657ea477e22e296fedfdbfa24cd70726235d2ee64185d2debb077510ff1"
+    },
+    {
+      "id": "autopilot-publication",
+      "reference": "29C",
+      "referenceUnchanged": true,
+      "textChanged": true,
+      "urlsUnchanged": true,
+      "htmlSha256": "e8533ea6c43afb63664160ec7b48c0aeaed2631bef555ba89c15c26f548c01a6",
+      "textSha256": "9d983f8087691282ec7b741f0f3c57a95464d9fac5a4ad875086cbba10b63a62"
+    }
+  ]
+}

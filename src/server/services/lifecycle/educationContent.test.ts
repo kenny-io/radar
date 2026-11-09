@@ -10,14 +10,20 @@ describe('weekly feature lesson copy', () => {
       expect(copy.steps).toHaveLength(2);
       expect(copy.subject).toContain('Paper & Pixel');
       expect(copy.ctaLabel).toBeTruthy();
-      expect(educationProgress(lesson)).toMatch(/^Here’s how I’d track it:/);
+      expect(educationProgress(lesson)).toMatch({
+        ai_visibility: /Mentioned and Cited your site/,
+        daily_brief: /copied and posted states/,
+        backlinks: /Live links.*verification/,
+        organic_search: /clicks and impressions/,
+        social_marketing: /scheduled, posted and failed/,
+      }[lesson]);
     }
   });
   it('keeps learning available across access states without pretending workflows have run', () => {
     for (const access of ['start_trial', 'restart', 'setup'] as const) {
       for (const lesson of EDUCATION_LESSONS) {
         const copy = renderEducationLesson(lesson, { ...context, access });
-        expect(copy.paragraphs.some(p => p.toLowerCase().includes(access === 'start_trial' ? 'start your radar trial' : access === 'restart' ? 'resume your subscription access first' : 'checking the business profile'))).toBe(true);
+        expect(copy.paragraphs.some(p => p.toLowerCase().includes(access === 'start_trial' ? 'start your radar trial' : access === 'restart' ? 'resume your subscription access' : 'save your business profile and activate your workspace'))).toBe(true);
         expect(copy.ctaLabel).toBe(access === 'start_trial' ? 'Start my Radar trial' : access === 'restart' ? 'Reopen my Radar account' : 'Continue setting up Radar');
       }
     }
@@ -33,6 +39,8 @@ describe('weekly feature lesson copy', () => {
   });
   it('does not ask a disconnected account to inspect nonexistent Search Console measurements', () => {
     expect(renderEducationLesson('organic_search', context).steps[1]).toContain('Connect Google Search Console');
-    expect(renderEducationLesson('organic_search', { ...context, gscConnected: true }).steps[1]).toContain('Queries and Pages tables in Performance');
+    const connected = renderEducationLesson('organic_search', { ...context, gscConnected: true }).steps[1];
+    expect(connected).toContain('Queries and Pages tables');
+    expect(connected).toContain('Performance');
   });
 });

@@ -18,17 +18,16 @@ export function renderGuide(id: GuideId, context: EducationContext): GuideConten
   if (id === 'article_workflow') return {
     subject: 'What happens before an article goes live',
     preheader: 'I’ll walk you through choosing a topic and reviewing your first draft.',
-    heading: 'Let’s get your first useful article ready.',
+    heading: 'Know what goes live on your site.',
     paragraphs: [
-      'I want to help you get an article onto your site that answers a real question for a potential customer. Radar uses your Business Profile to suggest topics, so you have somewhere to start.',
-      'Here’s how I’d work through the first one. These steps assume Autopilot and Blog autopilot are off, so you can choose the topic and review the draft before publication.',
+      'Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.',
       ...(active ? [] : [context.access === 'restart' ? 'You can pick this up when you resume your subscription access. Your account is the place to start.' : context.access === 'setup' ? 'First, finish reviewing and saving your Business Profile. Once your workspace is active, you can follow these steps in Content Calendar.' : 'Your saved profile carries into your Radar trial. Start it when you’re ready to try these steps in Content Calendar.']),
     ],
     steps: [
       'Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.',
       'Read the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.',
     ],
-    progress: 'You can follow the topic’s status in Content Calendar. Turning on Autopilot or Blog autopilot can allow articles to publish without a separate review.',
+    progress: 'Follow the topic’s status in Content Calendar after approval and again after scheduling, so you can see where it is in the publishing process.',
     ctaLabel: active ? 'Choose my first article' : context.access === 'restart' ? 'Reopen my Radar account' : context.access === 'setup' ? 'Continue setting up Radar' : 'Start my Radar trial',
   };
   if (id === 'search_refresh') return {
@@ -37,7 +36,7 @@ export function renderGuide(id: GuideId, context: EducationContext): GuideConten
     heading: 'There may be a useful next step in an existing page.',
     paragraphs: [
       'Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.',
-      'I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results before deciding what to change. A clearer title, a better example or a missing answer might be a useful place to start.',
+      'I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results to understand what the searcher expected before deciding what to change.',
       ...(active ? [] : ['The guide below is public. You can use it now, then review your measured pages in Radar when your workspace access is active.']),
     ],
     steps: [

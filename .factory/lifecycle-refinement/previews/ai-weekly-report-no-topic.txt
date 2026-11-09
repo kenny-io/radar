@@ -2,11 +2,9 @@ Email #28D · No saved article topic
 From: Ekene from Radar <notifications@radar.example>
 Reply-To: team@thally.io
 Subject: Recommendation share this week · fieldnote.example
-Preview: I’m sending your collected answers and a next step to consider for your business.
+Preview: This week’s collected answers, with the previous period alongside.
 
 Your weekly AI recommendation report
-
-I want to help you see how AI assistants describe your business. Use these collected answers to choose a question worth answering on your site.
 
 This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
 
@@ -26,7 +24,6 @@ Review all answers: https://radar.thally.io/performance
 
 Ekene
 Founder, Radar
-
-Reply and tell me what you’d like help with: team@thally.io
+team@thally.io
 
 Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-only-not-valid
