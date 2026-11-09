@@ -33,13 +33,23 @@ export interface GscState { status: GscStatus; property: string | null; progress
 export type Cadence = 'daily' | 'weekdays' | 'custom';
 export interface CalendarSettings { market: string; language: string; start: string; cadence: Cadence; perWeek: number }
 export type EntryType = 'How-to' | 'Guide' | 'Comparison' | 'Listicle' | 'Explainer' | 'Template';
+/** Safe, bounded local publishing diagnostics; never contains article/source payloads. */
+export interface PublishDiagnosticReason {
+  code: string; stage: 'discovery' | 'plan' | 'validation' | 'review' | 'repair'; reason: string;
+  path?: string; size?: number; limit?: number; actual?: number; issues?: string[];
+}
+export interface PublishDiagnostic extends PublishDiagnosticReason { origin?: PublishDiagnosticReason }
+export interface ArticlePublishError {
+  http: number; message: string; platform?: string; hint?: string; source?: 'radar'; diagnostic?: PublishDiagnostic;
+}
+
 export type EntryStatus = 'proposed' | 'approved' | 'drafting' | 'draft' | 'review' | 'scheduled' | 'publishing' | 'published' | 'failed';
 export interface Measured { impr: number; clicks: number; pos: number }
 export interface CalendarEntry {
   id: string; title: string; kw: string; type: EntryType; vol: number | null; kd: number | null; date: string;
   mode: 'new' | 'refresh'; url: string | null; measured: Measured | null;
   audience: string; relevance: string; dest: string | null; status: EntryStatus;
-  publishError: { http: number; message: string; platform?: string; hint?: string } | null; publishedUrl: string | null;
+  publishError: ArticlePublishError | null; publishedUrl: string | null;
 }
 export interface CalendarState { entries: CalendarEntry[]; settings: CalendarSettings; generatedAt: string | null }
 

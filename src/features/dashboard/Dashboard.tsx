@@ -120,8 +120,9 @@ function dashIssues(app: AppCtx, B: Workspace, sg: { top: Suggestion | null; hig
   if (failed) {
     const conn = B.blog.conns.find(c => c.id === (failed.dest || B.blog.defaultId)) || B.blog.conns[0];
     const platform = failed.publishError?.platform || platLabel(conn?.type);
+    const local = failed.publishError?.source === 'radar';
     const http = failed.publishError?.http;
-    out.push({ id: 'pub', tone: 'bad', label: 'Publishing failed', head: 'An article didn’t publish.', body: `“${failed.title}” — ${platform} rejected the request${http ? ` (${http})` : ''}.`, btn: <Btn kind="primary" size="lg" onClick={() => go('article', failed.id)}>Fix and retry</Btn>, btnSmall: <Btn size="sm" onClick={() => go('article', failed.id)}>Fix</Btn> });
+    out.push({ id: 'pub', tone: 'bad', label: 'Publishing failed', head: 'An article didn’t publish.', body: local ? `“${failed.title}” — Radar could not complete repository validation. ${failed.publishError?.hint || 'Open the article to review the issue and retry.'}` : `“${failed.title}” — ${platform} rejected the request${http ? ` (${http})` : ''}.`, btn: <Btn kind="primary" size="lg" onClick={() => go('article', failed.id)}>Fix and retry</Btn>, btnSmall: <Btn size="sm" onClick={() => go('article', failed.id)}>Fix</Btn> });
   }
   // Social channels (publishing on): a post that didn't go out, and accounts that need reconnecting.
   if (B.social.publishing) for (const x of socialIssues(B, now)) {

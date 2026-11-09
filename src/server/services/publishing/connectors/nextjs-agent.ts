@@ -4,9 +4,10 @@ import { z } from 'zod';
 import ts from 'typescript';
 import { ai } from '@/server/ai';
 import type { PublishPayload } from '../types';
-import { PublishError } from '../http';
+import { PublishError, publishingDiagnosticText, publishingTimeRemaining, publishingDeadlineError } from '../http';
+import type { PublishDiagnostic, PublishDiagnosticReason } from '@/lib/types';
 
-export interface RepoEntry { path: string; type: string; sha: string; mode?: string }
+export interface RepoEntry { path: string; type: string; sha: string; mode?: string; size?: number }
 export interface RepoSnapshot { entries: RepoEntry[]; read(path: string): Promise<string> }
 export interface RepositoryPostPlan {
   slug: string;
@@ -18,7 +19,7 @@ export interface RepositoryPostPlan {
   review: { summary: string; runtimeVerified: false };
   draft: true;
 }
-export interface RepositoryPostOptions { businessId: string; retry?: { slug: string; articlePath: string }; legacy?: { slug: string; articlePath: string } }
+export interface RepositoryPostOptions { businessId: string; deadlineAt?: number; retry?: { slug: string; articlePath: string }; legacy?: { slug: string; articlePath: string } }
 
 // Do not add schema maxLength/maxItems: ai.run fits strings/arrays to schema, which could silently truncate patches.
 const Role = z.enum(['content', 'route', 'listing', 'navigation', 'config']);
@@ -29,9 +30,20 @@ export const ProposalSchema = z.object({
   evidence: z.array(z.object({ path: z.string(), sha: z.string(), snippet: z.string(), role: Role }).strict()),
 }).strict();
 export const ReviewSchema = z.object({ approved: z.boolean(), summary: z.string(), issues: z.array(z.string()), evidence: z.array(z.object({ path: z.string(), snippet: z.string(), role: Role }).strict()) }).strict();
-const LIMIT = { rounds: 6, reads: 40, fileBytes: 100_000, contextBytes: 500_000, manifestBytes: 600_000, files: 12, outputBytes: 750_000, edits: 80, evidence: 24 };
+export const SOURCE_FILE_BYTES = 100_000;
+const LIMIT = { rounds: 6, reads: 40, fileBytes: SOURCE_FILE_BYTES, contextBytes: 500_000, manifestBytes: 600_000, files: 12, outputBytes: 750_000, edits: 80, evidence: 24 };
 const BODY_TOKENS = ['{{RADAR_MARKDOWN}}', '{{RADAR_HTML}}', '{{RADAR_MARKDOWN_JSON}}', '{{RADAR_HTML_JSON}}'] as const;
-function fail(reason: string): never { throw new PublishError(422, `Radar could not safely integrate this article: ${reason}. Review the repository’s publishing conventions or update the content folder hint and try again.`, 'api.github.com', 'config'); }
+function fail(reason: string, diagnostic: Partial<PublishDiagnostic> = {}): never {
+  const safeReason = publishingDiagnosticText(reason, 1200);
+  throw new PublishError(422, `Radar could not safely integrate this article: ${safeReason}. Review the repository’s publishing conventions or update the content folder hint and try again.`, '', 'config', { code: 'integration-invalid', stage: 'validation', reason: safeReason, ...diagnostic });
+}
+/** The only recoverable read failure; transport/auth/SHA/credential failures must still abort. */
+export class RepositorySourceTooLargeError extends PublishError {
+  constructor(public path: string, public sha: string, public size: number) {
+    const reason = `Source file ${publishingDiagnosticText(path)} is ${size} bytes; the inspection limit is ${SOURCE_FILE_BYTES} bytes. Inspect its authored inputs, generator and build ordering instead, or reduce a mandatory source file before retrying.`;
+    super(422, reason, '', 'config', { code: 'file-too-large', stage: 'discovery', reason, path: publishingDiagnosticText(path), size, limit: SOURCE_FILE_BYTES });
+  }
+}
 const bytes = (s: string) => Buffer.byteLength(s, 'utf8');
 /** Resolve explicit line-elided citations into exact source bytes; never normalize or guess fragment text. */
 export function resolveQuote(source: string, quote: string): string | null {
@@ -94,44 +106,78 @@ export async function planRepositoryPost(hint: string, p: PublishPayload, snapsh
     if (entries.has(entry.path)) fail('the repository snapshot contains duplicate paths');
     entries.set(entry.path, entry);
   }
-  const manifest = [...entries.values()].filter(e => regular(e) && safeRepositoryPath(e.path) && !containsCredential(e.path)).map(e => ({ path: e.path, sha: e.sha }));
+  const manifest = [...entries.values()].filter(e => regular(e) && safeRepositoryPath(e.path) && !containsCredential(e.path)).map(e => ({ path: e.path, sha: e.sha, ...(e.size !== undefined ? { size: e.size } : {}), readability: e.size !== undefined && e.size > LIMIT.fileBytes ? 'too-large' : 'text-candidate' }));
   if (!manifest.length || bytes(JSON.stringify(manifest)) > LIMIT.manifestBytes) fail('the repository file manifest is empty or exceeds the inspection budget');
   const observed = new Map<string, { sha: string; content: string }>(); let contextBytes = 0;
+  const attempted = new Set<string>();
+  const unavailable = new Map<string, { path: string; sha: string; size: number; reason: 'file-too-large'; limit: number }>();
+  const unavailableSources = () => [...unavailable.values()];
+  const unavailableReason = (path?: string) => (path ? [unavailable.get(path)!] : [...unavailable.values()].slice(0, 3)).map(source => `${source.path} (${source.size} bytes; limit ${source.limit} bytes)`).join(', ');
+  const discoveryFailed = () => fail(`source discovery did not establish a complete route and blog listing${unavailable.size ? '; unavailable source: ' + unavailableReason() + '. Inspect authored input/generator/build source, or reduce any mandatory source file' : ''}`, { code: 'discovery-incomplete', stage: 'discovery' });
   const metadata = { title: p.title, seoTitle: p.seoTitle || p.title, description: p.meta, slug: p.slug, date: p.date, author: p.author, authorSource: 'business-profile-fallback', keyword: p.keyword, image: p.image ? { url: p.image.url, alt: p.image.alt } : null, canonical: p.canonical, mode: p.mode, refreshUrl: p.refreshUrl, retry: options.retry || null, legacy: options.legacy || null };
   if (containsCredential(JSON.stringify(metadata))) fail('article metadata contains a recognizable credential');
   const context = () => [...observed].map(([path, file]) => ({ path, ...file }));
+  const deadlineAt = options.deadlineAt ?? Date.now() + 270_000;
   let reasoningCalls = 0;
   async function ask<T>(purpose: string, schema: z.ZodType<T>, prompt: unknown, instructions: string, maxTokens: number): Promise<T> {
     if (reasoningCalls >= 8) fail('repository inspection reached its reasoning budget');
     reasoningCalls++;
+    const stage = purpose.endsWith('review') ? 'review' : purpose.endsWith('repair') ? 'repair' : purpose.endsWith('discover') ? 'discovery' : 'plan';
+    const remaining = publishingTimeRemaining(deadlineAt, stage);
+    const timeoutMs = Math.min(180_000, remaining);
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let result;
-    try { result = await ai.run('writing', { purpose, system: SYSTEM + '\n\n' + instructions, prompt: JSON.stringify(prompt), schema, schemaName: purpose.replaceAll('.', '_'), maxTokens, timeoutMs: 180_000 }, { businessId: options.businessId, retries: 0 }); }
-    catch { throw new PublishError(502, 'Radar could not finish inspecting the repository. No publishing changes were applied; try again.', 'api.github.com'); }
+    try {
+      // ai.run may try provider fallbacks. Race this read-only operation only; a late result cannot resume planning.
+      const analysis = ai.run('writing', { purpose, system: SYSTEM + '\n\n' + instructions, prompt: JSON.stringify({ ...prompt as object, unavailableSources: unavailableSources() }), schema, schemaName: purpose.replaceAll('.', '_'), maxTokens, timeoutMs }, { businessId: options.businessId, retries: 0 });
+      result = await Promise.race([analysis, new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(publishingDeadlineError(stage)), remaining);
+      })]);
+    } catch (error) {
+      if (error instanceof PublishError && error.diagnostic?.code === 'publishing-deadline') throw error;
+      publishingTimeRemaining(deadlineAt, stage);
+      throw new PublishError(502, 'Radar could not finish inspecting the repository. Try publishing again.', '', 'http', { code: 'analysis-unavailable', stage, reason: 'Repository analysis did not finish. Retry publishing.' });
+    } finally { if (timer !== undefined) clearTimeout(timer); }
+    publishingTimeRemaining(deadlineAt, 'validation');
     return checked(schema, result.json);
   }
-  async function inspect(discovery: z.infer<typeof DiscoverySchema>): Promise<void> {
-    if (discovery.paths.length > LIMIT.reads || bytes(discovery.summary) > 4000) fail('source discovery exceeded its response budget');
-    const requested = [...new Set(discovery.paths)].filter(path => !observed.has(path));
-    if (!requested.length && !discovery.complete) fail('source discovery did not establish how to publish the article');
-    if (observed.size + requested.length > LIMIT.reads) fail('source discovery exceeded the file budget');
+  async function inspect(discovery: z.infer<typeof DiscoverySchema>): Promise<boolean> {
+    if (discovery.paths.length > LIMIT.reads || bytes(discovery.summary) > 4000) fail('source discovery exceeded its response budget', { code: 'discovery-response-limit', stage: 'discovery' });
+    const requested = [...new Set(discovery.paths)].filter(path => !attempted.has(path));
+    if (!requested.length && !discovery.complete) discoveryFailed();
+    if (attempted.size + requested.length > LIMIT.reads) fail(`source discovery requested ${attempted.size + requested.length} files; the limit is ${LIMIT.reads} attempted files including unavailable sources`, { code: 'read-count', stage: 'discovery', actual: attempted.size + requested.length, limit: LIMIT.reads });
+    let skipped = false;
     for (const path of requested) {
       const entry = entries.get(path);
       if (!entry || !regular(entry) || !safeRepositoryPath(path)) fail('source discovery requested an unavailable or protected file');
-      const content = await snapshot.read(path);
-      if (containsCredential(content)) fail('an inspected source file contains a recognizable credential; move credentials out of the publishing source before retrying');
+      attempted.add(path);
+      let content: string;
+      try {
+        if (entry.size !== undefined && entry.size > LIMIT.fileBytes) throw new RepositorySourceTooLargeError(path, entry.sha, entry.size);
+        content = await snapshot.read(path);
+        if (containsCredential(content)) fail('an inspected source file contains a recognizable credential; move credentials out of the publishing source before retrying');
+        if (bytes(content) > LIMIT.fileBytes) throw new RepositorySourceTooLargeError(path, entry.sha, bytes(content));
+      } catch (error) {
+        if (!(error instanceof RepositorySourceTooLargeError) || error.path !== path || error.sha !== entry.sha) throw error;
+        unavailable.set(path, { path, sha: entry.sha, size: error.size, reason: 'file-too-large', limit: LIMIT.fileBytes }); skipped = true; continue;
+      }
       const size = bytes(content);
-      if (content.includes('\u0000') || size > LIMIT.fileBytes || contextBytes + size > LIMIT.contextBytes) fail('source discovery exceeded the text file/context budget');
+      if (content.includes('\u0000') || contextBytes + size > LIMIT.contextBytes) fail('source discovery exceeded the text file/context budget');
       contextBytes += size; observed.set(path, { sha: entry.sha, content });
     }
+    return skipped;
   }
-  if (options.legacy) await inspect({ paths: [options.legacy.articlePath], complete: true, summary: 'Inspect the existing unpublished export before integrating it.' });
+  if (options.legacy) {
+    await inspect({ paths: [options.legacy.articlePath], complete: true, summary: 'Inspect the existing unpublished export before integrating it.' });
+    if (unavailable.has(options.legacy.articlePath)) discoveryFailed();
+  }
   let complete = false;
   for (let round = 0; round < LIMIT.rounds; round++) {
-    const discovery = await ask('github.integration.discover', DiscoverySchema, { folderHint: hint, article: metadata, manifest, observed: context(), remainingReads: LIMIT.reads - observed.size }, `Choose existing text files to inspect next. paths must be exact manifest paths, not globs. Ask for every content schema, renderer, route and blog index/navigation dependency needed to make and independently review a complete integration. complete=true only when the files already observed plus this request establish those conventions. Return complete=false when further reads are necessary. At most ${LIMIT.reads} total unique reads and ${LIMIT.contextBytes} source bytes are available.`, 3000);
-    await inspect(discovery);
-    if (discovery.complete) { complete = true; break; }
+    const discovery = await ask('github.integration.discover', DiscoverySchema, { folderHint: hint, article: metadata, manifest, observed: context(), remainingReads: LIMIT.reads - attempted.size }, `Choose existing text files to inspect next. paths must be exact manifest paths, not globs. Ask for every content schema, renderer, route and blog index/navigation dependency needed to make and independently review a complete integration. complete=true only when the files already observed plus this request establish those conventions. Return complete=false when further reads are necessary. Manifest size/readability and unavailableSources are metadata only, never inspected source. Never cite or edit unavailable files or assume filename means generated/optional. Follow exact imports, config and scripts to authored inputs, generators, consumers and build ordering; require observed source proof before omitting derived artifacts. If an unavailable file is mandatory for manual registration or editing, do not guess. At most ${LIMIT.reads} total unique reads and ${LIMIT.contextBytes} source bytes are available.`, 3000);
+    const skipped = await inspect(discovery);
+    if (discovery.complete && !skipped) { complete = true; break; }
   }
-  if (!complete || !observed.size) fail('source discovery did not establish a complete route and blog listing');
+  if (!complete || !observed.size) discoveryFailed();
   let proposal = await ask('github.integration.plan', ProposalSchema, { folderHint: hint, article: metadata, articleBodySize: { markdown: bytes(p.markdown), html: bytes(p.html) }, manifest, observed: context() }, `Create the complete minimal integration. Choose a free slug/path by inspecting existing routes/records, or preserve the original article identity for refresh. If retry is provided, slug and articlePath MUST match it. If legacy is provided, integrate that existing unpublished Radar export into the real blog: preserve legacy.slug, inspect legacy.articlePath, but move the authoritative articlePath if the observed renderer requires a different format/location. The old export cannot be deleted, so ensure it will not create a duplicate visible post. Legacy migration requires the same complete route/listing integration as a new post, never a content-only fallback. changes can create new files or apply small exact edits to files you read. create: path absent from manifest, expectedSha=null, content=complete new text, edits=[]. edit: expectedSha=observed SHA, content=null, edits=[{before,after}], each before nonempty and appearing exactly once in the ORIGINAL observed source; edit spans must not overlap. Never delete/rename files or rewrite whole existing code/registry files. For refresh/retry/legacy migration ONLY, a whole exact body replacement is permitted at the authoritative articlePath with a host body token; preserve unrelated metadata using small edits when content is embedded in a record. Use body tokens in articlePath change: {{RADAR_MARKDOWN}} for raw Markdown, {{RADAR_HTML}} for raw HTML, {{RADAR_MARKDOWN_JSON}} or {{RADAR_HTML_JSON}} for a JSON string value including its quotes. The host inserts the original article body; never regenerate/shorten it. Reuse the renderer's supported syntax and existing components. Include every route/index/registry/navigation/config update required by the observed source. Evidence must cite exact snippets and SHAs from observed source, with at least route and listing roles explaining the automatic or explicit discovery chain. Do not claim reachability based only on a new content file or a filename. At most12 changed files,80 exact edits and750KB final output. If a complete plan cannot be grounded in observed source, return no changes rather than guessing.`, 12000);
   function validateProposal(proposal: z.infer<typeof ProposalSchema>): RepositoryPostPlan['files'] {
     if (!proposal.slug || ['.', '..'].includes(proposal.slug) || proposal.slug.length > 200 || /[\x00-\x20/\\?#]/.test(proposal.slug)) fail('the plan did not resolve a safe article slug');
@@ -140,7 +186,10 @@ export async function planRepositoryPost(hint: string, p: PublishPayload, snapsh
     if (p.mode === 'refresh' && (!p.refreshUrl || routeIdentity(p.refreshUrl, true) !== routeIdentity(proposal.route))) fail('the refresh plan changes the original public article route');
     if (options.retry && (proposal.slug !== options.retry.slug || proposal.articlePath !== options.retry.articlePath)) fail('the retry plan changed the existing article identity');
     if (options.legacy && proposal.slug !== options.legacy.slug) fail('the migration plan changed the existing article slug');
-    if (!proposal.changes.length || proposal.changes.length > LIMIT.files || proposal.changes.reduce((n, c) => n + c.edits.length, 0) > LIMIT.edits) fail('the plan is empty or exceeds the change budget');
+    if (!proposal.changes.length) fail(`the plan contains no changes; inspected source did not establish a complete integration${proposal.summary.trim() ? '. Planner explanation: ' + publishingDiagnosticText(proposal.summary) : ''}${unavailable.size ? '. Unavailable during discovery: ' + unavailableReason() : ''}`, { code: 'plan-empty', stage: 'plan', actual: 0 });
+    if (proposal.changes.length > LIMIT.files) fail(`the plan changes ${proposal.changes.length} files; the limit is ${LIMIT.files}`, { code: 'changed-file-count', actual: proposal.changes.length, limit: LIMIT.files });
+    const editCount = proposal.changes.reduce((n, c) => n + c.edits.length, 0);
+    if (editCount > LIMIT.edits) fail(`the plan contains ${editCount} exact edits; the limit is ${LIMIT.edits}`, { code: 'edit-count', actual: editCount, limit: LIMIT.edits });
     const changed = new Map<string, string>(); const seenPaths = new Set<string>(); let outputBytes = 0; let bodyInserted = false;
     for (const change of proposal.changes) {
       if (!safeRepositoryPath(change.path, true) || seenPaths.has(change.path)) fail('the plan includes a protected or duplicate change path');
@@ -164,6 +213,7 @@ export async function planRepositoryPost(hint: string, p: PublishPayload, snapsh
         content = authored(change.content);
       } else {
         const file = observed.get(change.path);
+        if (unavailable.has(change.path)) fail(`the plan must edit unavailable source ${unavailableReason(change.path)}; reduce this mandatory file below the inspection limit before retrying`, { code: 'required-source-unavailable', path: publishingDiagnosticText(change.path) });
         if (!entry || !regular(entry) || !file || change.expectedSha !== file.sha || change.content !== null || !change.edits.length) fail('an existing-file edit is not grounded in the inspected snapshot');
         const spans = change.edits.map(patch => {
           const start = file.content.indexOf(patch.before);
@@ -186,13 +236,14 @@ export async function planRepositoryPost(hint: string, p: PublishPayload, snapsh
         const parsed = ts.createSourceFile(change.path, content, ts.ScriptTarget.Latest, true, kind);
         if ((parsed as any).parseDiagnostics.length) fail(`proposed JavaScript or TypeScript file ${change.path} has syntax errors`);
       }
-      outputBytes += bytes(content); if (outputBytes > LIMIT.outputBytes) fail('the final integration exceeds its output budget');
+      outputBytes += bytes(content); if (outputBytes > LIMIT.outputBytes) fail(`the final integration is ${outputBytes} bytes; the limit is ${LIMIT.outputBytes}`, { code: 'final-output-size', actual: outputBytes, limit: LIMIT.outputBytes });
       if (content !== observed.get(change.path)?.content || (options.retry && change.path === proposal.articlePath)) changed.set(change.path, content);
     }
     if (!bodyInserted || !changed.has(proposal.articlePath)) fail('the article body was not inserted into its content file');
     if (!proposal.evidence.length || proposal.evidence.length > LIMIT.evidence) fail('the plan lacks bounded source evidence');
     for (const proof of proposal.evidence) {
       const source = observed.get(proof.path);
+      if (unavailable.has(proof.path)) fail(`the plan cites unavailable source ${unavailableReason(proof.path)}; omitted or truncated files cannot establish integration evidence`, { code: 'unavailable-evidence' });
       if (!source) fail('the plan cites a source evidence path that was not inspected');
       if (proof.sha !== source.sha) fail(`the evidence SHA does not match the inspected file ${proof.path}`);
       const resolved = resolveQuote(source.content, proof.snippet);
@@ -203,17 +254,28 @@ export async function planRepositoryPost(hint: string, p: PublishPayload, snapsh
     return [...changed].map(([path, content]) => ({ path, content }));
   }
   let correctionUsed = false;
+  let correctionOrigin: PublishDiagnosticReason | undefined;
+  const rejectedRepair = (error: unknown): never => {
+    if (error instanceof PublishError && error.source === 'radar' && correctionOrigin) {
+      const final = error.diagnostic!;
+      const reason = publishingDiagnosticText(`Correction failed: ${final.reason}. Original rejection: ${correctionOrigin.reason}`, 1200);
+      throw new PublishError(error.http, reason, error.host, error.kind, { ...final, stage: 'repair', reason, origin: correctionOrigin });
+    }
+    throw error;
+  };
+  const beginCorrection = (error: PublishError) => { correctionOrigin = error.diagnostic ? (({ origin: _origin, ...reason }) => reason)(error.diagnostic) : { code: 'integration-invalid', stage: 'validation', reason: publishingDiagnosticText(error.detail) }; };
   const canCorrect = () => !correctionUsed && reasoningCalls < 7 && bytes(JSON.stringify(proposal)) <= LIMIT.outputBytes && !containsCredential(JSON.stringify(proposal));
   async function correct(feedback: unknown): Promise<RepositoryPostPlan['files']> {
     correctionUsed = true;
     proposal = await ask('github.integration.repair', ProposalSchema, { folderHint: hint, article: metadata, manifest, observed: context(), previousProposal: proposal, ...feedback as object }, `Correct the previous proposal using the concrete host-validator or independent-review feedback and ORIGINAL observed source. This is the only correction attempt. Return the same complete proposal schema. Copy evidence SHAs and quote exact source substrings verbatim (including whitespace and quoting); do not paraphrase evidence. Keep edits exact, unique and nonoverlapping in original source. Preserve the original body tokens, article identity, existing metadata, source-grounded route and public listing chain, and every safety/budget constraint. Inspect any newly supplied build/test/generator/deployment source before deciding whether derived indexes/feeds need committed edits or are generated by the existing pipeline before validation/deployment. Cite that pipeline and its coverage when leaving generated artifacts unchanged; never claim a build ran. Fix incorrect author attribution using actual repository author conventions. authorSource=business-profile-fallback is not an explicit requested byline: a new article may follow the observed site/team default instead, without inventing an author or author page; preserve existing attribution on refresh. Never replace a failed check with an unsupported claim, remove required manual registry work, weaken safety or change unrelated files.`, 12000);
     return validateProposal(proposal);
   }
-  let files: RepositoryPostPlan['files'];
+  let files!: RepositoryPostPlan['files'];
   try { files = validateProposal(proposal); }
   catch (error) {
     if (!(error instanceof PublishError) || error.http !== 422 || !canCorrect()) throw error;
-    files = await correct({ validationFailure: error.detail });
+    beginCorrection(error);
+    try { files = await correct({ validationFailure: error.detail }); } catch (repairError) { rejectedRepair(repairError); }
   }
   async function reviewProposal(): Promise<z.infer<typeof ReviewSchema>> {
     const review = await ask('github.integration.review', ReviewSchema, { article: metadata, articleBodySize: { markdown: bytes(p.markdown), html: bytes(p.html) }, folderHint: hint, observed: context(), proposal: { slug: proposal.slug, articlePath: proposal.articlePath, route: proposal.route, summary: proposal.summary, files, changes: proposal.changes, wholeFileReplacementPaths: proposal.changes.filter(change => change.kind === 'edit' && change.edits.reduce((total, edit) => total + edit.before.length, 0) >= (observed.get(change.path)?.content.trim().length || Infinity) * 0.9).map(change => change.path), evidence: proposal.evidence } }, `Perform a SOURCE-ONLY review of this integration against the ORIGINAL inspected source and FINAL proposed files. approved means the complete source integration is consistent with observed routing, listing and generation rules; it does NOT mean runtime checks passed. Build, CI, deployment and preview checks have NOT run inside this workflow: their absence alone is pending validation in a draft PR, never a source defect and never by itself a reason for approved=false or an issues entry. Reject actual source integration defects or incompatible observed pipeline ordering. The proposal.files field contains the authoritative final expanded bytes. proposal.changes intentionally retains host body tokens as patch provenance; these raw tokens do NOT mean the article was omitted because the host already inserted and checked the original payload in proposal.files. Evaluate rendering and content presence from proposal.files. Verify the supplied article is rendered at the claimed route and appears in the site's public blog listing/navigation using actual generators/collection rules or explicit registry updates. Inspect observed build/test/generator/deployment source and distinguish manually maintained registries from derived artifacts regenerated by the existing deployment pipeline. Derived files need not be committed when exact observed source proves that the existing pipeline regenerates them from the changed content BEFORE their consumer, the relevant required validation, or deployment; require concrete generator coverage and ordering evidence. A standalone test script is not automatically a prerequisite to the observed deployment build: establish the required order from actual observed build/CI/deployment configuration. Reject if an actual observed required check consumes older artifacts before regeneration, no generator covers the new source, or a manually maintained registry/navigation entry is missing. Never invent build/test success or waive missing manual integration. Trace all relevant imports, metadata schemas, required frontmatter, template components, rendering formats and discovery paths. Check slug collisions, refresh identity/original date, duplicate registration and preservation of unrelated source/content. authorSource=business-profile-fallback marks article.author as the publisher's business-name fallback, not an explicit byline request; a new article may use the observed site/team default instead without inventing an author identity or page. Existing attribution must survive refresh. For legacy migration, confirm the old unpublished export was integrated without duplicating a visible post; preserving the slug does not require preserving the old unreachable file path. Inspect the supplied exact changes and wholeFileReplacementPaths explicitly: a whole-file article replacement is acceptable only for a standalone article; reject replacement that removes unrelated records from a shared registry/content database, metadata that must survive, or other articles. Reject incomplete or speculative links, wrong renderer formats, unsupported imports, unrelated changes, security/credential edits and sample-specific claims copied as facts. approved=true only with no unresolved issues. Return concrete exact source snippets proving route and listing roles, from observed or final files; do not repeat planner claims as evidence. Do not claim runtime/build/CI checks occurred.`, 5000);
@@ -221,27 +283,36 @@ export async function planRepositoryPost(hint: string, p: PublishPayload, snapsh
   }
   function validateReview(review: z.infer<typeof ReviewSchema>): void {
     const finalSources = new Map(files.map(file => [file.path, file.content]));
-    if (!review.approved || review.issues.length || !review.summary.trim() || bytes(review.summary) > 8000 || review.evidence.length > LIMIT.evidence) fail('independent source review could not establish a complete, focused integration');
+    if (!review.approved || review.issues.length) {
+      const issues = review.issues.slice(0, 3).map(issue => publishingDiagnosticText(issue)).filter(Boolean);
+      fail(`independent source review rejected the integration: ${issues.join('; ') || 'the reviewer did not approve the source integration'}`, { code: 'review-rejected', stage: 'review', issues });
+    }
+    if (!review.summary.trim() || bytes(review.summary) > 8000 || review.evidence.length > LIMIT.evidence) fail('independent source review exceeded its response budget or omitted its summary', { code: 'review-invalid', stage: 'review' });
     for (const proof of review.evidence) {
       const source = finalSources.get(proof.path) ?? observed.get(proof.path)?.content;
       const resolved = source === undefined ? null : resolveQuote(source, proof.snippet);
-      if (resolved === null) fail('independent review cited missing or invented source evidence');
+      if (resolved === null) fail('independent review cited missing or invented source evidence', { code: 'review-evidence-invalid', stage: 'review' });
       proof.snippet = resolved;
     }
-    if (!['route', 'listing'].every(role => review.evidence.some(e => e.role === role))) fail('independent review did not verify both route and listing integration');
+    if (!['route', 'listing'].every(role => review.evidence.some(e => e.role === role))) fail('independent review did not verify both route and listing integration', { code: 'review-chain-incomplete', stage: 'review' });
   }
-  let review = await reviewProposal();
+  let review!: z.infer<typeof ReviewSchema>;
+  try { review = await reviewProposal(); } catch (error) { rejectedRepair(error); }
   try { validateReview(review); }
   catch (error) {
-    if (!(error instanceof PublishError) || error.http !== 422 || !canCorrect() || bytes(JSON.stringify(review)) > 30_000 || containsCredential(JSON.stringify(review))) throw error;
-    // With budget, inspect dependencies named by fresh review rather than patching generated outputs blindly.
-    if (reasoningCalls <= 5) {
-      const dependencyRead = await ask('github.integration.discover', DiscoverySchema, { folderHint: hint, article: metadata, manifest, observed: context(), remainingReads: LIMIT.reads - observed.size, previousProposal: proposal, independentReview: review, validationFailure: error.detail }, `Independent review found missing context or integration defects. Request the exact unobserved source files needed to resolve its issues: actual content consumers, schemas, generator scripts, build/test ordering, deployment configuration, author records or existing article metadata. CI/deployment configs may be READ for evidence but never modified. Do not assume generated artifacts require manual commits; inspect whether the existing pipeline regenerates them before validation/deployment. Choose only manifest paths within remaining read/context budgets. This is the single additional dependency-inspection pass.`, 3000);
-      await inspect(dependencyRead);
-    }
-    files = await correct({ validationFailure: error.detail, independentReview: review });
-    review = await reviewProposal();
-    validateReview(review);
+    if (!(error instanceof PublishError) || error.http !== 422 || !canCorrect() || bytes(JSON.stringify(review)) > 30_000 || containsCredential(JSON.stringify(review))) rejectedRepair(error);
+    beginCorrection(error as PublishError);
+    const rejection = error as PublishError;
+    try {
+      // With budget, inspect dependencies named by fresh review rather than patching generated outputs blindly.
+      if (reasoningCalls <= 5) {
+        const dependencyRead = await ask('github.integration.discover', DiscoverySchema, { folderHint: hint, article: metadata, manifest, observed: context(), remainingReads: LIMIT.reads - attempted.size, previousProposal: proposal, independentReview: review, validationFailure: rejection.detail }, `Independent review found missing context or integration defects. Request the exact unobserved source files needed to resolve its issues: actual content consumers, schemas, generator scripts, build/test ordering, deployment configuration, author records or existing article metadata. CI/deployment configs may be READ for evidence but never modified. Do not assume generated artifacts require manual commits; inspect whether the existing pipeline regenerates them before validation/deployment. Choose only manifest paths within remaining read/context budgets. This is the single additional dependency-inspection pass.`, 3000);
+        await inspect(dependencyRead);
+      }
+      files = await correct({ validationFailure: rejection.detail, independentReview: review });
+      review = await reviewProposal();
+      validateReview(review);
+    } catch (repairError) { rejectedRepair(repairError); }
   }
   return { slug: proposal.slug, path: proposal.articlePath, files, summary: proposal.summary, route: proposal.route, discovery: proposal.evidence, review: { summary: review.summary, runtimeVerified: false }, draft: true };
 }

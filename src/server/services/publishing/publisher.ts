@@ -14,7 +14,7 @@ import { renderImage } from '@/server/services/images';
 import { readLocal, storedKey } from '@/server/services/storage';
 import { platLabel } from '@/lib/constants';
 import { slugify } from '@/lib/format';
-import type { Article, CalendarEntry, ConnType, Profile } from '@/lib/types';
+import type { Article, ArticlePublishError, CalendarEntry, ConnType, Profile } from '@/lib/types';
 import { blocksToHtml, blocksToMarkdown, sourcesList } from './render';
 import { connectorFor } from './connectors';
 import { PublishError } from './http';
@@ -95,7 +95,7 @@ export async function connectionFor(b: BizRow, dest: string | null): Promise<Con
   return rows.find(r => r.id === dest) || rows.find(r => r.id === bl.defaultId) || rows[0];
 }
 
-export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: { http: number; message: string; platform: string; hint?: string } } | { status: 'skipped'; reason: string } | { status: 'retry' };
+export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: ArticlePublishError } | { status: 'skipped'; reason: string } | { status: 'retry' };
 
 /**
  * Publish one entry. Throws only for a transient failure that should be retried (the job queue backs off);
@@ -124,7 +124,7 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   const setEntry = async (v: Partial<typeof schema.calendarEntries.$inferInsert>) => { await db.update(schema.calendarEntries).set(v).where(eq(schema.calendarEntries.id, entryId)); await bump(b.id); };
   const fail = async (err: PublishError, type: string | null) => {
     await reportFailure(err, { source: 'publishing', operation: 'publishing.entry', businessId: b.id, ref: entryId, provider: type || undefined, status: err.http, attempt: o.attempt, maxAttempts: o.maxAttempts, retrying: false });
-    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}) };
+    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}), ...(err.source ? { source: err.source, diagnostic: err.diagnostic } : {}) };
     await setEntry({ status: 'failed', publishError: error, publishAttempts: o.attempt });
     if (conn && (err.http === 401 || err.http === 403)) await db.update(schema.connections).set({ status: 'error', lastError: err.line }).where(eq(schema.connections.id, conn.id));
     console.error(`[publish] ${entryId} failed on ${type}:`, err.message);
@@ -136,6 +136,7 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
 
   const type = conn.type as ConnType;
   const c = ctxFromRow(b, conn);
+  if (type === 'nextjs') c.publishDeadlineAt = Date.now() + 270_000;
   const connector = connectorFor(type);
   try {
     const payload = await buildPayload(b, e, art);

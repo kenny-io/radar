@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push
+
+ ✓ src/server/services/publishing/connectors.test.ts (28 tests) 807ms
+   ✓ RADAR_REAL_CONNECTORS (dev-only switch) > the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo  754ms
+ ✓ src/server/services/publishing/connectors/nextjs-agent.test.ts (64 tests) 84ms
+ ✓ src/server/services/publishing/connectors/nextjs.test.ts (58 tests) 74ms
+
+ Test Files  3 passed (3)
+      Tests  150 passed (150)
+   Start at  01:23:52
+   Duration  3.79s (transform 380ms, setup 0ms, collect 2.34s, tests 965ms, environment 0ms, prepare 120ms)
