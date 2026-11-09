@@ -6,8 +6,6 @@ Preview: The latest subscription charge didn’t go through. You can check it in
 
 Hi Alex,
 
-Let’s get your subscription sorted.
-
 The latest charge for your Radar subscription didn’t go through.
 
 Open Billing to check your payment method and the outstanding invoice. Your workspace access may be paused while it remains unpaid.

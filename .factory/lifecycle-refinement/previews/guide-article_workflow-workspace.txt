@@ -6,8 +6,6 @@ Preview: I’ll walk you through choosing a topic and reviewing your first draft
 
 Hi Alex,
 
-Know what goes live on your site.
-
 Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
 
 1. Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.

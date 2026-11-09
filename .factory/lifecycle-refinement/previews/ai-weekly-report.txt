@@ -4,8 +4,6 @@ Reply-To: team@thally.io
 Subject: Recommendation share this week · fieldnote.example
 Preview: This week’s collected answers, with the previous period alongside.
 
-Your weekly AI recommendation report
-
 This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
 
 This week: Your business was mentioned in 6 of 20 collected answers (30%).

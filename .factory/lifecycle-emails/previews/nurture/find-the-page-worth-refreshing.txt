@@ -3,8 +3,6 @@ Preview: Before writing something new, I’d look at the pages people already fi
 
 Hi Alex,
 
-There may be a useful next step in an existing page.
-
 Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
 
 I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results to understand what the searcher expected before deciding what to change.

@@ -6,8 +6,6 @@ Preview: Your subscription invoice is paid. Here’s where to find the receipt.
 
 Hi Alex,
 
-Your subscription receipt
-
 Your Radar subscription invoice is paid.
 
 You can view or download the invoice in Settings → Billing, then Manage billing.

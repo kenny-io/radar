@@ -2,8 +2,6 @@ Does ChatGPT or Claude recommend Paper & Pixel?
 
 Hi Alex,
 
-Read what the assistant actually says.
-
 An assistant can name Paper & Pixel without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
 Save your Business Profile and activate your workspace before following these steps.

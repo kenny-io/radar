@@ -38,3 +38,7 @@ The accepted founder correction 5b4f9462 is integrated with frozen main 4908694f
 ## Sequence-wide editorial correction
 
 At00a32602 the user identified duplicated #11/#13 and required the correction across every affected email. All 28 active families were audited as one recipient’s sequence. Copy was rewritten/trimmed wherever the same job, intro, advice or ask repeated, including welcome/founder/trial, work10–14, lessons15–19, guides20–21, receipt/partner notices and report/Autopilot. Runtime/schema/identity/URL/pref/cadence files are unchanged. Current source f4fd8880a0074b641881669aa77953bd4f4618cebdb76bdd6e119ea0780a3fe5/636 files, four-gallery artifact9a6509c4d38f444c6c105610f28741e19137ac0c2c59714fc9b134f0d417580a/354 files.136 fresh renders,11 catalogue controls,28 pure main checks and typecheck pass; final independent sequential review in qa/distinct-copy/report.md. Separate formatter-only companion patch preserves previous local-only boundaries. #5 retired, other references unchanged, no sends/production actions.
+
+## No body-headline checkpoint
+
+User requested removing the redundant body H1s. The minimal point edit is accepted in qa/no-headings/report.md:68 exact body comparisons,136 renders,34 pure checks/typecheck/11 catalogue controls pass. No other copy/links/sender/schedule/schema change. Source7a0614cd…/636files; gallery04c51411…/354files. Preserved before the subsequent new Autopilot-intro feature request; same numbering and #5 retired.

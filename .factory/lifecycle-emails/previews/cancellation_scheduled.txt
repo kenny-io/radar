@@ -6,8 +6,6 @@ Preview: Your access continues until the end date shown in this email.
 
 Hi Alex,
 
-Your cancellation is confirmed.
-
 You can keep using your workspace until December 12, 2026 at 12:00 PM UTC. Your Radar subscription won’t renew after that date.
 
 You can review your subscription in Settings → Billing if you decide to continue.

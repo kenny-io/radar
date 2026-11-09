@@ -6,8 +6,6 @@ Preview: Your subscription setup expired before it was completed.
 
 Hi Alex,
 
-Your subscription has ended
-
 Your Radar subscription setup expired before it was completed.
 
 If you’d like to pick up where you left off, open your account to review the subscription options.

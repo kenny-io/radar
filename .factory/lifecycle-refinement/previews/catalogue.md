@@ -72,8 +72,6 @@ Optional lifecycle mail is default-on for eligible verified users, preserving re
 
 Hi Alex,
 
-Your Business Profile is ready.
-
 I’m Ekene, Radar’s founder.
 
 Your website analysis and Business Profile for Fieldnote are saved. Open the profile and check the description of what you sell, who it’s for and how you want to sound.
@@ -111,8 +109,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-Welcome to Radar.
 
 I’m Ekene, Radar’s founder.
 
@@ -157,8 +153,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-Why I built Radar
 
 It’s never been easier to build a product. But getting it beyond your own network is still a full-time job.
 
@@ -206,8 +200,6 @@ Stop optional setup emails: https://radar.thally.io/email-preferences?token=prev
 
 Hi Alex,
 
-Choose a new password
-
 Here’s the link you requested to choose a new password for your Radar account.
 
 It works once and expires one hour after the request. After changing your password, sign in again on your devices.
@@ -251,8 +243,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-3 days to try Radar
 
 Your trial is active. Thanks for giving Radar a try.
 
@@ -308,8 +298,6 @@ This number stays reserved. No email body is scheduled or sent.
 
 Hi Alex,
 
-Your subscription receipt
-
 Your Radar subscription invoice is paid: $49.00.
 
 Invoice: RADAR-DEMO-0001.
@@ -347,8 +335,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-Your subscription receipt
 
 Your Radar subscription invoice is paid.
 
@@ -392,8 +378,6 @@ Email preferences: https://radar.thally.io/email-preferences
 
 Hi Alex,
 
-Let’s get your subscription sorted.
-
 The latest charge for your Radar subscription didn’t go through.
 
 Open Billing to check your payment method and the outstanding invoice. Your workspace access may be paused while it remains unpaid.
@@ -431,8 +415,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-Let’s get your subscription sorted.
 
 The latest charge for your Radar subscription didn’t go through.
 
@@ -478,8 +460,6 @@ Email preferences: https://radar.thally.io/email-preferences
 
 Hi Alex,
 
-Your cancellation is confirmed.
-
 You can keep using your workspace until December 12, 2026 at 12:00 PM UTC. Your Radar subscription won’t renew after that date.
 
 You can review your subscription in Settings → Billing if you decide to continue.
@@ -522,8 +502,6 @@ Email preferences: https://radar.thally.io/email-preferences
 
 Hi Alex,
 
-Your subscription has ended
-
 Your Radar subscription is no longer active.
 
 If you’d like to pick up where you left off, open your account to review the subscription options.
@@ -561,8 +539,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-Your subscription has ended
 
 Your Radar subscription setup expired before it was completed.
 
@@ -607,8 +583,6 @@ Email preferences: https://radar.thally.io/email-preferences
 **Full email:**
 
 Hi Alex,
-
-A few threads to look at today.
 
 Fieldnote · Daily Brief
 
@@ -656,8 +630,6 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 Hi Alex,
 
-Choose what you want drafted.
-
 Fieldnote · Content Calendar
 
 Your plan has 8 proposed topics awaiting a decision. Open a title, check the proposed angle and approve the one you want Radar to draft. Leave the others for later if they don’t fit.
@@ -703,8 +675,6 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 **Full email:**
 
 Hi Alex,
-
-Use the article you already have.
 
 Fieldnote · Article to social
 
@@ -752,8 +722,6 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 Hi Alex,
 
-Decide when one post should go out.
-
 Fieldnote · Social posts
 
 Your social pack for “How to choose a design tool for your studio” is saved. When you’re happy with one of the drafts, schedule it to a supported connected account or copy it to share from the platform yourself.
@@ -799,8 +767,6 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 **Full email:**
 
 Hi Alex,
-
-Which one will you move forward?
 
 These items need different decisions. Pick one below; each link opens the saved work in the right business.
 
@@ -862,8 +828,6 @@ Turn off work reminders: https://radar.thally.io/email-preferences?token=preview
 
 Hi Alex,
 
-Read what the assistant actually says.
-
 An assistant can name Fieldnote without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
 1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
@@ -907,8 +871,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-Read what the assistant actually says.
 
 An assistant can name Fieldnote without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
@@ -956,8 +918,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Read what the assistant actually says.
-
 An assistant can name Fieldnote without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
 Resume your subscription access before trying these steps.
@@ -1004,8 +964,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Read what the assistant actually says.
-
 An assistant can name Fieldnote without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
 Save your Business Profile and activate your workspace before following these steps.
@@ -1051,8 +1009,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi there,
-
-Read what the assistant actually says.
 
 An assistant can name your business without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
@@ -1106,8 +1062,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Make the reply worth posting.
-
 A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
 
 1. Open Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.
@@ -1151,8 +1105,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-Make the reply worth posting.
 
 A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
 
@@ -1200,8 +1152,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Make the reply worth posting.
-
 A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
 
 Resume your subscription access before trying these steps.
@@ -1248,8 +1198,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Make the reply worth posting.
-
 A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
 
 Save your Business Profile and activate your workspace before following these steps.
@@ -1295,8 +1243,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi there,
-
-Make the reply worth posting.
 
 A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
 
@@ -1350,8 +1296,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Help the right reader find you.
-
 Someone reading another founder’s site could be looking for exactly what Fieldnote offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
 
 1. Open Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.
@@ -1395,8 +1339,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-Help the right reader find you.
 
 Someone reading another founder’s site could be looking for exactly what Fieldnote offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
 
@@ -1444,8 +1386,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Help the right reader find you.
-
 Someone reading another founder’s site could be looking for exactly what Fieldnote offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
 
 Resume your subscription access before trying these steps.
@@ -1492,8 +1432,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Help the right reader find you.
-
 Someone reading another founder’s site could be looking for exactly what Fieldnote offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
 
 Save your Business Profile and activate your workspace before following these steps.
@@ -1539,8 +1477,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi there,
-
-Help the right reader find you.
 
 Someone reading another founder’s site could be looking for exactly what your business offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
 
@@ -1594,8 +1530,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-What is the searcher trying to do?
-
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
 1. Open Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read each topic’s search intent and keyword estimates. Decide which reader you can help and what the article should answer.
@@ -1639,8 +1573,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-What is the searcher trying to do?
 
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
@@ -1688,8 +1620,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-What is the searcher trying to do?
-
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
 Resume your subscription access before trying these steps.
@@ -1735,8 +1665,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-What is the searcher trying to do?
 
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
@@ -1784,8 +1712,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-What is the searcher trying to do?
-
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
 1. Open Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read each topic’s search intent and keyword estimates. Decide which reader you can help and what the article should answer.
@@ -1829,8 +1755,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi there,
-
-What is the searcher trying to do?
 
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
@@ -1884,8 +1808,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Put your own experience into the draft.
-
 Think of a question customers ask you repeatedly. I’d use your answer as the basis for a social post, then add an example from your own work. That gives someone a reason to read it and remember your business.
 
 1. Open Social Marketing and choose An idea. Enter one recurring customer question and ask for a post that answers it with a practical example. Generate a pack for the platforms you use.
@@ -1929,8 +1851,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-Put your own experience into the draft.
 
 Think of a question customers ask you repeatedly. I’d use your answer as the basis for a social post, then add an example from your own work. That gives someone a reason to read it and remember your business.
 
@@ -1978,8 +1898,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Put your own experience into the draft.
-
 Think of a question customers ask you repeatedly. I’d use your answer as the basis for a social post, then add an example from your own work. That gives someone a reason to read it and remember your business.
 
 Resume your subscription access before trying these steps.
@@ -2026,8 +1944,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Put your own experience into the draft.
-
 Think of a question customers ask you repeatedly. I’d use your answer as the basis for a social post, then add an example from your own work. That gives someone a reason to read it and remember your business.
 
 Save your Business Profile and activate your workspace before following these steps.
@@ -2073,8 +1989,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi there,
-
-Put your own experience into the draft.
 
 Think of a question customers ask you repeatedly. I’d use your answer as the basis for a social post, then add an example from your own work. That gives someone a reason to read it and remember your business.
 
@@ -2128,8 +2042,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Know what goes live on your site.
-
 Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
 
 1. Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.
@@ -2173,8 +2085,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-Know what goes live on your site.
 
 Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
 
@@ -2222,8 +2132,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-Know what goes live on your site.
-
 Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
 
 You can pick this up when you resume your subscription access. Your account is the place to start.
@@ -2269,8 +2177,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-Know what goes live on your site.
 
 Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
 
@@ -2324,8 +2230,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-There may be a useful next step in an existing page.
-
 Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
 
 I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results to understand what the searcher expected before deciding what to change.
@@ -2371,8 +2275,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-There may be a useful next step in an existing page.
 
 Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
 
@@ -2422,8 +2324,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 
 Hi Alex,
 
-There may be a useful next step in an existing page.
-
 Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
 
 I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results to understand what the searcher expected before deciding what to change.
@@ -2471,8 +2371,6 @@ Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=p
 **Full email:**
 
 Hi Alex,
-
-There may be a useful next step in an existing page.
 
 Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
 
@@ -2905,8 +2803,6 @@ Email preferences: https://radar.thally.io/email-preferences
 
 **Full email:**
 
-Your weekly AI recommendation report
-
 This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
 
 This week: Your business was mentioned in 6 of 20 collected answers (30%).
@@ -2948,8 +2844,6 @@ Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-on
 **Format:** HTML + plain text
 
 **Full email:**
-
-Your weekly AI recommendation report
 
 This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
 
@@ -2993,8 +2887,6 @@ Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-on
 
 **Full email:**
 
-Your weekly AI recommendation report
-
 This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
 
 This week: Your business was mentioned in 6 of 20 collected answers (30%).
@@ -3036,8 +2928,6 @@ Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-on
 **Format:** HTML + plain text
 
 **Full email:**
-
-Your weekly AI recommendation report
 
 This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
 

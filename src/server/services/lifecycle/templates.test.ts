@@ -11,7 +11,7 @@ describe('lifecycle templates', () => {
     expect(x.preheader?.length).toBeGreaterThan(10); expect(x.preheader!.length).toBeLessThanOrEqual(200);
     expect(x.html).toContain('aria-hidden="true"');
     expect(x.html).toContain('<table lang="en" dir="ltr" role="presentation"');
-    expect(x.html).toContain('<html lang="en" dir="ltr">'); expect(x.html).toContain('role="presentation"'); expect(x.html).toContain('<h1');
+    expect(x.html).toContain('<html lang="en" dir="ltr">'); expect(x.html).toContain('role="presentation"'); expect(x.html).not.toMatch(/<h1[\s>]/i);
     expect(x.text).toContain('Privacy: https://radar.thally.io/privacy'); expect(x.text).toContain('https://radar.thally.io/');
     expect(x.replyTo).toBe('team@thally.io');
     expect(x.html).not.toContain('<script');

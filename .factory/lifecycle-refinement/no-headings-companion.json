@@ -1,0 +1,7 @@
+{
+  "path": "src/server/services/visibility/digestContent.ts",
+  "beforeSha256": "54b07d6ba9b6ac169ff8038a5a1594dc065f4d1fa4866ececb87891f2ec5ad0a",
+  "afterSha256": "fadcd2aa07f5e9f5ac9bc6764102d3ebc9714698a33ce6d6b09b16f7cd31a10b",
+  "patchSha256": "023f2b3ca3df316dd036866ac69ee5123b50f620ad1c92a30faceab12051936e",
+  "scope": "Remove body H1 and standalone plaintext title only; no sender/job/runtime change"
+}

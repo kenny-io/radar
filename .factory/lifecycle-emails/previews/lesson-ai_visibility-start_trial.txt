@@ -6,8 +6,6 @@ Preview: A mention and a citation tell you different things. Here’s what to lo
 
 Hi Alex,
 
-Read what the assistant actually says.
-
 An assistant can name Fieldnote without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
 
 Start your Radar trial to try this in your workspace.

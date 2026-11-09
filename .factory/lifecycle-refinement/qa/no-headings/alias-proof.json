@@ -1,0 +1,16 @@
+{
+  "identicalFiles": 143,
+  "activeFamilies": 28,
+  "variants": 68,
+  "numberedSlots": 29,
+  "retired": [
+    {
+      "number": 5,
+      "reference": "5",
+      "family": "trial_ending",
+      "subject": "Trial-ending reminder",
+      "status": "Retired",
+      "reason": "Removed at your request. Radar does not queue or send a reminder to cancel before the trial ends."
+    }
+  ]
+}

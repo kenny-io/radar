@@ -2,8 +2,6 @@ What should Paper & Pixel publish next?
 
 Hi Alex,
 
-What is the searcher trying to do?
-
 Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
 
 Resume your subscription access before trying these steps.
