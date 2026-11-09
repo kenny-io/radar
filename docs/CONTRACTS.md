@@ -43,6 +43,8 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 ### social area
 - Component `PackThumb` (props in placeholder).
 - Generate flow opens from `app.go('social', { generate: true })`.
+- Unset `B.social.auto` preferences default to daily library drafts at 08:00 in `B.tz`, for LinkedIn/X with branded images. Explicit saved preferences remain authoritative. Draft settings can pause or customize generation.
+- Daily packs use a stable `auto-${businessId}-${date}` ID; retries never replace existing pack data. The worker uses profile, calendar, published articles, cached blog content and search suggestions, with profile-only fallback.
 
 ### platform area (Dashboard, Settings, Team, Backlinks)
 - `settings.ai` `{ task: 'writing'|'research', model }` · `settings.calendarDefaults` `{ market?, language?, cadence?, perWeek? }`
@@ -62,6 +64,7 @@ See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `
 - `gsc.backfill` (ref = businessId) — progress `{ pct }`
 - `brief.scan` (ref = date, one per business and day: Scan again during a running scan joins it) — payload `{ mode: 'first'|'again'|'keep', date, fromJob?, background?: true, round? }`; progress `{ step, threadsRead, failed?: platform, steps, mode, quiet? }` (`quiet`: Keep runs and background rescans, never shown as the scan view unless joined); result `{ mode, added, addedIds, since, failed?, partial?, notified?: true, skipped?: 'no_day'|'past', skippedPlats?: platform[] }` (`skippedPlats`: background runs, the platforms that failed and were skipped) (`notified`: the server already toasted the members, so the client shows no toast of its own)
 - `social.generate` (ref = client token) — progress `{ done: number }`, result `{ packId }`
+- `social.autoRun` — payload `{ date: string }` (business-local day), result `{ packId: string | null }`; cron atomically marks/enqueues once per business/day and catches up after the due time until midnight. Library drafts are the default; legacy explicit scheduling remains opt-in.
 - `visibility.collect` (ref = resultId)
 
 ## Social channels (connected X / LinkedIn accounts: post now, schedule, calendar)

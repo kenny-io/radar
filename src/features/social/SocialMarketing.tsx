@@ -6,8 +6,8 @@ import { PlatName } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Empty, PageHead, Status } from '@/components/ui';
-import { plat } from '@/lib/constants';
-import { fmtTime } from '@/lib/format';
+import { plat, tzShort } from '@/lib/constants';
+import { fmtTime, todayIn } from '@/lib/format';
 import { accountsOf } from '@/lib/socialPublish';
 import { autoSchedules } from './channels/logic';
 import { PackThumb } from './PackThumb';
@@ -23,16 +23,25 @@ export function SocialMarketing() {
   useEffect(() => { if (route.params && route.params.generate) setFlow(true); }, [route.params]);
   if (pack) return <PackView pack={pack} />;
   const a = B.social.auto; const pubOn = !!B.social.publishing;
+  const autoJob = app.jobFor('social.autoRun');
+  const jobDate = autoJob?.ref && /^\d{4}-\d{2}-\d{2}$/.test(autoJob.ref) ? autoJob.ref : autoJob ? todayIn(B.tz, new Date(autoJob.createdAt)) : null;
+  const preparing = autoJob?.status === 'queued' || autoJob?.status === 'running';
+  const failed = a.on && autoJob?.status === 'failed' && !packs.some(p => p.auto && jobDate && p.created >= jobDate);
+  const canEdit = B.role !== 'Viewer';
   return <div className="page">
-    <PageHead title="Social Marketing" sub={pubOn ? 'Platform-ready posts and visuals in your brand. Post or schedule to X and LinkedIn, or copy them anywhere.' : 'Platform-ready posts and visuals in your brand. You copy and publish them yourself — Radar never posts for you.'}>
-      <Btn kind="primary" icon="plus" onClick={() => setFlow(true)}>Generate social posts</Btn>
+    <PageHead title="Social Marketing" sub="Radar prepares social posts from your Business Profile, content calendar and blog articles. Review and edit each pack when you’re ready.">
+      <Btn kind="primary" icon="plus" disabled={!canEdit} onClick={() => setFlow(true)}>Generate social posts</Btn>
     </PageHead>
     <div className="row small" style={{ gap: 14, margin: '-14px 0 30px', flexWrap: 'wrap' }}>
-      {a.on ? <><Status tone="ok">Auto-generating {a.freq === 'daily' ? 'daily' : a.days.join(', ')} at {fmtTime(a.time)}</Status><span className="sub"><span style={{ display: 'inline-flex', gap: 12, verticalAlign: 'middle', marginRight: 6 }}>{a.platforms.map(k => <PlatName key={k} k={k} l={plat(k).l} s={14} gap={6} />)}</span>{autoSchedules(B) ? '· scheduled to connected accounts' : '· saved to your library'}</span></> : <span className="sub">Automatic generation is off.</span>}
-      <Btn kind="link" className="small" onClick={() => setAuto(true)}>{a.on ? 'Edit' : 'Set up'}</Btn>{pubOn && !accountsOf(B).length && <Btn kind="link" className="small" onClick={() => go('settings', { social: true })}>Connect X or LinkedIn</Btn>}
+      {a.on ? <><Status tone="ok" style={{ whiteSpace: 'normal' }}>Drafts {a.freq === 'daily' ? 'daily' : a.days.join(', ')} from {fmtTime(a.time)} {tzShort(B.tz)}</Status><span className="sub"><span style={{ display: 'inline-flex', gap: 12, verticalAlign: 'middle', marginRight: 6, flexWrap: 'wrap' }}>{a.platforms.map(k => <PlatName key={k} k={k} l={plat(k).l} s={14} gap={6} />)}</span>{autoSchedules(B) ? '· auto-scheduling enabled' : '· saved for your review'}</span></> : <span className="sub">Automatic drafts are paused. You can still generate a pack whenever you want.</span>}
+      {canEdit && <Btn kind="link" className="small" onClick={() => setAuto(true)}>Draft settings</Btn>}{pubOn && canEdit && !accountsOf(B).length && <Btn kind="link" className="small" onClick={() => go('settings', { social: true })}>Connect X or LinkedIn</Btn>}
     </div>
+    {(preparing || failed) && <div role="status" className="col" style={{ gap: 8, marginBottom: 24 }}>
+      <Status tone={failed ? 'warn' : 'ink'} pulse={preparing} style={{ whiteSpace: 'normal' }}>{failed ? 'Radar couldn’t prepare your latest social pack.' : 'Radar is preparing your next social pack.'}</Status>
+      <p className="small sub">{failed ? 'You can generate a pack now. Automatic drafts will try again on your next scheduled day.' : 'It will appear here when it’s ready. You can keep working while Radar writes.'}</p>
+    </div>}
     {packs.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 18 }}>{packs.map(p => <PackThumb key={p.id} p={p} brand={B.profile.brand} onClick={() => go('social', { pack: p.id })} />)}</div>
-      : <Empty icon="social" title="Your content library is empty" body="Start from an idea, an article URL, or one of your Radar articles. Each pack has copy and visuals for every platform you pick."><Btn kind="primary" icon="plus" onClick={() => setFlow(true)}>Generate social posts</Btn></Empty>}
+      : <Empty icon="social" title={preparing ? 'Your first social pack is on its way' : a.on ? 'Your next social posts start here' : 'Your content library is ready'} body={a.on ? `Radar prepares a pack ${a.freq === 'daily' ? 'each day' : 'on your selected days'} from ${fmtTime(a.time)} ${tzShort(B.tz)}. ${autoSchedules(B) ? 'Auto-scheduling is enabled in Draft settings.' : pubOn ? 'Drafts stay here until you choose to post or schedule them.' : 'Edit, copy and publish them whenever you’re ready.'} Want a pack sooner? Start from an idea or article below.` : 'Turn on automatic drafts in Draft settings, or generate a pack from an idea, an article URL or one of your Radar articles.'}><Btn kind="primary" icon="plus" disabled={!canEdit} onClick={() => setFlow(true)}>Generate social posts</Btn></Empty>}
     <SocialFlow open={flow} onClose={() => { setFlow(false); if (route.params && route.params.generate) go('social'); }} />
     <AutoModal open={auto} onClose={() => setAuto(false)} />
   </div>;
