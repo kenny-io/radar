@@ -11,7 +11,6 @@ import { defineCron } from '../../jobs/cron';
 import { notify } from '../../notify';
 import { getBiz, entryFromRow } from '../../workspace';
 import { shortId } from '../../crypto';
-import { GENERIC_AI_ERROR } from '../../errors';
 import { RadarError } from '../../errors';
 import { addDays, nowHMIn, todayIn } from '@/lib/format';
 import { draftArticle, entriesStatus, type DraftPayload } from './draft';
@@ -83,7 +82,9 @@ defineJob<DraftPayload>({
         }).catch(() => false);
         if (cleaned) {
           await once(`draft-failed:${entryId}:${todayIn((await getBiz(bid)).timezone)}`);
-          await notify(bid, GENERIC_AI_ERROR, { tone: 'bad' });
+          // Name the article and link to it: this row is also the Activity entry (first-five architecture §4).
+          const title = (await entriesStatus([entryId]).catch(() => []))[0]?.title || row.title;
+          await notify(bid, `Radar couldn’t draft “${trunc(title)}”. Try again.`, { tone: 'bad', action: { label: 'Open', href: `/article/${entryId}` } });
         }
       }
       throw e;

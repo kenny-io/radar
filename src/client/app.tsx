@@ -6,6 +6,8 @@ import { api, actCall, ApiError, isSubscriptionRequired } from './api';
 import { LaterQueue } from './laterQueue';
 import { Pending, RevSync } from './articleSync';
 import { useSeenPing } from './seen';
+import { liveUnread } from './liveUnread';
+import { articleUrl } from '@/features/article/review';
 import { useToast, type ToastOpts } from '@/components/ui';
 import type { JobSummary, Me, Workspace } from '@/lib/types';
 
@@ -24,7 +26,10 @@ export interface ActOpts {
 }
 export interface AppCtx {
   me: Me; user: Me['user']; B: Workspace | null; bid: string | null;
-  route: Route; go: (page: Page, params?: any) => void;
+  /** `go('article', id)` or `go('article', { id, back })`: `back` is where the article's Back button returns (review.ts).
+   *  `replace`: replace the history entry instead of adding one. `scroll: false`: keep the scroll position; when only the
+   *  query changes this also skips the server round trip (the calendar's view, filter and open entry). */
+  route: Route; go: (page: Page, params?: any, opts?: { replace?: boolean; scroll?: boolean }) => void;
   toast: (msg: React.ReactNode, opt?: ToastOpts) => void;
   act: <T = any>(action: string, input?: any, opts?: ActOpts) => Promise<T>;
   /** Debounced act for text fields: last call per key wins after `ms`. The reply carries no workspace; `done` gets the action's data when the save succeeds. */
@@ -47,7 +52,7 @@ export const useApp = () => { const c = useContext(Ctx); if (!c) throw new Error
 
 export function routeToUrl(page: Page, params?: any): string {
   const q = new URLSearchParams();
-  if (page === 'article') return `/article/${encodeURIComponent(String(params))}`;
+  if (page === 'article') return params && typeof params === 'object' ? articleUrl(String(params.id), params.back) : articleUrl(String(params));
   if (params && typeof params === 'object') for (const [k, v] of Object.entries(params)) if (v != null && v !== false) q.set(k, v === true ? '1' : String(v));
   const s = q.toString();
   return `/${page}${s ? '?' + s : ''}`;
@@ -74,7 +79,18 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
   useSeenPing(bid, pathname);
   const route = useMemo(() => urlToRoute(pathname || '/dashboard', new URLSearchParams(sp?.toString() || '')), [pathname, sp]);
 
-  const go = useCallback((page: Page, params?: any) => { router.push(routeToUrl(page, params)); window.scrollTo(0, 0); }, [router]);
+  const go = useCallback((page: Page, params?: any, opts: { replace?: boolean; scroll?: boolean } = {}) => {
+    const url = routeToUrl(page, params);
+    if (opts.scroll === false) {
+      // Only the query changes: Next keeps usePathname/useSearchParams in step with the History API, so the screen
+      // re-renders from the new URL at once, with no request to the server and no scrolling.
+      if (url.split('?')[0] === window.location.pathname) { window.history[opts.replace ? 'replaceState' : 'pushState'](null, '', url); return; }
+      if (opts.replace) router.replace(url, { scroll: false }); else router.push(url, { scroll: false });
+      return;
+    }
+    if (opts.replace) router.replace(url); else router.push(url);
+    window.scrollTo(0, 0);
+  }, [router]);
 
   const later = useRef(new LaterQueue());
   const revRef = useRef(0); revRef.current = B?.rev || 0;
@@ -114,6 +130,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
       es.addEventListener('job', (ev: MessageEvent) => { const j = JSON.parse(ev.data); setJobs(m => ({ ...m, [j.id]: j })); });
       es.addEventListener('toast', (ev: MessageEvent) => {
         const t = JSON.parse(ev.data);
+        liveUnread.add(bid, t.id); // the bell's unread count, until the next workspace brings the server's number
         toast(t.msg, { tone: t.tone || null, action: t.action ? { label: t.action.label, fn: () => router.push(t.action.href) } : null });
       });
       es.onerror = () => {

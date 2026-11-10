@@ -10,7 +10,6 @@ import { defineJob } from '../../jobs/queue';
 import { notify } from '../../notify';
 import { getBiz } from '../../workspace';
 import { shortId } from '../../crypto';
-import { GENERIC_AI_ERROR } from '../../errors';
 import { cadenceLabel } from '@/lib/constants';
 import { fmtN, slugify } from '@/lib/format';
 import { normKw } from '../gsc/metrics';
@@ -128,7 +127,7 @@ defineJob<CalGenPayload>({
       const pool: PoolItem[] = chosen.pool.map(c => ({ kw: c.kw, vol: c.vol, kd: c.kd, facts: c.facts, measured: c.measured, priority: c.priority, seed: c.seed, src: c.src, score: c.score }));
       return { generatedAt: generatedAt.toISOString(), pool, count: topics.length };
     } catch (e) {
-      if (ctx.attempt >= ctx.job.maxAttempts) await notify(bid, GENERIC_AI_ERROR, { tone: 'bad' });
+      if (ctx.attempt >= ctx.job.maxAttempts) await notify(bid, 'Radar couldn’t finish your content calendar. Try again.', { tone: 'bad', action: { label: 'Open calendar', href: '/calendar' } });
       throw e;
     }
   },

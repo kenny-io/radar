@@ -1,7 +1,7 @@
 'use client';
 // Content Calendar — port of ContentCalendar / Research / CalSetup / PublishLine / MonthGrid / CalList / EntrySheet /
 // KwMembership (prototype/radar-calendar.jsx). Research runs as the `calendar.generate` job; every write is a server action.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp, type AppCtx } from '@/client/app';
 import { Btn, EntryStatus, Field, Icon, Metric, Modal, PageHead, Seg, Sheet, Status } from '@/components/ui';
 import { RadarField, type Blip } from '@/components/RadarField';
@@ -12,6 +12,8 @@ import { socialItems, type SocialItem } from '@/lib/socialPublish';
 import { SocialChip } from '@/features/social/channels/SocialChip';
 import { dropKind } from '@/features/social/channels/logic';
 import { moveSocial, openSocial, useNowMs } from '@/features/social/channels/useSocial';
+import { failedNow } from '@/features/shell/activity';
+import { calendarParams, calendarState, calendarUrl, type CalFilter, type CalState } from './calendarUrl';
 
 type Entries = CalendarEntry[];
 const LOCKED = ['published', 'scheduled'];
@@ -46,10 +48,21 @@ export function ContentCalendar() {
   const cal = B.calendar; const entries = cal.entries;
   const params = route.params || {};
   const [setup, setSetup] = useState(!!params.setup && !entries.length);
-  const [view, setView] = useState<'calendar' | 'list'>(params.view === 'list' ? 'list' : 'calendar');
-  const [open, setOpen] = useState<string | null>(params.open || null);
-  const [regen, setRegen] = useState(false); const [filter, setFilter] = useState<string>(params.filter || 'all');
-  useEffect(() => { if (params.open) setOpen(params.open); }, [route.params]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [regen, setRegen] = useState(false);
+  // View, filter and the open entry are read from the URL (calendarUrl.ts), so a reload, a link from Activity and Back
+  // from an article all land on the same screen. Changing view or filter replaces the history entry; opening an entry
+  // adds one, so the browser's Back closes the sheet. Neither scrolls the page.
+  const cs = calendarState(params); const { view, filter, open } = cs;
+  const nav = (patch: Partial<CalState>, push = false) => app.go('calendar', calendarParams({ ...cs, ...patch }), { replace: !push, scroll: false });
+  const here = calendarUrl({ view, filter });
+  const pushed = useRef(false); // the open sheet is this screen's own history entry: closing it goes back instead of leaving a duplicate
+  useEffect(() => { if (!open) pushed.current = false; }, [open]);
+  /** An article that is ready for review opens directly (RL-3); anything else opens its sheet. */
+  const openEntry = (id: string) => {
+    if (entries.find(e => e.id === id)?.status === 'review') { app.go('article', { id, back: here }); return; }
+    pushed.current = true; nav({ open: id }, true);
+  };
+  const closeEntry = () => { if (pushed.current) { pushed.current = false; window.history.back(); } else nav({ open: null }); };
   const research = useResearch(app); const now = useNowMs();
   const generate = async (settings: CalendarSettings, keep?: boolean) => {
     setSetup(false); setRegen(false); research.setStarting({ keep: !!keep });
@@ -58,9 +71,13 @@ export function ContentCalendar() {
   };
   const upd = (id: string, patch: Partial<CalendarEntry>, action = 'calendar.update') => app.act(action, { entryId: id, ...patch }, { optimistic: patchEntry(id, patch) }).catch(() => {});
   const entry = entries.find(e => e.id === open);
+  // RL-5: the newest calendar run failed (live job, or the workspace's record of it after a reload). Retry runs it again.
+  const calFail = failedNow(app.jobFor('calendar.generate', B.id), B.failed?.calendar);
+  const failLine = calFail && <FailedLine label="Calendar failed" what="your content calendar" style={{ marginBottom: 22 }} onRetry={B.role !== 'Viewer' ? () => generate(cal.settings, !!calFail.keep) : undefined}>Radar couldn’t finish your content calendar.{entries.length ? ' The calendar you have is unchanged.' : ''}</FailedLine>;
   if (research.active) return <Research app={app} phase={research.phase} keep={research.keep} results={research.results} gsc={research.gsc} />;
   if (!entries.length) return <div className="page">
     <PageHead title="Content Calendar" sub="A month of articles researched from your Business Profile, existing content, and search data." />
+    {failLine}
     <div className="col enter" style={{ alignItems: 'flex-start', gap: 20, padding: '48px 0', borderTop: '1px solid var(--line)' }}>
       <Btn kind="primary" size="lg" icon="calendar" onClick={() => setSetup(true)} style={{ height: 56, padding: '0 26px', fontSize: 16 }}>Generate 30-day content calendar</Btn>
       <span className="small sub">{cal.settings.market} · {cal.settings.language} · starts {fmtD(cal.settings.start)} · {cadenceLabel(cal.settings)} · <a href="#" onClick={e => { e.preventDefault(); setSetup(true); }}>Change</a></span>
@@ -83,14 +100,15 @@ export function ContentCalendar() {
   };
   return <div className="page" style={{ maxWidth: 1180 }}>
     <PageHead title="Content Calendar" sub={<span>{range} · {entries.length} articles · {cadenceLabel(cal.settings)}</span>}>
-      <Seg value={view} onChange={setView} options={[{ v: 'calendar', l: 'Calendar' }, { v: 'list', l: 'List' }]} />
+      <Seg value={view} onChange={v => nav({ view: v })} options={[{ v: 'calendar', l: 'Calendar' }, { v: 'list', l: 'List' }]} />
       <Btn icon="refresh" onClick={() => setRegen(true)}>Regenerate</Btn>
       {counts.proposed > 0 && <Btn kind="primary" icon="check" title="Radar drafts each one the day before it publishes" onClick={approveAll}>Approve all {counts.proposed}</Btn>}
     </PageHead>
     <PublishLine app={app} />
-    {view === 'calendar' ? <MonthGrid entries={entries} today={B.today} onOpen={setOpen} onMove={move} social={B.social.publishing ? socialItems(B, now) : undefined} onOpenSocial={it => openSocial(app.go, it)} />
-      : <CalList entries={entries} filter={filter} setFilter={setFilter} onOpen={setOpen} />}
-    <EntrySheet app={app} entry={entry} onClose={() => setOpen(null)} upd={upd} />
+    {failLine}
+    {view === 'calendar' ? <MonthGrid entries={entries} today={B.today} onOpen={openEntry} onMove={move} social={B.social.publishing ? socialItems(B, now) : undefined} onOpenSocial={it => openSocial(app.go, it)} />
+      : <CalList entries={entries} filter={filter} setFilter={f => nav({ filter: f })} onOpen={openEntry} />}
+    <EntrySheet app={app} entry={entry} onClose={closeEntry} upd={upd} back={here} />
     <Modal open={regen} onClose={() => setRegen(false)} width={480}><div className="col" style={{ padding: 30, gap: 16 }}>
       <h2 className="h2">Regenerate proposed topics?</h2>
       <p className="sub">Radar will research fresh topics for the {counts.proposed} proposed slots. <span style={{ color: 'var(--ink)' }}>{counts.approved} approved and in-progress articles stay exactly where they are.</span></p>
@@ -174,10 +192,10 @@ function MonthGrid({ entries, today, onOpen, onMove, social, onOpenSocial }: { e
   </div>;
 }
 
-function CalList({ entries, filter, setFilter, onOpen }: { entries: Entries; filter: string; setFilter: (v: string) => void; onOpen: (id: string) => void }) {
+function CalList({ entries, filter, setFilter, onOpen }: { entries: Entries; filter: CalFilter; setFilter: (v: CalFilter) => void; onOpen: (id: string) => void }) {
   const fl = entries.filter(e => filter === 'all' || (filter === 'proposed' ? e.status === 'proposed' : filter === 'review' ? e.status === 'review' : ['approved', 'scheduled', 'published', 'draft'].includes(e.status)));
   return <div>
-    <div className="row" style={{ marginBottom: 12 }}><Seg wrap value={filter} onChange={setFilter} options={[{ v: 'all', l: 'All' }, { v: 'proposed', l: 'Proposed' }, { v: 'review', l: 'Ready for review' }, { v: 'approved', l: 'Approved' }]} /></div>
+    <div className="row" style={{ marginBottom: 12 }}><Seg<CalFilter> wrap value={filter} onChange={setFilter} options={[{ v: 'all', l: 'All' }, { v: 'proposed', l: 'Proposed' }, { v: 'review', l: 'Ready for review' }, { v: 'approved', l: 'Approved' }]} /></div>
     <style>{`@media(max-width:640px){.cl-row{flex-wrap:wrap;gap:6px 12px!important;padding:14px 4px!important}.cl-date{width:auto!important}.cl-st{width:auto!important;margin-left:auto}.cl-main{order:3;flex-basis:100%!important}.cl-main .cl-t{white-space:normal}}`}</style>
     <div style={{ borderTop: '1px solid var(--line)' }}>{fl.map(e => <div key={e.id} className="row tap cl-row" onClick={() => onOpen(e.id)} style={{ padding: '14px 10px', borderBottom: '1px solid var(--line2)', gap: 18, cursor: 'pointer' }}>
       <span className="mono sub cl-date" style={{ width: 84, flex: 'none' }}>{fmtDW(e.date)}</span>
@@ -189,7 +207,7 @@ function CalList({ entries, filter, setFilter, onOpen }: { entries: Entries; fil
 }
 
 interface Alt { id: string; title: string; kw: string; type: EntryType; vol: number | null; kd: number | null; mode: 'new' | 'refresh'; url: string | null; measured: CalendarEntry['measured']; audience: string; relevance: string; outline: string[] }
-function EntrySheet({ app, entry, onClose, upd }: { app: AppCtx; entry: CalendarEntry | undefined; onClose: () => void; upd: (id: string, patch: Partial<CalendarEntry>, action?: string) => void }) {
+function EntrySheet({ app, entry, onClose, upd, back }: { app: AppCtx; entry: CalendarEntry | undefined; onClose: () => void; upd: (id: string, patch: Partial<CalendarEntry>, action?: string) => void; back: string }) {
   const { go, toast } = app; const B = app.B!;
   const [alts, setAlts] = useState<Alt[] | null>(null); const [altBusy, setAltBusy] = useState(false); const [title, setTitle] = useState(entry?.title || '');
   useEffect(() => { setAlts(null); setTitle(entry?.title || ''); }, [entry?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -204,15 +222,18 @@ function EntrySheet({ app, entry, onClose, upd }: { app: AppCtx; entry: Calendar
     toast('Topic replaced', { action: { label: 'Undo', fn: () => apply(prev) } });
   };
   const fmtPos = (p: number) => (Math.round(p * 10) / 10).toString();
+  // RL-5: this entry's newest draft run failed. The entry is back at "approved", so Retry is the same call as "Draft now".
+  const draftFail = !locked && e.status !== 'drafting' ? failedNow(app.jobFor('article.draft', e.id), B.failed?.drafts?.[e.id]) : null;
   return <Sheet open onClose={onClose} width={540} eyebrow={fmtDW(e.date) + ' · ' + (e.mode === 'refresh' ? 'Refresh' : e.type)} footer={<>
     {e.status === 'proposed' && <Btn kind="ghost" icon="refresh" loading={altBusy} onClick={loadAlts}>Replace topic</Btn>}
     <span className="grow" />
     {e.status === 'proposed' ? <Btn kind="primary" icon="check" onClick={() => { upd(e.id, { status: 'approved' }, 'calendar.approve'); toast('Scheduled. Radar drafts it ' + fmtDW(addDays(e.date, -1)) + '.', { tone: 'ok' }); }}>Approve &amp; schedule</Btn>
       : e.status === 'approved' ? <><Btn kind="ghost" onClick={() => upd(e.id, { status: 'proposed' }, 'calendar.unschedule')}>Unschedule</Btn><span className="col" style={{ alignItems: 'flex-end', gap: 2, flex: 'none' }}><Status tone="ink">Scheduled</Status><span className="xs sub" style={{ whiteSpace: 'nowrap' }}>Draft ready {fmtDW(addDays(e.date, -1))} · <a href="#" onClick={ev => { ev.preventDefault(); upd(e.id, { status: 'drafting' }, 'article.draft'); }}>Draft now</a></span></span></>
         : e.status === 'drafting' ? <Status tone="signal" pulse>Radar is drafting…</Status>
-          : <Btn kind="primary" iconR="arrow" onClick={() => go('article', e.id)}>Open article</Btn>}
+          : <Btn kind="primary" iconR="arrow" onClick={() => go('article', { id: e.id, back })}>Open article</Btn>}
   </>}>
     <div className="col" style={{ gap: 26 }}>
+      {draftFail && <FailedLine label="Draft failed" what={`drafting “${e.title}”`} onRetry={B.role !== 'Viewer' ? () => upd(e.id, { status: 'drafting' }, 'article.draft') : undefined}>Radar couldn’t draft “{e.title}”.</FailedLine>}
       <div className="col" style={{ gap: 10 }}>
         <textarea className="input-bare" rows={Math.min(3, Math.ceil(title.length / 38)) || 1} style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.025em', lineHeight: 1.25, resize: 'none' }} value={title} onChange={ev => { const v = ev.target.value; setTitle(v); if (v.trim()) app.actLater('title:' + e.id, 'calendar.update', { entryId: e.id, title: v }, { optimistic: patchEntry(e.id, { title: v }) }); }} aria-label="Title" readOnly={locked} />
         <div className="row" style={{ gap: '6px 14px', flexWrap: 'wrap' }}><EntryStatus s={e.status} /><span className="small sub">Keyword · <span style={{ color: 'var(--ink)' }}>{e.kw}</span></span></div>
@@ -238,6 +259,16 @@ function EntrySheet({ app, entry, onClose, upd }: { app: AppCtx; entry: Calendar
       </div>
     </div>
   </Sheet>;
+}
+
+/** An inline failed state (first-five RL-5): says in words what failed, and offers Retry to those who may run it.
+ *  `what` completes the button's accessible name ("Retry drafting “…”"). `flush`: a full-width bar under the article's top bar. */
+export function FailedLine({ label, what, children, onRetry, busy, flush, style }: { label: string; what: string; children: React.ReactNode; onRetry?: () => void; busy?: boolean; flush?: boolean; style?: React.CSSProperties }) {
+  return <div className={'fail-line enter' + (flush ? ' flush' : '')} role="group" aria-label={label} style={style}>
+    <Status tone="bad">{label}</Status>
+    <span className="fail-msg">{children}{!onRetry && ' An owner or editor can try again.'}</span>
+    {onRetry && <Btn size="sm" kind="primary" icon="refresh" loading={busy} onClick={onRetry} aria-label={`Retry ${what}`}>Retry</Btn>}
+  </div>;
 }
 
 export function KwMembership({ app, kw }: { app: AppCtx; kw: string }) {
