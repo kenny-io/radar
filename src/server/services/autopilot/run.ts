@@ -1,4 +1,4 @@
-import { reportFailure } from '@/server/observability/failures';
+import { reportFailure, shouldReportFailure, type FailureContext } from '@/server/observability/failures';
 // The program coordinates existing capabilities; publication remains in the guarded, retry-safe publishers.
 import { and, asc, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { db, schema as S } from '@/server/db';
@@ -52,6 +52,10 @@ async function schedulePost(bid: string, activationId: string, sid: string, now:
     return row ? 'scheduled' : 'existing';
   });
 }
+
+/** A schedule the publishing rules refuse (no account connected, expired, preflight) is the owner's to resolve: it goes to
+ *  the handoff only. Every run meets it again, so reporting it would raise an operator alert every five minutes. */
+const refused = (e: unknown, context: FailureContext) => shouldReportFailure(e) ? reportFailure(e, context) : Promise.resolve();
 
 export async function runAutopilot(ctx: JobCtx<RunPayload>) {
   const bid = ctx.businessId!; const activationId = ctx.payload.activationId;
@@ -108,7 +112,7 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       if (!post || !auto.platforms.includes(platform as Platform)) continue;
       if (!canPost(platform) || !publishing) { issue(`pack:${pack.id}:${platform}`, `Publish your ${platform} post`, !publishing && canPost(platform) ? 'Direct social publishing is not available for this workspace. Copy the prepared draft to your account.' : 'This platform requires you to publish the prepared draft yourself.', `/social?pack=${encodeURIComponent(pack.id)}&plat=${platform}`, post.text); continue; }
       try { if (await schedulePost(bid, activationId, packSid(pack.id, platform), now) === 'scheduled') scheduled++; }
-      catch (e) { await reportFailure(e, { source: 'autopilot', operation: 'autopilot.scheduleSocial', businessId: bid, ref: pack.id, provider: platform, degraded: true }); issue(`pack:${pack.id}:${platform}`, `Your ${platform} post needs attention`, 'Connect or reconnect the account, or resolve the publishing check in Radar. Your draft is saved.', `/social?pack=${encodeURIComponent(pack.id)}&plat=${platform}`, post.text); }
+      catch (e) { await refused(e, { source: 'autopilot', operation: 'autopilot.scheduleSocial', businessId: bid, ref: pack.id, provider: platform, degraded: true }); issue(`pack:${pack.id}:${platform}`, `Your ${platform} post needs attention`, 'Connect or reconnect the account, or resolve the publishing check in Radar. Your draft is saved.', `/social?pack=${encodeURIComponent(pack.id)}&plat=${platform}`, post.text); }
     }
     summary.push(scheduled ? `${scheduled} social ${scheduled === 1 ? 'post' : 'posts'} scheduled` : 'Daily social drafts ready');
   });
@@ -132,7 +136,7 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       // At most two feed posts per platform/day, including the generated daily pack and manual schedules.
       if ((used.get(platform) || 0) >= 2) continue;
       try { if (await schedulePost(bid, activationId, sid, now) === 'scheduled') used.set(platform, (used.get(platform) || 0) + 1); }
-      catch (e) { await reportFailure(e, { source: 'autopilot', operation: 'autopilot.scheduleBrief', businessId: bid, ref: item.id, provider: platform, degraded: true }); issue(key, `${platform}: ${item.title}`, 'Reconnect the account or resolve the publishing check in Radar. The prepared post is saved.', `/brief?date=${date}`, textOf(item)); }
+      catch (e) { await refused(e, { source: 'autopilot', operation: 'autopilot.scheduleBrief', businessId: bid, ref: item.id, provider: platform, degraded: true }); issue(key, `${platform}: ${item.title}`, 'Reconnect the account or resolve the publishing check in Radar. The prepared post is saved.', `/brief?date=${date}`, textOf(item)); }
     }
   });
 
