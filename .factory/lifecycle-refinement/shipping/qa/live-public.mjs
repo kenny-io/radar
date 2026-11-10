@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 import { writeFile } from 'node:fs/promises';
-const origin='https://radar.thally.io',out='.factory/lifecycle-refinement/shipping/qa';
+const origin='https://radar.thally.io',out=process.env.QA_PUBLIC_OUTPUT||'.factory/lifecycle-refinement/shipping/qa';
 const b=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
 const c=await b.newContext({viewport:{width:390,height:844}});const results=[];const errors=[];let writes=0;
 await c.route('**/*',r=>{if(!['GET','HEAD'].includes(r.request().method())){writes++;return r.abort();}return r.continue();});

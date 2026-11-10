@@ -572,3 +572,15 @@ Not in the handoff. Workspaces save standing writing instructions that Radar add
 | Extra links in social posts | — | A social post keeps only its pack’s own source link (none on Reddit); an instruction to always add another link has no effect. LinkedIn keeps at most two hashtags; X stays within 280 characters | Existing link and platform rules are unchanged | Yes | Needs approval |
 | Facts in instructions | — | A figure typed into an instruction is not treated as a source: unsupported numbers are still removed from drafts. The copy points to the Business Profile for facts and figures | No invented statistics | Yes | Needs approval |
 | Existing drafts | — | Not regenerated. Instructions apply from the next draft, regeneration or rewrite | Avoids silent changes to reviewed copy | Yes (copy) | Needs approval |
+
+## First five optimizations (2026-11-10, owner-approved)
+
+| # | Area | Before | Now |
+|---|---|---|---|
+| O1 | Daily Brief → automatic rescans (supersedes part of B21) | A background rescan every 2 hours for each active business until the day is done | A rescan runs only when the owner has copied, marked posted, skipped, or scheduled/posted at least one of today's items since the previous scan, and only for a business used in the last 7 days (or with Autopilot on). A rescan with no reply slot left reads no source. Morning scan, Scan again and Keep are unchanged. |
+| O2 | AI Visibility → collection (narrows P20) | Nightly per business | Nightly for businesses used in the last 7 days (or with Autopilot on); at most weekly when idle 7–30 days; paused after 30 days until the owner returns, who then gets one run at once. Answers that cannot name the business skip the extraction call. |
+| O3 | Social → daily drafts | Daily pack for every active business | Same tiers as O2. |
+| O4 | Billing → failed renewal | Access ends as soon as a subscription is `past_due` | A subscription that was `active` keeps full access for 48 hours with a banner; a first charge that fails after the trial still locks at once. |
+| O5 | Onboarding → first session | Nothing generated until the owner starts each job | Calendar, first Daily Brief scan and AI visibility start when the business becomes active; the Dashboard shows their progress. |
+| O6 | Toasts | Every toast leaves after 4.2 s | Errors stay until dismissed; all notifications are also listed in Activity for 30 days. |
+

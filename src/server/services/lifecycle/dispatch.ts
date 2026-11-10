@@ -1,3 +1,4 @@
+import { prepareAiReport } from '../visibility/digest';
 import { isRetiredLifecycle, RETIRED_LIFECYCLE_TYPES } from './retired';
 import { randomUUID } from 'node:crypto';
 import { and, eq, gt, inArray, isNull } from 'drizzle-orm';
@@ -26,6 +27,7 @@ export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, no
   if (!u || u.guest || payload.envelope.to.length !== 1 || payload.envelope.to[0] !== u.email) return false;
   const d = payload.data;
   if (['welcome', 'founder_note', 'work_update'].includes(row.type) && !u.emailVerifiedAt) return false;
+  if (row.type === 'ai_weekly_report') return (await prepareAiReport(row, payload, now)).kind === 'send';
   if (row.type === 'lifecycle_guide') return (await prepareGuide(row, payload, now)).kind === 'send';
   if (row.type === 'weekly_education') return (await prepareEducation(row, payload, now)).kind === 'send';
   if (row.type === 'work_update') {
@@ -80,7 +82,7 @@ async function claim(now: Date, userIds?: string[]): Promise<Mail | null> {
   const token = randomUUID();
   const { rows } = await pool.query<{ id: string }>(`UPDATE lifecycle_emails SET status='sending', claimed_at=$1, claim_token=$2
     WHERE id = (SELECT id FROM lifecycle_emails WHERE ((status='queued' AND next_attempt_at <= $1)
-      OR (status='sending' AND claimed_at < $3)) AND ($4::uuid[] IS NULL OR user_id = ANY($4::uuid[])) ORDER BY CASE WHEN type='password_reset' THEN 0 WHEN type IN ('payment_failed','trial_ending','cancellation_scheduled','subscription_ended') THEN 1 WHEN type='weekly_education' THEN 3 WHEN type='lifecycle_guide' THEN 4 WHEN type='founder_note' THEN 5 WHEN type='work_update' THEN 6 ELSE 2 END, next_attempt_at, created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id`, [now, token, new Date(now.getTime() - CLAIM_MS), userIds ?? null]);
+      OR (status='sending' AND claimed_at < $3)) AND ($4::uuid[] IS NULL OR user_id = ANY($4::uuid[])) ORDER BY CASE WHEN type='password_reset' THEN 0 WHEN type IN ('payment_failed','trial_ending','cancellation_scheduled','subscription_ended') THEN 1 WHEN type='weekly_education' THEN 3 WHEN type='ai_weekly_report' THEN 4 WHEN type='lifecycle_guide' THEN 5 WHEN type='founder_note' THEN 6 WHEN type='work_update' THEN 7 ELSE 2 END, next_attempt_at, created_at FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id`, [now, token, new Date(now.getTime() - CLAIM_MS), userIds ?? null]);
   return rows[0] ? (await db.select().from(M).where(eq(M.id, rows[0].id)))[0] : null;
 }
 const owned = (row: Mail) => and(eq(M.id, row.id), eq(M.claimToken, row.claimToken!), eq(M.status, 'sending'));
@@ -176,8 +178,8 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         if (!p?.envelope || !p.data) throw new Error('invalid');
         payload = p;
       } catch { await terminal(row, 'failed', 'unreadable_payload'); continue; }
-      const prepareOptional = row.type === 'lifecycle_guide' ? prepareGuide : prepareEducation;
-      if (row.type === 'weekly_education' || row.type === 'lifecycle_guide') {
+      const prepareOptional = row.type === 'ai_weekly_report' ? prepareAiReport : row.type === 'lifecycle_guide' ? prepareGuide : prepareEducation;
+      if (row.type === 'weekly_education' || row.type === 'lifecycle_guide' || row.type === 'ai_weekly_report') {
         try {
           const prepared = await prepareOptional(row, payload, now);
           if (prepared.kind === 'defer') { await defer(row, prepared.until, prepared.reason); continue; }
@@ -189,14 +191,14 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         await terminal(row, 'failed', 'expired_delivery_window'); continue;
       }
       try {
-        if (!['weekly_education', 'lifecycle_guide'].includes(row.type) && !(await eligibleWithinDeadline(row, payload, now, options.signal))) { await terminal(row, 'suppressed', 'no_longer_applicable'); continue; }
+        if (!['weekly_education', 'lifecycle_guide', 'ai_weekly_report'].includes(row.type) && !(await eligibleWithinDeadline(row, payload, now, options.signal))) { await terminal(row, 'suppressed', 'no_longer_applicable'); continue; }
       } catch {
         if (options.shouldStop?.() || options.signal?.aborted) { await release(row); break; }
         const [attempted] = await db.update(M).set({ attempts: row.attempts + 1 }).where(owned(row)).returning();
         if (attempted) await retry(attempted, 'eligibility_check_unavailable', now);
         continue;
       }
-      if (row.type === 'work_update' || row.type === 'founder_note' || row.type === 'weekly_education' || row.type === 'lifecycle_guide') {
+      if (row.type === 'work_update' || row.type === 'founder_note' || row.type === 'weekly_education' || row.type === 'lifecycle_guide' || row.type === 'ai_weekly_report') {
         const after = await optionalDeliveryAfter(row.userId, now, row.id, db, row.type);
         if (after) { await defer(row, after); continue; }
       }
@@ -209,7 +211,7 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         const [frozen] = await db.update(M).set({ payloadEnc: encrypt(payload) }).where(owned(row)).returning({ id: M.id });
         if (!frozen) continue;
       }
-      if ((row.type === 'weekly_education' || row.type === 'lifecycle_guide') && !row.firstAttemptAt) {
+      if ((row.type === 'weekly_education' || row.type === 'lifecycle_guide' || row.type === 'ai_weekly_report') && !row.firstAttemptAt) {
         const [frozen] = await db.update(M).set({ payloadEnc: encrypt(payload) }).where(owned(row)).returning({ id: M.id });
         if (!frozen) continue;
       }
@@ -218,7 +220,7 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         await db.update(M).set({ status: 'logged', sentAt: null, claimedAt: null, claimToken: null, lastError: null }).where(owned(row));
         console.info('[lifecycle] dev-stub logged', { id: row.id, type: row.type }); continue;
       }
-      if (row.type === 'weekly_education' || row.type === 'lifecycle_guide') {
+      if (row.type === 'weekly_education' || row.type === 'lifecycle_guide' || row.type === 'ai_weekly_report') {
         const suppression = await educationSuppression(payload.envelope.to[0], fetcher, sleep, options.signal);
         if (suppression === 'suppressed') { await terminal(row, 'suppressed', 'provider_suppressed'); continue; }
         if (suppression !== 'clear' && suppression !== 'native_suppression') { await defer(row, new Date(now.getTime() + 3600e3), suppression); continue; }

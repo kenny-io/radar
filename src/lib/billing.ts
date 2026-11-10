@@ -4,6 +4,9 @@ export const TRIAL_DAYS = 3;
 export const FEE_CENTS = 100;
 /** Displayed price; billing refuses a configured Stripe price that differs. */
 export const PRICE_CENTS = 5000;
+/** Full access kept after a paid (`active`) subscription goes `past_due` (owner decision, 2026-11-10). The server reads
+ *  RADAR_PAST_DUE_GRACE_HOURS at call time; `0` restores the immediate lock (src/server/billing/access.ts `graceMs`). */
+export const PAST_DUE_GRACE_HOURS = 48;
 /** Stripe endpoint selection, shared with the standalone setup command. */
 export const WEBHOOK_EVENTS = ['payment_intent.succeeded', 'payment_intent.payment_failed', 'customer.subscription.created', 'customer.subscription.updated',
   'customer.subscription.deleted', 'invoice.paid', 'invoice.payment_failed'] as const;

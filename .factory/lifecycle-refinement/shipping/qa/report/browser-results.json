@@ -1,0 +1,97 @@
+{
+  "base": "http://localhost:3952",
+  "buildId": "R7jB76Uf9QoaQtlkN8XxE",
+  "checks": [
+    {
+      "name": "actual report has no H1 and fixed correct-business AI destination",
+      "pass": true
+    },
+    {
+      "name": "actual report fits 390px with hidden preheader",
+      "pass": true
+    },
+    {
+      "name": "actual report fits 600px with hidden preheader",
+      "pass": true
+    },
+    {
+      "name": "actual report switches selected business and opens AI Visibility",
+      "pass": true
+    },
+    {
+      "name": "AI tab remains selected through reload",
+      "pass": true
+    },
+    {
+      "name": "signed-out report returns through ordinary sign-in to its AI destination",
+      "pass": true
+    },
+    {
+      "name": "foreign report destination404 cannot mutate selected business",
+      "pass": true
+    },
+    {
+      "name": "owner sees default-on business-scoped report controls",
+      "pass": true
+    },
+    {
+      "name": "keyboard report opt-out persists on refresh",
+      "pass": true
+    },
+    {
+      "name": "report opt-out preserves course/work and other business",
+      "pass": true
+    },
+    {
+      "name": "failed report preference save rolls back with accessible error",
+      "pass": true
+    },
+    {
+      "name": "report preference can be restored and reloaded",
+      "pass": true
+    },
+    {
+      "name": "mobile business report controls fit",
+      "pass": true
+    },
+    {
+      "name": "lapsed owner can still manage reports outside workspace gate",
+      "pass": true
+    },
+    {
+      "name": "active Admin can persist report preference without a subscription",
+      "pass": true
+    },
+    {
+      "name": "Viewer cannot see or forge report preference update",
+      "pass": true
+    },
+    {
+      "name": "signed public GET is nonmutating and private",
+      "pass": true
+    },
+    {
+      "name": "anonymous keyboard form disables only its business report",
+      "pass": true
+    },
+    {
+      "name": "actual unauthenticated RFC8058 POST succeeds with private headers",
+      "pass": true
+    },
+    {
+      "name": "prior-owner signed token loses mutation authority",
+      "pass": true
+    },
+    {
+      "name": "no browser generation, publication, charge or activation action occurred",
+      "pass": true
+    },
+    {
+      "name": "no browser page errors",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "externalAborted": 0,
+  "blockedActions": []
+}

@@ -6,7 +6,7 @@ import { action, type ActionMap } from './define';
 import { db, schema } from '../db';
 import { enqueue } from '../jobs/queue';
 import { RadarError, notFound } from '../errors';
-import { calendarSettingsOf, entryFromRow } from '../workspace';
+import { calendarSettingsOf, entryFromRow, laterV } from '../workspace';
 import { alternativesFor } from '../services/calendar/alternatives';
 import { ENTRY_TYPES } from '@/lib/constants';
 import { kwIntentHeuristic } from '@/lib/constants';
@@ -118,7 +118,7 @@ export const actions: ActionMap = {
     if (r.status !== 'proposed') throw new RadarError('Only proposed topics can be replaced.');
     await db.update(E).set({ title: alt.title, kw: alt.kw, type: alt.type, vol: alt.vol, kd: alt.kd, mode: alt.mode, url: alt.url ?? null, measured: alt.measured ?? null, audience: alt.audience, relevance: alt.relevance }).where(eq(E.id, entryId));
     const data = { entryId, generated: false, body: [], brief: { angle: alt.relevance, outline: alt.outline || [], words: 1400 }, seo: { title: alt.title, meta: '', slug: slugify(alt.kw) }, img: { style: defaultArticleImageStyle(), seed: 1, prompt: 'Calm, editorial image about ' + alt.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null };
-    await db.insert(schema.articles).values({ entryId, businessId: ctx.bid, data }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
+    await db.insert(schema.articles).values({ entryId, businessId: ctx.bid, data }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: laterV() } });
     return { ok: true };
   } }),
 };

@@ -52,8 +52,9 @@ export interface BriefScanResult {
   /** The server already toasted every member "{n} new conversations since {time}" (background rescans and Keep runs),
    *  so a Scan again click that joined this job shows no second toast. */
   notified?: boolean;
-  /** A background rescan that did nothing: today's brief is missing, or the day ended before it ran. */
-  skipped?: 'no_day' | 'past';
+  /** A background rescan that did nothing: today's brief is missing, the day ended before it ran, or no account has a
+   *  reply slot left on any platform today (nothing was read). */
+  skipped?: 'no_day' | 'past' | 'no_slots';
 }
 
 export const RANK_SUB = 'By fit with your audience and how recently people replied';

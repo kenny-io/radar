@@ -1,11 +1,13 @@
 // Who may open Radar (architecture §4.1, §4.3). ownAccess is always false for a guest. For a real user it is true when
 // billing isn't enforced for them, they are comp (row, or the optional lazy grandfather cutoff), or their subscription is
-// trialing/active. Members ride on the owner's subscription (D6): bizAccess(biz) = ownAccess(owner).
+// trialing/active, or past_due inside the grace period (first-five architecture §5: only a subscription that was active
+// when the payment failed has `pastDueAt`). Members ride on the owner's subscription (D6): bizAccess(biz) = ownAccess(owner).
 import { and, eq, inArray, lt, sql } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { billingFlag, billingFlagNeedsEmail, grandfatherCutoff } from '../flags';
 import { providerName } from './config';
 import { toDraftSummary } from './draft';
+import { PAST_DUE_GRACE_HOURS } from '@/lib/billing';
 import type { DraftSummary, SubStatus } from '@/lib/types';
 
 export type Account = typeof schema.billingAccounts.$inferSelect;
@@ -20,7 +22,21 @@ export function billingEnforced(email?: string | null): boolean {
   return true;
 }
 
-export const accountGrants = (a: Pick<Account, 'comp' | 'status'> | null | undefined) => !!a && (a.comp || GRANTING.includes(a.status));
+type GraceRow = Pick<Account, 'status' | 'pastDueAt'>;
+/** Grace length in ms. RADAR_PAST_DUE_GRACE_HOURS is read at call time (web and worker); `0` = lock at once; unset or not a number ≥ 0 → 48 h. */
+export function graceMs(): number {
+  const raw = (process.env.RADAR_PAST_DUE_GRACE_HOURS ?? '').trim();
+  const h = raw === '' ? NaN : Number(raw);
+  return (Number.isFinite(h) && h >= 0 ? h : PAST_DUE_GRACE_HOURS) * 3600e3;
+}
+/** When a past-due account's grace ends (it may already have). Null when the account has no grace: not past due, or it
+ *  never was `active` when the payment failed (`pastDueAt` NULL: a failed first charge, or past due before this shipped). */
+export function graceEndsAt(a: GraceRow | null | undefined): Date | null {
+  return a && a.status === 'past_due' && a.pastDueAt ? new Date(a.pastDueAt.getTime() + graceMs()) : null;
+}
+export const inGrace = (a: GraceRow | null | undefined, now = Date.now()) => { const end = graceEndsAt(a); return !!end && now < end.getTime(); };
+/** The one access predicate: every gate, the job queue and lifecycle-mail eligibility go through it. */
+export const accountGrants = (a: Pick<Account, 'comp' | 'status' | 'pastDueAt'> | null | undefined, now = Date.now()) => !!a && (a.comp || GRANTING.includes(a.status) || inGrace(a, now));
 export async function accountOf(uid: string, q: Pick<typeof db, 'select'> = db): Promise<Account | null> {
   return (await q.select().from(schema.billingAccounts).where(eq(schema.billingAccounts.userId, uid)).limit(1))[0] || null;
 }

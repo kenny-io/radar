@@ -1,9 +1,11 @@
+import { recommendationDigestContent } from '../visibility/digestContent';
+import { validReport, type AiWeeklyReportData } from '../visibility/digestTypes';
 import { GUIDE_IDS, renderGuide, type GuideId } from './guideContent';
 import { EDUCATION_LESSONS, renderEducationLesson, educationProgress, type EducationLessonId, type EducationContext } from './educationContent';
 import { FEE_CENTS, PRICE_CENTS, TRIAL_DAYS } from '@/lib/billing';
 import { FOUNDER_REPLY_TO } from '../mailIdentity';
 
-export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work_update', 'weekly_education', 'lifecycle_guide'] as const;
+export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work_update', 'weekly_education', 'lifecycle_guide', 'ai_weekly_report'] as const;
 export type LifecycleType = typeof LIFECYCLE_TYPES[number] | 'trial_ending'; // Retired type retained for historical payloads.
 export interface WorkUpdateSection {
   eventId: string;
@@ -15,6 +17,7 @@ export interface WorkUpdateSection {
   title?: string;
 }
 export interface LifecycleData {
+  aiReport?: AiWeeklyReportData;
   name?: string; businessName?: string; businessId?: string; resetUrl?: string;
   profileAnalyzed?: boolean;
   workSections?: WorkUpdateSection[];
@@ -40,6 +43,12 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
   const origin = new URL(ctx.appUrl);
   if (!['http:', 'https:'].includes(origin.protocol)) throw new Error('Invalid app URL');
   const app = (path: string) => new URL(path, origin).href;
+  if (type === 'ai_weekly_report') {
+    const report = d.aiReport;
+    if (!ctx.unsubscribeUrl || !validReport(report)) throw new Error('Invalid AI weekly report');
+    const reviewUrl = app('/api/b/current?' + new URLSearchParams({ id:report.businessId, next:'/performance?tab=ai' }));
+    return { subject:`Recommendation share this week · ${report.domain}`, ...recommendationDigestContent(report.summary,origin.origin,ctx.unsubscribeUrl,reviewUrl), replyTo:FOUNDER_REPLY_TO };
+  }
   let subject: string, heading: string, paragraphs: string[], steps: string[] = [], cta: string, href: string;
   const hi = d.name?.trim() ? `Hi ${d.name.trim()},` : 'Hi there,';
   const monthly = money(PRICE_CENTS), first = money(PRICE_CENTS - FEE_CENTS), confirmation = money(FEE_CENTS);

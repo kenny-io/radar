@@ -9,6 +9,7 @@ import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { notFound } from '@/server/errors';
 import { handle } from '@/server/http/handle';
+import { touchActive } from '@/server/idle';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const get = handle(async (req: Request) => {
@@ -29,6 +30,8 @@ const get = handle(async (req: Request) => {
   if (!await educationOwnerAccess({ ...user, guest: false })) return redirect('/start-trial');
   // Existing gate remains authoritative. No current-business cookie is written before all checks pass.
   await gateBusiness({ ...user, guest: false }, business.id);
+  // A click on a Radar email is use of the business (idle spend, IS-1). A link without a business marks nothing.
+  await touchActive(business, { guest: false });
   return redirect(openBusinessUrl(business.id, target));
 });
 export async function GET(req: Request) {

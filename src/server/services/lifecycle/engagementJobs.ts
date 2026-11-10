@@ -7,3 +7,6 @@ defineCron('lifecycle.weekly-education', async now => { await collectEducation(n
 
 import { collectGuides } from './guides';
 defineCron('lifecycle.guides', async now => { await collectGuides(now); });
+
+import { collectAiReports } from '../visibility/digest';
+defineCron('visibility.weeklyDigest', async now => { const result = await collectAiReports(now); if (result.queued || result.failed) console.info('[visibility.weeklyDigest]',result); });

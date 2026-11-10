@@ -1,0 +1,66 @@
+{
+  "observedAt": "2026-11-09T22:54:09.706Z",
+  "origin": "https://radar.thally.io",
+  "environment": "Unauthenticated real production Chrome; read-only routes; all non-GET/HEAD browser traffic blocked; no test account supplied",
+  "deployedRevision": "Unknown: public health has no revision marker",
+  "writes": 0,
+  "errors": [],
+  "results": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "body": {
+        "ok": true
+      },
+      "cacheControl": "no-store"
+    },
+    {
+      "path": "/signin",
+      "status": 200,
+      "finalPath": "/signin",
+      "headings": [
+        "Sign in"
+      ],
+      "forms": 1,
+      "viewportFits": true,
+      "noindex": "noindex, follow",
+      "noReferrer": "strict-origin-when-cross-origin"
+    },
+    {
+      "path": "/forgot-password",
+      "status": 200,
+      "finalPath": "/forgot-password",
+      "headings": [
+        "Forgot your password?"
+      ],
+      "forms": 1,
+      "viewportFits": true,
+      "noindex": "noindex, nofollow",
+      "noReferrer": "no-referrer"
+    },
+    {
+      "path": "/email-preferences",
+      "status": 200,
+      "finalPath": "/signin",
+      "headings": [
+        "Sign in"
+      ],
+      "forms": 1,
+      "viewportFits": true,
+      "noindex": "noindex, follow",
+      "noReferrer": "strict-origin-when-cross-origin"
+    },
+    {
+      "path": "/settings?section=autopilot",
+      "status": 200,
+      "finalPath": "/signup",
+      "headings": [
+        "Create your account"
+      ],
+      "forms": 1,
+      "viewportFits": true,
+      "noindex": "noindex, follow",
+      "noReferrer": "strict-origin-when-cross-origin"
+    }
+  ]
+}

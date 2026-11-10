@@ -120,6 +120,20 @@
       "when": 1794263253046,
       "tag": "0016_autopilot_intro",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794264837882,
+      "tag": "0017_ai_weekly_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794272129974,
+      "tag": "0018_first_five",
+      "breakpoints": true
     }
   ]
 }

@@ -186,7 +186,9 @@ function AiTab() {
   const [vis, setVis] = useState<Vis | null>(null); const [open, setOpen] = useState<string | null>(null); const [np, setNp] = useState(''); const [adding, setAdding] = useState(false);
   const [pending, setPending] = useState<Record<string, string>>({}); // resultId → jobId
   const load = useCallback(() => app.act<Vis>('visibility.list', {}, { silent: true }).then(v => { setVis(v); return v; }).catch(() => null), []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [B.rev, load]);
+  // A collection run bumps the revision once, when it ends: its progress (cells done) is what fills the grid in meanwhile.
+  const run = app.jobFor('visibility.run', B.id);
+  useEffect(() => { load(); }, [B.rev, run?.id, run?.status, run?.progress?.done, load]);
   // Finish "Collect now": refetch when the job is done, then toast.
   useEffect(() => {
     for (const [rid, jid] of Object.entries(pending)) {

@@ -10,6 +10,7 @@ import type { Profile, SocialAuto, SocialPack } from '@/lib/types';
 import { createPack, getPack } from './generate';
 import { dailyContext } from './proactive';
 import { autoSchedule } from './publish/schedule';
+import { activityTier, cadenceDue, lastRuns } from '../../idle';
 
 class DailyDraftCancelled extends Error {}
 
@@ -26,13 +27,16 @@ export function isDue(a: SocialAuto, tz: string, now: Date): { due: boolean; dat
   return { due: toMin(nowHMIn(tz, now)) >= toMin(a.time || '08:00'), date };
 }
 
+/** By activity tier (idle.ts): active as before; idle at most one pack per 7 days, counted from the business's newest
+ *  social.autoRun job; dormant none. A skipped day writes no daily mark, so nothing queues up for the owner's return. */
 export async function autoTick(now: Date) {
-  const rows = await db.select({ id: schema.businesses.id, tz: schema.businesses.timezone, auto: schema.businesses.socialAuto, autopilot: schema.businesses.autopilot })
+  const rows = await db.select({ id: schema.businesses.id, tz: schema.businesses.timezone, auto: schema.businesses.socialAuto, autopilot: schema.businesses.autopilot, lastActiveAt: schema.businesses.lastActiveAt, onboarding: schema.businesses.onboarding })
     .from(schema.businesses).where(eq(schema.businesses.status, 'active'));
-  for (const r of rows) {
-    if (autopilotOf(r).enabled) continue;
-    const { due, date } = isDue(socialAutoOf({ socialAuto: r.auto } as any), r.tz || 'America/New_York', now);
-    if (!due) continue;
+  const due = rows.filter(r => !autopilotOf(r).enabled).map(r => ({ ...r, ...isDue(socialAutoOf({ socialAuto: r.auto } as any), r.tz || 'America/New_York', now), tier: activityTier(r, now) })).filter(r => r.due && r.tier !== 'dormant');
+  const runs = await lastRuns('social.autoRun', due.filter(r => r.tier === 'idle').map(r => r.id));
+  for (const r of due) {
+    if (!cadenceDue(r.tier, runs.get(r.id) ?? null, now)) continue;
+    const date = r.date;
     const key = `social.auto:${r.id}:${date}`;
     // One commit owns both the daily mark and job. Failed insertion (or worker death) cannot strand a daily mark.
     await db.transaction(async tx => {

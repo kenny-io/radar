@@ -5,6 +5,12 @@ import { useApp, type Page } from '@/client/app';
 import { Btn, Icon, LogoTile, Mark, Popover, Skel, type IconName } from '@/components/ui';
 import { Onboarding } from '@/features/onboarding/Onboarding';
 import { SupportWidget } from '@/features/support/SupportWidget';
+import { GraceBanner } from '@/features/billing/GraceBanner';
+import { TrialChip } from '@/features/billing/TrialChip';
+// Page-level stylesheets under (app) suspend the first commit and remount AppProvider (a second workspace load), so
+// screen CSS that is not in radar.css is imported here, at the shell.
+import '@/features/dashboard/first-week.css';
+import { ActivityBell } from './ActivityBell';
 import type { BusinessSummary, DraftSummary } from '@/lib/types';
 
 const NAV: [Page, string, IconName][] = [['dashboard', 'Dashboard', 'home'], ['brief', 'Daily Brief', 'brief'], ['calendar', 'Content Calendar', 'calendar'], ['social', 'Social Marketing', 'social'], ['performance', 'Performance', 'chart'], ['backlinks', 'Backlinks', 'link']];
@@ -21,7 +27,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <Side open={side} onClose={() => setSide(false)} />
     {side && <div onClick={() => setSide(false)} style={{ position: 'fixed', inset: 0, zIndex: 55, background: 'oklch(0 0 0 / .2)' }} />}
     <div style={{ minWidth: 0 }}>
-      <div className="mob-bar"><Btn kind="ghost" icon="menu" onClick={() => setSide(true)} aria-label="Menu" /><Mark s={20} /><span style={{ fontWeight: 600 }}>Radar</span></div>
+      <div className="mob-bar"><Btn kind="ghost" icon="menu" onClick={() => setSide(true)} aria-label="Menu" /><Mark s={20} /><span style={{ fontWeight: 600 }}>Radar</span><ActivityBell /></div>
+      <GraceBanner />
       <main className="main" key={page + (B?.id || '')}>{body}</main>
     </div>
     {onboarding.open && <Onboarding actor="user" draft={draftOf(me.businesses)} saveCommits autoDomain={null} inApp />}
@@ -49,7 +56,7 @@ export function Side({ open, onClose }: { open: boolean; onClose: () => void }) 
   // Locked businesses (the owner has no trialing/active subscription) are hidden; absent `access` means unlocked.
   const biz = me.businesses.filter(b => b.status === 'active' && b.access !== false);
   return <aside className={'side' + (open ? ' open' : '')}>
-    <div className="row" style={{ padding: '4px 8px 18px', gap: 9 }}><Mark s={22} /><span style={{ fontWeight: 600, fontSize: 16, letterSpacing: '-0.02em' }}>Radar</span></div>
+    <div className="row" style={{ padding: '4px 8px 18px', gap: 9 }}><Mark s={22} /><span style={{ fontWeight: 600, fontSize: 16, letterSpacing: '-0.02em' }}>Radar</span><ActivityBell /></div>
     {B ? <div style={{ position: 'relative', marginBottom: 18 }} ref={swRef}>
       <button className="nav-i" style={{ height: 52, background: sw ? 'var(--fill)' : undefined }} onClick={() => setSw(!sw)} aria-haspopup="menu"><LogoTile brand={B.profile.brand} s={30} /><span className="col grow" style={{ minWidth: 0, lineHeight: 1.25 }}><span className="trunc" style={{ color: 'var(--ink)' }}>{B.profile.business.name}</span><span className="xs sub trunc" style={{ fontWeight: 400 }}>{B.profile.domain}</span></span><Icon n="chevUD" s={14} /></button>
       <Popover anchor={swRef} open={sw} onClose={() => setSw(false)} style={{ width: '100%' }}>
@@ -62,6 +69,7 @@ export function Side({ open, onClose }: { open: boolean; onClose: () => void }) 
     <span className="grow" />
     <button className={'nav-i' + (page === 'profile' ? ' on' : '')} onClick={() => nav('profile')} disabled={!B}><Icon n="profile" s={18} />Business Profile</button>
     <button className={'nav-i' + (page === 'settings' ? ' on' : '')} onClick={() => nav('settings')} disabled={!B}><Icon n="gear" s={18} />Settings</button>
+    <TrialChip onNavigate={onClose} />
     <UserMenu name={me.user.name} email={me.user.email} initials={initials} onNavigate={onClose} />
   </aside>;
 }

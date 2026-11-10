@@ -18,7 +18,12 @@ const at = (s: number | null) => (s ? new Date(s * 1000) : null);
 export async function writeSubscription(tx: Tx, later: Later, a: Account, s: Subscription, extra: Partial<typeof A.$inferInsert> = {}) {
   await tx.update(A).set({
     stripeSubscriptionId: s.id, status: s.status, trialEnd: at(s.trial_end), currentPeriodEnd: at(s.current_period_end),
-    cancelAtPeriodEnd: !!s.cancel_at_period_end, everSubscribed: true, updatedAt: new Date(), ...extra,
+    cancelAtPeriodEnd: !!s.cancel_at_period_end, everSubscribed: true, updatedAt: new Date(),
+    // Grace clock (first-five architecture §5, PM decision BE-1): set only on active → past_due, kept while it stays past
+    // due, cleared by every other status. trialing → past_due (the first charge failed) and a row that was already past
+    // due with NULL stay NULL, so they lock as before and a later webhook can't hand them a fresh grace.
+    pastDueAt: s.status !== 'past_due' ? null : a.status === 'past_due' ? a.pastDueAt : a.status === 'active' ? new Date() : null,
+    ...extra,
   }).where(eq(A.userId, a.userId));
   if (a.cancelAtPeriodEnd && !s.cancel_at_period_end) {
     const M = schema.lifecycleEmails, prefix = `cancel-scheduled:${s.id}:`;

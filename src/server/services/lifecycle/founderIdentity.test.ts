@@ -1,3 +1,4 @@
+import { weeklyRecommendationShare } from '@/lib/recommendationShare';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { and, eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
@@ -51,7 +52,7 @@ describe.skipIf(!process.env.DATABASE_URL)('founder transport and retired-messag
   expect((await db.select().from(M).where(eq(M.id,live.id)))[0]).toEqual(live);for(const original of history)expect((await db.select().from(M).where(eq(M.id,original.id)))[0]).toEqual(original);
  });
  it('uses founder From and matching visible/team Reply-To for every newly rendered active lifecycle type',async()=>{
-  const u=await user(),bid=randomUUID(),data={trialEnd:new Date(now.getTime()+864e5).toISOString(),periodEnd:new Date(now.getTime()+864e5).toISOString(),resetUrl:env.appUrl+'/reset-password#token=not-real',education:{version:1 as const,lesson:'ai_visibility' as const,context:{gscConnected:false,access:'workspace' as const}},guide:{version:1 as const,id:'article_workflow' as const,context:{gscConnected:false,access:'workspace' as const}},workSections:[{eventId:randomUUID(),businessId:bid,businessName:'A business',kind:'brief_reply' as const,ref:'2026-11-10',count:1}]};
+  const u=await user(),bid=randomUUID(),data={aiReport:{version:1 as const,businessId:bid,ownerId:u.id,domain:'example.test',series:'1'.repeat(64),periodEnd:'2026-11-09',summary:{series:'1'.repeat(64),weekly:weeklyRecommendationShare([{promptId:'fixture',engine:'ChatGPT',status:'mentioned',series:'1'.repeat(64),day:'2026-11-08',measuredAt:'2026-11-08T12:00:00Z'}],'1'.repeat(64),'example.test',new Date('2026-11-09T12:00:00Z')),weeklyBiggestMiss:null}},trialEnd:new Date(now.getTime()+864e5).toISOString(),periodEnd:new Date(now.getTime()+864e5).toISOString(),resetUrl:env.appUrl+'/reset-password#token=not-real',education:{version:1 as const,lesson:'ai_visibility' as const,context:{gscConnected:false,access:'workspace' as const}},guide:{version:1 as const,id:'article_workflow' as const,context:{gscConnected:false,access:'workspace' as const}},workSections:[{eventId:randomUUID(),businessId:bid,businessName:'A business',kind:'brief_reply' as const,ref:'2026-11-10',count:1}]};
   for(const type of LIFECYCLE_TYPES){const p=lifecyclePayload(type,u,data);expect(p.envelope.from).toBe(founderFrom(from));expect(p.envelope.reply_to).toBe(FOUNDER_REPLY_TO);expect(p.envelope.text).toContain(FOUNDER_REPLY_TO);expect(p.envelope.html).toContain('mailto:'+FOUNDER_REPLY_TO);}
  });
  it('persists new general sender metadata before POST and freezes the entire retry envelope across config/option changes',async()=>{

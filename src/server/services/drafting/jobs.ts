@@ -9,9 +9,8 @@ import { db, schema } from '../../db';
 import { defineJob, once } from '../../jobs/queue';
 import { defineCron } from '../../jobs/cron';
 import { notify } from '../../notify';
-import { getBiz, entryFromRow } from '../../workspace';
+import { getBiz, entryFromRow, laterV } from '../../workspace';
 import { shortId } from '../../crypto';
-import { GENERIC_AI_ERROR } from '../../errors';
 import { RadarError } from '../../errors';
 import { addDays, nowHMIn, todayIn } from '@/lib/format';
 import { draftArticle, entriesStatus, type DraftPayload } from './draft';
@@ -63,7 +62,7 @@ defineJob<DraftPayload>({
         await assertArticleJobOwned(tx, ctx.job);
         const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
         if (JSON.stringify(latest?.data) !== JSON.stringify(art?.data)) throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
-        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: new Date() } });
+        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: laterV() } });
         await tx.update(schema.calendarEntries).set({ status: final, publishError: null }).where(eq(schema.calendarEntries.id, entryId));
         await recordEngagement(tx, { businessId: bid, kind: 'article_social', ref: entryId });
       });
@@ -83,7 +82,9 @@ defineJob<DraftPayload>({
         }).catch(() => false);
         if (cleaned) {
           await once(`draft-failed:${entryId}:${todayIn((await getBiz(bid)).timezone)}`);
-          await notify(bid, GENERIC_AI_ERROR, { tone: 'bad' });
+          // Name the article and link to it: this row is also the Activity entry (first-five architecture §4).
+          const title = (await entriesStatus([entryId]).catch(() => []))[0]?.title || row.title;
+          await notify(bid, `Radar couldn’t draft “${trunc(title)}”. Try again.`, { tone: 'bad', action: { label: 'Open', href: `/article/${entryId}` } });
         }
       }
       throw e;
@@ -123,7 +124,7 @@ defineJob<BodyImagesPayload>({
 
 /** Toasts (exact copy). User-started drafts: "Draft ready…". Scheduled drafts are batched per cron tick. */
 async function announce(bid: string, p: DraftPayload, title: string, auto: boolean) {
-  if (p.source === 'user') { await notify(bid, auto ? `“${trunc(title)}” is drafted and queued to publish.` : 'Draft ready. Edit anything, then approve.', { tone: 'ok' }); return; }
+  if (p.source === 'user') { await notify(bid, auto ? `“${trunc(title)}” is drafted and queued to publish.` : 'Draft ready. Edit anything, then approve.', { tone: 'ok', action: auto ? undefined : { label: 'Open', href: `/article/${p.entryId}` } }); return; }
   const ids = p.batch?.length ? p.batch : [p.entryId];
   const st = await entriesStatus(ids);
   if (st.some(s => s.status === 'drafting')) return; // another draft in this batch is still running; the last one announces
