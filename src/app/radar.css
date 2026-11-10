@@ -218,8 +218,12 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .toast button{flex:none}
 .toast button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
 .toast .toast-x{width:28px;padding:0;display:grid;place-items:center}
-/* Phone: an error toast stays until dismissed, so it sits above the support button instead of over it (52px button, 16px from the edge). */
-@media (max-width:640px){body:has(.radar-support) .toast-wrap{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 64px)}}
+/* Narrow screens: an error toast stays until dismissed, so it sits 12px above the support button instead of over it. The
+   button is 58px at 24px from the edge, and 52px at 16px up to 600px (support.css). With the support panel open the toast
+   goes back to the bottom edge: the panel has its own close button, and its footer stays readable. */
+@media (max-width:640px){body:has(.radar-support) .toast-wrap{bottom:calc(max(24px,env(safe-area-inset-bottom)) + 70px)}}
+@media (max-width:600px){body:has(.radar-support) .toast-wrap{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 64px)}}
+@media (max-width:640px){body:has(.support-panel) .toast-wrap{bottom:max(12px,env(safe-area-inset-bottom))}}
 /* Activity: the bell in the sidebar header and the phone bar, its count, and the rows of the panel (a Sheet). */
 .act-bell{position:relative;margin-left:auto;flex:none;width:32px;height:32px}
 .side .act-bell{margin-top:-5px;margin-bottom:-5px}

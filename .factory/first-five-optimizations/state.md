@@ -8,8 +8,9 @@
 | OPT-E2 lighter saves | factory-engineer | verified | LS-1..4 | integrated as `1a112427`; QA pass; LS-2 job text (D2) fixed by PM after QA |
 | OPT-E3 billing edges + first session | factory-engineer | verified | BE-1..4, FS-1..4 | integrated as `f0039c7f` + PM items `64c70659`; QA pass on stub billing |
 | OPT-E4 review loop + activity | factory-engineer | verified | RL-1..6 | integrated as `ea538775`; QA pass; cosmetic D3, D4 fixed by PM after QA |
-| OPT-Q1 independent QA | factory-qa | review | all | qa-report.md on `3c48df20`: 23 pass, 2 partial, 0 blocked; rerun of D1-D4 on the fix revision |
-| OPT-P1 integration and delivery | PM | active | all | not pushed; PR, merge and deploy wait for the owner |
+| OPT-Q1 independent QA | factory-qa | verified | all | qa-report.md on `3c48df20`: 23 pass, 2 partial, 0 blocked |
+| OPT-Q2 QA rerun | factory-qa | verified | IS-3, LS-2, RL-2, RL-6 | qa-rerun.md on `aaf9eea1`: D1-D4 pass; cosmetic N1, N2 fixed after it (CSS, PM-measured) |
+| OPT-P1 integration and delivery | PM | review | all | release-ready on stubs; not pushed; PR, merge and deploy wait for the owner |
 
 Baseline at `2d41a801`: `npm run typecheck` passes; `npm test` 1076 passed, 371 skipped (DB tests without
 `DATABASE_URL`), 1 failed (`src/server/ai/openrouter.qa.test.ts` golden snapshot, pre-existing).
@@ -68,3 +69,25 @@ Checks on `90be8b2a`: `tsc --noEmit` clean; `npm test` without a database 1165 p
 golden snapshot). DB suite not yet re-run on this commit (E2's own run on its base: 1436 passed, same single failure).
 Measured by E2 on the same data: debounced `article.save` reply 51–84 KB before, 78–79 bytes after; `GET /workspace`
 no longer grows with drafted articles.
+
+## Integration checkpoint 3 and QA (2026-11-10)
+`ea538775` adds E4; `3c48df20` adds the PM items (draft-ready notices link to the article, Dashboard Back) and docs.
+OPT-Q1 ran on `3c48df20`; fixes are `aaf9eea1`; OPT-Q2 ran on `aaf9eea1`; the last commit only moves toast offsets
+in `radar.css`. Numbers and what was not verified are in verification.md.
+
+Open for the owner (not defects against the brief):
+- Lock copy at hour 49: the 402 message says "Start your free trial to continue" to a customer whose paid
+  subscription lapsed, and a locked member with no business of their own lands on onboarding with no explanation.
+- A debounced edit made within 600 ms of closing the tab is lost (no unload flush; same on the base).
+- A Viewer still sees "Draft now" and "Edit brief" on an undrafted article (the server refuses).
+- Brief settings changed today apply to today's scans, while the copy says tomorrow.
+- Out of scope findings from the build: the 4-minute SSE reconnect probe rebuilds the workspace; `events/workspace.ts`
+  toasts ignore `user_id`; queue progress-write ordering can flake.
+
+Rollout: apply `0018_first_five` before deploying web, then worker; `RADAR_PAST_DUE_GRACE_HOURS` (default 48, `0`
+locks at once); confirm Stripe's retry schedule spans at least 48 hours; remove the legacy client branch one release
+later.
+
+Local leftovers: database `radar_opt_review_20261110`; gitignored `.env.local`; agent worktrees
+`agent-a96b46f5c04024165`, `agent-a50b32d49e24bf207`, `agent-ac6bc35b94ff11c90`, `agent-a1c5eda5fc87c5bc7` and their
+`worktree-agent-*` branches.
