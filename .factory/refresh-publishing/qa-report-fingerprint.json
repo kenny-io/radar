@@ -1,0 +1,19 @@
+{
+  "base": "4f0100eec86dc404b13ffc2d8ff4793b319a7a18",
+  "node": "22.23.3",
+  "files": {
+    "src/features/article/ArticleWorkspace.tsx": "0e15faa4730234c134dc45dc23c9f505983137cc133bbdc42510b3e01a3e4901",
+    "src/features/dashboard/Dashboard.tsx": "42d2fc36322fc13de5afe266729f4165d41434260416036c1fd4f5daf416e848",
+    "src/features/publishing/PublishFailure.tsx": "bd3d66081e1130288b066e593c14ad1b29f2bf8ae0d7f751139bd041121c8fb2",
+    "src/lib/publishingFailure.ts": "074e6f1ec66d441101e6a66e92d7a4a1805df2ffc76b91dc65d9ed2f28eb0b14",
+    "src/lib/publishingFailure.test.ts": "053e715a43f5d1efa62b05a98e70e2efd1299ac32a736edb8222e4e3d3b7c537",
+    "src/server/actions/core.ts": "36c3f912a72e4365c5f8664198c9bebaf9fbec5d1899e7b3130223b3dbb3dc80",
+    "src/server/actions/publishing.ts": "3e914aa59c51de4f6971f76781f2e8e616193fdd2a5ada79ddb2f0e51735516f",
+    "src/server/events/workspace.ts": "a9bad2bd96c40e0012545cfdd94022394b2852674b1f4edda2a1a856e48840da",
+    "src/server/workspace.ts": "5f2907d2aeb395b5495e1d38f82afbd175b6bbe66c41779ca75d0beae760358b",
+    "src/server/services/publishing/reportIssue.ts": "1fc03c3f1957b459969eb41a9f86f37a6a175aea981405dd15a9c010a9386b52",
+    "src/server/services/publishing/reportIssue.test.ts": "f237cec4a50e6bf001ce237de870fea33b3cdf607eaea8acea6547923e7e1875",
+    "src/server/services/publishing/connectors/nextjs-agent.ts": "9b04bb27a91cb8cd2528fbf3fbe8af25e425a87ec3787772d4b78e0fb64fb7de",
+    "src/server/services/publishing/connectors/nextjs-structured-refresh.test.ts": "a14b98d92bd37ca97a5b0200fdf58960c387ec9736d3a459fccbc682a2d86a24"
+  }
+}

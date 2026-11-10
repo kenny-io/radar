@@ -1,4 +1,5 @@
 import { reportFailure } from '@/server/observability/failures';
+import { reportPublishingIssue } from '../services/publishing/reportIssue';
 // Actions for the "publishing" area (CONTRACTS.md): blog connections, mode, schedule, publish now / retry.
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
@@ -112,6 +113,9 @@ async function setTz(ctx: ActCtx, tz: string) {
 async function conns(bid: string) { return db.select().from(schema.connections).where(eq(schema.connections.businessId, bid)).orderBy(schema.connections.createdAt); }
 
 export const actions: ActionMap = {
+  /** Explicit member report; input and diagnostics never come from the browser. */
+  'publish.reportIssue': action({ role: 'Viewer', input: z.object({ entryId: z.string().min(1).max(100) }).strict(), run: (ctx, { entryId }) => reportPublishingIssue(ctx, entryId) }),
+
   /** Picker options for an authorization (oauthRef) or a saved connection (id); Framer lists collections from its token. */
   'blog.targets': action({ read: true, role: 'Editor', input: connInput.partial({ fields: true }).extend({ fields: z.record(z.string(), z.string()).default({}) }), run: async (ctx, input) => {
     try {
