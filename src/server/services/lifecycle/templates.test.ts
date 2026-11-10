@@ -84,9 +84,9 @@ describe('lifecycle templates', () => {
     expect(() => renderLifecycle('trial_ending', {}, ctx)).toThrow('date required');
     expect(() => renderLifecycle('invoice_paid', { amountCents: -1 }, ctx)).toThrow('amount');
   });
-  it('only offers optional opt-out on founder mail', () => {
-    expect(renderLifecycle('founder_note', data, ctx).text).toContain('Stop optional setup emails');
-    expect(renderLifecycle('invoice_paid', data, ctx).text).not.toContain('Stop optional');
+  it('keeps the signed optional preference destination and account preferences for receipts', () => {
+    expect(renderLifecycle('founder_note', data, ctx).text).toContain(`Email preferences: ${ctx.unsubscribeUrl}`);
+    expect(renderLifecycle('invoice_paid', data, ctx).text).toContain(`Email preferences: ${ctx.appUrl}/email-preferences`);
   });
   it('requires a reset link on the configured origin with a fragment token', () => {
     expect(() => renderLifecycle('password_reset', { resetUrl: 'https://evil.test/reset-password#token=stolen' }, ctx)).toThrow('Invalid reset');
@@ -100,7 +100,7 @@ describe('lifecycle templates', () => {
     const section = { ...data.workSections![0], kind, title: 'How to plan your first product launch' };
     const mail = renderLifecycle('work_update', { ...data, workSections: [section] }, ctx);
     expect(mail.text).not.toMatch(/35%|guarantee|haven.t replied|haven.t posted/i);
-    expect(mail.text).toContain('Turn off work reminders');
+    expect(mail.text).toContain(`Email preferences: ${ctx.unsubscribeUrl}`);
     expect(mail.text).toContain('348 Business Bay, Dubai, UAE');
     const html = mail.html.replace(/&amp;/g, '&');
     expect(html).toContain('/email/open?businessId=00000000-0000-4000-8000-000000000002&kind=' + kind);

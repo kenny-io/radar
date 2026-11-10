@@ -56,8 +56,6 @@ Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 
 Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
-Stop optional setup emails: https://radar.thally.io/email-preferences?token=preview-only-not-valid
-
 ---
 
 First article workflow
@@ -89,8 +87,6 @@ Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
-
-Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 ---
 
@@ -124,8 +120,6 @@ Email preferences: https://radar.thally.io/email-preferences?token=preview-only-
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid
-
 ---
 
 Daily Brief lesson
@@ -158,8 +152,6 @@ Email preferences: https://radar.thally.io/email-preferences?token=preview-only-
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
 
-Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid
-
 ---
 
 Backlinks lesson
@@ -191,8 +183,6 @@ Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
-
-Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 ---
 
@@ -227,7 +217,5 @@ Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 Fairspleet LLC · 348 Business Bay, Dubai, UAE
-
-Stop Radar lessons and guides: https://radar.thally.io/email-preferences?token=preview-only-not-valid
 
 ---
