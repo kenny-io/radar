@@ -4,9 +4,9 @@
 | --- | --- | --- | --- | --- |
 | OPT-A1 architecture and ownership split | factory-architect | verified | all | architecture.md accepted with PM resolutions (section 11) |
 | OPT-F0 shared foundations (migration 0017, types, inert stubs, call sites) | factory-engineer | verified | enables all | `9de20794`; typecheck clean; 1396 pass with DB (sequential), same single baseline failure |
-| OPT-E1 idle spend | factory-engineer | active | IS-1..7 | worktree `first-five-e1`, branch `kenny-dev/first-five-e1` |
-| OPT-E2 lighter saves | factory-engineer | active | LS-1..4 | worktree `first-five-e2`, branch `kenny-dev/first-five-e2` |
-| OPT-E3 billing edges + first session | factory-engineer | active | BE-1..4, FS-1..4 | worktree `first-five-e3`, branch `kenny-dev/first-five-e3` |
+| OPT-E1 idle spend | factory-engineer | active | IS-1..7 | relaunched in an isolated agent worktree; implementation patch carried over, tests and checks outstanding |
+| OPT-E2 lighter saves | factory-engineer | active | LS-1..4 | relaunched in an isolated agent worktree; server patch carried over, client and tests outstanding |
+| OPT-E3 billing edges + first session | factory-engineer | active | BE-1..4, FS-1..4 | relaunched in an isolated agent worktree; patch carried over, first-week UI, tests and browser pass outstanding |
 | OPT-E4 review loop + activity | factory-engineer | planned | RL-1..6 | after E2 integrates |
 | OPT-Q1 independent QA | factory-qa | planned | all | after integration |
 | OPT-P1 integration and delivery | PM | active | all | brief written; baseline recorded |
@@ -38,3 +38,11 @@ architecture.md section 7.1. Stubs are inert: the workspace gains only `failed: 
 - Known and not from this change: with a database, lifecycle tests fail at random when test files run in parallel
   (they share `pg_try_advisory_lock(424251)`); they pass with `--no-file-parallelism`, before and after this commit.
 - Not run: `next build`, a browser pass.
+
+## Setup correction (2026-11-10)
+The first E1–E3 launch used hand-made sibling worktrees. A session guard rejects Write/Edit into other worktrees, so
+all three were stopped; some edits had already been made there through the shell before the guard was understood.
+Their uncommitted work was saved as patches, the hand-made worktrees and empty branches were removed, and each task
+was relaunched with agent worktree isolation from `b2c33a50`. Nothing from the first launch was committed.
+PM rulings for E3 (TrialChip `onNavigate`, onboarding footer slot, failed first-run row yields to a later success)
+are in the E3 task contract; AppShell call site `<TrialChip onNavigate={onClose} />` is a PM merge item.
