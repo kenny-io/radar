@@ -18,3 +18,5 @@ Tested production-source SHA256:
 - publisher.ts:b4a2daff5283a86777ab6a34f2d51fa5c782e942dc659e8839e00d9506fffb95
 - calendar/research.ts:9bcee88ad653d134537481d9d6681b5ebf83493c75b1d5ab39299e334669084c
 - gsc/refresh.ts:05dc7a16df4c33c94a7ad1ab1cba73c5fc4954848ff358b1ed96bca7d55d8b61
+
+Delivery: implementation committed and pushed as fcf70798d62df1b1a354f61fa1b781b9823cc8af; PR https://github.com/kenny-io/radar/pull/48 open, ready for review and mergeable against production base 75163f1c. GitHub readback reports no commit statuses or PR-triggered workflow runs; local verification is the available test evidence. This final record update changes documentation only. Merge/deployment and customer retry await owner approval.
