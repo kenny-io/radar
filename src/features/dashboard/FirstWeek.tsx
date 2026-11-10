@@ -9,7 +9,6 @@ import { Btn, Icon, Status } from '@/components/ui';
 import { accountsOf } from '@/features/brief/model';
 import { firstWeekRow, firstWeekSummary, type FirstWeekRow } from './firstWeekRows';
 import type { FirstRunKey, Workspace } from '@/lib/types';
-import './first-week.css';
 
 function greet() { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; }
 const withoutFirstRun = (b: Workspace): Workspace => { const { firstRun: _gone, ...rest } = b; return rest; };

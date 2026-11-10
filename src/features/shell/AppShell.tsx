@@ -7,6 +7,9 @@ import { Onboarding } from '@/features/onboarding/Onboarding';
 import { SupportWidget } from '@/features/support/SupportWidget';
 import { GraceBanner } from '@/features/billing/GraceBanner';
 import { TrialChip } from '@/features/billing/TrialChip';
+// Page-level stylesheets under (app) suspend the first commit and remount AppProvider (a second workspace load), so
+// screen CSS that is not in radar.css is imported here, at the shell.
+import '@/features/dashboard/first-week.css';
 import { ActivityBell } from './ActivityBell';
 import type { BusinessSummary, DraftSummary } from '@/lib/types';
 
