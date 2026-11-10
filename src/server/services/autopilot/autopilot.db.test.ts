@@ -210,6 +210,19 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
     expect(told.map(i => i.title)).toEqual(['Your linkedin post needs attention']);
     expect(await db.select().from(S.socialPubs).where(eq(S.socialPubs.businessId, bid))).toHaveLength(0);
   }, 30_000);
+  it('a refusal the owner cannot fix is reported: an expired account stays quiet, a schedule in the past does not', async () => {
+    const reported = vi.spyOn(failures, 'reportFailure').mockResolvedValue();
+    const real = scheduling.scheduleChecks;
+    const [account] = await db.insert(S.socialAccounts).values({ businessId: bid, ch: 'x', name: 'Test', remoteId: 'test', expired: true, tokensEnc: encrypt({ access_token: 'stub', stub: true }) }).returning();
+    await setAutopilot(await context(), true); const a = autopilotOf(await getBiz(bid));
+    await db.insert(S.briefDays).values({ businessId: bid, date, scannedAt: '08:00', items: [{ id: 'x-1', kind: 'post', pl: 'x', plats: ['x'], title: 'Post', tag: 'An idea', why: 'Relevant', drafts: { x: 'Prepared' }, edits: {}, mention: false, st: 'open' }] });
+    await runAutopilot(runCtx(a.activationId!));
+    expect(reported.mock.calls.map(c => (c[0] as any)?.code)).toEqual([]);
+    await db.update(S.socialAccounts).set({ expired: false }).where(eq(S.socialAccounts.id, account.id));
+    vi.spyOn(scheduling, 'scheduleChecks').mockImplementation((biz, r, _date, time, nowMs) => real(biz, r, addDays(date, -1), time, nowMs));
+    await runAutopilot(runCtx(a.activationId!));
+    expect(reported.mock.calls.map(c => [c[1].operation, (c[0] as any)?.code])).toEqual([['autopilot.scheduleBrief', 'past']]);
+  }, 30_000);
   it('an unexpected scheduling error is still reported as a failure', async () => {
     const reported = vi.spyOn(failures, 'reportFailure').mockResolvedValue();
     vi.spyOn(scheduling, 'scheduleChecks').mockRejectedValue(new Error('storage unavailable'));

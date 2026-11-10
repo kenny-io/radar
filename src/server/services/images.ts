@@ -122,7 +122,12 @@ export async function generatePhoto(r: ImageReq): Promise<Buffer> {
     }
   }
   if (!raw) {
-    if (providers.length && accountBlocked === providers.length) throw new RadarError('Image generation is temporarily unavailable. Your previous image is kept. Please contact support.', 503, 'image_unavailable');
+    if (providers.length && accountBlocked === providers.length) {
+      const blocked = new RadarError('Image generation is temporarily unavailable. Your previous image is kept. Please contact support.', 503, 'image_unavailable');
+      // The provider failure behind it was already reported; carrying it keeps the caller's report from alerting twice.
+      if (last) Object.defineProperty(blocked, 'cause', { value: last, enumerable: false });
+      throw blocked;
+    }
     throw last || new Error('no image provider available');
   }
   // Cover-crop to the exact aspect ratio

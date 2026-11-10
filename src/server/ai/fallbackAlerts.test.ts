@@ -62,6 +62,16 @@ describe('operator alerts across the AI fallback chain', () => {
     expect((M.deliver.mock.calls[0][0] as any).error.status).toBe(402);
   });
 
+  it('OpenRouter is the only provider and is out of credit: the routes after it are skipped, and one alert is still sent', async () => {
+    await configured({ openrouterKey: 'router-test' });
+    const called = providers({ openrouter: noCredit, openai: noCredit, anthropic: noCredit });
+    const { run } = await import('./index');
+    await expect(run('writing', { purpose: 'article.draft', prompt: 'Write it' }, { businessId: 'bid', retries: 0 })).rejects.toMatchObject({ code: 'ai_failed' });
+    expect(called).toEqual(['openrouter']);
+    expect(logged.map(e => e.context.retrying)).toEqual([true, false]);
+    expect(alerts()).toHaveLength(1);
+    expect(alerts()[0]).toMatchObject({ provider: 'openrouter', retrying: false });
+  });
   it('a transient error that succeeds on the retry sends no alert; one that fails every retry sends one', async () => {
     await configured({ openaiKey: 'openai-test' });
     let n = 0;
@@ -100,6 +110,14 @@ describe('operator alerts across the image and AI visibility fallbacks', () => {
     expect(alerts()[0]).toMatchObject({ source: 'image', provider: 'openai', retrying: false });
   });
   const ctx = { stub: { bid: 'bid', profile: {}, pages: [], manual: true } };
+  it('every image provider is out of credit: one alert, not one for the provider and another for the action', async () => {
+    await configured({ openrouterKey: 'router-test', openaiKey: 'openai-test' });
+    providers({ openrouter: noCredit, openai: noCredit, anthropic: noCredit });
+    const { renderImageFile } = await import('../services/images');
+    await expect(inJob(() => renderImageFile(req as any))).rejects.toMatchObject({ code: 'image_unavailable' });
+    expect(alerts()).toHaveLength(1);
+    expect(alerts()[0]).toMatchObject({ source: 'image', provider: 'openai', retrying: false });
+  });
   it('an AI visibility question OpenRouter cannot answer is answered by the official API: no alert', async () => {
     await configured({ openrouterKey: 'router-test', openaiKey: 'openai-test' });
     providers({ openrouter: noCredit, anthropic: noCredit, openai: () => Response.json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'direct answer' }] }] }) });

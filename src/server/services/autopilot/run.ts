@@ -1,4 +1,5 @@
-import { reportFailure, shouldReportFailure, type FailureContext } from '@/server/observability/failures';
+import { reportFailure, type FailureContext } from '@/server/observability/failures';
+import { RadarError } from '@/server/errors';
 // The program coordinates existing capabilities; publication remains in the guarded, retry-safe publishers.
 import { and, asc, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { db, schema as S } from '@/server/db';
@@ -53,9 +54,11 @@ async function schedulePost(bid: string, activationId: string, sid: string, now:
   });
 }
 
-/** A schedule the publishing rules refuse (no account connected, expired, preflight) is the owner's to resolve: it goes to
- *  the handoff only. Every run meets it again, so reporting it would raise an operator alert every five minutes. */
-const refused = (e: unknown, context: FailureContext) => shouldReportFailure(e) ? reportFailure(e, context) : Promise.resolve();
+/** A schedule refused for something only the owner can fix (no account connected, an expired one, a post that fails the
+ *  platform's checks) goes to the handoff only. Every run meets it again, so reporting it would raise an operator alert
+ *  every five minutes. Any other refusal means Radar built a schedule it should not have, and is reported. */
+const OWNER_FIXABLE = new Set(['not_connected', 'expired', 'preflight']);
+const refused = (e: unknown, context: FailureContext) => e instanceof RadarError && OWNER_FIXABLE.has(e.code) ? Promise.resolve() : reportFailure(e, context);
 
 export async function runAutopilot(ctx: JobCtx<RunPayload>) {
   const bid = ctx.businessId!; const activationId = ctx.payload.activationId;

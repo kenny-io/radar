@@ -2,7 +2,7 @@
 // Implementation divergence (logged): a small in-repo queue instead of Inngest/Trigger.dev/BullMQ — no extra infrastructure.
 import { JOB_OUTCOME, jobProducedOutcome, trackSoon } from '@/server/events';
 import os from 'node:os';
-import { reportFailure, sanitizeDiagnostic, withFailureContext } from '../observability/failures';
+import { holdAlerts, reportFailure, sanitizeDiagnostic, withFailureContext } from '../observability/failures';
 import { and, eq, inArray, lte, sql } from 'drizzle-orm';
 import { db, pool, schema } from '../db';
 import { RadarError } from '../errors';
@@ -94,8 +94,11 @@ async function executeInContext(job: JobRow, workerId: string) {
     progress: async (p) => { pending = p; if (Date.now() - last > 250) await flush(); else if (!timer) timer = setTimeout(() => { timer = null; flush().catch(() => {}); }, 260); },
     touch: async () => { if (job.businessId) await bump(job.businessId); },
   };
+  // While attempts remain, whether a failure inside this one matters to an operator depends on how the attempt ends.
+  const settle = job.kind !== 'observability.alert' && job.attempts < job.maxAttempts ? holdAlerts() : null;
   try {
     const result = await (def.timeoutMs ? Promise.race([def.run(ctx), new Promise((_, rej) => setTimeout(() => rej(new Error('Job timed out')), def.timeoutMs))]) : def.run(ctx));
+    await settle?.(true); // finished, so anything reported on the way was not retried: email it
     if (timer) clearTimeout(timer); await flush();
     await db.update(schema.jobs).set({ status: 'done', result: result ?? null, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
     trackSoon(`job.${job.kind}`, { bid: job.businessId, ref: job.ref, props: { status: 'done', attempt: job.attempts, ms: Date.now() - started, result } });
@@ -104,6 +107,7 @@ async function executeInContext(job: JobRow, workerId: string) {
     if (timer) clearTimeout(timer); await flush().catch(() => {});
     const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
     const msg = e instanceof RadarError ? e.userMessage : 'Radar couldn’t finish this. Try again.';
+    await settle?.(permanent); // retried: drop this attempt's alerts; ended early for good: email them
     if (job.kind !== 'observability.alert') await reportFailure(e, { source: 'job', operation: job.kind, retrying: !permanent && job.attempts < job.maxAttempts });
     else console.error('[radar.alert.retry_failed]', sanitizeDiagnostic(e?.message || 'Alert delivery failed'));
     if (!permanent && job.attempts < job.maxAttempts) {

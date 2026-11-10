@@ -46,9 +46,38 @@ describe('job failure observability', () => {
     defineJob({ kind: state.job.kind, run: async () => { throw new Error('Resend down'); } }); await runJobNow(state.job.id);
     expect(state.deliver).not.toHaveBeenCalled(); expect(state.updates).toContainEqual(expect.objectContaining({ status: 'queued' }));
   });
-  it('deduplicates nested provider errors without swallowing the original job retry', async () => {
+  const logged = () => vi.mocked(console.error).mock.calls.filter(c => c[0] === '[radar.failure]').map(c => JSON.parse(c[1] as string));
+  it('every provider failing inside an attempt that will be retried is logged, not alerted; the last attempt alerts once', async () => {
     const error = Object.assign(new Error('Provider down'), { status: 503 });
-    defineJob({ kind: state.job.kind, run: async () => { await reportFailure(error, { source: 'ai', operation: 'article.outline', provider: 'openrouter' }); throw error; } });
-    await runJobNow(state.job.id); expect(state.deliver).toHaveBeenCalledTimes(1); expect(state.updates).toContainEqual(expect.objectContaining({ status: 'queued' }));
+    defineJob({ kind: state.job.kind, run: async () => { await reportFailure(error, { source: 'ai', operation: 'article.outline', provider: 'openrouter', retrying: false }); throw error; } });
+    await runJobNow(state.job.id);
+    expect(state.deliver).not.toHaveBeenCalled(); expect(logged()).toHaveLength(1);
+    expect(state.updates).toContainEqual(expect.objectContaining({ status: 'queued' }));
+    state.job.attempts = 3; await runJobNow(state.job.id);
+    expect(state.deliver).toHaveBeenCalledTimes(1);
+    expect(state.deliver.mock.calls[0][0]).toMatchObject({ rootOperation: state.job.kind, context: { operation: 'article.outline', provider: 'openrouter', jobId: 'job-id' } });
+    expect(state.updates).toContainEqual(expect.objectContaining({ status: 'failed' }));
+  });
+  it('a failure the job works around still alerts once the job has finished', async () => {
+    let during = -1;
+    defineJob({ kind: state.job.kind, run: async () => { await reportFailure(new Error('Reddit did not respond'), { source: 'brief', operation: 'brief.source', provider: 'Reddit', degraded: true }); during = state.deliver.mock.calls.length; return { ok: true }; } });
+    await runJobNow(state.job.id);
+    expect(during).toBe(0); expect(state.deliver).toHaveBeenCalledTimes(1);
+    expect(state.deliver.mock.calls[0][0]).toMatchObject({ context: { operation: 'brief.source', degraded: true } });
+    expect(state.updates).toContainEqual(expect.objectContaining({ status: 'done' }));
+  });
+  it('an attempt that ends the job for good alerts at once, even with attempts left', async () => {
+    const { PermanentJobError } = await import('./queue');
+    defineJob({ kind: state.job.kind, run: async () => { await reportFailure(new Error('Provider rejected the request'), { source: 'ai', operation: 'article.outline' }); throw new PermanentJobError('This cannot be retried.'); } });
+    await runJobNow(state.job.id);
+    expect(state.deliver.mock.calls.map(c => (c[0] as any).context.operation)).toEqual(['article.outline', state.job.kind]);
+    expect(state.updates).toContainEqual(expect.objectContaining({ status: 'failed' }));
+  });
+  it('a report made in the job\'s scope after the attempt was settled is not lost', async () => {
+    // A timed-out handler keeps running in the job's async scope after the queue has moved on.
+    defineJob({ kind: state.job.kind, run: async () => { setTimeout(() => { void reportFailure(new Error('late failure'), { source: 'system', operation: 'late.work' }); }, 20); return null; } });
+    await runJobNow(state.job.id); expect(state.deliver).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(state.deliver).toHaveBeenCalledTimes(1));
+    expect(state.deliver.mock.calls[0][0]).toMatchObject({ context: { operation: 'late.work', jobId: 'job-id' } });
   });
 });

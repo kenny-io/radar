@@ -5,6 +5,8 @@ A failure that a retry or a fallback will still handle (`retrying: true`: a prov
 it, a job attempt with attempts left, a publication that will be sent again) is logged as `[radar.failure]` and is not
 emailed; if every retry and fallback then fails, the failure that ended the action is emailed once. Failures that
 finish with partial success (a template instead of a generated image, a brief without one source) are still emailed.
+Inside a background job attempt that has attempts left, alerts are held until the attempt ends: they are dropped when
+the job will be retried, and emailed when the job finished or failed for good.
 Reporting never replaces the existing result, user-safe error, retry or publishing safeguards. New alerts include a formatted
 HTML email and a sectioned plain-text alternative. They contain UTC time, environment/service, operation, available
 business/user/job/resource/request IDs,
@@ -38,7 +40,7 @@ This does not retrospectively sanitize historical application logs or every pre-
 | Article and social publishing | Returned terminal failures, auth holds, uncertain send outcomes, confirmed sends whose local save fails. A send that is scheduled to be retried is logged only |
 | Daily Brief | Failed source fetches, reply/post generation and rescans, including errors previously swallowed |
 | AI visibility | An engine failing on its last configured route and saved failed/degraded collection outcomes. OpenRouter failing before the engine's official API answers is logged only |
-| Autopilot | Failed stage/scheduling work; owner revocation, planned missing-connection handoffs and schedules the publishing rules refuse (no account connected, expired, preflight) remain expected states that go to the owner handoff |
+| Autopilot | Failed stage/scheduling work; owner revocation, planned missing-connection handoffs and schedules refused for something only the owner can fix (`not_connected`, `expired`, `preflight`) remain expected states that go to the owner handoff. Any other refused schedule is reported |
 | Other integrations | Keyword data, Search Console sync/properties, authority/link verification, connection tests and OAuth exchange failures, transactional mail and external token-revocation failures |
 
 Invalid inputs, denied access, expired application sessions, user cancellations, unconfigured **optional** engines,
