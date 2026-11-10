@@ -29,6 +29,19 @@ describe('operational failure reporting', () => {
     });
     expect(delivery).toHaveBeenCalledTimes(2);
   });
+  it('logs a failure that will be retried without alerting, and still alerts when the same failure ends the action', async () => {
+    const provider = Object.assign(new Error('Insufficient credits'), { status: 402 });
+    await withFailureContext({ source: 'job', operation: 'article.draft' }, async () => {
+      await reportFailure(provider, { source: 'ai', operation: 'article.outline', provider: 'openrouter', retrying: true, degraded: true });
+      expect(delivery).not.toHaveBeenCalled();
+      expect(vi.mocked(console.error).mock.calls.filter(c => c[0] === '[radar.failure]')).toHaveLength(1);
+      // Nothing else could be tried: the same error ends the call, and the job then fails with it wrapped.
+      await reportFailure(provider, { source: 'ai', operation: 'article.outline', provider: 'openrouter', retrying: false });
+      await reportFailure(Object.assign(new Error('Radar failed'), { cause: provider }), { source: 'job', operation: 'article.draft', retrying: false });
+    });
+    expect(delivery).toHaveBeenCalledTimes(1);
+    expect((delivery.mock.calls[0][0] as any).context).toMatchObject({ operation: 'article.outline', provider: 'openrouter', retrying: false });
+  });
   it('isolates concurrent request contexts', async () => {
     await Promise.all(['one', 'two'].map(businessId => withFailureContext({ source: 'action', operation: 'generate', businessId }, async () => {
       await Promise.resolve(); await reportFailure(new Error('down'), { source: 'ai', operation: 'writing' });

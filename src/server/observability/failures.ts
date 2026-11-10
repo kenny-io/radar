@@ -79,7 +79,8 @@ function hint(status: number | undefined, message: string): string {
 
 const eCause = (error: unknown): object | undefined => { const cause = (error as any)?.cause; return cause && typeof cause === 'object' ? cause : undefined; };
 
-/** Immediate, best-effort reporting. It never changes the caller's outcome or recursively reports delivery errors. */
+/** Immediate, best-effort reporting. It never changes the caller's outcome or recursively reports delivery errors.
+ *  Every report is logged; an operator alert goes out only for a failure nothing will retry (`retrying` is not true). */
 export async function reportFailure(error: unknown, context: FailureContext): Promise<void> {
   try {
     const current = scope.getStore();
@@ -87,7 +88,10 @@ export async function reportFailure(error: unknown, context: FailureContext): Pr
     let cause = eCause(error);
     if (object && current?.seen.has(object)) return;
     for (let depth = 0; cause && depth < 6; depth++, cause = eCause(cause)) if (current?.seen.has(cause)) { if (object) current.seen.add(object); return; }
-    if (object) current?.seen.add(object);
+    // A failure that will be retried or handed to a fallback is logged for diagnosis and never emailed: the system is
+    // working as designed. It stays out of `seen` so the report that ends the action still alerts.
+    const interim = context.retrying === true;
+    if (object && !interim) current?.seen.add(object);
     const e = error as any;
     const merged = safeContext({ ...current?.context, ...defined(context) } as FailureContext);
     const message = e?.name === 'SyntaxError' ? 'Invalid JSON response' : sanitizeDiagnostic(typeof e?.message === 'string' ? e.message : typeof error === 'string' ? error : 'Unknown error');
@@ -101,7 +105,7 @@ export async function reportFailure(error: unknown, context: FailureContext): Pr
       hint: hint(status, message),
     };
     try { console.error('[radar.failure]', JSON.stringify(event)); } catch { /* Logging failure must not block email. */ }
-    if (!failureAlertsEnabled()) return;
+    if (interim || !failureAlertsEnabled()) return;
     // Group explicitly keyed provider incidents for five minutes, never unrelated action failures.
     const identity = merged.incidentKey ? `${event.environment}:${event.service}:${merged.incidentKey}:${Math.floor(Date.now() / 300_000)}` : event.id;
     const key = `radar-failure/${createHash('sha256').update(identity).digest('hex')}`;

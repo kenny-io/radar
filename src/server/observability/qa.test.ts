@@ -85,14 +85,21 @@ describe.skipIf(!databaseEnabled)('independent durable failure delivery against 
     await runJobNow(original);
     const first = await pool.query('SELECT status,attempts,error FROM jobs WHERE id=$1', [original]);
     expect(first.rows[0]).toMatchObject({ status: 'queued', attempts: 1, error: 'Radar couldn’t finish this. Try again.' });
+    // An attempt that will be retried is not an operator incident: nothing is persisted or sent.
+    const early = await pool.query("SELECT id FROM jobs WHERE kind='observability.alert' AND payload->'event'->>'rootOperation'=$1", [kind]);
+    expect(early.rows).toHaveLength(0); expect(fetcher).not.toHaveBeenCalled();
+    await pool.query("UPDATE jobs SET attempts=3,status='running' WHERE id=$1", [original]);
+    await runJobNow(original);
+    const last = await pool.query('SELECT status,attempts FROM jobs WHERE id=$1', [original]);
+    expect(last.rows[0]).toMatchObject({ status: 'failed', attempts: 3 });
     const pending = await pool.query("SELECT * FROM jobs WHERE kind='observability.alert' AND payload->'event'->>'rootOperation'=$1", [kind]);
     expect(pending.rows).toHaveLength(1);
     const alert = pending.rows[0];
     expect(alert.business_id).toBeNull();
     expect(alert.status).toBe('queued');
     expect(alert.payload.event.context.jobId).toBe(original);
-    expect(alert.payload.event.context.attempt).toBe(1);
-    expect(alert.payload.event.context.retrying).toBe(true);
+    expect(alert.payload.event.context.attempt).toBe(3);
+    expect(alert.payload.event.context.retrying).toBe(false);
     expect(JSON.stringify(alert.payload)).not.toContain('CUSTOMER SECRET INPUT');
     const originalBody = fetcher.mock.calls[0][1].body;
     const originalKey = fetcher.mock.calls[0][1].headers['Idempotency-Key'];
