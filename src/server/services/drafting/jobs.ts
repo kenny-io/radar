@@ -9,7 +9,7 @@ import { db, schema } from '../../db';
 import { defineJob, once } from '../../jobs/queue';
 import { defineCron } from '../../jobs/cron';
 import { notify } from '../../notify';
-import { getBiz, entryFromRow } from '../../workspace';
+import { getBiz, entryFromRow, laterV } from '../../workspace';
 import { shortId } from '../../crypto';
 import { RadarError } from '../../errors';
 import { addDays, nowHMIn, todayIn } from '@/lib/format';
@@ -62,7 +62,7 @@ defineJob<DraftPayload>({
         await assertArticleJobOwned(tx, ctx.job);
         const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
         if (JSON.stringify(latest?.data) !== JSON.stringify(art?.data)) throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
-        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: new Date() } });
+        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: laterV() } });
         await tx.update(schema.calendarEntries).set({ status: final, publishError: null }).where(eq(schema.calendarEntries.id, entryId));
         await recordEngagement(tx, { businessId: bid, kind: 'article_social', ref: entryId });
       });

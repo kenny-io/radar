@@ -4,12 +4,12 @@
 | --- | --- | --- | --- | --- |
 | OPT-A1 architecture and ownership split | factory-architect | verified | all | architecture.md accepted with PM resolutions (section 11) |
 | OPT-F0 shared foundations (migration 0017, types, inert stubs, call sites) | factory-engineer | verified | enables all | `9de20794`; typecheck clean; 1396 pass with DB (sequential), same single baseline failure |
-| OPT-E1 idle spend | factory-engineer | review | IS-1..7 | integrated as `7988c70f`; handoff-e1.md; browser checks left for QA |
-| OPT-E2 lighter saves | factory-engineer | review | LS-1..4 | integrated as `1a112427`; handoff-e2.md; engineer browser pass 46 checks on dev stubs |
-| OPT-E3 billing edges + first session | factory-engineer | review | BE-1..4, FS-1..4 | integrated as `f0039c7f` + PM items `64c70659`; handoff-e3.md; engineer browser pass on stub billing |
-| OPT-E4 review loop + activity | factory-engineer | active | RL-1..6 | isolated agent worktree from `90be8b2a` |
-| OPT-Q1 independent QA | factory-qa | planned | all | after integration |
-| OPT-P1 integration and delivery | PM | active | all | brief written; baseline recorded |
+| OPT-E1 idle spend | factory-engineer | verified | IS-1..7 | integrated as `7988c70f`; QA pass; IS-3 double run (D1) fixed by PM after QA |
+| OPT-E2 lighter saves | factory-engineer | verified | LS-1..4 | integrated as `1a112427`; QA pass; LS-2 job text (D2) fixed by PM after QA |
+| OPT-E3 billing edges + first session | factory-engineer | verified | BE-1..4, FS-1..4 | integrated as `f0039c7f` + PM items `64c70659`; QA pass on stub billing |
+| OPT-E4 review loop + activity | factory-engineer | verified | RL-1..6 | integrated as `ea538775`; QA pass; cosmetic D3, D4 fixed by PM after QA |
+| OPT-Q1 independent QA | factory-qa | review | all | qa-report.md on `3c48df20`: 23 pass, 2 partial, 0 blocked; rerun of D1-D4 on the fix revision |
+| OPT-P1 integration and delivery | PM | active | all | not pushed; PR, merge and deploy wait for the owner |
 
 Baseline at `2d41a801`: `npm run typecheck` passes; `npm test` 1076 passed, 371 skipped (DB tests without
 `DATABASE_URL`), 1 failed (`src/server/ai/openrouter.qa.test.ts` golden snapshot, pre-existing).

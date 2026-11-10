@@ -3,9 +3,9 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { defineJob, enqueue, once } from '../../jobs/queue';
 import { defineCron } from '../../jobs/cron';
-import { nowHMIn, todayIn } from '@/lib/format';
+import { nowHMIn } from '@/lib/format';
 import { collectAll, collectOne, ensurePrompts } from './collect';
-import { activityTier, cadenceDue, lastRuns } from '../../idle';
+import { activityTier, cadenceDue, lastRuns, visNightKey } from '../../idle';
 
 /** "Collect now" — one prompt × engine (ref = resultId). */
 defineJob<{ resultId: string }>({ kind: 'visibility.collect', maxAttempts: 1, run: async ctx => collectOne(ctx.payload.resultId, { manual: true }) });
@@ -20,7 +20,7 @@ defineJob<{ promptIds?: string[] }>({ kind: 'visibility.run', maxAttempts: 1, ru
 // Nightly collection at ~02:00 in each business's timezone (window 02:00–05:59 so a late worker still runs it once).
 // By activity tier (idle.ts): active every night; idle at most once per 7 days, counted from the business's newest
 // visibility.run job of any origin; dormant not at all. A skipped night writes no cron mark, so nothing queues up for the
-// owner's return (touchActive starts the one catch-up run).
+// owner's return (touchActive starts the one catch-up run, which takes that night's mark).
 export async function nightlyTick(now: Date) {
   const rows = await db.select({ id: schema.businesses.id, tz: schema.businesses.timezone, lastActiveAt: schema.businesses.lastActiveAt, autopilot: schema.businesses.autopilot, onboarding: schema.businesses.onboarding })
     .from(schema.businesses).where(eq(schema.businesses.status, 'active'));
@@ -28,7 +28,7 @@ export async function nightlyTick(now: Date) {
   const runs = await lastRuns('visibility.run', due.filter(b => b.tier === 'idle').map(b => b.id));
   for (const b of due) {
     if (!cadenceDue(b.tier, runs.get(b.id) ?? null, now)) continue;
-    if (await once(`vis:${b.id}:${todayIn(b.tz, now)}`)) await enqueue('visibility.run', {}, { businessId: b.id, ref: b.id, singletonKey: 'vis-run:' + b.id });
+    if (await once(visNightKey(b.id, b.tz, now))) await enqueue('visibility.run', {}, { businessId: b.id, ref: b.id, singletonKey: 'vis-run:' + b.id });
   }
 }
 defineCron('visibility.nightly', nightlyTick);

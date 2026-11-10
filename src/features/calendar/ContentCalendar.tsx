@@ -55,14 +55,18 @@ export function ContentCalendar() {
   const cs = calendarState(params); const { view, filter, open } = cs;
   const nav = (patch: Partial<CalState>, push = false) => app.go('calendar', calendarParams({ ...cs, ...patch }), { replace: !push, scroll: false });
   const here = calendarUrl({ view, filter });
-  const pushed = useRef(false); // the open sheet is this screen's own history entry: closing it goes back instead of leaving a duplicate
+  // The open sheet is this screen's own history entry: closing it goes back instead of leaving a duplicate. The entry
+  // itself carries the mark (history.state), so it still holds after a reload or a Forward onto the open sheet.
+  const pushed = useRef(false);
   useEffect(() => { if (!open) pushed.current = false; }, [open]);
+  const ownEntry = () => pushed.current || !!(window.history.state as { radarSheet?: boolean } | null)?.radarSheet;
   /** An article that is ready for review opens directly (RL-3); anything else opens its sheet. */
   const openEntry = (id: string) => {
     if (entries.find(e => e.id === id)?.status === 'review') { app.go('article', { id, back: here }); return; }
     pushed.current = true; nav({ open: id }, true);
+    window.history.replaceState({ ...(window.history.state || {}), radarSheet: true }, '');
   };
-  const closeEntry = () => { if (pushed.current) { pushed.current = false; window.history.back(); } else nav({ open: null }); };
+  const closeEntry = () => { if (ownEntry()) { pushed.current = false; window.history.back(); } else nav({ open: null }); };
   const research = useResearch(app); const now = useNowMs();
   const generate = async (settings: CalendarSettings, keep?: boolean) => {
     setSetup(false); setRegen(false); research.setStarting({ keep: !!keep });

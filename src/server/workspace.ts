@@ -37,6 +37,9 @@ export type ArticlesMode = 'summary' | 'full';
 export const articlesMode = (req: Request): ArticlesMode => (Number(req.headers.get('x-radar-client')) >= 2 ? 'summary' : 'full');
 /** `v` of an article row: its updated_at in epoch ms. Every writer of `articles` advances it. */
 export const articleV = (updatedAt: Date | null | undefined) => (updatedAt ? updatedAt.getTime() : 0);
+/** `articles.updated_at` for a write to an existing row: now, and always at least a millisecond after the stored value, so
+ *  `v` moves forward even when the web, worker and database clocks disagree by a few milliseconds. */
+export const laterV = () => sql`greatest(date_trunc('milliseconds', clock_timestamp()), ${schema.articles.updatedAt} + interval '1 millisecond')`;
 async function articlesOf(bid: string, mode: ArticlesMode): Promise<Record<string, ArticleSummary>> {
   const A = schema.articles; const out: Record<string, any> = {};
   // Legacy tabs: exactly what they always got (typed as summaries only because the current client never takes this branch).
@@ -90,6 +93,13 @@ export function liveFromRow(r: typeof schema.liveLinks.$inferSelect): LiveLink {
   return { id: r.id, from: r.fromUrl, to: r.toUrl, anchor: r.anchor, rel: r.rel, since: String(r.since), status: r.status, lastCheckedAt: r.lastCheckedAt ? r.lastCheckedAt.toISOString() : null };
 }
 
+/** A job's progress as the workspace carries it. A draft streams its text through `blocks` and `partial`; once the job
+ *  has finished the article holds that text (loaded on demand), so the copy is dropped and a batch of drafts adds nothing. */
+export function jobProgress(j: { kind: string; status: string; progress: unknown }): any {
+  if (j.kind !== 'article.draft' || (j.status !== 'done' && j.status !== 'failed') || !j.progress || typeof j.progress !== 'object') return j.progress;
+  const { blocks: _b, partial: _p, ...rest } = j.progress as Record<string, unknown>;
+  return rest;
+}
 export async function loadWorkspace(bid: string, userId: string, role: Role, opts: { articles?: ArticlesMode } = {}): Promise<Workspace> {
   const b = await getBiz(bid);
   const today = bizToday(b);
@@ -145,7 +155,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role, opt
   const kwl = ((b.profile as Profile)?.keywords?.list || []).map(k => k.kw);
   const measured = gsc.status === 'connected' || gsc.status === 'error' ? await kwMeasured(bid, kwl) : {};
   const members: Member[] = team.map(({ m, name }) => ({ id: m.id, userId: m.userId, name: name || null, email: m.email, role: m.role, status: m.status, you: m.userId === userId }));
-  const jobs: JobSummary[] = jobRows.map(j => ({ id: j.id, kind: j.kind, status: j.status, progress: j.progress, error: j.error, createdAt: j.createdAt.toISOString(), ref: j.ref }));
+  const jobs: JobSummary[] = jobRows.map(j => ({ id: j.id, kind: j.kind, status: j.status, progress: jobProgress(j), error: j.error, createdAt: j.createdAt.toISOString(), ref: j.ref }));
   return {
     id: b.id, rev: b.rev, role, status: b.status, today, tz: b.timezone, ...(proj ? { now: new Date().toISOString() } : {}),
     autopilot: autopilotPublic(b),

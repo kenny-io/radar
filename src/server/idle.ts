@@ -2,7 +2,8 @@
 // Every threshold lives here. .factory/first-five-optimizations/architecture.md §2.1-§2.3.
 import { and, eq, gt, inArray, lte, sql } from 'drizzle-orm';
 import { db, schema } from './db';
-import { enqueue } from './jobs/queue';
+import { clearOnce, enqueue, once } from './jobs/queue';
+import { todayIn } from '@/lib/format';
 import { reportFailure } from './observability/failures';
 import { autopilotOf } from './services/autopilot/policy';
 import type { BizRow } from './workspace';
@@ -36,19 +37,26 @@ export async function lastRuns(kind: string, bids: string[]): Promise<Map<string
     .where(and(inArray(J.businessId, bids), eq(J.kind, kind), gt(J.createdAt, sql`now() - make_interval(days => ${IDLE_EVERY_DAYS + 1})`))).groupBy(J.businessId);
   return new Map(rows.filter(r => r.bid && r.at).map(r => [r.bid!, r.at]));
 }
+/** The once-a-day mark of a business's nightly AI visibility run: the nightly cron and the catch-up on return share it. */
+export const visNightKey = (bid: string, tz: string, now: Date) => `vis:${bid}:${todayIn(tz, now)}`;
 /** Mark the business as used by a signed-in member: at most one write an hour, never for a guest, never touches `rev` or `updated_at`.
  *  `biz` is the row the gate just loaded, so the usual call costs no query. When the write brings an idle or dormant business
  *  back, it queues one AI visibility run (the nightly window is fixed, so nothing else would catch up before 02:00).
+ *  That run takes the business's nightly mark for today, so a return inside the 02:00-05:59 window is not followed by a
+ *  second run from the next scheduler tick.
  *  Never throws: callers await it after their own work has already succeeded. */
 export async function touchActive(biz: Pick<BizRow, 'id' | 'lastActiveAt' | 'autopilot' | 'onboarding'>, actor: { guest: boolean }, now: Date = new Date()): Promise<void> {
   if (actor.guest || now.getTime() - biz.lastActiveAt.getTime() < TOUCH_EVERY_MS) return;
   try {
     const B = schema.businesses; const J = schema.jobs;
     // Conditional, so concurrent requests holding the same stale row write once between them.
-    const wrote = await db.update(B).set({ lastActiveAt: now }).where(and(eq(B.id, biz.id), lte(B.lastActiveAt, new Date(now.getTime() - TOUCH_EVERY_MS)))).returning({ status: B.status });
+    const wrote = await db.update(B).set({ lastActiveAt: now }).where(and(eq(B.id, biz.id), lte(B.lastActiveAt, new Date(now.getTime() - TOUCH_EVERY_MS)))).returning({ status: B.status, tz: B.timezone });
     if (!wrote.length || wrote[0].status !== 'active' || activityTier(biz, now) === 'active') return;
     const recent = await db.select({ id: J.id }).from(J).where(and(eq(J.businessId, biz.id), eq(J.kind, 'visibility.run'), gt(J.createdAt, new Date(now.getTime() - CATCH_UP_AFTER_MS)))).limit(1);
-    if (!recent.length) await enqueue('visibility.run', {}, { businessId: biz.id, ref: biz.id, singletonKey: 'vis-run:' + biz.id });
+    if (recent.length) return;
+    const night = visNightKey(biz.id, wrote[0].tz, now); const marked = await once(night);
+    try { await enqueue('visibility.run', {}, { businessId: biz.id, ref: biz.id, singletonKey: 'vis-run:' + biz.id }); }
+    catch (e) { if (marked) await clearOnce(night).catch(() => {}); throw e; }
   } catch (e: any) {
     console.error('[idle] touchActive failed', biz.id, e?.message || e);
     await reportFailure(e, { source: 'system', operation: 'idle.touchActive', businessId: biz.id, degraded: true, incidentKey: 'idle.touchActive' }).catch(() => {});

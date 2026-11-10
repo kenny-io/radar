@@ -9,7 +9,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { notify } from '@/server/notify';
-import { bump, blogOf, connPublic, entryFromRow, getBiz, type BizRow } from '@/server/workspace';
+import { bump, blogOf, connPublic, entryFromRow, getBiz, laterV, type BizRow } from '@/server/workspace';
 import { renderImage } from '@/server/services/images';
 import { readLocal, storedKey } from '@/server/services/storage';
 import { platLabel } from '@/lib/constants';
@@ -47,7 +47,7 @@ async function heroImage(b: BizRow, e: CalendarEntry, a: Article): Promise<strin
   try {
     const url = await renderImage({ bid: b.id, style: a.img?.style || 'branded', brand: { primary: p.brand.primary, secondary: p.brand.secondary }, headline: e.title, name: p.business.name || b.domain, seed: a.img?.seed ?? 1, prompt: a.img?.prompt, w: 1200, h: 628, kind: 'hero' });
     // Keep it on the article so the editor shows the same image that went live.
-    await db.update(schema.articles).set({ data: sql`jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true)`, updatedAt: new Date() }).where(eq(schema.articles.entryId, e.id));
+    await db.update(schema.articles).set({ data: sql`jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true)`, updatedAt: laterV() }).where(eq(schema.articles.entryId, e.id));
     return url;
   } catch (err: any) {
     await reportFailure(err, { source: 'publishing', operation: 'publishing.heroImage', businessId: b.id, ref: e.id, degraded: true });

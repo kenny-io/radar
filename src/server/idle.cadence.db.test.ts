@@ -109,6 +109,33 @@ describe.skipIf(!ON)('cadence by activity tier (database, real crons)', () => {
     }
   });
 
+  it('coming back inside the night window: the catch-up is that night\'s run even once it has finished', async () => {
+    for (const quietDays of [12, 45]) {
+      const b = await biz(owner, quietDays, night);
+      if (quietDays < 30) { await tick(); await later(b, 2); }
+      const had = (await count(b))[0];
+      await touchActive(await getBiz(b.id), { guest: false });
+      expect((await count(b))[0]).toBe(had + 1);
+      expect(await marks(b)).toContain(`vis:BID:${todayIn(b.tz)}`);
+      // The run is quick: it is done before the scheduler looks again, so no singleton is left to join.
+      await db.update(J).set({ status: 'done', finishedAt: new Date() }).where(and(eq(J.businessId, b.id), eq(J.kind, 'visibility.run')));
+      await tick(); await tick();
+      expect((await count(b))[0]).toBe(had + 1);
+      await later(b, 1); await tick();
+      expect((await count(b))[0]).toBe(had + 2);                   // the next night runs as usual
+    }
+  });
+
+  it('coming back outside the night window: one run now, and the next night still runs', async () => {
+    const b = await biz(owner, 45, noon);
+    await touchActive(await getBiz(b.id), { guest: false });
+    expect((await count(b))[0]).toBe(1);
+    await db.update(J).set({ status: 'done', finishedAt: new Date() }).where(eq(J.businessId, b.id));
+    // Fourteen hours on it is 02:00 the next local day: a new date, so today's mark does not hold the run back.
+    await nightlyTick(new Date(Date.now() + 14 * HOUR));
+    expect((await count(b))[0]).toBe(2);
+  });
+
   it('lastRuns: the newest job of the kind per business, any status, within the last 8 days', async () => {
     const a = await biz(owner, 1, noon); const b = await biz(owner, 1, noon); const none = await biz(owner, 1, noon);
     const at = (h: number) => new Date(Date.now() - h * HOUR);
