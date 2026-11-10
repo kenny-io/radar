@@ -9,6 +9,6 @@ Branch `kenny-dev/radar-custom-writing-instructions-2d11b9`, base `2d41a801`. In
 | Q1 independent acceptance | factory-qa | verified | E1 | acceptance, regression, real-browser journey | WI1–WI11, QA1 |
 | P1 integration and delivery | PM | active | Q1 | records, integrated checks, commits, handoff | — |
 
-Status: tested and committed locally on this branch; not pushed, no PR, not merged, not deployed. Q1 accepted fingerprint `a1904d34fd81e524` with one low UX observation (O1: over-limit text dropped on leaving the section). The PM fixed O1 in `src/features/settings/WritingInstructions.tsx` and rechecked it in the browser; final fingerprint `abe117019402f660`, with typecheck, full suite and build re-run on it (`verification.md`). Baseline exception: the known raster golden in `src/server/ai/openrouter.qa.test.ts`.
+Status: owner authorized merge and deployment on 2026-11-10 (PR #44). Release head `6ae70e04` includes main `8dee7358`; checks re-run on it (`release.md`). Q1 accepted fingerprint `a1904d34fd81e524`; later changes (O1 fix, merge of main, revision-only autosave reply) were rechecked by the PM, not independently.
 
-Open items for the owner: live-model compliance is unverified (stubs only); PM decisions D1–D4 in `brief.md` and the `DIVERGENCES.md` entry (status "Needs approval") await the owner's view. Next action: draft PR to main on the owner's go-ahead.
+Open items for the owner: live-model compliance is unverified before release (stubs only); PM decisions D1–D4 in `brief.md` and the `DIVERGENCES.md` entry (status "Needs approval") await the owner's view. Next action: confirm both Railway deployments and the production check listed in `release.md`.
