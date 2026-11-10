@@ -10,6 +10,9 @@ import { kwMeasured } from './services/gsc/metrics';
 import { decrypt } from './crypto';
 import { socialOn } from './flags';
 import { applySocial, extraBriefDays, socialProjection, stripSocial } from './services/social/publish/project';
+import { firstRunOf } from './services/firstRun';
+import { activityUnread, failedJobsOf } from './services/activity';
+import { billingNoticeOf } from './billing/notice';
 import type { Article, BacklinksState, BlogState, BriefDay, BriefState, CalendarEntry, CalendarSettings, ConnectionPublic, GscState, JobSummary, Member, Profile, Proposal, Role, SocialAuto, SocialPack, Workspace, LiveLink } from '@/lib/types';
 
 export type BizRow = typeof schema.businesses.$inferSelect;
@@ -71,7 +74,7 @@ export function liveFromRow(r: typeof schema.liveLinks.$inferSelect): LiveLink {
 export async function loadWorkspace(bid: string, userId: string, role: Role): Promise<Workspace> {
   const b = await getBiz(bid);
   const today = bizToday(b);
-  const [entries, arts, conns, packs, days, gscRow, props, live, team, jobRows, suggs] = await Promise.all([
+  const [entries, arts, conns, packs, days, gscRow, props, live, team, jobRows, suggs, firstRun, billing, unread, failed] = await Promise.all([
     db.select().from(schema.calendarEntries).where(eq(schema.calendarEntries.businessId, bid)).orderBy(schema.calendarEntries.date, schema.calendarEntries.createdAt),
     db.select().from(schema.articles).where(eq(schema.articles.businessId, bid)),
     db.select().from(schema.connections).where(eq(schema.connections.businessId, bid)).orderBy(schema.connections.createdAt),
@@ -83,6 +86,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
     db.select({ m: schema.members, name: schema.users.name }).from(schema.members).leftJoin(schema.users, eq(schema.users.id, schema.members.userId)).where(eq(schema.members.businessId, bid)).orderBy(schema.members.createdAt),
     db.select().from(schema.jobs).where(and(eq(schema.jobs.businessId, bid), or(inArray(schema.jobs.status, ['queued', 'running']), gte(schema.jobs.finishedAt, new Date(Date.now() - 120000))))).orderBy(desc(schema.jobs.createdAt)).limit(30),
     db.select().from(schema.suggestions).where(and(eq(schema.suggestions.businessId, bid), eq(schema.suggestions.state, 'open'))),
+    firstRunOf(b), billingNoticeOf(b, userId), activityUnread(bid, userId), failedJobsOf(bid),
   ]);
   const g = gscRow[0];
   const gsc: GscState = g ? { status: g.status, property: g.property, progress: g.progress, lastSyncedThrough: g.lastSyncedThrough ? String(g.lastSyncedThrough) : null, error: g.error } : { status: 'none', property: null, progress: 0, lastSyncedThrough: null, error: null };
@@ -142,7 +146,9 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
       review: calEntries.filter(e => e.status === 'review').length,
       backlinksPending: backlinks.joined ? backlinks.inbound.filter(p => !p.decision).length : 0,
       highSuggestions: suggs.filter(s => (s.data as any)?.prio === 'High').length,
+      activityUnread: unread,
     },
     onboarding: b.onboarding || {},
+    ...(firstRun ? { firstRun } : {}), ...(billing ? { billing } : {}), failed,
   };
 }

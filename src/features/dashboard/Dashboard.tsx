@@ -11,6 +11,7 @@ import { openSocial, useNowMs } from '@/features/social/channels/useSocial';
 import { socialItems } from '@/lib/socialPublish';
 import { platLabel } from '@/lib/constants';
 import { fmtD, fmtDW, fmtN } from '@/lib/format';
+import { FirstWeek } from './FirstWeek';
 import type { Brand, Workspace } from '@/lib/types';
 
 function greet() { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; }
@@ -23,6 +24,7 @@ export function Dashboard() {
   const app = useApp(); const { B, go } = app;
   const top = useTopSuggestion(app); const now = useNowMs();
   if (!B) return null;
+  if (B.firstRun) return <FirstWeek />;
   const pubOn = !!B.social.publishing;
   const cal = B.calendar.entries; const packs = B.social.packs;
   const first = (app.user.name || '').split(' ')[0];

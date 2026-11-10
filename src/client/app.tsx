@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api, actCall, ApiError, isSubscriptionRequired } from './api';
 import { LaterQueue } from './laterQueue';
+import { useSeenPing } from './seen';
 import { useToast, type ToastOpts } from '@/components/ui';
 import type { JobSummary, Me, Workspace } from '@/lib/types';
 
@@ -65,6 +66,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
   const [onb, setOnb] = useState(false);
   const bid = me.currentId;
   const bidRef = useRef(bid); bidRef.current = bid;
+  useSeenPing(bid, pathname);
   const route = useMemo(() => urlToRoute(pathname || '/dashboard', new URLSearchParams(sp?.toString() || '')), [pathname, sp]);
 
   const go = useCallback((page: Page, params?: any) => { router.push(routeToUrl(page, params)); window.scrollTo(0, 0); }, [router]);

@@ -11,6 +11,7 @@ import { ownAccess } from '@/server/billing/access';
 import { touchGuest } from '@/server/auth/session';
 import { reportFailure, shouldReportFailure, withFailureContext } from '@/server/observability/failures';
 import { clientIp } from '@/server/abuse/ip';
+import { touchActive } from '@/server/idle';
 
 export const POST = handle(async (req: Request, { params }: { params: Promise<{ bid: string }> }) => {
   const { bid } = await params;
@@ -29,6 +30,7 @@ export const POST = handle(async (req: Request, { params }: { params: Promise<{ 
       if (actor.guest) await touchGuest();
       trackSoon(`action.${action}`, { bid, uid: actor.id, props: { input: parsed, result: data } });
       if (ACTION_OUTCOME[action]) trackSoon(ACTION_OUTCOME[action], { bid, uid: actor.id, props: { input: parsed, result: data } });
+      await touchActive(biz, actor);
       await bump(bid);
       return json({ ok: true, data, workspace: await loadWorkspace(bid, actor.id, role) });
     } catch (error) {

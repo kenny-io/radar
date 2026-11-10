@@ -79,6 +79,8 @@ export interface Article {
   /** when videoMeta (YouTube suggestions) was fetched */
   videoFetchedAt?: string | null;
 }
+/** What the workspace carries per article once bodies load on demand (first-five architecture §3.2). */
+export interface ArticleSummary { generated: boolean; outline: string[]; /** articles.updated_at, epoch ms */ v: number }
 
 export type ConnType = 'wordpress' | 'ghost' | 'webflow' | 'notion' | 'wix' | 'shopify' | 'wpcom' | 'webhook' | 'framer' | 'nextjs';
 /** Connection as the client sees it — never contains secrets. */
@@ -221,6 +223,15 @@ export interface Member { id: string; userId: string | null; name: string | null
 
 export interface JobSummary { id: string; kind: string; status: 'queued' | 'running' | 'done' | 'failed'; progress: any; error: string | null; createdAt: string; ref: string | null }
 
+/* ── First five optimizations (.factory/first-five-optimizations/architecture.md §1, §4) ── */
+/** The three jobs Radar starts by itself when a business is committed. */
+export type FirstRunKey = 'calendar' | 'brief' | 'visibility';
+export interface FirstRunItem { key: FirstRunKey; jobId: string | null; status: 'queued' | 'running' | 'done' | 'failed'; progress: any; error: string | null }
+/** The newest job for an item when it failed. `at` is ISO; `keep` is the calendar run's keep flag. Lives as long as the job row. */
+export interface FailedJob { jobId: string; error: string | null; at: string; keep?: boolean }
+/** One row of the Activity panel (a stored notification). `at` is ISO. */
+export interface ActivityItem { id: string; msg: string; tone?: 'ok' | 'warn' | 'bad' | 'signal'; action?: { label: string; href: string }; at: string }
+
 export interface SiteStats { pages: number | null; articles: number | null; ranking: number | null; analyzedAt: string | null }
 
 export interface AutopilotState {
@@ -263,10 +274,16 @@ export interface Workspace {
   measured: Record<string, { q: string; clicks: number; impr: number; ctr: number; pos: number } | null>;
   /** Suggested keywords (competitor gaps, GSC positions 20–40, profile needs) */
   kwSuggestions: KeywordSuggestion[];
-  /** Server-computed counts for the sidebar and dashboard */
-  counts: { briefOpen: number; review: number; backlinksPending: number; highSuggestions: number };
+  /** Server-computed counts for the sidebar and dashboard. `activityUnread`: notifications newer than this member's read cursor. */
+  counts: { briefOpen: number; review: number; backlinksPending: number; highSuggestions: number; activityUnread: number };
   /** Onboarding draft state (step, saved). Present on every workspace; meaningful while status = 'onboarding'. */
   onboarding?: OnboardingState;
+  /** First-week run, present only while one of its jobs is queued, running or failed (under 7 days, not dismissed). Absence is "done". */
+  firstRun?: { at: string; items: FirstRunItem[] };
+  /** Newest failed job per item: the calendar run, and drafts by entry id. */
+  failed: { calendar: FailedJob | null; drafts: Record<string, FailedJob> };
+  /** The owner's billing notice for the grace banner and trial chip. Absent when billing is not enforced for the owner or the owner is comp. */
+  billing?: { payer: boolean; graceEndsAt?: string; trialEndsAt?: string };
 }
 
 /** `access: false` = the owner has no trialing/active subscription (billing on): hidden from the switcher, never current. Absent = true. */
@@ -275,13 +292,17 @@ export interface BusinessSummary { id: string; name: string; domain: string; bra
 export interface Me { user: User; businesses: BusinessSummary[]; currentId: string | null }
 
 /** RPC */
-export interface ActResponse<T = any> { ok: boolean; data?: T; workspace?: Workspace; error?: string; code?: string }
+export interface ActResponse<T = any> { ok: boolean; data?: T; rev?: number; workspace?: Workspace; error?: string; code?: string }
 
 // ── Gating, anonymous onboarding, trial billing (.factory/marketing-trial-gating/architecture.md §5) ──
 export type SubStatus = 'none' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'active' | 'past_due' | 'unpaid' | 'canceled' | 'paused';
 /** 'domain' / 'analyzing' are derived from jobs, as before. */
 export type DraftStep = 'review' | 'gsc' | 'save';
-export interface OnboardingState { step?: DraftStep; savedAt?: string; tz?: string; committedAt?: string }
+export interface OnboardingState {
+  step?: DraftStep; savedAt?: string; tz?: string; committedAt?: string;
+  /** Written by the commit that made the business active; `jobs` holds the tracked job id per row (first-five architecture §1). */
+  firstRun?: { at: string; jobs?: Partial<Record<FirstRunKey, string | null>>; dismissedAt?: string };
+}
 export interface DraftSummary {
   id: string; domain: string; name: string;
   brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>;
@@ -302,6 +323,8 @@ export interface BillingOverview {
   cancelAtPeriodEnd: boolean;
   canManage: boolean;
   everSubscribed: boolean;
+  /** ISO end of the past-due grace period, while in grace. */
+  graceEndsAt?: string | null;
 }
 export interface BillingState {
   /** false → billing off for this user; /start-trial redirects */
@@ -326,11 +349,11 @@ export interface BillingState {
   draft: DraftSummary | null;
 }
 /** The publishable key is read on the server and passed as a prop (not NEXT_PUBLIC_*). */
-export interface TrialPageProps { state: BillingState; publishableKey: string | null }
+export interface TrialPageProps { state: BillingState; publishableKey: string | null; /** Signed-in user's email, for the "Signed in as" footer. */ email?: string }
 export interface OnboardingStageProps {
   /** 'none' = /start before the first POST /api/b */
   actor: 'guest' | 'user' | 'none';
-  user: { name: string } | null;
+  user: { name: string; email?: string } | null;
   draft: DraftSummary | null;
   /** SaveStep label: true → "Save profile & open dashboard" */
   saveCommits: boolean;
