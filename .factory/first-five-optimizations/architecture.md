@@ -425,3 +425,22 @@ Tests each task adds (behaviours):
 - Q1: no grace for a first charge that fails after the trial (see section 5). Q2: per-member mark-all-read is enough.
   Q3: one immediate AI visibility catch-up run on return is accepted.
 - OPT-F0 is delegated to an engineer under the PM, not written by the PM directly; ownership rules are unchanged.
+
+## 12. LS client rules: PM rulings on OPT-E2's findings (2026-11-10)
+These refine section 3.3/3.4 and win where they differ.
+1. Reload trigger: reload when the workspace's `v` for the open article *changes to a value other than the loaded
+   `v`* (edge-triggered), not on plain inequality checked at every `rev` change.
+2. `article.save` (and `article.source`) reply `{ ok: true, v, prev }`. The client adopts `v` as its loaded version
+   only when `prev` equals the `v` it loaded; otherwise it schedules a reload. This keeps LS-4 for a teammate's save
+   that lands between my load and my save without refetching after every save.
+3. Opening an article while the app is busy waits for the pending saves (flush, then fetch), so a quick
+   leave-and-return never shows pre-save text.
+4. A held-back reload is rechecked on a short timer as well as on the next `rev` change.
+5. New file `src/client/articleSync.ts` (React-free decision logic plus its test) is added to E2's ownership.
+6. `actLater` gains a success-callback option so a debounced save can report `{ v, prev }` to the open article.
+7. Rev-gap detection must take the rev of a held (dropped) full-workspace response into account.
+- Legacy (headerless) write replies stay byte-identical to today: `{ ok, data, workspace }` with no `rev`.
+
+## 13. Execution note
+Engineer agents must run with their session rooted in their own worktree (Agent tool worktree isolation). A session
+guard rejects Write/Edit into sibling worktrees; hand-made sibling worktrees were removed for that reason.
