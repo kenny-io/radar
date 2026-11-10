@@ -10,7 +10,7 @@
 | OPT-E4 review loop + activity | factory-engineer | verified | RL-1..6 | integrated as `ea538775`; QA pass; cosmetic D3, D4 fixed by PM after QA |
 | OPT-Q1 independent QA | factory-qa | verified | all | qa-report.md on `3c48df20`: 23 pass, 2 partial, 0 blocked |
 | OPT-Q2 QA rerun | factory-qa | verified | IS-3, LS-2, RL-2, RL-6 | qa-rerun.md on `aaf9eea1`: D1-D4 pass; cosmetic N1, N2 fixed after it (CSS, PM-measured) |
-| OPT-P1 integration and delivery | PM | review | all | release-ready on stubs; not pushed; PR, merge and deploy wait for the owner |
+| OPT-P1 integration and delivery | PM | review | all | release-ready on stubs; pushed, PR kenny-io/radar#43 open against main (2026-11-10); merge and deploy wait for the owner |
 
 Baseline at `2d41a801`: `npm run typecheck` passes; `npm test` 1076 passed, 371 skipped (DB tests without
 `DATABASE_URL`), 1 failed (`src/server/ai/openrouter.qa.test.ts` golden snapshot, pre-existing).
