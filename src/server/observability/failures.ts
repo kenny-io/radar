@@ -14,7 +14,7 @@ export interface FailureEvent {
   context: FailureContext; rootOperation: string; error: { name: string; message: string; status?: number; code?: string; cause?: string };
   hint: string;
 }
-interface Held { open: boolean; alerts: Array<() => Promise<void>> }
+interface Held { open: boolean; alerts: Array<{ error: unknown; send: () => Promise<void> }> }
 interface Scope { context: FailureContext; rootOperation: string; seen: WeakSet<object>; id: string; held?: Held }
 const scope = new AsyncLocalStorage<Scope>();
 let deliveryModule: Promise<typeof import('./delivery')> | undefined;
@@ -66,16 +66,20 @@ export function withFailureContext<T>(context: FailureContext, run: () => Promis
   const parent = scope.getStore();
   return scope.run({ context: { ...parent?.context, ...defined(context) } as FailureContext, rootOperation: context.source === 'action' || context.source === 'job' ? context.operation : parent?.rootOperation || context.operation, seen: parent?.seen || new WeakSet(), id: parent?.id || randomUUID(), held: parent?.held }, run);
 }
-/** Hold the current scope's alerts until the caller knows how the work ended. A job attempt that will be retried is
- *  not an operator incident, whatever failed inside it: `settle(false)` drops its alerts (each is already logged) and
- *  `settle(true)` emails them. Reports made after settling are emailed at once. Outside a scope nothing is held. */
-export function holdAlerts(): (send: boolean) => Promise<void> {
+/** Hold the current scope's alerts until the caller knows how the work ended. `settle(true)` emails them all. A job
+ *  attempt that will be retried is not an operator incident: `settle(false, thrown)` drops the alerts for the failure
+ *  the retry is for (the thrown error and its causes; each is already logged). A failure the attempt had worked around
+ *  is still emailed, because the retry may find that work saved and never meet it again. Reports made after settling
+ *  are emailed at once. Outside a scope nothing is held. */
+export function holdAlerts(): (send: boolean, thrown?: unknown) => Promise<void> {
   const current = scope.getStore();
   if (!current) return async () => {};
   const held: Held = { open: true, alerts: [] }; current.held = held;
-  return async send => {
+  return async (send, thrown) => {
     held.open = false;
-    for (const alert of held.alerts.splice(0)) if (send) await alert().catch(e => { try { console.error('[radar.alert.delivery_failed]', sanitizeDiagnostic(e?.message)); } catch { /* never replaces the job's outcome */ } });
+    const retried = new Set<unknown>();
+    for (let e: unknown = thrown, depth = 0; !send && e && typeof e === 'object' && depth < 8; e = eCause(e), depth++) retried.add(e);
+    for (const alert of held.alerts.splice(0)) if (!retried.has(alert.error)) await alert.send().catch(e => { try { console.error('[radar.alert.delivery_failed]', sanitizeDiagnostic(e?.message)); } catch { /* never replaces the job's outcome */ } });
   };
 }
 function statusOf(error: any): number | undefined {
@@ -123,7 +127,7 @@ export async function reportFailure(error: unknown, context: FailureContext): Pr
     const identity = merged.incidentKey ? `${event.environment}:${event.service}:${merged.incidentKey}:${Math.floor(Date.now() / 300_000)}` : event.id;
     const key = `radar-failure/${createHash('sha256').update(identity).digest('hex')}`;
     const deliver = async () => { const { persistAndDeliverAlert } = await (deliveryModule ??= import('./delivery')); await persistAndDeliverAlert(event, key); };
-    if (current?.held?.open) { current.held.alerts.push(deliver); return; }
+    if (current?.held?.open) { current.held.alerts.push({ error, send: deliver }); return; }
     await deliver();
   } catch (deliveryError) {
     try { console.error('[radar.alert.delivery_failed]', sanitizeDiagnostic((deliveryError as any)?.message)); } catch { /* Reporting must never replace the original failure. */ }

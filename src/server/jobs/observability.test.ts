@@ -58,6 +58,17 @@ describe('job failure observability', () => {
     expect(state.deliver.mock.calls[0][0]).toMatchObject({ rootOperation: state.job.kind, context: { operation: 'article.outline', provider: 'openrouter', jobId: 'job-id' } });
     expect(state.updates).toContainEqual(expect.objectContaining({ status: 'failed' }));
   });
+  it('a retried attempt drops the alert for the failure being retried, wrapped or not, and keeps one it had worked around', async () => {
+    const provider = Object.assign(new Error('Provider down'), { status: 503 });
+    defineJob({ kind: state.job.kind, run: async () => {
+      await reportFailure(new Error('Image provider down, template used'), { source: 'image', operation: 'image.generate', degraded: true });
+      await reportFailure(provider, { source: 'ai', operation: 'article.outline', retrying: false });
+      throw Object.assign(new Error('Radar failed'), { cause: provider });
+    } });
+    await runJobNow(state.job.id);
+    expect(state.deliver.mock.calls.map(c => (c[0] as any).context.operation)).toEqual(['image.generate']);
+    expect(state.updates).toContainEqual(expect.objectContaining({ status: 'queued' }));
+  });
   it('a failure the job works around still alerts once the job has finished', async () => {
     let during = -1;
     defineJob({ kind: state.job.kind, run: async () => { await reportFailure(new Error('Reddit did not respond'), { source: 'brief', operation: 'brief.source', provider: 'Reddit', degraded: true }); during = state.deliver.mock.calls.length; return { ok: true }; } });

@@ -5,8 +5,10 @@ A failure that a retry or a fallback will still handle (`retrying: true`: a prov
 it, a job attempt with attempts left, a publication that will be sent again) is logged as `[radar.failure]` and is not
 emailed; if every retry and fallback then fails, the failure that ended the action is emailed once. Failures that
 finish with partial success (a template instead of a generated image, a brief without one source) are still emailed.
-Inside a background job attempt that has attempts left, alerts are held until the attempt ends: they are dropped when
-the job will be retried, and emailed when the job finished or failed for good.
+Inside a background job attempt that has attempts left, alerts are held until the attempt ends. When the job finished
+or failed for good they are emailed. When the job will be retried, the alert for the failure being retried (the thrown
+error and its causes) is dropped, and an alert for a failure the attempt had worked around is still emailed. A report
+made after the attempt has ended, for example by a handler that timed out and kept running, is emailed at once.
 Reporting never replaces the existing result, user-safe error, retry or publishing safeguards. New alerts include a formatted
 HTML email and a sectioned plain-text alternative. They contain UTC time, environment/service, operation, available
 business/user/job/resource/request IDs,

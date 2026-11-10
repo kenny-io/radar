@@ -107,7 +107,7 @@ async function executeInContext(job: JobRow, workerId: string) {
     if (timer) clearTimeout(timer); await flush().catch(() => {});
     const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
     const msg = e instanceof RadarError ? e.userMessage : 'Radar couldn’t finish this. Try again.';
-    await settle?.(permanent); // retried: drop this attempt's alerts; ended early for good: email them
+    await settle?.(permanent, e); // ended for good: email what was held; retried: drop only the alerts for the failure being retried
     if (job.kind !== 'observability.alert') await reportFailure(e, { source: 'job', operation: job.kind, retrying: !permanent && job.attempts < job.maxAttempts });
     else console.error('[radar.alert.retry_failed]', sanitizeDiagnostic(e?.message || 'Alert delivery failed'));
     if (!permanent && job.attempts < job.maxAttempts) {
