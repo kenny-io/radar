@@ -46,7 +46,8 @@ function InstructionField({ k, label, ph, viewer, focus }: { k: InstructionKey; 
     flying.current = t; setSt('saving'); setErr('');
     const optimistic = (b: Workspace): Workspace => { const n = { ...b.instructions }; if (t) n[k] = t; else delete n[k]; return { ...b, instructions: n }; };
     // Always written to the business this text was typed for, even if the current business changed meanwhile.
-    const req: Promise<unknown> = liveBid.current === bid ? app.act('settings.instructions', { set: k, text: t }, { optimistic, keepLocal: true, silent: true }) : actCall(bid, 'settings.instructions', { set: k, text: t });
+    // An autosave: the reply carries the revision only, no workspace.
+    const req: Promise<unknown> = liveBid.current === bid ? app.act('settings.instructions', { set: k, text: t }, { optimistic, keepLocal: true, silent: true, reply: 'rev' }) : actCall(bid, 'settings.instructions', { set: k, text: t }, 'rev');
     req.then(() => {
       flying.current = null; confirmed.current = t;
       if (cleanInstruction(draftRef.current ?? '').length <= INSTRUCTION_MAX) unsaved.delete(key); // an over-limit draft typed meanwhile is kept
