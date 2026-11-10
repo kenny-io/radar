@@ -48,6 +48,7 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 
 ### platform area (Dashboard, Settings, Team, Backlinks)
 - `settings.ai` `{ task: 'writing'|'research', model }` · `settings.calendarDefaults` `{ market?, language?, cadence?, perWeek? }`
+- `settings.instructions` `{ set, text }` — role Editor; one writing-instruction set per call. `set` is one of `INSTRUCTION_KEYS` (`all`, `articles`, `social`, `community`, `linkedin`, `x`, `reddit`, `facebook`, `quora`, `hn`); `text` is normalized with `cleanInstruction` and limited to `INSTRUCTION_MAX` (1,500) characters (`400 too_long`, never truncated); empty text removes the set. Returns `{ ok: true }` only (never the text). See “Writing instructions” below.
 - `team.invite` `{ email, role }` · `team.role` `{ memberId, role }` · `team.remove` `{ memberId }`
 - `feature.request` `{ text }`
 - `backlinks.*` (internal to the area)
@@ -55,6 +56,7 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 
 ## Workspace fields everyone can rely on
 See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `B.measured`, `B.kwSuggestions`, `B.site`, `B.jobs`.
+`B.instructions` (`WritingInstructions`) is always present (`{}` when none) and readable by every role; `B.ai` carries only `{ writing, research }`.
 
 ## Job kinds (for `app.jobFor(kind, ref)`)
 - `analysis.site` (ref = businessId) — progress `{ phase: 'site'|'biz'|'content'|'aud'|'brand'|'done', results: { site?: string, biz?: string, content?: string, aud?: string, brand?: string }, colors?: [p, s], logoMissing?: boolean, failed?: string }`
@@ -201,6 +203,13 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 
 - `settings.autopilot` `{ enabled: boolean }` · `settings.autopilotRun` `{}` — Owner-only marketing delegation and an immediate program check. Defaults off; enabling starts the worker program. `B.autopilot` exposes `{ enabled, enabledAt, lastRunAt, lastError, summary? }` without internal authorization identifiers.
 - `autopilot.run` — business-scoped program coordinator. Internal activation provenance guards autonomous calendar/article/social work; disabling or re-enabling revokes earlier activations. Existing manual and independently enabled automation remains separate. See `.factory/autopilot/architecture.md`.
+
+## Writing instructions (`.factory/writing-instructions/architecture.md`)
+
+- Stored sparsely in `businesses.ai.instructions` (`{ [set]: text }`); no column, no migration. `settings.instructions` and `settings.ai` each merge their own key in one SQL statement, so concurrent saves never erase each other. Rows without the key read as no instructions.
+- `AiInput.instructions?: { surface: 'article' | 'social' | 'community'; platforms? }` (`src/server/ai/instructions.ts`). `ai.run` resolves the saved sets from the same `businesses.ai` row it reads for the model and appends one delimited block to the end of `system`: `all` → content type → each listed platform. With nothing applicable, `system` is passed through unchanged. Only these sites set it: `article.draft`, `article.meta`, `article.rewrite`, `suggestions.refreshDraft` (`article`); `social.post` (`social` + its platform); `brief.reply`, `brief.brand` (`community` + thread platform); `brief.posts` (`social` + requested feed platforms); `brief.rewrite` (by item kind and platform). Planning, research, fact-check, image, visibility, backlink, support and email calls never set it.
+- Instructions never reach `Profile`, `profileContext`, number allow-lists, job payloads, `ai_calls` or `events`. Deterministic cleaners (`social/rules.ts`, `brief/rules.ts`, article number checks) run unchanged after generation.
+- Dev stubs: `stubRun` prints `[ai:stub] <purpose> received workspace writing instructions` followed by the block (development only).
 
 ## First five optimizations (2026-11)
 

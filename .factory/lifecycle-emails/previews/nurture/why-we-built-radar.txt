@@ -18,5 +18,3 @@ team@thally.io
 Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
 
 Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
-
-Stop optional setup emails: https://radar.thally.io/email-preferences?token=preview-only-not-valid

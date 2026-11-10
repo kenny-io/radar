@@ -13,6 +13,7 @@ import { SocialAccounts } from '@/features/social/channels/SocialAccounts';
 import { BillingSettings } from '@/features/billing/BillingSettings';
 import { EmailSettings } from './EmailSettings';
 import { AutopilotSettings } from './AutopilotSettings';
+import { WritingInstructionsSettings } from './WritingInstructions';
 
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
@@ -55,10 +56,10 @@ export function AISettings() {
 }
 
 const SET_KEY = 'radar.settings.tab';
-type SetKey = 'gsc' | 'publishing' | 'social' | 'autopilot' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'feedback';
+type SetKey = 'gsc' | 'publishing' | 'social' | 'autopilot' | 'writing' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'feedback';
 const SET_NAV: [string, [SetKey, string][]][] = [
   ['Connections', [['gsc', 'Search Console'], ['publishing', 'Publishing'], ['social', 'Social accounts']]],
-  ['Content', [['autopilot', 'Autopilot'], ['ai', 'AI models'], ['calendar', 'Calendar']]],
+  ['Content', [['autopilot', 'Autopilot'], ['writing', 'Writing instructions'], ['ai', 'AI models'], ['calendar', 'Calendar']]],
   ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing'], ['emails', 'Emails']]],
 
   ['Support', [['feedback', 'Request a feature']]],
@@ -94,6 +95,7 @@ export function SettingsPage() {
   const sched = (p: { time?: string; tz?: string }) => (b: Workspace): Workspace => ({ ...b, tz: p.tz || b.tz, blog: { ...b.blog, ...p } });
   const pane: Record<SetKey, React.ReactNode> = {
     autopilot: <AutopilotSettings key={B.id} onSection={setTab} />,
+    writing: <WritingInstructionsSettings key={B.id} />,
     gsc: <Section title="Search Console" style={{ marginTop: 0 }}>
       <Row t="Connection" d="Read-only access to search performance.">
         {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <div className="row" style={{ gap: 14, flexWrap: 'wrap' }}>

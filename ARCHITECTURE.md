@@ -57,6 +57,8 @@ hooks run every minute and must be idempotent (`once(key)`). All schedules use t
 ## AI
 `ai.run('writing' | 'research', { purpose, system, prompt, schema?, webSearch?, onDelta? }, { businessId })`.
 The model comes from Settings → AI models. Every generation prompt includes `profileContext(profile)`.
+Writing calls also pass `instructions: { surface, platforms? }`; `ai.run` then appends the workspace's saved writing
+instructions (Settings → Writing instructions, `src/server/ai/instructions.ts`) to the end of `system`, or nothing when none apply.
 Structured output is validated with zod. Model names appear only in Settings → AI models.
 
 ## Integrations and dev stubs

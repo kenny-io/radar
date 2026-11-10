@@ -559,6 +559,20 @@ Editor, Preview, HTML, Markdown/MDX and native Notion use the same section place
 
 Owner follow-up: the duplicate Edit/Preview switch is removed. One article view shows the final layout and supports inline text editing for editable drafts. Queued/published article text, Viewers, and active generation states are read-only.
 
+## Writing instructions (2026-11-10, owner request)
+
+Not in the handoff. Workspaces save standing writing instructions that Radar adds to every writing prompt. See `.factory/writing-instructions/` for the brief and architecture.
+
+| Item | Design | Built | Why | Visible | Status |
+|---|---|---|---|---|---|
+| Settings → Content → Writing instructions | Not designed | A new Settings section between Autopilot and AI models, built from the existing Settings rows and inputs. Four general sets (everything, articles, social posts, community replies) are always shown; six platform sets stay behind “By platform” add buttons until used. Each field autosaves, shows a character count (1,500 limit) and Saving… / Saved / Not saved. Viewers read the text but can’t change it. Opens from `?section=writing` | Owner request | Yes | Needs approval |
+| Business Profile → Brand voice | Hint only | One extra line under the field: “For rules by content type or platform, use Writing instructions.” linking to the new section. Onboarding is unchanged | Brand voice stays the short description; detailed rules live in Settings | Yes | Needs approval |
+| What instructions can’t change | — | Radar’s accuracy, disclosure, competitor, link, length, language and format rules, and the existing clean-up after generation, still apply. The section says so in plain copy | Integrity rules are not preferences | Yes (copy) | Needs approval |
+| Daily Brief emoji and hashtags | — | Daily Brief drafts (replies and feed posts) still have emoji and hashtags removed and replies kept short, whatever the instructions say. They work in Social Marketing posts. Disclosed in the section copy | Existing Daily Brief clean-up is unchanged in this version | Yes | Needs approval |
+| Extra links in social posts | — | A social post keeps only its pack’s own source link (none on Reddit); an instruction to always add another link has no effect. LinkedIn keeps at most two hashtags; X stays within 280 characters | Existing link and platform rules are unchanged | Yes | Needs approval |
+| Facts in instructions | — | A figure typed into an instruction is not treated as a source: unsupported numbers are still removed from drafts. The copy points to the Business Profile for facts and figures | No invented statistics | Yes | Needs approval |
+| Existing drafts | — | Not regenerated. Instructions apply from the next draft, regeneration or rewrite | Avoids silent changes to reviewed copy | Yes (copy) | Needs approval |
+
 ## First five optimizations (2026-11-10, owner-approved)
 
 | # | Area | Before | Now |

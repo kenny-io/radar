@@ -219,6 +219,9 @@ export interface LiveLink { id: string; from: string; to: string; anchor: string
 export interface BacklinksState { joined: boolean; prefs: Partial<BacklinkPrefs>; inbound: Proposal[]; outbound: Proposal[]; live: LiveLink[] }
 
 export interface AiPrefs { writing: string; research: string }
+export type InstructionKey = 'all' | 'articles' | 'social' | 'community' | 'linkedin' | 'x' | 'reddit' | 'facebook' | 'quora' | 'hn';
+/** Standing writing instructions per set (Settings → Writing instructions). Sparse: absent = none. */
+export type WritingInstructions = Partial<Record<InstructionKey, string>>;
 export interface Member { id: string; userId: string | null; name: string | null; email: string; role: Role; status: 'active' | 'invited'; you: boolean }
 
 export interface JobSummary { id: string; kind: string; status: 'queued' | 'running' | 'done' | 'failed'; progress: any; error: string | null; createdAt: string; ref: string | null }
@@ -267,6 +270,8 @@ export interface Workspace {
   brief: BriefState;
   backlinks: BacklinksState;
   ai: AiPrefs;
+  /** Saved writing instructions. Always present ({} when none); visible to every role. */
+  instructions: WritingInstructions;
   team: Member[];
   site: SiteStats;
   jobs: JobSummary[];
