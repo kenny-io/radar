@@ -49,7 +49,7 @@ export async function trialGuard(): Promise<{ redirect: string } | { props: Tria
     const committed = d?.onboarding?.savedAt ? await commitDraft(d.id) : null;
     return { redirect: committed ? openBusinessUrl(committed, SAVED_DASHBOARD) : '/dashboard' };
   }
-  return { props: { state: await billingState(u, { restartDueCents }), publishableKey: env.stripePublishableKey || null } };
+  return { props: { state: await billingState(u, { restartDueCents }), publishableKey: env.stripePublishableKey || null, email: u.email } };
 }
 
 /** /start (anonymous onboarding): a real user goes to /onboarding; otherwise the guest's draft (or none yet). */
@@ -67,7 +67,7 @@ export async function onboardingGuard(domain?: string | null): Promise<{ redirec
   const u = await currentUser();
   if (!u) return { redirect: (await currentGuest()) ? withDomain('/start', autoDomain) : '/signup' };
   const d = await draftOf(u.id);
-  return { props: { actor: 'user', user: { name: u.name }, draft: d ? toDraftSummary(d) : null, saveCommits: await ownAccess(u), autoDomain } };
+  return { props: { actor: 'user', user: { name: u.name, email: u.email }, draft: d ? toDraftSummary(d) : null, saveCommits: await ownAccess(u), autoDomain } };
 }
 
 /** /signup and /signin: the pending variant when this browser's guest has a saved draft (AC-S2). */

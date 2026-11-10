@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
 import { db, schema } from '../db';
 import { RadarError, notFound } from '../errors';
-import { calendarSettingsOf, entryFromRow } from '../workspace';
+import { articleV, calendarSettingsOf, entryFromRow } from '../workspace';
 import { startDraft } from '../services/drafting/start';
 import { startBodyImages } from '../services/drafting/bodyImages';
 import { assertArticleEditable, assertNoArticleWork, assertNoDraftWork, lockArticle } from '../services/drafting/guard';
@@ -28,10 +28,11 @@ const Patch = z.object({
 async function load(bid: string, entryId: string) {
   const r = (await db.select().from(E).where(and(eq(E.id, entryId), eq(E.businessId, bid))).limit(1))[0];
   if (!r) throw notFound('That article');
-  const a = (await db.select().from(schema.articles).where(eq(schema.articles.entryId, entryId)).limit(1))[0];
+  const a = (await db.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
   const e = entryFromRow(r);
-  return { row: r, e, a: ({ ...defaultArticle(e), ...((a?.data as Article) || {}) }) as Article };
+  return { row: r, e, a: ({ ...defaultArticle(e), ...((a?.data as Article) || {}) }) as Article, v: articleV(a?.updatedAt) };
 }
+/** Returns the row's new `v` and the `v` it replaced, read under the article lock: a client holding `prev` knows nobody wrote in between. */
 async function save(bid: string, entryId: string, change: (latest: Article) => Article, media = false) {
   return db.transaction(async tx => {
     const row = await lockArticle(tx, bid, entryId);
@@ -40,7 +41,9 @@ async function save(bid: string, entryId: string, change: (latest: Article) => A
     else await assertNoDraftWork(tx, bid, entryId);
     const current = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
     const data = change({ ...defaultArticle(entryFromRow(row)), ...((current?.data as Article) || {}) });
-    await tx.insert(schema.articles).values({ entryId, businessId: bid, data, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
+    const prev = articleV(current?.updatedAt); const at = new Date(Math.max(Date.now(), prev + 1)); // strictly later, so two saves in one millisecond still differ
+    await tx.insert(schema.articles).values({ entryId, businessId: bid, data, updatedAt: at }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: at } });
+    return { v: at.getTime(), prev };
   });
 }
 async function checkMedia(bid: string, entryId: string) {
@@ -54,6 +57,12 @@ async function render(bid: string, biz: any, title: string, a: Article): Promise
 }
 
 export const actions: ActionMap = {
+  /** One whole article for the Article workspace; the workspace itself carries only `ArticleSummary` (first-five architecture §3.3). */
+  'article.get': action({ read: true, input: z.object({ entryId: z.string().min(1).max(100) }), run: async (ctx, { entryId }) => {
+    const { a, v } = await load(ctx.bid, entryId);
+    return { article: a, v };
+  } }),
+
   /** Autosave: brief, SEO, image fields, videos, edited blocks. */
   'article.save': action({ input: z.object({ entryId: z.string(), patch: Patch }), run: async (ctx, { entryId, patch }) => {
     const { e, a, row } = await load(ctx.bid, entryId);
@@ -65,7 +74,7 @@ export const actions: ActionMap = {
     if (patch.img?.style && patch.img.style !== a.img.style && next.generated) {
       try { next.img = await render(ctx.bid, ctx.biz, e.title, next); } catch (error) { if (next.img.modelRequired) { if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); } next.img = { ...next.img, url: null, urlKey: null }; }
     }
-    await save(ctx.bid, entryId, latest => {
+    const at = await save(ctx.bid, entryId, latest => {
       if (patch.img?.style && patch.img.style !== a.img.style && (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt || latest.img.url !== a.img.url)) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
       return {
       ...latest,
@@ -74,7 +83,7 @@ export const actions: ActionMap = {
       img: { ...latest.img, ...patch.img, ...(patch.img?.style && patch.img.style !== a.img.style ? { url: next.img.url, urlKey: next.img.urlKey } : {}) },
       ...(patch.videos ? { videos: patch.videos } : {}),
     }; }, !!patch.img);
-    return { ok: true };
+    return { ok: true, ...at };
   } }),
 
   /** A supplied prompt explicitly requires the image model, even for an older template style. */
@@ -128,8 +137,8 @@ export const actions: ActionMap = {
   'article.source': action({ input: z.object({ entryId: z.string(), index: z.number().int().min(0), removed: z.boolean() }), run: async (ctx, { entryId, index, removed }) => {
     const { a } = await load(ctx.bid, entryId);
     if (!a.sources[index]) throw notFound('That source');
-    await save(ctx.bid, entryId, latest => ({ ...latest, sources: latest.sources.map((s, i) => i === index ? { ...s, removed } : s) }));
-    return { ok: true };
+    const at = await save(ctx.bid, entryId, latest => ({ ...latest, sources: latest.sources.map((s, i) => i === index ? { ...s, removed } : s) }));
+    return { ok: true, ...at };
   } }),
 
   /** "Publish to" select (several connections). */

@@ -9,7 +9,7 @@ import { randomToken } from '../crypto';
 import { bizToday, briefSettingsOf } from '../workspace';
 import { getJob } from '../jobs/queue';
 import { enqueueScan } from '../services/brief/jobs';
-import { withDay } from '../services/brief/store';
+import { ACTED_STATES, withDay } from '../services/brief/store';
 import { rewriteItem } from '../services/brief/draft';
 import { enqueueVisuals } from '../services/brief/visuals';
 import { imgCount, type ImageSettings } from '@/lib/imageOptions';
@@ -104,7 +104,8 @@ export const actions: ActionMap = {
         const before = items[i].st;
         if (input.st) it.st = input.st;
         const next = [...items]; next[i] = it;
-        return { items: next, ret: { it, before } };
+        // Copying, posting or skipping an item earns the day's next background rescan; edits, toggles and Undo do not.
+        return { items: next, acted: !!input.st && input.st !== before && ACTED_STATES.includes(input.st), ret: { it, before } };
       });
       if (!ok) throw new RadarError('That conversation wasn’t found.', 404, 'not_found');
       const { it, before } = ok;

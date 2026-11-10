@@ -61,6 +61,8 @@ export const businesses = pgTable('businesses', {
   backlinks: jsonb('backlinks').$type<any>().notNull().default({}),
   /** Onboarding draft state {step, savedAt, tz, committedAt} (architecture B3). */
   onboarding: jsonb('onboarding').$type<OnboardingState>().notNull().default({}),
+  /** Last time a signed-in member used the app (first-five architecture §2.1). Never moved by jobs, crons or background refreshes. */
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -74,6 +76,8 @@ export const members = pgTable('members', {
   status: text('status').$type<'active' | 'invited'>().notNull().default('active'),
   tokenHash: text('token_hash'),
   invitedAt: timestamp('invited_at', { withTimezone: true }),
+  /** Activity read cursor: notifications newer than this are unread for the member (first-five architecture §4). */
+  activitySeenAt: timestamp('activity_seen_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: created(),
 }, t => [uniqueIndex('members_biz_email_uq').on(t.businessId, t.email), index('members_user_idx').on(t.userId)]);
 
@@ -177,6 +181,8 @@ export const briefDays = pgTable('brief_days', {
   candidates: jsonb('candidates').$type<any[]>().notNull().default([]),
   /** Per-platform scan outcome for the day: threads read (all scans), so the page can say where nothing fit. */
   stats: jsonb('stats').$type<Record<string, { read: number }>>().notNull().default({}),
+  /** Last time a member copied, posted, skipped or scheduled an item of this day; earns the next background rescan (first-five architecture §2.4). */
+  actedAt: timestamp('acted_at', { withTimezone: true }),
 }, t => [primaryKey({ columns: [t.businessId, t.date] })]);
 
 export const aiPrompts = pgTable('ai_prompts', {
@@ -488,6 +494,8 @@ export const billingAccounts = pgTable('billing_accounts', {
   trialStartedAt: timestamp('trial_started_at', { withTimezone: true }),
   /** The $1 credited to month one (§21.3); set once the balance credit succeeds. */
   trialCreditedAt: timestamp('trial_credited_at', { withTimezone: true }),
+  /** When the subscription went active → past_due; starts the grace period. NULL otherwise (first-five architecture §5). */
+  pastDueAt: timestamp('past_due_at', { withTimezone: true }),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

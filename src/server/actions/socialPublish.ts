@@ -12,7 +12,7 @@ import { track } from '../events';
 import { socialOn } from '../flags';
 import { bizToday } from '../workspace';
 import { updatePack } from '../services/social/generate';
-import { withDay } from '../services/brief/store';
+import { markActed, withDay } from '../services/brief/store';
 import { COPY, DATE_RE, HM_RE, PLAT_L, SID_MAX, acctLabel, isLocked, moveCheck, packSid, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { BriefItem, Profile, SocialChannel, SocialPage } from '@/lib/types';
 import { AccountExpired, acctPublic, accountRow, adapterFor, deletePendingSocial, ensureToken, readPendingSocial, tokenFields, tokensOf } from '../services/social/publish/accounts';
@@ -150,6 +150,7 @@ const base: ActionMap = {
       if (!claimed) return lostWrite(ctx.bid, i.sid);
       const done = await runSend(claimed, { manual: true, userId: ctx.user.id });
       const fin = done || (await db.select().from(P).where(eq(P.id, claimed.id)).limit(1))[0];
+      if (r.t.src === 'brief' && fin?.status === 'posted') await markActed(ctx.bid, r.t.day!);
       return { pub: pubOf(fin, r.accts) };
     },
   }),
@@ -161,6 +162,7 @@ const base: ActionMap = {
       await requireSocial(ctx);
       const r = await resolve(ctx.bid, i.sid, i.acctId);
       const row = await scheduleOne(ctx, r, i.date, i.time);
+      if (r.t.src === 'brief') await markActed(ctx.bid, r.t.day!);
       return { pub: pubOf(row, r.accts) };
     },
   }),

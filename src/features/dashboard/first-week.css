@@ -1,0 +1,29 @@
+/* Dashboard "preparing your first week" (first-five architecture §1). Extends radar.css (.card, .tap, .status, .spin, .btn);
+   no new tokens. Motion here is the shared .spin / .enter and one width transition, all covered by radar.css's
+   prefers-reduced-motion rule. */
+.fw-list{list-style:none;margin:0;padding:6px;overflow:hidden}
+.fw-item{display:flex;align-items:center;flex-wrap:wrap;gap:0 8px;border-top:1px solid var(--line2)}
+.fw-item:first-child{border-top:0}
+.fw-row{flex:1 1 340px;min-width:0;display:flex;align-items:center;gap:14px;padding:16px 14px 16px 16px;border-radius:14px;color:inherit;text-decoration:none}
+/* The card clips, so the shared .tap focus ring is drawn inside the row. */
+.fw-row:focus-visible{outline-offset:-2px}
+.fw-ic{width:22px;height:22px;display:grid;place-items:center;flex:none}
+.fw-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.fw-t{font-size:16px;font-weight:500;letter-spacing:-0.01em}
+.fw-d{overflow-wrap:anywhere}
+.fw-bar{display:block;height:2px;margin-top:7px;max-width:280px;background:var(--line2);border-radius:2px;overflow:hidden}
+.fw-bar i{display:block;height:100%;background:var(--ink);transition:width .6s var(--ease)}
+.fw-row .status{flex:none}
+.fw-row>svg{color:var(--faint)}
+.fw-act{flex:none;padding:0 12px 0 4px}
+.fw-foot{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;margin-top:16px;min-height:38px}
+.fw-foot p{margin:0}
+.fw-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+@media (max-width:640px){
+  .fw-list{padding:4px}
+  .fw-row{flex-basis:100%;align-items:flex-start;gap:12px;padding:14px 12px}
+  .fw-ic{margin-top:1px}
+  .fw-row .status{margin-top:2px}
+  .fw-row>svg{display:none}
+  .fw-act{flex-basis:100%;padding:0 12px 14px 46px}
+}

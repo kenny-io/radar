@@ -85,9 +85,11 @@ function useOnboardingBiz(initialId: string | null) {
 export interface OnboardingProps extends Pick<OnboardingStageProps, 'actor' | 'draft' | 'saveCommits' | 'autoDomain'> {
   /** The in-app "Add a business" modal: a commit refreshes the app instead of navigating. */
   inApp?: boolean;
+  /** Rendered as the last row inside the dialog (the standalone stage's "Signed in as … · Sign out · Need help?"). */
+  footer?: React.ReactNode;
 }
 
-export function Onboarding({ actor, draft, saveCommits, autoDomain, inApp }: OnboardingProps) {
+export function Onboarding({ actor, draft, saveCommits, autoDomain, inApp, footer }: OnboardingProps) {
   const app = useApp();
   const ob = useOnboardingBiz(draft?.id || null);
   const [ready, setReady] = useState(!draft && !autoDomain);
@@ -223,6 +225,7 @@ export function Onboarding({ actor, draft, saveCommits, autoDomain, inApp }: Onb
         {step === 'gsc' && ob.W && ob.id && <GscStep W={ob.W} bid={ob.id} back={() => setStep('review')} next={() => setStep('save')} reload={() => ob.load()} />}
         {step === 'save' && ob.W && ob.id && <SaveStep W={ob.W} commits={saveCommits} back={() => setStep('gsc')} save={save} />}
       </div>
+      {footer}
     </div>
   </Modal>;
 }

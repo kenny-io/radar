@@ -88,6 +88,15 @@ Production enables alerts by default. Configure `RESEND_API_KEY` and a verified 
 require explicit `RADAR_FAILURE_ALERTS=on`; development stubs never send alerts. No migration or new vendor is needed.
 See [failure alert operations](docs/OBSERVABILITY.md) for coverage, a smoke test and failed-delivery recovery.
 
+### Background work and idle businesses
+
+Radar slows background work for a business nobody is using. A business is active when a member opened or used the
+app, or clicked a Radar email link, in the last 7 days, or when Autopilot is on. Idle businesses (7–30 days) get AI
+visibility checks and automatic social packs at most weekly; after 30 days both pause until the owner returns. The
+morning Daily Brief is unaffected. A two-hour brief rescan runs only after the owner has acted on one of the day's
+recommendations. A failed renewal keeps access for `RADAR_PAST_DUE_GRACE_HOURS` (default 48). Deploy migration
+`0018_first_five` before web and worker; the worker waits for it. See `docs/CONTRACTS.md` → First five optimizations.
+
 ## Docs
 - `ARCHITECTURE.md` — code layout, the client `app` object, actions, jobs, AI layer, dev stubs
 - `DIVERGENCES.md` — every divergence from the design, with status (some need product approval)

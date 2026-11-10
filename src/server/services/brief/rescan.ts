@@ -7,11 +7,15 @@ export const RESCAN_EVERY_MS = 2 * 3600e3;
 export interface LastScan { createdAt: Date; status: 'queued' | 'running' | 'done' | 'failed' | string }
 
 /** Is a background rescan of today due? Only when today's brief exists (so never before the morning scan, nor after local
- *  midnight), today's latest `brief.scan` job has finished, and it was created ≥ 2 h ago. Elapsed time comes from the job's
- *  `createdAt`, so DST doesn't matter, a click on Scan again restarts the clock, and a failed run is retried after 2 h
- *  (not every minute). A day without any job of its own (seeded or imported; real days are made by a job) is due. */
-export function rescanDue(o: { hasDay: boolean; last: LastScan | null; now: Date }): boolean {
-  if (!o.hasDay) return false;
+ *  midnight), a member has acted on it since its latest scan, that scan has finished, and it was created ≥ 2 h ago.
+ *  Earned (owner decision 2026-11-10): `actedAt` is the last time someone copied, posted, skipped or scheduled one of the
+ *  day's items; unless it is later than the latest `brief.scan` job's `createdAt` (any mode: morning, Scan again, Keep, an
+ *  earlier rescan) nothing is due, however much time has passed. Elapsed time comes from the job's `createdAt`, so DST
+ *  doesn't matter, a click on Scan again restarts the clock, and a failed run is retried after 2 h (not every minute).
+ *  A day without any job of its own (seeded or imported; real days are made by a job) is due once someone has acted. */
+export function rescanDue(o: { hasDay: boolean; last: LastScan | null; now: Date; actedAt: Date | null }): boolean {
+  if (!o.hasDay || !o.actedAt) return false;
+  if (o.last && o.actedAt.getTime() <= o.last.createdAt.getTime()) return false;
   if (!o.last) return true;
   if (o.last.status === 'queued' || o.last.status === 'running') return false;
   return o.now.getTime() - o.last.createdAt.getTime() >= RESCAN_EVERY_MS;
