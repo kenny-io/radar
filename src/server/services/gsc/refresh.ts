@@ -56,7 +56,7 @@ export async function acceptSuggestion(bid: string, id: string): Promise<{ entry
   };
   await db.transaction(async tx => {
     await tx.insert(schema.calendarEntries).values({
-      id: entryId, businessId: bid, title, kw, type: 'Guide', vol: kwDef?.vol ?? null, kd: kwDef?.kd ?? null, date, mode: 'refresh', url: s.page,
+      id: entryId, businessId: bid, title, kw, type: 'Guide', vol: kwDef?.vol ?? null, kd: kwDef?.kd ?? null, date, mode: 'refresh', url: s.url,
       measured: s.measured, audience: 'Searchers already finding this page', relevance: s.why, status: 'review',
     });
     await tx.insert(schema.articles).values({ entryId, businessId: bid, data: article });

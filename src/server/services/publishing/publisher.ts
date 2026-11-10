@@ -18,6 +18,7 @@ import type { Article, ArticlePublishError, CalendarEntry, ConnType, Profile } f
 import { blocksToHtml, blocksToMarkdown, sourcesList } from './render';
 import { connectorFor } from './connectors';
 import { PublishError } from './http';
+import { resolveRefreshUrl } from './refreshUrl';
 import { ctxFromRow, type ConnRow } from './store';
 import type { PublishPayload, RemoteDraft } from './types';
 import { assertNoArticleWork, lockArticle } from '../drafting/guard';
@@ -56,6 +57,7 @@ async function heroImage(b: BizRow, e: CalendarEntry, a: Article): Promise<strin
 }
 
 export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Promise<PublishPayload> {
+  const refreshUrl = e.mode === 'refresh' ? resolveRefreshUrl(e.url, b.domain) : null;
   const p = b.profile as Profile;
   const meta = new Map((a.videoMeta || []).map(v => [v.id, v]));
   const videos = (a.videos || []).map(id => { const m = meta.get(id); return { id, title: m?.title || '', channel: m?.channel || '', url: `https://www.youtube.com/watch?v=${id}` }; });
@@ -69,8 +71,7 @@ export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Pro
   const opts = { videos, sources, bodyImages };
   const slug = slugify(a.seo?.slug || e.kw || e.title) || slugify(e.title) || e.id;
   const imgUrl = await heroImage(b, e, a);
-  const canonical = e.mode === 'refresh' && e.url ? e.url : null;
-  const html = await applyOutbound(b.id, e.url || null, blocksToHtml(a.body || [], opts));
+  const html = await applyOutbound(b.id, refreshUrl || e.url || null, blocksToHtml(a.body || [], opts));
   return {
     entryId: e.id, title: e.title, slug, html, markdown: blocksToMarkdown(a.body || [], opts), blocks: a.body || [], bodyImages, meta: a.seo?.meta || '', seoTitle: a.seo?.title?.trim() || e.title, keyword: e.kw, date: e.date,
     image: imgUrl ? {
@@ -82,7 +83,7 @@ export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Pro
         return { buf: Buffer.from(await r.arrayBuffer()), type, name: `${slug}.${type.split('/')[1] || 'png'}` };
       },
     } : null,
-    canonical, mode: e.mode, refreshUrl: e.mode === 'refresh' ? e.url : null,
+    canonical: refreshUrl, mode: e.mode, refreshUrl,
     sources: sources.map(s => ({ title: s.title, url: s.url })), videos, author: p.business?.name || b.domain,
   };
 }

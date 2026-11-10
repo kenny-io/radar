@@ -58,7 +58,7 @@ export async function refreshCandidates(bid: string, max = 5): Promise<Candidate
       `${fmtN(p.impr)} impressions and ${fmtN(p.clicks)} clicks (${ctrPct}% CTR) in the last 28 days`,
       ...(pos > 10 ? ['It sits on page 2 of search results'] : ['It sits near the bottom of page 1']),
     ];
-    return { kw, vol: null, kd: null, src: 'refresh', seed: null, priority: false, measured: { impr: p.impr, clicks: p.clicks, pos }, mode: 'refresh', url: p.path, pageTitle: p.title && p.title !== p.path ? p.title : null, score: 0, facts } satisfies Candidate;
+    return { kw, vol: null, kd: null, src: 'refresh', seed: null, priority: false, measured: { impr: p.impr, clicks: p.clicks, pos }, mode: 'refresh', url: p.url, pageTitle: p.title && p.title !== p.path ? p.title : null, score: 0, facts } satisfies Candidate;
   });
 }
 
