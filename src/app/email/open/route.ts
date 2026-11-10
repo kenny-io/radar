@@ -8,6 +8,7 @@ import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { notFound } from '@/server/errors';
 import { handle } from '@/server/http/handle';
+import { touchActive } from '@/server/idle';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,8 @@ const get = handle(async (req: Request) => {
     if (!pack) throw notFound('That social content');
     target = '/social?' + new URLSearchParams({ pack: input.ref });
   }
+  // A click on a Radar email is use of the business (idle spend, IS-1). Only after every check has passed.
+  await touchActive(business, { guest: false });
   return NextResponse.redirect(new URL(openBusinessUrl(input.businessId, target), env.appUrl), 303);
 });
 export async function GET(req: Request) {

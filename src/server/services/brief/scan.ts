@@ -52,6 +52,9 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const both = accts.length > 1;
   // Read only where some account drafts (the company alone never reads Reddit, Hacker News or Quora).
   const plats = enabledInOrder([...new Set(accts.flatMap(a => platsFor(a, settings.platforms)))]);
+  // A background rescan can only add replies, so when no account has a reply slot left on any platform today it stops
+  // here: no source is read and no model is called. Manual Scan again, Keep and the morning scan carry on as always.
+  if (background && accts.every(a => Object.values(slotsLeft((existing?.items || []) as BriefItem[], a, platsFor(a, plats), 'again')).every(n => n === 0))) return { mode: 'again', added: 0, addedIds: [], since, skipped: 'no_slots' };
   const plan = buildPlan(profile);
   const draftSub = both ? DRAFT_SUB_BOTH : accts[0] === 'company' ? DRAFT_SUB_CO : DRAFT_SUB;
 
