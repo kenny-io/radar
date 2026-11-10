@@ -113,7 +113,8 @@ describe.skipIf(!ON)('resolveEntry and guards (database)', () => {
     const u = await F.user({ name: 'Ada' }); await F.signIn(u, H.jar);
     expect(await startGuard('fieldnote.app')).toEqual({ redirect: '/onboarding?domain=fieldnote.app' });
     expect(await startGuard()).toEqual({ redirect: '/onboarding' });
-    expect(await onboardingGuard(null)).toEqual({ props: { actor: 'user', user: { name: 'Ada' }, draft: null, saveCommits: true, autoDomain: null } });
+    // The signed-in stage is told who is signed in, for its "Signed in as … · Sign out" footer (first-five BE-4); a guest's props carry no user.
+    expect(await onboardingGuard(null)).toEqual({ props: { actor: 'user', user: { name: 'Ada', email: u.email }, draft: null, saveCommits: true, autoDomain: null } });
     process.env.RADAR_BILLING = 'on';
     expect(await onboardingGuard(null)).toMatchObject({ props: { saveCommits: false } });
   });
@@ -126,6 +127,7 @@ describe.skipIf(!ON)('resolveEntry and guards (database)', () => {
     const d = await F.biz(u, { status: 'onboarding', onboarding: SAVED });
     const r: any = await trialGuard();
     expect(r.props.publishableKey).toBeNull();
+    expect(r.props.email).toBe(u.email);                                               // for the page's signed-in footer (first-five BE-4)
     expect(r.props.state).toMatchObject({ enforced: true, provider: 'stub', access: false, status: 'none', mode: 'trial', needsRestart: false, trialEndIsPreview: true, dueTodayCents: 100, priceCents: 5000, trialDays: 3, hasDraft: true, draft: { id: d.id } });
     expect(Math.abs(new Date(r.props.state.trialEnd).getTime() - (Date.now() + 72 * 3600e3))).toBeLessThan(5000);
     await F.account(u.id, { status: 'trialing' });

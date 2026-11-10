@@ -9,6 +9,7 @@ import { AppProvider } from '@/client/app';
 import { Btn, Mark } from '@/components/ui';
 import { GhostDash, Side } from '@/features/shell/AppShell';
 import { Onboarding } from './Onboarding';
+import { SignedInFooter } from '@/features/billing/SignedInFooter';
 import type { Me, OnboardingStageProps } from '@/lib/types';
 
 export function OnboardingStage(props: OnboardingStageProps) {
@@ -22,6 +23,9 @@ export function OnboardingStage(props: OnboardingStageProps) {
         <main className="main"><GhostDash name={name} /></main>
       </div>
     </div>
-    <Onboarding actor={props.actor} draft={props.draft} saveCommits={props.saveCommits} autoDomain={props.autoDomain} />
+    {/* The footer is the only way out of this page: the modal can't be dismissed and the shell behind it is inert (BE-4).
+        It is rendered inside the dialog, so keyboard and screen-reader users reach it. */}
+    <Onboarding actor={props.actor} draft={props.draft} saveCommits={props.saveCommits} autoDomain={props.autoDomain}
+      footer={<SignedInFooter inModal email={props.actor === 'user' ? props.user?.email : null} />} />
   </AppProvider>;
 }

@@ -1,0 +1,32 @@
+/* Billing edges (first-five architecture §5): grace banner, trial chip, signed-in footer. Extends radar.css; no new tokens. */
+
+/* Grace banner: a strip above <main> on every app screen, aligned with .main's side padding. */
+.grace-banner{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px clamp(20px,4vw,56px);border-bottom:1px solid color-mix(in oklch,var(--bad) 26%,transparent);background:color-mix(in oklch,var(--bad) 7%,transparent);font-size:14px;line-height:1.45}
+.grace-banner .grace-msg{flex:1 1 320px;min-width:0;display:flex;align-items:flex-start;gap:10px}
+.grace-banner .grace-msg .dot{background:var(--bad);margin-top:7px}
+.grace-banner .grace-act{flex:none}
+.grace-banner .grace-act .btn{height:34px;padding:0 14px;font-size:13px}
+@media (max-width:640px){.grace-banner{padding:12px 16px}.grace-banner .grace-msg{flex-basis:100%}}
+
+/* Trial chip: a quiet sidebar row above the user menu. */
+.trial-chip{display:flex;align-items:center;gap:9px;width:100%;min-height:34px;margin-top:6px;padding:0 11px;border:0;border-radius:10px;background:none;text-align:left;font-size:13px;font-weight:500;color:var(--ink2);text-decoration:none;cursor:pointer;transition:background .15s,color .15s}
+.trial-chip:hover{background:var(--fill);color:var(--ink)}
+.trial-chip:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.trial-chip .dot{background:var(--signal)}
+.trial-chip.last .dot{background:var(--warn)}
+.trial-chip svg{margin-left:auto;color:var(--faint)}
+
+/* Signed-in footer: one small line under the trial form, and the last row inside the onboarding dialog. */
+.signed-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 8px;margin:0;font-size:12px;line-height:1.5;color:var(--mute);text-align:center}
+.signed-foot .who{flex-basis:100%;max-width:100%;overflow-wrap:anywhere}
+.signed-foot .who b{font-weight:500;color:var(--ink2)}
+.signed-foot .acts{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.signed-foot .sep{color:var(--faint)}
+.signed-foot .sep.lead{display:none}
+.signed-foot a,.signed-foot button{font:inherit;color:var(--ink2);background:none;border:0;padding:2px 0;border-radius:4px;cursor:pointer;text-decoration:underline;text-decoration-color:var(--faint);text-underline-offset:3px}
+.signed-foot a:hover,.signed-foot button:hover:not(:disabled){color:var(--ink);text-decoration-color:var(--ink)}
+.signed-foot a:focus-visible,.signed-foot button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.signed-foot button:disabled{opacity:.55;cursor:default}
+.signed-foot .err{flex-basis:100%;color:var(--bad)}
+.signed-foot-modal{flex:none;padding:12px clamp(22px,4vw,48px) calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line2)}
+@media (min-width:641px){.signed-foot-modal .who{flex-basis:auto}.signed-foot-modal .sep.lead{display:inline}}
