@@ -1,5 +1,5 @@
 // Constants shared by client and server. Copy is verbatim from the prototype (the copy deck).
-import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, BriefAccount, AiEngine } from './types';
+import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, BriefAccount, AiEngine, InstructionKey } from './types';
 
 /* ── AI models (Settings → AI models is the ONLY place these names render) ── */
 export const AI_MODELS = [
@@ -115,6 +115,25 @@ export const BMENTION = [{ v: 'asked', l: 'Only when asked' }, { v: 'relevant', 
 export const BRIEF_DEFAULT = { platforms: ['reddit', 'x', 'linkedin', 'hn'] as BriefPlatform[], time: '06:00', mention: 'asked' as const, accounts: ['founder', 'company'] as BriefAccount[] };
 /** Company drafts only go where brand accounts are welcome. Reddit, Hacker News and Quora stay founder-only. */
 export const CO_PLATS: BriefPlatform[] = ['x', 'linkedin'];
+
+/* ── Writing instructions (Settings → Content → Writing instructions) ── */
+export const INSTRUCTION_MAX = 1500;
+/** Canonical order: everything, content types, then platforms. */
+export const INSTRUCTION_KEYS = ['all', 'articles', 'social', 'community', 'linkedin', 'x', 'reddit', 'facebook', 'quora', 'hn'] as const;
+export const INSTRUCTION_SETS: { k: InstructionKey; l: string; d: string; ph: string; group: 'general' | 'platform' }[] = [
+  { k: 'all', l: 'Everything Radar writes', d: 'Articles, social posts and community replies.', ph: 'Use British spelling. Never say “unlock”. Write “sign up”, not “signup”.', group: 'general' },
+  { k: 'articles', l: 'Articles', d: 'Drafts, Search Console refreshes and rewrites in the editor.', ph: 'Open with the reader’s problem. End with one line inviting a free trial.', group: 'general' },
+  { k: 'social', l: 'Social posts', d: 'Social Marketing posts and Daily Brief feed posts.', ph: 'Short sentences. One idea per post. No rhetorical questions.', group: 'general' },
+  { k: 'community', l: 'Community replies', d: 'Daily Brief replies to threads.', ph: 'Lowercase is fine. Never talk about pricing.', group: 'general' },
+  { k: 'linkedin', l: 'LinkedIn', d: 'Posts and replies for LinkedIn.', ph: 'Start with a one-line hook. End with a question.', group: 'platform' },
+  { k: 'x', l: 'X', d: 'Posts and replies for X.', ph: 'No hashtags. Keep it under 200 characters.', group: 'platform' },
+  { k: 'reddit', l: 'Reddit', d: 'Posts and replies for Reddit.', ph: 'Lowercase and casual. No pricing talk.', group: 'platform' },
+  { k: 'facebook', l: 'Facebook', d: 'Posts for Facebook.', ph: 'Warm and neighbourly. Two short paragraphs at most.', group: 'platform' },
+  { k: 'quora', l: 'Quora', d: 'Answers and replies for Quora.', ph: 'Answer in the first sentence, then explain.', group: 'platform' },
+  { k: 'hn', l: 'Hacker News', d: 'Replies on Hacker News.', ph: 'Technical and plain. No marketing words.', group: 'platform' },
+];
+/** Normalize before counting, saving or sending: CRLF/CR → LF, drop control characters except \n and \t (jsonb rejects \u0000), trim. */
+export const cleanInstruction = (s: string) => String(s ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim();
 
 /* ── AI Visibility ── */
 export const AI_ENGINES: AiEngine[] = ['ChatGPT', 'Perplexity', 'Gemini', 'Claude', 'Grok'];

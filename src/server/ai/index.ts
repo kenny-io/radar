@@ -11,6 +11,7 @@ import { anthropicRun } from './adapters/anthropic';
 import { openaiRun } from './adapters/openai';
 import { openrouterRun, openrouterEnabled, openrouterId, openrouterDown, markOpenrouterDown, openrouterSkips, skipOpenrouterModel, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterTripped, noteOpenrouterOutcome } from './adapters/openrouter';
 import { stubRun } from './adapters/stub';
+import { instructionBlock, readInstructions, withInstructions, type InstructionSpec } from './instructions';
 import type { Profile } from '@/lib/types';
 
 export type AiTask = 'writing' | 'research';
@@ -32,6 +33,8 @@ export interface AiInput<T = any> {
   timeoutMs?: number;
   /** Stub-only: context passed to the dev stub generator. */
   stubContext?: any;
+  /** Apply this workspace's saved writing instructions. Set only by the writing sites in architecture §6. */
+  instructions?: InstructionSpec;
 }
 export interface AiOutput<T = any> { text: string; json: T | null; citations: { url: string; title?: string }[]; model: string; provider: string }
 export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; onDelta?: (d: string) => void; timeoutMs: number }
@@ -57,10 +60,11 @@ export function providerOf(modelId: string): 'Anthropic' | 'OpenAI' | 'SpaceX' {
 }
 function hasKey(p: string) { return p === 'Anthropic' ? !!env.anthropicKey : p === 'OpenAI' ? !!env.openaiKey : !!env.xaiKey; }
 
-async function modelFor(task: AiTask, businessId?: string | null): Promise<string> {
-  if (!businessId) return AI_DEFAULT[task];
+/** The business's `ai` settings (model choices and saved writing instructions) in one lookup; {} without a business. */
+async function aiSettingsFor(businessId?: string | null): Promise<Record<string, any>> {
+  if (!businessId) return {};
   const r = await db.select({ ai: schema.businesses.ai }).from(schema.businesses).where(eq(schema.businesses.id, businessId)).limit(1);
-  return (r[0]?.ai || {})[task] || AI_DEFAULT[task];
+  return r[0]?.ai || {};
 }
 
 /* Provider failover. A business's chosen model is always tried first. If its provider has no key, is out of credit,
@@ -170,7 +174,11 @@ const defaultTimeout = (maxTokens: number, webSearch: boolean) => Math.min(600_0
 
 /** Run a task. Retries transient failures, fails over between providers, validates JSON against the schema. Throws RadarError with generic copy on failure. */
 export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { businessId?: string | null; retries?: number } = {}): Promise<AiOutput<T>> {
-  const chosen = await modelFor(task, opts.businessId);
+  const settings = await aiSettingsFor(opts.businessId);
+  const chosen: string = settings[task] || AI_DEFAULT[task];
+  // Saved writing instructions go last in the system prompt, read from the same row as the model choice. With none
+  // saved (or no spec, or no business) `system` is the caller's value untouched.
+  const system = input.instructions && opts.businessId ? withInstructions(input.system, instructionBlock(readInstructions(settings), input.instructions)) : input.system;
   const jsonSchema = input.schema ? z.toJSONSchema(input.schema as any, { target: 'draft-7' } as any) : undefined;
   const retries = opts.retries ?? 2;
   const plan: Route[] = env.devStubs ? [{ modelId: chosen, via: 'direct' }] : routes(task, chosen);
@@ -184,7 +192,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
     const directNext = plan[ri + 1]?.modelId === modelId && plan[ri + 1]?.via === 'direct';
     // Re-check at each step: an account error, unknown model or open breaker earlier in THIS call also applies here.
     if (viaOr && !force && !orUsable(orModel, directNext)) continue;
-    const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system: input.system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
+    const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
     // OpenRouter gets one attempt when the same model's direct provider is next in line (failing over is faster than
     // retrying, and OpenRouter already retries across its own hosts); otherwise the usual retries.
     const tries = viaOr && directNext ? 0 : retries;
@@ -195,7 +203,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
       input.onReset?.();
       try {
         let res: ProviderResult;
-        if (env.devStubs) res = await stubRun(input, jsonSchema);
+        if (env.devStubs) res = await stubRun(system === input.system ? input : { ...input, system }, jsonSchema);
         else if (viaOr) res = await openrouterRun(call);
         else {
           if (!hasKey(provider)) throw Object.assign(new Error(`No API key configured for ${provider}`), { permanent: true });

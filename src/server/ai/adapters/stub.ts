@@ -1,6 +1,7 @@
 // DEV-ONLY stub provider (RADAR_DEV_STUBS=1). Deterministic outputs so every flow can run without API keys.
 // Feature modules register purpose-specific generators with registerStub(); unknown purposes get schema-shaped filler.
 import type { AiInput, ProviderResult } from '../index';
+import { extractInstructionBlock } from '../instructions';
 
 type StubFn = (input: AiInput, ctx: any) => any;
 const g = globalThis as unknown as { __radarStubs?: Map<string, StubFn> };
@@ -20,6 +21,9 @@ function fill(schema: any, key = 'value'): any {
 }
 
 export async function stubRun(input: AiInput, jsonSchema: any): Promise<ProviderResult> {
+  // Development evidence that saved writing instructions reached the writing-model boundary (stubs never run in production).
+  const block = extractInstructionBlock(input.system);
+  if (block) console.info(`[ai:stub] ${input.purpose} received workspace writing instructions\n${block}`);
   await new Promise(r => setTimeout(r, 120));
   const fn = stubs.get(input.purpose);
   if (fn) {

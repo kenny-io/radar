@@ -24,7 +24,7 @@ export async function rewriteSelection(bid: string, profile: Profile, i: { mode:
   const ok = (t: string) => statNumbers(t).every(n => allowed.has(normNum(n)));
   for (let attempt = 0; attempt < 2; attempt++) {
     const out = await ai.run('writing', {
-      purpose: 'article.rewrite', schema: Out, schemaName: 'rewrite', maxTokens: 800, temperature: attempt ? 0.3 : 0.7,
+      purpose: 'article.rewrite', schema: Out, schemaName: 'rewrite', maxTokens: 800, temperature: attempt ? 0.3 : 0.7, instructions: { surface: 'article' },
       system: `You are Radar, editing an article for this business in its brand voice. ${HOW[i.mode]} Return only the replacement for the selected text — no quotes, no commentary, no markdown. Match the surrounding grammar so it reads naturally in place.${attempt ? ' Do not include any numbers that are not in the original text.' : ''}`,
       prompt: `${profileContext(profile)}\n\nArticle: “${i.title}”\n\nText before the selection:\n…${i.before.slice(-400)}\n\nSELECTED TEXT:\n${core}\n\nText after the selection:\n${i.after.slice(0, 400)}…`,
       stubContext: { mode: i.mode, text: core, profile },
