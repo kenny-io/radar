@@ -558,3 +558,15 @@ The existing Media panel separates Cover image from Body images. Generated draft
 Editor, Preview, HTML, Markdown/MDX and native Notion use the same section placement helper. Body URLs are validated against the business's generated storage and made absolute for publishing; the featured image remains separate. This addresses the missing article-body capability; the other unbuilt image-options controls recorded under the 2026-10-21 Daily Brief update remain outside this change. See `.factory/article-body-images/` for architecture, acceptance and verification.
 
 Owner follow-up: the duplicate Edit/Preview switch is removed. One article view shows the final layout and supports inline text editing for editable drafts. Queued/published article text, Viewers, and active generation states are read-only.
+
+## First five optimizations (2026-11-10, owner-approved)
+
+| # | Area | Before | Now |
+|---|---|---|---|
+| O1 | Daily Brief → automatic rescans (supersedes part of B21) | A background rescan every 2 hours for each active business until the day is done | A rescan runs only when the owner has copied, marked posted, skipped, or scheduled/posted at least one of today's items since the previous scan, and only for a business used in the last 7 days (or with Autopilot on). A rescan with no reply slot left reads no source. Morning scan, Scan again and Keep are unchanged. |
+| O2 | AI Visibility → collection (narrows P20) | Nightly per business | Nightly for businesses used in the last 7 days (or with Autopilot on); at most weekly when idle 7–30 days; paused after 30 days until the owner returns, who then gets one run at once. Answers that cannot name the business skip the extraction call. |
+| O3 | Social → daily drafts | Daily pack for every active business | Same tiers as O2. |
+| O4 | Billing → failed renewal | Access ends as soon as a subscription is `past_due` | A subscription that was `active` keeps full access for 48 hours with a banner; a first charge that fails after the trial still locks at once. |
+| O5 | Onboarding → first session | Nothing generated until the owner starts each job | Calendar, first Daily Brief scan and AI visibility start when the business becomes active; the Dashboard shows their progress. |
+| O6 | Toasts | Every toast leaves after 4.2 s | Errors stay until dismissed; all notifications are also listed in Activity for 30 days. |
+

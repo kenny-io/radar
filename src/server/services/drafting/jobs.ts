@@ -124,7 +124,7 @@ defineJob<BodyImagesPayload>({
 
 /** Toasts (exact copy). User-started drafts: "Draft ready…". Scheduled drafts are batched per cron tick. */
 async function announce(bid: string, p: DraftPayload, title: string, auto: boolean) {
-  if (p.source === 'user') { await notify(bid, auto ? `“${trunc(title)}” is drafted and queued to publish.` : 'Draft ready. Edit anything, then approve.', { tone: 'ok' }); return; }
+  if (p.source === 'user') { await notify(bid, auto ? `“${trunc(title)}” is drafted and queued to publish.` : 'Draft ready. Edit anything, then approve.', { tone: 'ok', action: auto ? undefined : { label: 'Open', href: `/article/${p.entryId}` } }); return; }
   const ids = p.batch?.length ? p.batch : [p.entryId];
   const st = await entriesStatus(ids);
   if (st.some(s => s.status === 'drafting')) return; // another draft in this batch is still running; the last one announces

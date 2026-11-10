@@ -34,7 +34,7 @@ export function Dashboard() {
   const upcoming = cal.filter(e => e.date >= B.today && ['approved', 'scheduled', 'draft', 'proposed'].includes(e.status)).slice(0, 5);
   const issues = dashIssues(app, B, top, now);
   let head: React.ReactNode, act: React.ReactNode;
-  if (review.length) { head = `${review.length} article${review.length > 1 ? 's are' : ' is'} ready for your review.`; act = <Btn kind="primary" size="lg" iconR="arrow" onClick={() => go('article', review[0].id)}>Review “{review[0].title.length > 34 ? review[0].title.slice(0, 32) + '…' : review[0].title}”</Btn>; }
+  if (review.length) { head = `${review.length} article${review.length > 1 ? 's are' : ' is'} ready for your review.`; act = <Btn kind="primary" size="lg" iconR="arrow" onClick={() => go('article', { id: review[0].id, back: '/dashboard' })}>Review “{review[0].title.length > 34 ? review[0].title.slice(0, 32) + '…' : review[0].title}”</Btn>; }
   else if (issues.some(i => i.tone !== 'signal')) { const i0 = issues.find(i => i.tone !== 'signal')!; head = i0.head; act = i0.btn; }
   else if (!cal.length) { head = 'Plan the next 30 days of articles.'; act = <Btn kind="primary" size="lg" icon="calendar" onClick={() => go('calendar')}>Generate your content calendar</Btn>; }
   else {
@@ -56,7 +56,7 @@ export function Dashboard() {
         {socialItems(B, now).some(i => i.status === 'scheduled') && <p className="xs sub" style={{ marginTop: 10 }}>Drag a scheduled post to another day to reschedule it.</p>}
       </Section>
       <Section title="Awaiting review">
-        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
+        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', { id: e.id, back: '/dashboard' })}>
           <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
       </Section>
     </> :<div className="grid-2" style={{ columnGap: 48, rowGap: 8 }}>
@@ -65,7 +65,7 @@ export function Dashboard() {
           <span className="mono sub" style={{ width: 52, flex: 'none' }}>{fmtD(e.date)}</span><span className="grow trunc up-t">{e.title}</span><EntryStatus s={e.status} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>Nothing scheduled. <a href="#" onClick={e => { e.preventDefault(); go('calendar'); }}>Open the calendar</a></p>}
       </Section>
       <Section title="Awaiting review" style={{ minWidth: 0 }}>
-        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
+        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', { id: e.id, back: '/dashboard' })}>
           <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
       </Section>
     </div>}
