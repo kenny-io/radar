@@ -6,12 +6,14 @@ import { db, schema } from '../db';
 import { env } from '../env';
 import { reportFailure, type FailureContext } from '../observability/failures';
 import { RadarError, GENERIC_AI_ERROR } from '../errors';
-import { AI_DEFAULT, aiFind } from '@/lib/constants';
+import { aiFind } from '@/lib/constants';
 import { anthropicRun } from './adapters/anthropic';
 import { openaiRun } from './adapters/openai';
-import { openrouterRun, openrouterEnabled, openrouterId, openrouterDown, markOpenrouterDown, openrouterSkips, skipOpenrouterModel, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterTripped, noteOpenrouterOutcome } from './adapters/openrouter';
+import { openrouterRun, openrouterEnabled, openrouterId, openrouterDown, markOpenrouterDown, openrouterSkips, skipOpenrouterModel, isOpenrouterAccountError, isOpenrouterModelMissing, openrouterTripped, noteOpenrouterOutcome, isOpenrouterTimeout } from './adapters/openrouter';
 import { stubRun } from './adapters/stub';
 import { instructionBlock, readInstructions, withInstructions, type InstructionSpec } from './instructions';
+import { recordAiCall } from './record';
+import { resolve, effortOn, UTILITY_MIN_TOKENS, PREMIUM_TOKEN_HEADROOM, PREMIUM_MIN_TIMEOUT_MS, STANDARD_CLAUDE_HEADROOM, type Effort, type Step } from './tiers';
 import type { Profile } from '@/lib/types';
 
 export type AiTask = 'writing' | 'research';
@@ -37,12 +39,12 @@ export interface AiInput<T = any> {
   instructions?: InstructionSpec;
 }
 export interface AiOutput<T = any> { text: string; json: T | null; citations: { url: string; title?: string }[]; model: string; provider: string }
-export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; onDelta?: (d: string) => void; timeoutMs: number }
-export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number }
+export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; onDelta?: (d: string) => void; timeoutMs: number; /** Reasoning effort, set by the call's tier (never by a caller). Undefined = send no effort field. */ effort?: Effort }
+export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number; /** Web-search tool calls the provider billed (direct Anthropic and OpenAI). */ searches?: number }
 
 /** Catalogue id → provider API id. Labels in Settings are unchanged; ids verified against provider docs (DIVERGENCES #4). Override with AI_MODEL_MAP='{"gpt-6-sol":"..."}'. */
 const DEFAULT_API_IDS: Record<string, string> = {
-  'claude-fable-5.1': 'claude-fable-5-1', 'claude-opus-5.5': 'claude-opus-5-5', 'claude-sonnet-5.5': 'claude-sonnet-5-5', 'claude-haiku-5.5': 'claude-haiku-5-5',
+  'claude-fable-5.2': 'claude-fable-5-2', 'claude-fable-5.1': 'claude-fable-5-1', 'claude-opus-5.5': 'claude-opus-5-5', 'claude-sonnet-5.5': 'claude-sonnet-5-5', 'claude-haiku-5.5': 'claude-haiku-5-5',
   'gpt-6-astra': 'gpt-6-astra', 'gpt-6.1-sol': 'gpt-6.1-sol', 'gpt-6-sol': 'gpt-6-sol', 'gpt-6-luna': 'gpt-6-luna',
   'grok-4.7': 'grok-4.7', 'grok-4.6': 'grok-4.6',
 };
@@ -51,8 +53,6 @@ function apiId(id: string) {
   try { over = JSON.parse(process.env.AI_MODEL_MAP || '{}'); } catch { /* */ }
   return over[id] || DEFAULT_API_IDS[id] || id;
 }
-/** Rough USD per 1M tokens [input, output] for cost logging only. */
-const PRICE: Record<string, [number, number]> = { 'claude-fable-5.1': [15, 75], 'claude-opus-5.5': [5, 25], 'claude-sonnet-5.5': [3, 15], 'claude-haiku-5.5': [1, 5], 'gpt-6-astra': [10, 40], 'gpt-6.1-sol': [3, 12], 'gpt-6-sol': [2, 8], 'gpt-6-luna': [0.4, 1.6], 'grok-4.7': [3, 15], 'grok-4.6': [2, 10] };
 
 export function providerOf(modelId: string): 'Anthropic' | 'OpenAI' | 'SpaceX' {
   const m = aiFind(modelId);
@@ -70,7 +70,9 @@ async function aiSettingsFor(businessId?: string | null): Promise<Record<string,
 /* Provider failover. A business's chosen model is always tried first. If its provider has no key, is out of credit,
    rejects the key, or keeps failing, the call moves to the next configured provider (closest equivalent per task).
    Account-level failures (401/402/403, or 429 with a quota/credit/billing message) mark the provider unavailable for
-   10 minutes so later calls skip it without waiting. The model actually used is logged in ai_calls. */
+   10 minutes so later calls skip it without waiting. The model actually used is logged in ai_calls.
+   Which model is `chosen`, and which list follows it, comes from the call's tier (./tiers.ts): the lists below are the
+   standard ones, per kind. */
 const FALLBACKS: Record<AiTask, string[]> = { writing: ['claude-sonnet-5.5', 'grok-4.7', 'gpt-6-sol'], research: ['claude-opus-5.5', 'gpt-6-sol', 'grok-4.7'] };
 const DOWN_MS = 10 * 60_000;
 const downUntil = new Map<string, number>();
@@ -81,17 +83,17 @@ export function isAccountError(e: any): boolean {
   if (st === 401 || st === 402 || st === 403) return true;
   return st === 429 && /quota|credit|billing|insufficient|exceeded your current|spend limit|payment/i.test(msg);
 }
-function candidates(task: AiTask, chosen: string): string[] {
+function candidates(chosen: string, fallbacks: string[], force: boolean): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
-  for (const id of [chosen, ...FALLBACKS[task]]) {
+  for (const id of [chosen, ...fallbacks]) {
     const p = providerOf(id);
     if (seen.has(p)) continue;
     seen.add(p);
     if (hasKey(p) && !isDown(p)) out.push(id);
   }
   // Every provider looks unavailable: still try the chosen model (a stale "down" mark should not block all work).
-  return out.length ? out : [chosen];
+  return out.length || !force ? out : [chosen];
 }
 
 /* OpenRouter primary route (OPENROUTER_API_KEY). Same failover order as above, but each model is tried on OpenRouter
@@ -102,11 +104,13 @@ function candidates(task: AiTask, chosen: string): string[] {
 export interface Route { modelId: string; via: 'openrouter' | 'direct'; /** Last-resort route: tried even if marked unavailable. */ force?: boolean }
 /** OpenRouter usable for this model right now? `hasDirect`: the breaker only applies when there's somewhere else to go. */
 const orUsable = (orId: string, hasDirect: boolean) => !openrouterDown() && !openrouterSkips(orId) && !(hasDirect && openrouterTripped());
-export function routes(task: AiTask, chosen: string): Route[] {
-  if (!openrouterEnabled()) return candidates(task, chosen).map(modelId => ({ modelId, via: 'direct' as const }));
+/** `fallbacks`: the models after `chosen` (one per provider is kept). `force` false: a step that is not the plan's last
+ *  returns nothing when everything looks unavailable, so the plan moves on instead of forcing `chosen`. */
+export function routes(task: AiTask, chosen: string, fallbacks: string[] = FALLBACKS[task], force = true): Route[] {
+  if (!openrouterEnabled()) return candidates(chosen, fallbacks, force).map(modelId => ({ modelId, via: 'direct' as const }));
   const out: Route[] = [];
   const seen = new Set<string>();
-  for (const id of [chosen, ...FALLBACKS[task]]) {
+  for (const id of [chosen, ...fallbacks]) {
     const p = providerOf(id);
     if (seen.has(p)) continue;
     seen.add(p);
@@ -115,7 +119,7 @@ export function routes(task: AiTask, chosen: string): Route[] {
     if (orId && orUsable(orId, direct)) out.push({ modelId: id, via: 'openrouter' });
     if (direct) out.push({ modelId: id, via: 'direct' });
   }
-  if (out.length) return out;
+  if (out.length || !force) return out;
   // Everything looks unavailable: still try the chosen model on both routes (stale marks should not block all work).
   return [...(openrouterId(chosen) ? [{ modelId: chosen, via: 'openrouter' as const, force: true }] : []), { modelId: chosen, via: 'direct' as const }];
 }
@@ -172,19 +176,50 @@ function extractJson(text: string): any {
  *  requested output size. Explicit timeoutMs on a call always wins. */
 const defaultTimeout = (maxTokens: number, webSearch: boolean) => Math.min(600_000, Math.max(180_000, maxTokens * 45) + (webSearch ? 60_000 : 0));
 
+/** A route with the extras its tier step gives it (./tiers.ts). */
+type PlanRoute = Route & { effort?: Effort; boost?: Step['boost'] };
+/** Every step's routes in order. Only the last step may force a route when everything looks unavailable; a model and
+ *  route an earlier step already planned is not repeated. */
+function planRoutes(task: AiTask, steps: Step[]): PlanRoute[] {
+  const out: PlanRoute[] = []; const seen = new Set<string>();
+  steps.forEach((s, i) => {
+    for (const r of routes(task, s.chosen, s.fallbacks, i === steps.length - 1)) {
+      const k = r.modelId + ' ' + r.via; if (seen.has(k)) continue; seen.add(k);
+      out.push({ ...r, ...(s.effort && effortOn() ? { effort: s.effort } : {}), ...(s.boost ? { boost: s.boost } : {}) });
+    }
+  });
+  return out;
+}
+
 /** Run a task. Retries transient failures, fails over between providers, validates JSON against the schema. Throws RadarError with generic copy on failure. */
 export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { businessId?: string | null; retries?: number } = {}): Promise<AiOutput<T>> {
   const settings = await aiSettingsFor(opts.businessId);
-  const chosen: string = settings[task] || AI_DEFAULT[task];
+  // The model plan comes from the call's purpose (./tiers.ts): a utility purpose never reads the business's choice, a
+  // premium one asks the premium chain first. `chosen` is the model asked first; anything else that answers is a fallback.
+  const tiered = resolve(task, input.purpose, settings, FALLBACKS);
+  const chosen = tiered.chosen;
   // Saved writing instructions go last in the system prompt, read from the same row as the model choice. With none
   // saved (or no spec, or no business) `system` is the caller's value untouched.
   const system = input.instructions && opts.businessId ? withInstructions(input.system, instructionBlock(readInstructions(settings), input.instructions)) : input.system;
   const jsonSchema = input.schema ? z.toJSONSchema(input.schema as any, { target: 'draft-7' } as any) : undefined;
   const retries = opts.retries ?? 2;
-  const plan: Route[] = env.devStubs ? [{ modelId: chosen, via: 'direct' }] : routes(task, chosen);
+  const plan: PlanRoute[] = env.devStubs ? [{ modelId: chosen, via: 'direct' }] : planRoutes(task, tiered.steps);
+  // A model that declined the request is not asked again on its other route. A premium attempt that used up its whole
+  // timeout ends the premium step, so the wait before the standard model starts is one timeout at most. OpenRouter's
+  // idle cutoff is not that: it is an ordinary failed attempt, and the plan goes on to the model's direct route.
+  const skipModels = new Set<string>(); let premiumOver = false;
+  // Providers THIS call marked unavailable (out of credit, key rejected). A plan with more than one step can name the
+  // same provider twice; its later direct route is not asked again while another route can still be tried.
+  const downHere = new Set<string>();
+  const usableAfter = (ri: number) => plan.some((r, j) => {
+    if (j <= ri || skipModels.has(r.modelId) || (r.boost === 'premium' && premiumOver)) return false;
+    if (r.via === 'direct') { const p = providerOf(r.modelId); return hasKey(p) && !isDown(p); }
+    return !!r.force || orUsable(openrouterId(r.modelId)!, plan[j + 1]?.modelId === r.modelId && plan[j + 1]?.via === 'direct');
+  });
   let lastErr: any = null; let lastReport: FailureContext | null = null;
   for (let ri = 0; ri < plan.length; ri++) {
-    const { modelId, via, force } = plan[ri];
+    const { modelId, via, force, effort, boost } = plan[ri];
+    if (skipModels.has(modelId) || (boost === 'premium' && premiumOver)) continue;
     const provider = providerOf(modelId);
     const viaOr = via === 'openrouter';
     const logProvider = viaOr ? 'openrouter' : provider;
@@ -192,7 +227,17 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
     const directNext = plan[ri + 1]?.modelId === modelId && plan[ri + 1]?.via === 'direct';
     // Re-check at each step: an account error, unknown model or open breaker earlier in THIS call also applies here.
     if (viaOr && !force && !orUsable(orModel, directNext)) continue;
-    const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens: input.maxTokens || 4000, temperature: input.temperature, onDelta: input.onDelta, timeoutMs: input.timeoutMs || defaultTimeout(input.maxTokens || 4000, !!input.webSearch) };
+    // The same for a direct provider this call marked unavailable, unless nothing after it can be tried either: then it
+    // is still asked (a call never ends on a skip while there was an attempt left to make).
+    if (!viaOr && downHere.has(provider) && usableAfter(ri)) continue;
+    // The timeout always follows the caller's own budget. Token extras: thinking counts against max_tokens on Claude 5.x,
+    // so a utility attempt gets a floor, a premium one headroom, and a standard Claude attempt headroom when the caller
+    // asked for little. Without a boost (tiers off) the request is the caller's, untouched.
+    const base = input.maxTokens || 4000;
+    const maxTokens = boost === 'utility' ? Math.max(base, UTILITY_MIN_TOKENS) : boost === 'premium' ? base + PREMIUM_TOKEN_HEADROOM : boost === 'standard' && provider === 'Anthropic' && base < 4000 ? base + STANDARD_CLAUDE_HEADROOM : base;
+    let timeoutMs = input.timeoutMs || defaultTimeout(base, !!input.webSearch);
+    if (boost === 'premium') timeoutMs = Math.max(timeoutMs, PREMIUM_MIN_TIMEOUT_MS);
+    const call: ProviderCall = { apiModel: viaOr ? orModel : apiId(modelId), system, prompt: input.prompt, jsonSchema, schemaName: input.schemaName || 'output', webSearch: input.webSearch, maxTokens, temperature: input.temperature, onDelta: input.onDelta, timeoutMs, effort };
     // OpenRouter gets one attempt when the same model's direct provider is next in line (failing over is faster than
     // retrying, and OpenRouter already retries across its own hosts); otherwise the usual retries.
     const tries = viaOr && directNext ? 0 : retries;
@@ -201,8 +246,10 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
       if (viaOr && attempt > 0 && !force && !orUsable(orModel, directNext)) break;
       const t0 = Date.now();
       input.onReset?.();
+      const row = { businessId: opts.businessId, task: tiered.logTask, purpose: input.purpose, model: modelId, provider: logProvider };
+      // Set once the provider has answered: an answer Radar then rejects was still billed, and is recorded as such.
+      let res: ProviderResult | null = null;
       try {
-        let res: ProviderResult;
         if (env.devStubs) res = await stubRun(system === input.system ? input : { ...input, system }, jsonSchema);
         else if (viaOr) res = await openrouterRun(call);
         else {
@@ -219,7 +266,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
           if (!parsed.success) throw new Error('Structured output failed validation: ' + parsed.error.issues.map(issue => issue.code).slice(0, 8).join(', '));
           json = parsed.data;
         }
-        log(opts.businessId, task, input.purpose, modelId, logProvider, Date.now() - t0, res, true, null);
+        recordAiCall({ ...row, latencyMs: Date.now() - t0, inputTokens: res.inputTokens, outputTokens: res.outputTokens, costUsd: res.costUsd, searches: res.searches, ok: true });
         if (modelId !== chosen) console.warn(`[ai] ${input.purpose}: used ${modelId} (fallback from ${chosen})`);
         if (!viaOr && openrouterEnabled() && !env.devStubs) console.warn(`[ai] ${input.purpose}: served by ${provider} directly (OpenRouter unavailable for ${modelId})`);
         return { text: res.text, json, citations: res.citations || [], model: modelId, provider: logProvider };
@@ -227,12 +274,16 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         lastErr = e;
         lastReport = { source: 'ai', operation: input.purpose, businessId: opts.businessId, provider: logProvider, model: call.apiModel, attempt: attempt + 1, maxAttempts: tries + 1, retrying: ri < plan.length - 1 || (!e?.permanent && !isAccountError(e) && attempt < tries), degraded: ri < plan.length - 1 };
         await reportFailure(e, lastReport);
-        log(opts.businessId, task, input.purpose, modelId, logProvider, Date.now() - t0, null, false, String(e?.message || e));
+        // Tokens and cost when the provider answered and Radar rejected it (empty, invalid JSON), or declined and said what it used.
+        const billed: ProviderResult | null = res ?? e?.billed ?? null;
+        recordAiCall({ ...row, latencyMs: Date.now() - t0, inputTokens: billed?.inputTokens, outputTokens: billed?.outputTokens, costUsd: billed?.costUsd, searches: billed?.searches, ok: false, error: e });
         if (viaOr) {
           noteOpenrouterOutcome(e);
           if (isOpenrouterAccountError(e)) { markOpenrouterDown(String(e?.message || e)); break; }
           if (isOpenrouterModelMissing(e)) { skipOpenrouterModel(orModel, String(e?.message || e)); break; }
-        } else if (isAccountError(e)) { downUntil.set(provider, Date.now() + DOWN_MS); console.warn(`[ai] ${provider} unavailable for 10 min: ${String(e?.message || e).slice(0, 160)}`); break; }
+        } else if (isAccountError(e)) { downUntil.set(provider, Date.now() + DOWN_MS); downHere.add(provider); console.warn(`[ai] ${provider} unavailable for 10 min: ${String(e?.message || e).slice(0, 160)}`); break; }
+        if (e?.refusal) skipModels.add(modelId);
+        if (boost === 'premium' && isOpenrouterTimeout(e) && !e?.idle) { premiumOver = true; break; }
         if (e?.permanent) break;
         if (attempt < tries) await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
       }
@@ -246,12 +297,6 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
   // Keep operational diagnostics internal; HTTP responses still expose only the safe userMessage/code.
   Object.defineProperty(failure, 'cause', { value: lastErr, enumerable: false });
   throw failure;
-}
-
-function log(businessId: string | null | undefined, task: string, purpose: string, model: string, provider: string, ms: number, res: ProviderResult | null, ok: boolean, error: string | null) {
-  const pr = PRICE[model];
-  const cost = res?.costUsd != null ? res.costUsd : pr && res ? ((res.inputTokens || 0) * pr[0] + (res.outputTokens || 0) * pr[1]) / 1e6 : null;
-  db.insert(schema.aiCalls).values({ businessId: businessId || null, task, purpose, model, provider, latencyMs: ms, inputTokens: res?.inputTokens ?? null, outputTokens: res?.outputTokens ?? null, costUsd: cost, ok, error }).catch(() => {});
 }
 
 /** Every generation prompt includes the Business Profile (02-system.md §2). */

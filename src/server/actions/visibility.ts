@@ -18,9 +18,11 @@ export const actions: ActionMap = {
     return listVisibility(ctx.bid);
   } }),
 
-  /** Track a new prompt (≥6 chars). First collection runs with tonight's batch. */
+  /** Track a new prompt (≥6 chars) and queue its first collection at once: the scheduled run is weekly, so it would
+   *  otherwise show no data until then. The run covers this prompt only, so it does not count as the week's full run. */
   'visibility.addPrompt': action({ input: z.object({ prompt: z.string().trim().min(6).max(300) }), run: async (ctx, { prompt }) => {
     const id = await addPrompt(ctx.bid, prompt);
+    await enqueue('visibility.run', { promptIds: [id] }, { businessId: ctx.bid, ref: ctx.bid, singletonKey: 'vis-prompt:' + id });
     return { id, ...(await listVisibility(ctx.bid)) };
   } }),
 

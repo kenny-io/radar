@@ -51,14 +51,14 @@ describe.skipIf(!ON)('AI visibility collection (database)', () => {
 
     // 1. Cannot match: the business is nowhere in the answer.
     H.answer = () => ({ text: 'Popular options include **Tallyhour** and Billable. Try a couple of free trials.', cites, raw: { engine: 'canned' } });
-    expect(await collectOne(skip.id, { manual: false })).toEqual({ status: 'not-mentioned' });
+    expect(await collectOne(skip.id, { manual: false })).toEqual({ status: 'not-mentioned', collected: true });
     expect(extractCalls(run)).toHaveLength(0);
     expect(run).not.toHaveBeenCalled();
 
     // 2. Might match ("Fieldnotes"), so extraction runs, and finds other names only: today's not-mentioned branch.
     H.answer = () => ({ text: 'Fieldnotes-style apps such as **Tallyhour** and Billable are popular.', cites, raw: { engine: 'canned' } });
     run.mockResolvedValueOnce({ json: { products: ['Tallyhour', 'Billable'] } } as any);
-    expect(await collectOne(asked.id, { manual: false })).toEqual({ status: 'not-mentioned' });
+    expect(await collectOne(asked.id, { manual: false })).toEqual({ status: 'not-mentioned', collected: true });
     expect(extractCalls(run)).toHaveLength(1);
 
     const [s, a] = [await cell(skip.id), await cell(asked.id)];
@@ -71,7 +71,7 @@ describe.skipIf(!ON)('AI visibility collection (database)', () => {
 
     // 3. Named: extraction still runs (the dev stub lists known names in order) and the position comes from it.
     H.answer = () => ({ text: 'Tallyhour is popular; Fieldnote is worth a look.', cites: [], raw: null });
-    expect(await collectOne(named.id, { manual: false })).toEqual({ status: 'mentioned' });
+    expect(await collectOne(named.id, { manual: false })).toEqual({ status: 'mentioned', collected: true });
     expect(extractCalls(run)).toHaveLength(2);
     expect(await cell(named.id)).toMatchObject({ status: 'mentioned', pos: 2, error: null });
     expect(eventsFor(named.id).map(e => [e.kind, e.props.pos])).toEqual([['visibility.checked', 2], ['visibility.mentioned', 2]]);
@@ -83,7 +83,8 @@ describe.skipIf(!ON)('AI visibility collection (database)', () => {
     await db.update(A).set({ status: 'not-mentioned', resp: 'earlier' }).where(eq(A.id, c.id));
     const run = vi.spyOn(ai, 'run'); const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     H.answer = () => { throw new Error('assistant did not respond'); };
-    expect(await collectOne(c.id, { manual: false })).toEqual({ status: 'not-mentioned' });
+    // The earlier status comes back, but nothing was collected this time.
+    expect(await collectOne(c.id, { manual: false })).toEqual({ status: 'not-mentioned', collected: false });
     expect(run).not.toHaveBeenCalled();
     expect(await cell(c.id)).toMatchObject({ status: 'not-mentioned', resp: 'earlier', error: 'assistant did not respond' });
     log.mockRestore();
@@ -95,7 +96,7 @@ describe.skipIf(!ON)('AI visibility collection (database)', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     // A mix of outcomes: named, not named (extraction skipped), and one assistant that fails.
     H.answer = (engine, prompt) => { if (engine === AI_ENGINES[1] && /studios/.test(prompt)) throw new Error('assistant did not respond'); return { text: engine === AI_ENGINES[0] ? 'Tallyhour first, then Fieldnote.' : 'Popular options include Tallyhour and Billable.', cites: [], raw: null }; };
-    // As the nightly cron and the catch-up enqueue it.
+    // As the scheduled cron and the catch-up enqueue it.
     const id = await enqueue('visibility.run', {}, { businessId: b.id, ref: b.id, singletonKey: 'vis-run:' + b.id });
     const rev0 = await rev(b.id);
     const usedAt = async () => (await db.select({ at: schema.businesses.lastActiveAt }).from(schema.businesses).where(eq(schema.businesses.id, b.id)).limit(1))[0].at;
@@ -108,7 +109,7 @@ describe.skipIf(!ON)('AI visibility collection (database)', () => {
     await runJobNow(id);
 
     const j = (await getJob(id))!;
-    expect([j.status, j.result, j.progress]).toEqual(['done', { total: 10 }, { done: 10, total: 10 }]);
+    expect([j.status, j.result, j.progress]).toEqual(['done', { total: 10, collected: 9 }, { done: 10, total: 10 }]);   // one assistant failed for one cell
     expect(await rev(b.id)).toBe(rev0 + 1);
     expect(await usedAt()).toEqual(used0);                    // a background job is not a member using the app
     expect(mid).not.toBeNull();
@@ -128,6 +129,7 @@ describe.skipIf(!ON)('AI visibility collection (database)', () => {
     const rev0 = await rev(b.id);
     await runJobNow(id);
     expect([(await getJob(id))!.status, (await cell(b.cells[0].id)).status]).toEqual(['done', 'not-mentioned']);
+    expect((await getJob(id))!.result).toEqual({ status: 'not-mentioned' });   // the job's result is what it always was
     expect(await rev(b.id)).toBe(rev0 + 1);
   });
 });

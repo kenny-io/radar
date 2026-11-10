@@ -5,6 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 const M = vi.hoisted(() => {
   process.env.RADAR_DEV_STUBS = '1';
+  process.env.RADAR_AI_TIERS = 'off'; // the model defaults from before model tiers (tiered routing: ai/tiers.run.test.ts)
   if (!process.env.RADAR_BILLING) process.env.RADAR_BILLING = 'off';
   return { jar: new Map<string, string>(), calls: [] as { purpose: string; system?: string; prompt: string }[], n: 0 };
 });
@@ -173,6 +174,20 @@ describe.skipIf(!has)('writing instructions: saving (database)', () => {
       expect(ai.research).toBe('gpt-6-sol');
       expect(ai.instructions).toEqual(Object.fromEntries(sets.map(set => [set, `Round ${round} for ${set}.`])));
     }
+  });
+  it('Settings accepts Claude Fable 5.2, shows it back, and still refuses a model that is not in the list', async () => {
+    const before = await aiOf(B.id);
+    try {
+      const r = await act(ownerB, B.id, 'settings.ai', { task: 'research', model: 'claude-fable-5.2' });
+      expect(r.status).toBe(200);
+      expect(r.body.data.ai.research).toBe('claude-fable-5.2');
+      expect(r.body.workspace.ai.research).toBe('claude-fable-5.2');
+      expect((await aiOf(B.id)).research).toBe('claude-fable-5.2');
+      const bad = await act(ownerB, B.id, 'settings.ai', { task: 'research', model: 'claude-fable-9' });
+      expect(bad.status).toBe(400);
+      expect(bad.body).toMatchObject({ ok: false, code: 'invalid_model' });
+      expect((await aiOf(B.id)).research).toBe('claude-fable-5.2');
+    } finally { await db.update(schema.businesses).set({ ai: before }).where(eq(schema.businesses.id, B.id)); }
   });
   it('records which set changed in the activity log, never the text', async () => {
     const secret = `Never mention the Halberd acquisition ${F.tag}.`;

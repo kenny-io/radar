@@ -9,8 +9,12 @@ function paragraphs(summary: DigestSummary): string[] {
   const { weekly: w, weeklyBiggestMiss: miss } = summary;
   const lastDay = new Date(new Date(w.end + 'T00:00:00Z').getTime() - 86400e3).toISOString().slice(0, 10);
   const share = (period: typeof w.current) => period.share === null ? 'No answers were collected.' : `Your business was mentioned in ${period.mentioned} of ${period.collected} collected answers (${Math.round(period.share * 100)}%).`;
+  // Collection is weekly, and an off-cycle run can make the data older than the report: always say when it was collected.
+  const on = (w.days || []).filter(d => d.collected > 0).map(d => d.day).sort();
+  const collectedOn = !on.length ? [] : [`Radar checks your tracked questions once a week. These answers were collected ${on.length === 1 ? `on ${on[0]}` : `between ${on[0]} and ${on[on.length - 1]}`}.`];
   return [
     `This week covers ${w.start} through ${lastDay}, using completed UTC days.`,
+    ...collectedOn,
     `This week: ${share(w.current)}`,
     `Previous week, using the same tracked questions: ${share(w.previous)}`,
     w.delta === null ? 'There isn’t enough comparable data to show a change yet. Adding or changing tracked questions starts a new comparison.' : `That’s a change of ${w.delta >= 0 ? '+' : ''}${(w.delta * 100).toFixed(1)} percentage points.`,

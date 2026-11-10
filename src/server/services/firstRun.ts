@@ -64,7 +64,7 @@ type JobLite = Pick<typeof J.$inferSelect, 'id' | 'kind' | 'status' | 'progress'
 const finishedWell = (j: JobLite) => j.status === 'done' && !j.result?.skipped && !j.result?.failed;
 
 /** A failed row must not outlive a later success somewhere else (the calendar regenerated from its own screen, "Scan
- *  again" in the Daily Brief, the nightly visibility run). For each failed row, among the business's jobs of that kind
+ *  again" in the Daily Brief, a later visibility run). For each failed row, among the business's jobs of that kind
  *  that are newer than the failure: one that finished well makes the row done; otherwise one that is queued or running
  *  becomes the row's job, so the row shows that work instead of a stale failure. One query, only when a row failed. */
 async function supersede(bid: string, items: FirstRunItem[], failedAt: Map<FirstRunKey, number>): Promise<FirstRunItem[]> {

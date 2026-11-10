@@ -3,7 +3,9 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 const H = vi.hoisted(() => {
   const saved = process.env.RADAR_DEV_STUBS; process.env.RADAR_DEV_STUBS = '1';
-  return { saved, rows: {} as Record<string, any>, asked: [] as string[], inserted: [] as any[] };
+  // The model defaults from before model tiers (tiered routing: tiers.run.test.ts).
+  const savedTiers = process.env.RADAR_AI_TIERS; process.env.RADAR_AI_TIERS = 'off';
+  return { saved, savedTiers, rows: {} as Record<string, any>, asked: [] as string[], inserted: [] as any[] };
 });
 vi.mock('drizzle-orm', async orig => ({ ...(await orig<typeof import('drizzle-orm')>()), eq: (_col: unknown, value: string) => ({ id: value }) }));
 vi.mock('../db', () => ({
@@ -32,7 +34,10 @@ beforeEach(() => {
   };
   info = vi.spyOn(console, 'info').mockImplementation(() => {});
 });
-afterAll(() => { vi.restoreAllMocks(); if (H.saved === undefined) delete process.env.RADAR_DEV_STUBS; else process.env.RADAR_DEV_STUBS = H.saved; });
+afterAll(() => {
+  vi.restoreAllMocks(); if (H.saved === undefined) delete process.env.RADAR_DEV_STUBS; else process.env.RADAR_DEV_STUBS = H.saved;
+  if (H.savedTiers === undefined) delete process.env.RADAR_AI_TIERS; else process.env.RADAR_AI_TIERS = H.savedTiers;
+});
 
 describe('ai.run with saved writing instructions', () => {
   it('appends the applicable sets to the end of the system prompt and leaves the user prompt alone', async () => {

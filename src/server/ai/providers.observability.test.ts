@@ -15,9 +15,10 @@ vi.mock('../services/storage', () => ({ objectKey: () => 'bid/images/test.png', 
 
 beforeEach(() => {
   vi.resetModules(); M.report.mockReset().mockResolvedValue(undefined); M.put.mockReset().mockResolvedValue('/image.png'); M.rows.length = 0;
+  vi.stubEnv('RADAR_AI_TIERS', 'off'); // the routing from before model tiers (tiered: tiers.run.test.ts)
   vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
 });
-afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 async function configured(overrides: Record<string, any> = {}) {
   const { env } = await import('../env');

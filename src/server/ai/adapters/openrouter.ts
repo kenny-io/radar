@@ -4,8 +4,10 @@
 // Only used when OPENROUTER_API_KEY is set; the direct providers stay as fallback (DIVERGENCES: OpenRouter primary route).
 import { env } from '../../env';
 import { sseEvents } from './http';
-import { claudeSchema } from './anthropic';
+import { claudeSchema, refusalError, billedWith } from './anthropic';
+import { withEffort } from './effort';
 import type { ProviderCall, ProviderResult } from '../index';
+import type { Effort } from '../tiers';
 
 export const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 export const openrouterEnabled = () => !!env.openrouterKey;
@@ -17,9 +19,10 @@ export const openrouterHeaders = (): Record<string, string> => ({ 'content-type'
  *  - confirmed one by one with GET /api/v1/models/{id}/endpoints (the full list was too long to read in one fetch):
  *    claude-fable-5.1 (4 endpoints), gpt-6-astra (7), grok-4.6 (6); also grok-4.7, claude-sonnet-5.5, gpt-6-sol,
  *    which all have endpoints supporting structured_outputs.
+ *  - claude-fable-5.2 confirmed the same way on 2026-11-10 (Google, Bedrock, Azure and Anthropic endpoints, $8/$40).
  *  A model left out here (or set to "" in OPENROUTER_MODEL_MAP) is only served by its direct provider. */
 export const OPENROUTER_IDS: Record<string, string> = {
-  'claude-fable-5.1': 'anthropic/claude-fable-5.1', 'claude-opus-5.5': 'anthropic/claude-opus-5.5', 'claude-sonnet-5.5': 'anthropic/claude-sonnet-5.5', 'claude-haiku-5.5': 'anthropic/claude-haiku-5.5',
+  'claude-fable-5.2': 'anthropic/claude-fable-5.2', 'claude-fable-5.1': 'anthropic/claude-fable-5.1', 'claude-opus-5.5': 'anthropic/claude-opus-5.5', 'claude-sonnet-5.5': 'anthropic/claude-sonnet-5.5', 'claude-haiku-5.5': 'anthropic/claude-haiku-5.5',
   'gpt-6-astra': 'openai/gpt-6-astra', 'gpt-6.1-sol': 'openai/gpt-6.1-sol', 'gpt-6-sol': 'openai/gpt-6-sol', 'gpt-6-luna': 'openai/gpt-6-luna',
   'grok-4.7': 'x-ai/grok-4.7', 'grok-4.6': 'x-ai/grok-4.6',
 };
@@ -122,9 +125,15 @@ export function openrouterMessage(j: any): { text: string; citations: { url: str
   if (!citations.length) for (const s of j?.search_results || []) if (s?.url) citations.push({ url: s.url, title: s.title });
   return { text, citations };
 }
+/** Text calls only (AI Visibility reads openrouterMessage directly: a declined answer there is a measurement). */
 function collect(j: any): ProviderResult {
   const { text, citations } = openrouterMessage(j);
-  return { text, citations, inputTokens: j?.usage?.prompt_tokens, outputTokens: j?.usage?.completion_tokens, costUsd: typeof j?.usage?.cost === 'number' ? j.usage.cost : undefined };
+  const usage = { inputTokens: j?.usage?.prompt_tokens, outputTokens: j?.usage?.completion_tokens, costUsd: typeof j?.usage?.cost === 'number' ? j.usage.cost : undefined };
+  // The model declined. OpenRouter does not document which finish_reason an Anthropic refusal maps to, so all three
+  // spellings count: never keep the partial text as an answer.
+  const ch = j?.choices?.[0];
+  if (ch?.finish_reason === 'content_filter' || ch?.finish_reason === 'refusal' || ch?.native_finish_reason === 'refusal') throw refusalError(undefined, j?.usage ? usage : undefined);
+  return { text, citations, ...usage };
 }
 const addUsage = (out: ProviderResult, r: ProviderResult) => {
   out.inputTokens = (out.inputTokens || 0) + (r.inputTokens || 0); out.outputTokens = (out.outputTokens || 0) + (r.outputTokens || 0);
@@ -188,7 +197,7 @@ export async function openrouterChat(body: any, opts: { timeoutMs: number; onDel
     touch();
     if (!r.ok) { const txt = await readAll(r, touch); const e: any = new Error(`HTTP ${r.status}: ${txt.slice(0, 400)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 408; throw e; }
     if (/application\/json/i.test(r.headers.get('content-type') || '')) { const txt = await readAll(r, touch); return txt ? JSON.parse(txt) : {}; }
-    let text = ''; let id: any, model: any, usage: any, finish: any, citations: any, searchResults: any; let done = false;
+    let text = ''; let id: any, model: any, usage: any, finish: any, nativeFinish: any, citations: any, searchResults: any; let done = false;
     const annotations: any[] = [];
     for await (const ev of sseEvents(r, touch)) {
       if (ev.data === '[DONE]') { done = true; break; }
@@ -204,17 +213,20 @@ export async function openrouterChat(body: any, opts: { timeoutMs: number; onDel
       if (Array.isArray(d.search_results)) searchResults = d.search_results;
       if (ch?.finish_reason === 'error') throw bodyError(ch.error || { message: 'finish_reason error' }, 'Stream error');
       if (ch?.finish_reason) finish = ch.finish_reason;
+      if (ch?.native_finish_reason) nativeFinish = ch.native_finish_reason;
       if (d.usage) usage = d.usage;
     }
     // A stream that closes without [DONE] or a finish_reason was cut off mid-answer: never save a truncated answer.
     if (!done && !finish) throw Object.assign(new Error('OpenRouter stream ended before the answer finished'), { transient: true });
     return {
       id, model, object: 'chat.completion',
-      choices: [{ index: 0, message: { role: 'assistant', content: text, ...(annotations.length ? { annotations } : {}) }, finish_reason: finish ?? null }],
+      choices: [{ index: 0, message: { role: 'assistant', content: text, ...(annotations.length ? { annotations } : {}) }, finish_reason: finish ?? null, ...(nativeFinish ? { native_finish_reason: nativeFinish } : {}) }],
       ...(usage ? { usage } : {}), ...(citations ? { citations } : {}), ...(searchResults ? { search_results: searchResults } : {}),
     };
   } catch (e: any) {
-    if (ctl.signal.aborted) throw Object.assign(new Error(idle ? `OpenRouter stream idle for ${Math.round(idleMs / 1000)}s` : `OpenRouter timed out after ${Math.round(opts.timeoutMs / 1000)}s`), { timeout: true });
+    // Both are timeouts to the breaker. `idle` tells them apart for callers: the stream went quiet (OpenRouter's side),
+    // as opposed to the call using up its whole time budget.
+    if (ctl.signal.aborted) throw Object.assign(new Error(idle ? `OpenRouter stream idle for ${Math.round(idleMs / 1000)}s` : `OpenRouter timed out after ${Math.round(opts.timeoutMs / 1000)}s`), { timeout: true, ...(idle ? { idle: true } : {}) });
     throw e;
   } finally { clearTimeout(t); clearTimeout(it); }
 }
@@ -225,13 +237,19 @@ export async function openrouterRun(c: ProviderCall): Promise<ProviderResult> {
   messages.push({ role: 'user', content: c.prompt });
   // temperature: only for Grok, as with the direct adapters (GPT-6 and Claude 5.x reject it).
   const base: any = { model: c.apiModel, messages, max_tokens: c.maxTokens, ...(c.temperature != null && c.apiModel.startsWith('x-ai/') ? { temperature: c.temperature } : {}) };
-  const send = (body: any, onDelta?: (d: string) => void) => openrouterChat(body, { timeoutMs: c.timeoutMs, onDelta });
+  // reasoning.effort is OpenRouter's one field for every model family. A rejection of the field is resent once without
+  // it (./effort.ts), unless text has already been shown (a rejection normally arrives as the HTTP status).
+  const send = (body: any, onDelta?: (d: string) => void) => {
+    let shown = false;
+    return withEffort(`openrouter:${c.apiModel}`, c.effort, (effort?: Effort) => openrouterChat(effort ? { ...body, reasoning: { effort } } : body, { timeoutMs: c.timeoutMs, onDelta: onDelta && (d => { shown = true; onDelta(d); }) }), () => !shown);
+  };
 
   if (c.webSearch && c.jsonSchema) {
     // Two passes, as in the direct adapters: research with web search in free text, then structure the findings.
     const researched = collect(await send({ ...base, tools: [WEB_SEARCH_TOOL], messages: [...messages.slice(0, -1), { role: 'user', content: c.prompt + '\n\nResearch this thoroughly. Report your findings with source URLs.' }] }));
     const prompt = `${c.prompt}\n\nResearch findings to use:\n${researched.text}\n\nSources found:\n${researched.citations.map(x => '- ' + x.url).join('\n')}`;
-    const out = await openrouterRun({ ...c, webSearch: false, prompt });
+    // Pass 1 was answered and billed: a pass 2 that fails or is declined still reports it.
+    const out = await openrouterRun({ ...c, webSearch: false, prompt }).catch(e => { throw billedWith(e, researched); });
     out.citations = [...researched.citations, ...out.citations];
     addUsage(out, researched);
     return out;

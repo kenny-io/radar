@@ -62,3 +62,43 @@ it('provides an accessible mobile document and wraps escaped long prompt words',
   expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;' + 'longword'.repeat(100));
   expect(html).toContain('</main></body></html>');
 });
+
+// Collection is weekly (VW-3): the report always says when its answers were collected, so data from an off-cycle run
+// earlier in the week is never read as this morning's.
+const week = (collectedOn: Record<string, number>) => ({ ...summary, weekly: { ...summary.weekly,
+  days: ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08'].map(day => ({ day, collected: collectedOn[day] || 0, mentioned: 0, share: null })) } });
+const CADENCE = 'Radar checks your tracked questions once a week.';
+
+it('says which day the answers were collected on when the week has one collection day', () => {
+  const { text, html } = render(week({ '2026-11-08': 6 }) as any);
+  const paragraphs = text.split('\n\n');
+  expect(paragraphs[0]).toBe('This week covers 2026-11-02 through 2026-11-08, using completed UTC days.');
+  expect(paragraphs[1]).toBe(`${CADENCE} These answers were collected on 2026-11-08.`);
+  expect(paragraphs[2]).toContain('3 of 6 collected answers (50%)');
+  expect(html).toContain(`<p>${CADENCE} These answers were collected on 2026-11-08.</p>`);
+});
+
+it('gives the first and last day when answers were collected on several days', () => {
+  // A full run on Tuesday, a prompt added on Thursday, one cell collected by hand on Saturday.
+  const { text } = render(week({ '2026-11-03': 15, '2026-11-05': 5, '2026-11-07': 1 }) as any);
+  expect(text).toContain(`${CADENCE} These answers were collected between 2026-11-03 and 2026-11-07.`);
+  expect(text).not.toContain('collected on 2026');
+});
+
+it('a day on which every collection failed is not a collection day', () => {
+  const value = week({ '2026-11-04': 5 });
+  value.weekly.days[6] = { day: '2026-11-08', collected: 0, mentioned: 0, share: null };
+  expect(render(value as any).text).toContain('These answers were collected on 2026-11-04.');
+});
+
+it('says nothing about a collection day when no answers were collected, or the summary carries no days', () => {
+  const none = week({});
+  const empty = { ...none, weekly: { ...none.weekly, current: { share: null, mentioned: 0, collected: 0 } } };
+  for (const value of [empty, summary]) {
+    const { text, html } = render(value as any);
+    expect(text).not.toContain(CADENCE);
+    expect(text).not.toContain('These answers were collected');
+    expect(html).not.toContain('These answers were collected');
+  }
+  expect(render(empty as any).text).toContain('This week: No answers were collected.');
+});

@@ -18,6 +18,7 @@ let logged: any[] = [];
 beforeEach(() => {
   vi.resetModules(); M.deliver.mockClear(); logged = [];
   vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('RADAR_FAILURE_ALERTS', 'on'); vi.stubEnv('RADAR_DEV_STUBS', '0');
+  vi.stubEnv('RADAR_AI_TIERS', 'off'); // the routing from before model tiers (tiered: tiers.run.test.ts)
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation((tag: any, line: any) => { if (tag === '[radar.failure]') logged.push(JSON.parse(line)); });
 });
