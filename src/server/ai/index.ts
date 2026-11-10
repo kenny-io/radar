@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { env } from '../env';
-import { reportFailure } from '../observability/failures';
+import { reportFailure, type FailureContext } from '../observability/failures';
 import { RadarError, GENERIC_AI_ERROR } from '../errors';
 import { AI_DEFAULT, aiFind } from '@/lib/constants';
 import { anthropicRun } from './adapters/anthropic';
@@ -182,7 +182,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
   const jsonSchema = input.schema ? z.toJSONSchema(input.schema as any, { target: 'draft-7' } as any) : undefined;
   const retries = opts.retries ?? 2;
   const plan: Route[] = env.devStubs ? [{ modelId: chosen, via: 'direct' }] : routes(task, chosen);
-  let lastErr: any = null;
+  let lastErr: any = null; let lastReport: FailureContext | null = null;
   for (let ri = 0; ri < plan.length; ri++) {
     const { modelId, via, force } = plan[ri];
     const provider = providerOf(modelId);
@@ -225,7 +225,8 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         return { text: res.text, json, citations: res.citations || [], model: modelId, provider: logProvider };
       } catch (e: any) {
         lastErr = e;
-        await reportFailure(e, { source: 'ai', operation: input.purpose, businessId: opts.businessId, provider: logProvider, model: call.apiModel, attempt: attempt + 1, maxAttempts: tries + 1, retrying: ri < plan.length - 1 || (!e?.permanent && !isAccountError(e) && attempt < tries), degraded: ri < plan.length - 1 });
+        lastReport = { source: 'ai', operation: input.purpose, businessId: opts.businessId, provider: logProvider, model: call.apiModel, attempt: attempt + 1, maxAttempts: tries + 1, retrying: ri < plan.length - 1 || (!e?.permanent && !isAccountError(e) && attempt < tries), degraded: ri < plan.length - 1 };
+        await reportFailure(e, lastReport);
         log(opts.businessId, task, input.purpose, modelId, logProvider, Date.now() - t0, null, false, String(e?.message || e));
         if (viaOr) {
           noteOpenrouterOutcome(e);
@@ -237,6 +238,9 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
       }
     }
   }
+  // Interim failures are not alerted. When the routes after one were skipped without an attempt (OpenRouter's account
+  // is down, its breaker is open), that interim failure is what ended the call: report it as final.
+  if (lastErr && lastReport?.retrying) await reportFailure(lastErr, { ...lastReport, retrying: false, degraded: false });
   console.error(`[ai] ${input.purpose} failed`, lastErr?.message || lastErr);
   const failure = new RadarError(GENERIC_AI_ERROR, 502, 'ai_failed');
   // Keep operational diagnostics internal; HTTP responses still expose only the safe userMessage/code.

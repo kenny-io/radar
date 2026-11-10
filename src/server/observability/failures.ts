@@ -14,7 +14,8 @@ export interface FailureEvent {
   context: FailureContext; rootOperation: string; error: { name: string; message: string; status?: number; code?: string; cause?: string };
   hint: string;
 }
-interface Scope { context: FailureContext; rootOperation: string; seen: WeakSet<object>; id: string }
+interface Held { open: boolean; alerts: Array<{ error: unknown; send: () => Promise<void> }> }
+interface Scope { context: FailureContext; rootOperation: string; seen: WeakSet<object>; id: string; held?: Held }
 const scope = new AsyncLocalStorage<Scope>();
 let deliveryModule: Promise<typeof import('./delivery')> | undefined;
 const defined = (context: Partial<FailureContext>) => Object.fromEntries(Object.entries(context).filter(([, value]) => value !== undefined));
@@ -63,7 +64,23 @@ export function shouldReportFailure(error: unknown): boolean {
 }
 export function withFailureContext<T>(context: FailureContext, run: () => Promise<T>): Promise<T> {
   const parent = scope.getStore();
-  return scope.run({ context: { ...parent?.context, ...defined(context) } as FailureContext, rootOperation: context.source === 'action' || context.source === 'job' ? context.operation : parent?.rootOperation || context.operation, seen: parent?.seen || new WeakSet(), id: parent?.id || randomUUID() }, run);
+  return scope.run({ context: { ...parent?.context, ...defined(context) } as FailureContext, rootOperation: context.source === 'action' || context.source === 'job' ? context.operation : parent?.rootOperation || context.operation, seen: parent?.seen || new WeakSet(), id: parent?.id || randomUUID(), held: parent?.held }, run);
+}
+/** Hold the current scope's alerts until the caller knows how the work ended. `settle(true)` emails them all. A job
+ *  attempt that will be retried is not an operator incident: `settle(false, thrown)` drops the alerts for the failure
+ *  the retry is for (the thrown error and its causes; each is already logged). A failure the attempt had worked around
+ *  is still emailed, because the retry may find that work saved and never meet it again. Reports made after settling
+ *  are emailed at once. Outside a scope nothing is held. */
+export function holdAlerts(): (send: boolean, thrown?: unknown) => Promise<void> {
+  const current = scope.getStore();
+  if (!current) return async () => {};
+  const held: Held = { open: true, alerts: [] }; current.held = held;
+  return async (send, thrown) => {
+    held.open = false;
+    const retried = new Set<unknown>();
+    for (let e: unknown = thrown, depth = 0; !send && e && typeof e === 'object' && depth < 8; e = eCause(e), depth++) retried.add(e);
+    for (const alert of held.alerts.splice(0)) if (!retried.has(alert.error)) await alert.send().catch(e => { try { console.error('[radar.alert.delivery_failed]', sanitizeDiagnostic(e?.message)); } catch { /* never replaces the job's outcome */ } });
+  };
 }
 function statusOf(error: any): number | undefined {
   const value = Number(error?.status || error?.http || error?.statusCode || String(error?.message || '').match(/(?:HTTP\s*|image\s+|Resend\s+)([45]\d\d)/i)?.[1]);
@@ -79,7 +96,8 @@ function hint(status: number | undefined, message: string): string {
 
 const eCause = (error: unknown): object | undefined => { const cause = (error as any)?.cause; return cause && typeof cause === 'object' ? cause : undefined; };
 
-/** Immediate, best-effort reporting. It never changes the caller's outcome or recursively reports delivery errors. */
+/** Immediate, best-effort reporting. It never changes the caller's outcome or recursively reports delivery errors.
+ *  Every report is logged; an operator alert goes out only for a failure nothing will retry (`retrying` is not true). */
 export async function reportFailure(error: unknown, context: FailureContext): Promise<void> {
   try {
     const current = scope.getStore();
@@ -87,7 +105,10 @@ export async function reportFailure(error: unknown, context: FailureContext): Pr
     let cause = eCause(error);
     if (object && current?.seen.has(object)) return;
     for (let depth = 0; cause && depth < 6; depth++, cause = eCause(cause)) if (current?.seen.has(cause)) { if (object) current.seen.add(object); return; }
-    if (object) current?.seen.add(object);
+    // A failure that will be retried or handed to a fallback is logged for diagnosis and never emailed: the system is
+    // working as designed. It stays out of `seen` so the report that ends the action still alerts.
+    const interim = context.retrying === true;
+    if (object && !interim) current?.seen.add(object);
     const e = error as any;
     const merged = safeContext({ ...current?.context, ...defined(context) } as FailureContext);
     const message = e?.name === 'SyntaxError' ? 'Invalid JSON response' : sanitizeDiagnostic(typeof e?.message === 'string' ? e.message : typeof error === 'string' ? error : 'Unknown error');
@@ -101,12 +122,13 @@ export async function reportFailure(error: unknown, context: FailureContext): Pr
       hint: hint(status, message),
     };
     try { console.error('[radar.failure]', JSON.stringify(event)); } catch { /* Logging failure must not block email. */ }
-    if (!failureAlertsEnabled()) return;
+    if (interim || !failureAlertsEnabled()) return;
     // Group explicitly keyed provider incidents for five minutes, never unrelated action failures.
     const identity = merged.incidentKey ? `${event.environment}:${event.service}:${merged.incidentKey}:${Math.floor(Date.now() / 300_000)}` : event.id;
     const key = `radar-failure/${createHash('sha256').update(identity).digest('hex')}`;
-    const { persistAndDeliverAlert } = await (deliveryModule ??= import('./delivery'));
-    await persistAndDeliverAlert(event, key);
+    const deliver = async () => { const { persistAndDeliverAlert } = await (deliveryModule ??= import('./delivery')); await persistAndDeliverAlert(event, key); };
+    if (current?.held?.open) { current.held.alerts.push({ error, send: deliver }); return; }
+    await deliver();
   } catch (deliveryError) {
     try { console.error('[radar.alert.delivery_failed]', sanitizeDiagnostic((deliveryError as any)?.message)); } catch { /* Reporting must never replace the original failure. */ }
   }

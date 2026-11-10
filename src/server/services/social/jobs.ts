@@ -16,7 +16,8 @@ defineJob<PackInput>({
       return { packId };
     } catch (e: any) {
       // A page Radar can't read won't succeed on retry.
-      if (e instanceof RadarError && e.code !== 'ai_failed') throw new PermanentJobError(e.userMessage);
+      // Carrying the original keeps a failure that was already reported from alerting a second time as the job's.
+      if (e instanceof RadarError && e.code !== 'ai_failed') throw Object.defineProperty(new PermanentJobError(e.userMessage), 'cause', { value: e, enumerable: false });
       throw e;
     }
   },

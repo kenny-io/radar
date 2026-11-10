@@ -1,8 +1,15 @@
 # Radar failure alerts
 
-Radar attempts an operational email to `kenny@thally.io` as soon as a running action or configured provider attempt
-fails, before existing retries or fallback. This includes failures that otherwise return partial success. Reporting
-never replaces the existing result, user-safe error, retry or publishing safeguards. New alerts include a formatted
+Radar attempts an operational email to `kenny@thally.io` when a running action fails and nothing is left to retry it.
+A failure that a retry or a fallback will still handle (`retrying: true`: a provider route with another route behind
+it, a job attempt with attempts left, a publication that will be sent again) is logged as `[radar.failure]` and is not
+emailed; if every retry and fallback then fails, the failure that ended the action is emailed once. Failures that
+finish with partial success (a template instead of a generated image, a brief without one source) are still emailed.
+Inside a background job attempt that has attempts left, alerts are held until the attempt ends. When the job finished
+or failed for good they are emailed. When the job will be retried, the alert for the failure being retried (the thrown
+error and its causes) is dropped, and an alert for a failure the attempt had worked around is still emailed. A report
+made after the attempt has ended, for example by a handler that timed out and kept running, is emailed at once.
+Reporting never replaces the existing result, user-safe error, retry or publishing safeguards. New alerts include a formatted
 HTML email and a sectioned plain-text alternative. They contain UTC time, environment/service, operation, available
 business/user/job/resource/request IDs,
 provider/model/status/code, sanitized diagnostic cause and a suggested response. Customer prompts, action payloads,
@@ -28,14 +35,14 @@ This does not retrospectively sanitize historical application logs or every pre-
 | --- | --- |
 | Requests and RPC actions | Unexpected exceptions and operational server errors, with authorized action/business/user correlation |
 | Next.js Node request error hook | Render/route errors outside the standard request wrapper |
-| Background jobs | First failed attempt, further failed attempts, timeouts and unexpected bookkeeping/worker errors |
+| Background jobs | The final failed attempt (earlier attempts are logged only), timeouts and unexpected bookkeeping/worker errors |
 | Scheduler | Failed hook, database lock/tick and scheduler failures |
-| AI writing/research | Each configured provider route failure before retry/failover, including credits, auth, rate limits, downtime and invalid output |
-| Images | Provider failure, template degradation, required-model unavailability and render/storage failure |
-| Article and social publishing | Returned terminal failures, scheduled retries, auth holds, uncertain send outcomes, confirmed sends whose local save fails |
+| AI writing/research | The call failing on every configured route: credits, auth, rate limits, downtime and invalid output. A route that fails before a successful retry or failover is logged only |
+| Images | Every provider failing, template degradation, required-model unavailability and render/storage failure. A provider that fails before another one succeeds is logged only |
+| Article and social publishing | Returned terminal failures, auth holds, uncertain send outcomes, confirmed sends whose local save fails. A send that is scheduled to be retried is logged only |
 | Daily Brief | Failed source fetches, reply/post generation and rescans, including errors previously swallowed |
-| AI visibility | Configured engine failures and saved failed/degraded collection outcomes |
-| Autopilot | Failed stage/scheduling work; owner revocation and planned missing-connection handoffs remain expected states |
+| AI visibility | An engine failing on its last configured route and saved failed/degraded collection outcomes. OpenRouter failing before the engine's official API answers is logged only |
+| Autopilot | Failed stage/scheduling work; owner revocation, planned missing-connection handoffs and schedules refused for something only the owner can fix (`not_connected`, `expired`, `preflight`) remain expected states that go to the owner handoff. Any other refused schedule is reported |
 | Other integrations | Keyword data, Search Console sync/properties, authority/link verification, connection tests and OAuth exchange failures, transactional mail and external token-revocation failures |
 
 Invalid inputs, denied access, expired application sessions, user cancellations, unconfigured **optional** engines,
