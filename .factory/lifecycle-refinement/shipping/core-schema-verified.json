@@ -1,0 +1,11 @@
+{
+  "exact17MigrationHashesAndTimestampsMatch": true,
+  "guideCheckValidated": true,
+  "coreCommit": "2d41a8015effc35fb90d0af12875ebb3963adaa5",
+  "workerEducation": "1",
+  "workerStubs": "0",
+  "workerStartedAfterReadiness": true,
+  "normalFirstLessonAcceptance": 3,
+  "normalQueuedFirstLessons": 2,
+  "priorAutopilotUseSkipped": 1
+}

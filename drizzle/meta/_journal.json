@@ -124,8 +124,15 @@
     {
       "idx": 17,
       "version": "7",
-      "when": 1794268117594,
-      "tag": "0017_first_five",
+      "when": 1794264837882,
+      "tag": "0017_ai_weekly_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794272129974,
+      "tag": "0018_first_five",
       "breakpoints": true
     }
   ]

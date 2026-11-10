@@ -1,4 +1,5 @@
 'use client';
+import { AiReportPreferences } from './AiReportPreferences';
 import { useEffect, useRef, useState } from 'react';
 import { EducationPreference } from './EducationPreference';
 import { Btn } from '@/components/ui';
@@ -55,10 +56,10 @@ export function EmailSettings() {
       if (version === generation.current) setSaving(false);
     }
   };
-  if (loading && !value) return <><EducationPreference /><p className="small sub" role="status">Loading your email preferences…</p></>;
-  if (!value) return <><EducationPreference /><div className="col" style={{ gap: 12, alignItems: 'flex-start' }}><p className="small" role="alert">{error}</p><Btn size="sm" onClick={() => setRetry(n => n + 1)}>Try again</Btn></div></>;
+  if (loading && !value) return <><AiReportPreferences /><EducationPreference /><p className="small sub" role="status">Loading your email preferences…</p></>;
+  if (!value) return <><AiReportPreferences /><EducationPreference /><div className="col" style={{ gap: 12, alignItems: 'flex-start' }}><p className="small" role="alert">{error}</p><Btn size="sm" onClick={() => setRetry(n => n + 1)}>Try again</Btn></div></>;
   return <div aria-busy={loading || saving}>
-    <EducationPreference />
+    <AiReportPreferences /><EducationPreference />
     <p className="small sub" style={{ marginTop: 0 }}>Manage your work reminders. Radar checks that the next step is still unfinished before emailing you.</p>
     <p className="xs sub">Optional emails share a limit of one new message every 24 hours across your businesses, sent during the day. These choices don’t affect billing or security.</p>
     {fields.map(field => <label key={field.key} className="row" style={{ alignItems: 'flex-start', gap: 14, padding: '18px 0', borderTop: '1px solid var(--line2)', cursor: loading || saving ? 'wait' : 'pointer' }}>

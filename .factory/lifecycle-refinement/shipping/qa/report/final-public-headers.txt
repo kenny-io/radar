@@ -1,0 +1,13 @@
+HTTP/1.1 400 Bad Request
+X-Frame-Options: SAMEORIGIN
+Referrer-Policy: no-referrer
+X-Robots-Tag: noindex, nofollow
+Cache-Control: no-store
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+content-security-policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+content-type: text/html; charset=utf-8
+Date: Mon, 09 Nov 2026 23:13:18 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

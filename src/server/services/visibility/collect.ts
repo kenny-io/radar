@@ -15,6 +15,7 @@ import { AI_ENGINES } from '@/lib/constants';
 import type { AiEngine, AiPrompt, AiResult, Profile } from '@/lib/types';
 import { askEngine, EngineUnavailable } from './engines';
 import './stub';
+import { currentPromptSeries } from './history';
 
 const P = schema.aiPrompts; const A = schema.aiResults;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -110,10 +111,11 @@ export function bizMatcher(name: string, domain: string) {
   };
 }
 
-export async function collectOne(resultId: string, opts: { manual: boolean }): Promise<{ status: AiResult['status'] }> {
+export async function collectOne(resultId: string, opts: { manual: boolean; series?: string }): Promise<{ status: AiResult['status'] }> {
   const row = (await db.select({ r: A, prompt: P.prompt }).from(A).innerJoin(P, eq(P.id, A.promptId)).where(eq(A.id, resultId)).limit(1))[0];
   if (!row) return { status: 'not-collected' };
   const bid = row.r.businessId; const engine = row.r.engine as AiEngine;
+  const series = opts.series || await currentPromptSeries(bid);
   const biz = await getBiz(bid); const profile = { ...(biz.profile as Profile), domain: biz.domain };
   const pages = (await db.select({ url: schema.crawlPages.url }).from(schema.crawlPages).where(eq(schema.crawlPages.businessId, bid))).map(x => x.url);
   try {
@@ -133,7 +135,11 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     const idx = match.place(text, products);
     const mentioned = idx >= 0;
     const cites = [...new Set(ans.cites.filter(Boolean))].slice(0, 20);
-    await db.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt: new Date(), attemptedAt: new Date() }).where(eq(A.id, resultId));
+    const collectedAt = new Date();
+    await db.transaction(async tx => {
+      await tx.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt, attemptedAt: collectedAt }).where(eq(A.id, resultId));
+      await tx.insert(schema.aiObservations).values({ businessId: bid, promptId: row.r.promptId, prompt: row.prompt, engine, series, day: collectedAt.toISOString().slice(0,10), status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, measuredAt: collectedAt });
+    });
     trackSoon('visibility.checked', { bid, ref: resultId, props: { engine, mentioned, pos: mentioned ? idx + 1 : null, cites: cites.length } });
     if (mentioned) trackSoon('visibility.mentioned', { bid, ref: resultId, props: { engine, pos: idx + 1, prompt: row.prompt } });
     return { status: mentioned ? 'mentioned' : 'not-mentioned' };
@@ -145,6 +151,7 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     }
     // Keep an earlier real measurement if there is one; otherwise the cell stays "not collected".
     await db.update(A).set({ error: msg, attemptedAt: new Date() }).where(eq(A.id, resultId));
+    await db.insert(schema.aiObservations).values({ businessId: bid, promptId: row.r.promptId, prompt: row.prompt, engine, series, day: new Date().toISOString().slice(0,10), status: 'not-collected', cites: [] });
     return { status: row.r.status === 'not-collected' ? 'not-collected' : row.r.status };
   }
 }
@@ -153,8 +160,9 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
 export async function collectAll(bid: string, opts: { promptIds?: string[]; onProgress?: (done: number, total: number) => Promise<void> } = {}) {
   const where = opts.promptIds?.length ? and(eq(A.businessId, bid), inArray(A.promptId, opts.promptIds)) : eq(A.businessId, bid);
   const cells = await db.select({ id: A.id }).from(A).where(where);
+  const series = await currentPromptSeries(bid);
   let done = 0; const queue = [...cells];
-  const worker = async () => { for (let c = queue.shift(); c; c = queue.shift()) { await collectOne(c.id, { manual: false }); done++; await opts.onProgress?.(done, cells.length); } };
+  const worker = async () => { for (let c = queue.shift(); c; c = queue.shift()) { await collectOne(c.id, { manual: false, series }); done++; await opts.onProgress?.(done, cells.length); } };
   await Promise.all(Array.from({ length: Math.min(4, cells.length) }, worker));
   return { total: cells.length };
 }

@@ -9,6 +9,7 @@ import { GET as getLlms } from '../app/llms.txt/route';
 import { GET as getFullLlms } from '../app/llms-full.txt/route';
 import { GET as getPricing } from '../app/pricing.md/route';
 import nextConfig from '../../next.config';
+import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
 import { shouldServeStreamingMetadata } from 'next/dist/server/lib/streaming-metadata';
 
 describe('public SEO boundaries', () => {
@@ -20,6 +21,24 @@ describe('public SEO boundaries', () => {
     for (const ua of ['OAI-SearchBot/1.4', 'PerplexityBot/1.0', 'Claude-SearchBot/1.0', 'Googlebot/2.1', 'bingbot/2.0', 'Twitterbot/1.0', 'facebookexternalhit/1.1', 'LinkedInBot/1.0', 'Slackbot/1.0', 'Discordbot/2.0', 'WhatsApp/2.0', 'FutureSearchCrawler/1.0', 'Mozilla/5.0']) {
       expect(shouldServeStreamingMetadata(ua, pattern), ua).toBe(false);
     }
+  });
+  it('keeps signed report page and one-click API private after all matching global headers apply', async () => {
+    const configured = await nextConfig.headers!();
+    const effective = (url: string) => {
+      const pathname = new URL(url, SITE_ORIGIN).pathname;
+      const result = new Map<string, string>();
+      // Next applies matching rules in order; a route Response header alone is overridden by config.
+      for (const rule of configured) if (getPathMatch(rule.source)(pathname))
+        for (const header of rule.headers) result.set(header.key.toLowerCase(), header.value);
+      return result;
+    };
+    for (const url of ['/ai-email-preferences?token=signed-test', '/ai-email-preferences/', '/api/ai-email-preferences?token=signed-test']) {
+      const headers = effective(url);
+      expect(headers.get('referrer-policy'), url).toBe('no-referrer');
+      expect(headers.get('cache-control'), url).toBe('no-store');
+      expect(headers.get('x-robots-tag'), url).toBe('noindex, nofollow');
+    }
+    expect(effective('/features/ai-visibility').get('referrer-policy')).toBe('strict-origin-when-cross-origin');
   });
   it('indexes only the explicit public route allowlist, never accounts or customer resources', () => {
     const urls = sitemap().map(p => p.url);
