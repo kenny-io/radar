@@ -51,3 +51,20 @@ The 65 skipped tests need live connector credentials.
 
 Evidence (scripts, logs, screenshots; no credentials): session scratchpad `qa/` and `qa/rerun/`. It is outside the
 repository and will not survive the session.
+
+## Release, 2026-11-10
+
+Owner instruction: "merge and deploy". PR kenny-io/radar#43 merged to `main` at 09:02:28 UTC as merge commit `8dee7358`. Railway auto-deploys `main` to both services.
+
+| Check | Result |
+|---|---|
+| Hand-run version of 0018 (`IF NOT EXISTS` plus journal row) on a throwaway local database | same four columns as the real migrator, safe to re-run, real migrator a no-op afterwards. Not used in production |
+| Railway worker deployment `c5e9f3e9` | SUCCESS on `8dee7358` by 09:03:38 UTC; logged "waiting for database migrations before processing jobs", then "started" |
+| Railway web deployment | SUCCESS on `8dee7358` by 09:04:49 UTC; pre-deploy logged "Migrations applied" |
+| `GET https://radar.thally.io/api/health` | 200 `{"ok":true}` |
+| `GET /signin`, `GET /` | 200 |
+| Worker failures after start | 3, all Autopilot "Connect LinkedIn profile/page first" (`not_connected`). The previous worker on `93be7642` logged 243 of the same. No schema errors |
+
+Not verified in production: any signed-in flow (no production account used), the new columns read directly from the database (direct production database access was not permitted in this session), real Stripe grace behaviour, the first-week page for a real new business.
+
+Seen on the previous worker's logs, not caused by this release: `brief.rank` failing with HTTP 402 (15) and HTTP 429 (5) from the AI provider.
