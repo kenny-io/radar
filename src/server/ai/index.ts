@@ -40,7 +40,7 @@ export interface AiInput<T = any> {
 }
 export interface AiOutput<T = any> { text: string; json: T | null; citations: { url: string; title?: string }[]; model: string; provider: string }
 export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; onDelta?: (d: string) => void; timeoutMs: number; /** Reasoning effort, set by the call's tier (never by a caller). Undefined = send no effort field. */ effort?: Effort }
-export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number; /** Web-search tool calls the provider billed (direct Anthropic and OpenAI). */ searches?: number }
+export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number; /** Web-search tool calls the provider billed (direct Anthropic and OpenAI). */ searches?: number; /** The answer stopped at the output-token limit (stop_reason max_tokens, finish_reason length, incomplete: max_output_tokens). */ truncated?: boolean }
 
 /** Catalogue id → provider API id. Labels in Settings are unchanged; ids verified against provider docs (DIVERGENCES #4). Override with AI_MODEL_MAP='{"gpt-6-sol":"..."}'. */
 const DEFAULT_API_IDS: Record<string, string> = {
@@ -75,6 +75,8 @@ async function aiSettingsFor(businessId?: string | null): Promise<Record<string,
    standard ones, per kind. */
 const FALLBACKS: Record<AiTask, string[]> = { writing: ['claude-sonnet-5.5', 'grok-4.7', 'gpt-6-sol'], research: ['claude-opus-5.5', 'gpt-6-sol', 'grok-4.7'] };
 const DOWN_MS = 10 * 60_000;
+/** A retry after a cut-off answer doubles the output limit, up to this. The limit is a ceiling: unused room costs nothing. */
+export const TRUNCATION_MAX_TOKENS = 32_000;
 const downUntil = new Map<string, number>();
 const isDown = (p: string) => (downUntil.get(p) || 0) > Date.now();
 export function isAccountError(e: any): boolean {
@@ -258,11 +260,15 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         }
         // An empty answer is a failure (e.g. a provider that accepts the request and then errors inside the stream).
         if (viaOr) noteOpenrouterOutcome(); // OpenRouter answered: breaker count resets even if the answer is unusable
-        if (!String(res.text || '').trim() && res.json == null) throw new Error('Empty response from ' + logProvider);
+        // Cut off at the output-token limit: named as such (thinking counts against the limit on Claude 5.x, so a small
+        // budget can be spent before the answer is written), and the retry on this route gets twice the room.
+        const cutOff = (what: string) => Object.assign(new Error(`${what} cut off at the ${call.maxTokens}-token output limit (${logProvider})`), { truncated: true });
+        if (!String(res.text || '').trim() && res.json == null) throw res.truncated ? cutOff('Answer') : new Error('Empty response from ' + logProvider);
         let json: any = null;
         if (input.schema) {
           const raw = fitToSchema(res.json ?? extractJson(res.text), jsonSchema);
           const parsed = (input.schema as z.ZodType<T>).safeParse(raw);
+          if (!parsed.success && res.truncated) throw cutOff('Structured output');
           if (!parsed.success) throw new Error('Structured output failed validation: ' + parsed.error.issues.map(issue => issue.code).slice(0, 8).join(', '));
           json = parsed.data;
         }
@@ -282,6 +288,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
           if (isOpenrouterAccountError(e)) { markOpenrouterDown(String(e?.message || e)); break; }
           if (isOpenrouterModelMissing(e)) { skipOpenrouterModel(orModel, String(e?.message || e)); break; }
         } else if (isAccountError(e)) { downUntil.set(provider, Date.now() + DOWN_MS); downHere.add(provider); console.warn(`[ai] ${provider} unavailable for 10 min: ${String(e?.message || e).slice(0, 160)}`); break; }
+        if (e?.truncated) call.maxTokens = Math.min(call.maxTokens * 2, Math.max(call.maxTokens, TRUNCATION_MAX_TOKENS));
         if (e?.refusal) skipModels.add(modelId);
         if (boost === 'premium' && isOpenrouterTimeout(e) && !e?.idle) { premiumOver = true; break; }
         if (e?.permanent) break;

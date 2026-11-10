@@ -811,3 +811,81 @@ describe('Settings → AI models', () => {
     expect(calls[0].body.model).toBe('claude-fable-5-2');
   });
 });
+
+/* ════════════════════════════ cut off at the output limit ════════════════════════════ */
+describe('an answer cut off at the output-token limit', () => {
+  const only = { OPENAI_API_KEY: undefined, XAI_API_KEY: undefined };
+  const Rank = z.object({ results: z.array(z.object({ id: z.string(), fit: z.number() })) });
+  const rank = (over: any = {}) => ({ purpose: 'brief.rank', prompt: 'score these', schema: Rank, schemaName: 'ranking', maxTokens: 8000, ...over });
+  const FULL = '{"results":[{"id":"a","fit":0.5}]}';
+  const cut = (text: string) => json({ content: [{ type: 'text', text }], stop_reason: 'max_tokens', usage: { input_tokens: 900, output_tokens: 8000 } });
+  /** Sleeps between retries pass at once; every other timer is real. */
+  const fastRetries = () => shrinkTimers({ 800: 1, 1600: 1 });
+
+  it('Anthropic: the failure names the limit, keeps its tokens, and the retry asks for twice the room', async () => {
+    const ai = await boot(only); fastRetries();
+    let n = 0;
+    mockFetch(() => (++n === 1 ? cut('{"results":[{"id":"a","fit":0.5},{"id":"b"') : anText(FULL)));
+    const out = await ai.run('research', rank());
+    expect(out.json).toEqual({ results: [{ id: 'a', fit: 0.5 }] });
+    expect(calls.map(c => c.body.max_tokens)).toEqual([8000, 16000]);
+    expect(calls.map(tag)).toEqual(['an:claude-haiku-5-5', 'an:claude-haiku-5-5']);
+    expect(H.inserted).toEqual([
+      expect.objectContaining({ ok: false, task: 'utility', purpose: 'brief.rank', inputTokens: 900, outputTokens: 8000, error: 'Structured output cut off at the 8000-token output limit (Anthropic)' }),
+      expect.objectContaining({ ok: true, task: 'utility', purpose: 'brief.rank' }),
+    ]);
+  });
+  it('nothing but thinking before the limit: named too, not "Empty response"', async () => {
+    const ai = await boot(only); fastRetries();
+    let n = 0;
+    mockFetch(() => (++n === 1 ? cut('') : anText(FULL)));
+    await ai.run('research', rank({ maxTokens: 4000 }));
+    expect(calls.map(c => c.body.max_tokens)).toEqual([4000, 8000]);
+    expect(H.inserted[0]).toMatchObject({ ok: false, error: 'Answer cut off at the 4000-token output limit (Anthropic)' });
+  });
+  it('the room stops doubling at the ceiling, and a request already above it is not lowered', async () => {
+    const ai = await boot(only); fastRetries();
+    mockFetch(() => cut('{"results":['));
+    await caught(ai.run('research', rank({ maxTokens: 12000 })));
+    expect(calls.map(c => c.body.max_tokens)).toEqual([12000, 24000, 32000]);
+    mockFetch(() => cut('{"results":['));
+    await caught(ai.run('research', rank({ maxTokens: 40000 })));
+    expect(calls.map(c => c.body.max_tokens)).toEqual([40000, 40000, 40000]);
+  });
+  it('a cut-off answer that still validates is an answer: nothing is retried', async () => {
+    const ai = await boot(only);
+    mockFetch(() => cut(FULL));
+    const out = await ai.run('research', rank());
+    expect(out.json).toEqual({ results: [{ id: 'a', fit: 0.5 }] });
+    expect(calls).toHaveLength(1);
+    expect(H.inserted).toEqual([expect.objectContaining({ ok: true })]);
+  });
+  it('an invalid answer that was not cut off keeps the validation message and the same limit', async () => {
+    const ai = await boot(only); fastRetries();
+    mockFetch(() => anText('{"results":"none"}'));
+    await caught(ai.run('research', rank()));
+    expect(calls.map(c => c.body.max_tokens)).toEqual([8000, 8000, 8000]);
+    for (const row of H.inserted) expect(row.error).toMatch(/^Structured output failed validation/);
+  });
+  it('OpenRouter (finish_reason "length") and OpenAI (incomplete: max_output_tokens) are named the same way', async () => {
+    let ai = await bootOR({ ...only, ANTHROPIC_API_KEY: undefined }); fastRetries();
+    let n = 0;
+    mockFetch(() => (++n === 1 ? orText('{"results":[', { prompt_tokens: 900, completion_tokens: 8000, cost: 0.004 }, 'length') : orText(FULL)));
+    await ai.run('research', rank());
+    expect(calls.map(c => c.body.max_tokens)).toEqual([8000, 16000]);
+    expect(H.inserted[0]).toMatchObject({ ok: false, costUsd: 0.004, error: 'Structured output cut off at the 8000-token output limit (openrouter)' });
+
+    H.inserted.length = 0; n = 0;
+    ai = await boot({ ANTHROPIC_API_KEY: undefined, XAI_API_KEY: undefined, RADAR_AI_UTILITY_MODEL: 'gpt-6-luna' });
+    mockFetch(() => (++n === 1
+      ? json({ status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' }, output: [{ type: 'message', content: [{ type: 'output_text', text: '{"results":[', annotations: [] }] }], usage: { input_tokens: 900, output_tokens: 8000 } })
+      : oaText(FULL)));
+    await ai.run('research', rank());
+    expect(calls.map(c => c.body.max_output_tokens)).toEqual([8000, 16000]);
+    expect(H.inserted[0]).toMatchObject({ ok: false, outputTokens: 8000, error: 'Structured output cut off at the 8000-token output limit (OpenAI)' });
+  });
+  it('the Daily Brief ranking call asks for 8,000 tokens', async () => {
+    const src = (await import('node:fs')).readFileSync(new URL('../services/brief/rank.ts', import.meta.url), 'utf8');
+    expect(src).toMatch(/purpose: 'brief\.rank'[^\n]*maxTokens: 8000/);
+  });
+});
