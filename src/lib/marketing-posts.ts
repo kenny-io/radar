@@ -17,7 +17,7 @@ export const BLOG_POSTS = [
     ],
     "cta": {
       "label": "AI visibility in Radar",
-      "headline": "Radar asks five assistants your customers’ questions every night.",
+      "headline": "Radar asks five assistants your customers’ questions every week.",
       "description": "See where you’re mentioned, where you’re cited, and turn every gap into a topic.",
       "href": "/features/ai-visibility"
     },

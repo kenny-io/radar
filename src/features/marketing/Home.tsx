@@ -9,14 +9,14 @@ const connectors = [['framer', 'Framer'], ['ghost', 'Ghost'], ['github', 'GitHub
 const comparison = [
   ['Where you show up', 'Google, AI answers, social feeds and conversations', 'Mostly Google', 'Wherever you find time to post'],
   ['Your time', 'A few minutes of review a day', 'Calls, briefs and monthly reports', 'Evenings and weekends'],
-  ['AI assistants', 'Checked every night across five', 'Rarely tracked', 'No way to know what they say'],
+  ['AI assistants', 'Checked every week across five', 'Rarely tracked', 'No way to know what they say'],
   ['Publishing control', 'Review-first, or automatic publishing you enable', 'On their schedule', 'You do all of it'],
   ['Price', '$50/month, everything included', 'A monthly retainer', 'Several tool subscriptions'],
 ];
 const included = [
   ['Daily Brief', 'Conversations on Reddit, X, LinkedIn, Hacker News and Quora, with replies in your voice.'],
   ['Content Calendar', 'Researched articles for your schedule. Review them, or enable Daily autopilot.'],
-  ['AI Visibility', 'Nightly checks across ChatGPT, Perplexity, Gemini, Claude and Grok.'],
+  ['AI Visibility', 'Weekly checks across ChatGPT, Perplexity, Gemini, Claude and Grok.'],
   ['Social Marketing', 'On-brand posts and visuals, with optional automatic generation and scheduling.'],
   ['Performance', 'Search Console data with suggestions ranked by impact.'],
   ['Backlinks network', 'Optional, approved, disclosed links from relevant businesses.'],
@@ -37,7 +37,7 @@ export function Home() {
         <div className="pg-head rv"><h2 className="pg-t" id="un-t">Great products stay invisible when no one knows your name yet.</h2><p className="pg-l">Three walls stand between a new product and its first customers.</p></div>
         <div className="woes wl rv">
           <article><div className="bv vg-search" aria-hidden="true"><p className="vq"><i /><span>best time tracker for freelancers</span></p><ul><li><b>Tallyhour · Time tracking for teams</b><span>tallyhour.example</span></li><li><b>Hourwise · Billable hours, simplified</b><span>hourwise.example</span></li></ul><p className="vmiss"><i className="dot" />Your site: not on page one</p></div><p className="bk">No domain reputation</p><h3 className="bt3">Google ranks sites it already trusts.</h3><p className="fix"><i className="dot" /><span>Radar aims every article at keywords your site can realistically win.</span></p></article>
-          <article><div className="bv vg-ai" aria-hidden="true"><p className="vbub">What’s the best time tracker for freelance designers?</p><p className="vans">Most freelancers start with <b>Tallyhour</b> or <b>Hourwise</b>. Both offer simple timers and invoicing.</p><p className="vmiss"><i className="dot" />Your product: not mentioned</p></div><p className="bk">No brand recognition</p><h3 className="bt3">AI assistants recommend names they’ve seen widely.</h3><p className="fix"><i className="dot" /><span>Radar checks five assistants nightly and turns every gap into a topic.</span></p></article>
+          <article><div className="bv vg-ai" aria-hidden="true"><p className="vbub">What’s the best time tracker for freelance designers?</p><p className="vans">Most freelancers start with <b>Tallyhour</b> or <b>Hourwise</b>. Both offer simple timers and invoicing.</p><p className="vmiss"><i className="dot" />Your product: not mentioned</p></div><p className="bk">No brand recognition</p><h3 className="bt3">AI assistants recommend names they’ve seen widely.</h3><p className="fix"><i className="dot" /><span>Radar checks five assistants every week and turns every gap into a topic.</span></p></article>
           <article><div className="bv vg-net" aria-hidden="true"><span className="nw" /><span className="ping" /><span className="me" /><span className="vlab">Your followers</span></div><p className="bk">Stuck in your network</p><h3 className="bt3">Launch posts reach your followers, then stop.</h3><p className="fix"><i className="dot" /><span>Radar finds the conversations where strangers ask for what you built.</span></p></article>
         </div>
       </div></section>
@@ -92,7 +92,7 @@ export function Home() {
             </details>
             <details>
               <summary>Can I see whether AI assistants recommend me?</summary>
-              <p>Yes. Radar checks your prompts nightly across ChatGPT, Perplexity, Gemini, Claude and Grok, showing mentions, position and cited sites. Failed checks keep the last recorded result; prompts without a result show Not collected.</p>
+              <p>Yes. Radar checks your prompts every week across ChatGPT, Perplexity, Gemini, Claude and Grok, showing mentions, position and cited sites. Failed checks keep the last recorded result; prompts without a result show Not collected.</p>
             </details>
             <details>
               <summary>Do I need Google Search Console?</summary>

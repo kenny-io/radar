@@ -52,7 +52,7 @@ export function renderEducationLesson(lesson: EducationLessonId, context: Educat
           ...intro,
         ],
         steps: [
-          `Open Performance → AI Visibility and add two buyer questions. Try ${question}. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.`,
+          `Open Performance → AI Visibility and add two buyer questions. Try ${question}. Radar collects answers to a new question as soon as you add it, then checks every question once a week.`,
           'Open a collected answer and follow its citations. Look for whether your business is named, how it is described and which sources support that description. Compare those details with the information on your own site.',
         ],
         ctaLabel: cta('Check my AI visibility'),

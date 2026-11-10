@@ -35,7 +35,7 @@ Required env: `DATABASE_URL`, `APP_URL`, `RADAR_SECRET_KEY` (encrypts OAuth toke
 Then add credentials for the integrations you want — every one is optional and listed in `.env.example`:
 
 - **Google** OAuth client (sign-in + Search Console, scope `webmasters.readonly`)
-- **AI models**: Anthropic, OpenAI, xAI (Settings → AI models picks per business; defaults: writing = GPT-6 Sol, research = Claude Opus 5.5)
+- **AI models**: Anthropic, OpenAI, xAI (Settings → AI models picks per business; default for writing and research = Claude Opus 5.5). Radar also picks by task: scoring and extraction run on a small model, and article drafts, refresh drafts and calendar topics ask Claude Fable 5.2 first (`RADAR_AI_TIERS` and the other `RADAR_AI_*` switches are in `.env.example`)
 - **AI Visibility** targets: OpenAI (ChatGPT), Perplexity, Gemini, Anthropic (Claude), xAI (Grok)
 - **DataForSEO** (keyword volume/difficulty/related/competitor gaps), **YouTube Data API**, **OpenPageRank** (authority)
 - **Reddit** app + **X API** bearer token (Daily Brief)
@@ -104,9 +104,12 @@ See [failure alert operations](docs/OBSERVABILITY.md) for coverage, a smoke test
 ### Background work and idle businesses
 
 Radar slows background work for a business nobody is using. A business is active when a member opened or used the
-app, or clicked a Radar email link, in the last 7 days, or when Autopilot is on. Idle businesses (7–30 days) get AI
-visibility checks and automatic social packs at most weekly; after 30 days both pause until the owner returns. The
-morning Daily Brief is unaffected. A two-hour brief rescan runs only after the owner has acted on one of the day's
+app, or clicked a Radar email link, in the last 7 days, or when Autopilot is on. Idle businesses (7–30 days) get
+automatic social packs at most weekly. AI visibility is collected once a week for every business, active or idle, on
+its Sunday night; a Sunday that was missed, or whose run failed or collected nothing, is caught up on the first night
+the last run that collected anything is 8 or more days old (the next night, unless a full run happened earlier that week)
+(`RADAR_VISIBILITY_CADENCE=nightly` restores nightly collection for active businesses). After 30 days both pause until
+the owner returns. The morning Daily Brief is unaffected. A two-hour brief rescan runs only after the owner has acted on one of the day's
 recommendations. A failed renewal keeps access for `RADAR_PAST_DUE_GRACE_HOURS` (default 48). Deploy migration
 `0018_first_five` before web and worker; the worker waits for it. See `docs/CONTRACTS.md` → First five optimizations.
 

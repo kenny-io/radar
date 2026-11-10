@@ -3,13 +3,14 @@ import { autopilotPublic } from './services/autopilot/policy';
 import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { notFound } from './errors';
-import { AI_DEFAULT, BRIEF_DEFAULT } from '@/lib/constants';
+import { BRIEF_DEFAULT } from '@/lib/constants';
 import { imageSettingsOf } from '@/lib/imageOptions';
 import { addDays, todayIn } from '@/lib/format';
 import { kwMeasured } from './services/gsc/metrics';
 import { decrypt } from './crypto';
 import { socialOn } from './flags';
 import { readInstructions } from './ai/instructions';
+import { standardDefault } from './ai/tiers';
 import { applySocial, extraBriefDays, socialProjection, stripSocial } from './services/social/publish/project';
 import { firstRunOf } from './services/firstRun';
 import { activityUnread, failedJobsOf } from './services/activity';
@@ -74,8 +75,9 @@ export function socialAutoOf(b: BizRow): SocialAuto {
   return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}) };
 }
 export function briefSettingsOf(b: BizRow) { return { ...BRIEF_DEFAULT, ...(b.briefSettings || {}) }; }
-/** Model choices only: writing instructions share the `ai` column but are projected separately (Workspace.instructions). */
-export function aiPrefsOf(b: BizRow) { return { writing: b.ai?.writing || AI_DEFAULT.writing, research: b.ai?.research || AI_DEFAULT.research }; }
+/** Model choices only: writing instructions share the `ai` column but are projected separately (Workspace.instructions).
+ *  With no choice saved, Settings shows the model standard calls of that kind really use (the deployment's default). */
+export function aiPrefsOf(b: BizRow) { return { writing: b.ai?.writing || standardDefault('writing'), research: b.ai?.research || standardDefault('research') }; }
 export function defaultProfile(domain: string): Profile {
   return { domain, business: { name: '', description: '', offerings: [], industry: '', positioning: '', differentiators: [] }, audience: { segments: [], buyers: [], needs: [], competitors: [] }, keywords: { list: [] }, brand: { logo: null, primary: '#17181C', secondary: '#EF6A2E', voice: '', language: 'English (US)', markets: ['United States'] } };
 }

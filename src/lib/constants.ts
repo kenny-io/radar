@@ -4,7 +4,8 @@ import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, 
 /* ── AI models (Settings → AI models is the ONLY place these names render) ── */
 export const AI_MODELS = [
   { p: 'Anthropic', list: [
-    { id: 'claude-fable-5.1', l: 'Claude Fable 5.1', d: 'Anthropic’s most capable model. Slowest and highest cost.' },
+    { id: 'claude-fable-5.2', l: 'Claude Fable 5.2', d: 'Anthropic’s most capable model. Slowest and highest cost.' },
+    { id: 'claude-fable-5.1', l: 'Claude Fable 5.1', d: 'The previous Fable model. Costs more than Fable 5.2.' },
     { id: 'claude-opus-5.5', l: 'Claude Opus 5.5', d: 'Deep reasoning and careful judgment on tone.' },
     { id: 'claude-sonnet-5.5', l: 'Claude Sonnet 5.5', d: 'Fast and capable for everyday writing.' },
     { id: 'claude-haiku-5.5', l: 'Claude Haiku 5.5', d: 'Fastest and lowest cost.' }] },
@@ -21,7 +22,8 @@ export const AI_TASKS = [
   { k: 'writing', l: 'Ideas and writing', d: 'Post ideas, social posts and articles.' },
   { k: 'research', l: 'Web research', d: 'Daily Brief scans of Reddit, X, LinkedIn and more.' },
 ] as const;
-export const AI_DEFAULT = { writing: 'gpt-6-sol', research: 'claude-opus-5.5' };
+/** The standard default per kind. The server may override it per deployment (src/server/ai/tiers.ts: standardDefault). */
+export const AI_DEFAULT = { writing: 'claude-opus-5.5', research: 'claude-opus-5.5' };
 export function aiFind(id: string) {
   for (const g of AI_MODELS) { const m = g.list.find(x => x.id === id); if (m) return { ...m, p: g.p }; }
   return null;

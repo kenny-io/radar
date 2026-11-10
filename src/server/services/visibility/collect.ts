@@ -67,12 +67,12 @@ export async function addPrompt(bid: string, prompt: string) {
 export async function listVisibility(bid: string) {
   const prompts = await db.select().from(P).where(eq(P.businessId, bid)).orderBy(asc(P.createdAt));
   const rows = await db.select().from(A).where(eq(A.businessId, bid));
-  // A collection run in progress: cells in its scope not yet attempted since it started show as "collecting".
-  const run = (await db.select({ createdAt: schema.jobs.createdAt, payload: schema.jobs.payload }).from(schema.jobs)
-    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'visibility.run'), inArray(schema.jobs.status, ['queued', 'running'])))
-    .orderBy(asc(schema.jobs.createdAt)).limit(1))[0];
-  const scope: string[] | null = run ? ((run.payload as any)?.promptIds || null) : null;
-  const pendingInRun = (r: typeof rows[number]) => !!run && (!scope || scope.includes(r.promptId)) && (!r.attemptedAt || r.attemptedAt < run.createdAt);
+  // Collection runs queued or in progress (there can be several: a run per prompt the user just added, a full run behind
+  // them): a cell in the scope of any of them, not yet attempted since that run was created, shows as "collecting".
+  const runs = await db.select({ createdAt: schema.jobs.createdAt, payload: schema.jobs.payload }).from(schema.jobs)
+    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'visibility.run'), inArray(schema.jobs.status, ['queued', 'running'])));
+  const pendingInRun = (r: typeof rows[number]) => runs.some(run => { const scope: string[] | null = (run.payload as any)?.promptIds || null;
+    return (!scope || scope.includes(r.promptId)) && (!r.attemptedAt || r.attemptedAt < run.createdAt); });
   const by = new Map(rows.map(r => [r.promptId + '|' + r.engine, r]));
   const results: AiResult[] = [];
   for (const p of prompts) for (const engine of AI_ENGINES) {
@@ -111,9 +111,11 @@ export function bizMatcher(name: string, domain: string) {
   };
 }
 
-export async function collectOne(resultId: string, opts: { manual: boolean; series?: string }): Promise<{ status: AiResult['status'] }> {
+/** `collected`: this call stored a new measurement for the cell. False when the assistant failed, even if the cell
+ *  still shows an earlier measurement (`status` is then that earlier status). */
+export async function collectOne(resultId: string, opts: { manual: boolean; series?: string }): Promise<{ status: AiResult['status']; collected: boolean }> {
   const row = (await db.select({ r: A, prompt: P.prompt }).from(A).innerJoin(P, eq(P.id, A.promptId)).where(eq(A.id, resultId)).limit(1))[0];
-  if (!row) return { status: 'not-collected' };
+  if (!row) return { status: 'not-collected', collected: false };
   const bid = row.r.businessId; const engine = row.r.engine as AiEngine;
   const series = opts.series || await currentPromptSeries(bid);
   const biz = await getBiz(bid); const profile = { ...(biz.profile as Profile), domain: biz.domain };
@@ -142,7 +144,7 @@ export async function collectOne(resultId: string, opts: { manual: boolean; seri
     });
     trackSoon('visibility.checked', { bid, ref: resultId, props: { engine, mentioned, pos: mentioned ? idx + 1 : null, cites: cites.length } });
     if (mentioned) trackSoon('visibility.mentioned', { bid, ref: resultId, props: { engine, pos: idx + 1, prompt: row.prompt } });
-    return { status: mentioned ? 'mentioned' : 'not-mentioned' };
+    return { status: mentioned ? 'mentioned' : 'not-mentioned', collected: true };
   } catch (e: any) {
     const msg = e instanceof EngineUnavailable ? 'not_configured' : String(e?.message || e).slice(0, 300);
     if (!(e instanceof EngineUnavailable)) {
@@ -152,17 +154,18 @@ export async function collectOne(resultId: string, opts: { manual: boolean; seri
     // Keep an earlier real measurement if there is one; otherwise the cell stays "not collected".
     await db.update(A).set({ error: msg, attemptedAt: new Date() }).where(eq(A.id, resultId));
     await db.insert(schema.aiObservations).values({ businessId: bid, promptId: row.r.promptId, prompt: row.prompt, engine, series, day: new Date().toISOString().slice(0,10), status: 'not-collected', cites: [] });
-    return { status: row.r.status === 'not-collected' ? 'not-collected' : row.r.status };
+    return { status: row.r.status === 'not-collected' ? 'not-collected' : row.r.status, collected: false };
   }
 }
 
-/** Collect every cell (or the cells of the given prompts) with a small concurrency limit. */
+/** Collect every cell (or the cells of the given prompts) with a small concurrency limit. `collected` is how many of the
+ *  `total` cells got a new measurement in this run; 0 of some means every assistant failed (idle.ts does not count such a run). */
 export async function collectAll(bid: string, opts: { promptIds?: string[]; onProgress?: (done: number, total: number) => Promise<void> } = {}) {
   const where = opts.promptIds?.length ? and(eq(A.businessId, bid), inArray(A.promptId, opts.promptIds)) : eq(A.businessId, bid);
   const cells = await db.select({ id: A.id }).from(A).where(where);
   const series = await currentPromptSeries(bid);
-  let done = 0; const queue = [...cells];
-  const worker = async () => { for (let c = queue.shift(); c; c = queue.shift()) { await collectOne(c.id, { manual: false, series }); done++; await opts.onProgress?.(done, cells.length); } };
+  let done = 0, collected = 0; const queue = [...cells];
+  const worker = async () => { for (let c = queue.shift(); c; c = queue.shift()) { if ((await collectOne(c.id, { manual: false, series })).collected) collected++; done++; await opts.onProgress?.(done, cells.length); } };
   await Promise.all(Array.from({ length: Math.min(4, cells.length) }, worker));
-  return { total: cells.length };
+  return { total: cells.length, collected };
 }

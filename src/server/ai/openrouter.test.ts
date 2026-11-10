@@ -37,12 +37,13 @@ const anthropicOk = (text: string) => json({ content: [{ type: 'text', text }], 
 
 const saved = { ...env };
 beforeEach(() => {
+  vi.stubEnv('RADAR_AI_TIERS', 'off'); // this suite describes the routing from before model tiers (tiered: tiers.run.test.ts)
   resetOpenrouterState(); inserted.length = 0;
   Object.assign(env, { openrouterKey: 'or-key', openaiKey: 'oa-key', anthropicKey: 'an-key', xaiKey: 'xa-key', perplexityKey: '', geminiKey: '', openrouterModelMap: '', openrouterImageModel: '', openrouterVisModels: '', devStubs: false, appUrl: 'https://radar.example' });
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
-afterEach(() => { Object.assign(env, saved); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(() => { Object.assign(env, saved); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe('OpenRouter route order', () => {
   it('retains the non-collecting provider restriction even if a caller supplies permissive preferences', async () => {
@@ -221,7 +222,7 @@ describe('without OPENROUTER_API_KEY', () => {
     expect(out).toMatchObject({ provider: 'OpenAI', model: 'gpt-6-sol', text: 'direct' });
     expect(calls.map(c => c.url)).toEqual(['https://api.openai.com/v1/responses']);
     expect(calls[0].body).toEqual({ model: 'gpt-6-sol', input: [{ role: 'user', content: 'p' }], max_output_tokens: 4000 });
-    expect(inserted.at(-1)).toMatchObject({ provider: 'OpenAI', model: 'gpt-6-sol', ok: true, costUsd: (1000 * 2 + 1000 * 8) / 1e6 });
+    expect(inserted.at(-1)).toMatchObject({ provider: 'OpenAI', model: 'gpt-6-sol', ok: true, costUsd: (1000 * 2 + 1000 * 10) / 1e6 });
   });
 });
 

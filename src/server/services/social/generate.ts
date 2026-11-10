@@ -5,7 +5,8 @@ import { and, eq } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { ai, profileContext } from '../../ai';
 import { getBiz, bizToday } from '../../workspace';
-import { renderImageFile, imageModelConfigured } from '../images';
+import { renderImageFile, imageModelConfigured, generatePhotoRaw, MODEL_STYLES, type ImageSource } from '../images';
+import { reportFailure } from '../../observability/failures';
 import { randomToken } from '../../crypto';
 import { IMG_SIZES, plat } from '@/lib/constants';
 import { shortHead } from '@/lib/format';
@@ -82,11 +83,25 @@ export async function writePost(bid: string, p: Profile, k: Platform, o: { kind:
 /** Image style actually rendered: "Custom direction" renders as an illustration guided by the custom text. */
 export const renderStyle = (s: PackStyle): ImageStyle => (s === 'custom' ? 'illustration' : s);
 
-/** Renders the post's visual to a real file. `meta` (size, type) is stored as the post's imageMeta for the posting checks. */
-export async function renderPostImage(bid: string, p: Profile, k: Platform, post: Pick<SocialPost, 'style' | 'seed' | 'imagePrompt'>, headline: string, custom?: string): Promise<{ url: string; photo: boolean; meta: MediaMeta }> {
+/** What the image model is asked to draw for a post: its own image prompt, else the pack's custom direction, else the headline. */
+const postImagePrompt = (post: Pick<SocialPost, 'imagePrompt'>, headline: string, custom?: string) => post.imagePrompt || (custom?.trim() ? `${custom.trim()}. Topic: ${headline}` : headline);
+
+/** A new pack asks the image model once and cuts each platform's file from that one image. RADAR_SOCIAL_PACK_IMAGE=per_platform
+ *  (read at call time) goes back to one generation per platform. */
+const sharedPackImage = () => (process.env.RADAR_SOCIAL_PACK_IMAGE || '').trim().toLowerCase() !== 'per_platform';
+/** The aspect (w/h) to generate a pack's shared image at: the geometric mean of its widest and tallest platform ratio,
+ *  so the worst crop is as small as it can be for that pack. One platform (or several of one size) gives that size's own ratio. */
+export function packAspect(platforms: Platform[]): number {
+  const ratios = platforms.map(k => IMG_SIZES[k][0] / IMG_SIZES[k][1]);
+  return ratios.length ? Math.sqrt(Math.max(...ratios) * Math.min(...ratios)) : IMG_SIZES.hero[0] / IMG_SIZES.hero[1];
+}
+
+/** Renders the post's visual to a real file. `meta` (size, type) is stored as the post's imageMeta for the posting checks.
+ *  `from` is a new pack's shared image (createPack); without it the post gets its own render, as regenerate and publish do. */
+export async function renderPostImage(bid: string, p: Profile, k: Platform, post: Pick<SocialPost, 'style' | 'seed' | 'imagePrompt'>, headline: string, custom?: string, from?: ImageSource): Promise<{ url: string; photo: boolean; meta: MediaMeta }> {
   const [w, h] = IMG_SIZES[k];
   const style = renderStyle(post.style);
-  const { url, bytes, type } = await renderImageFile({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: post.imagePrompt || (custom?.trim() ? `${custom.trim()}. Topic: ${headline}` : headline), modelRequired: !!post.imagePrompt, w, h });
+  const { url, bytes, type } = await renderImageFile({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: postImagePrompt(post, headline, custom), modelRequired: !!post.imagePrompt, w, h }, from);
   return { url, photo: (!!post.imagePrompt || style === 'photography' || style === 'illustration') && imageModelConfigured(), meta: { bytes, type } };
 }
 
@@ -99,11 +114,23 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   const seed0 = Math.floor(Math.random() * 50);
   const posts: Partial<Record<Platform, SocialPost & { photo?: boolean }>> = {};
   const headline = input.source.kind === 'url' ? g.headline : input.source.label;
+  // A style that goes to the image model: one generation for the whole pack, made at the first platform's image step.
+  const modelPack = sharedPackImage() && MODEL_STYLES.includes(renderStyle(style)) && imageModelConfigured();
+  let shared: ImageSource | undefined;
   let i = 0;
   for (const k of input.platforms) {
     const text = await writePost(bid, p, k, { kind: input.source.kind, label: input.source.label, g, voice: input.voice, v: seed0 + i, context: options.context, recent: options.recent });
     const post: SocialPost & { photo?: boolean } = { text, style, seed: seed0 * 7 + i, imageUrl: null, copiedAt: null, v: 0 };
-    try { const r = await renderPostImage(bid, p, k, post, headline, input.custom); post.imageUrl = r.url; post.photo = r.photo; post.imageMeta = r.meta; }
+    try {
+      if (modelPack && shared === undefined) {
+        const a = packAspect(input.platforms), sizes = new Set(input.platforms.map(x => IMG_SIZES[x].join('x')));
+        shared = 'template'; // the model is asked once per pack: if it fails, every platform gets its template
+        try { shared = { raw: await generatePhotoRaw({ bid, kind: 'social', style: renderStyle(style), brand: p.brand, headline, name: p.business.name, seed: seed0 * 7, prompt: postImagePrompt(post, headline, input.custom), w: 1200, h: Math.round(1200 / a), cropSafe: sizes.size > 1 }) }; }
+        catch (e: any) { await reportFailure(e, { source: 'image', operation: 'image.generate', businessId: bid, degraded: true }); console.error('[social] pack image failed, using templates', e?.message); }
+      }
+      const r = await renderPostImage(bid, p, k, post, headline, input.custom, modelPack ? shared : undefined);
+      post.imageUrl = r.url; post.photo = r.photo; post.imageMeta = r.meta;
+    }
     catch (e: any) { console.error('[social] image render failed', e?.message); } // the live template shows while imageUrl is missing
     posts[k] = post; i++;
     await onProgress?.(i);

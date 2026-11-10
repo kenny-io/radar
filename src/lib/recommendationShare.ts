@@ -32,7 +32,7 @@ export function summarizeRecommendationShare(rows: readonly RecommendationAnswer
   return { ...totals(rows, domain), byEngine: Object.fromEntries(engines.map(engine => [engine, totals(rows.filter(r => r.engine === engine), domain)])) };
 }
 export interface HistoryAnswer extends RecommendationAnswer { promptId: string; series: string; day: string; measuredAt: Date | string }
-/** A manual retry cannot outweigh a nightly cell: use the latest successful observation per UTC day/cell. */
+/** A manual retry cannot outweigh a scheduled cell: use the latest successful observation per UTC day/cell. */
 export function dailyObservations(rows: readonly HistoryAnswer[], series: string): HistoryAnswer[] {
   const cells = new Map<string, HistoryAnswer>();
   for (const row of rows) {
