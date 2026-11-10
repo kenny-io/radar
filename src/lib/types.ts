@@ -253,7 +253,7 @@ export interface Workspace {
   profile: Profile; edited: Edited;
   gsc: GscState;
   calendar: CalendarState;
-  articles: Record<string, Article>;
+  articles: Record<string, ArticleSummary>;
   blog: BlogState;
   social: {
     packs: SocialPack[]; auto: SocialAuto; /** Last image setting used for social posts (Daily Brief included); the next default. */ img: import('./imageOptions').ImageSettings | null;

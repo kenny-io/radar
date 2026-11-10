@@ -13,7 +13,7 @@ import { applySocial, extraBriefDays, socialProjection, stripSocial } from './se
 import { firstRunOf } from './services/firstRun';
 import { activityUnread, failedJobsOf } from './services/activity';
 import { billingNoticeOf } from './billing/notice';
-import type { Article, BacklinksState, BlogState, BriefDay, BriefState, CalendarEntry, CalendarSettings, ConnectionPublic, GscState, JobSummary, Member, Profile, Proposal, Role, SocialAuto, SocialPack, Workspace, LiveLink } from '@/lib/types';
+import type { ArticleSummary, BacklinksState, BlogState, BriefDay, BriefState, CalendarEntry, CalendarSettings, ConnectionPublic, GscState, JobSummary, Member, Profile, Proposal, Role, SocialAuto, SocialPack, Workspace, LiveLink } from '@/lib/types';
 
 export type BizRow = typeof schema.businesses.$inferSelect;
 
@@ -23,9 +23,28 @@ export async function getBiz(bid: string): Promise<BizRow> {
   return r[0];
 }
 
-/** Bump the business revision so connected clients refetch (SSE). Call after every write. */
-export async function bump(bid: string) {
-  await db.update(schema.businesses).set({ rev: sql`${schema.businesses.rev} + 1`, updatedAt: new Date() }).where(eq(schema.businesses.id, bid));
+/** Bump the business revision so connected clients refetch (SSE). Call after every write. Returns the new revision. */
+export async function bump(bid: string): Promise<number> {
+  const r = await db.update(schema.businesses).set({ rev: sql`${schema.businesses.rev} + 1`, updatedAt: new Date() }).where(eq(schema.businesses.id, bid)).returning({ rev: schema.businesses.rev });
+  return r[0]?.rev ?? 0;
+}
+
+/* ── Articles in the workspace (first-five architecture §3.1, §3.2) ── */
+export type ArticlesMode = 'summary' | 'full';
+/** The client sends `x-radar-client: 2` on every request (src/client/api.ts) and loads bodies with `article.get`. A request
+ *  without it comes from a tab opened before that shipped: it must keep getting whole articles, or its editor would
+ *  render empty and could autosave an empty body. Remove the 'full' branch one release after this ships. */
+export const articlesMode = (req: Request): ArticlesMode => (Number(req.headers.get('x-radar-client')) >= 2 ? 'summary' : 'full');
+/** `v` of an article row: its updated_at in epoch ms. Every writer of `articles` advances it. */
+export const articleV = (updatedAt: Date | null | undefined) => (updatedAt ? updatedAt.getTime() : 0);
+async function articlesOf(bid: string, mode: ArticlesMode): Promise<Record<string, ArticleSummary>> {
+  const A = schema.articles; const out: Record<string, any> = {};
+  // Legacy tabs: exactly what they always got (typed as summaries only because the current client never takes this branch).
+  if (mode === 'full') { for (const a of await db.select().from(A).where(eq(A.businessId, bid))) out[a.entryId] = a.data; return out; }
+  // Never select `data`: the body stays in Postgres.
+  const rows = await db.select({ id: A.entryId, generated: sql<string | null>`${A.data}->>'generated'`, outline: sql<unknown>`${A.data}->'brief'->'outline'`, at: A.updatedAt }).from(A).where(eq(A.businessId, bid));
+  for (const r of rows) out[r.id] = { generated: r.generated === 'true', outline: Array.isArray(r.outline) ? r.outline : [], v: articleV(r.at) } satisfies ArticleSummary;
+  return out;
 }
 
 export const bizToday = (b: Pick<BizRow, 'timezone'>) => todayIn(b.timezone || 'America/New_York');
@@ -71,12 +90,12 @@ export function liveFromRow(r: typeof schema.liveLinks.$inferSelect): LiveLink {
   return { id: r.id, from: r.fromUrl, to: r.toUrl, anchor: r.anchor, rel: r.rel, since: String(r.since), status: r.status, lastCheckedAt: r.lastCheckedAt ? r.lastCheckedAt.toISOString() : null };
 }
 
-export async function loadWorkspace(bid: string, userId: string, role: Role): Promise<Workspace> {
+export async function loadWorkspace(bid: string, userId: string, role: Role, opts: { articles?: ArticlesMode } = {}): Promise<Workspace> {
   const b = await getBiz(bid);
   const today = bizToday(b);
-  const [entries, arts, conns, packs, days, gscRow, props, live, team, jobRows, suggs, firstRun, billing, unread, failed] = await Promise.all([
+  const [entries, articles, conns, packs, days, gscRow, props, live, team, jobRows, suggs, firstRun, billing, unread, failed] = await Promise.all([
     db.select().from(schema.calendarEntries).where(eq(schema.calendarEntries.businessId, bid)).orderBy(schema.calendarEntries.date, schema.calendarEntries.createdAt),
-    db.select().from(schema.articles).where(eq(schema.articles.businessId, bid)),
+    articlesOf(bid, opts.articles || 'summary'),
     db.select().from(schema.connections).where(eq(schema.connections.businessId, bid)).orderBy(schema.connections.createdAt),
     db.select().from(schema.socialPacks).where(eq(schema.socialPacks.businessId, bid)).orderBy(desc(schema.socialPacks.createdAt)),
     db.select().from(schema.briefDays).where(and(eq(schema.briefDays.businessId, bid), gte(schema.briefDays.date, addDays(today, -30)))).orderBy(schema.briefDays.date),
@@ -121,8 +140,6 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
   const socialPacks = packs.map(p => ({ ...(p.data as SocialPack), id: p.id }));
   const auto = socialAutoOf(b);
   if (proj) applySocial(socialPacks, briefDaysMap, proj); else stripSocial(socialPacks, briefDaysMap, auto);
-  const articles: Record<string, Article> = {};
-  for (const a of arts) articles[a.entryId] = a.data as Article;
   const calEntries = entries.map(entryFromRow);
   const todayBrief = briefDaysMap[today];
   const kwl = ((b.profile as Profile)?.keywords?.list || []).map(k => k.kw);

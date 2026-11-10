@@ -1,8 +1,11 @@
 'use client';
 // Article workspace — port of ArticleWorkspace / GenStream / Block / SeoPanel (prototype/radar-article.jsx).
 // Drafting streams from the `article.draft` job; every edit autosaves to the articles table.
+// The article itself is not in the workspace: `useArticle` loads it when the screen opens and holds it (client/articles.ts).
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
+import { useArticle } from '@/client/articles';
+import { bodyImagesLanded, draftLanded } from '@/client/articleSync';
 import { Btn, Empty, EntryStatus, Field, Icon, ListEditor, Popover, Seg, Status, Tabs, downloadBlob } from '@/components/ui';
 import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
 import { PublishIntro } from '@/features/publishing/PublishIntro';
@@ -10,17 +13,16 @@ import { BlogConnect } from '@/features/publishing/BlogConnect';
 import { KwMembership } from '@/features/calendar/ContentCalendar';
 import { platLabel, publishFailParts, tzShort } from '@/lib/constants';
 import { addDays, fmtDW, fmtTime } from '@/lib/format';
-import { defaultArticle, parseBlocks } from './blocks';
+import { parseBlocks } from './blocks';
+import { ArticleLoadError, ArticleLoading } from './ArticleLoad';
 import { articleBodyImageAnchor } from '@/lib/articleImages';
 import { BodyImage, BodyImagesPanel } from './BodyImage';
 import { RewriteBar, VideoEmbed, VideoPicker } from './RewriteBar';
 import type { Article, Block as BlockT, CalendarEntry, ConnectionPublic, VideoRef, Workspace } from '@/lib/types';
 
 type ArtPatch = { body?: BlockT[]; brief?: Article['brief']; seo?: Article['seo']; img?: Partial<Article['img']>; videos?: string[] };
-const patchArticle = (id: string, base: Article, p: ArtPatch | ((a: Article) => Partial<Article>)) => (B: Workspace): Workspace => {
-  const cur = B.articles[id] || base; const add = typeof p === 'function' ? p(cur) : p;
-  return { ...B, articles: { ...B.articles, [id]: { ...cur, ...add, img: { ...cur.img, ...((add as any).img || {}) } } as Article } };
-};
+/** The workspace keeps one editable field of an article, for the calendar's Undo of "Replace topic": its outline. */
+const patchOutline = (id: string, outline: string[]) => (B: Workspace): Workspace => ({ ...B, articles: { ...B.articles, [id]: { ...(B.articles[id] || { generated: false, v: 0 }), outline } } });
 const patchEntry = (id: string, patch: Partial<CalendarEntry>) => (B: Workspace): Workspace => ({ ...B, calendar: { ...B.calendar, entries: B.calendar.entries.map(x => (x.id === id ? { ...x, ...patch } : x)) } });
 
 export function ArticleWorkspace() {
@@ -31,13 +33,13 @@ export function ArticleWorkspace() {
   const [vids, setVids] = useState<VideoRef[] | null>(null); const [vidBusy, setVidBusy] = useState(false); const [starting, setStarting] = useState(false);
   const [bodyStarting, setBodyStarting] = useState(false);
   const [imageError, setImageError] = useState('');
-  const A: Article | null = e ? (B.articles[id] ? { ...defaultArticle(e), ...B.articles[id] } : defaultArticle(e)) : null;
+  const art = useArticle(e ? id : null); const A: Article | null = e ? art.article : null;
 
   // Draft job (Draft now, Rewrite from brief, the D-1 cron): stream progress; keep the stream up until the workspace has the result.
   const job = app.jobFor('article.draft', id);
   const running = !!job && (job.status === 'queued' || job.status === 'running');
-  const catching = !!job && job.status === 'done' && !!job.result?.draftedAt && job.result.draftedAt !== A?.draftedAt;
-  useEffect(() => { if (catching) app.refresh(); }, [catching]); // eslint-disable-line react-hooks/exhaustive-deps
+  const catching = draftLanded(job, A);
+  useEffect(() => { if (catching) { art.reload(); app.refresh(); } }, [catching]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (running || job?.status === 'done' || job?.status === 'failed') setStarting(false); }, [job?.status]); // eslint-disable-line react-hooks/exhaustive-deps
   const prog = (job?.progress || {}) as { blocks?: BlockT[]; partial?: string };
   const streamBlocks = useMemo(() => [...(prog.blocks || []), ...parseBlocks(prog.partial || '')], [prog.blocks, prog.partial]);
@@ -45,9 +47,9 @@ export function ArticleWorkspace() {
   const gen = genActive && (!!A?.generated || streamBlocks.length > 0) ? streamBlocks : null;
   const bodyJob = app.jobFor('article.bodyImages', id);
   const bodyRunning = !!bodyJob && ['queued', 'running'].includes(bodyJob.status);
-  const bodyCatching = bodyJob?.status === 'done' && !!bodyJob.result?.bodyImagesGeneratedAt && new Date(bodyJob.result.bodyImagesGeneratedAt).getTime() > new Date(A?.bodyImagesGeneratedAt || 0).getTime();
+  const bodyCatching = bodyImagesLanded(bodyJob, A);
   const bodyBusy = bodyStarting || bodyRunning || bodyCatching;
-  useEffect(() => { if (bodyJob?.status === 'done') app.refresh(); }, [bodyJob?.id, bodyJob?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (bodyCatching) art.reload(); }, [bodyCatching]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (bodyJob) setBodyStarting(false); }, [bodyJob?.id, bodyJob?.status]);
   useEffect(() => { setBodyStarting(false); }, [id]);
 
@@ -56,21 +58,25 @@ export function ArticleWorkspace() {
     if (tab !== 'image' || !A || vids) return;
     if (A.videoMeta?.length) { setVids(A.videoMeta.slice(0, 3)); return; }
     setVidBusy(true);
-    app.act<{ videos: VideoRef[] }>('article.videos', { entryId: id }, { silent: true }).then(r => setVids(r.videos)).catch(() => setVids([])).finally(() => setVidBusy(false));
-  }, [tab, id, A?.videoMeta?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    // The suggestions (and their credit lines) are stored on the article: fetch it again so an embedded video can render.
+    app.act<{ videos: VideoRef[] }>('article.videos', { entryId: id }, { silent: true }).then(r => { setVids(r.videos); art.reload(); }).catch(() => setVids([])).finally(() => setVidBusy(false));
+  }, [tab, id, !A, A?.videoMeta?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!e || !A) return <div className="page"><Empty title="Article not found" body="It may have been removed when the calendar was regenerated."><Btn onClick={() => go('calendar')}>Back to calendar</Btn></Empty></div>;
+  if (!e) return <div className="page"><Empty title="Article not found" body="It may have been removed when the calendar was regenerated."><Btn onClick={() => go('calendar')}>Back to calendar</Btn></Empty></div>;
+  const back = () => go('calendar', { open: null });
+  if (!A) return art.status === 'error' ? <ArticleLoadError title={e.title} error={art.error} onRetry={art.reload} onBack={back} /> : <ArticleLoading title={e.title} onBack={back} />;
 
-  /** Optimistic local merge + autosave (debounced for text, immediate otherwise). */
+  /** Optimistic local merge + autosave (debounced for text, immediate otherwise). A failed immediate save reverts to the server's copy. */
   const setA = (p: ArtPatch, later = true) => {
-    const opt = patchArticle(id, A, p);
     const cur = { ...A, ...p, img: { ...A.img, ...(p.img || {}) } };
+    art.patch(a => ({ ...a, ...p, img: { ...a.img, ...(p.img || {}) } }));
+    const opt = p.brief ? patchOutline(id, cur.brief.outline) : undefined;
     const patch: any = {};
     if (p.body) patch.body = cur.body; if (p.brief) patch.brief = cur.brief; if (p.seo) patch.seo = cur.seo; if (p.videos) patch.videos = cur.videos;
     if (p.img) patch.img = { style: cur.img.style, prompt: cur.img.prompt, alt: cur.img.alt };
     const key = 'art:' + id + ':' + Object.keys(patch).join(',');
-    if (later) app.actLater(key, 'article.save', { entryId: id, patch }, { optimistic: opt });
-    else app.act('article.save', { entryId: id, patch }, { optimistic: opt }).catch(() => {});
+    if (later) app.actLater(key, 'article.save', { entryId: id, patch }, { optimistic: opt, done: art.saved });
+    else app.act('article.save', { entryId: id, patch }, { optimistic: opt }).then(art.saved, art.reload);
   };
   const st = e.status; const brand = B.profile.brand; const blog = B.blog; const conns = blog.conns;
   const defConn = conns.find(c => c.id === blog.defaultId) || conns[0] || null;
@@ -94,7 +100,7 @@ export function ArticleWorkspace() {
   const canEdit = !mediaLocked && !genActive && !bodyBusy && B.role !== 'Viewer';
   const generateCover = async (custom = false) => {
     setImgBusy(true); setImageError('');
-    try { await app.flushLater(); await app.act('article.regenerateImage', { entryId: id, ...(custom ? { prompt: A.img.prompt.trim() } : {}) }); toast('Cover image generated'); }
+    try { await app.flushLater(); await app.act('article.regenerateImage', { entryId: id, ...(custom ? { prompt: A.img.prompt.trim() } : {}) }); art.reload(); toast('Cover image generated'); }
     catch (error: any) { setImageError(error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous cover is kept. Try again.'); }
     finally { setImgBusy(false); }
   };
@@ -107,7 +113,7 @@ export function ArticleWorkspace() {
 
   return <div className="art-wrap" style={{ margin: '-44px clamp(-56px,-4vw,-20px) 0' }}>
     <div className="row art-bar" style={{ position: 'sticky', top: 0, zIndex: 20, padding: '12px clamp(16px,3vw,32px)', background: 'color-mix(in oklch,var(--paper) 88%,transparent)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--line)', gap: 14, flexWrap: 'wrap' }}>
-      <Btn kind="ghost" size="sm" icon="back" onClick={() => go('calendar', { open: null })}>Calendar</Btn>
+      <Btn kind="ghost" size="sm" icon="back" onClick={back}>Calendar</Btn>
       <span className="grow row" style={{ gap: 14, minWidth: 'min(220px,40vw)' }}><span className="trunc hide-sm" style={{ fontWeight: 500, minWidth: 0 }}>{e.title}</span><span style={{ flex: 'none' }}>{statusLine}</span></span>
       {conns.length > 1 && !['published', 'publishing'].includes(st) && <select className="input hide-sm" aria-label="Publish to" style={{ width: 'auto', height: 34, fontSize: 13, paddingLeft: 12 }} value={e.dest || blog.defaultId || ''} onChange={ev => { const v = ev.target.value; app.act('article.dest', { entryId: id, dest: v }, { optimistic: patchEntry(id, { dest: v }) }).catch(() => {}); }}>{conns.map(c => <option key={c.id} value={c.id}>To {platLabel(c.type)}{c.id === blog.defaultId ? ' (default)' : ''}</option>)}</select>}
       {A.generated && !gen && ['review', 'draft', 'approved'].includes(st) && <Btn kind="primary" icon="check" disabled={bodyBusy} onClick={approve}>Approve article</Btn>}
@@ -149,7 +155,7 @@ export function ArticleWorkspace() {
         {tab === 'image' && <div className="col" style={{ gap: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Cover image</h3>
           <Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} radius={10} busy={imgBusy} url={heroUrl} />
-          <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); art.patch(a => ({ ...a, img: { ...a.img, style: style as Article['img']['style'] } })); art.reload(); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
           <Field label="Describe your image" hint="Describe the cover you want. After generating a custom cover, its direction also guides body images. Generated scenes may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
           <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
@@ -160,7 +166,7 @@ export function ArticleWorkspace() {
         </div>}
         {tab === 'sources' && <div className="col">{A.sources.map((s, i) => <div key={i} className="row" style={{ padding: '14px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 10, alignItems: 'flex-start' }}>
           <div className="col grow" style={{ gap: 3, minWidth: 0, opacity: s.removed ? .45 : 1 }}><span className="small" style={{ fontWeight: 500, textDecoration: s.removed ? 'line-through' : 'none' }}>{s.title}</span><span className="mono sub trunc">{s.url.replace(/^https?:\/\/(www\.)?/, '')}</span><span className="xs sub">Used for: {s.use}</span></div>
-          {canEdit && <Btn kind="ghost" size="sm" icon={s.removed ? 'undo' : 'x'} aria-label={s.removed ? 'Restore source' : 'Remove source'} title={s.removed ? 'Restore source' : 'Remove source'} onClick={() => app.act('article.source', { entryId: id, index: i, removed: !s.removed }, { optimistic: patchArticle(id, A, a => ({ sources: a.sources.map((x, j) => (j === i ? { ...x, removed: !s.removed } : x)) })) }).catch(() => {})} />}
+          {canEdit && <Btn kind="ghost" size="sm" icon={s.removed ? 'undo' : 'x'} aria-label={s.removed ? 'Restore source' : 'Remove source'} title={s.removed ? 'Restore source' : 'Remove source'} onClick={() => { art.patch(a => ({ ...a, sources: a.sources.map((x, j) => (j === i ? { ...x, removed: !s.removed } : x)) })); app.act('article.source', { entryId: id, index: i, removed: !s.removed }).then(art.saved, art.reload); }} />}
         </div>)}<p className="xs sub" style={{ marginTop: 14 }}>Radar cites sources inline and never invents statistics. Remove any source and its claims are flagged in the draft.</p></div>}
       </aside>
     </div>

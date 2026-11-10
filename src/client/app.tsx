@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api, actCall, ApiError, isSubscriptionRequired } from './api';
 import { LaterQueue } from './laterQueue';
+import { Pending, RevSync } from './articleSync';
 import { useSeenPing } from './seen';
 import { useToast, type ToastOpts } from '@/components/ui';
 import type { JobSummary, Me, Workspace } from '@/lib/types';
@@ -18,16 +19,20 @@ export interface ActOpts {
   silent?: boolean;
   /** Keep local optimistic state rather than replacing with the server's workspace (for rapid typing). */
   keepLocal?: boolean;
+  /** 'rev': the server answers a write with the new revision only and builds no workspace. `actLater` always sends it. */
+  reply?: 'rev';
 }
 export interface AppCtx {
   me: Me; user: Me['user']; B: Workspace | null; bid: string | null;
   route: Route; go: (page: Page, params?: any) => void;
   toast: (msg: React.ReactNode, opt?: ToastOpts) => void;
   act: <T = any>(action: string, input?: any, opts?: ActOpts) => Promise<T>;
-  /** Debounced act for text fields: last call per key wins after `ms`. */
-  actLater: (key: string, action: string, input: any, opts?: ActOpts & { ms?: number }) => void;
+  /** Debounced act for text fields: last call per key wins after `ms`. The reply carries no workspace; `done` gets the action's data when the save succeeds. */
+  actLater: (key: string, action: string, input: any, opts?: ActOpts & { ms?: number; done?: (data: any) => void }) => void;
   /** Send pending `actLater` saves now; resolves when they have finished (never rejects). Call before social.postNow / schedule / scheduleAll. */
   flushLater: () => Promise<void>;
+  /** A save is waiting for its debounce or a call is in flight: not the moment to replace what the user is editing. */
+  busy: () => boolean;
   setB: (fn: (B: Workspace) => Workspace) => void;
   refresh: () => Promise<void>;
   refreshMe: () => Promise<Me>;
@@ -71,13 +76,28 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
 
   const go = useCallback((page: Page, params?: any) => { router.push(routeToUrl(page, params)); window.scrollTo(0, 0); }, [router]);
 
+  const later = useRef(new LaterQueue());
+  const revRef = useRef(0); revRef.current = B?.rev || 0;
+  const inflight = useRef(0); const staleRef = useRef(false);
+  // Which revisions this tab has accounted for (its own write replies) and the workspace reply it is holding back.
+  const revs = useRef(new RevSync<Workspace>());
+  const pending = useRef<Pending>(null as any); if (!pending.current) pending.current = new Pending(later.current, () => inflight.current);
+  const busy = useCallback(() => pending.current.busy, []);
+
   const refresh = useCallback(async () => {
     const id = bidRef.current; if (!id) { setBState(null); return; }
-    try { const w = await api<Workspace>(`/api/b/${id}/workspace`); if (bidRef.current === id) setBState(w); }
+    try {
+      for (let tries = 0; ; tries++) {
+        const w = await api<Workspace>(`/api/b/${id}/workspace`); if (bidRef.current !== id) return;
+        // Never go back: a snapshot older than a reply this tab already has raced one of its own writes. Ask again.
+        if (w.rev < revs.current.top && tries < 2) continue;
+        revs.current.reset(w.rev); setBState(w); return;
+      }
+    }
     catch (e) { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); }
   }, []);
   const refreshMe = useCallback(async () => { const m = await api<Me>('/api/me'); setMe(m); return m; }, []);
-  useEffect(() => { setBState(null); setJobs({}); refresh(); }, [bid, refresh]);
+  useEffect(() => { setBState(null); setJobs({}); revs.current = new RevSync<Workspace>(); refresh(); }, [bid, refresh]);
 
   // Live updates: revisions, job progress, toasts.
   useEffect(() => {
@@ -119,9 +139,6 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
     msgs.forEach(m => toast(m, { tone: 'ok' }));
   }, [toast]);
 
-  const later = useRef(new LaterQueue());
-  const revRef = useRef(0); revRef.current = B?.rev || 0;
-  const inflight = useRef(0); const latestWs = useRef<Workspace | null>(null); const staleRef = useRef(false);
   const setB = useCallback((fn: (B: Workspace) => Workspace) => setBState(b => (b ? fn(b) : b)), []);
 
   const act = useCallback(async <T,>(action: string, input?: any, opts: ActOpts = {}): Promise<T> => {
@@ -129,14 +146,14 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
     if (opts.optimistic) setBState(b => (b ? opts.optimistic!(b) : b));
     inflight.current++;
     try {
-      const r = await actCall<T>(id, action, input);
-      if (r.workspace && bidRef.current === id) {
+      const r = await actCall<T>(id, action, input, opts.reply);
+      if (bidRef.current === id) {
         // Only the last in-flight write replaces local state; earlier responses must not clobber newer optimistic edits.
-        if (!latestWs.current || r.workspace.rev >= latestWs.current.rev) latestWs.current = r.workspace;
-        if (inflight.current === 1 && !later.current.size) {
-          const ws = latestWs.current; latestWs.current = null;
-          if (!opts.keepLocal) setBState(ws); else setBState(b => (b ? { ...b, rev: ws.rev } : b));
-        }
+        // A revision-only reply (debounced saves) moves just the revision; a revision somebody else wrote in between
+        // marks the workspace stale, and the refresh below runs once nothing is pending (articleSync.ts, RevSync).
+        const plan = revs.current.reply(r, inflight.current === 1 && !later.current.size, !!opts.keepLocal);
+        if (plan.apply) setBState(plan.apply); else if (plan.rev != null) { const rev = plan.rev; setBState(b => (b && b.rev < rev ? { ...b, rev } : b)); }
+        if (plan.stale) staleRef.current = true;
       }
       return r.data as T;
     } catch (e: any) {
@@ -151,11 +168,11 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
     }
   }, [refresh, toast]);
 
-  const actLater = useCallback((key: string, action: string, input: any, opts: ActOpts & { ms?: number } = {}) => {
+  const actLater = useCallback((key: string, action: string, input: any, { ms, done, ...opts }: ActOpts & { ms?: number; done?: (data: any) => void } = {}) => {
     if (opts.optimistic) setBState(b => (b ? opts.optimistic!(b) : b));
-    later.current.schedule(key, opts.ms ?? 600, () => act(action, input, { ...opts, optimistic: undefined, keepLocal: true }));
+    later.current.schedule(key, ms ?? 600, () => act(action, input, { ...opts, optimistic: undefined, keepLocal: true, reply: 'rev' }).then(done));
   }, [act]);
-  const flushLater = useCallback(() => later.current.flush(), []);
+  const flushLater = useCallback(() => pending.current.flush(), []);
 
   const switchBusiness = useCallback(async (id: string) => {
     await api('/api/b/current', { body: { id } });
@@ -170,7 +187,7 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
   }, [jobs, B]);
 
   const value: AppCtx = {
-    me, user: me.user, B, bid, route, go, toast, act, actLater, flushLater, setB, refresh, refreshMe, switchBusiness, jobs, jobFor,
+    me, user: me.user, B, bid, route, go, toast, act, actLater, flushLater, busy, setB, refresh, refreshMe, switchBusiness, jobs, jobFor,
     onboarding: { open: onb, start: () => setOnb(true), close: () => setOnb(false) },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -198,7 +198,7 @@ function EntrySheet({ app, entry, onClose, upd }: { app: AppCtx; entry: Calendar
   const loadAlts = async () => { setAltBusy(true); try { setAlts(await app.act<Alt[]>('calendar.alternatives', { entryId: e.id })); } catch { /* toasted */ } finally { setAltBusy(false); } };
   const toAlt = (x: CalendarEntry | Alt, outline: string[]) => ({ title: x.title, kw: x.kw, type: x.type, vol: x.vol, kd: x.kd, mode: x.mode, url: x.url, measured: x.measured, audience: x.audience, relevance: x.relevance, outline });
   const replace = (a: Alt) => {
-    const prev = toAlt(e, B.articles[e.id]?.brief.outline || []);
+    const prev = toAlt(e, B.articles[e.id]?.outline || []);
     const apply = (x: ReturnType<typeof toAlt>) => app.act('calendar.replace', { entryId: e.id, alt: x }, { optimistic: patchEntry(e.id, { ...x }) }).catch(() => {});
     apply(toAlt(a, a.outline)); onClose();
     toast('Topic replaced', { action: { label: 'Undo', fn: () => apply(prev) } });
