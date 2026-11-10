@@ -66,7 +66,7 @@ export function Side({ open, onClose }: { open: boolean; onClose: () => void }) 
     <span className="grow" />
     <button className={'nav-i' + (page === 'profile' ? ' on' : '')} onClick={() => nav('profile')} disabled={!B}><Icon n="profile" s={18} />Business Profile</button>
     <button className={'nav-i' + (page === 'settings' ? ' on' : '')} onClick={() => nav('settings')} disabled={!B}><Icon n="gear" s={18} />Settings</button>
-    <TrialChip />
+    <TrialChip onNavigate={onClose} />
     <UserMenu name={me.user.name} email={me.user.email} initials={initials} onNavigate={onClose} />
   </aside>;
 }

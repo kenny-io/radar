@@ -24,7 +24,8 @@ export function Dashboard() {
   const app = useApp(); const { B, go } = app;
   const top = useTopSuggestion(app); const now = useNowMs();
   if (!B) return null;
-  if (B.firstRun) return <FirstWeek />;
+  // A Viewer can't retry or dismiss a failed first run, so they only see it while something is still working.
+  if (B.firstRun && (B.role !== 'Viewer' || B.firstRun.items.some(i => i.status === 'queued' || i.status === 'running'))) return <FirstWeek />;
   const pubOn = !!B.social.publishing;
   const cal = B.calendar.entries; const packs = B.social.packs;
   const first = (app.user.name || '').split(' ')[0];
