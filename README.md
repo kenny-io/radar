@@ -76,6 +76,19 @@ runs the program continuously; no browser session is required. Disabling stops f
 pending publications from earlier activations. Manual schedules and separate automations continue; an external send
 already in progress may finish. See `.factory/autopilot/architecture.md` for authorization and recovery details.
 
+### Writing instructions
+
+Settings → Content → Writing instructions lets Editors, Admins and Owners save standing instructions for everything
+Radar writes, per content type (articles, social posts, community replies) and per platform. Radar adds the sets that
+apply to each writing prompt: article drafts with their SEO title and meta description, Search Console refresh drafts,
+editor rewrites, Social Marketing posts, and Daily Brief replies, feed posts and rewrites. Autopilot and scheduled
+generation use the same instructions. Accuracy, disclosure, link, length and format rules still apply afterwards.
+
+Instructions are stored in the existing `businesses.ai` settings column, so there is no migration. Deploy web and
+worker from the same revision: until the worker is updated, drafts it writes ignore saved instructions. With
+`RADAR_DEV_STUBS=1`, each stubbed writing call that receives instructions logs
+`[ai:stub] <purpose> received workspace writing instructions` and the block it received.
+
 ### Failure alerts
 
 Radar reports failed actions, background jobs, provider attempts and degraded generation/publishing flows to

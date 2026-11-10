@@ -10,8 +10,10 @@ export type GroupKey = 'business' | 'audience' | 'keywords' | 'brand';
 export interface ProfileGroupProps {
   group: GroupKey; profile: Profile; edited: Edited; onChange: (p: Profile, key: string) => void;
   gsc?: GscStatus; measured?: Workspace['measured']; suggestions?: KeywordSuggestion[];
+  /** Shown directly below Brand voice (Business Profile only; onboarding leaves it out). */
+  voiceMore?: React.ReactNode;
 }
-export function ProfileGroup({ group, profile, edited, onChange, gsc, measured, suggestions }: ProfileGroupProps) {
+export function ProfileGroup({ group, profile, edited, onChange, gsc, measured, suggestions, voiceMore }: ProfileGroupProps) {
   const P: any = (profile as any)[group];
   const up = (k: string, v: any, extra?: Record<string, any>) => { const p = JSON.parse(JSON.stringify(profile)); p[group][k] = v; if (extra) Object.assign(p[group], extra); onChange(p, group + '.' + k); };
   const M = (k: string) => <Inferred edited={!!edited[group + '.' + k]} />;
@@ -34,7 +36,7 @@ export function ProfileGroup({ group, profile, edited, onChange, gsc, measured, 
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => up('logo', r.result, { logoUploaded: true }); r.readAsDataURL(f); e.target.value = ''; }} /></div>
     </Field>
     <div className="grid-2"><ColorField label="Primary color" value={P.primary} onChange={v => up('primary', v)} mark={M('primary')} /><ColorField label="Secondary color" value={P.secondary} onChange={v => up('secondary', v)} mark={M('secondary')} /></div>
-    <Field label="Brand voice" mark={M('voice')} hint="Generated articles and posts are written in this voice."><textarea className="input" rows={2} value={P.voice} onChange={e => up('voice', e.target.value)} /></Field>
+    <div className="col" style={{ gap: 8 }}><Field label="Brand voice" mark={M('voice')} hint="Generated articles and posts are written in this voice."><textarea className="input" rows={2} value={P.voice} onChange={e => up('voice', e.target.value)} /></Field>{voiceMore}</div>
     <div className="grid-2"><Field label="Language" mark={M('language')}><select className="input" value={P.language} onChange={e => up('language', e.target.value)}>{langOpts.map(l => <option key={l}>{l}</option>)}</select></Field><Field label="Target markets" mark={M('markets')}><ListEditor items={P.markets} onChange={v => up('markets', v)} placeholder="Add market" /></Field></div>
   </div>;
 }

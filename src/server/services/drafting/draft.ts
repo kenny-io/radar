@@ -109,7 +109,7 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   // Stream the article.
   let text = '';
   const out = await ai.run('writing', {
-    purpose: 'article.draft', maxTokens: Math.round(a.brief.words * 2.2) + 600, temperature: 0.6, timeoutMs: 240000,
+    purpose: 'article.draft', maxTokens: Math.round(a.brief.words * 2.2) + 600, temperature: 0.6, timeoutMs: 240000, instructions: { surface: 'article' },
     system: 'You are Radar, a senior writer producing a useful, accurate article for a small business’s blog. You follow the format and rules exactly.',
     prompt: draftPrompt(profile, e, a, sources, queries, refreshText),
     onDelta: d => { text += d; const s = splitStream(text.replace(MARKS, '')); ctx.progress({ ...s, stage: 'writing' }).catch(() => {}); },
@@ -152,7 +152,7 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   if (!keepSeo || !alt) {
     try {
       const m = await ai.run('writing', {
-        purpose: 'article.meta', schema: MetaOut, schemaName: 'meta', maxTokens: 500, temperature: 0.3,
+        purpose: 'article.meta', schema: MetaOut, schemaName: 'meta', maxTokens: 500, temperature: 0.3, instructions: { surface: 'article' },
         system: 'You are Radar, an SEO editor. Write a search title (max 60 characters, include the keyword), a meta description (max 155 characters, specific, no clickbait, no numbers that aren’t in the article) and image alt text (one plain sentence describing a hero image for the article).',
         prompt: `${profileContext(profile)}\n\nArticle title: ${e.title}\nKeyword: ${e.kw}\nImage style: ${a.img.style}; direction: ${a.img.prompt}\nIntro: ${blockText(body[0] || ['p', ''])}`,
         stubContext: { e, profile, style: a.img.style },

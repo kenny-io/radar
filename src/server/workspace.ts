@@ -9,6 +9,7 @@ import { addDays, todayIn } from '@/lib/format';
 import { kwMeasured } from './services/gsc/metrics';
 import { decrypt } from './crypto';
 import { socialOn } from './flags';
+import { readInstructions } from './ai/instructions';
 import { applySocial, extraBriefDays, socialProjection, stripSocial } from './services/social/publish/project';
 import type { Article, BacklinksState, BlogState, BriefDay, BriefState, CalendarEntry, CalendarSettings, ConnectionPublic, GscState, JobSummary, Member, Profile, Proposal, Role, SocialAuto, SocialPack, Workspace, LiveLink } from '@/lib/types';
 
@@ -48,7 +49,8 @@ export function socialAutoOf(b: BizRow): SocialAuto {
   return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}) };
 }
 export function briefSettingsOf(b: BizRow) { return { ...BRIEF_DEFAULT, ...(b.briefSettings || {}) }; }
-export function aiPrefsOf(b: BizRow) { return { ...AI_DEFAULT, ...(b.ai || {}) }; }
+/** Model choices only: writing instructions share the `ai` column but are projected separately (Workspace.instructions). */
+export function aiPrefsOf(b: BizRow) { return { writing: b.ai?.writing || AI_DEFAULT.writing, research: b.ai?.research || AI_DEFAULT.research }; }
 export function defaultProfile(domain: string): Profile {
   return { domain, business: { name: '', description: '', offerings: [], industry: '', positioning: '', differentiators: [] }, audience: { segments: [], buyers: [], needs: [], competitors: [] }, keywords: { list: [] }, brand: { logo: null, primary: '#17181C', secondary: '#EF6A2E', voice: '', language: 'English (US)', markets: ['United States'] } };
 }
@@ -134,7 +136,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role): Pr
     articles,
     blog: blogOf(b, connsPub),
     social: { packs: socialPacks, auto, img: b.socialImg ? imageSettingsOf(b.socialImg) : null, ...(proj ? { publishing: true, accounts: proj.accounts, channels: proj.channels } : {}) },
-    brief, backlinks, ai: aiPrefsOf(b), team: members,
+    brief, backlinks, ai: aiPrefsOf(b), instructions: readInstructions(b.ai), team: members,
     site: { pages: b.site?.pages ?? null, articles: b.site?.articles ?? null, ranking: b.site?.ranking ?? null, analyzedAt: b.site?.analyzedAt ?? null },
     jobs, measured, kwSuggestions: (b.kwSuggestions || []) as any,
     counts: {
