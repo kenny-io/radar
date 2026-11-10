@@ -4,9 +4,9 @@
 | --- | --- | --- | --- | --- |
 | OPT-A1 architecture and ownership split | factory-architect | verified | all | architecture.md accepted with PM resolutions (section 11) |
 | OPT-F0 shared foundations (migration 0017, types, inert stubs, call sites) | factory-engineer | verified | enables all | `9de20794`; typecheck clean; 1396 pass with DB (sequential), same single baseline failure |
-| OPT-E1 idle spend | factory-engineer | active | IS-1..7 | relaunched in an isolated agent worktree; implementation patch carried over, tests and checks outstanding |
+| OPT-E1 idle spend | factory-engineer | review | IS-1..7 | integrated as `7988c70f`; handoff-e1.md; browser checks left for QA |
 | OPT-E2 lighter saves | factory-engineer | active | LS-1..4 | relaunched in an isolated agent worktree; server patch carried over, client and tests outstanding |
-| OPT-E3 billing edges + first session | factory-engineer | active | BE-1..4, FS-1..4 | relaunched in an isolated agent worktree; patch carried over, first-week UI, tests and browser pass outstanding |
+| OPT-E3 billing edges + first session | factory-engineer | review | BE-1..4, FS-1..4 | integrated as `f0039c7f` + PM items `64c70659`; handoff-e3.md; engineer browser pass on stub billing |
 | OPT-E4 review loop + activity | factory-engineer | planned | RL-1..6 | after E2 integrates |
 | OPT-Q1 independent QA | factory-qa | planned | all | after integration |
 | OPT-P1 integration and delivery | PM | active | all | brief written; baseline recorded |
@@ -46,3 +46,15 @@ Their uncommitted work was saved as patches, the hand-made worktrees and empty b
 was relaunched with agent worktree isolation from `b2c33a50`. Nothing from the first launch was committed.
 PM rulings for E3 (TrialChip `onNavigate`, onboarding footer slot, failed first-run row yields to a later success)
 are in the E3 task contract; AppShell call site `<TrialChip onNavigate={onClose} />` is a PM merge item.
+
+## Integration checkpoint (2026-11-10)
+`a518d043` = foundations + E1 + E3 + PM merge items + merge of `origin/main` at `93be7642` (weekly AI report, PR #42).
+Main already used migration 0017, so ours was regenerated as `drizzle/0018_first_five.sql` (same four columns) on
+main's snapshot. `visibility/collect.ts` conflict resolved: main's `ai_observations` inserts kept, per-cell `bump`
+removed (IS-6), extraction precheck kept (IS-5 still valid: main does not use extracted names elsewhere).
+`waitForWorkerSchema` now also probes the four new columns.
+Checks on `a518d043` (+ the worker-gate edit): `tsc --noEmit` clean; DB suite sequential on a fresh database
+migrated from zero: 1554 passed, 65 skipped, 1 failed (the pre-existing `openrouter.qa.test.ts` golden snapshot).
+PM decisions since the brief: a Viewer sees the first-week page only while something is working; re-copying an
+already-copied brief item does not earn a rescan (pinned by a test, one condition to change).
+Docs still to update at final integration: docs/CONTRACTS.md, DIVERGENCES.md B21/P20.
