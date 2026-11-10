@@ -5,9 +5,9 @@
 | OPT-A1 architecture and ownership split | factory-architect | verified | all | architecture.md accepted with PM resolutions (section 11) |
 | OPT-F0 shared foundations (migration 0017, types, inert stubs, call sites) | factory-engineer | verified | enables all | `9de20794`; typecheck clean; 1396 pass with DB (sequential), same single baseline failure |
 | OPT-E1 idle spend | factory-engineer | review | IS-1..7 | integrated as `7988c70f`; handoff-e1.md; browser checks left for QA |
-| OPT-E2 lighter saves | factory-engineer | active | LS-1..4 | relaunched in an isolated agent worktree; server patch carried over, client and tests outstanding |
+| OPT-E2 lighter saves | factory-engineer | review | LS-1..4 | integrated as `1a112427`; handoff-e2.md; engineer browser pass 46 checks on dev stubs |
 | OPT-E3 billing edges + first session | factory-engineer | review | BE-1..4, FS-1..4 | integrated as `f0039c7f` + PM items `64c70659`; handoff-e3.md; engineer browser pass on stub billing |
-| OPT-E4 review loop + activity | factory-engineer | planned | RL-1..6 | after E2 integrates |
+| OPT-E4 review loop + activity | factory-engineer | active | RL-1..6 | isolated agent worktree from `90be8b2a` |
 | OPT-Q1 independent QA | factory-qa | planned | all | after integration |
 | OPT-P1 integration and delivery | PM | active | all | brief written; baseline recorded |
 
@@ -58,3 +58,13 @@ migrated from zero: 1554 passed, 65 skipped, 1 failed (the pre-existing `openrou
 PM decisions since the brief: a Viewer sees the first-week page only while something is working; re-copying an
 already-copied brief item does not earn a rescan (pinned by a test, one condition to change).
 Docs still to update at final integration: docs/CONTRACTS.md, DIVERGENCES.md B21/P20.
+
+## Integration checkpoint 2 (2026-11-10)
+`90be8b2a` adds E2 (`1a112427`) and moves `first-week.css` to a shell-level import: E2 found that a stylesheet only a
+page under `(app)` imports suspends the first commit and remounts `AppProvider` (second workspace load) in development.
+Rule for this feature: screen CSS goes in `radar.css` or is imported from `AppShell.tsx`. QA must confirm one
+`GET /workspace` per hard load.
+Checks on `90be8b2a`: `tsc --noEmit` clean; `npm test` without a database 1165 passed, 480 skipped, 1 failed (baseline
+golden snapshot). DB suite not yet re-run on this commit (E2's own run on its base: 1436 passed, same single failure).
+Measured by E2 on the same data: debounced `article.save` reply 51–84 KB before, 78–79 bytes after; `GET /workspace`
+no longer grows with drafted articles.
