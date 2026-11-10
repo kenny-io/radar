@@ -1,0 +1,96 @@
+{
+  "environment": "isolated synthetic PostgreSQL, stubs, no worker/external email; real Chrome against local Next development server",
+  "base": "http://localhost:3851",
+  "results": [
+    {
+      "name": "Desktop failure is simple, saved article intact, no automatic report",
+      "pass": true,
+      "evidence": {
+        "reportRequiresClick": true,
+        "safeMessage": true,
+        "draftPreserved": true
+      }
+    },
+    {
+      "name": "Reporting shows sending, blocks duplicate clicks, then confirms accepted receipt",
+      "pass": true,
+      "evidence": {
+        "sendingDisabled": true,
+        "requestCount": 1,
+        "serverOnlyContext": true,
+        "receipt": "synthetic intercepted UI response; provider behavior tested separately"
+      }
+    },
+    {
+      "name": "Failed report stays retryable and never exposes response diagnostics",
+      "pass": true,
+      "evidence": {
+        "safeError": true,
+        "retryEnabled": true
+      }
+    },
+    {
+      "name": "Actual stub reporting cannot falsely claim an email was sent",
+      "pass": true,
+      "evidence": {
+        "realLocalAction": true,
+        "sentNotClaimed": true
+      }
+    },
+    {
+      "name": "Workspace, job polling and SSE expose safe publishing summaries only",
+      "pass": true,
+      "evidence": {
+        "workspaceSafe": true,
+        "jobSafe": true,
+        "sseSafe": true,
+        "rawServerDiagnosticsPreserved": true
+      }
+    },
+    {
+      "name": "Dashboard uses simple message and keyboard opens saved article",
+      "pass": true,
+      "evidence": {
+        "keyboardNavigation": true,
+        "safeDashboard": true
+      }
+    },
+    {
+      "name": "Mobile failure/report controls fit and remain keyboard accessible",
+      "pass": true,
+      "evidence": {
+        "width": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "Viewer can report; duplicate incident across teammates/reload has one immutable local report",
+      "pass": true,
+      "evidence": {
+        "viewerReportAllowed": true,
+        "viewerRetryForbidden": true,
+        "singleIncident": true,
+        "fixedRecipientAndSubject": true,
+        "noBodyInReport": true
+      }
+    },
+    {
+      "name": "Anonymous, outsider, forged fields and nonfailed entries cannot send arbitrary reports",
+      "pass": true,
+      "evidence": {
+        "outsider404": true,
+        "anonymous401": true,
+        "forgedFields400": true,
+        "nonfailed409": true
+      }
+    },
+    {
+      "name": "No browser runtime exceptions",
+      "pass": true,
+      "evidence": {
+        "pageErrors": 0
+      }
+    }
+  ],
+  "errors": []
+}

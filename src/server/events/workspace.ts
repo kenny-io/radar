@@ -1,3 +1,4 @@
+import { publicPublishingJob } from '@/lib/publishingFailure';
 import { and, eq, gte, inArray, or } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { coalescedReads } from './cache';
@@ -13,5 +14,5 @@ export const workspaceEvents = coalescedReads(async (bid: string) => {
     db.select().from(schema.notifications).where(and(eq(schema.notifications.businessId, bid),
       gte(schema.notifications.createdAt, new Date(Date.now() - 5 * 60_000)))).orderBy(schema.notifications.createdAt),
   ]);
-  return { rev: business[0]?.rev, jobs, notifications };
+  return { rev: business[0]?.rev, jobs: jobs.map(publicPublishingJob), notifications };
 });

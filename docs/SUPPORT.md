@@ -25,3 +25,13 @@ AI uses the business’s configured writing model and existing provider failover
 ## Verification and rollout
 
 Run `npm run typecheck`, the focused support tests and independent browser checks. Development verification must not send real emails. Before production activation, confirm configured model responses against real Radar questions and verify actual receipt/reply behavior at support@thally.io using an authorized test. The local stub verifies workflow and failure handling, not live model quality or inbox delivery. Rollback: remove the AppShell widget mount and support route; no schema rollback required.
+
+## User-reported publishing issues
+
+Failed articles show “Radar is unable to publish this post. Your article is saved.” The explicit **Report issue to the team** action sends a technical report to `kenny@thally.io` with the fixed subject **User Reported Issue on Radar**. This destination is separate from general chat support and automatic failure alerts. No email is sent merely by opening a failed article. Viewers may report; publication retries retain their existing Editor-or-higher authorization.
+
+The `publish.reportIssue` action accepts only an article ID and uses the normal authenticated business/member gate. It loads the failed entry, latest publication job, destination and contact context on the server. Reports exclude article bodies and credentials, retain bounded sanitized diagnostics for the team, and use the existing outbox. Customer workspace, polling and SSE publishing payloads expose only the simple failure message.
+
+Reports for one incident share an immutable outbox snapshot and provider idempotency key across clicks, reloads and members. Delivery attempts are serialized and share support mail limits (5/user/hour, 10/user/day, 15/business/hour). Confirmed duplicates reuse the report without a new send. Failed or ambiguous attempts reuse the same payload and expire after 23 hours. A fresh failed publication job identifies a new incident.
+
+Actual delivery requires `RESEND_API_KEY` and a valid verified-domain `MAIL_FROM`; missing configuration returns a safe error. Development stubs never send externally and explicitly identify local capture. The UI confirms “Issue reported” only after provider acceptance. Recipient inbox delivery should be verified through Resend events when needed. No migration or new dependency is required.

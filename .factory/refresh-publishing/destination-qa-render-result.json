@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "completeOriginalHtmlRendersOnce": true,
+  "staleEditorialBodyHidden": true,
+  "unchangedPeerOutputs": 7,
+  "targetFaqCtasAreaAndRelatedPreserved": true,
+  "records": [
+    {
+      "slug": "apartments",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "61526cd84b33e40503af0396a971cb65cebac367a93e3948d588821b942e4dc7"
+    },
+    {
+      "slug": "1-bedroom-apartments",
+      "markupSha256": "78e99e221f5fa8d8f63f4110490403c75614a1f47bf64c8ae6c4f3709e76fcf8"
+    },
+    {
+      "slug": "2-bedroom-apartments",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "53dd8b69c6f814790cf36922fb2415d610014b5d45f325d14200ade4479e4354"
+    },
+    {
+      "slug": "villas",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "fc567a644a630645855c4686008d0a590f69e2690e73a857bd03c8bfc3d124cf"
+    },
+    {
+      "slug": "studios",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "e28fafc46d5af62fecd504dfc236c2b2b35c9a4ffcbe195eb02163e9a606b3a5"
+    },
+    {
+      "slug": "townhouses",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "f19140e0d248a34b8e94c2865d2a68a28ecf67992bc2b4991b19aac4178efff1"
+    },
+    {
+      "slug": "best-rated-apartments",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "a1d2b5fce0e8235264ff278ff548dc284f5b4bac1c34bedcab8c175f8161fd25"
+    },
+    {
+      "slug": "landlords",
+      "peerMarkupUnchanged": true,
+      "markupSha256": "17bd21581a48da947422881443100ed8fae3e30122e9939a22ed93b038dd2b98"
+    }
+  ]
+}

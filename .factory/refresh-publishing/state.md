@@ -1,12 +1,12 @@
 # State
 
-Base: origin/main 75163f1c. Branch: kenny/fix-refresh-publishing. Original dirty checkout preserved.
+Repository: isolated kenny/structured-refresh-publishing, base main4f0100ee. Original dirty checkout preserved. User authorized merging/deploying PR48 and actual retry/verification, then additionally requested simple publishing errors and explicit email reporting.
 
-- ARCH-1: verified. factory-architect confirmed source mismatch and approved frozen implementation.
-- ENG-1: verified. factory-engineer implemented publisher normalization, future refresh URL persistence and regression tests; 105 focused tests passed.
-- QA-1: verified. factory-qa independently passed 23 probes and 412 broader tests, 66 external/DB harness skips; Node 22 typecheck and final report passed.
-- PM-1: review. Node 22 production build passed. PR https://github.com/kenny-io/radar/pull/48 is open and mergeable; tested implementation commit fcf70798. Owner merge/deployment approval pending.
+- ARCH-1/ENG-1/QA-1: verified and released. PR48 merged4f0100ee; web/worker SUCCESS, exact runtime hashes matched. Actual retry passed URL validation but safely exposed a separate structured-page planning refusal.
+- ARCH-2/ENG-2/QA-2: verified. Generic prompt-only structured editorial refresh support, all deterministic guards unchanged. Real-provider pinned-source preflight accepted2files; exact destination proposal passed166tests, targeted production build, complete body/7peer comparisons and5browser groups. Full destination build depends on unrelated community data; existing dependency advisory recorded.
+- ARCH-3/ENG-3/QA-3: verified. Customer-safe error/public projections and explicit fixed-destination incident report. Independent444regressions/66external skips,10browser groups,4real-Postgres/mock-provider cases, Node22typecheck/diffcheck passed. No external email from QA. See qa-report.md.
+- PM-2: delivery active. Final integrated Node22 production build passed; all13QA fingerprints unchanged. Preparing follow-up PR, authorized merge/deployment, one real report, then real article retry and exact generated-PR verification.
 
-No migration or runtime configuration change. Normalizing on read repairs saved relative targets on retry without editing stored article data. Original route-preservation and draft-PR semantics remain enforced.
+Original article e_MCOBF9hZ, lived.ae, route /rent/dubai/1-bedroom-apartments. Entry mode, saved content and original route remain unchanged. First authorized retry f811fa3c-bdf7-457d-a85b-885265f5ca5d failed safely; no destination branch/draft/PR created. Pending follow-up rollout must not be called recovered yet.
 
-No merge, deployment, production data changes, or customer retry performed. Repository owner approval required before auto-deploying main merge. After approval: merge, verify web/worker revisions and health, retry the reported entry once through its normal action, inspect the resulting outcome; do not merge the destination article PR as part of this repair.
+Delivery constraints: no schema/config/dependency change. No destination article PR merge is authorized; GitHub publication creates a draft PR pending destination review/deployment. Report recipient fixed kenny@thally.io, subject “User Reported Issue on Radar”; submit before retry while the entry is failed. Use existing role/business/action guards, preserve remote draft recovery, verify web/worker source parity and provider acceptance separately from inbox delivery.

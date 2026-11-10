@@ -1,3 +1,4 @@
+import { publicPublishError, publicPublishingJob } from '@/lib/publishingFailure';
 import { env } from './env';
 import { autopilotPublic } from './services/autopilot/policy';
 import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
@@ -83,7 +84,7 @@ export function defaultProfile(domain: string): Profile {
 }
 
 export function entryFromRow(r: typeof schema.calendarEntries.$inferSelect): CalendarEntry {
-  return { id: r.id, title: r.title, kw: r.kw, type: r.type as any, vol: r.vol, kd: r.kd, date: String(r.date), mode: r.mode, url: r.url, measured: r.measured || null, audience: r.audience, relevance: r.relevance, dest: r.dest, status: r.status as any, publishError: r.publishError || null, publishedUrl: r.publishedUrl };
+  return { id: r.id, title: r.title, kw: r.kw, type: r.type as any, vol: r.vol, kd: r.kd, date: String(r.date), mode: r.mode, url: r.url, measured: r.measured || null, audience: r.audience, relevance: r.relevance, dest: r.dest, status: r.status as any, publishError: publicPublishError(r.publishError), publishedUrl: r.publishedUrl };
 }
 /** Webhook signing secret display form "whsec_7Kq2…f91A" (publishing area). The full secret never reaches the client. */
 function webhookSecretHint(enc: string): string { try { const s = decrypt<string>(enc) || ''; return s.length > 16 ? `whsec_${s.slice(6, 10)}…${s.slice(-4)}` : 'whsec_…'; } catch { return 'whsec_…'; } }
@@ -159,7 +160,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role, opt
   const kwl = ((b.profile as Profile)?.keywords?.list || []).map(k => k.kw);
   const measured = gsc.status === 'connected' || gsc.status === 'error' ? await kwMeasured(bid, kwl) : {};
   const members: Member[] = team.map(({ m, name }) => ({ id: m.id, userId: m.userId, name: name || null, email: m.email, role: m.role, status: m.status, you: m.userId === userId }));
-  const jobs: JobSummary[] = jobRows.map(j => ({ id: j.id, kind: j.kind, status: j.status, progress: jobProgress(j), error: j.error, createdAt: j.createdAt.toISOString(), ref: j.ref }));
+  const jobs: JobSummary[] = jobRows.map(raw => { const j = publicPublishingJob(raw); return ({ id: j.id, kind: j.kind, status: j.status, progress: jobProgress(j), error: j.error, createdAt: j.createdAt.toISOString(), ref: j.ref }); });
   return {
     id: b.id, rev: b.rev, role, status: b.status, today, tz: b.timezone, ...(proj ? { now: new Date().toISOString() } : {}),
     autopilot: autopilotPublic(b),
