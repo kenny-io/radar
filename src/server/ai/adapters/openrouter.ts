@@ -133,7 +133,7 @@ function collect(j: any): ProviderResult {
   // spellings count: never keep the partial text as an answer.
   const ch = j?.choices?.[0];
   if (ch?.finish_reason === 'content_filter' || ch?.finish_reason === 'refusal' || ch?.native_finish_reason === 'refusal') throw refusalError(undefined, j?.usage ? usage : undefined);
-  return { text, citations, ...usage };
+  return { text, citations, ...usage, ...(ch?.finish_reason === 'length' ? { truncated: true } : {}) };
 }
 const addUsage = (out: ProviderResult, r: ProviderResult) => {
   out.inputTokens = (out.inputTokens || 0) + (r.inputTokens || 0); out.outputTokens = (out.outputTokens || 0) + (r.outputTokens || 0);

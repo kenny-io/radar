@@ -77,7 +77,7 @@ export async function rankCandidates(p: Profile, plan: Plan, cands: Candidate[],
   const rows: RankRow[] = [];
   for (let i = 0; i < chunks.length; i += 3) {
     const outs = await Promise.all(chunks.slice(i, i + 3).map(ch => ai.run('research', {
-      purpose: 'brief.rank', system: SYSTEM(p), schema: RankSchema, schemaName: 'ranking', maxTokens: 4000,
+      purpose: 'brief.rank', system: SYSTEM(p), schema: RankSchema, schemaName: 'ranking', maxTokens: 8000, // 25 results are ~1,700 tokens of JSON, and a thinking model spends from the same limit first
       prompt: `Score each of these ${ch.length} candidate threads. Return one result per id.\n\n${ch.map(c => describeCandidate(c)).join('\n\n')}`,
       stubContext: { profile: p, plan, cands: ch },
     }, { businessId: bid })));
