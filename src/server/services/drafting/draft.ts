@@ -96,7 +96,7 @@ RULES
 - Use the primary keyword in the introduction and in at least one heading, naturally.`;
 }
 
-export interface DraftPayload { entryId: string; source: 'user' | 'cron' | 'autopilot'; batchId?: string; batch?: string[] }
+export interface DraftPayload { entryId: string; source: 'user' | 'cron' | 'autopilot'; autopilotActivationId?: string; batchId?: string; batch?: string[] }
 
 export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, a0: Article | null, profile: Profile, gsc: boolean, name: string): Promise<Article> {
   const bid = ctx.businessId!;
@@ -109,7 +109,7 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   // Stream the article.
   let text = '';
   const out = await ai.run('writing', {
-    purpose: 'article.draft', maxTokens: Math.round(a.brief.words * 2.2) + 600, temperature: 0.6, timeoutMs: 240000,
+    purpose: 'article.draft', maxTokens: Math.round(a.brief.words * 2.2) + 600, temperature: 0.6, timeoutMs: 240000, instructions: { surface: 'article' },
     system: 'You are Radar, a senior writer producing a useful, accurate article for a small business’s blog. You follow the format and rules exactly.',
     prompt: draftPrompt(profile, e, a, sources, queries, refreshText),
     onDelta: d => { text += d; const s = splitStream(text.replace(MARKS, '')); ctx.progress({ ...s, stage: 'writing' }).catch(() => {}); },
@@ -152,7 +152,7 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   if (!keepSeo || !alt) {
     try {
       const m = await ai.run('writing', {
-        purpose: 'article.meta', schema: MetaOut, schemaName: 'meta', maxTokens: 500, temperature: 0.3,
+        purpose: 'article.meta', schema: MetaOut, schemaName: 'meta', maxTokens: 500, temperature: 0.3, instructions: { surface: 'article' },
         system: 'You are Radar, an SEO editor. Write a search title (max 60 characters, include the keyword), a meta description (max 155 characters, specific, no clickbait, no numbers that aren’t in the article) and image alt text (one plain sentence describing a hero image for the article).',
         prompt: `${profileContext(profile)}\n\nArticle title: ${e.title}\nKeyword: ${e.kw}\nImage style: ${a.img.style}; direction: ${a.img.prompt}\nIntro: ${blockText(body[0] || ['p', ''])}`,
         stubContext: { e, profile, style: a.img.style },
@@ -173,8 +173,8 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   if (img.style === 'branded' && !(a.body || []).length && /^Calm, editorial image about /.test(img.prompt || '') && defaultArticleImageStyle() === 'illustration') img.style = 'illustration';
   const key = `${img.style}:${img.seed}`;
   if (!img.url || img.urlKey !== key) {
-    try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }
-    catch (err: any) { console.error('[draft] image failed', err?.message); img.url = null; img.urlKey = null; }
+    try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, modelRequired: img.modelRequired, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }
+    catch (err: any) { console.error('[draft] image failed', err?.message); if (img.modelRequired) throw err; img.url = null; img.urlKey = null; }
   }
   const bodyImages = await generateArticleBodyImages({ businessId: bid, progress: p => ctx.progress({ ...p, blocks: body, partial: '' }) }, e, { ...a, body, img }, profile);
   return { ...a, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: new Date().toISOString(), sources, claims, draftedAt: new Date().toISOString() };

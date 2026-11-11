@@ -1,0 +1,217 @@
+{
+  "source": "Supplied November3 handoff HTML; editorial review may narrow unsupported advice",
+  "features": [
+    {
+      "slug": "daily-brief",
+      "title": "Daily Brief: conversations worth joining, every morning · Radar",
+      "description": "Every morning, Radar finds threads on Reddit, X, LinkedIn, Hacker News and Quora where you can genuinely help, with a reply drafted in your voice.",
+      "h1": "Be there when people ask for what you built.",
+      "sections": [
+        "Why launch posts stop at your network",
+        "How your brief comes together",
+        "Today’s brief.",
+        "Inside every brief",
+        "Help first. Always.",
+        "Questions",
+        "More ways Radar gets you found",
+        "You built it.Let people and AI find it."
+      ],
+      "screenshots": [
+        {
+          "src": "https://www.google.com/s2/favicons?domain=reddit.com&sz=64",
+          "alt": ""
+        },
+        {
+          "src": "../shots/c-brief-open.webp",
+          "alt": "Daily Brief in Radar: a queue of threads grouped by platform, and a selected r/freelance thread with a reply drafted in the founder’s voice."
+        }
+      ]
+    },
+    {
+      "slug": "social-marketing",
+      "title": "Social marketing: on-brand posts for every platform · Radar",
+      "description": "Turn an idea, a link or an article into posts and visuals made for LinkedIn, X, Facebook, Reddit and Quora, in your brand and your voice.",
+      "h1": "One idea. A post for every platform.",
+      "sections": [
+        "Why posting everywhere feels like a second job",
+        "From idea to post pack",
+        "A pack, ready to go.",
+        "Inside every pack",
+        "Sounds like you. Looks like you.",
+        "Questions",
+        "More ways Radar gets you found",
+        "You built it.Let people and AI find it."
+      ],
+      "screenshots": [
+        {
+          "src": "../shots/p-social.webp",
+          "alt": "A social pack in Radar: a LinkedIn preview with editable text and an on-brand visual, and a panel to post now or schedule."
+        }
+      ]
+    },
+    {
+      "slug": "performance",
+      "title": "Performance: Search Console data with next steps · Radar",
+      "description": "Radar reads your Google Search Console data and ranks what to improve by expected impact. Read-only access, with 16 months of history.",
+      "h1": "See how people find you, and what to fix next.",
+      "sections": [
+        "Why Search Console alone isn’t enough",
+        "From data to a decision",
+        "Every number, with a next step.",
+        "What you can see",
+        "Honest numbers.",
+        "Questions",
+        "More ways Radar gets you found",
+        "You built it.Let people and AI find it."
+      ],
+      "screenshots": [
+        {
+          "src": "../shots/p-perf.webp",
+          "alt": "Performance in Radar: clicks, impressions, CTR and average position for the last 28 days, with suggestions ranked by expected impact."
+        }
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "slug": "does-chatgpt-recommend-you",
+      "title": "How to find out if ChatGPT recommends your product · Radar",
+      "description": "AI assistants are a new front door for buyers. How to check whether ChatGPT, Perplexity, Gemini, Claude and Grok mention your product, and what to do when they don’t.",
+      "h1": "How to find out if ChatGPT recommends your product",
+      "date": "2026-11-02",
+      "meta": "Radar teamNov 2, 20267 min read",
+      "sectionIds": [
+        "shift",
+        "prompts",
+        "check",
+        "why",
+        "act"
+      ],
+      "sections": [
+        "Buyers ask assistants now",
+        "Write the prompts your customers would",
+        "Ask more than one assistant, more than once",
+        "Why assistants mention some products and not others",
+        "Turn every gap into a page"
+      ],
+      "cta": "../features/ai-visibility.html",
+      "related": [
+        "rank-a-new-website.html",
+        "page-two-refresh.html"
+      ],
+      "bodyTextLength": 3462
+    },
+    {
+      "slug": "rank-a-new-website",
+      "title": "How to rank a new website when Google doesn’t know you yet · Radar",
+      "description": "Big sites own the obvious keywords. How a new domain finds the keywords it can realistically win, publishes on a schedule, and builds from there.",
+      "h1": "How to rank a new website when Google doesn’t know you yet",
+      "date": "2026-10-27",
+      "meta": "Radar teamOct 27, 20268 min read",
+      "sectionIds": [
+        "why",
+        "ceiling",
+        "intent",
+        "cadence",
+        "measure"
+      ],
+      "sections": [
+        "Why new sites struggle",
+        "Find your difficulty ceiling",
+        "Pick keywords with a buyer behind them",
+        "Publish on a schedule, not when you can",
+        "Measure what’s almost working"
+      ],
+      "cta": "../features/organic-search.html",
+      "related": [
+        "page-two-refresh.html",
+        "safe-backlinks-new-sites.html"
+      ],
+      "bodyTextLength": 3697
+    },
+    {
+      "slug": "reddit-without-getting-banned",
+      "title": "How to market on Reddit without getting banned · Radar",
+      "description": "Reddit rewards people who help and removes people who pitch. A founder’s guide to finding the right threads, writing useful replies and disclosing who you are.",
+      "h1": "How to market on Reddit without getting banned",
+      "date": "2026-10-20",
+      "meta": "Radar teamOct 20, 20267 min read",
+      "sectionIds": [
+        "rules",
+        "find",
+        "write",
+        "disclose",
+        "rhythm"
+      ],
+      "sections": [
+        "Read the room first",
+        "Find questions, not audiences",
+        "Write the reply you’d want to read",
+        "Disclose, and leave the link out",
+        "A rhythm that lasts"
+      ],
+      "cta": "../features/daily-brief.html",
+      "related": [
+        "does-chatgpt-recommend-you.html",
+        "rank-a-new-website.html"
+      ],
+      "bodyTextLength": 3118
+    },
+    {
+      "slug": "page-two-refresh",
+      "title": "Page two is the fastest way to page one · Radar",
+      "description": "Pages ranking in positions 10 to 20 already have Google’s attention. How to find them in Search Console, diagnose what’s holding them back, and refresh them.",
+      "h1": "Page two is the fastest way to page one",
+      "date": "2026-10-13",
+      "meta": "Radar teamOct 13, 20266 min read",
+      "sectionIds": [
+        "why",
+        "find",
+        "diagnose",
+        "refresh",
+        "wait"
+      ],
+      "sections": [
+        "Why page two matters",
+        "Find your page-two pages in Search Console",
+        "Diagnose before you rewrite",
+        "What a good refresh changes",
+        "Give it time, then check"
+      ],
+      "cta": "../features/performance.html",
+      "related": [
+        "rank-a-new-website.html",
+        "does-chatgpt-recommend-you.html"
+      ],
+      "bodyTextLength": 2725
+    },
+    {
+      "slug": "safe-backlinks-new-sites",
+      "title": "Backlinks for new sites: what’s safe and what isn’t · Radar",
+      "description": "Links still help Google trust a site. How a new domain can earn them honestly, what counts as a link scheme, and how to mark partner links correctly.",
+      "h1": "Backlinks for new sites: what’s safe and what isn’t",
+      "date": "2026-10-06",
+      "meta": "Radar teamOct 6, 20267 min read",
+      "sectionIds": [
+        "why",
+        "risk",
+        "safe",
+        "open",
+        "check"
+      ],
+      "sections": [
+        "Why links still matter",
+        "What counts as a link scheme",
+        "Links worth earning",
+        "If you trade links, do it in the open",
+        "Keep an eye on what’s live"
+      ],
+      "cta": "../features/backlinks.html",
+      "related": [
+        "rank-a-new-website.html",
+        "page-two-refresh.html"
+      ],
+      "bodyTextLength": 2966
+    }
+  ]
+}

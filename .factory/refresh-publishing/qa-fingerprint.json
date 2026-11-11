@@ -1,0 +1,15 @@
+{
+  "base": "75163f1ccf821fbe468c8a345aecb5b6de50fd2e",
+  "node": "22.23.3",
+  "files": {
+    "src/server/services/publishing/publisher.ts": "b4a2daff5283a86777ab6a34f2d51fa5c782e942dc659e8839e00d9506fffb95",
+    "src/server/services/publishing/refreshUrl.ts": "889a73856ca7c57c12e43bf8fc9aecdf9b428d287549f772313b49eac2b2e32d",
+    "src/server/services/publishing/refreshUrl.test.ts": "6c2bffa80fe4ea78cb64b8dca1473a0098ed2bb157a2a81a37ea4a344ac0aa91",
+    "src/server/services/publishing/refreshSources.test.ts": "c2b09e3b549729d8ebd9828f1b0f4b1c2e759006ccfaec2aeec11b5e4bf9866d",
+    "src/server/services/publishing/observability.test.ts": "cf23f134764c9d2f571f10f951af15894f6880abc5ae4fe6a935765c12cee5db",
+    "src/server/services/calendar/research.ts": "9bcee88ad653d134537481d9d6681b5ebf83493c75b1d5ab39299e334669084c",
+    "src/server/services/gsc/refresh.ts": "05dc7a16df4c33c94a7ad1ab1cba73c5fc4954848ff358b1ed96bca7d55d8b61",
+    ".factory/refresh-publishing/qa-contract.test.ts": "46fbc46f862adcd5157f32a007a546ca2dc83c42b3906430ed54a417c722ed8d",
+    ".factory/refresh-publishing/qa-vitest.config.ts": "98d51371e12152c13767a63dc2285499e93f093d88bf06b18f3ba8af7b30668c"
+  }
+}

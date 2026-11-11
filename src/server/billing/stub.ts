@@ -71,7 +71,7 @@ const pubPI = (x: SPI): PaymentIntent => { const { invoice: _i, setup_future_usa
 function invoiceFor(s: SSub, pm: string | null): SInv {
   const c = cus(s.customer);
   const applied = Math.min(PRICE_CENTS, Math.max(0, -c.balance)); c.balance += applied;
-  const i: SInv = { id: nid('in'), status: 'open', amount_due: PRICE_CENTS - applied, client_secret: null, customer: s.customer, subscription: s.id, pi: null, applied };
+  const i: SInv = { id: nid('in'), status: 'open', amount_due: PRICE_CENTS - applied, amount_paid: 0, currency: 'usd', client_secret: null, customer: s.customer, subscription: s.id, pi: null, applied };
   if (i.amount_due === 0) i.status = 'paid';
   else {
     const p: SPI = { id: nid('pi'), status: 'requires_payment_method', amount: i.amount_due, currency: 'usd', customer: s.customer, payment_method: pm, client_secret: null, metadata: {}, last_payment_error: null, invoice: i.id, setup_future_usage: null };
@@ -83,6 +83,7 @@ function invoiceFor(s: SSub, pm: string | null): SInv {
 
 export const stubProvider: BillingProvider = {
   name: 'stub',
+  async createPortalSession() { throw new ProviderError('Hosted billing is unavailable in development stubs', 503); },
   async createCustomer(p, key) {
     return idem('createCustomer', key, p, () => { const c: Cus = { id: nid('cus'), email: p.email, name: p.name, uid: p.uid, defaultPm: null, balance: 0 }; S().customers.set(c.id, c); return { id: c.id }; });
   },
@@ -120,7 +121,7 @@ export const stubProvider: BillingProvider = {
       let clientSecret: string | null = null;
       if (p.trialEnd) {
         x.status = 'trialing'; x.trial_end = p.trialEnd; x.current_period_end = p.trialEnd;
-        const i: SInv = { id: nid('in'), status: 'paid', amount_due: 0, client_secret: null, customer: x.customer, subscription: x.id, pi: null, applied: 0 };
+        const i: SInv = { id: nid('in'), status: 'paid', amount_due: 0, amount_paid: 0, currency: 'usd', client_secret: null, customer: x.customer, subscription: x.id, pi: null, applied: 0 };
         S().invoices.set(i.id, i); x.latest_invoice = i.id;
       } else if (p.incomplete) {
         const i = invoiceFor(x, p.defaultPaymentMethod);
@@ -134,7 +135,7 @@ export const stubProvider: BillingProvider = {
     idem('setSubscriptionPaymentMethod', key, { id, pm }, () => { pmOf(pm); sub(id).default_payment_method = pm; return null; });
   },
   async cancelSubscription(id) { log('cancelSubscription'); const x = sub(id); x.status = 'canceled'; x.cancel_at_period_end = false; },
-  async getInvoice(id) { log('getInvoice'); const { customer: _c, subscription: _s, pi: _p, applied: _a, ...i } = inv(id); return copy(i); },
+  async getInvoice(id) { log('getInvoice'); const { pi: _p, applied: _a, ...i } = inv(id); return copy(i); },
   async voidInvoice(id, key) {
     idem('voidInvoice', key, { id }, () => {
       const i = inv(id);
@@ -152,7 +153,7 @@ export const stubProvider: BillingProvider = {
   async creditBalance(customer, cents, description, key) {
     idem('creditBalance', key, { customer, cents, description }, () => { cus(customer).balance -= cents; S().credits.push({ customer, amount: -cents, description, key }); return null; });
   },
-  async getPrice(id) { log('getPrice'); return { id, unit_amount: PRICE_CENTS, currency: 'usd', interval: 'month' }; },
+  async getPrice(id) { log('getPrice'); return { id, unit_amount: PRICE_CENTS, currency: 'usd', interval: 'month', active: true, type: 'recurring', billing_scheme: 'per_unit', interval_count: 1, usage_type: 'licensed', transform_quantity: null, custom_unit_amount: null }; },
 };
 
 export type StubOutcome = 'succeed' | 'decline' | 'auth_fail';
@@ -184,7 +185,7 @@ export function stubConfirmIntent(id: string, outcome: StubOutcome): { result: C
   if (x.setup_future_usage && x.customer) S().pmCustomer.set(pm, x.customer);
   const events = [stubEvent('payment_intent.succeeded', pubPI(x))];
   if (i && s) {
-    i.status = 'paid'; s.status = 'active'; s.current_period_end = nowSec() + MONTH; s.trial_end = null;
+    i.status = 'paid'; i.amount_paid = x.amount; s.status = 'active'; s.current_period_end = nowSec() + MONTH; s.trial_end = null;
     events.push(stubEvent('invoice.paid', { id: i.id, customer: i.customer }), stubEvent('customer.subscription.updated', pubSub(s)));
   }
   return { result: { paymentIntent: brief() }, events };
@@ -196,7 +197,7 @@ export function stubSetStatus(id: string, status: SubStatus): Subscription {
   const x = sub(id);
   const open = x.latest_invoice ? S().invoices.get(x.latest_invoice) : undefined;
   if (status === 'past_due' || status === 'unpaid') { if (open?.status !== 'open') invoiceFor(x, x.default_payment_method); x.trial_end = null; }
-  if (status === 'active') { if (open?.status === 'open') open.status = 'paid'; x.trial_end = null; x.current_period_end = nowSec() + MONTH; }
+  if (status === 'active') { if (open?.status === 'open') { open.status = 'paid'; open.amount_paid = open.amount_due; } x.trial_end = null; x.current_period_end = nowSec() + MONTH; }
   if (status === 'canceled' || status === 'incomplete_expired') { x.cancel_at_period_end = false; if (open?.status === 'open') open.status = 'void'; }
   x.status = status as SubStatus;
   return pubSub(x);

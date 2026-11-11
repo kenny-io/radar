@@ -1,0 +1,23 @@
+Email #12 · Primary example
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Make a social pack from a saved article
+Preview: Choose the article as the source for a new pack.
+
+Hi Alex,
+
+Fieldnote · Article to social
+
+“How to choose a design tool for your studio” is available in your saved articles. Select it as the source in Social Marketing to turn its ideas into a post pack.
+
+Make a pack from this article: https://radar.thally.io/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=article_social&ref=preview-resource
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE

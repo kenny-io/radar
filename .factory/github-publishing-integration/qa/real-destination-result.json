@@ -1,0 +1,16 @@
+{
+  "base": "http://localhost:3948",
+  "checks": [
+    "Real destination BlogIndex displays generated registry article card",
+    "Keyboard article-card navigation renders real PostShell, generated MDX and SEO title",
+    "Real Next route works after reload",
+    "Real breadcrumb returns to populated real blog index",
+    "Mobile real destination article renders without horizontal overflow",
+    "Fresh browser page resolves generated article directly",
+    "Generated real Open Graph image route renders a 1200×630 PNG in Chrome"
+  ],
+  "pageErrors": [],
+  "failedLocalResponses": [],
+  "destinationRevision": "c44cde2f12d5170a2fbaf4e038b467b12efb161f",
+  "runtime": "Next.js16.3.5 webpack dev, complete isolated destination snapshot with real existing components; generated plan files overlaid; no remote mutation"
+}

@@ -1,0 +1,5 @@
+#5 · Retired: Trial-ending reminder
+
+Removed at your request. Radar does not queue or send a reminder to cancel before the trial ends.
+
+No email body is scheduled or sent.

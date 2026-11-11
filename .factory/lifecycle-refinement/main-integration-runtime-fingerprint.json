@@ -1,0 +1,251 @@
+{
+  "startingHead": "96b3d730c0becd9066a28e2829728f0e84fd462f",
+  "mergingMain": "b38b67a4d48c51f39bd5fc68e1fc4143a9633060",
+  "aggregateSha256": "1422b532bc9d0c8b5607e1b19a0a27259f274aeda6f780b745201c9864ef5652",
+  "files": [
+    {
+      "path": "drizzle/0010_autopilot.sql",
+      "sha256": "df6995cf7d0268cd918c917a28348f2049d879a8a8bf25a76d0b8c9a85888881"
+    },
+    {
+      "path": "drizzle/0010_lifecycle_emails.sql",
+      "sha256": null
+    },
+    {
+      "path": "drizzle/0011_engagement_updates.sql",
+      "sha256": null
+    },
+    {
+      "path": "drizzle/0011_lifecycle_emails.sql",
+      "sha256": "a91aa6c8cd95bd02ba46e8147977efe142e3962cc16988c5a2e7099a124ace8e"
+    },
+    {
+      "path": "drizzle/0012_engagement_updates.sql",
+      "sha256": "0da601d21eb36bc576cf22ff5b5945d706c079f96d990d589496202125e2324f"
+    },
+    {
+      "path": "drizzle/0012_weekly_education.sql",
+      "sha256": null
+    },
+    {
+      "path": "drizzle/0013_lifecycle_guides.sql",
+      "sha256": null
+    },
+    {
+      "path": "drizzle/0013_weekly_education.sql",
+      "sha256": "01e37f79634f2553457a7e2b5ff8ef8eb8ba794a97ea7281964f1896eb12daab"
+    },
+    {
+      "path": "drizzle/0014_lifecycle_guides.sql",
+      "sha256": "ee864aa2adcb4e13015a8f1da1b402d834f9cc57a57205fdf40f2898915fdb13"
+    },
+    {
+      "path": "drizzle/meta/0010_snapshot.json",
+      "sha256": "ecc30bae98ab3b419fcf5a628c68fa22f848d28d70054b497b4ba793afb0be31"
+    },
+    {
+      "path": "drizzle/meta/0011_snapshot.json",
+      "sha256": "0fe902ab2fc036f2105b14af68b17e91173b484d2d98572a2e8bd886cb76712a"
+    },
+    {
+      "path": "drizzle/meta/0012_snapshot.json",
+      "sha256": "c238d1e3a14e4df4ccaf937c2f828c9272fb70ecad6c45ca0d7f5c8184338ddd"
+    },
+    {
+      "path": "drizzle/meta/0013_snapshot.json",
+      "sha256": "1fce439904e5f68277c48be5f63cd9b5194cc64d45ace487458b8173032bd49e"
+    },
+    {
+      "path": "drizzle/meta/0014_snapshot.json",
+      "sha256": "7c2a51da23abd8a51e9170f1fbd30656a423c8227fd4d255e37361c25a1ac757"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "f8c8eb6e230ac49e376c3cc782528870dd194237f6e0ec71a4d0354f7bab7424"
+    },
+    {
+      "path": "src/app/api/b/current/route.ts",
+      "sha256": "8f84274a82126a1375cf2dd96a5b510aa2c455403fbb6510297e069e918ccbd2"
+    },
+    {
+      "path": "src/features/brief/DailyBrief.tsx",
+      "sha256": "676d5264f414dccf50f1fc574eef2353e708c67639eaa0922df4e4ddcec8b706"
+    },
+    {
+      "path": "src/features/brief/redditCopy.test.ts",
+      "sha256": "9354c25ce924dd8d59ef10ab57398dd3a0d71cf2946031ebc271d192a2e93fd3"
+    },
+    {
+      "path": "src/features/brief/redditCopy.ts",
+      "sha256": "067c96e255af40889ca7e6e15a1e3ea276b2509e081a4d7dfd80c026ddf2fed0"
+    },
+    {
+      "path": "src/features/publishing/PublishingSettings.tsx",
+      "sha256": "2256aae26388adddeab3e8ecee3480a9f96411a1d68243df2fdda1ba6d71becd"
+    },
+    {
+      "path": "src/features/settings/AutopilotSettings.tsx",
+      "sha256": "abad59a31752333ebd02451433b7d5bf0d7b3de2295dd4dbf7a5953bc2c150cf"
+    },
+    {
+      "path": "src/features/settings/SettingsPage.tsx",
+      "sha256": "50231c5b5219ed30db19f489617cf5d393e6ada650772da40fe9c878b40cbe3d"
+    },
+    {
+      "path": "src/features/social/AutoModal.tsx",
+      "sha256": "944f14f46588b62e72c489236dcf06289c6c503e64ffd2dfaf30f494e310ac82"
+    },
+    {
+      "path": "src/features/social/SocialMarketing.tsx",
+      "sha256": "da79757dd0666b16cd9df078b8e688b07e47823c5b57c17e764324b45b9fc95a"
+    },
+    {
+      "path": "src/lib/types.ts",
+      "sha256": "246b95b80337fc8c931ff4a623496500572186cc30305e127cf18cf92cc78c04"
+    },
+    {
+      "path": "src/server/actions/article.ts",
+      "sha256": "33e7c1412e1393c1485b4e13cff5cf7e564d97ea91723fc2ddb86cc7d39dbf0c"
+    },
+    {
+      "path": "src/server/actions/calendar.ts",
+      "sha256": "c043fecd20ca5cfc996adfe4627eae0578b3b8a53ab41d9a05bf9ab9ac38b992"
+    },
+    {
+      "path": "src/server/actions/publishing.ts",
+      "sha256": "f87a329a6dc96e787dc8eb4afcf94de2318332ee1e4e8d530d33bde6e877ac40"
+    },
+    {
+      "path": "src/server/actions/settings.ts",
+      "sha256": "db01ba0e31c917ace235c577c7aedef2713bc8353d56dd2f04ba078383d6c3e5"
+    },
+    {
+      "path": "src/server/billing/guard.test.ts",
+      "sha256": "b3d1481e61ab3804a5e64733e24e1292163ac30f0b1e39d4669dce8feb238e11"
+    },
+    {
+      "path": "src/server/billing/guard.ts",
+      "sha256": "2ccc80017fa6a0a88c3f8f588c0951e939326bc6a1e63249a70eb05695718a52"
+    },
+    {
+      "path": "src/server/db/schema.ts",
+      "sha256": "f815500ef0eaa806718a705f5ee7795851479d34488739843504f18ff3388538"
+    },
+    {
+      "path": "src/server/db/workerReady.ts",
+      "sha256": "88de5a54c52e6afca19e3468e5c57675430c19681ee174d061c706a363fd9d95"
+    },
+    {
+      "path": "src/server/jobs/all.ts",
+      "sha256": "fd802807e07f70522dc0685b4b22406b6055056fd953ff8dea8460a6610f1e6f"
+    },
+    {
+      "path": "src/server/services/autopilot/autopilot.db.test.ts",
+      "sha256": "120ae124361be437be173a3b0709d43d05c1511587b7d18f4c21f3670ce8f492"
+    },
+    {
+      "path": "src/server/services/autopilot/control.ts",
+      "sha256": "b5f9423fb21c2ff7cd8ce5afacdbef03f22e3b8c3981428fab82d7e14466a34d"
+    },
+    {
+      "path": "src/server/services/autopilot/guard.ts",
+      "sha256": "91ddee3dfe5b146837fa1ecc457b317cf3427318aba4ead5118f0f8fc7bbc5d2"
+    },
+    {
+      "path": "src/server/services/autopilot/handoff.ts",
+      "sha256": "de7f1c79d4f0f83a03e5c8e51ff1b051f1bff02727ea22af07abb30999d69a66"
+    },
+    {
+      "path": "src/server/services/autopilot/jobs.ts",
+      "sha256": "746464b6973765fcbe1f9239de4b469e6a275f88bcd6eec3e2725b9e1b977e27"
+    },
+    {
+      "path": "src/server/services/autopilot/policy.test.ts",
+      "sha256": "c26ec0a54e94145859d196f0ff1bbc401a8eac4a3652aae38ebfd13543886c51"
+    },
+    {
+      "path": "src/server/services/autopilot/policy.ts",
+      "sha256": "e08bb7617a978599ab89b6844d2f81747ba44e24644c42868316c4db2185b9e3"
+    },
+    {
+      "path": "src/server/services/autopilot/run.ts",
+      "sha256": "ceed24699c2d0ef2c66dabc9eb99e4b0becd4b1999f8cf4e307857c781ac197b"
+    },
+    {
+      "path": "src/server/services/brief/scan.ts",
+      "sha256": "50b4a02a1eace568aebb3a666b8c2a2c2090e5db605914fdd7da2fd0d70894ca"
+    },
+    {
+      "path": "src/server/services/calendar/jobs.ts",
+      "sha256": "471b4b5a7da9f28145a3c171b9ca5cefc18a7d1c9658d3b8d6a0157f74640ab9"
+    },
+    {
+      "path": "src/server/services/drafting/draft.ts",
+      "sha256": "9701f493129d4f4fe0cbb0856ad171cdd73daa4d33196f1201125b1dc663f57e"
+    },
+    {
+      "path": "src/server/services/drafting/jobs.ts",
+      "sha256": "322cbe8ab0dbbf7866c5f4d0ef8e37aba3e627c00d56017bbdc2751647f6a5cc"
+    },
+    {
+      "path": "src/server/services/drafting/start.ts",
+      "sha256": "2bb6e7526b0292054f9f63e716c1b5d7f9df325371b2635a7339acc0d004a754"
+    },
+    {
+      "path": "src/server/services/legacyContent.ts",
+      "sha256": "1a5fb278fc4dcc1eefc1064ca6d7ea6a75ab1943e5e143103a79eda283f438e5"
+    },
+    {
+      "path": "src/server/services/lifecycle/autopilotIntegration.test.ts",
+      "sha256": "91c35f5bf1fe2b60ab1a5b696aabe68768896af87c2b548918f3f12b958f3e40"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagement.ts",
+      "sha256": "cd71943bf5a0e6517a3cfc704843d66d8877c509897ef87e9cc10409db967fa0"
+    },
+    {
+      "path": "src/server/services/lifecycle/guideContent.ts",
+      "sha256": "f7e400d05eb81760038e992814f20ef24545bec46cab6112e2b09117baf3d1e1"
+    },
+    {
+      "path": "src/server/services/mail.ts",
+      "sha256": "b25ff6c3997ebd98ad45f565bfefd391427f75d4706bdd38dcfcd3afb2878e4e"
+    },
+    {
+      "path": "src/server/services/publishing/jobs.ts",
+      "sha256": "f6091b1fe061d4fbeddd6da19e307d6031d8b7695252b9f9490f746574116296"
+    },
+    {
+      "path": "src/server/services/publishing/publisher.ts",
+      "sha256": "44a7c850f67e6d60c8cc668a31b7c79d249e0d7ef6378cf2994ebbe459797c40"
+    },
+    {
+      "path": "src/server/services/social/auto.ts",
+      "sha256": "4a47ff878cd60e22bb7ca640a536233ae51394ecff95092b234a853da80afad5"
+    },
+    {
+      "path": "src/server/services/social/jobs.ts",
+      "sha256": "754ac3c47237f7dc443ec1485325ff3838df6ac4acf6d6bd9e82ab09a809389e"
+    },
+    {
+      "path": "src/server/services/social/publish/jobs.ts",
+      "sha256": "c10cfae14ea5f9815a5b7a5cc37be09e776a709d7a75a90920e7339ada96ead0"
+    },
+    {
+      "path": "src/server/services/social/publish/schedule.ts",
+      "sha256": "6efdd9542e7797d3d6c5b662a74c59000f59680b894e7d0b703f82ec43525db2"
+    },
+    {
+      "path": "src/server/services/social/publish/send.ts",
+      "sha256": "63c7251e2e450710a4f584d039ce3dd365ae4a8360bcdcb63dff17a522033ced"
+    },
+    {
+      "path": "src/server/workspace.ts",
+      "sha256": "9c43f42dbef3c81d103bd25d9428004d9878b4a9ae4707672d03cce121fb21e9"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "32ba8b6a419e395d0770801d3d2f5f8542331732bb7427dffaa6b9e15bd9bcfa"
+    }
+  ]
+}

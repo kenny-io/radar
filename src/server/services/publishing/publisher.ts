@@ -1,4 +1,6 @@
+import { reportFailure } from '@/server/observability/failures';
 // The publisher: scheduled entry → payload → draft on the platform → publish (02-system.md §7, §12).
+import { canRun } from '../autopilot/guard';
 import { trackSoon } from '@/server/events';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -7,15 +9,16 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { notify } from '@/server/notify';
-import { bump, blogOf, connPublic, entryFromRow, getBiz, type BizRow } from '@/server/workspace';
+import { bump, blogOf, connPublic, entryFromRow, getBiz, laterV, type BizRow } from '@/server/workspace';
 import { renderImage } from '@/server/services/images';
 import { readLocal, storedKey } from '@/server/services/storage';
 import { platLabel } from '@/lib/constants';
 import { slugify } from '@/lib/format';
-import type { Article, CalendarEntry, ConnType, Profile } from '@/lib/types';
+import type { Article, ArticlePublishError, CalendarEntry, ConnType, Profile } from '@/lib/types';
 import { blocksToHtml, blocksToMarkdown, sourcesList } from './render';
 import { connectorFor } from './connectors';
 import { PublishError } from './http';
+import { resolveRefreshUrl } from './refreshUrl';
 import { ctxFromRow, type ConnRow } from './store';
 import type { PublishPayload, RemoteDraft } from './types';
 import { assertNoArticleWork, lockArticle } from '../drafting/guard';
@@ -33,6 +36,7 @@ async function applyOutbound(bid: string, entryUrl: string | null, html: string)
     try { mod = await import(/* webpackIgnore: true */ spec); } catch { mod = await import(/* webpackIgnore: true */ pathToFileURL(file).href); }
     return typeof mod?.applyApprovedOutboundLinks === 'function' ? await mod.applyApprovedOutboundLinks(bid, entryUrl, html) : html;
   } catch (e: any) {
+    await reportFailure(e, { source: 'publishing', operation: 'publishing.outboundLinks', businessId: bid, degraded: true });
     console.error('[publish] outbound links skipped:', e?.message || e);
     return html;
   }
@@ -44,12 +48,16 @@ async function heroImage(b: BizRow, e: CalendarEntry, a: Article): Promise<strin
   try {
     const url = await renderImage({ bid: b.id, style: a.img?.style || 'branded', brand: { primary: p.brand.primary, secondary: p.brand.secondary }, headline: e.title, name: p.business.name || b.domain, seed: a.img?.seed ?? 1, prompt: a.img?.prompt, w: 1200, h: 628, kind: 'hero' });
     // Keep it on the article so the editor shows the same image that went live.
-    await db.update(schema.articles).set({ data: sql`jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true)`, updatedAt: new Date() }).where(eq(schema.articles.entryId, e.id));
+    await db.update(schema.articles).set({ data: sql`jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true)`, updatedAt: laterV() }).where(eq(schema.articles.entryId, e.id));
     return url;
-  } catch (err: any) { console.error('[publish] hero image failed:', err?.message || err); return null; }
+  } catch (err: any) {
+    await reportFailure(err, { source: 'publishing', operation: 'publishing.heroImage', businessId: b.id, ref: e.id, degraded: true });
+    console.error('[publish] hero image failed:', err?.message || err); return null;
+  }
 }
 
 export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Promise<PublishPayload> {
+  const refreshUrl = e.mode === 'refresh' ? resolveRefreshUrl(e.url, b.domain) : null;
   const p = b.profile as Profile;
   const meta = new Map((a.videoMeta || []).map(v => [v.id, v]));
   const videos = (a.videos || []).map(id => { const m = meta.get(id); return { id, title: m?.title || '', channel: m?.channel || '', url: `https://www.youtube.com/watch?v=${id}` }; });
@@ -63,8 +71,7 @@ export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Pro
   const opts = { videos, sources, bodyImages };
   const slug = slugify(a.seo?.slug || e.kw || e.title) || slugify(e.title) || e.id;
   const imgUrl = await heroImage(b, e, a);
-  const canonical = e.mode === 'refresh' && e.url ? e.url : null;
-  const html = await applyOutbound(b.id, e.url || null, blocksToHtml(a.body || [], opts));
+  const html = await applyOutbound(b.id, refreshUrl || e.url || null, blocksToHtml(a.body || [], opts));
   return {
     entryId: e.id, title: e.title, slug, html, markdown: blocksToMarkdown(a.body || [], opts), blocks: a.body || [], bodyImages, meta: a.seo?.meta || '', seoTitle: a.seo?.title?.trim() || e.title, keyword: e.kw, date: e.date,
     image: imgUrl ? {
@@ -76,7 +83,7 @@ export async function buildPayload(b: BizRow, e: CalendarEntry, a: Article): Pro
         return { buf: Buffer.from(await r.arrayBuffer()), type, name: `${slug}.${type.split('/')[1] || 'png'}` };
       },
     } : null,
-    canonical, mode: e.mode, refreshUrl: e.mode === 'refresh' ? e.url : null,
+    canonical: refreshUrl, mode: e.mode, refreshUrl,
     sources: sources.map(s => ({ title: s.title, url: s.url })), videos, author: p.business?.name || b.domain,
   };
 }
@@ -89,7 +96,7 @@ export async function connectionFor(b: BizRow, dest: string | null): Promise<Con
   return rows.find(r => r.id === dest) || rows.find(r => r.id === bl.defaultId) || rows[0];
 }
 
-export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: { http: number; message: string; platform: string; hint?: string } } | { status: 'skipped'; reason: string } | { status: 'retry' };
+export type PublishOutcome = { status: 'published'; url: string } | { status: 'failed'; error: ArticlePublishError } | { status: 'skipped'; reason: string } | { status: 'retry' };
 
 /**
  * Publish one entry. Throws only for a transient failure that should be retried (the job queue backs off);
@@ -100,6 +107,8 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   if (!row) return { status: 'skipped', reason: 'missing' };
   if (row.status !== 'scheduled' && row.status !== 'publishing') return { status: 'skipped', reason: 'status ' + row.status };
   const b = await getBiz(row.businessId);
+  const programAllowed = async () => !!o.manual || !row.autopilotActivationId || (await canRun(b.id, row.autopilotActivationId) && !(await getBiz(b.id)).blog?.paused);
+  if (!(await programAllowed())) return { status: 'skipped', reason: 'autopilot_off' };
   if ((b.blog || {}).paused && !o.manual && row.status === 'scheduled') return { status: 'skipped', reason: 'paused' };
   // Read the publish snapshot under the same lock that admits generation, saving and approval.
   const admitted = await db.transaction(async tx => {
@@ -115,7 +124,8 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
   const conn = await connectionFor(b, e.dest);
   const setEntry = async (v: Partial<typeof schema.calendarEntries.$inferInsert>) => { await db.update(schema.calendarEntries).set(v).where(eq(schema.calendarEntries.id, entryId)); await bump(b.id); };
   const fail = async (err: PublishError, type: string | null) => {
-    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}) };
+    await reportFailure(err, { source: 'publishing', operation: 'publishing.entry', businessId: b.id, ref: entryId, provider: type || undefined, status: err.http, attempt: o.attempt, maxAttempts: o.maxAttempts, retrying: false });
+    const error = { http: err.http, message: err.line, platform: type ? platLabel(type) : '', ...(err.hint ? { hint: err.hint } : {}), ...(err.source ? { source: err.source, diagnostic: err.diagnostic } : {}) };
     await setEntry({ status: 'failed', publishError: error, publishAttempts: o.attempt });
     if (conn && (err.http === 401 || err.http === 403)) await db.update(schema.connections).set({ status: 'error', lastError: err.line }).where(eq(schema.connections.id, conn.id));
     console.error(`[publish] ${entryId} failed on ${type}:`, err.message);
@@ -127,14 +137,22 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
 
   const type = conn.type as ConnType;
   const c = ctxFromRow(b, conn);
+  if (type === 'nextjs') c.publishDeadlineAt = Date.now() + 270_000;
   const connector = connectorFor(type);
   try {
     const payload = await buildPayload(b, e, art);
     let draft: RemoteDraft | null = admitted.row.publishRemote && admitted.row.publishRemote.connId === conn.id ? admitted.row.publishRemote : null;
+    const holdProgram = async () => {
+      if (await programAllowed()) return false;
+      await db.update(schema.calendarEntries).set({ status: 'review' }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.status, 'publishing')));
+      await bump(b.id); return true;
+    };
     if (!draft) {
+      if (await holdProgram()) return { status: 'skipped', reason: 'autopilot_off' };
       draft = { ...(await connector.createDraft(c, payload)), connId: conn.id };
       await db.update(schema.calendarEntries).set({ publishRemote: draft }).where(eq(schema.calendarEntries.id, entryId));
     }
+    if (await holdProgram()) return { status: 'skipped', reason: 'autopilot_off' };
     const { url } = await connector.publish(c, payload, draft);
     await setEntry({ status: 'published', publishedUrl: url, publishError: null, publishRemote: null, publishAttempts: o.attempt });
     if (conn.status !== 'ok') await db.update(schema.connections).set({ status: 'ok', lastError: null }).where(eq(schema.connections.id, conn.id));

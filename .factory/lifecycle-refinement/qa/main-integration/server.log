@@ -1,0 +1,448 @@
+   ▲ Next.js 15.5.28
+   - Local:        http://127.0.0.1:3950
+   - Network:      http://127.0.0.1:3950
+
+ ✓ Starting...
+ ✓ Ready in 5.8s
+ ○ Compiling /signin ...
+ ✓ Compiled /signin in 2.2s (838 modules)
+ GET /signin 200 in 3264ms
+ ✓ Compiled /api/auth/signin in 340ms (621 modules)
+ ✓ Compiled in 253ms (235 modules)
+ GET /icon.svg?6086fb25638947a4 200 in 802ms
+ POST /api/auth/signin 200 in 820ms
+ ✓ Compiled /dashboard in 240ms (921 modules)
+ GET /dashboard 200 in 520ms
+ ○ Compiling /api/b/[bid]/events ...
+ ✓ Compiled /api/b/[bid]/events in 937ms (1260 modules)
+ GET /icon.svg?6086fb25638947a4 200 in 1316ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/events 200 in 1447ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/workspace 200 in 1459ms
+ GET /settings?section=emails 200 in 1510ms
+ GET /icon.svg?6086fb25638947a4 200 in 20ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/workspace 200 in 289ms
+ ○ Compiling /api/me/email-preferences ...
+ ✓ Compiled /api/me/email-preferences in 551ms (1264 modules)
+ GET /api/me/education-preferences 200 in 630ms
+ GET /api/me/email-preferences 200 in 631ms
+ GET /settings 200 in 674ms
+ GET /api/me/education-preferences 200 in 21ms
+ GET /settings 200 in 36ms
+ GET /icon.svg?6086fb25638947a4 200 in 9ms
+ PATCH /api/me/education-preferences 200 in 18ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/events 200 in 1422ms
+ GET /settings 200 in 101ms
+ GET /icon.svg?6086fb25638947a4 200 in 14ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/workspace 200 in 131ms
+ GET /api/me/education-preferences 200 in 22ms
+ GET /api/me/email-preferences 200 in 24ms
+ GET /api/me/education-preferences 200 in 14ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/events 200 in 527ms
+ GET /settings 200 in 52ms
+ GET /icon.svg?6086fb25638947a4 200 in 27ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/workspace 200 in 40ms
+ GET /api/me/email-preferences 200 in 13ms
+ GET /api/me/education-preferences 200 in 15ms
+ PATCH /api/me/education-preferences 200 in 18ms
+ GET /api/me/email-preferences 200 in 14ms
+ PATCH /api/me/education-preferences 200 in 18ms
+ PATCH /api/me/education-preferences 200 in 16ms
+ ✓ Compiled /email-preferences in 426ms (1273 modules)
+ GET /email-preferences?token=[REDACTED] 200 in 630ms
+ GET /icon.svg?6086fb25638947a4 200 in 17ms
+ ✓ Compiled /api/email-preferences in 302ms (1275 modules)
+ POST /api/email-preferences 200 in 415ms
+ POST /api/email-preferences?token=[REDACTED] 200 in 14ms
+ POST /api/email-preferences?token=[REDACTED] 400 in 8ms
+ ✓ Compiled /api/b/current in 230ms (1277 modules)
+ POST /api/b/current 200 in 300ms
+ ✓ Compiled /email/learn in 277ms (1280 modules)
+ GET /email/learn?lesson=ai_visibility&businessId=1b3b94f6-e788-4844-bcc0-2a86a78a595f 303 in 366ms
+ GET /api/b/current?id=1b3b94f6-e788-4844-bcc0-2a86a78a595f&next=%2Fperformance%3Ftab%3Dai 303 in 22ms
+ ✓ Compiled /performance in 412ms (1295 modules)
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/events 200 in 3876ms
+ GET /performance?tab=ai 200 in 615ms
+ GET /icon.svg?6086fb25638947a4 200 in 12ms
+ GET /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/workspace 200 in 103ms
+ ○ Compiling /api/b/[bid]/act ...
+ ✓ Compiled /api/b/[bid]/act in 919ms (1437 modules)
+ POST /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/act 200 in 6508ms
+ POST /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/act 200 in 6760ms
+ ○ Compiling /api/me ...
+ ✓ Compiled /api/me in 7.7s (1439 modules)
+ GET /api/me 200 in 8161ms
+ GET /email/learn?lesson=organic_search&businessId=1096c0b0-4086-41f5-903e-7e39663c1db1 303 in 209ms
+ GET /api/b/current?id=1096c0b0-4086-41f5-903e-7e39663c1db1&next=%2Fcalendar 303 in 79ms
+ ○ Compiling /calendar ...
+ ✓ Compiled /calendar in 3.3s (1448 modules)
+ GET /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/events 200 in 20635ms
+ GET /calendar 200 in 5257ms
+ GET /icon.svg?6086fb25638947a4 200 in 51ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/workspace 200 in 909ms
+ GET /api/me 200 in 43ms
+ ○ Compiling /blog/[slug] ...
+ ✓ Compiled /blog/[slug] in 5.9s (1542 modules)
+ GET /blog/page-two-refresh 200 in 10330ms
+ GET /icon.svg?6086fb25638947a4 200 in 41ms
+ GET /api/me 200 in 266ms
+ GET /email/learn?lesson=daily_brief&businessId=78c3fc5e-97f0-4d45-9933-e03b0d850ecb 404 in 90ms
+ GET /api/me 200 in 57ms
+ GET /email/learn?lesson=ai_visibility&businessId=1b3b94f6-e788-4844-bcc0-2a86a78a595f 303 in 31ms
+ GET /signin?next=%2Femail%2Flearn%3Flesson%3Dai_visibility%26businessId%3D1b3b94f6-e788-4844-bcc0-2a86a78a595f 200 in 115ms
+ GET /icon.svg?6086fb25638947a4 200 in 32ms
+ POST /api/auth/signin 200 in 938ms
+ GET /email/learn?lesson=ai_visibility&businessId=1b3b94f6-e788-4844-bcc0-2a86a78a595f 303 in 161ms
+ GET /api/b/current?id=1b3b94f6-e788-4844-bcc0-2a86a78a595f&next=%2Fperformance%3Ftab%3Dai 303 in 129ms
+ GET /signin 200 in 484ms
+ GET /performance?tab=ai 200 in 877ms
+ GET /signin 200 in 635ms
+ GET /icon.svg?6086fb25638947a4 200 in 139ms
+ GET /icon.svg?6086fb25638947a4 200 in 150ms
+ GET /icon.svg?6086fb25638947a4 200 in 60ms
+ GET /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/workspace 200 in 422ms
+ POST /api/auth/signin 200 in 1838ms
+ POST /api/auth/signin 200 in 1858ms
+ POST /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/act 200 in 1732ms
+ POST /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/act 200 in 1788ms
+ ○ Compiling /start-trial ...
+ ✓ Compiled /start-trial in 3.1s (1569 modules)
+ GET /email/learn?lesson=daily_brief&businessId=1b3b94f6-e788-4844-bcc0-2a86a78a595f 303 in 3582ms
+ GET /api/b/current?id=1b3b94f6-e788-4844-bcc0-2a86a78a595f&next=%2Fbrief 303 in 214ms
+ GET /start-trial 200 in 4571ms
+ GET /dashboard 200 in 4445ms
+ ○ Compiling /brief ...
+ ✓ Compiled /brief in 3s (1588 modules)
+ GET /icon.svg?6086fb25638947a4 200 in 2015ms
+ GET /icon.svg?6086fb25638947a4 200 in 2016ms
+ GET /api/b/54b20fe7-1bec-4e88-adc9-cff9fd8a3789/workspace 200 in 4318ms
+ GET /api/b/54b20fe7-1bec-4e88-adc9-cff9fd8a3789/events 200 in 4545ms
+ GET /api/b/1096c0b0-4086-41f5-903e-7e39663c1db1/events 200 in 30769ms
+ GET /settings?section=billing 307 in 4986ms
+ GET /settings?section=emails 200 in 5023ms
+ GET /brief 200 in 7081ms
+ GET /start-trial 200 in 956ms
+ GET /icon.svg?6086fb25638947a4 200 in 28ms
+ GET /icon.svg?6086fb25638947a4 200 in 166ms
+ GET /api/b/54b20fe7-1bec-4e88-adc9-cff9fd8a3789/workspace 200 in 411ms
+ GET /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/workspace 200 in 432ms
+ GET /api/me/education-preferences 200 in 251ms
+ GET /api/me/email-preferences 200 in 459ms
+ GET /settings 200 in 1144ms
+ GET /api/me/education-preferences 200 in 817ms
+ GET /api/b/current?id=e2a7e7ab-dfd0-4d1f-a45e-5ba5480a3529&next=%2Fsettings%3Fsection%3Dautopilot 303 in 829ms
+ GET /email/learn?lesson=backlinks&businessId=1b3b94f6-e788-4844-bcc0-2a86a78a595f 303 in 837ms
+ GET /settings 200 in 707ms
+ GET /api/b/current?id=1b3b94f6-e788-4844-bcc0-2a86a78a595f&next=%2Fbacklinks 303 in 292ms
+ GET /api/b/54b20fe7-1bec-4e88-adc9-cff9fd8a3789/events 200 in 3037ms
+ ○ Compiling /backlinks ...
+ GET /settings?section=autopilot 200 in 2563ms
+ GET /signin 200 in 2812ms
+ ✓ Compiled /backlinks in 10.6s (1597 modules)
+ GET /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/events 200 in 21016ms
+ GET /backlinks 200 in 19300ms
+ GET /icon.svg?6086fb25638947a4 200 in 313ms
+ GET /icon.svg?6086fb25638947a4 200 in 556ms
+ GET /api/b/e2a7e7ab-dfd0-4d1f-a45e-5ba5480a3529/workspace 200 in 2013ms
+ POST /api/auth/signin 200 in 3198ms
+ GET /api/b/current?id=71566258-c89e-441c-916d-6fa124c60da7&next=%2Fsettings%3Fsection%3Dautopilot 404 in 2107ms
+ GET /api/b/e2a7e7ab-dfd0-4d1f-a45e-5ba5480a3529/events 200 in 5068ms
+ GET /settings 200 in 2466ms
+ ○ Compiling /favicon.ico ...
+ GET /start-trial 200 in 2144ms
+ GET /api/b/1b3b94f6-e788-4844-bcc0-2a86a78a595f/events 200 in 46477ms
+ ✓ Compiled /favicon.ico in 4.5s (1271 modules)
+ GET /favicon.ico 200 in 6085ms
+ GET /api/b/current?id=e2a7e7ab-dfd0-4d1f-a45e-5ba5480a3529&next=%2Fsettings%3Fsection%3Dautopilot 303 in 6013ms
+ GET /signin?next=%2Fapi%2Fb%2Fcurrent%3Fid%3De2a7e7ab-dfd0-4d1f-a45e-5ba5480a3529%26next%3D%252Fsettings%253Fsection%253Dautopilot 200 in 560ms
+ GET /icon.svg?6086fb25638947a4 200 in 156ms
+ GET /settings?section=billing 307 in 426ms
+ GET /start-trial 200 in 155ms
+ GET /icon.svg?6086fb25638947a4 200 in 37ms
+ GET /icon.svg?6086fb25638947a4 200 in 27ms
+ ✓ Compiled in 850ms (1349 modules)
+ GET /signin 200 in 568ms
+ GET /icon.svg?6086fb25638947a4 200 in 61ms
+ POST /api/auth/signin 200 in 306ms
+ ✓ Compiled /dashboard in 425ms (716 modules)
+ GET /dashboard 200 in 875ms
+ GET /icon.svg?6086fb25638947a4 200 in 86ms
+ ○ Compiling /api/b/[bid]/events ...
+ ✓ Compiled /api/b/[bid]/events in 1768ms (1018 modules)
+ ✓ Compiled (1022 modules)
+ GET /api/b/99fc4cd5-246b-48d8-ba77-4d50c6e18928/workspace 200 in 2829ms
+ GET /api/b/99fc4cd5-246b-48d8-ba77-4d50c6e18928/events 200 in 2828ms
+ GET /settings?section=emails 200 in 2941ms
+ GET /icon.svg?6086fb25638947a4 200 in 43ms
+ GET /api/b/99fc4cd5-246b-48d8-ba77-4d50c6e18928/workspace 200 in 96ms
+ ○ Compiling /api/me/email-preferences ...
+ ✓ Compiled /api/me/email-preferences in 803ms (1024 modules)
+ ✓ Compiled (1026 modules)
+ GET /api/me/education-preferences 200 in 1137ms
+ GET /api/me/email-preferences 200 in 1198ms
+ GET /settings 200 in 1210ms
+ GET /api/me/education-preferences 200 in 41ms
+ GET /settings 200 in 57ms
+ GET /icon.svg?6086fb25638947a4 200 in 14ms
+ ✓ Compiled /api/b/current in 259ms (1028 modules)
+ GET /api/b/current?id=0e406f5e-3fa9-4f36-93f8-603e2bd5378c&next=%2Fsettings%3Fsection%3Dautopilot 303 in 349ms
+ GET /api/b/99fc4cd5-246b-48d8-ba77-4d50c6e18928/events 200 in 2339ms
+ GET /settings?section=autopilot 200 in 168ms
+ GET /icon.svg?6086fb25638947a4 200 in 15ms
+ GET /api/b/0e406f5e-3fa9-4f36-93f8-603e2bd5378c/workspace 200 in 179ms
+ GET /settings 200 in 47ms
+ GET /settings 200 in 54ms
+ GET /api/b/current?id=2de49d51-7911-4f10-bb97-a70e1a110ce3&next=%2Fsettings%3Fsection%3Dautopilot 404 in 41ms
+ GET /api/b/0e406f5e-3fa9-4f36-93f8-603e2bd5378c/events 200 in 368ms
+ ✓ Compiled /favicon.ico in 442ms (1030 modules)
+ GET /favicon.ico 200 in 782ms
+ GET /api/b/current?id=0e406f5e-3fa9-4f36-93f8-603e2bd5378c&next=%2Fsettings%3Fsection%3Dautopilot 303 in 814ms
+ GET /signin?next=%2Fapi%2Fb%2Fcurrent%3Fid%3D0e406f5e-3fa9-4f36-93f8-603e2bd5378c%26next%3D%252Fsettings%253Fsection%253Dautopilot 200 in 232ms
+ GET /icon.svg?6086fb25638947a4 200 in 36ms
+ POST /api/auth/signin 200 in 229ms
+ GET /api/b/current?id=0e406f5e-3fa9-4f36-93f8-603e2bd5378c&next=%2Fsettings%3Fsection%3Dautopilot 303 in 29ms
+ GET /settings?section=autopilot 200 in 155ms
+ GET /icon.svg?6086fb25638947a4 200 in 41ms
+ GET /api/b/0e406f5e-3fa9-4f36-93f8-603e2bd5378c/workspace 200 in 204ms
+ GET /settings 200 in 74ms
+ GET /settings 200 in 87ms
+ GET /icon.svg?6086fb25638947a4 200 in 23ms
+ GET /api/b/0e406f5e-3fa9-4f36-93f8-603e2bd5378c/events 200 in 562ms
+ GET /signin 200 in 346ms
+ GET /icon.svg?6086fb25638947a4 200 in 142ms
+ POST /api/auth/signin 200 in 15ms
+ GET /dashboard 200 in 275ms
+ GET /icon.svg?6086fb25638947a4 200 in 39ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/events 200 in 88ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/workspace 200 in 89ms
+ GET /settings?section=emails 200 in 190ms
+ GET /icon.svg?6086fb25638947a4 200 in 96ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/workspace 200 in 116ms
+ GET /api/me/education-preferences 200 in 135ms
+ GET /api/me/email-preferences 200 in 137ms
+ GET /settings 200 in 163ms
+ GET /api/me/education-preferences 200 in 69ms
+ GET /settings 200 in 98ms
+ GET /icon.svg?6086fb25638947a4 200 in 13ms
+ PATCH /api/me/education-preferences 200 in 35ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/events 200 in 1015ms
+ GET /settings 200 in 147ms
+ GET /icon.svg?6086fb25638947a4 200 in 70ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/workspace 200 in 399ms
+ GET /api/me/education-preferences 200 in 370ms
+ GET /api/me/email-preferences 200 in 359ms
+ GET /api/me/education-preferences 200 in 19ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/events 200 in 1463ms
+ GET /settings 200 in 75ms
+ GET /icon.svg?6086fb25638947a4 200 in 40ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/workspace 200 in 37ms
+ GET /api/me/email-preferences 200 in 41ms
+ GET /api/me/education-preferences 200 in 19ms
+ PATCH /api/me/education-preferences 200 in 34ms
+ GET /api/me/email-preferences 200 in 22ms
+ PATCH /api/me/education-preferences 200 in 27ms
+ PATCH /api/me/education-preferences 200 in 18ms
+ ○ Compiling /email-preferences ...
+ ✓ Compiled /email-preferences in 614ms (1021 modules)
+ GET /email-preferences?token=[REDACTED] 200 in 801ms
+ GET /icon.svg?6086fb25638947a4 200 in 45ms
+ ✓ Compiled /api/email-preferences in 264ms (1023 modules)
+ POST /api/email-preferences 200 in 336ms
+ POST /api/email-preferences?token=[REDACTED] 200 in 22ms
+ POST /api/email-preferences?token=[REDACTED] 400 in 13ms
+ POST /api/b/current 200 in 35ms
+ ✓ Compiled /email/learn in 276ms (1026 modules)
+ GET /email/learn?lesson=ai_visibility&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 366ms
+ GET /api/b/current?id=1fa1d170-3390-49dd-bd35-92ceece4bb18&next=%2Fperformance%3Ftab%3Dai 303 in 19ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/events 200 in 3382ms
+ GET /performance?tab=ai 200 in 162ms
+ GET /icon.svg?6086fb25638947a4 200 in 16ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 135ms
+ ○ Compiling /api/b/[bid]/act ...
+ ✓ Compiled /api/b/[bid]/act in 953ms (1168 modules)
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 200 in 1248ms
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 200 in 1250ms
+ ✓ Compiled /api/me in 377ms (1170 modules)
+ GET /api/me 200 in 456ms
+ GET /email/learn?lesson=organic_search&businessId=1a62b4af-2d59-4335-9bda-ab479ed640dd 303 in 46ms
+ GET /api/b/current?id=1a62b4af-2d59-4335-9bda-ab479ed640dd&next=%2Fcalendar 303 in 24ms
+ ✓ Compiled /calendar in 299ms (1176 modules)
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 2861ms
+ GET /calendar 200 in 502ms
+ GET /icon.svg?6086fb25638947a4 200 in 23ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/workspace 200 in 122ms
+ GET /api/me 200 in 27ms
+ ✓ Compiled /blog/[slug] in 453ms (1251 modules)
+ GET /blog/page-two-refresh 200 in 971ms
+ GET /icon.svg?6086fb25638947a4 200 in 24ms
+ GET /api/me 200 in 33ms
+ GET /email/learn?lesson=daily_brief&businessId=50aad4ec-8a28-4168-96df-fc308c78d9cd 404 in 33ms
+ GET /api/me 200 in 16ms
+ GET /email/learn?lesson=ai_visibility&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 19ms
+ GET /signin?next=%2Femail%2Flearn%3Flesson%3Dai_visibility%26businessId%3D1fa1d170-3390-49dd-bd35-92ceece4bb18 200 in 127ms
+ GET /icon.svg?6086fb25638947a4 200 in 17ms
+ POST /api/auth/signin 200 in 209ms
+ GET /email/learn?lesson=ai_visibility&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 19ms
+ GET /api/b/current?id=1fa1d170-3390-49dd-bd35-92ceece4bb18&next=%2Fperformance%3Ftab%3Dai 303 in 19ms
+ GET /performance?tab=ai 200 in 104ms
+ GET /icon.svg?6086fb25638947a4 200 in 20ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 142ms
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 200 in 232ms
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 200 in 244ms
+ GET /email/learn?lesson=daily_brief&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 82ms
+ GET /api/b/current?id=1fa1d170-3390-49dd-bd35-92ceece4bb18&next=%2Fbrief 303 in 164ms
+ GET /api/b/1a62b4af-2d59-4335-9bda-ab479ed640dd/events 200 in 4329ms
+ GET /brief 200 in 177ms
+ GET /icon.svg?6086fb25638947a4 200 in 22ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 73ms
+ GET /email/learn?lesson=backlinks&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 28ms
+ GET /api/b/current?id=1fa1d170-3390-49dd-bd35-92ceece4bb18&next=%2Fbacklinks 303 in 33ms
+ ○ Compiling /backlinks ...
+ ✓ Compiled /backlinks in 681ms (1257 modules)
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 1226ms
+ GET /backlinks 200 in 1000ms
+ GET /icon.svg?6086fb25638947a4 200 in 35ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 195ms
+ GET /email/learn?lesson=organic_search&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 71ms
+ GET /api/b/current?id=1fa1d170-3390-49dd-bd35-92ceece4bb18&next=%2Fcalendar 303 in 46ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 533ms
+ GET /calendar 200 in 222ms
+ GET /icon.svg?6086fb25638947a4 200 in 36ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 62ms
+ GET /email/learn?lesson=social_marketing&businessId=1fa1d170-3390-49dd-bd35-92ceece4bb18 303 in 61ms
+ GET /api/b/current?id=1fa1d170-3390-49dd-bd35-92ceece4bb18&next=%2Fsocial%3Fgenerate%3D1 303 in 33ms
+ ○ Compiling /social ...
+ ✓ Compiled /social in 2.9s (1600 modules)
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 3364ms
+ GET /social?generate=1 200 in 3227ms
+ GET /icon.svg?6086fb25638947a4 200 in 32ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 178ms
+ GET /api/me/education-preferences 200 in 68ms
+ PATCH /api/me/education-preferences 200 in 74ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 556ms
+ GET /email-preferences 200 in 135ms
+ GET /icon.svg?6086fb25638947a4 200 in 58ms
+ GET /api/me/email-preferences 200 in 80ms
+ GET /api/me/education-preferences 200 in 83ms
+ GET /api/me/education-preferences 200 in 23ms
+ PATCH /api/me/education-preferences 200 in 25ms
+ GET /email-preferences 200 in 71ms
+ GET /icon.svg?6086fb25638947a4 200 in 37ms
+ GET /api/me/education-preferences 200 in 41ms
+ GET /api/me/email-preferences 200 in 44ms
+ GET /api/me/education-preferences 200 in 21ms
+ GET /email-preferences 307 in 118ms
+ GET /signin?next=%2Femail-preferences 200 in 123ms
+ GET /icon.svg?6086fb25638947a4 200 in 25ms
+ POST /api/auth/signin 200 in 256ms
+ GET /email-preferences 200 in 125ms
+ GET /icon.svg?6086fb25638947a4 200 in 39ms
+ GET /api/me/education-preferences 200 in 43ms
+ GET /api/me/email-preferences 200 in 48ms
+ GET /api/me/education-preferences 200 in 30ms
+ PATCH /api/me/education-preferences 200 in 36ms
+ GET /email-preferences 200 in 112ms
+ GET /icon.svg?6086fb25638947a4 200 in 45ms
+ GET /api/me/education-preferences 200 in 48ms
+ GET /api/me/email-preferences 200 in 56ms
+ GET /api/me/education-preferences 200 in 18ms
+ ○ Compiling /signup ...
+ ✓ Compiled /signup in 1461ms (1602 modules)
+ GET /signup?next=%2Femail-preferences 200 in 1855ms
+ GET /icon.svg?6086fb25638947a4 200 in 16ms
+ ○ Compiling /api/auth/signup ...
+ ✓ Compiled /api/auth/signup in 631ms (1607 modules)
+ POST /api/auth/signup 200 in 763ms
+ ○ Compiling /verify-email ...
+ ✓ Compiled /verify-email in 585ms (1615 modules)
+ GET /verify-email 200 in 823ms
+ GET /icon.svg?6086fb25638947a4 200 in 20ms
+ GET /icon.svg?6086fb25638947a4 200 in 10ms
+ ○ Compiling /api/auth/verify-email ...
+ ✓ Compiled /api/auth/verify-email in 834ms (1617 modules)
+ POST /api/auth/verify-email 200 in 1104ms
+ GET /email-preferences 200 in 100ms
+ GET /icon.svg?6086fb25638947a4 200 in 27ms
+ GET /api/me/education-preferences 200 in 61ms
+ GET /api/me/email-preferences 200 in 63ms
+ GET /api/me/education-preferences 200 in 16ms
+ GET /settings?section=team 200 in 145ms
+ GET /icon.svg?6086fb25638947a4 200 in 23ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 160ms
+ GET /settings 200 in 54ms
+ GET /settings 200 in 37ms
+ GET /icon.svg?6086fb25638947a4 200 in 13ms
+[mail:log] to=lc2-viewer-mw9p906kfxl3f@test.local subject=Radar QA invited you to Beacon Studio on Radar
+Radar QA invited you to join Beacon Studio (b-mw9p87eeq4tur.test) on Radar.
+
+As a Viewer, you can review the workspace. Approval and publishing controls are available to editors and admins.
+
+Accept invitation: http://localhost:3950/api/invites/[REDACTED]
+
+Your invitation link works once and expires in 14 days. If you weren’t expecting an invitation, you can ignore this email.
+
+Email preferences: http://localhost:3950/email-preferences
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 200 in 210ms
+ ○ Compiling /api/invites/[token] ...
+ ✓ Compiled /api/invites/[token] in 590ms (1619 modules)
+ GET /api/invites/[REDACTED] 303 in 1437ms
+ GET /signup?next=%2Fapi%2Finvites%2F[REDACTED] 200 in 130ms
+ GET /icon.svg?6086fb25638947a4 200 in 36ms
+ GET /signin?next=%2Fapi%2Finvites%2F[REDACTED] 200 in 94ms
+ GET /icon.svg?6086fb25638947a4 200 in 32ms
+ POST /api/auth/signin 200 in 464ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 471ms
+[team] invite 45de0bb2-b0b0-4d8d-8827-82f370212564 accepted by user 9a44570b-527c-4e8c-8a93-b90a05ff8faf
+ GET /api/invites/[REDACTED] 303 in 570ms
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 200 in 561ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 136ms
+ GET /dashboard 200 in 313ms
+ GET /icon.svg?6086fb25638947a4 200 in 59ms
+ POST /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/act 403 in 114ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/workspace 200 in 130ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 250ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 27901ms
+ GET /api/b/1fa1d170-3390-49dd-bd35-92ceece4bb18/events 200 in 6782ms
+ GET /signin 200 in 94ms
+ GET /icon.svg?6086fb25638947a4 200 in 17ms
+ POST /api/auth/signin 200 in 217ms
+ GET /dashboard 200 in 90ms
+ GET /icon.svg?6086fb25638947a4 200 in 42ms
+ GET /api/b/cdf74cfd-5916-47c3-9876-93ee1dcb052e/workspace 200 in 121ms
+ GET /api/b/cdf74cfd-5916-47c3-9876-93ee1dcb052e/events 200 in 122ms
+ GET /settings?section=emails 200 in 203ms
+ GET /icon.svg?6086fb25638947a4 200 in 52ms
+ GET /api/b/cdf74cfd-5916-47c3-9876-93ee1dcb052e/workspace 200 in 52ms
+ GET /api/me/education-preferences 200 in 59ms
+ GET /api/me/email-preferences 200 in 70ms
+ GET /settings 200 in 103ms
+ GET /api/me/education-preferences 200 in 39ms
+ GET /settings 200 in 39ms
+ GET /icon.svg?6086fb25638947a4 200 in 9ms
+ GET /api/b/current?id=0a987bd2-d292-4008-b754-7bbae8322acd&next=%2Fsettings%3Fsection%3Dautopilot 303 in 25ms
+ GET /api/b/cdf74cfd-5916-47c3-9876-93ee1dcb052e/events 200 in 401ms
+ GET /settings?section=autopilot 200 in 79ms
+ GET /icon.svg?6086fb25638947a4 200 in 29ms
+ GET /api/b/0a987bd2-d292-4008-b754-7bbae8322acd/workspace 200 in 36ms
+ GET /settings 200 in 53ms
+ GET /api/b/current?id=1d78994e-f807-45b8-bfe8-46e351ab895a&next=%2Fsettings%3Fsection%3Dautopilot 404 in 33ms
+ GET /api/b/0a987bd2-d292-4008-b754-7bbae8322acd/events 200 in 131ms
+ GET /settings 200 in 23ms
+ GET /favicon.ico 200 in 76ms
+ GET /api/b/current?id=0a987bd2-d292-4008-b754-7bbae8322acd&next=%2Fsettings%3Fsection%3Dautopilot 303 in 76ms
+ GET /signin?next=%2Fapi%2Fb%2Fcurrent%3Fid%3D0a987bd2-d292-4008-b754-7bbae8322acd%26next%3D%252Fsettings%253Fsection%253Dautopilot 200 in 141ms
+ GET /icon.svg?6086fb25638947a4 200 in 70ms
+ POST /api/auth/signin 200 in 221ms
+ GET /api/b/current?id=0a987bd2-d292-4008-b754-7bbae8322acd&next=%2Fsettings%3Fsection%3Dautopilot 303 in 21ms
+ GET /settings?section=autopilot 200 in 314ms
+ GET /icon.svg?6086fb25638947a4 200 in 19ms
+ GET /api/b/0a987bd2-d292-4008-b754-7bbae8322acd/workspace 200 in 49ms
+ GET /settings 200 in 61ms
+ GET /settings 200 in 36ms
+ GET /icon.svg?6086fb25638947a4 200 in 23ms
+ GET /api/b/0a987bd2-d292-4008-b754-7bbae8322acd/events 200 in 320ms
+ GET /settings 200 in 103ms
+ GET /icon.svg?6086fb25638947a4 200 in 35ms
+ GET /api/b/0a987bd2-d292-4008-b754-7bbae8322acd/workspace 200 in 92ms
+ GET /api/b/0a987bd2-d292-4008-b754-7bbae8322acd/events 200 in 306ms
+ ✓ Compiled in 602ms (1619 modules)
+[?25h

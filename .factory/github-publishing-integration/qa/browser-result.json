@@ -1,0 +1,21 @@
+{
+  "base": "http://127.0.0.1:51004",
+  "checks": [
+    "Generated registry exposes exactly one new blog-index link",
+    "Keyboard blog-index navigation opens generated route, SEO title and MDX body",
+    "Direct route survives refresh",
+    "Article breadcrumb returns to populated blog index",
+    "Mobile viewport opens same generated article",
+    "No browser page errors"
+  ],
+  "errors": [],
+  "sourceRevision": "c44cde2f12d5170a2fbaf4e038b467b12efb161f",
+  "paths": [
+    "src/app/blog/qa-reachable-publishing/page.tsx",
+    "src/app/blog/qa-reachable-publishing/body.tsx",
+    "src/app/blog/qa-reachable-publishing/opengraph-image.tsx",
+    "src/app/blog/qa-reachable-publishing/content.mdx",
+    "src/lib/blog.ts"
+  ],
+  "fixtureLimit": "Real planner output, destination wrappers/index/registry and MDX compiler; shared visual and OG components shimmed. No full target build, Radar account flow or production deployment."
+}

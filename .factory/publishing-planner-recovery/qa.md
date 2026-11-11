@@ -1,0 +1,52 @@
+# Independent QA — publishing planner recovery
+
+QA-1, 10 November 2026 (Asia/Dubai). Read user AGENTS instructions, brief, architecture, verification/state, changed implementation, and developer regressions. No additional repository AGENTS file. Exact isolated workspace `/Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push`, branch `kenny/publishing-planner-recovery`, base HEAD `8b0fc3462c2709788cfa730d2f80c3ffee014a30`. Integrated working-source hashes are recorded in `qa/fingerprint.json`; final source fingerprint `62806d32772f83de37842b53ac916ecf24be5b2c5bcd84a664a641b0232eab0d` (13 changed tracked implementation/test/documentation files). Do not carry these results to a different source fingerprint without checking affected coverage.
+
+## Results
+
+| Criterion | Status | Independently observed coverage |
+| --- | --- | --- |
+| PPR-1 oversized generated source recovery | Passed locally | Known oversized blob is never fetched; unavailable metadata propagates through discovery, plan, review; complete body returned from source-grounded plan; skipped bytes never enter observed context; unknown/underreported sizes and UTF-8 byte accounting covered. Developer regressions cover authored generator/build-chain discovery and repeat-read budget. No destination code executed on Radar. |
+| PPR-2 mandatory unavailable source and safety | Passed locally | Mandatory oversized read rejects with size/limit and zero Git writes; unavailable source cannot supply evidence; wrong typed-error SHA, real auth/network failures, stale content SHA and malformed UTF-8 stay fatal; exact edit/SHA/credential/atomic branch gates in broader regressions; late model result cannot resume planning, late planner cannot write Git objects; deadline refuses branch/PR progression. |
+| PPR-3 specific safe diagnostics | Passed locally | Separate empty, file-count, edit-count, final-output count; review reason plus empty-repair cause survives; bounded redaction of Bearer/API key/GitHub token/private key/URL/fenced source; actual local PostgreSQL publishEntry persists source+diagnostic+hint, keeps complete article, no remote draft, healthy connection. |
+| PPR-4 truthful article/dashboard | Passed browser | Native Chrome 10/10 scenarios: local Radar attribution and reason, reload persistence, retained body, absent Reconnect, dashboard keyboard navigation, retry503 visible/rollback, remote GitHub403 and Reconnect retained, 390px article/dashboard no overflow and visible keyboard focus. Viewer retry403, outsider read/retry404/no article leak, anonymous authentication gate; no runtime exceptions. |
+| PPR-5 verification | Passed observed tests; build owned by PM | Final Node22 broad suite397 passed/85 external or database skips; focused developer150 passed; independent17 passed; typecheck passed. PM reports production build passed in verification.md; release is separately gated. |
+| PPR-6 release and two actual articles | Not performed by QA | PM explicitly owns release, live retries and destination build/preview. QA made no production writes/retries and did not merge/deploy. Draft PR creation and destination live publication remain distinct acceptance gates. |
+
+Final Node22 broad suite, independent probes, focused regressions and typecheck all passed on the identical frozen source fingerprint. UI files were unchanged after the final native Chrome run.
+
+No product defects observed in these checks. No existing baseline failures in the selected broad suite. External/database suites were skipped rather than reported as passing. Browser DevTools shared-profile access was unavailable; isolated native Chrome via existing Playwright capability supplied real browser evidence instead.
+
+## Environment and commands
+
+Browser: `http://localhost:3847`, Next development server, isolated local PostgreSQL `radar_planner_recovery_qa` on localhost54329, `RADAR_DEV_STUBS=1`, billing off, real connector/provider/email credentials empty. No worker was started. Synthetic Owner/Viewer/Outsider accounts only, with scoped local sessions provisioned by QA setup. Article errors were seeded synthetic fixtures; browser retry503 is an intentionally intercepted local response, not a claim of a real GitHub rejection. Actual publisher persistence was separately exercised through real DB with only the connector boundary mocked. Session material remains in ignored `.data/publishing-planner-recovery/fixture.json` (0600); no session/secret evidence was committed.
+
+Baseline on clean8b0fc346: typecheck passed; publishing suite314 passed/51 skipped. Final local execution used Node24.1.0 initially (repository engine22.x); Final frozen source was independently rechecked on Node22.18.0:17/17 QA probes and typecheck passed, logs `qa/independent-node22-final.log` and `qa/typecheck-node22-final.log`. Source fingerprint remained identical after the engineer declared freeze.
+
+Commands (from workspace):
+
+- `npx vitest run src/server/services/publishing src/server/actions/publishing.test.ts src/server/http/publicNetwork.test.ts src/server/observability src/server/auth src/server/services/drafting/bodyImages.test.ts src/server/ai/ai.test.ts` — Initial integrated run23 files passed,12 skipped;396 tests passed,85 skipped, no failures (`qa/publishing-final.log`). Final frozen Node22 run with `--maxWorkers=1 --minWorkers=1`:397 passed/85 skipped, no failures; `qa/publishing-node22-final.log`. The final additional developer regression is included in397.
+- `npx vitest run --config .factory/publishing-planner-recovery/qa/vitest.config.ts` —17 passed across planner/security/deadline, transport/no-write, real local publisher-persistence probes. Evidence `qa/independent-final.log`; harnesses under `qa/` only.
+- `PATH=/Users/ekene/.nvm/versions/node/v22.18.0/bin:$PATH npx vitest run src/server/services/publishing/connectors/nextjs-agent.test.ts src/server/services/publishing/connectors/nextjs.test.ts src/server/services/publishing/connectors.test.ts --maxWorkers=1 --minWorkers=1` —150/150 passed on frozen source, `qa/focused-node22-final.log`.
+- `npm run typecheck` — passed, `qa/typecheck-final.log`; repeated with `PATH=/Users/ekene/.nvm/versions/node/v22.18.0/bin:$PATH`, passed in `qa/typecheck-node22-final.log`.
+- `node .factory/publishing-planner-recovery/qa/browser.mjs` —10/10 passed, `qa/browser-results.json`, `qa/browser.log`.
+- `git diff --check` — passed. Next dev's automatic tsconfig include was removed after stopping the QA server; repository config returned exactly to HEAD.
+
+Screenshots: `qa/article-local-desktop.png`, `qa/article-remote-desktop.png`, `qa/dashboard-local-desktop.png`, `qa/article-local-mobile.png`, `qa/dashboard-local-mobile.png`. Mobile screenshot visually inspected: reason wraps, article remains readable, Retry focus visible, no overflow. No screen reader session was run; keyboard, semantics and viewport smoke do not establish complete accessibility conformance. Older persisted errors without source retain old interpretation by compatibility design.
+
+Recommendation: ACCEPT the observed local recovery, diagnostics, safety and affected UI for PM release. PM records the successful production build in verification.md; no known QA product defect remains. Do not describe the two live articles as successfully published until PM records each reviewed draft PR and destination build/preview result. Passing these checks does not prove all behavior correct.
+
+## QA-3 / PPR-7 public citation follow-up — ACCEPT local fix
+
+10 November2026. Read ARCH-2 and added PPR-7 before assessing engineer summary. Workspace unchanged; follow-up branch `kenny/publishing-public-sources`, base HEAD `4908694fb6c63ce618e83843d30203af739fe9dd`. Exact frozen hashes: render.ts `47b378f6b5813befd60951c8c7b83d3b399bab8962729375ea7fc0c0c4d95a3c`, render.test.ts `c02c9f5aa67ccaba93fcfbe326812850dc8261a6c49456395a5fd00830c651ec` (`qa/citations-fingerprint.json`). Only shared pure sourcesList eligibility changed in implementation.
+
+Actual failure: the analytics article's final internal research URL had no HTTP(S) scheme; oldsafeUrl rendered it as `#`. Its title contained a destination-prohibited em dash. Improved planner correctly rejected the exported article and refused to rewrite the preserved body; PM reports no branch created. The fix drops ineligible public citations from HTML, Markdown and structured payload using the same existing sourcesList boundary, while retaining stored research. It does not rewrite body/title punctuation, special-case Search Console, or relax source review.
+
+Independent frozen-source Node22.18 results:
+
+- `npx vitest run --config .factory/publishing-planner-recovery/qa/vitest.config.ts --maxWorkers=1 --minWorkers=1`:37/37 passed, including20new public-citation probes plus17prior planner/transport/persistence regressions. `qa/citations-independent-final-node22.log`.
+- New checks cover the exact no-scheme `Google Search Console` class, hash/relative/protocol-relative/javascript/data/file/mail/FTP/malformed/credential-bearing URLs, removed entries and all-invalid empty headings. Valid HTTP(S) citation order/originalURL bytes remain; frozen source arrays and article body objects remain byte-for-byte unchanged. Original em dash prose is preserved. Actual buildPayload.sources matches HTML/Markdown filtering, not merely a copied map in the test.
+- `npx vitest run src/server/services/publishing src/server/actions/publishing.test.ts src/server/services/drafting/bodyImages.test.ts --maxWorkers=1 --minWorkers=1`:357passed/51external-service skips,16files passed/9skipped. `qa/citations-publishing-node22.log`. Final render25tests included; source hashes match engineer freeze.
+- `npm run typecheck` on Node22 passed (`qa/citations-typecheck-node22.log`); `git diff --check` passed; log trailing blank lines trimmed.
+
+No observed regression or remaining local PPR-7 defect. UI code did not change, so the prior article/dashboard browser10/10 and PR137 actual Netlify preview remain applicable; a repeated renderer-only UI smoke is not required. No additional production browser or mutation was performed by QA. PM owns production build, release, stored production body/source hash readback and analytics retry. PPR-7 live completion remains pending until that retry yields a reviewed draft PR and independently verified destination build/preview. This verdict accepts the local filtering change for PM's build/release gate and does not claim the second article has published.

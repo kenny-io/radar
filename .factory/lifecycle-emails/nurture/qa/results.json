@@ -1,0 +1,201 @@
+{
+  "environment": "Local HTML in isolated installed Chrome; first-party logo fulfilled from deployable local PNG; no send, queue or provider call",
+  "checks": [
+    {
+      "id": "put-your-profile-to-work",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nPut your Business Profile to work\n\nYou’ve already given Radar your website. Your Business Profile is the starting point for what comes next.\n\nStart your trial, then use Content Calendar to choose the first topics you want to publish. Radar researches the opportunities and proposes a plan for you to review.\n\nApprove a topic you like, review the article when it’s drafted, and schedule it for your site. You can also turn that article into social posts.\n\nStart with one topic you’d want your next customer to find.\n\nContinue with Radar\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1109
+    },
+    {
+      "id": "links-you-can-review",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/features/backlinks",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nRead the sentence before you agree to the link\n\nA useful link needs a reason to be on the page. The reader should be able to follow it and find something relevant.\n\nThat’s the idea behind Radar’s optional backlinks network. You choose your topics and review proposals from other businesses.\n\nSee the partner’s page and the exact sentence around the proposed link.\nSee the destination page and why the link fits.\nApprove or decline the proposal. Radar re-checks live links weekly.\n\nYou can review each proposal yourself. Auto-approval is an optional setting, not the starting point.\n\nSee how the network works\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1136
+    },
+    {
+      "id": "before-anything-publishes",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nWhat happens before an article goes live\n\nYou don’t need to arrive with a month of article ideas or a spreadsheet of keywords.\n\nHere’s the workflow once you start your Radar trial:\n\nRadar uses your Business Profile and keyword research to propose topics in Content Calendar.\nYou approve the topics you want, then review and edit the articles Radar drafts.\nConnect a supported publishing destination and schedule the articles you’re ready to put out.\n\nReview comes first by default. Blog autopilot is a separate choice you can make later.\n\nYou can start with one article and decide how much of the workflow you want to automate.\n\nStart my Radar trial\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1307
+    },
+    {
+      "id": "why-we-built-radar",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "mailto:team@thally.io",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nWhy we built Radar\n\nI’m Ekene, Radar’s founder.\n\nIt’s never been easier to build a product. But getting it beyond your own network is still a full-time job.\n\nThat’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.\n\nIf you get stuck or anything is unclear, reply here. I’m happy to help.\n\nReply to Ekene\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 893
+    },
+    {
+      "id": "join-a-useful-conversation",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nFind one conversation you can help with\n\nPublishing is one way to get your product in front of people. Joining a useful conversation is another.\n\nThe difficult part is finding a discussion where you can help, while there’s still a reason to join it.\n\nDaily Brief looks for relevant conversations across Reddit, X, LinkedIn and Hacker News. It brings the discussion and a suggested reply into Radar so you can review them together.\n\nYou decide which conversations are worth your time and make each reply your own before sharing it.\n\nOnce you start your trial, try it with one conversation where you have something useful to contribute.\n\nTry Daily Brief\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1203
+    },
+    {
+      "id": "find-the-page-worth-refreshing",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/blog/page-two-refresh",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nYour next article might be a page you already have\n\nBefore writing something new, it can be useful to look at what people already find on your site.\n\nIf your site has Google Search Console data, look for pages that get impressions but few clicks, or queries with an average position around 10–20.\n\nThose are places to investigate. The page may need a clearer title, a fuller answer or an update to an older section.\n\nDuring your Radar trial, connect Search Console and let the history sync. Performance shows the queries and pages alongside suggested changes you can review and add to Content Calendar.\n\nThis guide walks through how to review a page-two opportunity before deciding what to change.\n\nRead the page-two refresh guide\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1204
+    },
+    {
+      "id": "see-the-ai-answer",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nWould an AI assistant recommend your product?\n\nThink of a question someone might ask before discovering your product. Which products would an AI assistant include in its answer?\n\nAI Visibility in Radar checks questions related to your business across ChatGPT, Perplexity, Gemini, Claude and Grok.\n\nRead the response each assistant returned.\nSee whether your business was mentioned and which pages were cited.\nUse a question worth answering as a topic for your Content Calendar.\n\nYou can add your own questions, too. A response that hasn’t been collected is shown separately from one where you weren’t mentioned.\n\nStart your trial, then open Performance → AI Visibility to see the answers for yourself.\n\nTry AI Visibility in Radar\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1390
+    },
+    {
+      "id": "put-your-profile-to-work",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nPut your Business Profile to work\n\nYou’ve already given Radar your website. Your Business Profile is the starting point for what comes next.\n\nStart your trial, then use Content Calendar to choose the first topics you want to publish. Radar researches the opportunities and proposes a plan for you to review.\n\nApprove a topic you like, review the article when it’s drafted, and schedule it for your site. You can also turn that article into social posts.\n\nStart with one topic you’d want your next customer to find.\n\nContinue with Radar\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 905
+    },
+    {
+      "id": "links-you-can-review",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/features/backlinks",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nRead the sentence before you agree to the link\n\nA useful link needs a reason to be on the page. The reader should be able to follow it and find something relevant.\n\nThat’s the idea behind Radar’s optional backlinks network. You choose your topics and review proposals from other businesses.\n\nSee the partner’s page and the exact sentence around the proposed link.\nSee the destination page and why the link fits.\nApprove or decline the proposal. Radar re-checks live links weekly.\n\nYou can review each proposal yourself. Auto-approval is an optional setting, not the starting point.\n\nSee how the network works\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 952
+    },
+    {
+      "id": "before-anything-publishes",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nWhat happens before an article goes live\n\nYou don’t need to arrive with a month of article ideas or a spreadsheet of keywords.\n\nHere’s the workflow once you start your Radar trial:\n\nRadar uses your Business Profile and keyword research to propose topics in Content Calendar.\nYou approve the topics you want, then review and edit the articles Radar drafts.\nConnect a supported publishing destination and schedule the articles you’re ready to put out.\n\nReview comes first by default. Blog autopilot is a separate choice you can make later.\n\nYou can start with one article and decide how much of the workflow you want to automate.\n\nStart my Radar trial\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1078
+    },
+    {
+      "id": "why-we-built-radar",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "mailto:team@thally.io",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nWhy we built Radar\n\nI’m Ekene, Radar’s founder.\n\nIt’s never been easier to build a product. But getting it beyond your own network is still a full-time job.\n\nThat’s why we built Radar. We wanted to take on the marketing work that helps good products reach the people who need them.\n\nIf you get stuck or anything is unclear, reply here. I’m happy to help.\n\nReply to Ekene\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 791
+    },
+    {
+      "id": "join-a-useful-conversation",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nFind one conversation you can help with\n\nPublishing is one way to get your product in front of people. Joining a useful conversation is another.\n\nThe difficult part is finding a discussion where you can help, while there’s still a reason to join it.\n\nDaily Brief looks for relevant conversations across Reddit, X, LinkedIn and Hacker News. It brings the discussion and a suggested reply into Radar so you can review them together.\n\nYou decide which conversations are worth your time and make each reply your own before sharing it.\n\nOnce you start your trial, try it with one conversation where you have something useful to contribute.\n\nTry Daily Brief\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 999
+    },
+    {
+      "id": "find-the-page-worth-refreshing",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/blog/page-two-refresh",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nYour next article might be a page you already have\n\nBefore writing something new, it can be useful to look at what people already find on your site.\n\nIf your site has Google Search Console data, look for pages that get impressions but few clicks, or queries with an average position around 10–20.\n\nThose are places to investigate. The page may need a clearer title, a fuller answer or an update to an older section.\n\nDuring your Radar trial, connect Search Console and let the history sync. Performance shows the queries and pages alongside suggested changes you can review and add to Content Calendar.\n\nThis guide walks through how to review a page-two opportunity before deciding what to change.\n\nRead the page-two refresh guide\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 994
+    },
+    {
+      "id": "see-the-ai-answer",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 1,
+      "primary": "https://radar.thally.io/start-trial",
+      "image": {
+        "natural": 224,
+        "display": 28
+      },
+      "text": "\tRadar by Thally\n\nHi Alex,\n\nWould an AI assistant recommend your product?\n\nThink of a question someone might ask before discovering your product. Which products would an AI assistant include in its answer?\n\nAI Visibility in Radar checks questions related to your business across ChatGPT, Perplexity, Gemini, Claude and Grok.\n\nRead the response each assistant returned.\nSee whether your business was mentioned and which pages were cited.\nUse a question worth answering as a topic for your Content Calendar.\n\nYou can add your own questions, too. A response that hasn’t been collected is shown separately from one where you weren’t mentioned.\n\nStart your trial, then open Performance → AI Visibility to see the answers for yourself.\n\nTry AI Visibility in Radar\n\n$1 to begin a 3-day trial, credited to your first month. Normally $49 for the first month, then $50/month. Cancel before the trial ends to avoid monthly charges.\n\nEkene\nFounder, Radar\n\nYou can reply to me at team@thally.io.\n\nFairspleet LLC · 348 Business Bay, Dubai, UAE\n\nPrivacy · Terms · Unsubscribe",
+      "height": 1109
+    }
+  ]
+}

@@ -7,7 +7,7 @@ export interface RenderOpts {
   bodyImages?: ArticleBodyImage[];
   /** Embedded YouTube videos (in order). Inserted after the first section, as in the article editor. */
   videos?: (VideoRef | { id: string; title?: string; channel?: string })[];
-  /** Sources rendered as a citations list at the end (removed sources are skipped). */
+  /** Sources rendered as public citations at the end (removed and internal references are skipped). */
   sources?: Source[];
   /** Heading for the citations list. */
   sourcesHeading?: string;
@@ -34,7 +34,16 @@ function blockHtml(b: Block): string {
   return `<${b[0]}>${escHtml(b[1] as string)}</${b[0]}>`;
 }
 
-export function sourcesList(sources: Source[] = []) { return sources.filter(s => !s.removed && s.url); }
+/** Research may include internal references; only genuine external citations belong in public exports. */
+export function sourcesList(sources: Source[] = []) {
+  return sources.filter(source => {
+    if (source.removed || !/^https?:\/\//i.test(source.url || '')) return false;
+    try {
+      const url = new URL(source.url);
+      return ['http:', 'https:'].includes(url.protocol) && !!url.hostname && !url.username && !url.password;
+    } catch { return false; }
+  });
+}
 
 export function blocksToHtml(blocks: Block[], opts: RenderOpts = {}): string {
   const out: string[] = [];

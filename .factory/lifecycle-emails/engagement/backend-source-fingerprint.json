@@ -1,0 +1,24 @@
+{
+  "algorithm": "SHA256 of sorted relative POSIX path + NUL + raw file bytes + NUL",
+  "sha256": "bb475980a04f7536aed90bd9e3caaf626962c71d6042a069ede64d19c2311d1a",
+  "files": [
+    "src/server/db/schema.ts",
+    "drizzle/0010_engagement_updates.sql",
+    "drizzle/meta/0010_snapshot.json",
+    "drizzle/meta/_journal.json",
+    "src/server/services/lifecycle/preferences.ts",
+    "src/server/services/lifecycle/engagement.ts",
+    "src/server/services/lifecycle/engagement.test.ts",
+    "src/server/services/lifecycle/engagementJobs.ts",
+    "src/server/services/lifecycle/queue.ts",
+    "src/server/services/lifecycle/dispatch.ts",
+    "src/server/services/brief/scan.ts",
+    "src/server/services/brief/store.ts",
+    "src/server/services/calendar/jobs.ts",
+    "src/server/services/drafting/jobs.ts",
+    "src/server/services/social/generate.ts",
+    "src/server/actions/calendar.ts",
+    "src/server/actions/article.ts",
+    "src/server/jobs/all.ts"
+  ]
+}

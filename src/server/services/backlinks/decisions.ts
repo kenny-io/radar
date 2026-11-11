@@ -4,6 +4,8 @@ import { and, eq } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { enqueue } from '../../jobs/queue';
 import { sendMail } from '../mail';
+import { env } from '../../env';
+import { backlinkApprovedEmail, backlinkDeclinedEmail, backlinkLostEmail, backlinkRemovalEmail } from '../legacyContent';
 import { absUrl, displayUrl, editorEmail, hostOf } from './network';
 import type { Profile } from '@/lib/types';
 
@@ -35,21 +37,14 @@ export async function runDecisionNotice({ proposalId, decision, key }: { proposa
   if (decision === 'approved' && row.direction === 'in') {
     // The partner hosts the link. Tell its editor where and how to place it.
     const counterpart = d.pairId ? (await db.select().from(schema.proposals).where(and(eq(schema.proposals.businessId, partner.id), eq(schema.proposals.direction, 'out'))).then(rs => rs.find(r => r.data?.pairId === d.pairId))) : null;
-    const text = [
-      `${nameOf(me)} (${me?.domain}) approved a partner link on your page ${absUrl(d.page)}.`,
-      '', 'The proposed sentence:', sentence, '',
-      `Links to: ${absUrl(d.target)}`, `Anchor: ${d.anchor}`, `Attribute: ${d.rel}`, `Disclosure: ${d.disclosure}`, '',
-      'You’re the editor: place it as written, adjust the sentence, or skip it. Please keep the attribute and the disclosure.',
-      ...(counterpart && !counterpart.decision ? ['You can also approve it in Radar → Backlinks → Links from you, and Radar adds it the next time that article publishes.'] : []),
-      'Radar checks the page and reports the link to both sides once it’s live.',
-    ].join('\n');
-    await sendMail(to.email, `${nameOf(me)} approved a partner link on ${displayUrl(d.page)}`, text);
+    const mail = backlinkApprovedEmail({ appUrl: env.appUrl, business: nameOf(me), domain: me?.domain || '', page: absUrl(d.page), displayPage: displayUrl(d.page), sentence, target: absUrl(d.target), anchor: d.anchor, rel: d.rel, disclosure: d.disclosure, canApproveInRadar: !!counterpart && !counterpart.decision });
+    await sendMail(to.email, mail.subject, mail.text);
     await db.update(schema.proposals).set({ data: { ...d, approvedNoticeSent: true } }).where(eq(schema.proposals.id, row.id));
     return { sent: 'approved' };
   }
   if (decision === 'rejected' && row.note) {
-    const text = [`${nameOf(me)} (${me?.domain}) passed on the proposed link on ${absUrl(d.page)}:`, '', sentence, '', `Their note: “${row.note}”`].join('\n');
-    await sendMail(to.email, `${nameOf(me)} passed on a partner link`, text);
+    const mail = backlinkDeclinedEmail({ appUrl: env.appUrl, business: nameOf(me), domain: me?.domain || '', page: absUrl(d.page), sentence, note: row.note });
+    await sendMail(to.email, mail.subject, mail.text);
     return { sent: 'rejected' };
   }
   return { skipped: true };
@@ -66,21 +61,16 @@ export async function sendRemovalRequest(link: { from: string; to: string; ancho
   const host = await hostBusiness(link.from);
   const to = host ? await editorEmail(host.id) : null;
   if (!to) { console.warn('[backlinks] removal requested but no contact for', link.from); return false; }
-  const text = [
-    `${nameOf(requester)} (${requester.domain}) asked Radar to remove a link on your site.`, '',
-    `Page: ${absUrl(link.from)}`, `Link to: ${absUrl(link.to)}`, `Anchor: “${link.anchor}”`, '',
-    'Please remove the link within 7 days. Radar re-checks the page and confirms the removal to both sides.',
-  ].join('\n');
-  await sendMail(to.email, `Link removal request from ${nameOf(requester)}`, text);
+  const mail = backlinkRemovalEmail({ appUrl: env.appUrl, business: nameOf(requester), domain: requester.domain, page: absUrl(link.from), target: absUrl(link.to), anchor: link.anchor });
+  await sendMail(to.email, mail.subject, mail.text);
   return true;
 }
 
 /** Lost (or un-qualified) links are reported to both sides. */
 export async function sendLostNotice(link: { from: string; to: string; anchor: string; rel: string }, ownerBizId: string, reason: 'missing' | 'rel') {
   const owner = await biz(ownerBizId); const host = await hostBusiness(link.from);
-  const why = reason === 'rel' ? `The link is there but no longer carries rel="${link.rel === 'nofollow' ? 'nofollow' : 'sponsored'}", which network links require.` : 'Radar couldn’t find the link on the page anymore.';
-  const text = [`A partner link needs attention.`, '', `Page: ${absUrl(link.from)}`, `Link to: ${absUrl(link.to)}`, `Anchor: “${link.anchor}”`, '', why, 'If it was removed on purpose, no action is needed. Otherwise, restore it as placed.'].join('\n');
+  const mail = backlinkLostEmail({ appUrl: env.appUrl, page: absUrl(link.from), displayPage: displayUrl(link.from), target: absUrl(link.to), anchor: link.anchor, rel: link.rel, reason });
   const recipients = new Set<string>();
   for (const b of [owner, host]) { if (!b) continue; const e = await editorEmail(b.id); if (e) recipients.add(e.email); }
-  for (const r of recipients) await sendMail(r, `Partner link not found on ${displayUrl(link.from)}`, text);
+  for (const r of recipients) await sendMail(r, mail.subject, mail.text);
 }

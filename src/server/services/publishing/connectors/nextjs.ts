@@ -1,20 +1,22 @@
-// GitHub (type "nextjs"; any site built from a repository, e.g. Next.js) — OAuth, scope "repo". Each article: its own branch → commit {folder}/{slug}.mdx with frontmatter → pull request.
+// GitHub (type "nextjs") — OAuth, scope "repo". Each article gets its own branch and PR.
+// Every site layout uses source-based repository planning and review before an atomic complete integration commit.
 // "Published" = the pull request is opened (DIVERGENCES #10); publishedUrl is the PR.
 // Contract (docs.github.com/en/rest, API version 2022-11-28):
 //  - GET  /repos/{repo}: default_branch, permissions.push; a private repo the token can't see is a 404, not a 403
 //  - GET  /repos/{repo}/git/ref/heads/<branch name> (the branch's slashes stay in the path); 404 = no such ref, 409 = empty repo
 //  - POST /repos/{repo}/git/refs { ref: "refs/heads/…", sha }; DELETE /repos/{repo}/git/refs/heads/<branch name>
-//  - GET  /repos/{repo}/contents/{path}?ref=… → { sha }, 404 when absent; PUT { message, content (base64), branch, sha (to update) }
-//  - POST /repos/{repo}/pulls { title, head, base, body } (422 = validation, e.g. a PR for that head already exists);
+//  - GET  /repos/{repo}/contents/{path}?ref=<commit SHA> → { sha, encoding, content }; immutable text source only
+//  - GET/POST /repos/{repo}/git/trees and /git/commits; PATCH /git/refs/heads/<branch> { sha, force: false }
+//  - POST /repos/{repo}/pulls { title, head, base, body, draft: true } (422 = validation, e.g. that head has a PR);
 //    GET /repos/{repo}/pulls?head=owner:branch&state=open
 //  - GET  /user/repos?affiliation=owner,collaborator,organization_member&sort=pushed&per_page=100&page=N → [{ full_name, html_url, permissions.push }]
 //    (repos of an org that restricts OAuth apps are left out of the list, not an error)
 //  - 401 = bad credentials; rate limits are 403 or 429 ("API rate limit exceeded" / "secondary rate limit");
 //    an org that restricts OAuth apps answers 403 "…the `org` organization has enabled OAuth App access restrictions…",
 //    and one with SAML single sign-on answers 403 "Resource protected by organization SAML enforcement…"
-import type { Connector, ConnCtx, PublishPayload, Target } from '../types';
-import { jsonBody, PublishError, reqJson } from '../http';
-import { yamlStr } from '../render';
+import type { Connector, ConnCtx, PublishPayload, RemoteDraft, Target } from '../types';
+import { jsonBody, PublishError, reqJson, publishingTimeRemaining, repositoryPublishingError } from '../http';
+import { planRepositoryPost, safeRepositoryPath, RepositorySourceTooLargeError, SOURCE_FILE_BYTES, type RepoEntry } from './nextjs-agent';
 
 const API = 'https://api.github.com';
 const h = (c: ConnCtx) => ({ authorization: `Bearer ${c.creds.access_token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'Radar' });
@@ -31,17 +33,18 @@ export const normFolder = (s: string) => {
 };
 /** "." and ".." segments would let the folder climb out of the repository's contents API into other endpoints or repos. */
 export const unsafeFolder = (s: string) => s.split('/').some(x => x === '.' || x === '..');
-const folder = (c: ConnCtx) => { const f = normFolder(c.fields.path); if (unsafeFolder(f)) throw new PublishError(422, 'The content folder can’t contain “.” or “..”. Edit the connection and choose a folder inside the repository.', 'api.github.com', 'config'); return f; };
+const folder = (c: ConnCtx) => { const f = normFolder(c.fields.path); if (unsafeFolder(f)) throw repositoryPublishingError('The content folder can’t contain “.” or “..”. Edit the connection and choose a folder inside the repository.'); return f; };
 const encPath = (p: string) => p.split('/').map(encodeURIComponent).join('/');
-const slugOf = (url: string) => url.replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop() || '';
 const notFound = (e: unknown) => e instanceof PublishError && e.http === 404;
 
 /** The org named in GitHub's 403 message (`thallylabs`), else a generic "repository’s". */
 const orgIn = (detail: string) => { const m = /`([A-Za-z0-9-]+)`/.exec(detail); return m ? m[1] : 'repository’s'; };
 /** A revoked token is "Needs reconnecting"; a rate-limited 403 is retried like a 429 instead of flagging the connection;
  * an org that hasn't approved Radar (or needs SSO) is a setup problem explained in a sentence, not "check the credentials". */
-async function gh<T = any>(url: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
-  try { return await reqJson<T>(url, init); } catch (e) {
+async function gh<T = any>(c: ConnCtx, url: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
+  const timeoutMs = Math.min(init.timeoutMs ?? 30_000, publishingTimeRemaining(c.publishDeadlineAt, 'plan'));
+  try { return await reqJson<T>(url, { ...init, timeoutMs }); } catch (e) {
+    publishingTimeRemaining(c.publishDeadlineAt, 'plan');
     if (e instanceof PublishError && e.http === 401) throw new PublishError(401, e.detail, e.host, 'auth-expired');
     if (e instanceof PublishError && e.http === 403 && /OAuth App access restrictions/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization hasn’t approved Radar on GitHub. Ask an organization owner to approve it, or request access under GitHub Settings → Applications → Radar, then test again.`, e.host, 'config');
     if (e instanceof PublishError && e.http === 403 && /SAML enforcement/i.test(e.detail)) throw new PublishError(403, `The ${orgIn(e.detail)} organization uses single sign-on. Sign in to the organization through its SSO, then reauthorize Radar on GitHub and test again.`, e.host, 'config');
@@ -49,13 +52,8 @@ async function gh<T = any>(url: string, init: RequestInit & { timeoutMs?: number
     throw e;
   }
 }
-/** Only a 404 means "no such file"; anything else (401, 403, 5xx) is rethrown. */
-async function getFile(c: ConnCtx, repo: string, path: string, ref: string): Promise<{ sha: string } | null> {
-  try { return await gh<{ sha: string }>(`${API}/repos/${repo}/contents/${encPath(path)}?ref=${encodeURIComponent(ref)}`, { headers: h(c) }); }
-  catch (e) { if (notFound(e)) return null; throw e; }
-}
 async function getRef(c: ConnCtx, repo: string, branch: string): Promise<{ object: { sha: string } } | null> {
-  try { return await gh(`${API}/repos/${repo}/git/ref/heads/${encPath(branch)}`, { headers: h(c) }); }
+  try { return await gh(c, `${API}/repos/${repo}/git/ref/heads/${encPath(branch)}`, { headers: h(c) }); }
   catch (e) {
     if (notFound(e)) return null;
     if (e instanceof PublishError && e.http === 409) throw new PublishError(422, 'The repository is empty. Push a first commit to it, then try again.', e.host, 'config');
@@ -65,47 +63,23 @@ async function getRef(c: ConnCtx, repo: string, branch: string): Promise<{ objec
 
 async function base(c: ConnCtx) {
   const repo = repoOf(c);
-  const r = await gh<{ default_branch: string; permissions?: { push?: boolean } }>(`${API}/repos/${repo}`, { headers: h(c) });
+  const r = await gh<{ default_branch: string; permissions?: { push?: boolean } }>(c, `${API}/repos/${repo}`, { headers: h(c) });
   if (r.permissions && r.permissions.push === false) throw new PublishError(403, 'Your GitHub account can’t push to that repository. Reconnect with an account that can.', 'api.github.com', 'config');
   const ref = await getRef(c, repo, r.default_branch);
   if (!ref) throw new PublishError(404, `Default branch ${r.default_branch} not found`, 'api.github.com');
   return { repo, branch: r.default_branch, sha: ref.object.sha };
 }
-const makeBranch = (c: ConnCtx, repo: string, name: string, sha: string) => gh(`${API}/repos/${repo}/git/refs`, { method: 'POST', ...jsonBody({ ref: `refs/heads/${name}`, sha }, h(c)) });
+const makeBranch = (c: ConnCtx, repo: string, name: string, sha: string) => gh(c, `${API}/repos/${repo}/git/refs`, { method: 'POST', ...jsonBody({ ref: `refs/heads/${name}`, sha }, h(c)) });
 
 /** One branch per article (slug + entry id): a retry finds and reuses it, and two articles with the same slug never share one. */
 export const branchOf = (p: PublishPayload) => `radar/${p.slug.slice(0, 120).replace(/-+$/, '')}-${p.entryId.replace(/^e_/, '').slice(0, 60)}`.replace(/[^A-Za-z0-9._/-]/g, '-').replace(/\.{2,}/g, '.').replace(/[./]+$/, '');
-
-/** Where the post goes: the refreshed post's own file, else {slug}.mdx — or slug-2, -3… when another post already has it. */
-async function target(c: ConnCtx, repo: string, ref: string, p: PublishPayload): Promise<{ path: string; slug: string; taken?: boolean }> {
-  const dir = folder(c);
-  if (p.mode === 'refresh' && p.refreshUrl) {
-    const s = slugOf(p.refreshUrl);
-    if (s) for (const ext of ['.mdx', '.md']) if (await getFile(c, repo, `${dir}/${s}${ext}`, ref)) return { path: `${dir}/${s}${ext}`, slug: s };
-  }
-  for (let i = 0; i < 20; i++) {
-    const slug = i ? `${p.slug}-${i + 1}` : p.slug;
-    if (!(await getFile(c, repo, `${dir}/${slug}.mdx`, ref)) && !(await getFile(c, repo, `${dir}/${slug}.md`, ref))) return { path: `${dir}/${slug}.mdx`, slug, ...(i ? { taken: true } : {}) };
-  }
-  throw new PublishError(422, `Every slug from “${p.slug}” to “${p.slug}-20” is taken in ${dir}. Change the article’s slug and try again.`, 'api.github.com', 'config');
-}
-
-export function mdxFile(p: PublishPayload): string {
-  const fm = [
-    '---', `title: ${yamlStr(p.title)}`, `description: ${yamlStr(p.meta)}`, `date: ${yamlStr(p.date)}`, `slug: ${yamlStr(p.slug)}`,
-    ...(p.image ? [`image: ${yamlStr(p.image.url)}`, `imageAlt: ${yamlStr(p.image.alt)}`] : []),
-    ...(p.canonical ? [`canonical: ${yamlStr(p.canonical)}`] : []),
-    `author: ${yamlStr(p.author)}`, `keywords: [${yamlStr(p.keyword)}]`, '---', '',
-  ];
-  return fm.join('\n') + p.markdown;
-}
 
 /** Repositories the account can push to, most recently pushed first. After page 1, fetch at most four pages at a time
  * until the first short page. Speculative pages after it (including errors) are ignored. */
 async function repos(c: ConnCtx): Promise<Target[]> {
   type Row = { full_name: string; name: string; html_url: string; permissions?: { push?: boolean } };
   const page = async (n: number): Promise<Row[]> => {
-    const b = await gh(`${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${n}`, { headers: h(c) });
+    const b = await gh(c, `${API}/user/repos?per_page=100&sort=pushed&affiliation=owner,collaborator,organization_member&page=${n}`, { headers: h(c) });
     if (!Array.isArray(b)) throw new PublishError(502, 'GitHub returned an invalid repository list. Refresh repositories and try again.', 'api.github.com');
     return b;
   };
@@ -130,38 +104,121 @@ async function repos(c: ConnCtx): Promise<Target[]> {
   return [0, 1, 2, 3].flatMap(k => list.filter(x => x.r === k).map(x => (k < 3 ? { ...x.t, suggested: true } : x.t)));
 }
 
+/** One immutable snapshot and one complete commit: content never lands without its integration changes. */
+async function createRepositoryDraft(c: ConnCtx, p: PublishPayload, b: Awaited<ReturnType<typeof base>>, hint: string, storedLegacy?: RemoteDraft) {
+  const branch = branchOf(p);
+  const validSlug = (value: unknown): value is string => typeof value === 'string' && !!value && !['.', '..'].includes(value) && value.length <= 200 && !/[\x00-\x20/\\?#]/.test(value);
+  if (storedLegacy && (storedLegacy.id !== branch || storedLegacy.extra?.base !== b.branch || !validSlug(storedLegacy.extra?.slug) || typeof storedLegacy.extra?.path !== 'string' || !safeRepositoryPath(storedLegacy.extra.path, true))) {
+    throw repositoryPublishingError('The older publishing draft does not match this article and repository branch. Review or reset the saved draft before retrying.');
+  }
+  const previous = await getRef(c, b.repo, branch);
+  if (storedLegacy && !previous) throw repositoryPublishingError('The older publishing branch no longer exists. Reset the saved publishing draft and try again.');
+  const parent = previous?.object.sha || b.sha;
+  const commit = await gh<{ tree: { sha: string }; message: string }>(c, `${API}/repos/${b.repo}/git/commits/${parent}`, { headers: h(c) });
+  let retry: { slug: string; articlePath: string } | undefined;
+  let legacy: { slug: string; articlePath: string } | undefined;
+  if (previous) {
+    // Only Radar's final generated marker is authoritative; article titles can contain arbitrary newlines.
+    const trailer = commit.message.trimEnd().split('\n').at(-1);
+    const marker = trailer?.startsWith('Radar-Post: ') ? trailer.slice('Radar-Post: '.length) : null;
+    let saved: any;
+    try { saved = marker && JSON.parse(marker); } catch { /* Refuse unrelated branches. */ }
+    const matches = saved?.version === 2 && saved.entryId === p.entryId && saved.hint === hint && validSlug(saved.slug) && typeof saved.articlePath === 'string' && safeRepositoryPath(saved.articlePath, true);
+    if (matches) retry = { slug: saved.slug, articlePath: saved.articlePath };
+    else if (storedLegacy && saved?.version !== 2 && (!saved?.entryId || saved.entryId === p.entryId)) legacy = { slug: storedLegacy.extra.slug, articlePath: storedLegacy.extra.path };
+    else {
+      throw repositoryPublishingError('The article branch contains changes Radar cannot safely resume. Review that branch before retrying, or use a new article branch.');
+    }
+  }
+  const tree = await gh<{ sha: string; truncated?: boolean; tree: RepoEntry[] }>(c, `${API}/repos/${b.repo}/git/trees/${commit.tree.sha}?recursive=1`, { headers: h(c) });
+  if (tree.truncated || !Array.isArray(tree.tree) || tree.tree.length > 30_000) throw repositoryPublishingError('The repository tree is too large to inspect safely. Connect the website in a smaller repository and try again.', 'tree-unavailable');
+  const entries = new Map(tree.tree.map(entry => [entry.path, entry]));
+  if (legacy) {
+    const exported = entries.get(legacy.articlePath);
+    if (!exported || exported.type !== 'blob' || !['100644', '100755'].includes(exported.mode || '100644')) throw repositoryPublishingError('The saved older draft article is missing or is not a regular repository file. Reset the publishing draft before retrying.');
+  }
+  const cache = new Map<string, Promise<string>>();
+  const read = (path: string): Promise<string> => {
+    const entry = entries.get(path);
+    if (!entry || entry.type !== 'blob' || !['100644', '100755'].includes(entry.mode || '100644') || !safeRepositoryPath(path)) throw repositoryPublishingError('Repository inspection requested an unavailable or protected text file.');
+    if (entry.size !== undefined && entry.size > SOURCE_FILE_BYTES) throw new RepositorySourceTooLargeError(path, entry.sha, entry.size);
+    if (!cache.has(path)) cache.set(path, (async () => {
+      const file = await gh<{ sha?: string; content?: string; encoding?: string; size?: number }>(c, `${API}/repos/${b.repo}/contents/${encPath(path)}?ref=${encodeURIComponent(parent)}`, { headers: h(c) });
+      if (file.sha !== entry.sha) throw repositoryPublishingError('Repository file contents do not match the inspected revision. Retry after checking the repository branch.', 'snapshot-mismatch');
+      if ((file.size || 0) > SOURCE_FILE_BYTES) throw new RepositorySourceTooLargeError(path, entry.sha, file.size!);
+      if (file.encoding !== 'base64' || typeof file.content !== 'string') throw repositoryPublishingError(`Radar cannot safely inspect ${path}. Source files used for publishing must be below 100 KB.`);
+      if (file.content.replace(/\s/g, '').length > Math.ceil(SOURCE_FILE_BYTES / 3) * 4) throw new RepositorySourceTooLargeError(path, entry.sha, Math.floor(file.content.replace(/\s/g, '').length * 3 / 4) - (file.content.endsWith('==') ? 2 : file.content.endsWith('=') ? 1 : 0));
+      const decoded = Buffer.from(file.content, 'base64');
+      if (decoded.length > SOURCE_FILE_BYTES) throw new RepositorySourceTooLargeError(path, entry.sha, decoded.length);
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(decoded); }
+      catch { throw repositoryPublishingError('Repository inspection encountered a file that is not UTF-8 text.'); }
+    })());
+    return cache.get(path)!;
+  };
+  // The hint never selects a framework or limits where a grounded integration may add files.
+  const plan = await planRepositoryPost(hint, p, { entries: tree.tree, read }, { businessId: c.bid, deadlineAt: c.publishDeadlineAt, ...(retry ? { retry } : {}), ...(legacy ? { legacy } : {}) });
+  const changes = plan.files.map(file => {
+    const existing = entries.get(file.path);
+    if (!safeRepositoryPath(file.path, true) || (existing && (existing.type !== 'blob' || !['100644', '100755'].includes(existing.mode || '100644')))) throw repositoryPublishingError('The integration includes an unsafe repository change.');
+    return { path: file.path, mode: existing?.mode || '100644', type: 'blob', content: file.content };
+  });
+  const createdTree = await gh<{ sha: string }>(c, `${API}/repos/${b.repo}/git/trees`, { method: 'POST', ...jsonBody({ base_tree: commit.tree.sha, tree: changes }, h(c)) });
+  const identity = { version: 2, entryId: p.entryId, hint, slug: plan.slug, articlePath: plan.path };
+  const createdCommit = await gh<{ sha: string }>(c, `${API}/repos/${b.repo}/git/commits`, { method: 'POST', ...jsonBody({ message: `${previous || p.mode === 'refresh' ? 'Update' : 'Add'} post: ${p.title}\n\nRadar-Post: ${JSON.stringify(identity)}`, tree: createdTree.sha, parents: [parent] }, h(c)) });
+  if (previous) await gh(c, `${API}/repos/${b.repo}/git/refs/heads/${encPath(branch)}`, { method: 'PATCH', ...jsonBody({ sha: createdCommit.sha, force: false }, h(c)) });
+  else await makeBranch(c, b.repo, branch, createdCommit.sha);
+  return { id: branch, extra: { base: b.branch, path: plan.path, slug: plan.slug, layout: 'repository-aware', files: plan.files.map(file => file.path), summary: plan.summary, route: plan.route, discovery: plan.discovery, review: plan.review, draft: true, ...(p.mode === 'new' && plan.slug !== p.slug ? { taken: true } : {}) } };
+}
+
+/** Source review is useful evidence, but it is never a substitute for a destination build/preview. */
+function pullRequestBody(p: PublishPayload, extra: any): string {
+  const lines = [p.meta, '', '**Draft for build and deployment-preview review.** The article is not live. Destination build, runtime route responses and deployment preview have not been run by Radar.', '', `Scheduled for ${p.date}. Article file: \`${String(extra?.path || 'unverified')}\`.`, ''];
+  if (extra?.layout === 'repository-aware') {
+    lines.push(String(extra.summary || '').slice(0, 8000), '', `Inferred article route: \`${String(extra.route || '')}\`.`, '', 'Integration files:');
+    for (const file of (Array.isArray(extra.files) ? extra.files : []).slice(0, 12)) lines.push(`- \`${String(file)}\``);
+    lines.push('', 'Observed integration evidence (source inspection, not runtime verification):');
+    for (const evidence of (Array.isArray(extra.discovery) ? extra.discovery : []).slice(0, 24)) lines.push(`- ${String(evidence.role)}: \`${String(evidence.path)}\` at \`${String(evidence.sha)}\`: ${JSON.stringify(String(evidence.snippet || '').slice(0, 1000))}`);
+    lines.push('', 'Static checks: exact snapshot/source edits, allowed change paths, original article-body insertion, and a separate source-based route/listing review.', `Source review: ${String(extra.review?.summary || 'See the complete diff.').slice(0, 4000)}`);
+    if (extra.taken) lines.push('', `The proposed slug \`${p.slug}\` was unavailable; the inspected plan uses \`${String(extra.slug)}\`.`);
+  }
+  lines.push('', 'Before marking this PR ready: run the repository’s build/CI checks and use its deployment preview to verify the article route, blog listing and navigation.', '', 'Opened by Radar.');
+  return lines.join('\n');
+}
+
 export const nextjs: Connector = {
   targets: repos,
   async test(c) {
     const b = await base(c);
     const n = `radar/connection-test-${Date.now().toString(36)}`;
     await makeBranch(c, b.repo, n, b.sha);
-    await gh(`${API}/repos/${b.repo}/git/refs/heads/${encPath(n)}`, { method: 'DELETE', headers: h(c) });
+    await gh(c, `${API}/repos/${b.repo}/git/refs/heads/${encPath(n)}`, { method: 'DELETE', headers: h(c) });
   },
   async createDraft(c, p) {
+    c = { ...c, publishDeadlineAt: c.publishDeadlineAt ?? Date.now() + 270_000 };
+    const hint = folder(c);
     const b = await base(c);
-    const t = await target(c, b.repo, b.branch, p);
-    const branch = branchOf(p);
-    if (!(await getRef(c, b.repo, branch))) await makeBranch(c, b.repo, branch, b.sha);
-    // The file's sha on this branch: the refreshed post, or this article's own commit from an interrupted attempt.
-    const ex = await getFile(c, b.repo, t.path, branch);
-    const file = mdxFile({ ...p, slug: t.slug });
-    await gh(`${API}/repos/${b.repo}/contents/${encPath(t.path)}`, { method: 'PUT', ...jsonBody({ message: `${ex ? 'Update' : 'Add'} post: ${p.title}`, content: Buffer.from(file, 'utf8').toString('base64'), branch, ...(ex?.sha ? { sha: ex.sha } : {}) }, h(c)) });
-    return { id: branch, extra: { base: b.branch, path: t.path, slug: t.slug, ...(t.taken ? { taken: true } : {}) } };
+    return createRepositoryDraft(c, p, b, hint);
   },
   async publish(c, p, d) {
+    c = { ...c, publishDeadlineAt: c.publishDeadlineAt ?? Date.now() + 270_000 };
     const repo = repoOf(c);
-    const path = d.extra?.path;
-    const note = d.extra?.taken ? `\n\n\`${p.slug}\` is already used by another post, so this one is \`${d.extra.slug}\`.` : '';
-    const body = `${p.meta}\n\nScheduled for ${p.date}. File: \`${path}\`.${note}\n\nOpened by Radar. Merge to publish.`;
+    if (d.extra?.layout !== 'repository-aware') {
+      // The publisher persists RemoteDraft before opening a PR. Upgrade old saved exports rather than
+      // letting retries bypass discovery and open another content-only PR.
+      d = await createRepositoryDraft(c, p, await base(c), folder(c), d);
+    }
+    if (d.id !== branchOf(p) || typeof d.extra?.base !== 'string' || !d.extra.base || !safeRepositoryPath(d.extra?.path || '', true) || !Array.isArray(d.extra?.files) || !d.extra.files.includes(d.extra.path) || !d.extra.files.length || typeof d.extra?.route !== 'string' || !d.extra.route.startsWith('/') || !d.extra?.review?.summary || d.extra.review.runtimeVerified !== false || !Array.isArray(d.extra?.discovery) || !['route', 'listing'].every(role => d.extra.discovery.some((proof: any) => proof?.role === role))) {
+      throw repositoryPublishingError('The saved publishing draft lacks a reviewed repository integration. Reset the publishing draft and try again.');
+    }
+    const body = pullRequestBody(p, d.extra);
     try {
-      const pr = await gh<{ html_url: string }>(`${API}/repos/${repo}/pulls`, { method: 'POST', ...jsonBody({ title: p.title, head: d.id, base: d.extra?.base, body }, h(c)) });
+      const pr = await gh<{ html_url: string }>(c, `${API}/repos/${repo}/pulls`, { method: 'POST', ...jsonBody({ title: p.title, head: d.id, base: d.extra?.base, body, draft: true }, h(c)) });
       return { url: pr.html_url };
     } catch (e: any) {
       // A PR for this branch already exists (a retry after a timeout): reuse it. Any other 422 stands (not retried).
       if (e instanceof PublishError && e.http === 422) {
         const owner = repo.split('/')[0];
-        const open = await gh<{ html_url: string }[]>(`${API}/repos/${repo}/pulls?head=${encodeURIComponent(owner + ':' + d.id)}&state=open`, { headers: h(c) });
+        const open = await gh<{ html_url: string }[]>(c, `${API}/repos/${repo}/pulls?head=${encodeURIComponent(owner + ':' + d.id)}&state=open`, { headers: h(c) });
         if (open[0]) return { url: open[0].html_url };
       }
       throw e;

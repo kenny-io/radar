@@ -33,13 +33,23 @@ export interface GscState { status: GscStatus; property: string | null; progress
 export type Cadence = 'daily' | 'weekdays' | 'custom';
 export interface CalendarSettings { market: string; language: string; start: string; cadence: Cadence; perWeek: number }
 export type EntryType = 'How-to' | 'Guide' | 'Comparison' | 'Listicle' | 'Explainer' | 'Template';
+/** Safe, bounded local publishing diagnostics; never contains article/source payloads. */
+export interface PublishDiagnosticReason {
+  code: string; stage: 'discovery' | 'plan' | 'validation' | 'review' | 'repair'; reason: string;
+  path?: string; size?: number; limit?: number; actual?: number; issues?: string[];
+}
+export interface PublishDiagnostic extends PublishDiagnosticReason { origin?: PublishDiagnosticReason }
+export interface ArticlePublishError {
+  http: number; message: string; platform?: string; hint?: string; source?: 'radar'; diagnostic?: PublishDiagnostic;
+}
+
 export type EntryStatus = 'proposed' | 'approved' | 'drafting' | 'draft' | 'review' | 'scheduled' | 'publishing' | 'published' | 'failed';
 export interface Measured { impr: number; clicks: number; pos: number }
 export interface CalendarEntry {
   id: string; title: string; kw: string; type: EntryType; vol: number | null; kd: number | null; date: string;
   mode: 'new' | 'refresh'; url: string | null; measured: Measured | null;
   audience: string; relevance: string; dest: string | null; status: EntryStatus;
-  publishError: { http: number; message: string; platform?: string; hint?: string } | null; publishedUrl: string | null;
+  publishError: ArticlePublishError | null; publishedUrl: string | null;
 }
 export interface CalendarState { entries: CalendarEntry[]; settings: CalendarSettings; generatedAt: string | null }
 
@@ -57,7 +67,7 @@ export interface Article {
   entryId: string; generated: boolean; body: Block[];
   brief: { angle: string; outline: string[]; words: 900 | 1400 | 2200 };
   seo: { title: string; meta: string; slug: string };
-  img: { style: ImageStyle; seed: number; prompt: string; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null };
+  img: { style: ImageStyle; seed: number; prompt: string; /** Explicit custom requests require a model on later regenerations. */ modelRequired?: boolean; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null };
   videos: string[]; videoMeta: VideoRef[]; sources: Source[];
   /** claim spans tied to sources: [blockIndex, text, sourceIndex] — used to flag claims when a source is removed */
   claims: { block: number; text: string; source: number }[];
@@ -69,6 +79,8 @@ export interface Article {
   /** when videoMeta (YouTube suggestions) was fetched */
   videoFetchedAt?: string | null;
 }
+/** What the workspace carries per article once bodies load on demand (first-five architecture §3.2). */
+export interface ArticleSummary { generated: boolean; outline: string[]; /** articles.updated_at, epoch ms */ v: number }
 
 export type ConnType = 'wordpress' | 'ghost' | 'webflow' | 'notion' | 'wix' | 'shopify' | 'wpcom' | 'webhook' | 'framer' | 'nextjs';
 /** Connection as the client sees it — never contains secrets. */
@@ -81,6 +93,10 @@ export interface SocialPost {
   text: string; style: PackStyle; seed: number; imageUrl: string | null; copiedAt: number | null; v: number;
   /** Size and type of the file at `imageUrl`, recorded when Radar renders it (social channels). Absent on older posts: the server checks the real file. */
   imageMeta?: MediaMeta | null;
+  /** User direction for this platform, reused by Regenerate. */
+  imagePrompt?: string;
+  /** Latest in-flight image request; prevents stale renders replacing a newer image. */
+  imageRequest?: string;
   /** Radar re-encoded the image to fit the platform's limits (Compress images). */
   compressed?: boolean;
   /** Publishing state from Radar (projected from `social_pubs` when `social.publishing`). Absent/null = never scheduled or posted by Radar. */
@@ -173,6 +189,14 @@ export interface BriefImages {
   n: number;
   /** One per image, filled in as each one finishes; null while generating or if it failed. */
   urls: (string | null)[]; status: 'generating' | 'ready' | 'failed';
+  /** Request identity survives remove/re-add races; jobId lets the UI recover from expired jobs. */
+  request?: string; jobId?: string;
+  /** Custom direction, retained for retries. */
+  prompt?: string;
+  /** User-safe failure detail for unavailable generation or a failed custom set. */
+  error?: string;
+  /** Custom image sets replace the current complete set only after every new image is stored. */
+  pending?: { style: import('./imageOptions').StyleKey; seed: number; n: number; prompt: string };
   /** Parallel to `urls`: size/type recorded when each image is rendered (absent on older items). */
   meta?: (MediaMeta | null)[];
 }
@@ -195,11 +219,31 @@ export interface LiveLink { id: string; from: string; to: string; anchor: string
 export interface BacklinksState { joined: boolean; prefs: Partial<BacklinkPrefs>; inbound: Proposal[]; outbound: Proposal[]; live: LiveLink[] }
 
 export interface AiPrefs { writing: string; research: string }
+export type InstructionKey = 'all' | 'articles' | 'social' | 'community' | 'linkedin' | 'x' | 'reddit' | 'facebook' | 'quora' | 'hn';
+/** Standing writing instructions per set (Settings → Writing instructions). Sparse: absent = none. */
+export type WritingInstructions = Partial<Record<InstructionKey, string>>;
 export interface Member { id: string; userId: string | null; name: string | null; email: string; role: Role; status: 'active' | 'invited'; you: boolean }
 
 export interface JobSummary { id: string; kind: string; status: 'queued' | 'running' | 'done' | 'failed'; progress: any; error: string | null; createdAt: string; ref: string | null }
 
+/* ── First five optimizations (.factory/first-five-optimizations/architecture.md §1, §4) ── */
+/** The three jobs Radar starts by itself when a business is committed. */
+export type FirstRunKey = 'calendar' | 'brief' | 'visibility';
+export interface FirstRunItem { key: FirstRunKey; jobId: string | null; status: 'queued' | 'running' | 'done' | 'failed'; progress: any; error: string | null }
+/** The newest job for an item when it failed. `at` is ISO; `keep` is the calendar run's keep flag. Lives as long as the job row. */
+export interface FailedJob { jobId: string; error: string | null; at: string; keep?: boolean }
+/** One row of the Activity panel (a stored notification). `at` is ISO. */
+export interface ActivityItem { id: string; msg: string; tone?: 'ok' | 'warn' | 'bad' | 'signal'; action?: { label: string; href: string }; at: string }
+
 export interface SiteStats { pages: number | null; articles: number | null; ranking: number | null; analyzedAt: string | null }
+
+export interface AutopilotState {
+  enabled: boolean;
+  enabledAt: string | null;
+  lastRunAt: string | null;
+  lastError: string | null;
+  summary?: string;
+}
 
 /** Per-business workspace — the client's "B". Loaded by GET /api/b/:bid/workspace. */
 export interface Workspace {
@@ -208,10 +252,11 @@ export interface Workspace {
   today: string; tz: string;
   /** Server time when this workspace was built (ISO). Clients may use it to correct clock skew for lock/past checks. */
   now?: string;
+  autopilot?: AutopilotState;
   profile: Profile; edited: Edited;
   gsc: GscState;
   calendar: CalendarState;
-  articles: Record<string, Article>;
+  articles: Record<string, ArticleSummary>;
   blog: BlogState;
   social: {
     packs: SocialPack[]; auto: SocialAuto; /** Last image setting used for social posts (Daily Brief included); the next default. */ img: import('./imageOptions').ImageSettings | null;
@@ -225,6 +270,8 @@ export interface Workspace {
   brief: BriefState;
   backlinks: BacklinksState;
   ai: AiPrefs;
+  /** Saved writing instructions. Always present ({} when none); visible to every role. */
+  instructions: WritingInstructions;
   team: Member[];
   site: SiteStats;
   jobs: JobSummary[];
@@ -232,10 +279,16 @@ export interface Workspace {
   measured: Record<string, { q: string; clicks: number; impr: number; ctr: number; pos: number } | null>;
   /** Suggested keywords (competitor gaps, GSC positions 20–40, profile needs) */
   kwSuggestions: KeywordSuggestion[];
-  /** Server-computed counts for the sidebar and dashboard */
-  counts: { briefOpen: number; review: number; backlinksPending: number; highSuggestions: number };
+  /** Server-computed counts for the sidebar and dashboard. `activityUnread`: notifications newer than this member's read cursor. */
+  counts: { briefOpen: number; review: number; backlinksPending: number; highSuggestions: number; activityUnread: number };
   /** Onboarding draft state (step, saved). Present on every workspace; meaningful while status = 'onboarding'. */
   onboarding?: OnboardingState;
+  /** First-week run, present only while one of its jobs is queued, running or failed (under 7 days, not dismissed). Absence is "done". */
+  firstRun?: { at: string; items: FirstRunItem[] };
+  /** Newest failed job per item: the calendar run, and drafts by entry id. */
+  failed: { calendar: FailedJob | null; drafts: Record<string, FailedJob> };
+  /** The owner's billing notice for the grace banner and trial chip. Absent when billing is not enforced for the owner or the owner is comp. */
+  billing?: { payer: boolean; graceEndsAt?: string; trialEndsAt?: string };
 }
 
 /** `access: false` = the owner has no trialing/active subscription (billing on): hidden from the switcher, never current. Absent = true. */
@@ -244,13 +297,17 @@ export interface BusinessSummary { id: string; name: string; domain: string; bra
 export interface Me { user: User; businesses: BusinessSummary[]; currentId: string | null }
 
 /** RPC */
-export interface ActResponse<T = any> { ok: boolean; data?: T; workspace?: Workspace; error?: string; code?: string }
+export interface ActResponse<T = any> { ok: boolean; data?: T; rev?: number; workspace?: Workspace; error?: string; code?: string }
 
 // ── Gating, anonymous onboarding, trial billing (.factory/marketing-trial-gating/architecture.md §5) ──
 export type SubStatus = 'none' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'active' | 'past_due' | 'unpaid' | 'canceled' | 'paused';
 /** 'domain' / 'analyzing' are derived from jobs, as before. */
 export type DraftStep = 'review' | 'gsc' | 'save';
-export interface OnboardingState { step?: DraftStep; savedAt?: string; tz?: string; committedAt?: string }
+export interface OnboardingState {
+  step?: DraftStep; savedAt?: string; tz?: string; committedAt?: string;
+  /** Written by the commit that made the business active; `jobs` holds the tracked job id per row (first-five architecture §1). */
+  firstRun?: { at: string; jobs?: Partial<Record<FirstRunKey, string | null>>; dismissedAt?: string };
+}
 export interface DraftSummary {
   id: string; domain: string; name: string;
   brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>;
@@ -258,6 +315,22 @@ export interface DraftSummary {
 }
 /** Signup pending variant (AC-S2). */
 export type PendingProfile = Pick<DraftSummary, 'name' | 'domain' | 'brand'>;
+/** The signed-in user's persisted billing account, independent of the selected business or billing gate. */
+export interface BillingOverview {
+  provider: 'stripe' | 'stub' | 'none';
+  enforced: boolean;
+  status: SubStatus | 'comp';
+  priceCents: number;
+  currency: 'usd';
+  interval: 'month';
+  trialEnd: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  canManage: boolean;
+  everSubscribed: boolean;
+  /** ISO end of the past-due grace period, while in grace. */
+  graceEndsAt?: string | null;
+}
 export interface BillingState {
   /** false → billing off for this user; /start-trial redirects */
   enforced: boolean;
@@ -281,15 +354,15 @@ export interface BillingState {
   draft: DraftSummary | null;
 }
 /** The publishable key is read on the server and passed as a prop (not NEXT_PUBLIC_*). */
-export interface TrialPageProps { state: BillingState; publishableKey: string | null }
+export interface TrialPageProps { state: BillingState; publishableKey: string | null; /** Signed-in user's email, for the "Signed in as" footer. */ email?: string }
 export interface OnboardingStageProps {
   /** 'none' = /start before the first POST /api/b */
   actor: 'guest' | 'user' | 'none';
-  user: { name: string } | null;
+  user: { name: string; email?: string } | null;
   draft: DraftSummary | null;
   /** SaveStep label: true → "Save profile & open dashboard" */
   saveCommits: boolean;
   /** cleaned and validated ?domain= */
   autoDomain: string | null;
 }
-export interface AuthResult { ok: true; next: string }
+export type AuthResult = { ok: true; next: string; verificationRequired?: never } | { ok: true; verificationRequired: true; next?: never };

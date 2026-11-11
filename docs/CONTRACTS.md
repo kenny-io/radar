@@ -43,9 +43,12 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 ### social area
 - Component `PackThumb` (props in placeholder).
 - Generate flow opens from `app.go('social', { generate: true })`.
+- Unset `B.social.auto` preferences default to daily library drafts at 08:00 in `B.tz`, for LinkedIn/X with branded images. Explicit saved preferences remain authoritative. Draft settings can pause or customize generation.
+- Daily packs use a stable `auto-${businessId}-${date}` ID; retries never replace existing pack data. The worker uses profile, calendar, published articles, cached blog content and search suggestions, with profile-only fallback.
 
 ### platform area (Dashboard, Settings, Team, Backlinks)
 - `settings.ai` `{ task: 'writing'|'research', model }` · `settings.calendarDefaults` `{ market?, language?, cadence?, perWeek? }`
+- `settings.instructions` `{ set, text }` — role Editor; one writing-instruction set per call. `set` is one of `INSTRUCTION_KEYS` (`all`, `articles`, `social`, `community`, `linkedin`, `x`, `reddit`, `facebook`, `quora`, `hn`); `text` is normalized with `cleanInstruction` and limited to `INSTRUCTION_MAX` (1,500) characters (`400 too_long`, never truncated); empty text removes the set. Returns `{ ok: true }` only (never the text). See “Writing instructions” below.
 - `team.invite` `{ email, role }` · `team.role` `{ memberId, role }` · `team.remove` `{ memberId }`
 - `feature.request` `{ text }`
 - `backlinks.*` (internal to the area)
@@ -53,6 +56,7 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 
 ## Workspace fields everyone can rely on
 See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `B.measured`, `B.kwSuggestions`, `B.site`, `B.jobs`.
+`B.instructions` (`WritingInstructions`) is always present (`{}` when none) and readable by every role; `B.ai` carries only `{ writing, research }`.
 
 ## Job kinds (for `app.jobFor(kind, ref)`)
 - `analysis.site` (ref = businessId) — progress `{ phase: 'site'|'biz'|'content'|'aud'|'brand'|'done', results: { site?: string, biz?: string, content?: string, aud?: string, brand?: string }, colors?: [p, s], logoMissing?: boolean, failed?: string }`
@@ -62,6 +66,7 @@ See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `
 - `gsc.backfill` (ref = businessId) — progress `{ pct }`
 - `brief.scan` (ref = date, one per business and day: Scan again during a running scan joins it) — payload `{ mode: 'first'|'again'|'keep', date, fromJob?, background?: true, round? }`; progress `{ step, threadsRead, failed?: platform, steps, mode, quiet? }` (`quiet`: Keep runs and background rescans, never shown as the scan view unless joined); result `{ mode, added, addedIds, since, failed?, partial?, notified?: true, skipped?: 'no_day'|'past', skippedPlats?: platform[] }` (`skippedPlats`: background runs, the platforms that failed and were skipped) (`notified`: the server already toasted the members, so the client shows no toast of its own)
 - `social.generate` (ref = client token) — progress `{ done: number }`, result `{ packId }`
+- `social.autoRun` — payload `{ date: string }` (business-local day), result `{ packId: string | null }`; cron atomically marks/enqueues once per business/day and catches up after the due time until midnight. Library drafts are the default; legacy explicit scheduling remains opt-in.
 - `visibility.collect` (ref = resultId)
 
 ## Social channels (connected X / LinkedIn accounts: post now, schedule, calendar)
@@ -141,9 +146,13 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 - `resolveEntry(user)` — used by `(app)/layout.tsx`: renders, or redirects to `/onboarding` (no business, or a draft not saved) or `/start-trial` (saved draft or owned business without access). A guest on an app route goes to `/signup`.
 
 ### Auth endpoints
-- `POST /api/auth/signup` `{ name, email, password, next? }` and `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }`. Navigate to `next`. Both claim this browser's guest draft first. When the claimed profile is committed there (the account already has access), they also set `radar_biz` to it, so `/dashboard?saved=profile` opens that profile.
-- Google: the callback redirects to the same destination. Dev stub (not production): `/api/auth/google/start?dev_as=<email>` signs in as that email.
-- `POST /api/auth/signout` clears the session and the guest cookie.
+- `POST /api/auth/signup` `{ name, email, turnstileToken, next? }` → generic `{ ok: true, verificationRequired: true }`. Creates no session and does not claim the guest draft. Password is chosen by the mailbox holder after confirmation.
+- `POST /api/auth/verification/resend` `{ email, turnstileToken, next? }` → the same generic response for unknown, verified and unverified addresses. Sends only to unverified accounts within shared IP/email/global budgets. Also provides existing password-account recovery without the old password.
+- `/verify-email#token=<opaque>` → explicit password setup form; client scrubs fragment immediately. GET never verifies an account. `POST /api/auth/verify-email` `{ token, password }` consumes an unexpired, single-use token, verifies mailbox ownership, replaces the password, revokes old sessions/tokens, then claims this browser's guest draft and returns `{ ok: true, next }`. Invalid/expired/reused links return `400 verification_invalid`.
+- `POST /api/auth/signin` `{ email, password, next? }` → `{ ok: true, next }` for verified password accounts. Unverified legacy accounts must complete email confirmation before authenticated access. Session/draft/invite access requires verified identity.
+- Google requires a verified provider identity and looks up the stable Google subject. Matching email alone never merges accounts; conflicting identities return `/signin?error=google_link`. Existing Google accounts retain Google access; legacy attached passwords are revoked by migration. Dev stub (not production): `/api/auth/google/start?dev_as=<email>`.
+- Signup and resend always share10/IP/hour,3/address/hour and300global/hour mail budgets, plus their route IP limits. Default protection is rate-only. `RADAR_SIGNUP_TURNSTILE=1` additionally requires server-validated Turnstile with action `turnstile-spin-v2` and hostname matching APP_URL; enabled bot protection never silently falls back. Missing production mail configuration always fails closed. Missing/invalid human check → 403; limits → 429; unavailable provider/config → 503.
+- `POST /api/auth/signout` clears the session and guest cookie. Password verification and successful Google sign-in claim guest drafts; pending signup does not.
 
 ### Business endpoints
 - `POST /api/b` `{ domain, turnstileToken? }` → `{ ok, id, guest }` — creates a guest when nobody is signed in (429 `rate_limited`, 403 `human_check_failed`). Same domain as the draft: reset, keep Search Console; another domain: also clears GSC, crawl pages and `onboarding`.
@@ -155,12 +164,16 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 | Call | Success | Error codes |
 |---|---|---|
 | `GET /api/billing/state` | `BillingState` (bare, no `ok`) | 401 |
+| `GET /api/billing/overview` | `BillingOverview` for the signed-in user's account, including persisted dates, cancellation state and `canManage` (bare, no `ok`) | 401 |
+| `POST /api/billing/portal` | `{ ok: true, url }`, a fresh Stripe-hosted portal session for the caller's stored customer | 401; forbidden origin (403); `no_subscription` (409); `rate_limited` (429); `billing_unavailable` (503) |
 | `POST /api/billing/start` `{ paymentMethodId }` | `{ ok, clientSecret, paymentIntentId, trialEnd }`, or `{ ok, activated: true, state }` when an earlier $1 already succeeded | `already_active`, `restart_required`, `trial_used`, `payment_processing` (409); `invalid_payment_method` (400); `rate_limited` (429); `billing_unavailable` (503) |
 | `POST /api/billing/restart` `{ paymentMethodId }` | `{ ok, clientSecret, subscriptionId }`, or `{ ok, activated: true, state }` | `already_active`, `not_lapsed` (409); 400; 429; 503 |
 | `POST /api/billing/confirm` `{ paymentIntentId }` \| `{ subscriptionId }` | `{ ok, state }` with `state.access === true`; sets `radar_biz` to the business just committed | `not_yours` (403); `payment_not_succeeded` (409: not active yet; retry, then poll state); `activation_failed` (502) |
 | `POST /api/billing/webhook` | Stripe only (signature) | 400 bad signature or no secret; 500 handler failure |
 
 - The client always passes `payment_method` to `confirmCardPayment` (a restart against an open invoice doesn't use the subscription default).
+- Overview and portal are account-scoped, independent of selected business, membership and billing enforcement. No client customer ID or return URL is accepted. Responses are private and uncached; overview contains no Stripe identifiers. Complimentary payers retain management access. Settings → Billing and the restart screen share the management action; the server chooses a fixed Radar return path. Portal session URLs contain bearer secrets and must never be logged or stored.
+- New trial/restart payments await successful validation of the configured price: active, recurring, licensed, per-unit, $50 USD, month, interval count one. Failed or mismatched prices return 503 before customer/payment creation. Portal access does not depend on price validation.
 - `trialEnd` comes from the server (now + 72 h, to the second) and never changes after start; show `state.trialEnd` after confirm.
 - `state.dueTodayCents` in restart mode is what the restart will charge: the open invoice's `amount_due` (`past_due`, `unpaid`, an unpaid restart), else $50 less any unused credit ($49 when the trial was canceled before its first invoice). Show it on the button and timeline.
 - Events: `trial.started`, `trial.payment_failed`, `sub.status_changed`, `onboarding.claimed`, `onboarding.draft_replaced`, `business.onboarded` (from `commitDraft`, the only path to an active business). They carry ids and enum props only.
@@ -170,8 +183,47 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 - `POST /api/billing/dev/confirm-intent` `{ paymentIntentId, outcome: 'succeed'|'decline'|'auth_fail', webhook?: boolean }` → stripe-js `{ paymentIntent: { id, status } }` | `{ error: { type, code, decline_code?, message, payment_intent } }` (HTTP 200). The PaymentIntent id is `clientSecret.split('_secret_')[0]`. `decline` (or a `decline` card) → `type: 'card_error', code: 'card_declined'`; `auth_fail` → `code: 'payment_intent_authentication_failure'`. `webhook: true` also delivers the events Stripe would send, through the real handlers (the "tab closed after paying" path).
 - `POST /api/billing/dev/simulate` `{ status }` → `{ ok, state }` — moves the account's subscription (`past_due`/`unpaid` open a $49 invoice: $50 less the $1 credit; `active`; `canceled`) and runs the webhook path. Stub state is in memory: a dev server restart forgets subscriptions (`simulate` then answers 409 `no_subscription`).
 - Both dev endpoints answer 404 unless the stub is the provider.
+- The stub deliberately does not emulate a hosted portal. Its overview reports `canManage: false`, and portal requests return 503. Use a real Stripe sandbox to verify hosted card updates, invoices and cancellation.
 
 ### Server helpers other areas may call
 - `ownAccess(user)`, `bizAccess({ ownerId })`, `accessSummary(uid)` — `src/server/billing/access.ts`. A guest never has access.
 - `commitDraft(bid, q?, later?)`, `draftOf(ownerId)` — `src/server/billing/draft.ts`.
 - Background jobs for an active business whose owner has no access finish as `{ skipped: 'no_access' }` (`src/server/jobs/queue.ts`); `social.send` is exempt.
+
+### Custom image direction
+
+- `social.regenImage { packId, platform, prompt? }` and `article.regenerateImage { entryId, prompt? }` accept trimmed, nonempty custom direction of at most 1000 characters. `brief.visuals` accepts the same optional `prompt` (`null` clears it for automatic visuals). Omitted prompts preserve the previous saved direction; older callers remain valid.
+- Social direction is per platform (`SocialPost.imagePrompt`). Regeneration and style changes reuse it. Only image fields change after the file is stored; concurrent post text, other platforms, copy history and publication state are preserved. A request token prevents stale image completion, including overlapping style changes.
+- Article cover direction uses the existing `Article.img.prompt`. `Generate from prompt` flushes autosave and explicitly requires model generation, including for template styles. A successful custom cover persists `img.modelRequired`; subsequent cover/body regeneration and cover rerenders during drafting retain strict mode. Legacy automatic article direction keeps its existing fallback behavior. Cover mutation refuses active body-image jobs as well as scheduled/published/pending-publication states.
+- Custom requests always invoke an image model. Missing configuration, provider failure or storage failure cannot be reported as a successful template render. Previous complete media remains available; unavailable-generation errors are user safe and distinct from retryable generation failures. No uploaded/reference-photo or web-photo retrieval capability is implied; generated named subjects may differ from the real subject.
+- Brief custom visuals persist direction, pending style/count, a unique request token and exact job ID. They replace the previous complete image set atomically after all requested images are stored. Partial failures retain the complete prior set and retry direction. Request/seed and worker-attempt checks reject stale output; the workspace projects expired or failed referenced jobs into a recoverable state even after the recent-jobs feed ages out. Change request and Remove remain available during generation.
+- Image generation actions remain Editor writes scoped to the active business. Publication locks are checked before generation and before committing the result. Input cannot replace stored media URLs, metadata or request identity.
+
+## Marketing Autopilot
+
+- `settings.autopilot` `{ enabled: boolean }` · `settings.autopilotRun` `{}` — Owner-only marketing delegation and an immediate program check. Defaults off; enabling starts the worker program. `B.autopilot` exposes `{ enabled, enabledAt, lastRunAt, lastError, summary? }` without internal authorization identifiers.
+- `autopilot.run` — business-scoped program coordinator. Internal activation provenance guards autonomous calendar/article/social work; disabling or re-enabling revokes earlier activations. Existing manual and independently enabled automation remains separate. See `.factory/autopilot/architecture.md`.
+
+## Writing instructions (`.factory/writing-instructions/architecture.md`)
+
+- Stored sparsely in `businesses.ai.instructions` (`{ [set]: text }`); no column, no migration. `settings.instructions` and `settings.ai` each merge their own key in one SQL statement, so concurrent saves never erase each other. Rows without the key read as no instructions.
+- `AiInput.instructions?: { surface: 'article' | 'social' | 'community'; platforms? }` (`src/server/ai/instructions.ts`). `ai.run` resolves the saved sets from the same `businesses.ai` row it reads for the model and appends one delimited block to the end of `system`: `all` → content type → each listed platform. With nothing applicable, `system` is passed through unchanged. Only these sites set it: `article.draft`, `article.meta`, `article.rewrite`, `suggestions.refreshDraft` (`article`); `social.post` (`social` + its platform); `brief.reply`, `brief.brand` (`community` + thread platform); `brief.posts` (`social` + requested feed platforms); `brief.rewrite` (by item kind and platform). Planning, research, fact-check, image, visibility, backlink, support and email calls never set it.
+- Instructions never reach `Profile`, `profileContext`, number allow-lists, job payloads, `ai_calls` or `events`. Deterministic cleaners (`social/rules.ts`, `brief/rules.ts`, article number checks) run unchanged after generation.
+- Dev stubs: `stubRun` prints `[ai:stub] <purpose> received workspace writing instructions` followed by the block (development only).
+
+## First five optimizations (2026-11)
+
+Design and reasons: `.factory/first-five-optimizations/architecture.md`.
+
+- **Client version header.** The app sends `x-radar-client: 2` on every request. Without it a request is a legacy tab and gets the pre-change responses (`GET /workspace` and write replies carry whole articles; write replies are `{ ok, data, workspace }`). Remove the legacy branch one release after deploy.
+- **`POST /api/b/:bid/act { action, input, reply?: 'rev' }`.** Read → `{ ok, data }`. Write with `reply: 'rev'` → `{ ok, data, rev }` and no workspace is built (every debounced `actLater` save). Other writes → `{ ok, data, rev, workspace }`. `bump(bid)` returns the new revision.
+- **Articles.** `B.articles[entryId]` is an `ArticleSummary { generated, outline, v }` (`v` = `articles.updated_at` in ms). The body loads with read action `article.get { entryId }` → `{ article, v }` through `useArticle(entryId)` (`src/client/articles.ts`; rules in `src/client/articleSync.ts`). `article.save` and `article.source` return `{ ok, v, prev }`. `AppCtx.busy()` is true while a save is queued, flushing or in flight; never apply fetched article data while it is. `B.jobs[].progress` of a finished `article.draft` job carries no `blocks` or `partial` (`jobProgress` in `server/workspace.ts`); the live stream comes from the SSE `job` event and from running jobs.
+- **Activity signal.** `businesses.last_active_at` is written at most hourly by a non-read action, the read action `app.seen {}` (pinged by `useSeenPing` on mount, business switch and navigation) and the `/email/open` and `/email/learn` links. `GET /workspace`, other reads, SSE, jobs and guests never write it. Tiers and cadence live in `src/server/idle.ts` (`activityTier`, `cadenceDue`): active < 7 days (or Autopilot on, or committed < 7 days ago), idle 7–30, dormant 30+.
+- **Gated crons.** `brief.rescan` runs for active businesses only and only when `brief_days.acted_at` is later than the day's newest `brief.scan` job (an item was copied, marked posted, skipped, or scheduled/posted from Radar). `social.auto`: idle at most once per 7 days, dormant paused. `visibility.nightly` (the cron keeps its name) is weekly since 2026-11-10. It enqueues one full `visibility.run` (payload `{}`), inside 02:00–05:59 business time and at most once per business-local day, when, counting from the business's newest `visibility.run` that counts, either (a) it is the business's Sunday and that run was created 2 or more business-local calendar days ago, or (b) that run was created 8 or more such days ago or there is none in the last 10 days, on any weekday (a missed, failed or empty Sunday is caught up the next night). A run counts when it has no `promptIds`, is not `failed` (queued and running count), and did not finish with result `total > 0` and `collected = 0`. `visibility.run` result is now `{ total, collected }`: cells in scope and how many got a new measurement in that run (a result without `collected`, from before this change, counts); `visibility.collect` result stays `{ status }`. Active, idle and Autopilot alike, dormant paused (`visibilityDue`, `VIS_WEEKDAY`, `VIS_SKIP_WITHIN_DAYS`, `VIS_OVERDUE_DAYS`, `VIS_LOOKBACK_DAYS` in `src/server/idle.ts`). `RADAR_VISIBILITY_CADENCE=nightly` restores the earlier rule (active every night, idle at most once per 7 days). `visibility.addPrompt` now also enqueues `visibility.run` with `{ promptIds: [id] }` (singleton `vis-prompt:<id>`); its response is unchanged. A returning business gets one `visibility.run` if none started in 24 h; that run takes the day's `vis:<bid>:<date>` mark, so the cron does not add a second one the same night, and being a full run it counts for the rule above. `brief.scan` result `skipped` gains `'no_slots'` (background rescans with no reply slot left read no source). `visibility.collect` makes no extraction call when the answer cannot name the business, and a run bumps the revision once.
+- **First run.** `commitDraft` writes `onboarding.firstRun` and starts `calendar.generate`, a first `brief.scan` and `visibility.run`. `B.firstRun { at, items: FirstRunItem[] }` is present while one is queued, running or failed (up to 7 days); the Dashboard shows `FirstWeek`. Actions `firstRun.retry { key }` → `{ jobId | null }` and `firstRun.dismiss {}` (Editor).
+- **Billing.** `billing_accounts.past_due_at` is set on `active → past_due` only. `accountGrants(a, now)` includes grace: `RADAR_PAST_DUE_GRACE_HOURS` (default 48, `0` = none). `B.billing { payer, graceEndsAt?, trialEndsAt? }` feeds `GraceBanner` and `TrialChip`; `BillingOverview.graceEndsAt` is present only during grace. Dev route `POST /api/billing/dev/simulate` accepts `pastDueHoursAgo` (stub only).
+- **Activity.** Notifications are kept 30 days. `activity.list { before?: id, limit? ≤ 50 }` → `{ items: ActivityItem[], unread, seenAt }` (Viewer); `activity.seen {}` moves the member's `members.activity_seen_at` cursor and does not bump the revision. `B.counts.activityUnread`; `B.failed { calendar, drafts }` holds the newest failed `calendar.generate` / `article.draft` job per item until a later run replaces it.
+- **Navigation.** `go(page, params, { replace?, scroll? })`. Calendar state is in the URL: `/calendar?view=list&filter=<key>&open=<entryId>` (defaults omitted). `go('article', { id, back })` adds `?back=`; only `/calendar…` and `/dashboard…` are accepted.
+- **Toasts.** Tone `bad` stays until dismissed and is announced with `role="alert"`; others keep 4.2 s and `role="status"`.
+- **CSS.** A stylesheet imported only by a page under `(app)` remounts `AppProvider` on first load. Put screen CSS in `radar.css` or import it from `AppShell.tsx`.
+

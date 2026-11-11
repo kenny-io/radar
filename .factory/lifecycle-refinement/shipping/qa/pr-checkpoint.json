@@ -1,0 +1,11 @@
+{
+  "observedAt": "2026-11-10",
+  "url": "https://github.com/kenny-io/radar/pull/25",
+  "state": "open",
+  "merged": false,
+  "mergeable": true,
+  "headSha": "ebd34ae840b538adf80910a8af3a8e27143978aa",
+  "headBranch": "kenny/lifecycle-emails",
+  "baseSha": "4908694fb6c63ce618e83843d30203af739fe9dd",
+  "source": "GitHub get_pr_info connector read"
+}

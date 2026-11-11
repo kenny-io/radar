@@ -1,0 +1,62 @@
+{
+  "observedAt": "2026-11-09T22:54:13.706Z",
+  "origin": "https://radar.thally.io",
+  "account": "PM-created nonhuman Resend simulator; credentials excluded",
+  "originalEducation": true,
+  "checks": [
+    {
+      "name": "unauthenticated no-business preferences require sign-in and preserve return",
+      "pass": true
+    },
+    {
+      "name": "ordinary simulator sign-in returns to account preferences without paid workspace",
+      "pass": true
+    },
+    {
+      "name": "fresh missing education preference defaults on",
+      "pass": true
+    },
+    {
+      "name": "fresh work categories default on",
+      "pass": true
+    },
+    {
+      "name": "keyboard education opt-out persists across refresh",
+      "pass": true
+    },
+    {
+      "name": "education opt-out leaves work categories independent",
+      "pass": true
+    },
+    {
+      "name": "failed preference save announces error and restores prior state",
+      "pass": true
+    },
+    {
+      "name": "failed intercepted request did not change persisted opt-out",
+      "pass": true
+    },
+    {
+      "name": "simulator original education state restored and persists",
+      "pass": true
+    },
+    {
+      "name": "guide description has no obsolete two-guide limit",
+      "pass": true
+    },
+    {
+      "name": "mobile account preference controls fit viewport",
+      "pass": true
+    },
+    {
+      "name": "desktop preference controls remain visible",
+      "pass": true
+    },
+    {
+      "name": "no unrelated production write was attempted",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "prohibitedWrites": 0
+}

@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-11-09T21:36:44.608029+00:00",
+  "branch": "kenny/publishing-public-sources",
+  "head": "4908694fb6c63ce618e83843d30203af739fe9dd",
+  "files": {
+    "src/server/services/publishing/render.ts": "47b378f6b5813befd60951c8c7b83d3b399bab8962729375ea7fc0c0c4d95a3c",
+    "src/server/services/publishing/render.test.ts": "c02c9f5aa67ccaba93fcfbe326812850dc8261a6c49456395a5fd00830c651ec"
+  },
+  "runtime": "Node22.18.0"
+}

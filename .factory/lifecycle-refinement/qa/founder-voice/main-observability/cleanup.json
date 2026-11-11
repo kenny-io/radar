@@ -1,0 +1,38 @@
+[
+  {
+    "database": "radar_founder_voice_qa_20261110",
+    "before": {
+      "users": "0",
+      "businesses": "0",
+      "lifecycle_outbox": "0",
+      "general_outbox": "0",
+      "jobs": "0"
+    },
+    "after": {
+      "users": "0",
+      "businesses": "0",
+      "lifecycle_outbox": "0",
+      "general_outbox": "0",
+      "jobs": "0"
+    },
+    "cleanup": "Only the fresh isolated observability test database job fixtures were deleted; no production or shared DB writes."
+  },
+  {
+    "database": "radar_founder_observability_qa_20261110",
+    "before": {
+      "users": "0",
+      "businesses": "0",
+      "lifecycle_outbox": "0",
+      "general_outbox": "0",
+      "jobs": "9"
+    },
+    "after": {
+      "users": "0",
+      "businesses": "0",
+      "lifecycle_outbox": "0",
+      "general_outbox": "0",
+      "jobs": "0"
+    },
+    "cleanup": "Only the fresh isolated observability test database job fixtures were deleted; no production or shared DB writes."
+  }
+]

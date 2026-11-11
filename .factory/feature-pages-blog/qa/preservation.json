@@ -1,0 +1,21 @@
+{
+  "base": "f4e0ec581bc5c95330cb20e57fb579835b87e434",
+  "checks": [
+    {
+      "file": "src/features/marketing/OrganicSearch.tsx",
+      "bodyBeforeRelatedUnchanged": true
+    },
+    {
+      "file": "src/features/marketing/AiVisibility.tsx",
+      "bodyBeforeRelatedUnchanged": true
+    },
+    {
+      "file": "src/features/marketing/Backlinks.tsx",
+      "bodyBeforeRelatedUnchanged": true
+    },
+    {
+      "file": "src/features/marketing/Home.tsx",
+      "unchanged": true
+    }
+  ]
+}

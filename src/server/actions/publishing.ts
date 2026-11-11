@@ -1,3 +1,5 @@
+import { reportFailure } from '@/server/observability/failures';
+import { reportPublishingIssue } from '../services/publishing/reportIssue';
 // Actions for the "publishing" area (CONTRACTS.md): blog connections, mode, schedule, publish now / retry.
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
@@ -112,6 +114,9 @@ async function setTz(ctx: ActCtx, tz: string) {
 async function conns(bid: string) { return db.select().from(schema.connections).where(eq(schema.connections.businessId, bid)).orderBy(schema.connections.createdAt); }
 
 export const actions: ActionMap = {
+  /** Explicit member report; input and diagnostics never come from the browser. */
+  'publish.reportIssue': action({ role: 'Viewer', input: z.object({ entryId: z.string().min(1).max(100) }).strict(), run: (ctx, { entryId }) => reportPublishingIssue(ctx, entryId) }),
+
   /** Picker options for an authorization (oauthRef) or a saved connection (id); Framer lists collections from its token. */
   'blog.targets': action({ read: true, role: 'Editor', input: connInput.partial({ fields: true }).extend({ fields: z.record(z.string(), z.string()).default({}) }), run: async (ctx, input) => {
     try {
@@ -127,7 +132,7 @@ export const actions: ActionMap = {
       const targets = await conn.targets(ctxOf(ctx.biz, { type, fields, creds }));
       return { targets };
     } catch (e: any) {
-      if (e instanceof PublishError) return { targets: [], error: failCopy(input.type, e) };
+      if (e instanceof PublishError) { await reportFailure(e, { source: 'publishing', operation: 'blog.targets', businessId: ctx.bid, provider: input.type, status: e.http }); return { targets: [], error: failCopy(input.type, e) }; }
       throw e;
     }
   } }),
@@ -147,7 +152,7 @@ export const actions: ActionMap = {
       if (r.existing && r.existing.status !== 'ok') { await db.update(schema.connections).set({ status: 'ok', lastError: null }).where(eq(schema.connections.id, r.existing.id)); }
       return { ok: true };
     } catch (e: any) {
-      if (e instanceof PublishError) { console.warn('[blog.test]', input.type, e.message); return { ok: false, http: e.http, message: failCopy(input.type, e) }; }
+      if (e instanceof PublishError) { await reportFailure(e, { source: 'publishing', operation: 'blog.test', businessId: ctx.bid, provider: input.type, status: e.http }); console.warn('[blog.test]', input.type, e.message); return { ok: false, http: e.http, message: failCopy(input.type, e) }; }
       throw e;
     }
   } }),
@@ -236,7 +241,7 @@ async function startPublish(ctx: ActCtx, entryId: string) {
     const row = await lockArticle(tx, ctx.bid, entryId);
     await assertNoArticleWork(tx, ctx.bid, entryId);
     if (!['scheduled', 'failed'].includes(row.status)) throw new RadarError('Approve the article before publishing it.', 400, 'not_scheduled');
-    await tx.update(schema.calendarEntries).set({ status: 'publishing', publishError: null }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.businessId, ctx.bid)));
+    await tx.update(schema.calendarEntries).set({ status: 'publishing', publishError: null, autopilotActivationId: null }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.businessId, ctx.bid)));
     const [job] = await tx.insert(schema.jobs).values({ kind: 'publish.entry', payload: { entryId, manual: true }, businessId: ctx.bid, ref: entryId, singletonKey: 'publish:' + entryId, maxAttempts: 4 }).returning({ id: schema.jobs.id });
     return { jobId: job.id };
   });

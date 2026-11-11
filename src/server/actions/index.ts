@@ -13,5 +13,8 @@ import { actions as backlinks } from './backlinks';
 import { actions as team } from './team';
 import { actions as settings } from './settings';
 import { actions as core } from './core';
+import { actions as presence } from './presence';
+import { actions as firstRun } from './firstRun';
+import { actions as activity } from './activity';
 
-export const ACTIONS: ActionMap = { ...core, ...profile, ...onboarding, ...calendar, ...article, ...publishing, ...social, ...socialPublish, ...brief, ...performance, ...visibility, ...backlinks, ...team, ...settings };
+export const ACTIONS: ActionMap = { ...core, ...profile, ...onboarding, ...calendar, ...article, ...publishing, ...social, ...socialPublish, ...brief, ...performance, ...visibility, ...backlinks, ...team, ...settings, ...presence, ...firstRun, ...activity };

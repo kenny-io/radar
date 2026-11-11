@@ -64,6 +64,76 @@
       "when": 1792896628517,
       "tag": "0008_grandfather",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793808223880,
+      "tag": "0009_signup_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794254096992,
+      "tag": "0010_autopilot",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794254096993,
+      "tag": "0011_lifecycle_emails",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794254096994,
+      "tag": "0012_engagement_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794254096995,
+      "tag": "0013_weekly_education",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794254096996,
+      "tag": "0014_lifecycle_guides",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794258891387,
+      "tag": "0015_mail_sender_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794263253046,
+      "tag": "0016_autopilot_intro",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794264837882,
+      "tag": "0017_ai_weekly_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794272129974,
+      "tag": "0018_first_five",
+      "breakpoints": true
     }
   ]
 }

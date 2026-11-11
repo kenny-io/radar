@@ -1,0 +1,13 @@
+import pg from 'pg';
+import fs from 'node:fs/promises';
+const db=new pg.Pool({connectionString:'postgres://postgres:radar@localhost:54329/radar_daily_social_qa'});
+const own=(await db.query("SELECT b.id,b.owner_id,b.profile,u.password_hash FROM businesses b JOIN users u ON u.id=b.owner_id WHERE u.email='dev@radar.local' AND b.domain='fieldnote.app'" )).rows[0];
+const viewer=(await db.query("INSERT INTO users(name,email,password_hash) VALUES('Daily Social Viewer','daily-viewer@radar.local',$1) ON CONFLICT(email) DO UPDATE SET password_hash=EXCLUDED.password_hash RETURNING id",[own.password_hash])).rows[0];
+await db.query("INSERT INTO members(business_id,user_id,email,role,status) VALUES($1,$2,'daily-viewer@radar.local','Viewer','active') ON CONFLICT (business_id,email) DO NOTHING",[own.id,viewer.id]);
+const foreign=(await db.query("INSERT INTO users(name,email,password_hash) VALUES('Daily Social Foreign','daily-foreign@radar.local',$1) ON CONFLICT(email) DO UPDATE SET password_hash=EXCLUDED.password_hash RETURNING id",[own.password_hash])).rows[0];
+let foreignBiz=(await db.query("SELECT id FROM businesses WHERE owner_id=$1",[foreign.id])).rows[0];
+if(!foreignBiz)foreignBiz=(await db.query("INSERT INTO businesses(owner_id,domain,status,profile) VALUES($1,'foreign-daily.invalid','active',$2) RETURNING id",[foreign.id,own.profile])).rows[0];
+await db.query("INSERT INTO members(business_id,user_id,email,role,status) VALUES($1,$2,'daily-foreign@radar.local','Owner','active') ON CONFLICT (business_id,email) DO NOTHING",[foreignBiz.id,foreign.id]);
+await db.query("UPDATE businesses SET social_auto='{}',timezone='UTC',profile=jsonb_set(profile,'{keywords,list}','[]') WHERE id=$1",[own.id]);
+const fixture={businessId:own.id,ownerId:own.owner_id,viewerId:viewer.id,foreignBusinessId:foreignBiz.id};
+await fs.writeFile('.factory/daily-social-drafts/qa/fixture.json',JSON.stringify(fixture,null,2));console.log(fixture);await db.end();

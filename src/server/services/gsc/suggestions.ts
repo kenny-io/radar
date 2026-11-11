@@ -182,7 +182,7 @@ export async function listSuggestions(bid: string) {
   const rows = await db.select().from(schema.suggestions).where(eq(schema.suggestions.businessId, bid)).orderBy(desc(schema.suggestions.createdAt));
   // Handled rows stay visible (dimmed) for 30 days.
   const recent = rows.filter(r => r.state === 'open' || Date.now() - r.createdAt.getTime() < 30 * 864e5);
-  return recent.map(r => { const d = r.data as SuggestionData; return { id: r.id, prio: d.prio, title: d.title, why: d.why, impact: d.impact, page: d.page, kind: d.kind, state: r.state, gain: d.gain, diff: d.diff, entryId: d.entryId || null }; })
+  return recent.map(r => { const d = r.data as SuggestionData; return { id: r.id, prio: d.prio, title: d.title, why: d.why, impact: d.impact, page: d.page, url: d.url, kind: d.kind, state: r.state, gain: d.gain, diff: d.diff, entryId: d.entryId || null }; })
     .sort((a, b) => PRIO_RANK[a.prio] - PRIO_RANK[b.prio] || b.gain - a.gain);
 }
 

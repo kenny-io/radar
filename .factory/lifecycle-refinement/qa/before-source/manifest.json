@@ -1,0 +1,38 @@
+{
+  "head": "f616862c7dcefb1aabec9155972466f7b3aeaf36",
+  "reason": "Unmodified baseline source for independent before/after copy review; not imported by runtime or sender",
+  "files": [
+    {
+      "path": "src/server/services/lifecycle/templates.ts",
+      "sha256": "f2d0d4734de318cd21d1b95fbc3e7496d55a51daae25f9716908f39ab7e943fe"
+    },
+    {
+      "path": "src/server/services/lifecycle/educationContent.ts",
+      "sha256": "b00607ef0c931d92df601097b55c9a6d01d2e8df14fef3926fea5cb222119172"
+    },
+    {
+      "path": "src/server/auth/verification.ts",
+      "sha256": "849a1859d33c337eb2984e7c8b66ba6153692eca5935dca40bf186a244a9385c"
+    },
+    {
+      "path": "src/server/services/mail.ts",
+      "sha256": "ec96421f3fbe12855ac6e7e4230664eb9ef9e6cd08982da8a6a696307beedcda"
+    },
+    {
+      "path": "src/server/services/team/invites.ts",
+      "sha256": "91d5da6bfa0c4f97bd731134603cab64611915a4a69a99c23883d46d7e09fbee"
+    },
+    {
+      "path": "src/server/services/backlinks/decisions.ts",
+      "sha256": "00ae18237cb614ad32b3a42b54d4bb29a5bc80aad8e1e5ad565ffd2b36020501"
+    },
+    {
+      "path": "src/server/services/support/mail.ts",
+      "sha256": "dc41ba78d0f47f47f448d3258d6f44deff318c5ac2a7af4c776fdcb342c35777"
+    },
+    {
+      "path": "src/server/actions/settings.ts",
+      "sha256": "1d8100b646ea0e93f1805fdc6edc2e20c3c953f9a853ebc12642b240a8c1d3ea"
+    }
+  ]
+}

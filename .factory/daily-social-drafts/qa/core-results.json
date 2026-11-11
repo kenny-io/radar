@@ -1,0 +1,75 @@
+{
+  "at": "2026-11-09T16:21:13.453Z",
+  "results": [
+    {
+      "name": "Daily background draft appears in real library with provenance and review controls",
+      "pass": true,
+      "detail": {
+        "provenance": true,
+        "editable": true,
+        "scheduleAndPostAvailable": true,
+        "defaultNoPublications": true
+      }
+    },
+    {
+      "name": "Review edit persists after refresh and daily retry preserves the reviewed text",
+      "pass": true,
+      "detail": {
+        "autosave": true,
+        "reload": true,
+        "idempotentRetryKeptEdit": true
+      }
+    },
+    {
+      "name": "User schedules and unschedules a prepared draft using real controls",
+      "pass": true,
+      "detail": {
+        "scheduled": true,
+        "reload": true,
+        "unscheduled": true
+      }
+    },
+    {
+      "name": "Manual generation remains available and opens an editable pack",
+      "pass": true,
+      "detail": {
+        "manualJob": true,
+        "editable": true,
+        "packCount": 2,
+        "automaticPackPreserved": true
+      }
+    },
+    {
+      "name": "User explicitly publishes manual X post through confirmation to stub account",
+      "pass": true,
+      "detail": {
+        "confirmationRequired": true,
+        "posted": true,
+        "stubOnly": true,
+        "reload": true
+      }
+    },
+    {
+      "name": "Mobile prepared pack remains editable without horizontal overflow",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "Foreign pack mutation fails within otherwise authorized business",
+      "pass": true,
+      "detail": {
+        "foreignBusiness404": true
+      }
+    },
+    {
+      "name": "Browser runtime errors",
+      "pass": true,
+      "detail": {
+        "errors": []
+      }
+    }
+  ]
+}

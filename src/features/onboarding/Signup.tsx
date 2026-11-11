@@ -10,54 +10,73 @@ import { RadarField } from '@/components/RadarField';
 import { api, ApiError } from '@/client/api';
 import { EMAIL_RE } from '@/lib/format';
 import type { AuthResult, PendingProfile } from '@/lib/types';
+import { Turnstile } from './Turnstile';
+import { safeAuthNext, VerificationRequest, type HumanCheckProps } from './VerificationRequest';
 
 const GOOGLE_ERR = 'Google sign-in didn’t finish. Try again, or use your email.';
 
-export function Signup({ mode = 'signup', pending = null }: { mode?: 'signup' | 'signin'; pending?: PendingProfile | null }) {
+export function Signup({ mode = 'signup', pending = null, turnstileRequired, turnstileSiteKey, devStubs }: { mode?: 'signup' | 'signin'; pending?: PendingProfile | null } & HumanCheckProps) {
   const signin = mode === 'signin';
   const sp = useSearchParams();
+  const [verification, setVerification] = useState<'sent' | 'request' | null>(null);
+  const [humanToken, setHumanToken] = useState(''); const [humanReset, setHumanReset] = useState(0);
   const [f, setF] = useState({ name: '', email: '', pw: '' }); const [err, setErr] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false);
+  // SSR must not offer a native form submission before React attaches the JSON authentication handler.
+  const [mounted, setMounted] = useState(false); useEffect(() => setMounted(true), []);
   const rawNext = sp?.get('next') || '';
-  const safeNext = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '';
+  const safeNext = safeAuthNext(rawNext);
   const next = safeNext || '/dashboard';
-  useEffect(() => { if (sp?.get('error') === 'google') setErr({ email: GOOGLE_ERR }); }, [sp]);
+  useEffect(() => {
+    if (sp?.get('error') === 'google') setErr({ form: GOOGLE_ERR });
+    if (sp?.get('error') === 'google_link') setErr({ form: 'This email uses another sign-in method. Sign in with your password, or confirm your email if you haven’t yet.' });
+  }, [sp]);
   const submit = async (e?: React.FormEvent) => {
-    e && e.preventDefault(); const er: Record<string, string> = {};
+    e && e.preventDefault(); if (!mounted || busy) return; const er: Record<string, string> = {};
     if (!signin && !f.name.trim()) er.name = 'Add your name';
-    if (!EMAIL_RE.test(f.email)) er.email = 'Enter a valid email';
-    if (signin ? !f.pw : f.pw.length < 8) er.pw = signin ? 'Enter your password' : 'Use at least 8 characters';
+    if (!EMAIL_RE.test(f.email.trim())) er.email = 'Enter a valid email';
+    if (signin && !f.pw) er.pw = 'Enter your password';
+    if (!signin && turnstileRequired && !humanToken) er.form = 'Complete the security check to continue.';
     setErr(er); if (Object.keys(er).length) return;
     setBusy(true);
     try {
-      const body = signin ? { email: f.email, password: f.pw } : { name: f.name.trim(), email: f.email, password: f.pw };
+      const body = signin ? { email: f.email, password: f.pw } : { name: f.name.trim(), email: f.email, ...(turnstileRequired ? { turnstileToken: humanToken } : {}) };
       const r = await api<Partial<AuthResult>>(signin ? '/api/auth/signin' : '/api/auth/signup', { body: safeNext ? { ...body, next: safeNext } : body });
-      window.location.href = r.next || next;
+      if (!signin) { setVerification('sent'); setBusy(false); } else window.location.href = r.next || next;
     } catch (x) {
       setBusy(false);
-      if (x instanceof ApiError && x.errors) setErr(x.errors); else setErr({ pw: (x as Error).message || 'Radar couldn’t finish this. Try again.' });
+      if (x instanceof ApiError && x.code === 'verification_required') { setVerification('request'); setErr({}); }
+      else if (x instanceof ApiError && x.errors) setErr(x.errors); else setErr({ form: (x as Error).message || 'Radar couldn’t finish this. Try again.' });
+    } finally {
+      if (!signin) { setHumanToken(''); setHumanReset(n => n + 1); }
     }
   };
-  const google = () => { setBusy(true); window.location.href = '/api/auth/google/start?next=' + encodeURIComponent(next); };
-  const hint = (k: string) => err[k] && <span style={{ color: 'var(--bad)' }}>{err[k]}</span>;
+  const google = () => { if (!mounted || busy) return; setBusy(true); window.location.href = '/api/auth/google/start?next=' + encodeURIComponent(next); };
+  const hint = (k: string) => err[k] && <span role="alert" style={{ color: 'var(--bad)' }}>{err[k]}</span>;
   const q = rawNext ? '?next=' + encodeURIComponent(next) : '';
   return <AuthShell energy={.35} art={<><span style={{ fontSize: 'clamp(32px,4.4vw,56px)', lineHeight: 1.02, fontWeight: 600, letterSpacing: '-0.045em', textWrap: 'balance' } as React.CSSProperties}>Be found by the people looking for you.</span><span style={{ color: 'var(--ink2)', marginTop: 14, fontSize: 15 }}>Search and social marketing that runs on what makes your business yours.</span></>}>
-    <form className="col enter" style={{ gap: 18, maxWidth: 380, width: '100%', margin: '0 auto', position: 'relative' }} onSubmit={submit} noValidate>
+    {verification ? <VerificationRequest turnstileRequired={turnstileRequired} turnstileSiteKey={turnstileSiteKey} devStubs={devStubs} initialEmail={f.email} initialSent={verification === 'sent'} next={safeNext} hasDraft={!!pending} /> : <form className="col enter" style={{ gap: 18, maxWidth: 380, width: '100%', minWidth: 0, margin: '0 auto', position: 'relative' }} onSubmit={submit} noValidate aria-busy={busy}>
       {pending && <BackLink href="/start" />}
       {signin
         ? <div className="col" style={{ gap: 6, marginBottom: 6 }}><h1 className="h1">Sign in</h1></div>
         : <div className="col" style={{ gap: 6, marginBottom: 6 }}><h1 className="h1">{pending ? 'Save your Business Profile' : 'Create your account'}</h1><p className="sub">{pending ? <>Create an account to keep <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{pending.name}</span> and open your dashboard.</> : 'Set up your Business Profile, then start your 3-day free trial.'}</p></div>}
       {pending && !signin && <div className="row" style={{ gap: 12, padding: '12px 14px', borderRadius: 14, background: 'var(--surface)', boxShadow: '0 0 0 1px var(--line)' }}><LogoTile brand={pending.brand} s={34} /><span className="col grow" style={{ minWidth: 0, lineHeight: 1.3 }}><span className="small trunc" style={{ fontWeight: 500 }}>{pending.name}</span><span className="xs sub trunc">{pending.domain}</span></span><Status tone="ok">Ready</Status></div>}
-      <GoogleButton onClick={google} disabled={busy}>Continue with Google</GoogleButton>
+      {err.form && <p className="small" role="alert" style={{ color: 'var(--bad)' }}>{err.form}</p>}
+      <GoogleButton onClick={google} disabled={!mounted || busy}>Continue with Google</GoogleButton>
       <div className="row xs sub" style={{ gap: 12 }}><hr className="hair grow" />or<hr className="hair grow" /></div>
-      {!signin && <Field label="Name" hint={hint('name')}><input className={'input' + (err.name ? ' err' : '')} autoComplete="name" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>}
-      <Field label="Work email" hint={hint('email')}><input className={'input' + (err.email ? ' err' : '')} type="email" autoComplete="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
-      <Field label="Password" hint={err.pw ? hint('pw') : signin ? null : 'At least 8 characters'}><input className={'input' + (err.pw ? ' err' : '')} type="password" autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>
-      <Btn kind="primary" size="lg" className="btn-block" type="submit" loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
+      {!signin && <Field label="Name" hint={hint('name')}><input id="signup-name" aria-label="Name" aria-invalid={!!err.name} className={'input' + (err.name ? ' err' : '')} disabled={!mounted} autoComplete="name" maxLength={200} value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>}
+      <Field label="Work email" hint={hint('email')}><input id="signup-email" aria-label="Work email" aria-invalid={!!err.email} className={'input' + (err.email ? ' err' : '')} disabled={!mounted} type="email" autoComplete="email" maxLength={320} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
+      {signin && <Field label="Password" hint={hint('pw')}><input id="signin-password" aria-label="Password" aria-invalid={!!err.pw} className={'input' + (err.pw ? ' err' : '')} disabled={!mounted} type="password" maxLength={signin ? 1024 : 256} autoComplete={signin ? 'current-password' : 'new-password'} value={f.pw} onChange={e => setF({ ...f, pw: e.target.value })} /></Field>}
+      {!signin && <><p className="small sub">We’ll email you a link to confirm your address and choose your password.</p>{turnstileRequired && <Turnstile siteKey={turnstileSiteKey} devStubs={devStubs} resetKey={humanReset} onToken={setHumanToken} />}</>}
+      {signin && <a href="/forgot-password" className="small" style={{ alignSelf: 'flex-end' }}>Forgot your password?</a>}
+      <Btn kind="primary" size="lg" className="btn-block" type="submit" disabled={!mounted || (!signin && turnstileRequired && !humanToken)} loading={busy} style={{ marginTop: 6 }}>{signin ? 'Sign in' : 'Create account'}</Btn>
+      {signin && <Btn kind="link" disabled={!mounted || busy} onClick={() => setVerification('request')}>Need to confirm your email?</Btn>}
       {signin
         ? <p className="xs sub" style={{ textAlign: 'center' }}>New to Radar? <a href={'/signup' + q}>Create account</a></p>
         : <p className="xs sub" style={{ textAlign: 'center' }}>Already have an account? <a href={'/signin' + q}>Sign in</a></p>}
-      <p className="xs" style={{ textAlign: 'center', color: 'var(--faint)', marginTop: 8 }}><a href="/privacy" style={{ color: 'inherit' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit' }}>Terms</a></p>
-    </form>
+      <p className="xs" style={{ textAlign: 'center', color: 'var(--faint)', marginTop: 8 }}>{signin
+        ? <><a href="/privacy" style={{ color: 'inherit' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit' }}>Terms</a></>
+        : <>By creating an account or continuing with Google, you agree to the <a href="/terms" style={{ color: 'inherit' }}>Terms</a> and acknowledge the <a href="/privacy" style={{ color: 'inherit' }}>Privacy Policy</a>.</>}</p>
+    </form>}
   </AuthShell>;
 }
 
@@ -79,7 +98,7 @@ export function AuthShell({ energy, art, children }: { energy: number; art?: Rea
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(0,1fr)', minHeight: '100vh', position: 'relative' }} className="signup">
     <style>{`@media(max-width:860px){.signup{grid-template-columns:1fr!important}.signup-art{min-height:200px!important}}`}</style>
     <div className="signup-art" style={{ position: 'relative', minHeight: '100vh' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, padding: '28px 32px', gap: 9 }} className="row"><Mark s={24} /><span style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.02em' }}>Radar</span></div>
+      <a href="/" aria-label="Radar home" style={{ position: 'absolute', left: 0, top: 0, padding: '28px 32px', gap: 9, color: 'inherit', textDecoration: 'none' }} className="row"><Mark s={24} /><span style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.02em' }}>Radar</span></a>
       {art && <div style={{ position: 'absolute', left: 0, bottom: 0, padding: '0 32px 40px', maxWidth: 560 }} className="col hide-sm">{art}</div>}
     </div>
     <div className="col" style={{ justifyContent: 'center', padding: '48px clamp(24px,6vw,88px)', position: 'relative' }}>

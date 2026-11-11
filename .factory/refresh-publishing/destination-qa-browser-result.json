@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "origin": "http://127.0.0.1:43130",
+  "mode": "Exact accepted live-model proposal, local focused production build; no deployed preview claim",
+  "results": [
+    {
+      "scenario": "Desktop route, complete article and preserved content",
+      "sameMarkup": true,
+      "bodyCount": 1,
+      "headingCount": 9,
+      "canonical": "https://www.lived.ae/rent/dubai/1-bedroom-apartments",
+      "passed": true
+    },
+    {
+      "scenario": "Preserved price sorting and fresh-load persistence",
+      "passed": true
+    },
+    {
+      "scenario": "Keyboard navigation from original directory",
+      "passed": true
+    },
+    {
+      "scenario": "Unchanged peer legacy rendering",
+      "passed": true
+    },
+    {
+      "scenario": "Mobile complete-body layout and image loading",
+      "viewport": 390,
+      "width": 390,
+      "images": [
+        {
+          "naturalWidth": 1200,
+          "width": 358,
+          "alt": "Illustration of What 1-bedroom rents look like across Dubai communities"
+        },
+        {
+          "naturalWidth": 1200,
+          "width": 358,
+          "alt": "Illustration of Which communities offer the best value"
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

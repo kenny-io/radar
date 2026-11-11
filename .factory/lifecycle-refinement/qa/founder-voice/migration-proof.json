@@ -1,0 +1,23 @@
+{
+  "baseline": "5f7c56ab56cdd60099b032e8003dc178c05d4708",
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_founder_clean_1794258920950",
+      "pass": true,
+      "migrations": 16,
+      "oldLineageUnchanged": true,
+      "legacyMetadataNotBackfilled": false,
+      "noopPass": true
+    },
+    {
+      "mode": "upgrade",
+      "database": "radar_founder_upgrade_1794258921137",
+      "pass": true,
+      "migrations": 16,
+      "oldLineageUnchanged": true,
+      "legacyMetadataNotBackfilled": true,
+      "noopPass": true
+    }
+  ]
+}

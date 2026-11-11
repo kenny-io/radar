@@ -1,0 +1,37 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push
+
+ ✓ src/server/services/publishing/connectors.test.ts (28 tests) 845ms
+   ✓ RADAR_REAL_CONNECTORS (dev-only switch) > the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo  758ms
+ ✓ src/server/services/publishing/http.test.ts (17 tests) 770ms
+ ✓ src/server/services/publishing/connectors/nextjs-agent.test.ts (64 tests) 141ms
+ ✓ src/server/services/publishing/connectors/wpcom.test.ts (12 tests) 19ms
+ ✓ src/server/services/publishing/connectors/nextjs.test.ts (58 tests) 70ms
+ ✓ src/server/services/publishing/connectors/framer.test.ts (30 tests) 20ms
+ ✓ src/server/services/publishing/connectors/notion.test.ts (20 tests) 39ms
+stderr | src/server/services/publishing/connectors/wix.test.ts > createDraft + publish (new post) > an image Wix refuses to import is left off; the post is still created
+[wix] hero image import refused: 400 Bad Request: {"message":"Invalid url"}
+
+ ✓ src/server/services/publishing/connectors/wix.test.ts (24 tests) 33ms
+ ✓ src/server/services/publishing/connectors/shopify.test.ts (22 tests) 25ms
+ ✓ src/server/services/publishing/oauth.test.ts (22 tests) 26ms
+ ✓ src/server/services/publishing/connectors/webflow.test.ts (18 tests) 23ms
+ ✓ src/server/services/publishing/bodyImages.test.ts (3 tests) 5ms
+ ✓ src/server/services/publishing/render.test.ts (25 tests) 5ms
+ ✓ src/server/actions/publishing.test.ts (8 tests) 5ms
+ ✓ src/server/services/publishing/observability.test.ts (2 tests) 4ms
+ ✓ src/server/services/drafting/bodyImages.test.ts (4 tests) 5ms
+ ↓ src/server/services/publishing/publisher.live.test.ts (15 tests | 1 skipped)
+ ↓ src/server/services/publishing/connectors/framer.live.test.ts (5 tests | 5 skipped)
+ ↓ src/server/services/publishing/connectors/ghost.live.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/connectors/nextjs.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/shopify.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webflow.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webhook.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/wix.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/wordpress.live.test.ts (11 tests | 11 skipped)
+
+ Test Files  16 passed | 9 skipped (25)
+      Tests  357 passed | 51 skipped (422)
+   Start at  01:36:05
+   Duration  13.15s (transform 597ms, setup 0ms, collect 7.50s, tests 2.03s, environment 2ms, prepare 899ms)

@@ -1,0 +1,41 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stdout | .factory/lifecycle-refinement/qa/autopilot-intro/delivery.test.ts > Independent #30 delivery relevance and retry safety > pauses unattempted preference-disabled mail without losing its identity/window, then sends once after resume
+pause-resume-diagnostic {"mail":{"id":"54afb8be-49ae-4a46-83da-d64ac5b349b9","userId":"0738a49f-d2ba-464c-a105-a397eb60ed2d","businessId":null,"eventKey":"guide:v1:0738a49f-d2ba-464c-a105-a397eb60ed2d:autopilot_intro","type":"lifecycle_guide","payloadEnc":"[OMITTED synthetic encrypted snapshot]","status":"suppressed","attempts":0,"nextAttemptAt":"2026-11-13T12:00:00.000Z","firstAttemptAt":null,"claimedAt":null,"claimToken":null,"expiresAt":"2026-12-13T12:00:00.000Z","providerId":null,"lastError":"expired_delivery_window","createdAt":"2026-11-09T22:36:24.496Z","sentAt":null},"state":{"userId":"0738a49f-d2ba-464c-a105-a397eb60ed2d","guideId":"autopilot_intro","firstObservedAt":"2026-11-11T12:00:00.000Z","dueAt":"2026-11-13T12:00:00.000Z","expiresAt":"2026-12-13T12:00:00.000Z","pendingEmailId":"54afb8be-49ae-4a46-83da-d64ac5b349b9","sourceBusinessId":"f33a2b46-2fc3-4f0a-99dd-dc16d1ae0eb7","status":"blocked","sentAt":null,"reason":"expired_delivery_window","updatedAt":"2026-11-11T12:00:00.000Z"},"calls":[]}
+
+ ❯ .factory/lifecycle-refinement/qa/autopilot-intro/delivery.test.ts (9 tests | 1 failed | 8 skipped) 102ms
+   ↓ Independent #30 delivery relevance and retry safety > retries the identical body/key/identity after a harmless GSC flip and acknowledges exactly once
+   ↓ Independent #30 delivery relevance and retry safety > permanently exits if another owned business enables during waiting, queuing or an ambiguous retry
+   ↓ Independent #30 delivery relevance and retry safety > rechecks program use and preference after suppression lookup before the first provider POST
+   ↓ Independent #30 delivery relevance and retry safety > blocks changed or unverified recipients, lost Owner role and deleted source without rebinding
+   × Independent #30 delivery relevance and retry safety > pauses unattempted preference-disabled mail without losing its identity/window, then sends once after resume 101ms
+     → expected [] to have a length of 1 but got +0
+   ↓ Independent #30 delivery relevance and retry safety > expires an unattempted window and an ambiguous23h retry without creating a fresh key
+   ↓ Independent #30 delivery relevance and retry safety > lets a simultaneous weekly lesson win, then intro wins ahead of daily work within the strict24h cap
+   ↓ Independent #30 delivery relevance and retry safety > queues a quiet-hours due intro and waits until09:00 without another row or key
+   ↓ Independent #30 delivery relevance and retry safety > does not advance the introduction on unavailable suppression preflight and safely resumes the same row
+ ↓ .factory/lifecycle-refinement/qa/autopilot-intro/policy.test.ts (7 tests | 7 skipped)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  .factory/lifecycle-refinement/qa/autopilot-intro/delivery.test.ts > Independent #30 delivery relevance and retry safety > pauses unattempted preference-disabled mail without losing its identity/window, then sends once after resume
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ .factory/lifecycle-refinement/qa/autopilot-intro/delivery.test.ts:10:792
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 skipped (2)
+      Tests  1 failed | 15 skipped (16)
+   Start at  02:36:23
+   Duration  1.23s (transform 175ms, setup 0ms, collect 829ms, tests 102ms, environment 0ms, prepare 78ms)
+

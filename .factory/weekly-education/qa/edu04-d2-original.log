@@ -1,0 +1,59 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stderr | .factory/weekly-education/qa/state-machine.test.ts > independent education state and dispatch > blocks expired/ambiguous lessons and never starts another key; simulated delivery never advances
+[lifecycle] delivery failed {
+  id: 'c95425dc-4976-45bd-a159-c073b6a57d0b',
+  type: 'weekly_education',
+  reason: 'expired_delivery_window'
+}
+
+stdout | .factory/weekly-education/qa/state-machine.test.ts > independent education state and dispatch > blocks expired/ambiguous lessons and never starts another key; simulated delivery never advances
+[lifecycle] dev-stub logged {
+  id: 'c3dc55b8-0820-4007-a312-9c6756e0f31e',
+  type: 'weekly_education'
+}
+
+ ❯ .factory/weekly-education/qa/state-machine.test.ts (19 tests | 1 failed) 1008ms
+   ✓ independent education state and dispatch > enrolls verified users once regardless of billing stage, excludes guests/unverified/inherited optout 110ms
+   ✓ independent education state and dispatch > sends exactly five ordered lessons after acceptance plus7days, no downtime catch-up/re-enrollment 110ms
+   ✓ independent education state and dispatch > suppression lookup malformed/unavailable/auth failures defer with zero provider attempts 75ms
+   ✓ independent education state and dispatch > freezes retry body/key across profile changes and uses eventual acceptance time for next due 27ms
+   ✓ independent education state and dispatch > optout pauses unattempted row, resumption uses same id; changed recipient blocks without POST 19ms
+   ✓ independent education state and dispatch > shared optional cap counts ambiguous founder attempts and business-local daytime 14ms
+   ✓ independent education state and dispatch > does not borrow profile data for member-only users or write billing in read-only context selection 10ms
+   ✓ independent education state and dispatch > protects a pending outbox row from deletion while allowing account cascade 16ms
+   ✓ independent education state and dispatch > uses new event hooks without an optin row, preserves saved false and excludes unverified users 21ms
+   ✓ independent education state and dispatch > matching suppression stops mail, thrown lookup fails closed, and every actual request is paced 55ms
+   ✓ independent education state and dispatch > blocks expired/ambiguous lessons and never starts another key; simulated delivery never advances 34ms
+   ✓ independent education state and dispatch > rolls back acceptance atomically if progression fails, then reuses identical request on retry 38ms
+   ✓ independent education state and dispatch > prequeued due education wins a shared slot over a competing work update 36ms
+   ✓ independent education state and dispatch > daily work for a full week cannot keep consuming the next due education slot 162ms
+   ✓ independent education state and dispatch > keeps at least168hours spacing through fall daylight-saving change and sends during local daytime 42ms
+   ✓ independent education state and dispatch > uses native provider enforcement only for the exact bounded restricted_api_key401 capability response 25ms
+   ✓ independent education state and dispatch > never falls back for invalid/unknown/unbounded/other-status lookup errors 162ms
+   ✓ independent education state and dispatch > rechecks optout after restricted-key lookup before any provider POST 23ms
+   × independent education state and dispatch > keeps transactional invoice acknowledgments ahead of optional education 25ms
+     → expected 'queued' to be 'sent' // Object.is equality
+ ✓ .factory/weekly-education/qa/api-boundaries.test.ts (4 tests) 66ms
+ ✓ .factory/weekly-education/qa/content-boundaries.test.ts (5 tests) 58ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  .factory/weekly-education/qa/state-machine.test.ts > independent education state and dispatch > keeps transactional invoice acknowledgments ahead of optional education
+AssertionError: expected 'queued' to be 'sent' // Object.is equality
+
+Expected: "sent"
+Received: "queued"
+
+ ❯ .factory/weekly-education/qa/state-machine.test.ts:135:391
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 27 passed (28)
+   Start at  21:59:39
+   Duration  2.52s (transform 193ms, setup 0ms, collect 962ms, tests 1.13s, environment 0ms, prepare 106ms)
+

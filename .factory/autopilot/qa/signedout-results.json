@@ -1,0 +1,28 @@
+{
+  "at": "2026-11-09T19:46:45.459Z",
+  "results": [
+    {
+      "name": "AC5 Signed-out email link signs in and returns to the intended owned business",
+      "pass": true,
+      "detail": {
+        "signedOutRedirectedToLogin": true,
+        "exactBusinessHopPreserved": true,
+        "previousBusinessOverriddenAfterAuth": true
+      }
+    },
+    {
+      "name": "AC8 Unauthenticated POST current-business change remains unauthorized",
+      "pass": true,
+      "detail": {
+        "post401": true
+      }
+    },
+    {
+      "name": "AC8 Arbitrary API next through login remains rejected",
+      "pass": true,
+      "detail": {
+        "arbitraryApiNextFallsBackToDashboard": true
+      }
+    }
+  ]
+}

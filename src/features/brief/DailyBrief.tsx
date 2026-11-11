@@ -20,8 +20,9 @@ import { failToast } from '@/features/social/channels/PublishBox';
 import { compressToast, heldLines, repub, rescheduleAction, withPub } from '@/features/social/channels/logic';
 import { ConnectSocial } from '@/features/social/channels/ConnectSocial';
 import { useNowMs } from '@/features/social/channels/useSocial';
+import { copyRedditReply, redditCommentsUrl } from './redditCopy';
 
-type Act = { copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
+type Act = { copying: boolean; copy: (it: BriefItem) => void; posted: (it: BriefItem) => void; skip: (it: BriefItem) => void; undo: (it: BriefItem) => void;
   /** Reply now opened X's reply box: mark it copied (then "I posted it"), carrying any unsaved edit, without touching the clipboard. */
   opened: (it: BriefItem) => void;
   /** Posted or scheduled from Radar: move on to the next item. */
@@ -55,6 +56,8 @@ export function DailyBrief() {
   /** Local text the user typed that the server hasn't confirmed yet (per item + variant). */
   const [overlay, setOverlay] = useState<Record<string, Record<string, string>>>({});
   const editTimers = useRef<Record<string, any>>({});
+  const copyingReddit = useRef(false);
+  const [copyingReply, setCopyingReply] = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
   const br = B!.brief as BriefState;
 
@@ -87,11 +90,11 @@ export function DailyBrief() {
     const my = ++seq.current;
     if (Object.keys(patch).length) setPending(m => ({ ...m, [id]: { ...(m[id] || {}), ...patch, seq: my } }));
     const settle = () => setPending(m => { if (!m[id] || m[id].seq !== my) return m; const n = { ...m }; delete n[id]; return n; });
-    app.act('brief.item', { date: day, id, ...patch, ...extra }, { optimistic: b => patchB(b, day, id, i => {
+    return app.act('brief.item', { date: day, id, ...patch, ...extra }, { optimistic: b => patchB(b, day, id, i => {
       const n: BriefItem = { ...i, ...patch, edits: { ...(i.edits || {}) } };
       if (extra.edit) { if (extra.edit.text == null) delete n.edits[extra.edit.v]; else n.edits[extra.edit.v] = extra.edit.text; }
       return n;
-    }) }).then(settle, settle);
+    }) }).then(() => { settle(); return true; }, () => { settle(); return false; });
   }, [app, day]);
   /** Pull a not-yet-saved edit for an item so the next write carries it. */
   const takePending = (id: string): { v: string; text: string } | undefined => {
@@ -126,8 +129,34 @@ export function DailyBrief() {
   const pick = (id: string) => { setSel(id); if (narrow) { setOpened(true); toDetail(); } };
   const backToList = () => { setOpened(false); setTimeout(() => { const el = document.querySelector('.brief-qi.on') as HTMLElement | null; if (el) el.scrollIntoView({ block: 'center' }); }, 30); };
   const advance = (id: string) => { const idx = order.findIndex(i => i.id === id); const rest = [...order.slice(idx + 1), ...order.slice(0, idx)].filter(i => i.id !== id && (i.st === 'open' || i.st === 'copied')); setSel(rest[0] ? rest[0].id : null); if (narrow) toDetail(); };
+  const copyReddit = async (it: BriefItem) => {
+    if (copyingReddit.current) return;
+    copyingReddit.current = true;
+    setCopyingReply(true);
+    try {
+      const result = await copyRedditReply(textOf(it), it.url, async () => {
+        const pend = takePending(it.id);
+        const saved = await setItem(it.id, { st: 'copied' }, pend ? { edit: pend } : {});
+        if (saved && pend) clearOverlay(it.id, pend.v, pend.text);
+        return saved;
+      });
+      if (result === 'copied') toast('Copied. Open the Reddit thread and paste your reply in the comments.');
+      else if (result === 'open-needed') {
+        const destination = redditCommentsUrl(it.url);
+        toast('Reply copied. Open Reddit to paste it in the comments.', { action: destination ? { label: 'Open Reddit', fn: () => window.open(destination, '_blank', 'noopener,noreferrer') } : null });
+      }
+      else if (result === 'save-failed') toast('Reply copied, but Radar couldn’t save it. Try copying again before opening Reddit.', { tone: 'bad' });
+    } catch {
+      toast('Couldn’t copy your reply. Allow clipboard access and try again, or select and copy the reply manually.', { tone: 'bad' });
+    } finally {
+      copyingReddit.current = false;
+      setCopyingReply(false);
+    }
+  };
   const act: Act = {
+    copying: copyingReply,
     copy: it => {
+      if (it.kind === 'reply' && it.plat === 'reddit') { void copyReddit(it); return; }
       copyText(textOf(it)); const pend = takePending(it.id);
       setItem(it.id, { st: 'copied' }, pend ? { edit: pend } : {});
       if (pend) setTimeout(() => clearOverlay(it.id, pend.v, pend.text), 400);
@@ -139,8 +168,12 @@ export function DailyBrief() {
     skip: it => { const prev = it.st as 'open' | 'copied'; setItem(it.id, { st: 'skipped' }); advance(it.id); toast('Skipped', { action: { label: 'Undo', fn: () => { setItem(it.id, { st: prev }); setSel(it.id); } } }); },
     undo: it => setItem(it.id, { st: 'open' }),
   };
+  // Shortcuts use the same current item and actions as the buttons, including unsaved edits and variant changes.
+  const keyboardState = useRef({ order, sel, act, day, today, sheet, scan });
+  keyboardState.current = { order, sel, act, day, today, sheet, scan };
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      const { order, sel, act, day, today, sheet, scan } = keyboardState.current;
       const tg = e.target as HTMLElement;
       if (/INPUT|TEXTAREA|SELECT/.test(tg.tagName) || tg.isContentEditable || e.metaKey || e.ctrlKey || e.altKey || sheet || scan) return;
       const idx = order.findIndex(i => i.id === sel); const it = order[idx];
@@ -150,7 +183,7 @@ export function DailyBrief() {
       else if (e.key === 's' && it && day === today && it.st !== 'posted' && it.st !== 'skipped' && it.st !== 'expired' && it.st !== 'scheduled') act.skip(it);
     };
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
-  }, [sel, order.map(i => i.id + i.st).join(), sheet, scan, day, overlay]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── scanning (job brief.scan, ref = today) ── */
   const live: ScanJob = scan?.jobId ? ((app.jobs[scan.jobId] as any) || B!.jobs.find(j => j.id === scan.jobId) || null) : null;
@@ -284,17 +317,21 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const live = it.st === 'open' || it.st === 'copied';
   const noun = it.kind === 'reply' ? 'reply' : 'post'; const co = acctOf(it) === 'company';
   /* ── Add visuals (UPDATE-2026-10-21-image-options §5) ── */
-  const B = app.B!; const brand = B.profile.brand;
+  const B = app.B!; const brand = B.profile.brand; const visualEditable = live && B.role !== 'Viewer';
   const [vis, setVis] = useState(false); const [vIx, setVIx] = useState(0);
   const ratio = PLAT.find(p => p.k === plat)?.ratio || 1.91;
   const im = it.kind === 'post' ? it.img || null : null;
   const vn = im ? Math.min(im.n, plat === 'x' ? 4 : 5) : 0; const vi = Math.min(vIx, Math.max(0, vn - 1));
-  const vBusy = !!im && im.status === 'generating';
+  const visualJob = app.jobFor('brief.visuals', `${day}:${it.id}`);
+  const visualExpired = im?.status === 'generating' && visualJob?.id === im.jobId && (visualJob?.status === 'failed' || (visualJob?.status === 'done' && visualJob?.result?.skipped));
+  const visualFailed = im?.status === 'failed' || visualExpired;
+  const visualError = im?.error || (visualExpired ? visualJob?.error : null);
+  const vBusy = !!im && im.status === 'generating' && !visualExpired;
   const vUrl = im ? im.urls[vi] || null : null;
-  const createVis = (x: { style: StyleKey; n: ImgCount }) => {
+  const createVis = (x: { style: StyleKey; n: ImgCount; prompt?: string }) => {
     setVis(false); setVIx(0);
-    app.act('brief.visuals', { date: day, id: it.id, style: x.style, n: x.n }, { optimistic: b => {
-      const nb = patchB(b, day, it.id, i => ({ ...i, img: { style: x.style, seed: -1, n: x.n, urls: [], status: 'generating' } }));
+    app.act('brief.visuals', { date: day, id: it.id, style: x.style, n: x.n, prompt: x.prompt?.trim() || null }, { optimistic: b => {
+      const nb = patchB(b, day, it.id, i => ({ ...i, img: x.prompt?.trim() && i.img?.urls.length && i.img.urls.every(Boolean) ? { ...i.img, jobId: undefined, error: undefined, prompt: x.prompt.trim(), pending: { style: x.style, seed: -1, n: x.n, prompt: x.prompt.trim() }, status: 'generating' } : { style: x.style, seed: -1, n: x.n, prompt: x.prompt?.trim(), urls: [], status: 'generating' } }));
       return { ...nb, social: { ...nb.social, img: { on: true, style: x.style, n: x.n } } };
     } }).catch(() => {});
   };
@@ -310,7 +347,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     if (got < vn) toast(vn > 1 ? `Radar couldn’t download ${vn - got} of ${vn} images. Try again.` : DL_ERROR, { tone: 'bad' });
     else toast(vn > 1 ? `Downloaded ${vn} images` : 'Downloaded image');
   };
-  const visInitial: { style: StyleKey; n: ImgCount } = im ? { style: styleK(im.style), n: imgCount(im.n) } : { style: styleK((B.social.img || IMG_DEFAULT).style), n: imgCount((B.social.img || IMG_DEFAULT).n) };
+  const visInitial: { style: StyleKey; n: ImgCount; prompt?: string } = im ? { style: styleK(im.pending?.style || im.style), n: imgCount(im.pending?.n || im.n), prompt: im.prompt } : { style: styleK((B.social.img || IMG_DEFAULT).style), n: imgCount((B.social.img || IMG_DEFAULT).n) };
   /* ── Social channels (publishing on): Post now / Schedule / Reply now ── */
   const now = useNowMs(); const pubOn = !!B.social.publishing;
   const bp = pubOn ? briefPublish(socialAccountsOf(B), it) : null;
@@ -319,6 +356,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
   const pl = k ? PLAT_L[k] : ''; const ppl = pub ? PLAT_L[pub.platform] : pl; const sid = briefSid(day, it.id);
   const label = acctLabel(sa) || pub?.acctLabel || '';
   const problems = (postDirect || (pubOn && it.kind === 'post' && it.st === 'scheduled')) && k ? preflight(k, briefPreflightInput(it, k, text)) : replyDirect ? preflight('x', { text, images: [] }) : [];
+  const issue = problems.find(p => p.code !== 'images_pending');
   const locked = isLocked(pub, now);
   const [cf, setCf] = useState(false); const [sc, setSc] = useState(false); const [pBusy, setPBusy] = useState(false); const [fixing, setFixing] = useState(false); const [recon, setRecon] = useState(false);
   const flushEdit = async () => { const pend = takePending(); if (pend) { await app.act('brief.item', { date: day, id: it.id, edit: pend }); clearOverlay(pend.v, pend.text); } };
@@ -374,6 +412,7 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
     <div className="brief-compose">
       <div className="row" style={{ gap: 10, flexWrap: 'wrap', minHeight: 32 }}>
         <span className="label grow">{co ? (it.kind === 'reply' ? 'Reply as ' : 'Post as ') + name : it.kind === 'reply' ? 'Your reply' : 'Your post'}</span>
+        {it.kind === 'reply' && live && !past && <Btn size="sm" kind="primary" icon="copy" loading={act.copying} disabled={busy} onClick={() => act.copy(it)}>Copy reply</Btn>}
         {it.kind === 'reply' && !co && live && <Seg value={it.mention ? 'm' : 'h'} onChange={x => setItem({ mention: x === 'm' })} options={it.noMention ? [{ v: 'h', l: 'Just help' }] : [{ v: 'h', l: 'Just help' }, { v: 'm', l: 'Plug ' + name }]} />}
         {it.kind === 'post' && (it.plats || []).length > 1 && live && <Seg value={it.pl as string} onChange={x => setItem({ pl: x as BriefPlatform })} options={(it.plats || []).map(p => ({ v: p as string, l: BPLAT[p] }))} />}
       </div>
@@ -384,17 +423,16 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
         {busy && <span className="row" style={{ gap: 6 }}><span className="spin" style={{ width: 11, height: 11, color: 'var(--signal)' }} />Rewriting…</span>}
       </div>
     </div>
-    {im && (vBusy || vn > 0 || im.status === 'failed') && <div className="col" style={{ gap: 10, marginTop: 18 }}>
-      {im.status === 'failed' && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>Radar couldn’t make these images.</span>{live && <Btn kind="link" className="small" onClick={() => createVis({ style: im.style, n: imgCount(im.n) })}>Try again</Btn>}{live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
+    {visualFailed && im && im.urls.some(Boolean) && <div className="row small" role="status" style={{ marginTop: 18, gap: 10, flexWrap: 'wrap', color: 'var(--bad)' }}><span className="grow">{visualError || 'Radar couldn’t generate the new images. Your previous images are kept.'}</span>{visualEditable && <Btn kind="link" className="small" onClick={() => createVis(visInitial)}>Try again</Btn>}</div>}
+    {im && (vBusy || vn > 0 || visualFailed) && <div className="col" style={{ gap: 10, marginTop: 18 }}>
+      {visualFailed && !im.urls.some(Boolean) ? <div className="row small" style={{ gap: 10, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 12, background: 'var(--fill)' }}><span className="grow" style={{ color: 'var(--bad)' }}>{visualError || 'Radar couldn’t make these images.'}</span>{visualEditable && <Btn kind="link" className="small" onClick={() => createVis({ style: im.pending?.style || im.style, n: imgCount(im.pending?.n || im.n), prompt: im.prompt })}>Try again</Btn>}{visualEditable && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}</div> : <>
       <Visual key={vi + ':' + (vUrl || '')} style={im.style} brand={brand} headline={vi ? '' : it.title} seed={imgSeed(Math.max(1, im.seed), vi)} ratio={ratio} name={name} radius={12} busy={vBusy && !vUrl} url={vUrl} />
       {!(vBusy && !vn) && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
         {vn > 1 && <div className="row" style={{ gap: 8, flexWrap: 'wrap' }} role="tablist" aria-label="Images">{Array.from({ length: vn }, (_, i) => <button key={i} type="button" role="tab" aria-selected={i === vi} aria-label={'Image ' + (i + 1)} onClick={() => setVIx(i)} style={{ width: 56, padding: 2, border: 0, borderRadius: 9, background: 'none', cursor: 'pointer', boxShadow: i === vi ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', transition: 'box-shadow .2s' }}><Visual style={im.style} brand={brand} headline="" seed={imgSeed(Math.max(1, im.seed), i)} ratio={1} name="" radius={7} url={im.urls[i] || null} busy={vBusy && !im.urls[i]} /></button>)}</div>}
         <span className="grow" />
-        {!vBusy && <>
-          {live && <Btn kind="link" className="small" onClick={() => setVis(true)}>Change</Btn>}
-          <Btn kind="link" className="small" onClick={dlVis}>{vn > 1 ? 'Download ' + vn : 'Download'}</Btn>
-          {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}
-        </>}
+        {visualEditable && <Btn kind="link" className="small" onClick={() => setVis(true)}>{vBusy ? 'Change request' : 'Change'}</Btn>}
+        {im.urls.length === im.n && im.urls.every(Boolean) && <Btn kind="link" className="small" onClick={dlVis}>{vn > 1 ? 'Download ' + vn : 'Download'}</Btn>}
+        {visualEditable && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={removeVis}>Remove</Btn>}
       </div>}
       <span className="xs sub">{vBusy ? `Creating ${vn > 1 ? vn + ' images' : 'image'} · ${styleL(im.style)}` : `${styleL(im.style)}${vn > 1 ? ' · ' + vn + ' images' : ''}`}</span>
       </>}
@@ -407,8 +445,8 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
         <Btn kind="ghost" icon="copy" aria-label="Copy post" title="Copy post" onClick={() => act.copy(it)} /></>}
       {replyDirect && it.st === 'open' && <><Btn kind="primary" disabled={busy || problems.length > 0} onClick={replyNow}><LogoLabel k="x">Reply now</LogoLabel></Btn><Btn kind="ghost" icon="copy" aria-label="Copy reply" title="Copy reply" onClick={() => act.copy(it)} /></>}
       {it.st === 'scheduled' && scheduledLine}
-      {!postDirect && !replyDirect && it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
-      {!postDirect && it.st === 'copied' && <><Btn kind="primary" icon="check" onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" onClick={() => act.copy(it)}>Copy again</Btn></>}
+      {!postDirect && !replyDirect && it.st === 'open' && <Btn kind="primary" icon="copy" disabled={busy || act.copying} onClick={() => act.copy(it)}>Copy {noun}</Btn>}
+      {!postDirect && it.st === 'copied' && <><Btn kind="primary" icon="check" disabled={act.copying} onClick={() => act.posted(it)}>I posted it</Btn><Btn kind="ghost" icon="copy" disabled={busy || act.copying} onClick={() => act.copy(it)}>Copy again</Btn></>}
       {it.st === 'posted' && <Status tone="ok">{postedL(pub)}</Status>}
       {it.st === 'posted' && pub?.direct && <Btn size="sm" kind="ghost" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={pub.platform}>{`View on ${ppl}`}</LogoLabel></Btn>}
       {it.st === 'skipped' && <span className="small sub">Skipped</span>}
@@ -419,13 +457,14 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
           <form onSubmit={e => { e.preventDefault(); if (custom.trim()) rewrite(custom.trim()); }}><input className="input" style={{ height: 36, fontSize: 13 }} placeholder="Or say what to change" value={custom} onChange={e => setCustom(e.target.value)} autoFocus /></form>
         </Popover></span>}
       <span className="grow" />
-      {it.kind === 'post' && live && !im && <Btn kind="link" className="small" onClick={() => setVis(true)}>Add visuals</Btn>}
+      {it.kind === 'post' && visualEditable && !im && <Btn kind="link" className="small" onClick={() => setVis(true)}>Add visuals</Btn>}
       {live && <Btn kind="link" className="small" style={{ color: 'var(--mute)' }} onClick={() => act.skip(it)}>Skip</Btn>}
       {!live && it.st !== 'scheduled' && !pub?.direct && <Btn kind="link" className="small" onClick={() => act.undo(it)}>Undo</Btn>}
     </div>}
     {live && !past && it.kind === 'reply' && <p className="xs sub" style={{ marginTop: 14 }}>{co ? `Post from the ${name} account. Help first, product second.` : it.noMention ? `${it.where} doesn’t allow self-promotion, so this reply stays purely helpful.` : it.plat === 'reddit' ? `Reddit drafts never include links${it.mention ? ', and always disclose that you work on ' + name : ''}.${it.mention && it.rulesUnknown ? ` Check ${it.where}’s rules on self-promotion before posting this version.` : ''}` : it.mention ? `Plugs ${name} once, with a disclosure.` : `Doesn’t mention ${name}. Switch to “Plug ${name}” if it fits.`}</p>}
     {showHint && <p className="xs sub" style={{ marginTop: 10 }}>{sa?.expired ? <>{`${chOf(sa.ch).l} needs reconnecting to post from here. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Reconnect</a></> : <>{`Connect ${k === 'x' ? 'X' : co ? 'your LinkedIn page' : 'your LinkedIn profile'} to post or schedule from Radar. `}<a href="#" onClick={e => { e.preventDefault(); go('settings', { social: true }); }}>Connect</a></>}</p>}
-    {((!past && live && (postDirect || (replyDirect && it.st === 'open'))) || it.st === 'scheduled') && problems.length > 0 && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{problems[0].msg}</span>{problems[0].fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{problems[0].fix.l}</Btn>}</p>}
+    {!past && live && vBusy && <p className="xs row" role="status" style={{ marginTop: 10, gap: 8, color: 'var(--serp)' }}><span className="spin" aria-hidden="true" style={{ width: 13, height: 13, flexShrink: 0 }} /><span>{(im?.pending?.n ?? im?.n ?? 1) > 1 ? 'Creating your images…' : 'Creating your image…'}</span></p>}
+    {((!past && live && (postDirect || (replyDirect && it.st === 'open'))) || it.st === 'scheduled') && issue && <p className="xs row" style={{ marginTop: 10, gap: 10, color: 'var(--bad)', flexWrap: 'wrap' }}><span>{issue.msg}</span>{issue.fix && <Btn kind="link" className="xs" disabled={fixing} onClick={compress}>{issue.fix.l}</Btn>}</p>}
     {postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${pl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa}
       initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('brief', k!, B.today)} onSave={schedule} />}
     {it.st === 'scheduled' && pub && !postDirect && <ScheduleModal open={sc} onClose={() => setSc(false)} title={`Schedule ${ppl} post`} sub={`As ${label}. It shows on your calendar, where you can drag it to another day.`} acct={sa} lockTime={!!sa?.expired} initial={{ date: pub.date, time: pub.time }} onSave={schedule} />}
@@ -435,19 +474,29 @@ function BriefDetail({ it, day, name, past, act, setItem, setText, restore, take
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 6 }}><Btn kind="ghost" onClick={() => setCf(false)}>Cancel</Btn><Btn kind="primary" onClick={postNow}><LogoLabel k={k!}>Post now</LogoLabel></Btn></div>
     </div></Modal>}
     {held && pubAcct && <ConnectSocial ch={recon ? pubAcct.ch : null} reconnect={pubAcct} open={recon} onClose={() => setRecon(false)} />}
-    {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} initial={visInitial} onCreate={createVis} />}
+    {it.kind === 'post' && <BriefVisualsModal open={vis} onClose={() => setVis(false)} brand={brand} name={name} title={it.title} text={text} platform={plat} initial={visInitial} onCreate={createVis} />}
   </article>;
 }
 
 /** Add visuals window: style tiles and the number of images. */
-function BriefVisualsModal({ open, onClose, brand, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; initial: { style: StyleKey; n: ImgCount }; onCreate: (x: { style: StyleKey; n: ImgCount }) => void }) {
-  const [im, setIm] = useState(initial); useEffect(() => { if (open) setIm(initial); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+function BriefVisualsModal({ open, onClose, brand, name, title, text, platform, initial, onCreate }: { open: boolean; onClose: () => void; brand: { primary: string; secondary: string }; name: string; title: string; text: string; platform?: BriefPlatform | null; initial: { style: StyleKey; n: ImgCount; prompt?: string }; onCreate: (x: { style: StyleKey; n: ImgCount; prompt?: string }) => void }) {
+  const defaults = () => ({ ...initial, prompt: initial.prompt?.trim() ? initial.prompt : undefined });
+  const [im, setIm] = useState(defaults); useEffect(() => { if (open) setIm(defaults()); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const topic = title.replace(/\s+/g, ' ').trim().slice(0, 160);
+  const postContext = text.replace(/https?:\/\/\S+/gi, '').replace(/\s+/g, ' ').trim().slice(0, 260);
+  const suggestedPrompt = [
+    `Create an image for ${name.slice(0, 80) || 'our brand'}’s ${platform ? BPLAT[platform] : 'social media'} post about “${topic}”. Visual style: ${styleL(im.style).toLowerCase()}.`,
+    postContext && `Visualize the main idea with one clear scene or visual metaphor. Post context: ${postContext}`,
+    `Use brand colors ${brand.primary} and ${brand.secondary}, a simple background and one strong focal point. Keep it readable at social-feed size. No text, logos, watermarks or invented charts.`,
+  ].filter(Boolean).join('\n\n');
+  const prompt = im.prompt ?? suggestedPrompt;
   return <Modal open={open} onClose={onClose} width={640} label="Add visuals to this post"><div className="col" style={{ padding: '32px clamp(20px,5vw,32px) 26px', gap: 22 }}>
     <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>Add visuals to this post</h2><p className="sub">Radar creates images to go with the post. You can regenerate, download or remove them.</p></div>
     <Field label="Visual style"><div role="radiogroup" aria-label="Visual style" className="vis-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(104px,1fr))', gap: 12 }}>{STYLES.map(st => { const on = im.style === st.k; return <button key={st.k} type="button" role="radio" aria-checked={on} onClick={() => setIm({ ...im, style: st.k })} className="col" style={{ gap: 6, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}><span style={{ borderRadius: 12, boxShadow: on ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', padding: 2, transition: 'box-shadow .2s' }}><Visual style={st.k} brand={brand} headline="" seed={5} name="" radius={9} ratio={1} /></span><span className="xs" style={{ fontWeight: on ? 500 : 400, color: on ? 'var(--ink)' : 'var(--ink2)', lineHeight: 1.3 }}>{st.l}</span></button>; })}</div>
       <span className="small sub" style={{ marginTop: 10, display: 'block' }}>{(STYLES.find(st => st.k === im.style) || STYLES[0]).d}</span></Field>
+    <Field label="Describe your image" hint="Edit this suggested prompt, or clear it to use the post’s context. Generated scenes may differ from real subjects."><textarea className="input" rows={3} maxLength={1000} placeholder="Describe the subject, scene and details you want" value={prompt} onChange={e => setIm({ ...im, prompt: e.target.value })} /></Field>
     <Field label="Number of images" hint="X allows up to 4."><Seg value={im.n} onChange={v => setIm({ ...im, n: v })} options={IMG_COUNTS} /></Field>
-    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" onClick={() => onCreate(im)}>Create images</Btn></div>
+    <div className="row" style={{ justifyContent: 'flex-end', gap: 10, borderTop: '1px solid var(--line2)', paddingTop: 18 }}><Btn kind="ghost" onClick={onClose}>Cancel</Btn><Btn kind="primary" icon="image" disabled={!!prompt && (!prompt.trim() || prompt.trim().length > 1000)} onClick={() => onCreate({ ...im, prompt })}>Create images</Btn></div>
   </div></Modal>;
 }
 

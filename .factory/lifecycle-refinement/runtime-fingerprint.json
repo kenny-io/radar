@@ -1,0 +1,67 @@
+{
+  "startingHead": "f616862c7dcefb1aabec9155972466f7b3aeaf36",
+  "scope": "engineer runtime snapshot; shared template copy/frame may be updated by PM",
+  "aggregateSha256": "f8a8f88d6044e93b3395d59322609fcebbb5a3c4413de11d47972d44dcd17666",
+  "files": [
+    {
+      "path": "drizzle/0013_lifecycle_guides.sql",
+      "sha256": "ee864aa2adcb4e13015a8f1da1b402d834f9cc57a57205fdf40f2898915fdb13"
+    },
+    {
+      "path": "drizzle/meta/0013_snapshot.json",
+      "sha256": "9f094640b4b2c6083346825a3e3e55643282a11a46fa2c7c7c0fa77c98af3896"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "713f9725a4519595f578d98f3a4a45e8a894c7c15ea69f6d93233b1c879cbf7a"
+    },
+    {
+      "path": "src/server/db/schema.ts",
+      "sha256": "f7dc50f67400ce12aa9789adb9f83f858632974d16ec1eada8c79dfc1d45cecb"
+    },
+    {
+      "path": "src/server/db/workerReady.ts",
+      "sha256": "d5be86fc0533ae717baa934f307a44f2b1454f7938c5d26a168a787e0ecda339"
+    },
+    {
+      "path": "src/server/services/lifecycle/guides.ts",
+      "sha256": "9da5415dbfdcbbbd17adcf7b8c53dbcab2c90f108eef40de06797d53d0bf0496"
+    },
+    {
+      "path": "src/server/services/lifecycle/guides.test.ts",
+      "sha256": "120ffebe56f9cb438e6c6228108dabe021fdc659c8de9d2f65f9c85514a26b50"
+    },
+    {
+      "path": "src/server/services/lifecycle/queue.ts",
+      "sha256": "5b82272f2778d1c6e6913b20ec9797b4ebd81ac595c9fc5d5038a637f4d744c7"
+    },
+    {
+      "path": "src/server/services/lifecycle/dispatch.ts",
+      "sha256": "1355bd31aa2baefd7d19cef84fb867e2d3cfa05e2bdc0484b4da3a022220c504"
+    },
+    {
+      "path": "src/server/services/lifecycle/preferences.ts",
+      "sha256": "9dccd37d71f7b85c7e07e82e32a74b20911647966a1f0e38dc940aceb38f64bb"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagement.ts",
+      "sha256": "2be5935854a163be7ae515dc6454468e64cc7b13b0450f1b4e00136d8ebb9a20"
+    },
+    {
+      "path": "src/server/services/lifecycle/engagementJobs.ts",
+      "sha256": "7e0b11aebe7036f8118e8ac8bab87e5da07f58e524b471d3a06831d521e25df0"
+    },
+    {
+      "path": "src/server/services/lifecycle/templates.ts",
+      "sha256": "4c04f3b7755ac9cf109cde1551b2235040f7673aec3575670c3db5cb5374b714"
+    },
+    {
+      "path": "src/server/services/lifecycle/templates.test.ts",
+      "sha256": "195bab3f141247fc4a5b38a7f7c40859543ae3bbcb480865243f72a6e75cb557"
+    },
+    {
+      "path": "src/server/services/lifecycle/educationContent.test.ts",
+      "sha256": "00b7bbe016e315ccaeb26f4c2e3b7f0a21c2d630de56d9c5d6b80c5c6370d6db"
+    }
+  ]
+}

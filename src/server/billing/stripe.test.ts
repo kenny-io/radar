@@ -80,6 +80,28 @@ describe('stripeRequest', () => {
     await expect(stripeProvider.getSubscription('sub_1')).rejects.toMatchObject({ status: 500, type: 'api_error' });
     expect(calls).toHaveLength(1);
   });
+  it('aborts stalled requests after 15 seconds and limits retries without changing the payment key', async () => {
+    vi.useFakeTimers();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation(ms => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), ms);
+      return controller.signal;
+    });
+    setStripeDepsForTests({ fetch: (async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return new Promise<Response>((_resolve, reject) => init.signal!.addEventListener('abort', () => reject(init.signal!.reason), { once: true }));
+    }) as any });
+    try {
+      const pending = stripeRequest('POST', '/payment_intents', { key: 'radar:pi:timeout', params: { amount: 100 } });
+      const rejected = expect(pending).rejects.toMatchObject({ status: 502, type: 'api_connection_error' });
+      await vi.advanceTimersByTimeAsync(45000);
+      await rejected;
+      expect(calls).toHaveLength(3);
+      expect(timeout.mock.calls).toEqual([[15000], [15000], [15000]]);
+      expect(calls.every(c => c.init.signal?.aborted)).toBe(true);
+      expect(new Set(calls.map(c => headers(c)['Idempotency-Key']))).toEqual(new Set(['radar:pi:timeout']));
+    } finally { timeout.mockRestore(); vi.useRealTimers(); }
+  });
   it('restart subscriptions ask for default_incomplete and return the invoice’s confirmation secret', async () => {
     replies.push(reply(200, { id: 'sub_2', status: 'incomplete', customer: 'cus_1', items: { data: [{ current_period_end: 1802592000 }] }, metadata: { purpose: 'restart' }, latest_invoice: { id: 'in_2', confirmation_secret: { client_secret: 'pi_2_secret_z' } } }));
     const r = await stripeProvider.createSubscription({ customer: 'cus_1', price: 'price_1', defaultPaymentMethod: 'pm_2', incomplete: true, metadata: { purpose: 'restart' } }, 'radar:restart:k');
@@ -109,5 +131,34 @@ describe('stripeRequest', () => {
     setStripeDepsForTests({ secretKey: () => '' });
     await expect(stripeProvider.getPrice('price_1')).rejects.toMatchObject({ status: 503 });
     expect(calls).toHaveLength(0);
+  });
+  it('creates a hosted portal session with only server-supplied settings and preserves its request key on retry', async () => {
+    replies.push(() => { throw new TypeError('fetch failed'); }, reply(200, { id: 'bps_1', url: 'https://billing.stripe.com/p/session/test_only' }));
+    expect(await stripeProvider.createPortalSession({ customer: 'cus_1', returnUrl: 'https://radar.example/settings?section=billing', configuration: 'bpc_radar' }, 'radar:portal:request-1'))
+      .toEqual({ url: 'https://billing.stripe.com/p/session/test_only' });
+    expect(calls).toHaveLength(2);
+    expect(calls[0].url).toBe('https://api.stripe.com/v1/billing_portal/sessions');
+    expect(body(calls[0])).toBe('customer=cus_1&return_url=https://radar.example/settings?section=billing&configuration=bpc_radar');
+    expect(calls.map(c => headers(c)['Idempotency-Key'])).toEqual(['radar:portal:request-1', 'radar:portal:request-1']);
+  });
+  it('maps the full price contract needed to refuse metered, multi-month or transformed prices', async () => {
+    replies.push(reply(200, { id: 'price_month', unit_amount: 5000, currency: 'usd', active: true, type: 'recurring', billing_scheme: 'per_unit', recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed' }, transform_quantity: null, custom_unit_amount: null }));
+    expect(await stripeProvider.getPrice('price_month')).toEqual({ id: 'price_month', unit_amount: 5000, currency: 'usd', active: true, type: 'recurring', billing_scheme: 'per_unit', interval: 'month', interval_count: 1, usage_type: 'licensed', transform_quantity: null, custom_unit_amount: null });
+  });
+  it.each([
+    ['legacy explicit end-of-period flag', { status: 'active', cancel_at_period_end: true, cancel_at: null }, true],
+    ['actual Dahlia portal cancellation', { status: 'trialing', cancel_at_period_end: false, cancel_at: 1793911362, canceled_at: 1793652415 }, true],
+    ['custom cancellation date differs from billing period', { status: 'active', cancel_at_period_end: false, cancel_at: 1793911300 }, false],
+    ['historical canceled_at alone', { status: 'active', cancel_at_period_end: false, cancel_at: null, canceled_at: 1793652415 }, false],
+    ['canceled history', { status: 'canceled', cancel_at_period_end: true, cancel_at: 1793911362 }, false],
+    ['paused history', { status: 'paused', cancel_at_period_end: true, cancel_at: 1793911362 }, false],
+    ['expired incomplete history', { status: 'incomplete_expired', cancel_at_period_end: true, cancel_at: 1793911362 }, false],
+  ])('maps scheduled cancellation accurately: %s', async (_label, fields, expected) => {
+    replies.push(reply(200, { id: 'sub_actual_portal', customer: 'cus_fixture', created: 1793652168, ended_at: null,
+      trial_end: 1793911362, items: { data: [{ current_period_start: 1793652168, current_period_end: 1793911362 }] }, ...fields }));
+    const sub = await stripeProvider.getSubscription('sub_actual_portal');
+    expect(sub.cancel_at_period_end).toBe(expected);
+    // A custom cancel_at must never overwrite the real billing period and make the UI show an invented end date.
+    expect(sub.current_period_end).toBe(1793911362);
   });
 });

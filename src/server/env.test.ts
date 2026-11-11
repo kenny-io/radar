@@ -7,7 +7,20 @@ const load = async (vars: Record<string, string>) => {
   vi.resetModules();
   return (await import('./env')).env;
 };
-afterEach(() => { for (const k of KEYS) delete process.env[k]; vi.resetModules(); });
+afterEach(() => { for (const k of KEYS) delete process.env[k]; vi.unstubAllEnvs(); vi.resetModules(); });
+
+describe('production integration safety', () => {
+  it('ignores the development stub switch in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('RADAR_DEV_STUBS', '1');
+    expect((await load({})).devStubs).toBe(false);
+  });
+  it('allows deterministic integrations outside production', async () => {
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('RADAR_DEV_STUBS', '1');
+    expect((await load({})).devStubs).toBe(true);
+  });
+});
 
 describe('X app credentials', () => {
   it('reads X_CLIENT_ID / X_CLIENT_SECRET', async () => {

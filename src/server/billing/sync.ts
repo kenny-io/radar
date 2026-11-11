@@ -1,8 +1,10 @@
 // Subscription state from the provider onto the account (architecture §7.3 syncSubscription). The webhook, the restart
 // confirm and dev/simulate all land here. Fetched inside the lock, so out-of-order deliveries converge on current state.
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { schema } from '../db';
 import { track } from '../events';
+import { queueLifecycle } from '../services/lifecycle/queue';
 import type { Account } from './access';
 import { TERMINAL } from './access';
 import { accountByCustomer, lockAccount, withBillingLock } from './account';
@@ -16,8 +18,34 @@ const at = (s: number | null) => (s ? new Date(s * 1000) : null);
 export async function writeSubscription(tx: Tx, later: Later, a: Account, s: Subscription, extra: Partial<typeof A.$inferInsert> = {}) {
   await tx.update(A).set({
     stripeSubscriptionId: s.id, status: s.status, trialEnd: at(s.trial_end), currentPeriodEnd: at(s.current_period_end),
-    cancelAtPeriodEnd: !!s.cancel_at_period_end, everSubscribed: true, updatedAt: new Date(), ...extra,
+    cancelAtPeriodEnd: !!s.cancel_at_period_end, everSubscribed: true, updatedAt: new Date(),
+    // Grace clock (first-five architecture §5, PM decision BE-1): set only on active → past_due, kept while it stays past
+    // due, cleared by every other status. trialing → past_due (the first charge failed) and a row that was already past
+    // due with NULL stay NULL, so they lock as before and a later webhook can't hand them a fresh grace.
+    pastDueAt: s.status !== 'past_due' ? null : a.status === 'past_due' ? a.pastDueAt : a.status === 'active' ? new Date() : null,
+    ...extra,
   }).where(eq(A.userId, a.userId));
+  if (a.cancelAtPeriodEnd && !s.cancel_at_period_end) {
+    const M = schema.lifecycleEmails, prefix = `cancel-scheduled:${s.id}:`;
+    // A resumed cancellation can be scheduled again before the worker runs. Retire the old queued confirmation
+    // now so only the new transition can be sent. An already in-flight provider request cannot be recalled.
+    await tx.update(M).set({ status: 'suppressed', lastError: 'subscription_resumed' }).where(and(
+      eq(M.userId, a.userId), eq(M.type, 'cancellation_scheduled'), eq(M.status, 'queued'),
+      sql`left(${M.eventKey}, length(${prefix})) = ${prefix}`,
+    ));
+  }
+  // The outbox write commits with billing state. A replay sees the already-persisted transition and cannot mail twice.
+  // Each real cancel -> resume -> cancel transition gets its own identity, even within one billing period.
+  const periodEnd = at(s.current_period_end || s.trial_end)?.toISOString();
+  if (s.cancel_at_period_end && !a.cancelAtPeriodEnd && ['trialing', 'active'].includes(s.status) && periodEnd) {
+    await queueLifecycle(tx, { type: 'cancellation_scheduled', userId: a.userId,
+      eventKey: `cancel-scheduled:${s.id}:${randomUUID()}`, data: { subscriptionId: s.id, periodEnd } });
+  }
+  if (a.status !== s.status && TERMINAL.includes(s.status)) {
+    await queueLifecycle(tx, { type: 'subscription_ended', userId: a.userId,
+      eventKey: `subscription-ended:${s.id}:${s.status}:${randomUUID()}`, data: { subscriptionId: s.id, status: s.status, periodEnd } });
+  }
+  // Trial-ending marketing mail is retired; trial/subscription state and essential notices remain unchanged.
   if (a.status !== s.status) later.push(() => track('sub.status_changed', { uid: a.userId, ref: s.id, props: { from: a.status, to: s.status } }));
   console.info(`[billing] ${a.userId} subscription ${s.id} ${a.status} → ${s.status}`);
 }

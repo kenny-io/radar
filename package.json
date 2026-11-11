@@ -13,9 +13,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/server/db/migrate.ts",
     "typecheck": "tsc --noEmit",
+    "seo:cards": "node --import tsx scripts/generate-social-cards.ts",
     "test": "vitest run",
     "lint": "tsc --noEmit",
-    "db:push": "drizzle-kit push --force"
+    "db:push": "drizzle-kit push --force",
+    "billing:setup": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/billing.ts setup",
+    "billing:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/billing.ts check"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.700.0",
@@ -35,6 +38,8 @@
     "robots-parser": "^3.0.1",
     "simple-icons": "^16.35.0",
     "tsx": "^4.20.0",
+    "typescript": "^5.7.0",
+    "undici": "7.30.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {
@@ -45,10 +50,12 @@
     "concurrently": "^9.1.0",
     "drizzle-kit": "^0.31.0",
     "playwright": "^1.64.1",
-    "typescript": "^5.7.0",
     "vitest": "^3.2.0"
   },
   "engines": {
     "node": "22.x"
+  },
+  "overrides": {
+    "postcss": "8.5.32"
   }
 }

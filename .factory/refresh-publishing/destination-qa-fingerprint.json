@@ -1,0 +1,11 @@
+{
+  "destinationBase": "dbfb0f0b66b1a607bd3f0b2587a84064464c52b3",
+  "plannerSha256": "9b04bb27a91cb8cd2528fbf3fbe8af25e425a87ec3787772d4b78e0fb64fb7de",
+  "destinationFiles": {
+    "apps/web/app/rent/dubai/hubs.ts": "f5be1a4f22b1d280fae0d845a8d545165324ae64239cc3654dcd72dd7b3dc1e4",
+    "apps/web/app/rent/dubai/[slug]/page.tsx": "a569ece63b5e563dfd681ace97584cf628155f720531b5e98853f8a5feedb280"
+  },
+  "bodyHtmlSha256": "bfe90cefcc880f31133b80ec7c34fbb655c91b08704a180ce3a752fe7713b67a",
+  "lockSha256": "4ac0b1948c7dec5ad8c6c9a8b94cd70161b5e96530ac4aa96733dba77ee8339a",
+  "sourceMatchesAcceptedPlanAfterBuildAndBrowser": true
+}

@@ -21,7 +21,8 @@ export const billing = {
   restart: (paymentMethodId: string, ip = randomIp()) => post(RESTART, { paymentMethodId }, ip),
   confirm: (body: { paymentIntentId?: string; subscriptionId?: string }) => post(CONFIRM, body),
   confirmIntent: (paymentIntentId: string, outcome: 'succeed' | 'decline' | 'auth_fail' = 'succeed', webhook?: boolean) => post(CONFIRM_INTENT, { paymentIntentId, outcome, webhook }),
-  simulate: (status: string) => post(SIMULATE, { status }),
+  /** `pastDueHoursAgo` (with past_due): move an existing grace clock back, to test its expiry. */
+  simulate: (status: string, pastDueHoursAgo?: number) => post(SIMULATE, { status, ...(pastDueHoursAgo != null ? { pastDueHoursAgo } : {}) }),
   state: async () => { const r = await STATE(); return { status: r.status, j: await r.json() as any }; },
 };
 

@@ -1,17 +1,21 @@
+import { reportFailure } from '@/server/observability/failures';
 // AI Visibility: prompt generation, per-cell collection and parsing (02-system.md §11).
 // Parse rules: mentioned = the business is named in the answer; position = its order among the products the answer names
 // (the writing model extracts the ordered list; Radar matches the business name/domain). Citations are URLs; own-domain ones count
 // toward "Cited your site". Any failure leaves the cell "not collected" — never "not mentioned".
+// The extraction call is skipped when the answer cannot contain the business (bizMatcher.canMatch); the row is the same.
+// A run bumps the workspace revision once, when its job ends (queue.ts); cells do not bump it.
 import { trackSoon } from '@/server/events';
 import { z } from 'zod';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db, schema } from '../../db';
-import { getBiz, bizToday, bump } from '../../workspace';
+import { getBiz, bizToday } from '../../workspace';
 import { ai } from '../../ai';
 import { AI_ENGINES } from '@/lib/constants';
 import type { AiEngine, AiPrompt, AiResult, Profile } from '@/lib/types';
 import { askEngine, EngineUnavailable } from './engines';
 import './stub';
+import { currentPromptSeries } from './history';
 
 const P = schema.aiPrompts; const A = schema.aiResults;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -63,12 +67,12 @@ export async function addPrompt(bid: string, prompt: string) {
 export async function listVisibility(bid: string) {
   const prompts = await db.select().from(P).where(eq(P.businessId, bid)).orderBy(asc(P.createdAt));
   const rows = await db.select().from(A).where(eq(A.businessId, bid));
-  // A collection run in progress: cells in its scope not yet attempted since it started show as "collecting".
-  const run = (await db.select({ createdAt: schema.jobs.createdAt, payload: schema.jobs.payload }).from(schema.jobs)
-    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'visibility.run'), inArray(schema.jobs.status, ['queued', 'running'])))
-    .orderBy(asc(schema.jobs.createdAt)).limit(1))[0];
-  const scope: string[] | null = run ? ((run.payload as any)?.promptIds || null) : null;
-  const pendingInRun = (r: typeof rows[number]) => !!run && (!scope || scope.includes(r.promptId)) && (!r.attemptedAt || r.attemptedAt < run.createdAt);
+  // Collection runs queued or in progress (there can be several: a run per prompt the user just added, a full run behind
+  // them): a cell in the scope of any of them, not yet attempted since that run was created, shows as "collecting".
+  const runs = await db.select({ createdAt: schema.jobs.createdAt, payload: schema.jobs.payload }).from(schema.jobs)
+    .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.kind, 'visibility.run'), inArray(schema.jobs.status, ['queued', 'running'])));
+  const pendingInRun = (r: typeof rows[number]) => runs.some(run => { const scope: string[] | null = (run.payload as any)?.promptIds || null;
+    return (!scope || scope.includes(r.promptId)) && (!r.attemptedAt || r.attemptedAt < run.createdAt); });
   const by = new Map(rows.map(r => [r.promptId + '|' + r.engine, r]));
   const results: AiResult[] = [];
   for (const p of prompts) for (const engine of AI_ENGINES) {
@@ -83,10 +87,37 @@ export async function listVisibility(bid: string) {
 /* ── collection ── */
 const ExtractOut = z.object({ products: z.array(z.string()) });
 
-export async function collectOne(resultId: string, opts: { manual: boolean }): Promise<{ status: AiResult['status'] }> {
+/** How the business is recognised in an assistant's answer. Pure; `name` is the business name (or the domain's first label). */
+export function bizMatcher(name: string, domain: string) {
+  const n = norm(name), d = norm(domain), root = norm(domain.split('.')[0]);
+  const named = new RegExp(`(^|[^a-z0-9])(${escapeRe(name.toLowerCase())}|${escapeRe(domain.toLowerCase())})([^a-z0-9]|$)`, 'i');
+  const isBiz = (s: string) => { const x = norm(s); return !!x && (x === n || x === d || x === root || (n.length >= 4 && x.includes(n)) || x.includes(d)); };
+  return {
+    /** Could `place` find the business among names copied from `text`? `norm` works character by character, so a name
+     *  copied from the text normalises to a piece of `norm(text)`, and every `isBiz` clause then needs `n`, `d` or `root`
+     *  inside it. The literal test stays because a non-Latin name normalises to ''. False means the extraction model
+     *  call can be skipped: with any list of names from the text, `place` answers -1. */
+    canMatch(text: string): boolean { const T = norm(text); return named.test(text) || (n !== '' && T.includes(n)) || T.includes(d) || (root !== '' && T.includes(root)); },
+    /** The business's 0-based order among the products the answer names, or -1 when it is not mentioned. */
+    place(text: string, products: string[]): number {
+      let idx = products.findIndex(isBiz);
+      if (idx < 0 && named.test(text)) {
+        // Named in the text but missed by extraction: place it by first appearance among the extracted names.
+        const at = text.toLowerCase().indexOf(name.toLowerCase());
+        idx = products.filter(p => { const i = text.toLowerCase().indexOf(p.toLowerCase()); return i >= 0 && i < at; }).length;
+      }
+      return idx;
+    },
+  };
+}
+
+/** `collected`: this call stored a new measurement for the cell. False when the assistant failed, even if the cell
+ *  still shows an earlier measurement (`status` is then that earlier status). */
+export async function collectOne(resultId: string, opts: { manual: boolean; series?: string }): Promise<{ status: AiResult['status']; collected: boolean }> {
   const row = (await db.select({ r: A, prompt: P.prompt }).from(A).innerJoin(P, eq(P.id, A.promptId)).where(eq(A.id, resultId)).limit(1))[0];
-  if (!row) return { status: 'not-collected' };
+  if (!row) return { status: 'not-collected', collected: false };
   const bid = row.r.businessId; const engine = row.r.engine as AiEngine;
+  const series = opts.series || await currentPromptSeries(bid);
   const biz = await getBiz(bid); const profile = { ...(biz.profile as Profile), domain: biz.domain };
   const pages = (await db.select({ url: schema.crawlPages.url }).from(schema.crawlPages).where(eq(schema.crawlPages.businessId, bid))).map(x => x.url);
   try {
@@ -94,45 +125,47 @@ export async function collectOne(resultId: string, opts: { manual: boolean }): P
     const text = cleanResponse(ans.text || '');
     if (!text) throw new Error('empty response');
     const name = profile.business.name || profile.domain.split('.')[0];
-    const ex = await ai.run('writing', {
+    const match = bizMatcher(name, profile.domain);
+    // The extracted names are used for nothing but the match below, so an answer that cannot match needs no model call.
+    const ex = match.canMatch(text) ? await ai.run('writing', {
       purpose: 'visibility.extract', schema: ExtractOut, schemaName: 'products',
       stubContext: { text, candidates: [name, ...profile.audience.competitors] },
       system: 'You extract structured facts from text. Output only names that appear in the text.',
       prompt: `List every product, app, tool, service or company that this answer names as an option or recommendation, in the order they first appear. Copy each name as written. Exclude publishers that are only cited as sources.\n\nANSWER:\n${text.slice(0, 12000)}`,
-    }, { businessId: bid });
-    const products = (ex.json?.products || []).map(s => s.trim()).filter(Boolean);
-    const n = norm(name), d = norm(profile.domain), root = norm(profile.domain.split('.')[0]);
-    const isBiz = (s: string) => { const x = norm(s); return !!x && (x === n || x === d || x === root || (n.length >= 4 && x.includes(n)) || x.includes(d)); };
-    let idx = products.findIndex(isBiz);
-    const inText = new RegExp(`(^|[^a-z0-9])(${escapeRe(name.toLowerCase())}|${escapeRe(profile.domain.toLowerCase())})([^a-z0-9]|$)`, 'i').test(text);
-    if (idx < 0 && inText) {
-      // Named in the text but missed by extraction: place it by first appearance among the extracted names.
-      const at = text.toLowerCase().indexOf(name.toLowerCase());
-      idx = products.filter(p => { const i = text.toLowerCase().indexOf(p.toLowerCase()); return i >= 0 && i < at; }).length;
-    }
+    }, { businessId: bid }) : null;
+    const products = (ex?.json?.products || []).map(s => s.trim()).filter(Boolean);
+    const idx = match.place(text, products);
     const mentioned = idx >= 0;
     const cites = [...new Set(ans.cites.filter(Boolean))].slice(0, 20);
-    await db.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt: new Date(), attemptedAt: new Date() }).where(eq(A.id, resultId));
+    const collectedAt = new Date();
+    await db.transaction(async tx => {
+      await tx.update(A).set({ status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, resp: text, raw: ans.raw, error: null, date: bizToday(biz), collectedAt, attemptedAt: collectedAt }).where(eq(A.id, resultId));
+      await tx.insert(schema.aiObservations).values({ businessId: bid, promptId: row.r.promptId, prompt: row.prompt, engine, series, day: collectedAt.toISOString().slice(0,10), status: mentioned ? 'mentioned' : 'not-mentioned', pos: mentioned ? idx + 1 : null, cites, measuredAt: collectedAt });
+    });
     trackSoon('visibility.checked', { bid, ref: resultId, props: { engine, mentioned, pos: mentioned ? idx + 1 : null, cites: cites.length } });
     if (mentioned) trackSoon('visibility.mentioned', { bid, ref: resultId, props: { engine, pos: idx + 1, prompt: row.prompt } });
-    await bump(bid);
-    return { status: mentioned ? 'mentioned' : 'not-mentioned' };
+    return { status: mentioned ? 'mentioned' : 'not-mentioned', collected: true };
   } catch (e: any) {
     const msg = e instanceof EngineUnavailable ? 'not_configured' : String(e?.message || e).slice(0, 300);
-    if (!(e instanceof EngineUnavailable)) console.error(`[visibility] ${engine} failed`, msg);
+    if (!(e instanceof EngineUnavailable)) {
+      await reportFailure(e, { source: 'visibility', operation: 'visibility.collect', businessId: bid, ref: resultId, provider: engine, degraded: true });
+      console.error(`[visibility] ${engine} failed`, msg);
+    }
     // Keep an earlier real measurement if there is one; otherwise the cell stays "not collected".
     await db.update(A).set({ error: msg, attemptedAt: new Date() }).where(eq(A.id, resultId));
-    await bump(bid);
-    return { status: row.r.status === 'not-collected' ? 'not-collected' : row.r.status };
+    await db.insert(schema.aiObservations).values({ businessId: bid, promptId: row.r.promptId, prompt: row.prompt, engine, series, day: new Date().toISOString().slice(0,10), status: 'not-collected', cites: [] });
+    return { status: row.r.status === 'not-collected' ? 'not-collected' : row.r.status, collected: false };
   }
 }
 
-/** Collect every cell (or the cells of the given prompts) with a small concurrency limit. */
+/** Collect every cell (or the cells of the given prompts) with a small concurrency limit. `collected` is how many of the
+ *  `total` cells got a new measurement in this run; 0 of some means every assistant failed (idle.ts does not count such a run). */
 export async function collectAll(bid: string, opts: { promptIds?: string[]; onProgress?: (done: number, total: number) => Promise<void> } = {}) {
   const where = opts.promptIds?.length ? and(eq(A.businessId, bid), inArray(A.promptId, opts.promptIds)) : eq(A.businessId, bid);
   const cells = await db.select({ id: A.id }).from(A).where(where);
-  let done = 0; const queue = [...cells];
-  const worker = async () => { for (let c = queue.shift(); c; c = queue.shift()) { await collectOne(c.id, { manual: false }); done++; await opts.onProgress?.(done, cells.length); } };
+  const series = await currentPromptSeries(bid);
+  let done = 0, collected = 0; const queue = [...cells];
+  const worker = async () => { for (let c = queue.shift(); c; c = queue.shift()) { if ((await collectOne(c.id, { manual: false, series })).collected) collected++; done++; await opts.onProgress?.(done, cells.length); } };
   await Promise.all(Array.from({ length: Math.min(4, cells.length) }, worker));
-  return { total: cells.length };
+  return { total: cells.length, collected };
 }

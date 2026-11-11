@@ -1,0 +1,25 @@
+{
+  "base": "5f7c56ab56cdd60099b032e8003dc178c05d4708",
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_founder_clean_1794259242194",
+      "migrations": 16,
+      "oldLedger": "unchanged",
+      "newColumn": "nullable/no-default",
+      "oldSenderMetadata": "not-applicable",
+      "oldBodiesAndRetiredHistory": "not-applicable",
+      "secondMigrate": "no-op"
+    },
+    {
+      "mode": "upgrade0014",
+      "database": "radar_founder_upgrade0014_1794259242389",
+      "migrations": 16,
+      "oldLedger": "unchanged",
+      "newColumn": "nullable/no-default",
+      "oldSenderMetadata": "NULL; no backfill",
+      "oldBodiesAndRetiredHistory": "unchanged",
+      "secondMigrate": "no-op"
+    }
+  ]
+}

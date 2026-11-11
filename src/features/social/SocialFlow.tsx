@@ -51,7 +51,13 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
   const [st, setSt] = useState<St>({ step: 'source', kind: 'idea', idea: '', url: '', article: null, platforms: ['linkedin', 'x'], style: 'branded', custom: '', voice: '' });
   const [gen, setGen] = useState(-1); const [err, setErr] = useState('');
   const [job, setJob] = useState<{ id: string; token: string } | null>(null);
-  useEffect(() => { if (open) { setGen(-1); setJob(null); setSt(s => ({ ...s, step: 'source' })); } }, [open]);
+  const articleFromLink = typeof app.route.params?.article === 'string' ? app.route.params.article : null;
+  useEffect(() => {
+    if (!open) return;
+    const article = articleFromLink && B.calendar.entries.find(entry => entry.id === articleFromLink && entry.status !== 'proposed' && B.articles[entry.id]?.generated);
+    setGen(-1); setJob(null);
+    setSt(state => ({ ...state, step: 'source', ...(article ? { kind: 'article' as const, article: article.id } : {}) }));
+  }, [open, articleFromLink, B.id]);
   const set = (p: Partial<St>) => { setErr(''); setSt(s => ({ ...s, ...p })); };
   const arts = B.calendar.entries.filter(e => e.status !== 'proposed');
   const srcLabel = st.kind === 'suggest' ? st.picked || '' : st.kind === 'idea' ? st.idea.trim() : st.kind === 'url' ? st.url.trim() : (arts.find(a => a.id === st.article) || { title: '' }).title;

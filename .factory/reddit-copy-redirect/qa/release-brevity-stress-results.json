@@ -1,0 +1,10 @@
+{
+  "results": [
+    {
+      "name": "Generated reply shape/disclosure stress",
+      "pass": true,
+      "syntheticInputs": 225,
+      "outputs": 675
+    }
+  ]
+}

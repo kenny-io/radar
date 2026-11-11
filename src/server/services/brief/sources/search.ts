@@ -3,6 +3,7 @@
 // candidate is a thread that exists. Falls back to the research model's web search (web.ts) when no key is set.
 import { env } from '@/server/env';
 import { fetchJson } from '@/server/ai/adapters/http';
+import { recordAiCall } from '@/server/ai/record';
 import { BPLAT } from '@/lib/constants';
 import { listL } from '@/lib/format';
 import type { BriefPlatform } from '@/lib/types';
@@ -31,14 +32,23 @@ export const searchSource = (plat: BriefPlatform): Source => async (ctx) => {
   if (!queries.length) return [];
   let j: any;
   try {
-    j = await withRetry(() => fetchJson('https://api.perplexity.ai/search', {
-      method: 'POST', timeoutMs: 30000,
-      headers: { authorization: `Bearer ${env.perplexityKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ query: queries, max_results: 20, search_domain_filter: [domain], search_recency_filter: 'week' }),
-    }));
+    j = await withRetry(async () => {
+      // One ai_calls row per HTTP request, so a retry writes its own. Perplexity bills the request, not each query in
+      // it; a request that failed logs no cost.
+      const t0 = Date.now(); const row = { businessId: ctx.bid, task: 'search', purpose: 'brief.search', model: 'perplexity-search', provider: 'Perplexity' };
+      try {
+        const res = await fetchJson('https://api.perplexity.ai/search', {
+          method: 'POST', timeoutMs: 30000,
+          headers: { authorization: `Bearer ${env.perplexityKey}`, 'content-type': 'application/json' },
+          body: JSON.stringify({ query: queries, max_results: 20, search_domain_filter: [domain], search_recency_filter: 'week' }),
+        });
+        recordAiCall({ ...row, latencyMs: Date.now() - t0, requests: 1, ok: true });
+        return res;
+      } catch (e) { recordAiCall({ ...row, latencyMs: Date.now() - t0, ok: false, error: e }); throw e; }
+    }, 2, { source: 'brief', operation: 'brief.search', businessId: ctx.bid, provider: 'Perplexity', degraded: true });
   } catch (e: any) {
     console.error(`[brief.search] ${plat}`, e?.message || e);
-    throw new SourceError(`${BPLAT[plat]} search failed`);
+    throw new SourceError(`${BPLAT[plat]} search failed`, e);
   }
   // A multi-query request returns one result list per query.
   const rows: any[] = Array.isArray(j?.results?.[0]) ? j.results.flat() : (j?.results || []);

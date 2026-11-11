@@ -35,15 +35,83 @@ Required env: `DATABASE_URL`, `APP_URL`, `RADAR_SECRET_KEY` (encrypts OAuth toke
 Then add credentials for the integrations you want — every one is optional and listed in `.env.example`:
 
 - **Google** OAuth client (sign-in + Search Console, scope `webmasters.readonly`)
-- **AI models**: Anthropic, OpenAI, xAI (Settings → AI models picks per business; defaults: writing = GPT-6 Sol, research = Claude Opus 5.5)
+- **AI models**: Anthropic, OpenAI, xAI (Settings → AI models picks per business; default for writing and research = Claude Opus 5.5). Radar also picks by task: scoring and extraction run on a small model, and article drafts, refresh drafts and calendar topics ask Claude Fable 5.2 first (`RADAR_AI_TIERS` and the other `RADAR_AI_*` switches are in `.env.example`)
 - **AI Visibility** targets: OpenAI (ChatGPT), Perplexity, Gemini, Anthropic (Claude), xAI (Grok)
 - **DataForSEO** (keyword volume/difficulty/related/competitor gaps), **YouTube Data API**, **OpenPageRank** (authority)
 - **Reddit** app + **X API** bearer token (Daily Brief)
 - Blog connector OAuth apps: **Webflow, Notion, Wix, Shopify, WordPress.com, GitHub** (WordPress, Ghost, Webhook and Framer use per-connection credentials)
 - **X** and **LinkedIn** (profile + page) apps for connected social accounts: post now and scheduling, behind `RADAR_SOCIAL_PUBLISHING` (off by default; see `docs/LAUNCH.md` §7b)
 - **Resend** (email), optional **S3**-compatible storage
+- **Stripe** (optional paid access): existing $1 card confirmation, three-day trial, then $50/month; Settings → Billing opens customer self-service. See `docs/LAUNCH.md` §7c for sandbox provisioning, verification and grandfathered rollout. Billing stays off until configured.
 
 Run `npm run db:migrate` on deploy.
+
+### Daily social drafts
+
+The worker prepares one social pack per active business each day, from 08:00 in the business timezone. Unconfigured
+businesses default to LinkedIn and X drafts with branded visuals. Radar uses the Business Profile, content calendar,
+published Radar articles, cached blog content and search ideas, with profile-based topics when other sources run out.
+Drafts appear in Social Marketing for review and editing; manual generation remains available at any time.
+
+Social Marketing → Draft settings controls time, platforms, selected days and pause. Explicitly saved preferences
+are preserved, including an existing opt-in to automatic scheduling. New defaults save to the library; connecting a
+social account alone never enables automatic publishing. The worker catches up later the same day after downtime;
+daily packs are deduplicated across retries. No schema migration is needed for daily drafts.
+
+### Marketing Autopilot
+
+Settings → Autopilot lets a workspace owner delegate Radar's supported marketing work. It is off by default.
+Turning it on authorizes calendar planning, article drafting and publication, and social post generation and
+publication without individual review. The program uses the Business Profile, saved cadence and business timezone.
+It retains existing calendar entries, drafts, edits, manual schedules and individual automation preferences.
+
+Blog publication needs a connected publishing destination. Social publication uses connected X and LinkedIn
+accounts and requires `RADAR_SOCIAL_PUBLISHING` for the business. Comments and replies, including Reddit comments,
+require the owner; Radar emails prepared text and actionable links, together with missing-connection or failure
+handoffs. Configure `RESEND_API_KEY` and `MAIL_FROM` to deliver email; without Resend, messages remain in the local
+outbox log. Search/visibility monitoring and separately opted-in backlink workflows retain their existing behavior.
+
+Deploy migration `0010_autopilot` with `npm run db:migrate` before updating both web and worker processes. The worker
+runs the program continuously; no browser session is required. Disabling stops future Autopilot work, including
+pending publications from earlier activations. Manual schedules and separate automations continue; an external send
+already in progress may finish. See `.factory/autopilot/architecture.md` for authorization and recovery details.
+
+### Writing instructions
+
+Settings → Content → Writing instructions lets Editors, Admins and Owners save standing instructions for everything
+Radar writes, per content type (articles, social posts, community replies) and per platform. Radar adds the sets that
+apply to each writing prompt: article drafts with their SEO title and meta description, Search Console refresh drafts,
+editor rewrites, Social Marketing posts, and Daily Brief replies, feed posts and rewrites. Autopilot and scheduled
+generation use the same instructions. Accuracy, disclosure, link, length and format rules still apply afterwards.
+
+Instructions are stored in the existing `businesses.ai` settings column, so there is no migration. Deploy web and
+worker from the same revision: until the worker is updated, drafts it writes ignore saved instructions. With
+`RADAR_DEV_STUBS=1`, each stubbed writing call that receives instructions logs
+`[ai:stub] <purpose> received workspace writing instructions` and the block it received.
+
+### Failure alerts
+
+Radar reports failed actions, background jobs, provider attempts and degraded generation/publishing flows to
+`kenny@thally.io`. Provider credit errors and outages are reported before retry/fallback, so an incident is visible
+even if another provider completes the action. Alerts include sanitized diagnostics and action/job correlation;
+failed email attempts are retained in the existing Postgres job queue and retried by the worker.
+
+Production enables alerts by default. Configure `RESEND_API_KEY` and a verified `MAIL_FROM` on both web and worker;
+`RADAR_FAILURE_ALERT_EMAIL` overrides the recipient and `RADAR_FAILURE_ALERTS=off` disables email. Development/tests
+require explicit `RADAR_FAILURE_ALERTS=on`; development stubs never send alerts. No migration or new vendor is needed.
+See [failure alert operations](docs/OBSERVABILITY.md) for coverage, a smoke test and failed-delivery recovery.
+
+### Background work and idle businesses
+
+Radar slows background work for a business nobody is using. A business is active when a member opened or used the
+app, or clicked a Radar email link, in the last 7 days, or when Autopilot is on. Idle businesses (7–30 days) get
+automatic social packs at most weekly. AI visibility is collected once a week for every business, active or idle, on
+its Sunday night; a Sunday that was missed, or whose run failed or collected nothing, is caught up on the first night
+the last run that collected anything is 8 or more days old (the next night, unless a full run happened earlier that week)
+(`RADAR_VISIBILITY_CADENCE=nightly` restores nightly collection for active businesses). After 30 days both pause until
+the owner returns. The morning Daily Brief is unaffected. A two-hour brief rescan runs only after the owner has acted on one of the day's
+recommendations. A failed renewal keeps access for `RADAR_PAST_DUE_GRACE_HOURS` (default 48). Deploy migration
+`0018_first_five` before web and worker; the worker waits for it. See `docs/CONTRACTS.md` → First five optimizations.
 
 ## Docs
 - `ARCHITECTURE.md` — code layout, the client `app` object, actions, jobs, AI layer, dev stubs
@@ -51,6 +119,7 @@ Run `npm run db:migrate` on deploy.
 - `docs/LAUNCH.md` — everything to set up to run Radar live (accounts, keys, OAuth apps, hosting)
 - `docs/webhook.md` — the signed webhook payload for the Webhook connector
 - `docs/CONTRACTS.md` — actions, components and job kinds shared between feature areas
+- `docs/SUPPORT.md` — dashboard AI assistant, email handoff, configuration and verification
 
 ## Scripts
 `npm run typecheck` · `npm test` · `npm run db:generate` (after schema changes) · `npm run db:migrate`

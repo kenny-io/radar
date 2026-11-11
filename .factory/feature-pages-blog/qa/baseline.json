@@ -1,0 +1,46 @@
+{
+  "source": "production base f4e0ec58",
+  "requests": "read-only anonymous",
+  "routes": [
+    {
+      "path": "/features/daily-brief",
+      "status": 404
+    },
+    {
+      "path": "/features/social-marketing",
+      "status": 404
+    },
+    {
+      "path": "/features/performance",
+      "status": 404
+    },
+    {
+      "path": "/blog",
+      "status": 404
+    },
+    {
+      "path": "/blog/does-chatgpt-recommend-you",
+      "status": 404
+    },
+    {
+      "path": "/blog/rank-a-new-website",
+      "status": 404
+    },
+    {
+      "path": "/blog/reddit-without-getting-banned",
+      "status": 404
+    },
+    {
+      "path": "/blog/page-two-refresh",
+      "status": 404
+    },
+    {
+      "path": "/blog/safe-backlinks-new-sites",
+      "status": 404
+    },
+    {
+      "path": "/blog/rss.xml",
+      "status": 404
+    }
+  ]
+}

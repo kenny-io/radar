@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Keyword data provider (02-system.md §5): monthly volume + difficulty per market/language, related keywords, competitor gaps.
 // DataForSEO (Google Ads volume + Labs difficulty). Cached 30 days in keyword_cache. Dev stub when RADAR_DEV_STUBS=1.
 import { and, eq, gte, inArray } from 'drizzle-orm';
@@ -35,6 +36,7 @@ async function dfs(path: string, body: any[]): Promise<any> {
     return t.result || [];
   } catch (e: any) {
     health = { ok: false, reason: classifyProviderError(e), at: Date.now() };
+    await reportFailure(e, { source: 'system', operation: 'keywords.provider', provider: 'DataForSEO', degraded: true });
     throw e;
   }
 }

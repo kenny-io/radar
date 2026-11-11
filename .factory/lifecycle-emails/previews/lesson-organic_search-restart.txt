@@ -1,0 +1,29 @@
+Email #18C · restart
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: What should Fieldnote publish next?
+Preview: Use search intent to judge which proposed article fits your business.
+
+Hi Alex,
+
+Search intent tells you what someone is trying to do when they type a query. I’d use it to decide which proposed article would be useful to a potential customer, alongside the keyword estimates in Radar.
+
+Resume your subscription access before trying these steps.
+
+1. Open Content Calendar and compare two proposed topics, including one around “design tools for small studios”. Read each topic’s search intent and keyword estimates. Decide which reader you can help and what the article should answer.
+
+2. Open Performance and read the Queries and Pages tables over the same period. Use the measured impressions and clicks as context for your choice; keep them separate from the estimates attached to proposed topics.
+
+After publication, give Search Console time to collect data before comparing the page’s clicks and impressions. An estimate helped you choose the topic; measured activity tells you what happened afterward.
+
+Reopen my Radar account: https://radar.thally.io/start-trial
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE

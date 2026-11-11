@@ -1,0 +1,86 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+stdout | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[job brief.scan 65944da4-da99-4d91-a104-c0942112975c] skipped: the owner has no active subscription
+
+ ❯ src/server/services/lifecycle/engagement.test.ts (15 tests | 12 failed) 4653ms
+   ✓ conditional work updates (database; fake email provider only) > preserves explicit opt-outs and re-enable boundaries with stable transition timestamps  1256ms
+   ✓ conditional work updates (database; fake email provider only) > records source references transactionally and dedupes replayed completion/approval  395ms
+   × conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs 67ms
+     → expected [] to have a length of 1 but got +0
+   × conditional work updates (database; fake email provider only) > waits one hour for a brief, and any copied reply permanently prevents its reminder even after reopen 202ms
+     → expected null to match object { kind: 'brief_reply', count: 1 }
+   ✓ conditional work updates (database; fake email provider only) > does not queue empty, stale, failed/unready source references or an ungenerated article 140ms
+   × conditional work updates (database; fake email provider only) > waits24h for a calendar, resolves the whole generation on one real approval, and ignores older kept entries 154ms
+     → expected null to match object { count: 1 }
+   × conditional work updates (database; fake email provider only) > suggests social only for a real article without an existing article-based pack 94ms
+     → expected null to match object { kind: 'article_social', …(1) }
+   × conditional work updates (database; fake email provider only) > waits24h for a social pack and permanently stops after a copy, even when copiedAt is later cleared 244ms
+     → expected null to match object { kind: 'social_publish', count: 1 }
+   × conditional work updates (database; fake email provider only) > atomically groups nearby work across owned businesses into one message and never reopens assigned sources 516ms
+     → expected +0 to be 1 // Object.is equality
+   × conditional work updates (database; fake email provider only) > drops acted-on sections before the first attempt, then freezes the remaining exact payload for retries 227ms
+     → Cannot read properties of undefined (reading 'payloadEnc')
+   × conditional work updates (database; fake email provider only) > suppresses an obsolete included section on retry, rather than changing the provider body 79ms
+     → Cannot read properties of undefined (reading 'payloadEnc')
+   × conditional work updates (database; fake email provider only) > enforces the cross-business cap including founder mail, quiet hours, and leaves transactional mail alone 484ms
+     → expected undefined to match object { Object (status, attempts, ...) }
+   × conditional work updates (database; fake email provider only) > moves capped/quiet pending owners off the bounded due page so other owners can be collected 54ms
+     → expected +0 to be 1 // Object.is equality
+   × conditional work updates (database; fake email provider only) > defers remaining due work after a same-day digest was suppressed instead of monopolizing collection 65ms
+     → expected '2026-11-04T11:00:00.000Z' to be '2026-11-05T00:00:00.000Z' // Object.is equality
+   × conditional work updates (database; fake email provider only) > rechecks opt-out, membership, owner transfer and billing access before sending 649ms
+     → Cannot read properties of undefined (reading 'payloadEnc')
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > manual replies are handed to owner with selected edits; repeated runs dedupe and late arrivals are delivered
+[mail:log] to=autopilot-9e7bd683-e76d-48a0-a482-6308a3508d3f@test.local subject=Radar Autopilot: 2 actions need you · Autopilot tests
+Autopilot found 2 actions for Autopilot tests that need your help. Review the saved work before taking the next step.
+
+1. Connect your publishing destination
+
+Radar can prepare articles. Connect a blog so Autopilot can publish them.
+
+Review in Radar: http://localhost:3950/api/b/current?id=a7ae322a-c46a-4b5d-b845-2d0a6f055f43&next=%2Fsettings%3Fsection%3Dpublishing
+
+2. reddit: Help with tracking
+
+Radar cannot post this comment. Open the conversation and send the prepared reply from your account.
+
+Open conversation: https://www.reddit.com/r/test/comments/1
+
+Review in Radar: http://localhost:3950/api/b/current?id=a7ae322a-c46a-4b5d-b845-2d0a6f055f43&next=%2Fbrief%3Fdate%3D2026-11-09
+
+Prepared draft:
+My prepared reply
+
+Manage Autopilot: http://localhost:3950/api/b/current?id=a7ae322a-c46a-4b5d-b845-2d0a6f055f43&next=%2Fsettings%3Fsection%3Dautopilot
+
+You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.
+
+Email preferences: http://localhost:3950/email-preferences
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates
+[social.send] pub 2f88e772-02b5-4350-969f-8b9885d970e0 s:auto-a7ae322a-c46a-4b5d-b845-2d0a6f055f43-2026-11-09:x: posted (attempt 1)
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > revoking while media uploads prevents the remote create call
+[social.send] pub 3829683d-e726-4b40-84a9-666387a9f0ef s:pmw9p67poUWzptA:x: failed rejected after 1 attempt(s): Autopilot is off. Schedule this draft manually to publish it.
+
+ ✓ src/server/services/autopilot/autopilot.db.test.ts (11 tests) 6305ms
+   ✓ Autopilot program (database) > additive calendar generation preserves existing proposals, dates and edited article bodies  3987ms
+   ✓ Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates  546ms
+   ✓ Autopilot program (database) > a concurrent manual publication cannot be overwritten by the program scheduling upsert  380ms
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > keeps signup and resend responses generic and throttles an address across rotating IPs
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > shares a ten-attempt IP budget across signup and resend even when each route has attempts remaining
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[abuse] limit hit: auth:verification
+
+ ✓ src/server/auth/verification.test.ts (11 tests) 6027ms
+   ✓ mailbox confirmation security (database) > does not accept a registrant password or grant a session/admin capability before inbox confirmation  2434ms
+   ✓ mailbox confirmation security (database) > recovers legacy account in place, preserves paid/business records and invalidates old sessions and all other links  1232ms
+   ✓ mailbox confirmation security (database) > expires tokens, binds their email, validates password bytes and permits exactly one concurrent consume  1807ms
+ ✓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests) 1465ms
+   ✓ engagement settings, opt-out and work links (local database) > preserves the work destination through actual password and Google sign-in  888ms

@@ -8,6 +8,7 @@ import { env } from '../env';
 import { ProviderError, type BillingProvider, type Invoice, type PaymentIntent, type PaymentMethod, type Price, type Subscription } from './provider';
 
 const API = 'https://api.stripe.com/v1';
+const REQUEST_TIMEOUT_MS = 15000;
 type Params = { [k: string]: unknown };
 
 const encKey = (k: string) => encodeURIComponent(k).replace(/%5B/gi, '[').replace(/%5D/gi, ']');
@@ -43,12 +44,17 @@ export async function stripeRequest<T = any>(method: 'GET' | 'POST' | 'DELETE', 
   const url = `${API}${path}${qs ? '?' + qs : ''}`;
   for (let conflicts = 0, drops = 0; ;) {
     let res: Response;
-    try { res = await deps.fetch(url, { method, headers, body }); }
+    let j: any;
+    try {
+      // Billing holds an account lock while contacting Stripe. Bound both the headers and response body so an outage
+      // cannot occupy a database connection indefinitely; retries retain the original payment idempotency key.
+      res = await deps.fetch(url, { method, headers, body, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+      j = await res.json();
+    }
     catch (e: any) {
       if (drops++ < 2) { await deps.sleep(500); continue; }
       throw new ProviderError(`Stripe ${method} ${path.split('/')[1]} failed: ${e?.message || 'network error'}`, 502, 'api_connection_error');
     }
-    const j: any = await res.json().catch(() => ({}));
     if (res.ok) return j as T;
     if (res.status === 409 && conflicts++ < 3) { await deps.sleep(1000); continue; }
     const err = j?.error || {};
@@ -58,11 +64,20 @@ export async function stripeRequest<T = any>(method: 'GET' | 'POST' | 'DELETE', 
 
 const seg = (id: string) => encodeURIComponent(id);
 const idOf = (v: any): string | null => (v == null ? null : typeof v === 'string' ? v : v.id ?? null);
-const toSub = (s: any): Subscription => ({
-  id: s.id, status: s.status, customer: idOf(s.customer)!, trial_end: s.trial_end ?? null, cancel_at_period_end: !!s.cancel_at_period_end,
-  current_period_end: s.items?.data?.[0]?.current_period_end ?? null, metadata: s.metadata || {},
-  latest_invoice: idOf(s.latest_invoice), default_payment_method: idOf(s.default_payment_method),
-});
+const toSub = (s: any): Subscription => {
+  const periodEnd = s.items?.data?.[0]?.current_period_end ?? null;
+  // The pinned Dahlia portal can schedule end-of-period cancellation as cancel_at with a false legacy boolean.
+  // Normalize only an exact period-end match: arbitrary dashboard dates must not invent a different billing date.
+  // canceled_at records when cancellation was requested, including while a trial is still active; it is not an end.
+  const scheduledAtEnd = typeof s.cancel_at === 'number' && Number.isFinite(s.cancel_at) && s.cancel_at > 0 && s.cancel_at === periodEnd;
+  const canHaveSchedule = !['canceled', 'paused', 'incomplete_expired'].includes(s.status);
+  return {
+    id: s.id, status: s.status, customer: idOf(s.customer)!, trial_end: s.trial_end ?? null,
+    cancel_at_period_end: canHaveSchedule && (s.cancel_at_period_end === true || scheduledAtEnd),
+    current_period_end: periodEnd, metadata: s.metadata || {},
+    latest_invoice: idOf(s.latest_invoice), default_payment_method: idOf(s.default_payment_method),
+  };
+};
 const toPI = (p: any): PaymentIntent => ({
   id: p.id, status: p.status, amount: p.amount, currency: p.currency, customer: idOf(p.customer), payment_method: idOf(p.payment_method),
   client_secret: p.client_secret ?? null, metadata: p.metadata || {},
@@ -70,10 +85,23 @@ const toPI = (p: any): PaymentIntent => ({
 });
 const toPM = (m: any): PaymentMethod => ({ id: m.id, type: m.type, customer: idOf(m.customer), card: m.card ? { fingerprint: m.card.fingerprint ?? null } : null });
 /** Basil and later: the invoice's PaymentIntent secret is `confirmation_secret.client_secret` (expanded). */
-const toInvoice = (i: any): Invoice => ({ id: i.id, status: i.status, amount_due: i.amount_due, client_secret: i.confirmation_secret?.client_secret ?? null });
+const toInvoice = (i: any): Invoice => ({
+  id: i.id, status: i.status, amount_due: i.amount_due, client_secret: i.confirmation_secret?.client_secret ?? null,
+  ...(i.customer !== undefined ? { customer: idOf(i.customer) } : {}),
+  // Basil moved subscription invoices under parent.subscription_details; older fixtures may use subscription.
+  ...(i.parent?.subscription_details?.subscription !== undefined || i.subscription !== undefined
+    ? { subscription: idOf(i.parent?.subscription_details?.subscription ?? i.subscription) } : {}),
+  ...(typeof i.amount_paid === 'number' ? { amount_paid: i.amount_paid } : {}),
+  ...(typeof i.currency === 'string' ? { currency: i.currency } : {}),
+  ...(i.number !== undefined ? { number: i.number } : {}),
+});
 
 export const stripeProvider: BillingProvider = {
   name: 'stripe',
+  async createPortalSession(p, key) {
+    const s = await stripeRequest('POST', '/billing_portal/sessions', { params: { customer: p.customer, return_url: p.returnUrl, configuration: p.configuration }, key });
+    return { url: s.url };
+  },
   async createCustomer(p, key) { return { id: (await stripeRequest('POST', '/customers', { params: { email: p.email, name: p.name, metadata: { radar_user_id: p.uid } }, key })).id }; },
   async setCustomerDefaultPaymentMethod(customer, pm, key) { await stripeRequest('POST', `/customers/${seg(customer)}`, { params: { invoice_settings: { default_payment_method: pm } }, key }); },
   async attachPaymentMethod(pm, customer, key) { await stripeRequest('POST', `/payment_methods/${seg(pm)}/attach`, { params: { customer }, key }); },
@@ -108,5 +136,11 @@ export const stripeProvider: BillingProvider = {
     // A negative amount is a credit, applied to the customer's next invoice (https://docs.stripe.com/billing/customer/balance).
     await stripeRequest('POST', `/customers/${seg(customer)}/balance_transactions`, { params: { amount: -Math.abs(cents), currency: 'usd', description }, key });
   },
-  async getPrice(id): Promise<Price> { const p = await stripeRequest('GET', `/prices/${seg(id)}`); return { id: p.id, unit_amount: p.unit_amount ?? null, currency: p.currency, interval: p.recurring?.interval ?? null }; },
+  async getPrice(id): Promise<Price> {
+    const p = await stripeRequest('GET', `/prices/${seg(id)}`);
+    return { id: p.id, unit_amount: p.unit_amount ?? null, currency: p.currency, interval: p.recurring?.interval ?? null,
+      active: p.active === true, type: p.type, billing_scheme: p.billing_scheme,
+      interval_count: p.recurring?.interval_count ?? null, usage_type: p.recurring?.usage_type ?? null,
+      transform_quantity: p.transform_quantity ?? null, custom_unit_amount: p.custom_unit_amount ?? null };
+  },
 };

@@ -1,0 +1,15 @@
+Welcome to Radar
+
+Hi Alex,
+
+Welcome to Radar.
+
+Your account is ready. Open Radar to pick up where you left off.
+
+Open Radar: https://radar.example.test/dashboard
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.example.test/privacy · Terms: https://radar.example.test/terms
+
+Email preferences: https://radar.example.test/email-preferences

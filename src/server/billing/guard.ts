@@ -1,3 +1,4 @@
+import { isEducationLanding } from '../services/lifecycle/educationLinks';
 // Every page-level gating decision (architecture §4.3, §3.4 of the handoff). Pages and auth endpoints call only these.
 import { currentGuest, currentUser, type SessionUser } from '../auth/session';
 import { env } from '../env';
@@ -48,7 +49,7 @@ export async function trialGuard(): Promise<{ redirect: string } | { props: Tria
     const committed = d?.onboarding?.savedAt ? await commitDraft(d.id) : null;
     return { redirect: committed ? openBusinessUrl(committed, SAVED_DASHBOARD) : '/dashboard' };
   }
-  return { props: { state: await billingState(u, { restartDueCents }), publishableKey: env.stripePublishableKey || null } };
+  return { props: { state: await billingState(u, { restartDueCents }), publishableKey: env.stripePublishableKey || null, email: u.email } };
 }
 
 /** /start (anonymous onboarding): a real user goes to /onboarding; otherwise the guest's draft (or none yet). */
@@ -66,7 +67,7 @@ export async function onboardingGuard(domain?: string | null): Promise<{ redirec
   const u = await currentUser();
   if (!u) return { redirect: (await currentGuest()) ? withDomain('/start', autoDomain) : '/signup' };
   const d = await draftOf(u.id);
-  return { props: { actor: 'user', user: { name: u.name }, draft: d ? toDraftSummary(d) : null, saveCommits: await ownAccess(u), autoDomain } };
+  return { props: { actor: 'user', user: { name: u.name, email: u.email }, draft: d ? toDraftSummary(d) : null, saveCommits: await ownAccess(u), autoDomain } };
 }
 
 /** /signup and /signin: the pending variant when this browser's guest has a saved draft (AC-S2). */
@@ -79,17 +80,46 @@ export async function signupContext(): Promise<{ pending: PendingProfile | null 
 }
 
 const APP_PATH = /^\/(dashboard|calendar|article|performance|profile|settings|social|brief|backlinks)(\/|\?|#|$)/;
-export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/\\') ? n : null;
+/** Work emails may return through this one landing route after authentication. No generic /email or /api allowance. */
+function isWorkLanding(n: string) {
+  if (!n.startsWith('/email/open?') || n.includes('#') || /[\\\u0000-\u001f\u007f]/.test(n)) return false;
+  const params = new URLSearchParams(n.slice('/email/open?'.length));
+  if ([...params].length !== 3 || [...params.keys()].some(key => !['businessId', 'kind', 'ref'].includes(key))) return false;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.get('businessId') || '')) return false;
+  if (!['brief_reply', 'calendar_review', 'article_social', 'social_publish'].includes(params.get('kind') || '')) return false;
+  return /^[A-Za-z0-9_.:-]{1,120}$/.test(params.get('ref') || '');
+}
+export const safeNext = (n?: string | null) => typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !/[\u0000-\u0020\u007f\\]/.test(n) ? n : null;
+
+/** Only this authenticated cookie-setting hop is allowed through login; its destination remains a safe page. */
+export function safeBusinessHop(next?: string | null): string | null {
+  const n = safeNext(next);
+  if (!n || /[\u0000-\u001f\u007f]/.test(n)) return null;
+  const url = new URL(n, 'https://radar.invalid');
+  if (url.origin !== 'https://radar.invalid' || url.pathname !== '/api/b/current' || url.hash) return null;
+  const id = url.searchParams.get('id') || '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
+  const candidate = safeNext(url.searchParams.get('next'));
+  const page = candidate && !candidate.startsWith('/api/') && !/[\u0000-\u001f\u007f]/.test(candidate) ? candidate : '/dashboard';
+  return openBusinessUrl(id, page);
+}
+
 
 /** After signup, signin or Google: invites first, then resolveEntry (claim already ran). `committed` is the business the
  *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */
 export async function entryAfterAuth(u: SessionUser, next?: string | null): Promise<{ next: string; committed: string | null }> {
   const n = safeNext(next);
+  if (n === '/email-preferences') return { next: n, committed: null };
+  if (n && isEducationLanding(n)) return { next: n, committed: null };
   if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);
   if ('redirect' in e) return { next: e.redirect, committed: null };
-  const to = n && APP_PATH.test(n) ? n : '/dashboard';
+  const hop = safeBusinessHop(n);
+  const work = !!n && isWorkLanding(n);
+  const to = hop || (n && (APP_PATH.test(n) || work) ? n : '/dashboard');
+
   if (!e.committed) return { next: to, committed: null };
+  if (work || hop) return { next: to, committed: e.committed };
   return { next: to + (to.includes('?') ? '&' : '?') + 'saved=profile', committed: e.committed };
 }
 export const destinationAfterAuth = async (u: SessionUser, next?: string | null) => (await entryAfterAuth(u, next)).next;

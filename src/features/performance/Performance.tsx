@@ -6,8 +6,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Metric, PageHead, Section, Seg, Sheet, Skel, Status, Tabs } from '@/components/ui';
 import { GscConnect } from '@/features/gsc/GscConnect';
+import { CopyPrompt } from '@/components/CopyPrompt';
 import { AI_ENGINES } from '@/lib/constants';
 import { fmtD, fmtDW, fmtN } from '@/lib/format';
+import { buildSuggestionPrompt, type SuggestionPromptSelection } from '@/lib/suggestionPrompt';
 import type { AiPrompt, AiResult, Workspace } from '@/lib/types';
 
 type MK = 'clicks' | 'impr' | 'ctr' | 'pos';
@@ -17,7 +19,7 @@ interface QRow { q: string; clicks: number; impr: number; ctr: number; pos: numb
 interface PRow { path: string; url: string; title: string; clicks: number; impr: number; ctr: number; pos: number }
 interface SearchData { cur: Tot; prev: Tot | null; series: Pt[]; queries: QRow[]; pages: PRow[]; kw: Record<string, QRow | null>; property: string }
 interface Diff { title: [string, string] | null; meta: [string, string] | null; blocks: ['add' | 'edit', string, string][] }
-interface Sugg { id: string; prio: 'High' | 'Medium' | 'Low'; title: string; why: string; impact: string; page: string; kind: string; state: 'open' | 'calendar' | 'dismissed'; diff: Diff }
+interface Sugg { id: string; prio: 'High' | 'Medium' | 'Low'; title: string; why: string; impact: string; page: string; url?: string; kind: string; state: 'open' | 'calendar' | 'dismissed'; diff: Diff }
 interface Vis { prompts: AiPrompt[]; results: AiResult[]; lastCollected: string | null }
 
 const METRICS: { k: MK; l: string; f: (v: number) => string }[] = [{ k: 'clicks', l: 'Clicks', f: v => fmtN(Math.round(v)) }, { k: 'impr', l: 'Impressions', f: v => fmtN(Math.round(v)) }, { k: 'ctr', l: 'CTR', f: v => (v * 100).toFixed(1) + '%' }, { k: 'pos', l: 'Avg. position', f: v => v.toFixed(1) }];
@@ -46,6 +48,7 @@ function LineChart({ data, k, fmt, height = 240 }: { data: Pt[]; k: MK; fmt: (v:
 export function Performance() {
   const app = useApp();
   const [tab, setTab] = useState<'search' | 'ai'>('search');
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('tab') === 'ai') setTab('ai'); }, []);
   if (!app.B) return null;
   return <div className="page">
     <PageHead title="Performance" sub={tab === 'search' ? 'How people find you in Google, and what to improve next.' : 'How AI assistants answer the questions your customers ask.'} />
@@ -107,7 +110,7 @@ function SearchTab() {
         <div>{suggs.map((s, i) => { const h = handled(s); return <div key={s.id} className="row perf-sg" style={{ padding: '18px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 18, alignItems: 'flex-start', flexWrap: 'wrap', opacity: h ? .5 : 1 }}>
           <span style={{ width: 84, flex: 'none', paddingTop: 2 }}><Status tone={s.prio === 'High' ? 'signal' : s.prio === 'Medium' ? 'ink' : 'mute'}>{s.prio}</Status></span>
           <span className="col grow" style={{ gap: 4, minWidth: 240 }}><span style={{ fontWeight: 500 }}>{s.title}</span><span className="small sub" style={{ maxWidth: 620 }}>{s.why}</span><span className="xs" style={{ color: 'var(--ink2)', marginTop: 2 }}>{s.impact}</span></span>
-          {h ? <Status tone="ok">{h}</Status> : <Btn size="sm" onClick={() => setDiff(s)}>Review changes</Btn>}
+          {h && <Status tone="ok">{h}</Status>}<Btn size="sm" onClick={() => setDiff(s)}>Review changes</Btn>
         </div>; })}</div>
       </Section>}
     <Section title={<Seg value={tbl} onChange={setTbl} options={[{ v: 'keywords', l: 'Your keywords' }, { v: 'queries', l: 'Queries' }, { v: 'pages', l: 'Pages' }]} />} action={tbl === 'keywords' && <Btn kind="link" className="small" iconR="chevR" onClick={() => app.go('profile')}>Edit keywords</Btn>}>
@@ -117,7 +120,7 @@ function SearchTab() {
       </table></div>}
       <p className="xs sub" style={{ marginTop: 10 }}>Positions between 10 and 20 are highlighted — page two, where a refresh usually pays off most.</p>
     </Section>
-    <RefreshSheet s={diff} onClose={() => setDiff(null)} onDone={(id, label) => { setDone(d => ({ ...d, [id]: label })); setDiff(null); }} />
+    <RefreshSheet key={diff?.id} s={diff} onClose={() => setDiff(null)} onDone={(id, label) => { setDone(d => ({ ...d, [id]: label })); setDiff(null); }} />
   </div>;
 }
 
@@ -133,19 +136,23 @@ function TargetKw({ B, kw }: { B: Workspace; kw: Record<string, QRow | null> }) 
 function RefreshSheet({ s, onClose, onDone }: { s: Sugg | null; onClose: () => void; onDone: (id: string, label: string) => void }) {
   const app = useApp(); const { toast } = app; const [busy, setBusy] = useState(false);
   if (!s) return null; const df = s.diff;
-  const Row = ({ l, v }: { l: string; v: [string, string] | null }) => v ? <div className="col" style={{ gap: 8 }}><span className="label">{l}</span><div className="col" style={{ gap: 6 }}><span className="small" style={{ color: 'var(--mute)', textDecoration: 'line-through', textDecorationColor: 'var(--faint)' }}>{v[0]}</span><span className="small" style={{ background: 'var(--signal-wash)', padding: '6px 9px', borderRadius: 8 }}>{v[1]}</span></div></div> : null;
+  const business = { name: app.B!.profile.business.name, domain: app.B!.profile.domain };
+  const prompt = (selection: SuggestionPromptSelection) => buildSuggestionPrompt(s, business, selection);
+  const canEdit = app.B!.role !== 'Viewer' && s.state === 'open';
+  const seoRow = (l: string, v: [string, string] | null, selection: 'title' | 'meta') => v ? <div className="col" style={{ gap: 8, overflowWrap: 'anywhere' }}><span className="label">{l}</span><div className="col" style={{ gap: 6 }}><span className="small" style={{ color: 'var(--mute)', textDecoration: 'line-through', textDecorationColor: 'var(--faint)' }}>{v[0]}</span><span className="small" style={{ background: 'var(--signal-wash)', padding: '6px 9px', borderRadius: 8 }}>{v[1]}</span></div><CopyPrompt prompt={prompt(selection)} label={`Copy prompt for ${l} on ${s.page}`} /></div> : null;
   const accept = async () => {
     setBusy(true);
     try { const r = await app.act<{ entryId: string; date: string }>('suggestions.accept', { id: s.id }); toast('Added to your calendar for review on ' + fmtDW(r.date), { tone: 'ok' }); onDone(s.id, 'In calendar'); }
     catch { /* toasted */ } finally { setBusy(false); }
   };
   const dismiss = () => { app.act('suggestions.dismiss', { id: s.id }).catch(() => {}); onDone(s.id, 'Dismissed'); };
-  return <Sheet open onClose={onClose} width={560} eyebrow={'Suggested changes · ' + s.page} title={s.title} footer={<><Btn kind="ghost" onClick={dismiss} disabled={busy}>Dismiss</Btn><span className="grow" /><Btn kind="primary" icon="check" loading={busy} onClick={accept}>Add to calendar for review</Btn></>}>
+  return <Sheet open onClose={onClose} width={560} eyebrow={'Suggested changes · ' + s.page} title={s.title} footer={canEdit ? <><Btn kind="ghost" onClick={dismiss} disabled={busy}>Dismiss</Btn><span className="grow" /><Btn kind="primary" icon="check" loading={busy} onClick={accept}>Add to calendar for review</Btn></> : <Btn kind="ghost" onClick={onClose}>Close</Btn>}>
     <div className="col" style={{ gap: 26 }}>
       <p className="small sub">{s.why}</p>
-      <Row l="SEO title" v={df.title} /><Row l="Meta description" v={df.meta} />
-      <div className="col" style={{ gap: 2 }}><span className="label" style={{ marginBottom: 6 }}>Content changes</span>{df.blocks.map(([k, h, d], i) => <div key={i} className="row" style={{ padding: '12px 0', borderTop: '1px solid var(--line2)', alignItems: 'flex-start', gap: 12 }}><span className="mono" style={{ width: 40, flex: 'none', color: k === 'add' ? 'var(--ok)' : 'var(--signal-ink)', paddingTop: 2 }}>{k === 'add' ? '+ add' : '~ edit'}</span><span className="col"><span className="small" style={{ fontWeight: 500 }}>{h}</span><span className="small sub">{d}</span></span></div>)}</div>
-      <p className="xs sub">Nothing changes on your site until you approve the refreshed article and it publishes.</p>
+      <div className="col" style={{ gap: 10 }}><p className="small sub">Copy a prompt and paste it into your coding agent to implement these changes.</p><CopyPrompt prompt={prompt('all')} label={`Copy all suggested changes for ${s.page}`} all /></div>
+      {seoRow('SEO title', df.title, 'title')}{seoRow('Meta description', df.meta, 'meta')}
+      {df.blocks.length > 0 && <div className="col" style={{ gap: 2 }}><span className="label" style={{ marginBottom: 6 }}>Content changes</span>{df.blocks.map(([k, h, d], i) => <div key={i} className="row" style={{ padding: '12px 0', borderTop: '1px solid var(--line2)', alignItems: 'flex-start', gap: 12 }}><span className="mono" style={{ width: 40, flex: 'none', color: k === 'add' ? 'var(--ok)' : 'var(--signal-ink)', paddingTop: 2 }}>{k === 'add' ? '+ add' : '~ edit'}</span><div className="col" style={{ gap: 8, minWidth: 0, flex: 1, overflowWrap: 'anywhere' }}><div className="col"><span className="small" style={{ fontWeight: 500 }}>{h}</span><span className="small sub">{d}</span></div><CopyPrompt prompt={prompt({ block: i })} label={`Copy prompt for content change ${i + 1}: ${h} on ${s.page}`} /></div></div>)}</div>}
+      <p className="xs sub">Copying a prompt does not change your site or add this suggestion to your calendar.</p>
     </div>
   </Sheet>;
 }
@@ -179,7 +186,9 @@ function AiTab() {
   const [vis, setVis] = useState<Vis | null>(null); const [open, setOpen] = useState<string | null>(null); const [np, setNp] = useState(''); const [adding, setAdding] = useState(false);
   const [pending, setPending] = useState<Record<string, string>>({}); // resultId → jobId
   const load = useCallback(() => app.act<Vis>('visibility.list', {}, { silent: true }).then(v => { setVis(v); return v; }).catch(() => null), []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [B.rev, load]);
+  // A collection run bumps the revision once, when it ends: its progress (cells done) is what fills the grid in meanwhile.
+  const run = app.jobFor('visibility.run', B.id);
+  useEffect(() => { load(); }, [B.rev, run?.id, run?.status, run?.progress?.done, load]);
   // Finish "Collect now": refetch when the job is done, then toast.
   useEffect(() => {
     for (const [rid, jid] of Object.entries(pending)) {
@@ -206,7 +215,7 @@ function AiTab() {
   const add = async (e: React.FormEvent) => {
     e.preventDefault(); if (np.trim().length < 6) return;
     setAdding(true);
-    try { const r = await app.act<Vis>('visibility.addPrompt', { prompt: np.trim() }); setVis(r); setNp(''); toast('Prompt added. First collection runs tonight.'); }
+    try { const r = await app.act<Vis>('visibility.addPrompt', { prompt: np.trim() }); setVis(r); setNp(''); toast('Prompt added. Radar is collecting its first answers now.'); }
     catch { /* toasted */ } finally { setAdding(false); }
   };
   return <div>
@@ -221,7 +230,7 @@ function AiTab() {
     <div style={{ overflowX: 'auto' }}><table className="ai-grid" style={{ width: '100%', borderCollapse: 'collapse' }}>
       <thead><tr className="xs sub" style={{ textAlign: 'left' }}><th style={{ fontWeight: 400, padding: '10px 8px 10px 0' }}>Prompt</th>{AI_ENGINES.map(en => <th key={en} style={{ fontWeight: 400, padding: '10px 4px', width: 78 }}><span className="row" style={{ gap: 6 }}><BrandIcon k={en} s={14} />{en}</span></th>)}</tr></thead>
       <tbody>{prompts.map(pr => <tr key={pr.id} style={{ borderTop: '1px solid var(--line2)' }}><td style={{ padding: '14px 12px 14px 0', fontSize: 15, textWrap: 'pretty' } as React.CSSProperties}><span className="ai-q">{pr.prompt}</span></td>
-        {AI_ENGINES.map(en => { const r = cell(pr.id, en); return <td key={en} data-eng={en} style={{ padding: '6px 0' }}>{r ? <button className="tap" onClick={() => setOpen(r.id)} aria-label={en + ': ' + (r.status === 'mentioned' ? 'mentioned at position ' + r.pos : r.status === 'not-mentioned' ? 'not mentioned' : 'not collected')} style={{ border: 0, background: 'none', borderRadius: 8, padding: '8px', width: '100%', textAlign: 'left', cursor: 'pointer' }}><AiCell r={r} /></button> : null}</td>; })}
+        {AI_ENGINES.map(en => { const r = cell(pr.id, en); return <td key={en} data-eng={en} style={{ padding: '6px 0' }}>{r ? <button className="tap" onClick={() => setOpen(r.id)} aria-label={en + ': ' + (r.collecting ? 'collecting' : r.status === 'mentioned' ? 'mentioned at position ' + r.pos : r.status === 'not-mentioned' ? 'not mentioned' : 'not collected')} style={{ border: 0, background: 'none', borderRadius: 8, padding: '8px', width: '100%', textAlign: 'left', cursor: 'pointer' }}><AiCell r={r} /></button> : null}</td>; })}
       </tr>)}</tbody></table></div>
     <style>{`@media(max-width:640px){.ai-grid thead{display:none}.ai-grid tr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:12px 0}.ai-grid td:first-child{grid-column:1/-1;padding:0 0 6px!important}.ai-grid td[data-eng]:before{content:attr(data-eng);display:block;font-size:11px;color:var(--mute);padding:0 8px}.ai-grid td[data-eng]{white-space:nowrap;font-size:12px;padding-left:0!important;padding-right:0!important}.ai-grid td[data-eng] button{padding:6px 4px!important}.ai-grid td[data-eng]:before{padding:0 4px}}`}</style>
     <div className="row xs sub" style={{ gap: 20, marginTop: 14, flexWrap: 'wrap' }}><span className="row" style={{ gap: 6 }}><i className="dot" style={{ background: 'var(--ok)' }} />#2 Mentioned, ranked 2nd</span><span className="row" style={{ gap: 6 }}><i className="dot" style={{ background: 'var(--ink)' }} />0 Asked, not mentioned</span><span className="row" style={{ gap: 6 }}><i className="dot" style={{ background: 'transparent', border: '1.3px dashed var(--faint)' }} />No data yet</span></div>

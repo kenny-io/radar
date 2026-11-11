@@ -2,14 +2,15 @@
 //  - article.draft (ref = entryId): research → streamed draft ({ blocks, partial }) → validation → hero image → review|scheduled
 //  - cron drafting.due: at blog.time in the business timezone, approved entries with date − 1 ≤ today start drafting.
 //    Autopilot (acknowledged, connected) also auto-approves one proposed article per day. Pausing stops publishing, not drafting.
+import { authorized } from '../autopilot/policy';
+import { canRun } from '../autopilot/guard';
 import { and, eq, inArray, lte } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { defineJob, once } from '../../jobs/queue';
 import { defineCron } from '../../jobs/cron';
 import { notify } from '../../notify';
-import { getBiz, entryFromRow } from '../../workspace';
+import { getBiz, entryFromRow, laterV } from '../../workspace';
 import { shortId } from '../../crypto';
-import { GENERIC_AI_ERROR } from '../../errors';
 import { RadarError } from '../../errors';
 import { addDays, nowHMIn, todayIn } from '@/lib/format';
 import { draftArticle, entriesStatus, type DraftPayload } from './draft';
@@ -17,6 +18,7 @@ import { startDraft } from './start';
 import { generateArticleBodyImages, type BodyImagesPayload } from './bodyImages';
 import { assertArticleEditable, assertArticleJobOwned, assertNoArticleWork, lockArticle } from './guard';
 import type { Article, Profile } from '@/lib/types';
+import { recordEngagement, resolveCalendarForEntries } from '../lifecycle/engagement';
 
 const trunc = (t: string) => (t.length > 40 ? t.slice(0, 40).trimEnd() + '…' : t);
 
@@ -29,7 +31,11 @@ async function publishingReady(bid: string, blog: any) {
 defineJob<DraftPayload>({
   kind: 'article.draft', maxAttempts: 2, timeoutMs: 15 * 60e3,
   run: async (ctx) => {
-    const bid = ctx.businessId!; const { entryId, source } = ctx.payload;
+    const bid = ctx.businessId!; const { entryId, source, autopilotActivationId } = ctx.payload;
+    if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) {
+      await db.update(schema.calendarEntries).set({ status: 'proposed' }).where(and(eq(schema.calendarEntries.businessId, bid), eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.status, 'drafting'), eq(schema.calendarEntries.autopilotActivationId, autopilotActivationId)));
+      return { entryId, skipped: 'autopilot_off' };
+    }
     const { row, art } = await db.transaction(async tx => {
       const row = await lockArticle(tx, bid, entryId);
       assertArticleEditable(row.status, row.publishRemote);
@@ -37,6 +43,7 @@ defineJob<DraftPayload>({
       await assertArticleJobOwned(tx, ctx.job);
       const art = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
       await tx.update(schema.calendarEntries).set({ status: 'drafting' }).where(eq(schema.calendarEntries.id, entryId));
+      await resolveCalendarForEntries(tx, bid, [entryId]);
       return { row, art };
     });
     try {
@@ -44,16 +51,20 @@ defineJob<DraftPayload>({
       const g = (await db.select({ status: schema.gscConnections.status }).from(schema.gscConnections).where(eq(schema.gscConnections.businessId, bid)).limit(1))[0];
       const gsc = !!g && ['connected', 'error', 'syncing'].includes(g.status);
       const a = await draftArticle(ctx, entryFromRow(row), (art?.data as Article) || null, profile, gsc, profile.business.name);
-      const auto = await publishingReady(bid, biz.blog);
-      const final = auto ? 'scheduled' : 'review';
+      let final = 'review';
       await db.transaction(async tx => {
+        const [latestBiz] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, bid)).for('update');
         const current = await lockArticle(tx, bid, entryId);
+        const connection = await tx.select({ id: schema.connections.id }).from(schema.connections).where(and(eq(schema.connections.businessId, bid), eq(schema.connections.status, 'ok'))).limit(1);
+        const auto = latestBiz && !latestBiz.blog?.paused && connection.length && (current.autopilotActivationId ? authorized(latestBiz, current.autopilotActivationId) : latestBiz.blog?.mode === 'autopilot' && latestBiz.blog?.autopilotAckAt);
+        final = auto ? 'scheduled' : 'review';
         if (current.status !== 'drafting') throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
         await assertArticleJobOwned(tx, ctx.job);
         const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
         if (JSON.stringify(latest?.data) !== JSON.stringify(art?.data)) throw new RadarError('The article changed while Radar was drafting it. Try again.', 409, 'article_changed');
-        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: new Date() } });
+        await tx.insert(schema.articles).values({ entryId, businessId: bid, data: a, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data: a, updatedAt: laterV() } });
         await tx.update(schema.calendarEntries).set({ status: final, publishError: null }).where(eq(schema.calendarEntries.id, entryId));
+        await recordEngagement(tx, { businessId: bid, kind: 'article_social', ref: entryId });
       });
       await ctx.touch();
       const now = (await entriesStatus([entryId]))[0];
@@ -71,7 +82,9 @@ defineJob<DraftPayload>({
         }).catch(() => false);
         if (cleaned) {
           await once(`draft-failed:${entryId}:${todayIn((await getBiz(bid)).timezone)}`);
-          await notify(bid, GENERIC_AI_ERROR, { tone: 'bad' });
+          // Name the article and link to it: this row is also the Activity entry (first-five architecture §4).
+          const title = (await entriesStatus([entryId]).catch(() => []))[0]?.title || row.title;
+          await notify(bid, `Radar couldn’t draft “${trunc(title)}”. Try again.`, { tone: 'bad', action: { label: 'Open', href: `/article/${entryId}` } });
         }
       }
       throw e;
@@ -101,6 +114,7 @@ defineJob<BodyImagesPayload>({
       await assertArticleJobOwned(tx, ctx.job);
       const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0]?.data as Article | undefined;
       if (!latest || JSON.stringify(latest.body) !== JSON.stringify(snapshot.a.body)) throw new RadarError('The article text changed while Radar was making its images. Try again to match the latest text.', 409, 'article_changed');
+      if (latest.img.style !== snapshot.a.img.style || latest.img.prompt !== snapshot.a.img.prompt || latest.img.modelRequired !== snapshot.a.img.modelRequired) throw new RadarError('The image direction changed while Radar was generating. Try again.', 409, 'article_changed');
       await tx.update(schema.articles).set({ data: { ...latest, bodyImages, bodyImagesGeneratedAt }, updatedAt: new Date() }).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid)));
     });
     await ctx.touch();
@@ -110,7 +124,7 @@ defineJob<BodyImagesPayload>({
 
 /** Toasts (exact copy). User-started drafts: "Draft ready…". Scheduled drafts are batched per cron tick. */
 async function announce(bid: string, p: DraftPayload, title: string, auto: boolean) {
-  if (p.source === 'user') { await notify(bid, auto ? `“${trunc(title)}” is drafted and queued to publish.` : 'Draft ready. Edit anything, then approve.', { tone: 'ok' }); return; }
+  if (p.source === 'user') { await notify(bid, auto ? `“${trunc(title)}” is drafted and queued to publish.` : 'Draft ready. Edit anything, then approve.', { tone: 'ok', action: auto ? undefined : { label: 'Open', href: `/article/${p.entryId}` } }); return; }
   const ids = p.batch?.length ? p.batch : [p.entryId];
   const st = await entriesStatus(ids);
   if (st.some(s => s.status === 'drafting')) return; // another draft in this batch is still running; the last one announces
@@ -151,7 +165,12 @@ defineCron('drafting.due', async (now) => {
     // "Approved without publishing" articles are already written — never redraft over the user's edits.
     const arts = await db.select({ id: schema.articles.entryId, data: schema.articles.data }).from(schema.articles).where(inArray(schema.articles.entryId, due.map(d => d.id)));
     const written = new Set(arts.filter(a => (a.data as Article)?.generated).map(a => a.id));
-    const ids = due.filter(d => !failed.has(`draft-failed:${d.id}:${today}`) && !written.has(d.id)).map(d => d.id);
+    const permitted = new Set<string>();
+    for (const d of due) {
+      const [entry] = await db.select({ activation: schema.calendarEntries.autopilotActivationId }).from(schema.calendarEntries).where(eq(schema.calendarEntries.id, d.id));
+      if (!entry?.activation || await canRun(b.id, entry.activation)) permitted.add(d.id);
+    }
+    const ids = due.filter(d => permitted.has(d.id) && !failed.has(`draft-failed:${d.id}:${today}`) && !written.has(d.id)).map(d => d.id);
     if (!ids.length) continue;
     const batch = { id: shortId('b_'), ids };
     for (const id of ids) await startDraft(b.id, id, bl.mode === 'autopilot' ? 'autopilot' : 'cron', batch);

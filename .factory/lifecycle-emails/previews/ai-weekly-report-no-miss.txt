@@ -1,0 +1,27 @@
+Email #28B · No missed question
+From: Ekene from Radar <notifications@radar.example>
+Reply-To: team@thally.io
+Subject: Recommendation share this week · fieldnote.example
+Preview: This week’s collected answers, with the previous period alongside.
+
+This week covers 2026-11-02 through 2026-11-08, using completed UTC days.
+
+This week: Your business was mentioned in 6 of 20 collected answers (30%).
+
+Previous week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).
+
+That’s a change of +10.0 percentage points.
+
+This report has no missed question to highlight.
+
+I’d read the answers to see how the assistants described your business.
+
+Missing or failed collections are excluded from these figures. AI answers can change between checks.
+
+Review all answers: https://radar.thally.io/api/b/current?id=11111111-1111-4111-8111-111111111111&next=%2Fperformance%3Ftab%3Dai
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Email preferences: https://radar.thally.io/ai-email-preferences?token=preview-only-not-valid

@@ -37,7 +37,7 @@ export async function acceptSuggestion(bid: string, id: string): Promise<{ entry
 
   const changes = [s.diff.title && `SEO title: "${s.diff.title[0]}" → "${s.diff.title[1]}"`, s.diff.meta && `Meta description → "${s.diff.meta[1]}"`, ...s.diff.blocks.map(([k, h, d]) => `${k === 'add' ? 'ADD section' : 'EDIT section'} "${h}": ${d}`)].filter(Boolean).join('\n');
   const r = await ai.run('writing', {
-    purpose: 'suggestions.refreshDraft', schema: DraftOut, schemaName: 'refreshed_article', maxTokens: 6000,
+    purpose: 'suggestions.refreshDraft', schema: DraftOut, schemaName: 'refreshed_article', maxTokens: 6000, instructions: { surface: 'article' },
     stubContext: { crawl, diff: s.diff, title, kw, profile },
     system: `You refresh an existing article for ${profile.business.name}. Keep everything that is still accurate, apply exactly the requested edits, and add the requested sections. Never invent statistics, prices, dates or customer claims. Never recommend the competitors listed in the profile. Write in the brand voice and in ${profile.brand.language}.`,
     prompt: `${ai.profileContext(profile)}\n\nPage: ${s.url}\nCurrent title: ${crawl?.title || title}\nCurrent text:\n${(crawl?.text || '(not available — write the sections from the changes below)').slice(0, 9000)}\n\nSearch queries that bring people to this page (Search Console, last 28 days): ${(s.queries || []).slice(0, 8).map(q => `"${q.q}"`).join(', ') || 'none'}\n\nChanges to make:\n${changes}\n\nReturn the full refreshed article as blocks (h2/h3 headings, paragraphs, bullet lists). Do not include the page title as a block. Also return a one-sentence angle and the outline (the h2 headings).`,
@@ -56,7 +56,7 @@ export async function acceptSuggestion(bid: string, id: string): Promise<{ entry
   };
   await db.transaction(async tx => {
     await tx.insert(schema.calendarEntries).values({
-      id: entryId, businessId: bid, title, kw, type: 'Guide', vol: kwDef?.vol ?? null, kd: kwDef?.kd ?? null, date, mode: 'refresh', url: s.page,
+      id: entryId, businessId: bid, title, kw, type: 'Guide', vol: kwDef?.vol ?? null, kd: kwDef?.kd ?? null, date, mode: 'refresh', url: s.url,
       measured: s.measured, audience: 'Searchers already finding this page', relevance: s.why, status: 'review',
     });
     await tx.insert(schema.articles).values({ entryId, businessId: bid, data: article });

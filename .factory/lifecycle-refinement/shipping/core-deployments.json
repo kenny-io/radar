@@ -1,0 +1,18 @@
+{
+  "services": [
+    {
+      "service": "web",
+      "id": "537c66bc-28e6-440e-a065-e31c4ce35d25",
+      "status": "SUCCESS",
+      "createdAt": "2026-11-09T22:50:43.756Z",
+      "commit": "2d41a8015effc35fb90d0af12875ebb3963adaa5"
+    },
+    {
+      "service": "worker",
+      "id": "31629ac4-d8a5-4627-99b0-e30dd7ba18b4",
+      "status": "SUCCESS",
+      "createdAt": "2026-11-09T22:50:43.756Z",
+      "commit": "2d41a8015effc35fb90d0af12875ebb3963adaa5"
+    }
+  ]
+}

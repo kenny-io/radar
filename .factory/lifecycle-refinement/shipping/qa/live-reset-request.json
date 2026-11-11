@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-11-09T22:54:09.597Z",
+  "simulator": true,
+  "requestCount": 1,
+  "httpStatus": 200,
+  "genericSuccess": true,
+  "noPasswordChange": true,
+  "blockedWrites": 0,
+  "errors": []
+}

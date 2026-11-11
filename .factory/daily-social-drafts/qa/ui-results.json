@@ -1,0 +1,73 @@
+{
+  "at": "2026-11-09T16:19:03.700Z",
+  "results": [
+    {
+      "name": "Default daily empty state explains drafts and preserves manual action",
+      "pass": true,
+      "detail": {
+        "daily": true,
+        "review": true,
+        "manual": true
+      }
+    },
+    {
+      "name": "Pause settings persist and disabled controls cannot receive keyboard focus",
+      "pass": true,
+      "detail": {
+        "reload": true,
+        "timeDisabled": true,
+        "keyboardSkipsDisabledFields": true
+      }
+    },
+    {
+      "name": "Failed settings save stays open and can recover",
+      "pass": true,
+      "detail": {
+        "failureRetainsForm": true,
+        "retryPersists": true
+      }
+    },
+    {
+      "name": "Custom weekdays require selection and persist",
+      "pass": true,
+      "detail": {
+        "emptyCustomInvalid": true,
+        "persistedTue": true,
+        "restoredDaily": true
+      }
+    },
+    {
+      "name": "Queued and failed daily job states are visible",
+      "pass": true,
+      "detail": {
+        "queued": true,
+        "failed": true
+      }
+    },
+    {
+      "name": "Mobile library/settings fit and keyboard opens settings",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390,
+        "dialogWidth": 370,
+        "keyboard": true
+      }
+    },
+    {
+      "name": "Viewer cannot change preferences; foreign user cannot access business",
+      "pass": true,
+      "detail": {
+        "viewer403": true,
+        "foreign404": true
+      }
+    },
+    {
+      "name": "Browser runtime errors",
+      "pass": true,
+      "detail": {
+        "errors": []
+      }
+    }
+  ]
+}

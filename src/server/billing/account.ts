@@ -2,11 +2,11 @@
 import { eq, sql } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { env } from '../env';
-import { PRICE_CENTS } from '@/lib/billing';
 import type { Account } from './access';
 import { runLater, type Later, type Tx } from './draft';
 import { BillingError } from './errors';
 import { getProvider, ProviderError, STUB_PRICE_ID, type BillingProvider } from './provider';
+export { checkPriceOnce } from './price';
 
 const A = schema.billingAccounts;
 
@@ -44,18 +44,6 @@ export function priceId(p: BillingProvider): string {
   const id = env.stripePriceId || (p.name === 'stub' ? STUB_PRICE_ID : '');
   if (!id) { console.error('[billing] STRIPE_PRICE_ID is not set'); throw BillingError.unavailable(); }
   return id;
-}
-
-const g = globalThis as unknown as { __radarPriceChecked?: boolean };
-/** Once per process: the configured price must be the $50/month USD the pages show (PRICE_CENTS). Logs, never blocks. */
-export async function checkPriceOnce(p: BillingProvider, id: string) {
-  if (g.__radarPriceChecked) return;
-  g.__radarPriceChecked = true;
-  try {
-    const pr = await p.getPrice(id);
-    if (pr.unit_amount !== PRICE_CENTS || pr.currency !== 'usd' || pr.interval !== 'month')
-      console.error(`[billing] STRIPE_PRICE_ID ${id} is ${pr.unit_amount} ${pr.currency}/${pr.interval}; the pages show ${PRICE_CENTS} usd/month`);
-  } catch (e: any) { g.__radarPriceChecked = false; console.error('[billing] price check failed', e?.message || e); }
 }
 
 /** The Stripe customer, created once (key radar:cus:{uid} replays it within 24h). Runs before the lock. */

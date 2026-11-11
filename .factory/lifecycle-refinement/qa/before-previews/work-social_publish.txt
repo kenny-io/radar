@@ -1,0 +1,21 @@
+Your social posts are ready to schedule
+
+Hi Alex,
+
+Your social posts are ready to schedule
+
+Paper & Pixel · Social posts
+
+Your posts for “A useful article” are saved in your social library. Review them, then publish now or choose a time that works for you.
+
+Review my posts: https://radar.example.test/email/open?businessId=11111111-1111-4111-8111-111111111111&kind=social_publish&ref=qa-ref
+
+Reply to this email or write to support@thally.io.
+
+Privacy: https://radar.example.test/privacy · Terms: https://radar.example.test/terms
+
+Email preferences: https://radar.example.test/email-preferences?token=qa-only-invalid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+Turn off work reminders: https://radar.example.test/email-preferences?token=qa-only-invalid

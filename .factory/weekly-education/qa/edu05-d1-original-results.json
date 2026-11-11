@@ -1,0 +1,111 @@
+{
+  "base": "http://127.0.0.1:3939",
+  "environment": "Node22 local Next dev; fresh isolated Postgres15; no worker; ordinary verified synthetic password account; no real providers",
+  "checks": [
+    {
+      "name": "weekly lessons default on",
+      "pass": true
+    },
+    {
+      "name": "all work categories default on",
+      "pass": true
+    },
+    {
+      "name": "keyboard optout persisted",
+      "pass": true
+    },
+    {
+      "name": "optout survives refresh",
+      "pass": true
+    },
+    {
+      "name": "education optout preserves work categories",
+      "pass": true
+    },
+    {
+      "name": "save failure rolls checkbox back",
+      "pass": true
+    },
+    {
+      "name": "read failure has retry",
+      "pass": true
+    },
+    {
+      "name": "stale focus read cannot overwrite newer saved preference",
+      "pass": true
+    },
+    {
+      "name": "mobile settings no overflow",
+      "pass": true
+    },
+    {
+      "name": "anonymous scanner GET leaves enabled",
+      "pass": true
+    },
+    {
+      "name": "anonymous form scoped optout persists",
+      "pass": true
+    },
+    {
+      "name": "form optout preserves work categories",
+      "pass": true
+    },
+    {
+      "name": "oneclick works without session or Origin",
+      "pass": true
+    },
+    {
+      "name": "forged oneclick rejected",
+      "pass": true
+    },
+    {
+      "name": "AI CTA selects actual AI tab",
+      "pass": true
+    },
+    {
+      "name": "CTA selects authorized target business",
+      "pass": true
+    },
+    {
+      "name": "CTA causes no product action POST",
+      "pass": true
+    },
+    {
+      "name": "foreign-business CTA denied before selection",
+      "pass": true
+    },
+    {
+      "name": "signedout CTA preserves destination",
+      "pass": true
+    },
+    {
+      "name": "ordinary signin roundtrip arrives on AI tab",
+      "pass": true
+    },
+    {
+      "name": "signin CTA causes no product action POST",
+      "pass": true
+    },
+    {
+      "name": "lapsed account can read preferences",
+      "pass": true
+    },
+    {
+      "name": "lapsed account can persist preference",
+      "pass": true
+    },
+    {
+      "name": "lapsed account can open visible email controls",
+      "pass": false,
+      "detail": {
+        "url": "http://127.0.0.1:3939/start-trial"
+      }
+    }
+  ],
+  "errors": [],
+  "failure": "Error: lapsed account can open visible email controls",
+  "urls": [
+    "http://127.0.0.1:3939/start-trial",
+    "http://127.0.0.1:3939/performance?tab=ai"
+  ]
+}

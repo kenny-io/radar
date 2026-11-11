@@ -30,11 +30,12 @@ export function ProfilePage() {
     try { const r = await app.act<{ jobId: string }>('profile.reanalyze', {}); setRun({ jobId: r.jobId, edits }); } catch { /* toasted */ }
   };
   const inferred = (Object.keys(PROFILE_FIELDS) as ProfileGroupKey[]).reduce((n, g) => n + inferredLeft(B.edited, g), 0);
+  const voiceMore = <span className="xs sub">For rules by content type or platform, use <button type="button" className="unlink" onClick={() => app.go('settings', { section: 'writing' })}>Writing instructions</button>.</span>;
   return <div className="page" style={{ maxWidth: 860 }}>
     <PageHead title="Business Profile" sub={<span>Radar uses this for every topic, article, and post. {inferred > 0 && <span><span className="inf" style={{ verticalAlign: 1 }}><i />{inferred} inferred</span> fields haven’t been checked yet.</span>}</span>}>
       <span className="xs sub">{saved ? 'All changes saved' : ''}</span>
       <Btn icon="refresh" loading={!!run} onClick={reanalyze}>Re-analyze website</Btn>
     </PageHead>
-    {([['business', 'Business'], ['audience', 'Audience'], ['keywords', 'Keywords'], ['brand', 'Brand']] as const).map(([g, l]) => <section key={g} style={{ padding: '34px 0', borderTop: '1px solid var(--line)' }}><h2 className="h2" style={{ marginBottom: 22 }}>{l}</h2><ProfileGroup group={g} profile={B.profile} edited={B.edited} onChange={onChange} gsc={B.gsc.status} measured={B.measured} suggestions={B.kwSuggestions} /></section>)}
+    {([['business', 'Business'], ['audience', 'Audience'], ['keywords', 'Keywords'], ['brand', 'Brand']] as const).map(([g, l]) => <section key={g} style={{ padding: '34px 0', borderTop: '1px solid var(--line)' }}><h2 className="h2" style={{ marginBottom: 22 }}>{l}</h2><ProfileGroup group={g} profile={B.profile} edited={B.edited} onChange={onChange} gsc={B.gsc.status} measured={B.measured} suggestions={B.kwSuggestions} voiceMore={g === 'brand' ? voiceMore : undefined} /></section>)}
   </div>;
 }

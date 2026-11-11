@@ -1,0 +1,8 @@
+{
+  "base": "4f0100eec86dc404b13ffc2d8ff4793b319a7a18",
+  "files": {
+    "src/server/services/publishing/connectors/nextjs-agent.ts": "9b04bb27a91cb8cd2528fbf3fbe8af25e425a87ec3787772d4b78e0fb64fb7de",
+    "src/server/services/publishing/connectors/nextjs-structured-refresh.test.ts": "a14b98d92bd37ca97a5b0200fdf58960c387ec9736d3a459fccbc682a2d86a24",
+    ".factory/refresh-publishing/live-plan.ts": "65103c4d05226e84f463c309daa44a8773e4570fcd8f2eb5c960dd4ff8362f4d"
+  }
+}

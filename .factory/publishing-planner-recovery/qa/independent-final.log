@@ -1,0 +1,18 @@
+npm warn Unknown user config "python". This will stop working in the next major version of npm.
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push
+
+ ✓ .factory/publishing-planner-recovery/qa/independent.test.ts (12 tests) 29ms
+ ✓ .factory/publishing-planner-recovery/qa/transport.test.ts (4 tests) 20ms
+stderr | .factory/publishing-planner-recovery/qa/persistence.test.ts > persists safe local origin/reason through actual publisher without changing content or connection health
+[radar.failure] {"id":"542a2ed5-144d-463c-ac38-4294399707ec","timestamp":"2026-11-09T21:22:53.449Z","environment":"test","service":"web","context":{"source":"publishing","operation":"publishing.entry","businessId":"a32481e4-1d96-4b2f-8e91-17bf8664d382","ref":"e_planner_qa_persistence","provider":"nextjs","attempt":1,"maxAttempts":4,"retrying":false,"status":422},"rootOperation":"publishing.entry","error":{"name":"Error","message":"422 Unprocessable Entity: Missing manual listing registration.","status":422},"hint":"Inspect the correlated operation and service logs. Check integration configuration and retry the failed action when safe."}
+
+stderr | .factory/publishing-planner-recovery/qa/persistence.test.ts > persists safe local origin/reason through actual publisher without changing content or connection health
+[publish] e_planner_qa_persistence failed on nextjs: 422 Unprocessable Entity: Missing manual listing registration.
+
+ ✓ .factory/publishing-planner-recovery/qa/persistence.test.ts (1 test) 84ms
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  01:22:51
+   Duration  1.61s (transform 502ms, setup 0ms, collect 2.72s, tests 133ms, environment 0ms, prepare 219ms)

@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Search Console sync (02-system.md §4): 16-month backfill month by month (newest first, with a resumable cursor),
 // daily incremental pulls, query+page aggregate for suggestions, and error/resume handling that keeps existing data.
 import { and, eq, sql } from 'drizzle-orm';
@@ -88,6 +89,7 @@ export function monthChunks(start: string, end: string): [string, string][] {
 const sixteenMonthsBefore = (end: string) => { const d = new Date(end + 'T12:00'); d.setMonth(d.getMonth() - 16); return addDays([d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-'), 1); };
 
 async function fail(bid: string, e: any) {
+  await reportFailure(e, { source: 'system', operation: 'gsc.sync', businessId: bid, provider: 'Google Search Console' });
   const msg = e instanceof GscApiError ? e.message : String(e?.cause?.message || e?.message || e);
   console.error('[gsc] sync paused', bid, msg);
   await setConn(bid, { status: 'error', error: msg.slice(0, 500) });
@@ -124,7 +126,7 @@ export async function runBackfill(bid: string, onProgress: (pct: number) => Prom
     }
     await refreshQueryPage(bid, src);
     try { const { generateSuggestions } = await import('./suggestions'); await generateSuggestions(bid); }
-    catch (e: any) { console.error('[gsc] suggestions failed after backfill', e?.message || e); await enqueue('suggestions.generate', {}, { businessId: bid, ref: bid, singletonKey: 'sugg:' + bid, runAt: new Date(Date.now() + 60_000) }); }
+    catch (e: any) { await reportFailure(e, { source: 'system', operation: 'gsc.suggestions', businessId: bid, retrying: true }); console.error('[gsc] suggestions failed after backfill', e?.message || e); await enqueue('suggestions.generate', {}, { businessId: bid, ref: bid, singletonKey: 'sugg:' + bid, runAt: new Date(Date.now() + 60_000) }); }
     await setConn(bid, { status: 'connected', progress: 100, error: null, backfillCursor: { ...cur, i: cur.months.length, done: true }, lastSyncedThrough: through });
     await onProgress(100);
     await notify(bid, 'Search Console synced. Recommendations updated.', { tone: 'ok' });

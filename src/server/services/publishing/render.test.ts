@@ -3,7 +3,7 @@
 // (mdxjs.com/docs/what-is-mdx: unescaped `<` and `{` "have to be escaped" (\< \{), no autolinks, no indented code;
 // github.com/micromark/micromark-extension-mdxjs-esm: lowercase `export`/`import` followed by a space starts ESM).
 import { describe, expect, it } from 'vitest';
-import { blocksToHtml, blocksToMarkdown, escMd } from './render';
+import { blocksToHtml, blocksToMarkdown, escMd, sourcesList } from './render';
 
 describe('escMd (prose that must not break an MDX build)', () => {
   it('escapes JSX and expression openers', () => {
@@ -42,15 +42,56 @@ describe('blocksToMarkdown', () => {
       '## Sources\n\n1. [Survey \\[2026\\]](https://example.org/a%20b_%28c%29)',
     ].join('\n\n') + '\n');
   });
-  it('a source URL can\'t close the link or open JSX/an expression; non-http URLs become #', () => {
+  it('a source URL can\'t close the link or open JSX/an expression; non-http source URLs are omitted', () => {
     const md = blocksToMarkdown([['p', 'x']], { sources: [{ title: 't', url: 'https://e.org/x)<y>{z}', use: '' }, { title: 'bad', url: 'javascript:alert(1)', use: '' }] });
     expect(md).toContain('[t](https://e.org/x%29%3Cy%3E%7Bz%7D)');
-    expect(md).toContain('[bad](#)');
+    expect(md).not.toContain('[bad]');
+    expect(md).not.toContain('javascript:');
   });
 });
 
 describe('blocksToHtml is unchanged', () => {
   it('escapes text as HTML only', () => {
     expect(blocksToHtml([['p', 'export {a} < b'], ['ul', ['- x']]])).toBe('<p>export {a} &lt; b</p>\n<ul><li>- x</li></ul>');
+  });
+});
+
+describe('public source citations', () => {
+  const internal = { title: 'Search Console — queries for “documentation analytics for developer docs”', url: 'Google Search Console', use: 'Internal research context', notes: ['Keep these research notes in the article.'] };
+  it('omits the actual internal research reference while preserving neighboring external citations across public exports', () => {
+    const first = { title: 'Documentation report — 2026', url: 'https://example.org/report?year=2026#results', use: 'Report', notes: ['Original finding.'] };
+    const last = { title: 'Protocol guide', url: 'HTTP://example.com/guide', use: 'Guide' };
+    const sources = [first, internal, last];
+    const before = JSON.stringify(sources);
+    const blocks: import('@/lib/types').Block[] = [['p', 'Original article — body remains unchanged.']];
+    const html = blocksToHtml(blocks, { sources }); const markdown = blocksToMarkdown(blocks, { sources });
+    const publicSources = sourcesList(sources);
+    // buildPayload uses this same list when exporting structured payload.sources.
+    const payloadSources = publicSources.map(source => ({ title: source.title, url: source.url }));
+    expect(payloadSources).toEqual([{ title: first.title, url: first.url }, { title: last.title, url: last.url }]);
+    expect(publicSources[0]).toBe(first); expect(publicSources[1]).toBe(last);
+    expect(JSON.stringify(sources)).toBe(before); expect(sources[1]).toBe(internal);
+    for (const output of [html, markdown, JSON.stringify(payloadSources)]) {
+      expect(output).not.toContain('Search Console'); expect(output).not.toContain(internal.use);
+      expect(output).toContain(first.title); expect(output).toContain(first.url); expect(output).toContain(last.url);
+    }
+    expect(html).toContain('<p>Original article — body remains unchanged.</p>');
+    expect(markdown).toContain('Original article — body remains unchanged.');
+    expect(markdown).toContain('1. [Documentation report — 2026]'); expect(markdown).toContain('2. [Protocol guide]');
+  });
+  it.each(['', '#', '#research', 'Google Search Console', 'gsc:queries', '/research/report', '../report', '//example.org/report', 'javascript:alert(1)', 'mailto:author@example.org', 'https://', 'https://bad host.test/report', 'https://user:password@example.org/report', 'https://user@example.org/report', 'http://:password@example.org/report'])('does not export internal, malformed or credential-bearing reference %s', url => {
+    const source = { title: 'Research reference', url, use: 'Context only' };
+    expect(sourcesList([source])).toEqual([]);
+    expect(blocksToHtml([['p', 'Body']], { sources: [source] })).toBe('<p>Body</p>');
+    expect(blocksToMarkdown([['p', 'Body']], { sources: [source] })).toBe('Body\n');
+  });
+  it('keeps removed sources out, retains valid URL/title strings and suppresses an empty citations heading', () => {
+    const removed = { title: 'Removed source', url: 'https://example.org/removed', use: '', removed: true };
+    expect(sourcesList([internal, removed])).toEqual([]);
+    expect(blocksToHtml([], { sources: [internal, removed], sourcesHeading: 'References' })).toBe('');
+    expect(blocksToMarkdown([], { sources: [internal, removed], sourcesHeading: 'References' })).toBe('\n');
+    const source = { title: '', url: 'https://example.org/path_(reference)?q=1&v=2', use: '' };
+    expect(sourcesList([source])).toEqual([source]); expect(sourcesList()).toEqual([]);
+    expect(source.title).toBe(''); expect(source.url).toBe('https://example.org/path_(reference)?q=1&v=2');
   });
 });

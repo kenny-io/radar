@@ -16,16 +16,17 @@ defineJob<PackInput>({
       return { packId };
     } catch (e: any) {
       // A page Radar can't read won't succeed on retry.
-      if (e instanceof RadarError && e.code !== 'ai_failed') throw new PermanentJobError(e.userMessage);
+      // Carrying the original keeps a failure that was already reported from alerting a second time as the job's.
+      if (e instanceof RadarError && e.code !== 'ai_failed') throw Object.defineProperty(new PermanentJobError(e.userMessage), 'cause', { value: e, enumerable: false });
       throw e;
     }
   },
 });
 
 /** Automatic generation for one business (enqueued by the cron, once per day). Never posts. */
-defineJob<{ date: string }>({
+defineJob<{ date: string; autopilotActivationId?: string }>({
   kind: 'social.autoRun', maxAttempts: 3, timeoutMs: 10 * 60e3,
-  run: async ctx => { const packId = await autoRun(ctx.businessId!); if (packId) await ctx.touch(); return { packId }; },
+  run: async ctx => { const packId = await autoRun(ctx.businessId!, ctx.payload.date, ctx.payload.autopilotActivationId); if (packId) await ctx.touch(); return { packId }; },
 });
 
 defineCron('social.auto', autoTick);

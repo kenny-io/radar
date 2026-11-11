@@ -1,0 +1,12 @@
+{
+  "environment": "isolated local Postgres, stubs only, no provider calls",
+  "checks": [
+    {
+      "name": "mail dispatch while all four general worker slots are occupied",
+      "pass": true,
+      "status": "logged",
+      "runningJobs": 4,
+      "elapsedMs": 129
+    }
+  ]
+}

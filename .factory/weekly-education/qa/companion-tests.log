@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /Users/ekene/Downloads/design_handoff_radar/radar-push
+
+ ✓ src/lib/recommendationShare.test.ts (5 tests) 7ms
+ ✓ src/server/services/visibility/digest.test.ts (7 tests) 6ms
+ ✓ src/server/services/visibility/history.test.ts (4 tests) 5ms
+ ✓ src/server/services/visibility/digestPreferences.test.ts (17 tests) 16ms
+
+ Test Files  4 passed (4)
+      Tests  33 passed (33)
+   Start at  21:55:21
+   Duration  734ms (transform 249ms, setup 0ms, collect 1.22s, tests 33ms, environment 0ms, prepare 324ms)
+

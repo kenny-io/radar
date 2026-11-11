@@ -96,6 +96,24 @@ describe.skipIf(!ON)('trial billing flow (stub, database)', () => {
     expect((await billing.state()).j).toMatchObject({ access: true, status: 'trialing' });
   });
 
+  it('retries a failed promised card credit without another charge, subscription or trial event', async () => {
+    const { u, d } = await payer();
+    const { pi } = await pay(undefined, { confirm: false });
+    const event = D.pi(pi);
+    vi.spyOn(stubProvider, 'creditBalance').mockRejectedValueOnce(new Error('credit temporarily unavailable'));
+    await expect(D.deliver('payment_intent.succeeded', event)).rejects.toThrow('credit temporarily unavailable');
+    expect(await account(u.id)).toMatchObject({ trialCreditedAt: null });
+    expect(stubState().credits).toHaveLength(0);
+    expect(await D.deliver('payment_intent.succeeded', event)).toBe('processed');
+    expect((await billing.confirm({ paymentIntentId: pi })).status).toBe(200);
+    expect((await account(u.id)).trialCreditedAt).not.toBeNull();
+    expect(stubCalls('createPaymentIntent')).toBe(1);
+    expect(stubSubsOf((await account(u.id)).stripeCustomerId)).toHaveLength(1);
+    expect(stubState().credits).toHaveLength(1);
+    expect(await eventsOf(u.id, 'trial.started')).toHaveLength(1);
+    expect(await onboarded(d.id)).toBe(1);
+  });
+
   it('a decline leaves no subscription and status none; confirm answers 409 payment_not_succeeded', async () => {
     const { u, d } = await payer();
     const s = await billing.start('pm_stub_decline_0002');            // a decline never records a fingerprint

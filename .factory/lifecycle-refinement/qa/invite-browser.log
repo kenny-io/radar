@@ -1,0 +1,10 @@
+/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push/.factory/lifecycle-refinement/qa/invite-browser.ts:3
+async function login(p:any,email:string){await p.getByRole('textbox',{name:'Work email'}).fill(email);await p.getByLabel('Password',{exact:true}).fill(password);const response=p.waitForResponse((r:any)=>r.url().endsWith('/api/auth/signin'));await p.getByRole('button',{name:'Sign in',exact:true}).click();const r=await response,h=await r.request().allHeaders();const body=r.ok()?{}:await r.json();evidence.auth.push({status:r.status(),origin:h.origin,site:h['sec-fetch-site'],requestOrigin:new URL(r.url()).origin,pageOrigin:new URL(p.url()).origin,code:body.code,error:body.error});if(!r.ok())throw Error('Authfailure '+JSON.stringify(evidence.auth.at(-1)));}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+
+
+Error: Authfailure {"status":403,"origin":"http://localhost:3950","site":"same-origin","requestOrigin":"http://localhost:3950","pageOrigin":"http://localhost:3950","code":"forbidden","error":"You don’t have permission to do that."}
+    at login (/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push/.factory/lifecycle-refinement/qa/invite-browser.ts:3:601)
+    at async <anonymous> (/Users/ekene/.codex/worktrees/radar-weekly-education/radar-push/.factory/lifecycle-refinement/qa/invite-browser.ts:4:1061)
+
+Node.js v22.18.0

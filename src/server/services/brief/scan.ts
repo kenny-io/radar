@@ -1,4 +1,6 @@
+import { reportFailure } from '@/server/observability/failures';
 // The Daily Brief research agent (02-system §9): discover → collect (per platform) → rank → select → draft → save.
+import { canRun } from '../autopilot/guard';
 import { and, desc, eq, lt } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { briefSettingsOf, bizToday, getBiz } from '@/server/workspace';
@@ -15,9 +17,10 @@ import { createDay, getDay, mergeStats, withDay, type CandMark, type DayStats } 
 import { fitToCap, slotsLeft } from './cap';
 import { newSinceFor } from './rescan';
 import './stubs';
+import { recordEngagement } from '../lifecycle/engagement';
 
 export interface ScanPayload {
-  mode: ScanMode; date?: string; fromJob?: string;
+  mode: ScanMode; date?: string; fromJob?: string; autopilotActivationId?: string;
   /** Automatic rescan (cron `brief.rescan`): quiet progress, a failing platform is skipped, members get the toast. */
   background?: boolean;
   /** Earlier `brief.scan` jobs for this date (query rotation, `queriesFor`). First scans always search round 0. */
@@ -31,6 +34,7 @@ const slim = (c: Candidate): Candidate => ({ ...c, body: clip(c.body, 400), comm
 export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult> {
   const bid = ctx.businessId!;
   const b = await getBiz(bid);
+  if (ctx.payload.autopilotActivationId && !(await canRun(bid, ctx.payload.autopilotActivationId))) return { mode: ctx.payload.mode, skipped: 'past', added: 0 };
   const profile = { ...(b.profile as Profile), domain: b.domain };
   const settings = briefSettingsOf(b) as BriefSettings;
   const date = ctx.payload.date || bizToday(b);
@@ -48,6 +52,9 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const both = accts.length > 1;
   // Read only where some account drafts (the company alone never reads Reddit, Hacker News or Quora).
   const plats = enabledInOrder([...new Set(accts.flatMap(a => platsFor(a, settings.platforms)))]);
+  // A background rescan can only add replies, so when no account has a reply slot left on any platform today it stops
+  // here: no source is read and no model is called. Manual Scan again, Keep and the morning scan carry on as always.
+  if (background && accts.every(a => Object.values(slotsLeft((existing?.items || []) as BriefItem[], a, platsFor(a, plats), 'again')).every(n => n === 0))) return { mode: 'again', added: 0, addedIds: [], since, skipped: 'no_slots' };
   const plan = buildPlan(profile);
   const draftSub = both ? DRAFT_SUB_BOTH : accts[0] === 'company' ? DRAFT_SUB_CO : DRAFT_SUB;
 
@@ -81,6 +88,7 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
         });
         cands.push(...got);
       } catch (e: any) {
+        await reportFailure(e, { source: 'brief', operation: 'brief.source', businessId: bid, ref: date, provider: p, degraded: background });
         console.error(`[brief.scan] ${p} source failed${background ? ' (background rescan, skipped)' : ''}:`, e?.message || e);
         // A background rescan skips the platform and carries on with the others: no failure UI, today's brief stays.
         if (background) { skippedPlats.push(p); delete stats[p]; continue; }
@@ -115,7 +123,10 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   // ── Draft ──
   step = 'draft'; await push();
   const isAdd = mode !== 'first';
-  const fail = (s: Scored) => (e: any) => { console.error('[brief.scan] draft failed', s.id, e?.message); return null; };
+  const fail = (s: Scored) => async (e: any) => {
+    await reportFailure(e, { source: 'brief', operation: 'brief.draftReply', businessId: bid, ref: s.id, degraded: true });
+    console.error('[brief.scan] draft failed', s.id, e?.message); return null;
+  };
   const drafted = await Promise.all([
     ...fPicked.map(s => draftReply(profile, s, settings, bid, isAdd).catch(fail(s))),
     ...cPicked.map(s => draftCompanyReply(profile, s, bid, isAdd).catch(fail(s))),
@@ -123,13 +134,17 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   const replies = drafted.filter(Boolean) as BriefItem[];
   if (fPicked.length + cPicked.length && !replies.length) throw new Error('Drafting failed for every reply');
   const themes = mode === 'first' ? feedThemes(scored) : [];
-  const postFail = (e: any) => { console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[]; };
+  const postFail = async (e: any) => {
+    await reportFailure(e, { source: 'brief', operation: 'brief.draftPosts', businessId: bid, ref: date, degraded: true });
+    console.error('[brief.scan] posts failed', e?.message); return [] as BriefItem[];
+  };
   const posts = mode === 'first' ? (await Promise.all([
     accts.includes('founder') ? draftPosts(profile, themes, fPlats, bid, date, 'founder').catch(postFail) : [],
     accts.includes('company') && cPlats.length ? draftPosts(profile, themes, cPlats, bid, date, 'company').catch(postFail) : [],
   ])).flat() : [];
 
   // ── Save ──
+  if (ctx.payload.autopilotActivationId && !(await canRun(bid, ctx.payload.autopilotActivationId))) return { mode, skipped: 'past', added: 0 };
   const scannedAt = nowHMIn(b.timezone || 'America/New_York');
   const at = new Date().toISOString();
   const tk = (c: Candidate) => { const k = threadKey(c); return k ? { tk: k } : {}; };
@@ -138,9 +153,13 @@ export async function runScan(ctx: JobCtx<ScanPayload>): Promise<BriefScanResult
   for (const c of fresh) if (!marks.find(m => m.id === c.id)) marks.push({ id: c.id, plat: c.plat, ...tk(c), at });
   let addedIds: string[] = [];
   if (mode === 'first') {
-    await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats);
+    await db.transaction(async tx => {
+      const inserted = await createDay(bid, date, [...replies, ...posts], marks, scannedAt, stats, tx);
+      if (!ctx.payload.autopilotActivationId) await tx.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
+      if (inserted && replies.some(i => i.st === 'open' && /^https?:\/\//i.test(i.url || ''))) await recordEngagement(tx, { businessId: bid, kind: 'brief_reply', ref: date });
+    });
     addedIds = [...replies, ...posts].map(i => i.id);
-    await db.update(schema.businesses).set({ briefSetup: true }).where(eq(schema.businesses.id, bid));
+
   } else {
     addedIds = (await withDay(bid, date, row => {
       const items = row.items as BriefItem[];

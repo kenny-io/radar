@@ -1,0 +1,4 @@
+# Generated verification artifacts remain local; browser.mjs recreates them.
+*.png
+*.json
+*.log

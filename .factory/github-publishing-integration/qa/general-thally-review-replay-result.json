@@ -1,0 +1,12 @@
+{
+  "status": "failed-safely",
+  "plannerSha256": "cc7385984ca0992996af4ce1fce13682146cae62b80011c33a575cacee0b5bcd",
+  "replayedResponses": 7,
+  "freshReviewerRequests": 1,
+  "http": 422,
+  "kind": "config",
+  "reason": "Radar could not safely integrate this article: independent review cited missing or invented source evidence. Review the repository’s publishing conventions or update the content folder hint and try again.",
+  "scope": "Replay of captured real source analysis with one fresh reviewer request; not counted as a successful full agent rerun.",
+  "diagnosticsSuppressed": 1,
+  "credentialFileDeleted": true
+}

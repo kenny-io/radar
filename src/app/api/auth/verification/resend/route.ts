@@ -1,0 +1,20 @@
+import { z } from 'zod';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/server/db';
+import { handle, json } from '@/server/http/handle';
+import { EMAIL_RE } from '@/lib/format';
+import { isGuestEmail } from '@/server/auth/session';
+import { assertAuthOrigin, authBody, limitAuthIp } from '@/server/auth/requests';
+import { guardVerificationRequest, sendVerification, verificationResult } from '@/server/auth/verification';
+const Body = z.object({ email: z.string().max(320), next: z.string().max(2000).optional(), turnstileToken: z.string().max(2048).optional() });
+export const POST = handle(async (req: Request) => {
+  assertAuthOrigin(req);
+  await limitAuthIp(req, 'verification');
+  const b = Body.parse(await authBody(req));
+  const email = b.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email) || isGuestEmail(email)) return json({ ok: false, errors: { email: 'Enter a valid email' } }, 400);
+  await guardVerificationRequest(req, email, b.turnstileToken);
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+  if (user && !user.guest && !user.emailVerifiedAt && !user.googleSub) await sendVerification(user, b.next);
+  return json(verificationResult);
+});

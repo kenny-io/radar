@@ -1,0 +1,934 @@
+
+> radar@1.0.0 test
+> vitest run --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+ ❯ src/server/ai/openrouter.qa.test.ts (74 tests | 1 failed) 7924ms
+   × parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot 2052ms
+     → expected { …(14) } to deeply equal { …(14) }
+   ✓ parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > an empty OPENROUTER_API_KEY counts as unset (no OpenRouter request) 205ms
+   ✓ route order with OPENROUTER_API_KEY > research: OR(opus) → direct(opus) → OR(gpt-6-sol) → direct → OR(grok) → direct 35ms
+   ✓ route order with OPENROUTER_API_KEY > total transient failure: OR gets 1 try per model, direct keeps its 3 (12 fetches, not more) 32ms
+   ✓ route order with OPENROUTER_API_KEY > OpenRouter only (no direct keys): each model gets the usual 3 attempts on OpenRouter (9 fetches) 121ms
+   ✓ route order with OPENROUTER_API_KEY > a model with no direct key is still served by OpenRouter, in one call 16ms
+   ✓ route order with OPENROUTER_API_KEY > a business-chosen Grok model goes OR(grok) first and keeps temperature only for Grok 27ms
+   ✓ route order with OPENROUTER_API_KEY > OPENROUTER_MODEL_MAP "" sends that model straight to its direct provider 15ms
+   ✓ route order with OPENROUTER_API_KEY > after an OpenRouter account error, later models in the SAME call skip OpenRouter 27ms
+   ✓ OpenRouter failure handling > 401 bad key → 10-minute cooldown for text and images; next calls go direct 56ms
+   ✓ OpenRouter failure handling > 402 no credit → 10-minute cooldown for text and images; next calls go direct 123ms
+   ✓ OpenRouter failure handling > 403 key limit → 10-minute cooldown for text and images; next calls go direct 133ms
+   ✓ OpenRouter failure handling > 429 credit wording → 10-minute cooldown for text and images; next calls go direct 274ms
+   ✓ OpenRouter failure handling > moderation-flagged 403 → this call goes direct, no cooldown (next call tries OpenRouter again) 30ms
+   ✓ OpenRouter failure handling > a moderation-flagged 403 on an IMAGE request does not pause OpenRouter 88ms
+   ✓ OpenRouter failure handling > 404 unknown model → skips OpenRouter for that model only (10 min), others still use it 30ms
+   ✓ OpenRouter failure handling > 404 "no endpoints support the requested parameters" → direct for this call only 22ms
+   ✓ OpenRouter failure handling > 429 rate limit → falls back to direct, no cooldown 28ms
+   ✓ OpenRouter failure handling > 500 → falls back to direct, no cooldown 28ms
+   ✓ OpenRouter failure handling > 502 provider error → falls back to direct, no cooldown 23ms
+   ✓ OpenRouter failure handling > 503 → falls back to direct, no cooldown 184ms
+   ✓ OpenRouter failure handling > network timeout → aborts after timeoutMs, falls back, opens the 2-minute breaker (not the 10-minute cooldown) 113ms
+   ✓ OpenRouter failure handling > network error (fetch rejects) → falls back 55ms
+   ✓ OpenRouter failure handling > in-stream error chunk: partial OR text discarded via onReset, direct answer shown, no partial in result 20ms
+   ✓ OpenRouter failure handling > in-stream credit error (402 chunk) → cooldown 18ms
+   ✓ OpenRouter failure handling > stream that ends with no content → treated as failure and falls back 34ms
+   ✓ OpenRouter failure handling > malformed JSON in structured output → schema validation fails, one OR call, then direct 17ms
+   ✓ OpenRouter failure handling > JSON wrapped in prose/code fences from OpenRouter is still extracted and fitted to the schema 14ms
+   ✓ OpenRouter failure handling > 200 body with an error object (no choices) → fails over 19ms
+   ✓ OpenRouter structured outputs > request shape: json_schema + strict + require_parameters, streamed (PM 2026-10-23) but no JSON deltas shown, no tools 21ms
+   ✓ OpenRouter structured outputs > optional / record fields → strict:false for non-Claude models; Claude models always strict with the Claude subset 30ms
+   ✓ OpenRouter structured outputs > schema 400 → exactly one plain-JSON retry on OpenRouter; a second 400 moves on (no loop) 28ms
+   ✓ OpenRouter structured outputs > schema 400 with OpenRouter as the only route: 2 calls per model, never more 28ms
+   ✓ OpenRouter structured outputs > a non-schema 400 is not retried as plain JSON 20ms
+   ✓ OpenRouter structured outputs > research + schema: web_search pass then structuring pass; failure in pass 2 → direct does both passes (4 fetches) 20ms
+   ✓ OpenRouter structured outputs > plain research (web search, no schema) sends the web_search tool and returns url_citation citations 44ms
+   ✓ images via OpenRouter > aspect ratio for every size Radar requests (hero/linkedin/facebook/quora 1200×628, x/brief 1200×675, reddit 1200×900)  1155ms
+   ✓ images via OpenRouter > decodes image/png (with and without data: prefix) and cover-crops to exactly 1200×628 108ms
+   ✓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×900 200ms
+   ✓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×675 96ms
+   ✓ images via OpenRouter > missing media_type is fine; SVG and empty data fall back to OpenAI 147ms
+   ✓ images via OpenRouter > renderImage: OR failure with no other image key → brand template (no throw) 184ms
+   ✓ images via OpenRouter > an image account error (402) pauses OpenRouter for text too 78ms
+   ✓ images via OpenRouter > dev stubs: no image model even with a key 39ms
+   ✓ AI Visibility via OpenRouter > each engine → its model, web search tool (not for Sonar), Claude max_tokens 2048, attribution headers 48ms
+   ✓ AI Visibility via OpenRouter > citations: nested url_citation, flat url, Perplexity citations (strings/objects), search_results fallback 47ms
+   ✓ AI Visibility via OpenRouter > Gemini grounding redirect links in OR citations are resolved like the direct path (no key sent to Google) 10ms
+   ✓ AI Visibility via OpenRouter > falls back to the official API on OR failure, with the exact parent-commit direct request 82ms
+   ✓ AI Visibility via OpenRouter > fetch rejection / 429 / 200-with-error → falls back to the official API 13ms
+   ✓ AI Visibility via OpenRouter > OR account error from visibility → cooldown shared with text; next engine call goes direct only 10ms
+   ✓ AI Visibility via OpenRouter > "not collected" semantics: OR fails + no direct key → real error; no OR + no key → EngineUnavailable with zero requests 18ms
+   ✓ AI Visibility via OpenRouter > OR in cooldown + no direct key → reported as "not configured" (EngineUnavailable), no request 8ms
+   ✓ AI Visibility via OpenRouter > dev stubs bypass OpenRouter entirely 164ms
+   ✓ the OpenRouter key never leaks > not in logs, ai_calls rows, thrown errors, visibility errors; only ever sent to openrouter.ai 100ms
+   ✓ the OpenRouter key never leaks > HTTP-Referer is APP_URL without trailing slash; defaults to localhost when APP_URL unset 90ms
+   ✓ the OpenRouter key never leaks > ai_calls row for an OR failure stores the provider error text, not request headers 10ms
+   ✓ retest: OpenRouter streaming for every text call > JSON split at arbitrary byte boundaries (inside the data: line and inside UTF-8 characters) reassembles exactly 43ms
+   ✓ retest: OpenRouter streaming for every text call > plain-text (no onDelta) and visibility calls now send stream:true and parse the reassembled answer 12ms
+   ✓ retest: OpenRouter streaming for every text call > stream that ends with finish_reason but no [DONE] → accepted 42ms
+   ✓ retest: OpenRouter streaming for every text call > a stream that closes mid-answer (no finish_reason, no [DONE]) is treated as a failure and falls back direct 13ms
+   ✓ retest: OpenRouter streaming for every text call > error chunk in the middle of a JSON answer → partial JSON discarded, falls back, counts as one transient strike 17ms
+   ✓ retest: idle cutoff and timers > idle and total timers are cleared after success / HTTP error / JSON body: nothing aborts later, breaker stays closed 262ms
+   ✓ retest: idle cutoff and timers > keep-alive comments count as activity: a slow-but-alive stream is not cut 161ms
+   ✓ retest: idle cutoff and timers > stalled stream after partial text → idle cutoff, partial discarded via onReset, direct answer, breaker opens 91ms
+   ✓ retest: idle cutoff and timers > hang before response headers → idle cutoff also applies 60ms
+   ✓ retest: circuit breaker > 3 consecutive 5xx open it; a success in between resets the count; it closes after 2 minutes 16ms
+   ✓ retest: circuit breaker > 4xx answers (rate limit, schema, moderation) do not count as strikes 12ms
+   ✓ retest: circuit breaker > does not block OpenRouter-only setups: text, images and visibility still use OpenRouter while it is open 168ms
+   ✓ retest: circuit breaker > while open, it is skipped per model only where that model has a direct route 15ms
+   ✓ retest: circuit breaker > an image timeout (60 s total) falls back to OpenAI and opens the breaker for text 154ms
+   ✓ retest: circuit breaker > visibility: idle cutoff falls back to the official API and opens the breaker 73ms
+   ✓ retest: circuit breaker > non-credit 403 (e.g. region block) skips only that model, no global cooldown 11ms
+   ✓ retest: concurrent calls > 6 concurrent calls hitting a 402: each tries OpenRouter at most once, none tries it for a second model, all succeed direct 60ms
+   ✓ retest: concurrent calls > 3 concurrent calls into a hung OpenRouter each wait one idle cutoff, then go direct; the 4th skips OpenRouter 76ms
+stderr | src/server/services/brief/scan.test.ts > background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure
+[brief.scan] linkedin source failed (background rescan, skipped): linkedin (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+stderr | src/server/services/brief/scan.test.ts > background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure
+[brief.scan] linkedin source failed: linkedin (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/brief/scan.test.ts (4 tests) 31756ms
+   ✓ background rescans (database, dev stubs) > a quiet rescan is enqueued 2 h after the last scan, adds new replies marked New, and toasts the members once  20831ms
+   ✓ background rescans (database, dev stubs) > a failing platform is skipped in the background; a manual Scan again still shows the failure  10403ms
+stderr | src/server/services/lifecycle/engagement.test.ts > conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs
+[brief.scan] reddit source failed: reddit (stub) failed on purpose (BRIEF_STUB_FAIL)
+
+ ✓ src/server/services/lifecycle/engagement.test.ts (15 tests) 12025ms
+   ✓ conditional work updates (database; fake email provider only) > preserves explicit opt-outs and re-enable boundaries with stable transition timestamps  344ms
+   ✓ conditional work updates (database; fake email provider only) > captures only an actual successful initial brief, not manual rescans or failed/empty runs  9919ms
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > a full draft image-storage failure never marks the article ready or replaces its previous content
+[job article.draft 4e4d9f6d-eac6-47bb-be7d-b95055af89b6] attempt 1 failed: storage unavailable
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > rewriting an article never downgrades a missing custom cover to a template on generation failure
+[draft] image failed custom generation unavailable
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > rewriting an article never downgrades a missing custom cover to a template on generation failure
+[job article.draft c097b478-7ea2-4652-b099-10e1a9cd2593] attempt 1 failed: custom generation unavailable
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > one failed storage operation fails the queue job and keeps the previous images and content
+[job article.bodyImages c43d1f25-521b-474e-ac2e-605d93757051] attempt 1 failed: storage unavailable
+
+stderr | src/server/services/drafting/bodyImages.db.test.ts > article body images (database) > cover provider/storage failures preserve the full prior article, and locked or foreign covers never render
+[article] cover generation failed storage unavailable
+
+ ✓ src/server/services/drafting/bodyImages.db.test.ts (18 tests) 9509ms
+   ✓ article body images (database) > new drafts and long rewrites cannot complete without their body images  3684ms
+   ✓ article body images (database) > a full draft image-storage failure never marks the article ready or replaces its previous content  1660ms
+   ✓ article body images (database) > rewriting an article never downgrades a missing custom cover to a template on generation failure  1581ms
+   ✓ article body images (database) > a late final draft attempt cannot demote the newer draft during failure cleanup  1790ms
+stdout | src/server/auth/passwordReset.test.ts > password recovery (database, no mail delivery) > bounds reset requests by normalized email and source IP and rejects foreign origins/oversized bodies
+[abuse] limit hit: auth:reset-request
+
+stdout | src/server/auth/passwordReset.test.ts > password recovery (database, no mail delivery) > bounds reset requests by normalized email and source IP and rejects foreign origins/oversized bodies
+[abuse] limit hit: auth:reset-request
+
+ ✓ src/server/auth/passwordReset.test.ts (7 tests) 7509ms
+   ✓ password recovery (database, no mail delivery) > returns the same response for password, Google-only and unknown accounts, stores only hashed reset tokens and encrypted links  885ms
+   ✓ password recovery (database, no mail delivery) > atomically replaces the password, invalidates every session and other reset link, and never signs in automatically  1632ms
+   ✓ password recovery (database, no mail delivery) > lets only one of concurrent distinct valid reset links change the password  536ms
+   ✓ password recovery (database, no mail delivery) > refuses a session for a password hash verified before a concurrent reset  444ms
+   ✓ password recovery (database, no mail delivery) > rejects a stale password proof before claiming a guest or replacing either onboarding draft  413ms
+   ✓ password recovery (database, no mail delivery) > bounds reset requests by normalized email and source IP and rejects foreign origins/oversized bodies  3365ms
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > manual replies are handed to owner with selected edits; repeated runs dedupe and late arrivals are delivered
+[mail:log] to=autopilot-b46f3e0d-21cf-4b40-a1d1-3db672204214@test.local subject=Radar Autopilot: 2 actions need you · Autopilot tests
+Autopilot found 2 actions for Autopilot tests that need your help. Review the saved work before taking the next step.
+
+1. Connect your publishing destination
+
+Radar can prepare articles. Connect a blog so Autopilot can publish them.
+
+Review in Radar: http://localhost:3933/api/b/current?id=8196939d-79f8-4c7d-b994-de442427798d&next=%2Fsettings%3Fsection%3Dpublishing
+
+2. reddit: Help with tracking
+
+Radar cannot post this comment. Open the conversation and send the prepared reply from your account.
+
+Open conversation: https://www.reddit.com/r/test/comments/1
+
+Review in Radar: http://localhost:3933/api/b/current?id=8196939d-79f8-4c7d-b994-de442427798d&next=%2Fbrief%3Fdate%3D2026-11-09
+
+Prepared draft:
+My prepared reply
+
+Manage Autopilot: http://localhost:3933/api/b/current?id=8196939d-79f8-4c7d-b994-de442427798d&next=%2Fsettings%3Fsection%3Dautopilot
+
+You’re receiving this because Autopilot is on for this business. You can turn it off in Autopilot settings.
+
+Email preferences: http://localhost:3933/email-preferences
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates
+[social.send] pub f6583b05-d7a3-402a-ac4d-24277b44f134 s:auto-8196939d-79f8-4c7d-b994-de442427798d-2026-11-09:x: posted (attempt 1)
+
+stdout | src/server/services/autopilot/autopilot.db.test.ts > Autopilot program (database) > revoking while media uploads prevents the remote create call
+[social.send] pub 301ce9d6-69b5-4586-adaf-bca5996732ec s:pmw9p6zstNTwzLg:x: failed rejected after 1 attempt(s): Autopilot is off. Schedule this draft manually to publish it.
+
+ ✓ src/server/services/autopilot/autopilot.db.test.ts (11 tests) 5122ms
+   ✓ Autopilot program (database) > additive calendar generation preserves existing proposals, dates and edited article bodies  3748ms
+   ✓ Autopilot program (database) > master social generation overrides saved draft pause, queues once and schedules saved packs without duplicates  448ms
+ ✓ src/server/auth/claim.test.ts (9 tests) 2616ms
+   ✓ claim (database) > signup by email claims the draft intact (edits, Edited flags, Search Console); journey A lands on /start-trial  408ms
+   ✓ claim (database) > signin to an existing account claims it and replaces the account’s own old draft; with access a saved draft commits  535ms
+   ✓ claim (database) > D2: a signin claim that commits opens the claimed profile (radar_biz), not the account’s oldest business, billing on and off  1090ms
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > a guest is limited per IP per hour, with the flag off too; the 6th analysis is refused with copy
+[abuse] limit hit: analysis:ip
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > a signed-in user without access is limited the same way; with access not at all
+[abuse] limit hit: analysis:ip
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > 20 per IP per day, and 10 per domain per day across addresses
+[abuse] limit hit: analysis:ip
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > 20 per IP per day, and 10 per domain per day across addresses
+[abuse] limit hit: analysis:domain
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > the global breaker answers 503 busy
+[abuse] limit hit: analysis:global
+
+stdout | src/server/abuse/rateLimit.test.ts > rate limits (database) > creating guests is limited to 10 per IP per hour
+[abuse] limit hit: guest:ip
+
+ ✓ src/server/abuse/rateLimit.test.ts (6 tests) 4323ms
+   ✓ rate limits (database) > fixed windows: counts within a window, a new window starts at 1, hour and day never share a row  2214ms
+   ✓ rate limits (database) > a guest is limited per IP per hour, with the flag off too; the 6th analysis is refused with copy  1118ms
+   ✓ rate limits (database) > a signed-in user without access is limited the same way; with access not at all  447ms
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > keeps signup and resend responses generic and throttles an address across rotating IPs
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > shares a ten-attempt IP budget across signup and resend even when each route has attempts remaining
+[abuse] limit hit: auth:verification
+
+stdout | src/server/auth/verification.test.ts > mailbox confirmation security (database) > enforces the global mail budget in rate-only mode before creating another account
+[abuse] limit hit: auth:verification
+
+ ✓ src/server/auth/verification.test.ts (11 tests) 4040ms
+   ✓ mailbox confirmation security (database) > does not accept a registrant password or grant a session/admin capability before inbox confirmation  1312ms
+   ✓ mailbox confirmation security (database) > recovers legacy account in place, preserves paid/business records and invalidates old sessions and all other links  1605ms
+   ✓ mailbox confirmation security (database) > expires tokens, binds their email, validates password bytes and permits exactly one concurrent consume  777ms
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] x authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] li_page authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] li_page authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > connects all three channels through the OAuth callback and projects them (no tokens in the workspace)
+[social.oauth] li_profile authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > two concurrent Post now clicks produce one post
+[social.send] pub d28d320e-d521-476b-829e-3cac3f64fd99 s:ptestmw9p7epl:x: posted (attempt 1, now)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a scheduled post is claimed once, sends the latest text, and a re-run job does nothing
+[social.send] pub 8c05453e-fed6-4ea0-a3f8-3ec8ea93b614 s:ptestmw9p7epl:linkedin: posted (attempt 1)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > nothing after a successful create can cause a resend (posted is saved first)
+[social.send] pub e897adb1-2011-4741-b18c-3e9c380bff2a s:ptestmw9p7epl:x: posted (attempt 1, now)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 8324bd4a-a515-4ef9-9daf-026b9f29b3f9 s:ptestmw9p7epl:x: retry 1/3 at 2026-11-09T20:13:00.185Z (rate_limit)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 8324bd4a-a515-4ef9-9daf-026b9f29b3f9 s:ptestmw9p7epl:x: retry 2/3 at 2026-11-09T20:13:03.214Z (rate_limit)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 8324bd4a-a515-4ef9-9daf-026b9f29b3f9 s:ptestmw9p7epl:x: retry 3/3 at 2026-11-09T20:13:09.239Z (rate_limit)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 8324bd4a-a515-4ef9-9daf-026b9f29b3f9 s:ptestmw9p7epl:x: failed rate_limit after 4 attempt(s): stub 429
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > rate limits back off three times, then fail with "Try again later"
+[social.send] pub 8324bd4a-a515-4ef9-9daf-026b9f29b3f9 s:ptestmw9p7epl:x: failed rate_limit after 5 attempt(s): stub 429
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 6521c378-1b3b-42dd-b36d-afb27480b021 s:ptestmw9p7epl:x: unknown outcome; found on read-back
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 6521c378-1b3b-42dd-b36d-afb27480b021 s:ptestmw9p7epl:x: posted (attempt 1, now)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 76430ae8-224a-4b5f-8165-6539c7b2a9e1 s:ptestmw9p7epl:x: failed unknown after 1 attempt(s): stub network timeout
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > unknown outcome: X reads back (found → posted, not found → unknown); LinkedIn fails as unknown, never resent
+[social.send] pub 440b86e2-56ac-4310-85f6-c868d64aa49b s:ptestmw9p7epl:linkedin: failed unknown after 1 attempt(s): stub network reset after send
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[social.send] pub 6f7cf26f-1960-4ed1-84cb-9bacc03429ae s:ptestmw9p7epl:x: unknown outcome; found on read-back
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[social.send] pub 6f7cf26f-1960-4ed1-84cb-9bacc03429ae s:ptestmw9p7epl:x: posted (attempt 1)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a stuck sending row is verified, not resent; one stuck before create retries
+[social.send] pub 80206423-a7f9-4897-93d9-d33472e5cb85 s:ptestmw9p7epl:x: retry 1/3 at 2026-11-09T20:13:00.489Z (unavailable)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a post more than 24 h late fails as stale and is never sent
+[social.send] pub 7eaa1fbb-6529-4f62-a5f2-b607b452d473 s:ptestmw9p7epl:x: failed stale
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.tokens] refresh refused for c14f92d8-89b7-4e0b-8867-677aa82960ad: stub refresh 400 invalid_grant
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.tokens] account c14f92d8-89b7-4e0b-8867-677aa82960ad (x) expired; 1 scheduled post(s) held
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.oauth] x authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > expired account: posts are held, a reconnect keeps the id and releases them, another account is refused
+[social.oauth] x authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stderr | src/server/services/social/publish/publish.test.ts > social channels (database) > LinkedIn profile: social.tokens expires it at expires_at with no refresh call; later posts are held
+[social.tokens] account fc133d1f-8d95-4fcc-803e-75f9346aac3b (li_profile) expired; 1 scheduled post(s) held
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > LinkedIn profile: social.tokens expires it at expires_at with no refresh call; later posts are held
+[social.oauth] li_profile authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > disconnect deletes the tokens and unschedules that account’s posts, with the count; posted history stays
+[social.send] pub 21918bec-9944-4a8f-8219-9520c7f54d6a s:ptestmw9p7epl:x: posted (attempt 1, now)
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > disconnect deletes the tokens and unschedules that account’s posts, with the count; posted history stays
+[social.oauth] x authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > disconnect deletes the tokens and unschedules that account’s posts, with the count; posted history stays
+[social.oauth] li_page authorized for 0619026b-b77d-4fd1-8e7b-96acacd198d5
+
+stdout | src/server/services/social/publish/publish.test.ts > social channels (database) > a Brief post sent directly is posted for good, like "I posted it", and keeps counting in impact events
+[social.send] pub 71c1cb7c-596d-459c-a9e1-0b7721e1efba b:2026-11-09:feed1: posted (attempt 1, now)
+
+ ✓ src/server/services/social/publish/publish.test.ts (21 tests) 2384ms
+ ✓ src/server/auth/signupEmails.test.ts (6 tests) 2237ms
+   ✓ new-account lifecycle emails (database) > queues welcome and founder only after mailbox confirmation, once across concurrent signup/confirmation and never sign-in  1196ms
+   ✓ new-account lifecycle emails (database) > captures an analyzed guest Business Profile before password signup claims the draft  373ms
+   ✓ new-account lifecycle emails (database) > does not mistake a default profile or another guest’s analyzed draft for completed analysis  570ms
+stderr | src/server/services/social/proactive.db.test.ts > daily social drafts (database) > falls through an unreadable Radar source to a cached blog
+[social] daily article unavailable; trying another source
+
+stderr | src/server/services/social/proactive.db.test.ts > daily social drafts (database) > falls back to business knowledge if search idea generation fails
+[social] daily search ideas unavailable; using business profile
+
+ ✓ src/server/services/social/proactive.db.test.ts (15 tests) 2138ms
+   ✓ daily social drafts (database) > generates a profile-only draft and returns saved edits without another AI call  796ms
+stdout | src/server/auth/requests.test.ts > public auth regression (database) > throttles a normalized account across rotating IPs and IPs across different accounts
+[abuse] limit hit: auth:signin
+
+stdout | src/server/auth/requests.test.ts > public auth regression (database) > throttles a normalized account across rotating IPs and IPs across different accounts
+[abuse] limit hit: auth:signin
+
+stdout | src/server/auth/requests.test.ts > public auth regression (database) > throttles signup before validation/hash work and rejects foreign-origin auth before inserting
+[abuse] limit hit: auth:signup
+
+ ✓ src/server/auth/requests.test.ts (9 tests) 656ms
+   ✓ public auth regression (database) > allows sign-in for legacy passwords above bcrypt’s 72-byte limit  432ms
+ ✓ src/server/services/lifecycle/guides.test.ts (15 tests) 2869ms
+   ✓ one-time lifecycle guides (Postgres; fake provider only) > does not capture search using current/future/stale/zero page data 2026-11-09/10  311ms
+   ✓ one-time lifecycle guides (Postgres; fake provider only) > defers stale search before first attempt, then renders current data when it is useful again  534ms
+   ✓ one-time lifecycle guides (Postgres; fake provider only) > blocks a continuously unavailable search guide at the unattempted delivery deadline  354ms
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start then confirm: trialing, trial_end is the pending second, draft committed once, $1 credited once
+[billing] 748508ae-c72c-49ea-a5c0-9a64d6bb5b46 trial check pi_stub_2opdm65 created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start then confirm: trialing, trial_end is the pending second, draft committed once, $1 credited once
+[billing] 748508ae-c72c-49ea-a5c0-9a64d6bb5b46 subscription sub_stub_4xgzyqx none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > confirm twice, racing the webhook: one subscription, one trial.started, the draft committed once
+[billing] dd1aad65-37dd-4025-a70e-866ddf720f07 trial check pi_stub_2qcqbpm created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > confirm twice, racing the webhook: one subscription, one trial.started, the draft committed once
+[billing] dd1aad65-37dd-4025-a70e-866ddf720f07 subscription sub_stub_5hpv3lj none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > the webhook alone (tab closed after paying) activates and commits the draft
+[billing] 8fbbf8d0-065d-446e-865e-61d63342d3ce trial check pi_stub_2vnsjlk created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > the webhook alone (tab closed after paying) activates and commits the draft
+[billing] 8fbbf8d0-065d-446e-865e-61d63342d3ce subscription sub_stub_5jxt8fg none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > retries a failed promised card credit without another charge, subscription or trial event
+[billing] 8d4b7f8a-f69f-4782-a854-e3fd2c90f9d1 trial check pi_stub_22r7eua created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > retries a failed promised card credit without another charge, subscription or trial event
+[billing] 8d4b7f8a-f69f-4782-a854-e3fd2c90f9d1 subscription sub_stub_56qbyfm none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > retries a failed promised card credit without another charge, subscription or trial event
+[billing] 8d4b7f8a-f69f-4782-a854-e3fd2c90f9d1 subscription sub_stub_56qbyfm none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > a decline leaves no subscription and status none; confirm answers 409 payment_not_succeeded
+[billing] 1f22f2d7-b3ed-4e71-800d-143347fe5d5c trial check pi_stub_2wuogmd created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] 3f040acb-224b-479d-9b37-e9c3f7dd7ddf trial check pi_stub_2132fr4 created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] 3f040acb-224b-479d-9b37-e9c3f7dd7ddf subscription sub_stub_5fhr753 none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] bc0335f0-d110-4634-9e62-a435291287dc trial check pi_stub_9mw1qnl created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > 3-D Secure failed, then the same card again: the same PaymentIntent is reused and activates
+[billing] bc0335f0-d110-4634-9e62-a435291287dc trial check pi_stub_adumfqj created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > a card that already had a trial gets 409 trial_used, before any $1
+[billing] 57ea9c90-d716-4aaa-8538-3c4e127fafd0 trial check pi_stub_274tihg created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > a card that already had a trial gets 409 trial_used, before any $1
+[billing] 57ea9c90-d716-4aaa-8538-3c4e127fafd0 subscription sub_stub_4addm6p none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start when the previous $1 succeeded activates with no new charge and does not hang (one lock)
+[billing] 5114015f-94cf-4cc9-917b-413c91720768 trial check pi_stub_295qisu created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > start when the previous $1 succeeded activates with no new charge and does not hang (one lock)
+[billing] 5114015f-94cf-4cc9-917b-413c91720768 subscription sub_stub_4ttquxi none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > confirm with another user’s PaymentIntent gets 403 not_yours
+[billing] 07f68b45-7545-4ffb-bae8-c6dc01d5d03f trial check pi_stub_2su87o3 created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > late activation (trial_end under an hour away) uses a fresh 72h and is safe to retry
+[billing] 5ce6731c-910b-44ad-9577-aa91e9c70931 trial check pi_stub_24n0jr1 created
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > late activation (trial_end under an hour away) uses a fresh 72h and is safe to retry
+[billing] 5ce6731c-910b-44ad-9577-aa91e9c70931 subscription sub_stub_4mbxfk9 none → trialing
+
+stdout | src/server/billing/billingFlow.test.ts > trial billing flow (stub, database) > late activation (trial_end under an hour away) uses a fresh 72h and is safe to retry
+[billing] 5ce6731c-910b-44ad-9577-aa91e9c70931 subscription sub_stub_4mbxfk9 none → trialing
+
+ ✓ src/server/billing/billingFlow.test.ts (13 tests) 827ms
+ ✓ src/server/services/publishing/connectors.test.ts (27 tests) 862ms
+   ✓ RADAR_REAL_CONNECTORS (dev-only switch) > the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo  758ms
+ ✓ src/server/services/publishing/http.test.ts (17 tests) 837ms
+stderr | src/server/actions/customImages.db.test.ts > custom social images (database) > keeps existing image metadata and a retryable desired prompt when model or storage fails
+[social] render failed storage down
+
+stderr | src/server/actions/customImages.db.test.ts > custom social images (database) > keeps existing image metadata and a retryable desired prompt when model or storage fails
+[social] render failed Image generation is unavailable right now. Please contact support to enable it.
+
+stderr | src/server/actions/customImages.db.test.ts > custom Daily Brief visuals (database) > a partial custom failure retains the complete prior set and desired settings for retry
+[brief.visuals] image failed 1 provider failed
+
+ ✓ src/server/actions/customImages.db.test.ts (12 tests) 506ms
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > durably queues one trial and one future reminder without workspace mail across confirm/webhook replays
+[billing] ed6933bb-8820-40d3-a965-4f0de1a00723 trial check pi_stub_214t88n created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > durably queues one trial and one future reminder without workspace mail across confirm/webhook replays
+[billing] ed6933bb-8820-40d3-a965-4f0de1a00723 subscription sub_stub_4k8j8h2 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 trial check pi_stub_2m95rjq created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 trialing → unpaid
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 unpaid → canceled
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > supports cancel → resume → cancel in one period, while unchanged/replayed updates create no extra notices
+[billing] cabbdc5a-e47e-4e8f-ba6a-8f855e14a059 subscription sub_stub_47k9a60 canceled → canceled
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 2c4b3c19-6a7e-4e4f-a464-67a17ba1e25a trial check pi_stub_2abnqdq created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 2c4b3c19-6a7e-4e4f-a464-67a17ba1e25a subscription sub_stub_4yg06yg none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > does not commit a billing transition if its durable email cannot be persisted
+[billing] 2c4b3c19-6a7e-4e4f-a464-67a17ba1e25a subscription sub_stub_4yg06yg trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] 4193be3e-8b68-4641-b64f-713927a67b8d trial check pi_stub_2d3lv9b created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] 4193be3e-8b68-4641-b64f-713927a67b8d subscription sub_stub_44oa7li none → trialing
+
+stderr | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] activation of pi_stub_2d3lv9b failed: credit unavailable
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > rolls trial mail and workspace activation back with a failed credit, then queues trial mail once
+[billing] 4193be3e-8b68-4641-b64f-713927a67b8d subscription sub_stub_44oa7li none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] 84330c4d-6b51-48f4-91c1-b8fd45d35580 trial check pi_stub_2y4ohtm created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] 84330c4d-6b51-48f4-91c1-b8fd45d35580 subscription sub_stub_41o40vo none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] 84330c4d-6b51-48f4-91c1-b8fd45d35580 subscription sub_stub_41o40vo trialing → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] 84330c4d-6b51-48f4-91c1-b8fd45d35580 subscription sub_stub_41o40vo trialing → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] 84330c4d-6b51-48f4-91c1-b8fd45d35580 subscription sub_stub_41o40vo active → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > uses fetched $49 paid facts, dedupes invoice IDs and skips zero-dollar trial invoices
+[billing] 84330c4d-6b51-48f4-91c1-b8fd45d35580 subscription sub_stub_41o40vo active → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 17ad7020-363e-4331-a69c-a61b1d973378 trial check pi_stub_2k4btez created
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 17ad7020-363e-4331-a69c-a61b1d973378 subscription sub_stub_47mm4yj none → trialing
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 17ad7020-363e-4331-a69c-a61b1d973378 subscription sub_stub_47mm4yj trialing → past_due
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 17ad7020-363e-4331-a69c-a61b1d973378 subscription sub_stub_47mm4yj past_due → past_due
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 17ad7020-363e-4331-a69c-a61b1d973378 subscription sub_stub_47mm4yj past_due → active
+
+stdout | src/server/billing/billingLifecycle.test.ts > billing lifecycle (database, no external sends) > fetches failed invoices and ignores delayed failure after payment or an invoice for an old subscription
+[billing] 17ad7020-363e-4331-a69c-a61b1d973378 subscription sub_stub_47mm4yj active → active
+
+ ✓ src/server/billing/billingLifecycle.test.ts (8 tests) 663ms
+ ✓ src/server/actions/onboarding.test.ts (6 tests) 403ms
+stderr | src/server/services/lifecycle/education.test.ts > weekly education (real PostgreSQL; fake provider) > retains frozen body and key after an ambiguous provider failure and blocks expired retries
+[lifecycle] delivery failed {
+  id: '2ad98aaa-c2b8-4cd5-91cf-4a4febb340b3',
+  type: 'weekly_education',
+  reason: 'expired_delivery_window'
+}
+
+ ✓ src/server/services/lifecycle/education.test.ts (27 tests) 910ms
+ ✓ src/server/auth/googleIdentity.test.ts (3 tests) 739ms
+ ✓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests) 531ms
+   ✓ engagement settings, opt-out and work links (local database) > preserves the work destination through actual password and Google sign-in  382ms
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e trial check pi_stub_2b9uphy created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e subscription sub_stub_41vevx8 none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e subscription sub_stub_41vevx8 trialing → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e subscription sub_stub_41vevx8 past_due → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e restart: paying open invoice in_stub_7o5sa4m on sub_stub_41vevx8
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e subscription sub_stub_41vevx8 past_due → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > past_due pays the open invoice on the same subscription; access after the confirm
+[billing] 7a54127c-41a7-4415-a34b-879630bddb0e subscription sub_stub_41vevx8 past_due → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 trial check pi_stub_2rocwnc created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_42k2isz none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_42k2isz trialing → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_8msc31t canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_czffkgo incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_glmemrv incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_glmemrv incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > canceled starts a new subscription with no trial, charged today; the same card reuses it, another card replaces it
+[billing] db72f683-7721-4e39-bf63-d82252a205f3 subscription sub_stub_glmemrv incomplete → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d trial check pi_stub_2n8v3qj created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d subscription sub_stub_4kkgyot none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d subscription sub_stub_4kkgyot trialing → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d subscription sub_stub_4kkgyot past_due → past_due
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d restart: paying open invoice in_stub_7omt18t on sub_stub_4kkgyot
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d subscription sub_stub_4kkgyot past_due → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d subscription sub_stub_4kkgyot active → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > D1: once the credit paid a past_due invoice, a later canceled restart shows and charges the full $50
+[billing] cfd5666b-b7b0-4fde-8d97-886333e2bd4d subscription sub_stub_en62n87 canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] df946ceb-ce2e-407b-963b-f5f658af9704 trial check pi_stub_2nenuwm created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] df946ceb-ce2e-407b-963b-f5f658af9704 subscription sub_stub_4xrgt9n none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] df946ceb-ce2e-407b-963b-f5f658af9704 subscription sub_stub_4xrgt9n trialing → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] df946ceb-ce2e-407b-963b-f5f658af9704 subscription sub_stub_8erdwhk canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > an incomplete restart paid in another tab is not replaced: switching cards activates instead of canceling it
+[billing] df946ceb-ce2e-407b-963b-f5f658af9704 subscription sub_stub_8erdwhk incomplete → active
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] d228d165-5728-4c47-8106-00aaeaf42d1a trial check pi_stub_2jjegv4 created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] d228d165-5728-4c47-8106-00aaeaf42d1a subscription sub_stub_4yah4nu none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] d228d165-5728-4c47-8106-00aaeaf42d1a subscription sub_stub_4yah4nu trialing → canceled
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] d228d165-5728-4c47-8106-00aaeaf42d1a subscription sub_stub_82bh00g canceled → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > a failed void never blocks the restart: the unpaid one is canceled and replaced as before
+[billing] d228d165-5728-4c47-8106-00aaeaf42d1a subscription sub_stub_ch2wt5r incomplete → incomplete
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] 0fbaa84d-51cb-4ca0-b7b4-26496de2a463 trial check pi_stub_31g7t38 created
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] 0fbaa84d-51cb-4ca0-b7b4-26496de2a463 subscription sub_stub_5xfovyd none → trialing
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] 0fbaa84d-51cb-4ca0-b7b4-26496de2a463 subscription sub_stub_5xfovyd trialing → unpaid
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] 0fbaa84d-51cb-4ca0-b7b4-26496de2a463 subscription sub_stub_5xfovyd unpaid → unpaid
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] 0fbaa84d-51cb-4ca0-b7b4-26496de2a463 restart: paying open invoice in_stub_8lmmz8v on sub_stub_5xfovyd
+
+stdout | src/server/billing/restart.test.ts > restart (stub, database) > gates: never subscribed → not_lapsed; active → already_active; another account’s subscription → 403
+[billing] 0fbaa84d-51cb-4ca0-b7b4-26496de2a463 subscription sub_stub_5xfovyd unpaid → active
+
+ ✓ src/server/billing/restart.test.ts (6 tests) 560ms
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] f997ad0e-4058-452a-ae47-696388668896 trial check pi_stub_2519a0o created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] f997ad0e-4058-452a-ae47-696388668896 subscription sub_stub_4h7ke9q none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] f997ad0e-4058-452a-ae47-696388668896 subscription sub_stub_4h7ke9q trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] f997ad0e-4058-452a-ae47-696388668896 subscription sub_stub_4h7ke9q past_due → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > past_due → no access (restart, $49 due after the credit); invoice.paid → active; deleted → canceled
+[billing] f997ad0e-4058-452a-ae47-696388668896 subscription sub_stub_4h7ke9q active → canceled
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a replayed event id is a no-op
+[billing] 9189acb4-ba57-4f68-ac1a-8e6b74d8f914 trial check pi_stub_2r0weud created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a replayed event id is a no-op
+[billing] 9189acb4-ba57-4f68-ac1a-8e6b74d8f914 subscription sub_stub_44jkvwc none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a replayed event id is a no-op
+[billing] 9189acb4-ba57-4f68-ac1a-8e6b74d8f914 subscription sub_stub_44jkvwc trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a handler that throws leaves processed_at null with the message; the retry processes it
+[billing] b73f312b-323d-4cbd-a641-e990168a6604 trial check pi_stub_2zli0n7 created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a handler that throws leaves processed_at null with the message; the retry processes it
+[billing] b73f312b-323d-4cbd-a641-e990168a6604 subscription sub_stub_488xzc4 none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > a handler that throws leaves processed_at null with the message; the retry processes it
+[billing] b73f312b-323d-4cbd-a641-e990168a6604 subscription sub_stub_488xzc4 trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 14cd4798-2e94-4451-b082-8772a429a98a trial check pi_stub_2szfy8k created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 14cd4798-2e94-4451-b082-8772a429a98a subscription sub_stub_4jmeln0 none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 14cd4798-2e94-4451-b082-8772a429a98a subscription sub_stub_4jmeln0 trialing → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > out-of-order deliveries converge on the provider’s current state
+[billing] 14cd4798-2e94-4451-b082-8772a429a98a subscription sub_stub_4jmeln0 active → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 0c734ad4-a845-4718-bb50-5258117ce448 trial check pi_stub_25d0mur created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 0c734ad4-a845-4718-bb50-5258117ce448 subscription sub_stub_4gbnuov none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 0c734ad4-a845-4718-bb50-5258117ce448 subscription sub_stub_4gbnuov trialing → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 0c734ad4-a845-4718-bb50-5258117ce448 subscription sub_stub_4gbnuov trialing → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > persists the real Dahlia portal cancel_at shape through webhook sync without changing the billing date
+[billing] 0c734ad4-a845-4718-bb50-5258117ce448 subscription sub_stub_4gbnuov trialing → canceled
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 trial check pi_stub_2ollm3d created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 subscription sub_stub_4kctcqc none → trialing
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 subscription sub_stub_4kctcqc trialing → canceled
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 subscription sub_stub_82zgtij canceled → incomplete
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 subscription sub_stub_82zgtij incomplete → active
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] ignoring subscription sub_stub_4kctcqc (canceled): cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 follows sub_stub_82zgtij
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > an event for an old subscription (or the old trial $1) never regresses a restarted account
+[billing] ignoring subscription sub_stub_4kctcqc (canceled): cfabec40-7fa2-4e17-bf2e-7dd805f9bbd9 follows sub_stub_82zgtij
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] 2c98f891-d6bd-42b3-ad23-1385ee0e7957 trial check pi_stub_2lrjowi created
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] 2c98f891-d6bd-42b3-ad23-1385ee0e7957 subscription sub_stub_4y8kcb4 none → trialing
+
+stderr | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook refused: STRIPE_WEBHOOK_SECRET is not set
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] 2c98f891-d6bd-42b3-ad23-1385ee0e7957 subscription sub_stub_4y8kcb4 trialing → past_due
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook customer.subscription.updated evt_stub_9hqyia4: processed
+
+stdout | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook customer.subscription.updated evt_stub_9hqyia4: replay
+
+stderr | src/server/billing/webhookSync.test.ts > webhook sync (stub, database) > the route verifies the signature, refuses without a secret, and answers 200 / 400
+[billing] webhook customer.subscription.updated evt_stub_ambd36m failed: down
+
+ ✓ src/server/billing/webhookSync.test.ts (7 tests) 705ms
+ ✓ src/server/billing/setup.test.ts (22 tests) 658ms
+   ✓ Stripe billing setup > disconnected CLI reports missing credentials without echoing arguments or raw errors  489ms
+ ✓ src/server/actGate.test.ts (6 tests) 201ms
+ ✓ src/server/billing/access.test.ts (8 tests) 346ms
+ ✓ src/server/ai/openrouter.test.ts (47 tests) 217ms
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body image provider fallback > stores a real template PNG when the image provider fails; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[images] openai image 503: provider down
+
+ ✓ src/server/services/articleImagesFallback.test.ts (4 tests) 245ms
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+stdout | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > stub mode never calls a provider even when a key exists; missing real credentials keep mail queued
+[lifecycle] dev-stub logged { id: '4ecc410b-1ece-4404-897f-6feb06182d09', type: 'welcome' }
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > marks permanent provider errors terminal and never stores the provider error body
+[lifecycle] delivery failed {
+  id: '9e0700d7-f1ca-459d-b357-1377314d57a8',
+  type: 'welcome',
+  reason: 'provider_http_403'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > recovers a crashed lease safely and refuses retries after the provider dedupe window
+[lifecycle] delivery failed {
+  id: '3b017c5a-ae7d-49f3-8d16-c5d42785fac7',
+  type: 'welcome',
+  reason: 'expired_delivery_window'
+}
+
+stderr | src/server/services/lifecycle/dispatch.test.ts > durable lifecycle dispatch (database, fake provider only) > does not acknowledge success without a provider ID and bounds network-error retries
+[lifecycle] delivery failed {
+  id: '616c1e7e-35cd-4fe0-8eb0-feb9e77ae8a2',
+  type: 'welcome',
+  reason: 'provider_network_or_timeout'
+}
+
+ ✓ src/server/services/lifecycle/dispatch.test.ts (14 tests) 214ms
+ ✓ src/server/services/imageAvailability.test.ts (9 tests) 104ms
+ ✓ src/server/billing/guard.test.ts (11 tests) 268ms
+stdout | src/server/jobs/billingSkip.test.ts > job skip for lapsed businesses (database) > skips with {skipped: no_access} when billing is on and the owner has no access
+[job test.billingSkip 25cc79ac-ccc9-4b28-8f92-9ec807ca6574] skipped: the owner has no active subscription
+
+stdout | src/server/jobs/billingSkip.test.ts > job skip for lapsed businesses (database) > runs for drafts (guest analysis), with billing off, and for an email list that does not name the owner
+[job test.billingSkip f99c8bbf-e76b-4038-8c3f-1b47e286f1fd] skipped: the owner has no active subscription
+
+ ✓ src/server/jobs/billingSkip.test.ts (2 tests) 66ms
+ ✓ src/server/billing/chargeSafety.test.ts (4 tests) 109ms
+ ✓ src/server/services/publishing/connectors/nextjs-agent.test.ts (50 tests) 48ms
+stdout | src/server/jobs/guestCleanup.test.ts > guest cleanup (database) > deletes an expired guest older than 24h with its draft; keeps live and young guests and real users
+[cleanup] guests 2, rate-limit windows 0, webhook events 0
+
+stdout | src/server/jobs/guestCleanup.test.ts > guest cleanup (database) > prunes rate-limit windows older than two days and processed webhook events older than 30 days
+[cleanup] guests 0, rate-limit windows 1, webhook events 1
+
+ ✓ src/server/jobs/guestCleanup.test.ts (2 tests) 71ms
+ ✓ src/server/services/publishing/connectors/webflow.test.ts (18 tests) 27ms
+stdout | src/server/billing/grandfather.test.ts > grandfather (database) > the lazy cutoff comps owners of businesses created before it, not after; a later cutoff re-applies; idempotent
+[billing] grandfathered 1 account(s) (cutoff 2026-11-04T20:13:45.200Z)
+
+stdout | src/server/billing/grandfather.test.ts > grandfather (database) > the lazy cutoff comps owners of businesses created before it, not after; a later cutoff re-applies; idempotent
+[billing] grandfathered 1 account(s) (cutoff 2026-11-09T20:13:45.207Z)
+
+ ✓ src/server/billing/grandfather.test.ts (2 tests) 55ms
+ ✓ src/server/services/publishing/connectors/nextjs.test.ts (51 tests) 78ms
+stdout | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub 8d347831-32a1-4157-b053-8cd545184b08 s:work-pack-4bc1ab26-39c3-4c8c-aa26-038b6c9084b0:x: posted (attempt 1, now)
+
+stderr | src/server/services/lifecycle/engagementPublishing.test.ts > publishing follow-through resolves reminders (local DB, fake provider) > keeps a live provider acknowledgment saved even when reminder resolution fails, with no duplicate create
+[social.send] pub 8d347831-32a1-4157-b053-8cd545184b08: work reminder resolution failed after posted save
+
+ ✓ src/server/services/lifecycle/engagementPublishing.test.ts (3 tests) 192ms
+stderr | src/server/services/publishing/connectors/wix.test.ts > createDraft + publish (new post) > an image Wix refuses to import is left off; the post is still created
+[wix] hero image import refused: 400 Bad Request: {"message":"Invalid url"}
+
+ ✓ src/server/services/publishing/connectors/wix.test.ts (24 tests) 39ms
+ ✓ src/features/brief/redditCopy.test.ts (31 tests) 62ms
+ ✓ src/server/services/lifecycle/educationRoutes.test.ts (4 tests) 78ms
+ ✓ src/server/services/publishing/connectors/notion.test.ts (20 tests) 44ms
+ ✓ src/server/services/social/publish/adapters.test.ts (14 tests) 56ms
+ ✓ src/server/services/analysis/crawl.test.ts (8 tests) 13ms
+ ✓ src/server/services/publishing/connectors/shopify.test.ts (22 tests) 39ms
+ ✓ src/lib/socialPublish.test.ts (39 tests) 45ms
+ ✓ src/server/services/publishing/oauth.test.ts (22 tests) 36ms
+ ✓ src/app/api/health/route.test.ts (2 tests) 26ms
+ ✓ src/server/services/publishing/connectors/framer.test.ts (30 tests) 124ms
+ ✓ src/server/services/publishing/connectors/wpcom.test.ts (12 tests) 37ms
+ ✓ src/server/services/autopilot/policy.test.ts (20 tests) 24ms
+ ✓ src/app/api/b/[bid]/support/route.test.ts (4 tests) 15ms
+ ✓ src/server/services/support/input.test.ts (3 tests) 19ms
+ ✓ src/features/social/channels/logic.test.ts (20 tests) 41ms
+ ✓ src/server/services/lifecycle/autopilotIntegration.test.ts (7 tests) 247ms
+ ✓ src/server/services/lifecycle/templates.test.ts (25 tests) 43ms
+ ✓ src/server/billing/stripe.test.ts (21 tests) 27ms
+ ✓ src/features/billing/dates.test.ts (4 tests) 33ms
+ ✓ src/lib/seo.test.ts (9 tests) 24ms
+ ✓ src/server/billing/management.test.ts (9 tests) 16ms
+ ✓ src/components/Visual.test.ts (3 tests) 6ms
+ ✓ src/lib/visual.test.ts (3 tests) 14ms
+ ✓ src/server/services/publishing/bodyImages.test.ts (3 tests) 8ms
+ ✓ src/server/http/publicNetwork.test.ts (17 tests) 16ms
+stdout | src/server/billing/webhookBody.test.ts > billing webhook public body boundaries > verifies the exact raw UTF-8 body and accepts a valid event/replay unchanged
+[billing] webhook invoice.paid evt_body_fixture: processed
+
+stdout | src/server/billing/webhookBody.test.ts > billing webhook public body boundaries > verifies the exact raw UTF-8 body and accepts a valid event/replay unchanged
+[billing] webhook invoice.paid evt_body_fixture: replay
+
+ ✓ src/server/billing/webhookBody.test.ts (4 tests) 21ms
+ ✓ src/lib/marketing-posts.test.ts (3 tests) 16ms
+ ✓ src/server/services/brief/replyBrevity.test.ts (22 tests) 14ms
+ ✓ src/server/services/support/mail.test.ts (7 tests) 8ms
+ ✓ src/server/services/support/answer.test.ts (5 tests) 9ms
+ ✓ src/server/services/social/proactive.test.ts (4 tests) 14ms
+ ✓ src/server/env.test.ts (7 tests) 14ms
+ ✓ src/server/services/brief/plan.test.ts (16 tests) 9ms
+ ✓ src/server/services/social/social.test.ts (11 tests) 20ms
+ ✓ src/server/ai/ai.test.ts (13 tests) 10ms
+ ✓ src/features/billing/stubStripe.test.ts (13 tests) 9ms
+ ✓ src/lib/suggestionPrompt.test.ts (9 tests) 4ms
+ ✓ src/server/billing/price.test.ts (12 tests) 6ms
+ ✓ src/server/services/storage.test.ts (5 tests) 5ms
+ ✓ src/features/marketing/feature-demo-data.test.ts (4 tests) 7ms
+ ✓ src/server/events/cache.test.ts (3 tests) 5ms
+ ✓ src/server/actions/publishing.test.ts (8 tests) 5ms
+ ✓ src/features/billing/copy.test.ts (9 tests) 5ms
+ ✓ src/server/abuse/human.test.ts (3 tests) 5ms
+ ✓ src/server/services/drafting/bodyImages.test.ts (4 tests) 7ms
+ ✓ src/server/services/publishing/render.test.ts (8 tests) 3ms
+ ✓ src/server/services/brief/rescan.test.ts (8 tests) 3ms
+ ✓ src/server/abuse/ip.test.ts (3 tests) 14ms
+ ✓ src/server/services/brief/cap.test.ts (6 tests) 6ms
+ ✓ src/server/db/workerReady.test.ts (3 tests) 4ms
+ ✓ src/lib/promptClipboard.test.ts (3 tests) 4ms
+ ✓ src/server/services/lifecycle/educationContent.test.ts (4 tests) 5ms
+ ✓ src/server/services/brief/rules-figures.test.ts (4 tests) 4ms
+ ✓ src/features/billing/overviewCopy.test.ts (4 tests) 3ms
+ ✓ src/server/billing/webhook.test.ts (7 tests) 3ms
+stderr | src/server/services/lifecycle/worker.test.ts > dedicated lifecycle dispatch loop > retains the loop after one failed iteration
+[lifecycle] dispatcher iteration failed; durable queue retained
+
+ ✓ src/server/services/lifecycle/worker.test.ts (3 tests) 3ms
+ ✓ src/server/services/support/index.test.ts (3 tests) 3ms
+ ✓ src/lib/articleImages.test.ts (4 tests) 5ms
+ ✓ src/features/marketing/domain.test.ts (21 tests) 4ms
+ ✓ src/client/laterQueue.test.ts (5 tests) 4ms
+ ✓ src/lib/imageOptions.test.ts (3 tests) 4ms
+ ✓ src/features/billing/elementErrors.test.ts (6 tests) 8ms
+ ↓ src/server/services/publishing/publisher.live.test.ts (15 tests | 15 skipped)
+ ↓ src/server/services/publishing/connectors/framer.live.test.ts (5 tests | 5 skipped)
+ ↓ src/server/services/publishing/connectors/ghost.live.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/connectors/nextjs.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/shopify.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webflow.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webhook.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/wix.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/wordpress.live.test.ts (11 tests | 11 skipped)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/ai/openrouter.qa.test.ts > parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot
+AssertionError: expected { …(14) } to deeply equal { …(14) }
+
+- Expected
++ Received
+
+@@ -110,11 +110,11 @@
+      "calls": [],
+      "configured": false,
+      "logs": [],
+      "rows": [],
+      "stored": [
+-       "f883614e6a7dfb07",
++       "91d5409f50974af7",
+      ],
+      "style": "branded",
+    },
+    "p1": {
+      "backoffs": [],
+
+ ❯ src/server/ai/openrouter.qa.test.ts:202:20
+    200|     const actual = await parityScenarios();
+    201|     if (process.env.QA_CAPTURE) { fs.writeFileSync(process.env.QA_CAPT…
+    202|     expect(actual).toEqual(GOLDEN);
+       |                    ^
+    203|   });
+    204|   it('an empty OPENROUTER_API_KEY counts as unset (no OpenRouter reque…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 103 passed | 9 skipped (113)
+      Tests  1 failed | 1241 passed | 65 skipped (1307)
+   Start at  00:11:03
+   Duration  198.64s (transform 5.13s, setup 0ms, collect 64.60s, tests 106.95s, environment 26ms, prepare 7.31s)
+

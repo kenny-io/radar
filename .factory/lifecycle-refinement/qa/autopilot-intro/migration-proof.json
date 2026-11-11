@@ -1,0 +1,31 @@
+{
+  "baseline": "22267d421851bde1504282a9b0375d2e1713ecbf",
+  "results": [
+    {
+      "mode": "clean",
+      "database": "radar_intro_clean_1794263622039",
+      "pass": true,
+      "migrations": 17,
+      "oldLineageUnchanged": true,
+      "oldHistoryUnchanged": false,
+      "noMigrationEnrollment": true,
+      "newGuideAllowed": true,
+      "pendingDeleteRestricted": true,
+      "userCascade": true,
+      "noopPass": true
+    },
+    {
+      "mode": "upgrade",
+      "database": "radar_intro_upgrade_1794263622298",
+      "pass": true,
+      "migrations": 17,
+      "oldLineageUnchanged": true,
+      "oldHistoryUnchanged": true,
+      "noMigrationEnrollment": true,
+      "newGuideAllowed": true,
+      "pendingDeleteRestricted": true,
+      "userCascade": true,
+      "noopPass": true
+    }
+  ]
+}

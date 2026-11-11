@@ -1,0 +1,21 @@
+import {renderLifecycle,type LifecycleData} from '@/server/services/lifecycle/templates';
+import {EDUCATION_LESSONS,type EducationContext} from '@/server/services/lifecycle/educationContent';
+import {GUIDE_IDS} from '@/server/services/lifecycle/guideContent';
+import {confirmationEmail,invitationEmail,backlinkApprovedEmail,backlinkDeclinedEmail,backlinkRemovalEmail,backlinkLostEmail} from '@/server/services/legacyContent';
+export interface Case {id:string;family:string;format:'html'|'text';mail:{subject:string;text:string;html?:string;preheader?:string};access?:string;primary?:string;}
+export const origin='https://radar.example.test';
+export function emailCases():Case[]{
+ const common:LifecycleData={name:'Alex',businessName:'Paper & Pixel',businessId:'11111111-1111-4111-8111-111111111111',trialEnd:'2026-11-15T12:00:00Z',periodEnd:'2026-12-01T12:00:00Z',amountCents:5000,currency:'USD',invoiceNumber:'QA-001',resetUrl:origin+'/reset-password#token=qa-only-invalid'};
+ const cases:Case[]=[];const add=(id:string,family:string,mail:Case['mail'],access?:string)=>cases.push({id,family,mail,format:mail.html?'html':'text',access});const lifecycle=(id:string,type:any,data:LifecycleData,access?:string)=>add(id,type==='weekly_education'?'lesson:'+data.education!.lesson:type==='lifecycle_guide'?'guide:'+data.guide!.id:type==='work_update'?'work:'+(data.workSections!.length>1?'combined':data.workSections![0].kind):type,renderLifecycle(type,data,{appUrl:origin,unsubscribeUrl:origin+'/email-preferences?token=qa-only-invalid'}),access);
+ for(const type of ['welcome','founder_note','password_reset','trial_started','trial_ending','invoice_paid','payment_failed','cancellation_scheduled','subscription_ended'])lifecycle(type,type,common);
+ lifecycle('welcome-profile','welcome',{...common,profileAnalyzed:true});lifecycle('subscription-setup-expired','subscription_ended',{...common,status:'incomplete_expired'});
+ const sections=['brief_reply','calendar_review','article_social','social_publish'].map((kind,i)=>({eventId:`00000000-0000-4000-8000-00000000000${i}`,kind,businessId:common.businessId!,businessName:common.businessName!,ref:kind==='brief_reply'?'2026-11-10':'qa-ref',count:2,title:'A useful article'} as any));
+ for(const section of sections)lifecycle('work-'+section.kind,'work_update',{...common,workSections:[section]});lifecycle('work-combined','work_update',{...common,workSections:sections.slice(0,3)});
+ for(const access of ['workspace','start_trial','restart','setup'] as const){const context:EducationContext={businessName:common.businessName,offering:'design tools',audience:'independent studios',keyword:'design tools for small studios',gscConnected:false,access};for(const lesson of EDUCATION_LESSONS)lifecycle(lesson+'-'+access,'weekly_education',{...common,education:{version:1,lesson,businessId:common.businessId,context}},access);for(const id of GUIDE_IDS)lifecycle(id+'-'+access,'lifecycle_guide',{...common,guide:{version:1,id,businessId:common.businessId,context}},access);}
+ add('confirmation','confirmation',confirmationEmail({appUrl:origin,link:origin+'/verify-email#token=qa-only-invalid',minutes:30}));
+ for(const role of ['Admin','Editor','Viewer'] as const)add('invite-'+role.toLowerCase(),'team-invitation',invitationEmail({appUrl:origin,link:origin+'/api/invites/qa-only-invalid',inviter:'Morgan',business:common.businessName!,domain:'paper-pixel.test',role,days:14}));
+ const b={appUrl:origin,business:'Beacon Studio',domain:'beacon.test',page:'https://partner.example.test/guide',displayPage:'partner.example.test/guide',sentence:'Choose [Paper & Pixel](https://paper-pixel.test) for your studio.',target:'https://paper-pixel.test',anchor:'Paper & Pixel',rel:'sponsored',disclosure:'Member of the Radar partner network.'};
+ for(const canApproveInRadar of [false,true])add('backlink-approved-'+(canApproveInRadar?'radar':'manual'),'backlink-approved',backlinkApprovedEmail({...b,canApproveInRadar}));
+ add('backlink-declined','backlink-declined',backlinkDeclinedEmail({...b,note:'We already cover this topic. Thank you for the proposal.'}));add('backlink-removal','backlink-removal',backlinkRemovalEmail(b));for(const reason of ['missing','rel'] as const)add('backlink-lost-'+reason,'backlink-lost',backlinkLostEmail({...b,reason}));
+ return cases;
+}

@@ -1,10 +1,11 @@
 // Constants shared by client and server. Copy is verbatim from the prototype (the copy deck).
-import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, BriefAccount, AiEngine } from './types';
+import type { CalendarSettings, ConnType, EntryStatus, Platform, BriefPlatform, BriefAccount, AiEngine, InstructionKey } from './types';
 
 /* ── AI models (Settings → AI models is the ONLY place these names render) ── */
 export const AI_MODELS = [
   { p: 'Anthropic', list: [
-    { id: 'claude-fable-5.1', l: 'Claude Fable 5.1', d: 'Anthropic’s most capable model. Slowest and highest cost.' },
+    { id: 'claude-fable-5.2', l: 'Claude Fable 5.2', d: 'Anthropic’s most capable model. Slowest and highest cost.' },
+    { id: 'claude-fable-5.1', l: 'Claude Fable 5.1', d: 'The previous Fable model. Costs more than Fable 5.2.' },
     { id: 'claude-opus-5.5', l: 'Claude Opus 5.5', d: 'Deep reasoning and careful judgment on tone.' },
     { id: 'claude-sonnet-5.5', l: 'Claude Sonnet 5.5', d: 'Fast and capable for everyday writing.' },
     { id: 'claude-haiku-5.5', l: 'Claude Haiku 5.5', d: 'Fastest and lowest cost.' }] },
@@ -21,7 +22,8 @@ export const AI_TASKS = [
   { k: 'writing', l: 'Ideas and writing', d: 'Post ideas, social posts and articles.' },
   { k: 'research', l: 'Web research', d: 'Daily Brief scans of Reddit, X, LinkedIn and more.' },
 ] as const;
-export const AI_DEFAULT = { writing: 'gpt-6-sol', research: 'claude-opus-5.5' };
+/** The standard default per kind. The server may override it per deployment (src/server/ai/tiers.ts: standardDefault). */
+export const AI_DEFAULT = { writing: 'claude-opus-5.5', research: 'claude-opus-5.5' };
 export function aiFind(id: string) {
   for (const g of AI_MODELS) { const m = g.list.find(x => x.id === id); if (m) return { ...m, p: g.p }; }
   return null;
@@ -79,7 +81,7 @@ export const PLATFORMS: PlatformDef[] = ([
   { k: 'wpcom', l: 'WordPress.com', mono: 'W.', oauth: true, pick: 'Site' },
   { k: 'webhook', l: 'Webhook', mono: '{ }', fields: [['hook', 'Endpoint URL', 'https://api.yoursite.com/radar']], secret: true, help: 'Radar sends each article as signed JSON.' },
   { k: 'framer', l: 'Framer', mono: 'F', fields: [['url', 'Project URL', 'https://framer.com/projects/…'], ['key', 'API token', '', 'password']], pick: 'CMS collection' },
-  { k: 'nextjs', l: 'GitHub', d: 'Pull request', mono: 'GH', fields: [['path', 'Content folder', 'content/posts', 'text', 'Where your posts live in the repository.']], oauth: true, oauthLabel: 'GitHub', authFirst: true, pick: 'Repository', help: 'Radar opens a pull request with each article as MDX.' },
+  { k: 'nextjs', l: 'GitHub', d: 'Pull request', mono: 'GH', fields: [['path', 'Content folder hint', 'content/posts', 'text', 'A starting point for discovery. Radar also inspects routes, post listings and navigation elsewhere in the repository.']], oauth: true, oauthLabel: 'GitHub', authFirst: true, pick: 'Repository', help: 'Radar inspects your repository and prepares the article and blog integration changes together. It opens a draft pull request for build and deployment preview checks.' },
 ] as PlatformDef[]).sort((a, b) => a.l.localeCompare(b.l));
 export const platOf = (k?: string | null) => PLATFORMS.find(p => p.k === k) || PLATFORMS.find(p => p.k === 'wordpress')!;
 export const platLabel = (k?: string | null) => platOf(k).l;
@@ -88,10 +90,10 @@ export const platLabel = (k?: string | null) => platOf(k).l;
  * `publishError.platform` as the label ("Ghost") and `message` as the full status line ("503 Service Unavailable",
  * "no response from host"), so neither is re-mapped or prefixed with the code again.
  */
-export function publishFailParts(err: { http?: number; message?: string; platform?: string; hint?: string } | null | undefined, destType?: string | null) {
+export function publishFailParts(err: { http?: number; message?: string; platform?: string; hint?: string; source?: 'radar' } | null | undefined, destType?: string | null) {
   const p = err?.platform || '';
   const platform = p ? (PLATFORMS.find(x => x.k === p)?.l || p) : destType ? platLabel(destType) : 'The platform';
-  return { platform, detail: err?.message || (err?.http ? String(err.http) : 'an error'), ...(err?.hint ? { hint: err.hint } : {}) };
+  return { platform, ...(err?.source === 'radar' ? { source: 'radar' as const } : {}), detail: err?.message || (err?.http ? String(err.http) : 'an error'), ...(err?.hint ? { hint: err.hint } : {}) };
 }
 /** Fields that are secrets: stored encrypted, never sent back to the client. */
 export const SECRET_FIELDS = ['pass', 'key'];
@@ -115,6 +117,25 @@ export const BMENTION = [{ v: 'asked', l: 'Only when asked' }, { v: 'relevant', 
 export const BRIEF_DEFAULT = { platforms: ['reddit', 'x', 'linkedin', 'hn'] as BriefPlatform[], time: '06:00', mention: 'asked' as const, accounts: ['founder', 'company'] as BriefAccount[] };
 /** Company drafts only go where brand accounts are welcome. Reddit, Hacker News and Quora stay founder-only. */
 export const CO_PLATS: BriefPlatform[] = ['x', 'linkedin'];
+
+/* ── Writing instructions (Settings → Content → Writing instructions) ── */
+export const INSTRUCTION_MAX = 1500;
+/** Canonical order: everything, content types, then platforms. */
+export const INSTRUCTION_KEYS = ['all', 'articles', 'social', 'community', 'linkedin', 'x', 'reddit', 'facebook', 'quora', 'hn'] as const;
+export const INSTRUCTION_SETS: { k: InstructionKey; l: string; d: string; ph: string; group: 'general' | 'platform' }[] = [
+  { k: 'all', l: 'Everything Radar writes', d: 'Articles, social posts and community replies.', ph: 'Use British spelling. Never say “unlock”. Write “sign up”, not “signup”.', group: 'general' },
+  { k: 'articles', l: 'Articles', d: 'Drafts, Search Console refreshes and rewrites in the editor.', ph: 'Open with the reader’s problem. End with one line inviting a free trial.', group: 'general' },
+  { k: 'social', l: 'Social posts', d: 'Social Marketing posts and Daily Brief feed posts.', ph: 'Short sentences. One idea per post. No rhetorical questions.', group: 'general' },
+  { k: 'community', l: 'Community replies', d: 'Daily Brief replies to threads.', ph: 'Lowercase is fine. Never talk about pricing.', group: 'general' },
+  { k: 'linkedin', l: 'LinkedIn', d: 'Posts and replies for LinkedIn.', ph: 'Start with a one-line hook. End with a question.', group: 'platform' },
+  { k: 'x', l: 'X', d: 'Posts and replies for X.', ph: 'No hashtags. Keep it under 200 characters.', group: 'platform' },
+  { k: 'reddit', l: 'Reddit', d: 'Posts and replies for Reddit.', ph: 'Lowercase and casual. No pricing talk.', group: 'platform' },
+  { k: 'facebook', l: 'Facebook', d: 'Posts for Facebook.', ph: 'Warm and neighbourly. Two short paragraphs at most.', group: 'platform' },
+  { k: 'quora', l: 'Quora', d: 'Answers and replies for Quora.', ph: 'Answer in the first sentence, then explain.', group: 'platform' },
+  { k: 'hn', l: 'Hacker News', d: 'Replies on Hacker News.', ph: 'Technical and plain. No marketing words.', group: 'platform' },
+];
+/** Normalize before counting, saving or sending: CRLF/CR → LF, drop control characters except \n and \t (jsonb rejects \u0000), trim. */
+export const cleanInstruction = (s: string) => String(s ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim();
 
 /* ── AI Visibility ── */
 export const AI_ENGINES: AiEngine[] = ['ChatGPT', 'Perplexity', 'Gemini', 'Claude', 'Grok'];

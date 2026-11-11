@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { STATUS_MAP } from '@/lib/constants';
 import { HEX_RE } from '@/lib/format';
 import type { Brand, EntryStatus } from '@/lib/types';
+import { retainToasts, toastPlan } from './toasts';
 
 export const IC = { logout: 'M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5M10 16.5 14.5 12 10 7.5M14.5 12H4', brief: 'M21 12a9 9 0 1 1-9-9M16.5 12a4.5 4.5 0 1 1-4.5-4.5M12 12l6.5-6.5', home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', social: 'M4 10v4h3l7 4V6L7 10H4zM18 9a4 4 0 0 1 0 6', chart: 'M4 20V4M4 20h16M8 15l4-5 3 3 5-6', link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1', gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1', profile: 'M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M9 21v-4h6v4M8 7h2M14 7h2M8 11h2M14 11h2', chevD: 'M6 9l6 6 6-6', chevR: 'M9 6l6 6-6 6', chevL: 'M15 6l-6 6 6 6', chevUD: 'M8 9l4-4 4 4M8 15l4 4 4-4', plus: 'M12 5v14M5 12h14', check: 'M5 12.5l4.5 4.5L19 7', x: 'M6 6l12 12M18 6 6 18', copy: 'M9 9h11v11H9zM5 15H4V4h11v1', download: 'M12 4v11M7 10l5 5 5-5M5 20h14', upload: 'M12 16V5M7 10l5-5 5 5M5 20h14', refresh: 'M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4', arrow: 'M5 12h14M13 6l6 6-6 6', ext: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6', pause: 'M8 5v14M16 5v14', play: 'M7 5l12 7-12 7z', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01', alert: 'M12 9v4M12 17h.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z', edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18', trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3', eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z', clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2', dots: 'M5 12h.01M12 12h.01M19 12h.01', menu: 'M4 7h16M4 12h16M4 17h16', doc: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5', lock: 'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4', wand: 'M15 4V2M15 10V8M11 6h2M17 6h2M4 20 14 10', back: 'M19 12H5M11 6l-6 6 6 6', undo: 'M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3', send: 'M4 12 20 4l-6 16-3-7z' } as const;
 export type IconName = keyof typeof IC;
@@ -75,15 +76,32 @@ export function Modal({ open, onClose, width = 720, children, dismissable = true
   if (!open || !mounted) return null;
   return createPortal(<div className={'overlay' + (full ? ' ov-full' : '')} onMouseDown={e => { if (e.target === e.currentTarget && dismissable) onClose && onClose(); }}><div className={'modal' + (full ? ' modal-full' : '')} role="dialog" aria-modal="true" aria-label={label} style={{ maxWidth: width }}>{children}</div></div>, document.body);
 }
-export function Sheet({ open, onClose, width = 520, title, eyebrow, children, footer }: { open: boolean; onClose: () => void; width?: number; title?: React.ReactNode; eyebrow?: React.ReactNode; children?: React.ReactNode; footer?: React.ReactNode }) {
-  const mounted = useMounted();
+/** `id`, `label` and `focus` are for a sheet opened from a toggle button (the Activity panel): `id` is what the button's
+ *  aria-controls points at, `label` names the dialog, and `focus` moves keyboard focus into the sheet when it opens, keeps
+ *  Tab inside it, and gives focus back when it closes (to `focus.current` when a ref is passed, else to where it was). */
+export function Sheet({ open, onClose, width = 520, title, eyebrow, children, footer, id, label, focus }: { open: boolean; onClose: () => void; width?: number; title?: React.ReactNode; eyebrow?: React.ReactNode; children?: React.ReactNode; footer?: React.ReactNode; id?: string; label?: string; focus?: boolean | React.RefObject<HTMLElement | null> }) {
+  const mounted = useMounted(); const ref = useRef<HTMLElement>(null); const show = open && mounted;
   useEffect(() => {
     if (!open) return;
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [open, onClose]);
-  if (!open || !mounted) return null;
-  return createPortal(<><div className="sheet-wrap" onClick={onClose} /><aside className="sheet" role="dialog" style={{ width }}>
+  useEffect(() => {
+    if (!show || !focus) return;
+    const el = ref.current; const before = document.activeElement as HTMLElement | null;
+    el?.focus({ preventScroll: true });
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !el) return;
+      const f = Array.from(el.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(x => x.offsetParent !== null);
+      if (!f.length) { e.preventDefault(); return; }
+      const at = document.activeElement; const first = f[0]; const last = f[f.length - 1];
+      if (e.shiftKey && (at === first || at === el)) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
+    };
+    el?.addEventListener('keydown', trap);
+    return () => { el?.removeEventListener('keydown', trap); const back = (typeof focus === 'object' && focus.current) || before; if (back && back.isConnected) back.focus({ preventScroll: true }); };
+  }, [show]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!show) return null;
+  return createPortal(<><div className="sheet-wrap" onClick={onClose} /><aside ref={ref} id={id} className="sheet" role="dialog" aria-label={label} aria-modal={focus ? true : undefined} tabIndex={focus ? -1 : undefined} style={{ width }}>
     <div className="row" style={{ padding: '20px 22px 0', alignItems: 'flex-start' }}><div className="grow col" style={{ gap: 6 }}>{eyebrow && <span className="eyebrow">{eyebrow}</span>}{title && <h2 className="h2">{title}</h2>}</div><Btn kind="ghost" icon="x" onClick={onClose} aria-label="Close" /></div>
     <div className="grow scroll-y" style={{ padding: '18px 22px 24px' }}>{children}</div>
     {footer && <div className="row" style={{ padding: '14px 22px', borderTop: '1px solid var(--line)', flexWrap: 'wrap' }}>{footer}</div>}
@@ -94,15 +112,22 @@ export function Sheet({ open, onClose, width = 520, title, eyebrow, children, fo
 export interface ToastOpts { tone?: Tone | null; action?: { label: string; fn: () => void } | null; ms?: number }
 type ToastFn = (msg: React.ReactNode, opt?: ToastOpts) => void;
 const ToastCtx = createContext<ToastFn>(() => {});
+/** Errors (tone `bad`) stay until dismissed, have a close button and sit in a `role="alert"` region; every other toast
+ *  is a status that leaves after 4.2 s. What leaves when there is no room: `retainToasts` (toasts.ts). */
 export function ToastHost({ children }: { children?: React.ReactNode }) {
   const [list, setList] = useState<({ id: number; msg: React.ReactNode } & ToastOpts)[]>([]);
   const mounted = useMounted();
+  const drop = useCallback((id: number) => setList(l => l.filter(t => t.id !== id)), []);
   const push = useCallback<ToastFn>((msg, opt = {}) => {
-    const id = Math.random();
-    setList(l => [...l.slice(-2), { id, msg, ...opt }]);
-    setTimeout(() => setList(l => l.filter(t => t.id !== id)), opt.ms || 4200);
-  }, []);
-  return <ToastCtx.Provider value={push}>{children}{mounted && createPortal(<div className="toast-wrap" role="status">{list.map(t => <div key={t.id} className="toast">{t.tone && <i className="dot" style={{ background: TONE[t.tone] }} />}<span>{t.msg}</span>{t.action && <button type="button" onClick={() => { t.action!.fn(); setList(l => l.filter(x => x.id !== t.id)); }}>{t.action.label}</button>}</div>)}</div>, document.body)}</ToastCtx.Provider>;
+    const id = Math.random(); const plan = toastPlan(opt);
+    setList(l => retainToasts(l, { id, msg, ...opt }));
+    if (plan.ms != null) setTimeout(() => drop(id), plan.ms);
+  }, [drop]);
+  const item = (t: typeof list[number]) => <div key={t.id} className="toast">{t.tone && <i className="dot" style={{ background: TONE[t.tone] }} />}<span>{t.msg}</span>{t.action && <button type="button" onClick={() => { t.action!.fn(); drop(t.id); }}>{t.action.label}</button>}{toastPlan(t).sticky && <button type="button" className="toast-x" aria-label="Dismiss" onClick={() => drop(t.id)}><Icon n="x" s={14} /></button>}</div>;
+  return <ToastCtx.Provider value={push}>{children}{mounted && createPortal(<div className="toast-wrap">
+    <div className="toast-reg" role="alert">{list.filter(t => toastPlan(t).sticky).map(item)}</div>
+    <div className="toast-reg" role="status">{list.filter(t => !toastPlan(t).sticky).map(item)}</div>
+  </div>, document.body)}</ToastCtx.Provider>;
 }
 export const useToast = () => useContext(ToastCtx);
 

@@ -1,0 +1,9 @@
+# Distinct copy: independent sequential review
+
+Baseline clean 00a32602d12fcf0056483b02ccb8c0713c33eb98. Copy-only user correction: #13 felt like #11; every email should have a distinct purpose and every line should earn its place. PM owns source/copy/previews. QA owns this directory only. No source edits, new wording tests, database/provider actions, deployment or broader delivery workflow.
+
+Read as the same subscriber receiving onboarding, work reminders and lessons over time. Judge whether each message introduces a new state, useful evidence, decision or skill. Do not confuse a different label with a different job. Do not require arbitrary variation in identity, security, subscription or preference controls. Combined work is an alternative representation of the same source facts, not a separate lesson; role/access/data variants preserve the same family's job.
+
+Before evidence: baseline-catalogue.json and baseline-copy.json preserve all 68 active variants with stable references at the starting source. Compare final actual HTML/plaintext, first paragraph, instruction, CTA and surrounding sequence. Check all 28 active family purposes and direct overlaps below; check repeated asks within a single message as well as across messages. Preserve founder voice without making every opener an I-want-to-help declaration; remove fabricated review/completion claims. Keep #5 retired and every other reference unchanged.
+
+After final PM regeneration: inspect all revised source and rendered text; render changed variants at 390/600 using the existing harness, real-Chrome mobile reading/gallery controls and targeted screenshots. Run existing pure template/lesson checks and typecheck as appropriate; no new tests for word substitutions, no full suite or app/DB workflow. Record exact source/artifact fingerprint and bounded result. Scheduling, caps, sender metadata and auth facts are reused only where unchanged.

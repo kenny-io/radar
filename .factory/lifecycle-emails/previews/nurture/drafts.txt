@@ -1,0 +1,221 @@
+RADAR LIFECYCLE SCHEDULE
+The seven former drafts now map to actual runtime events and lessons.
+Fictional source previews only; generating this gallery sends nothing.
+
+Profile activation
+Runtime event: welcome
+Timing: Immediately after mailbox confirmation or new verified Google signup
+Audience: New verified account; analyzed-profile copy when that context exists
+Relationship: Replaces the analyzed-profile welcome; one welcome event.
+Subject: Put your Business Profile to work
+Preview: Check the offering, audience and voice in your saved profile.
+
+Hi Alex,
+
+I’m Ekene, Radar’s founder.
+
+Your website analysis and Business Profile for Fieldnote are saved. Open the profile and check the description of what you sell, who it’s for and how you want to sound.
+
+Correct anything Radar misunderstood before generating content. This is the context it will use for your business.
+
+Continue with my profile: https://radar.thally.io/dashboard
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences
+
+---
+
+Founder note
+Runtime event: founder_note
+Timing: Planned 24 hours after verified account creation, subject to daytime and optional-mail cap
+Audience: New verified account with effective founder-mail permission
+Relationship: Reuses the existing founder event and approved story.
+Subject: Why I built Radar
+Preview: Building is easier. Getting your product beyond your own network still takes work.
+
+Hi Alex,
+
+It’s never been easier to build a product. But getting it beyond your own network is still a full-time job.
+
+That’s why I built Radar. I wanted to help founders get the articles, posts and useful conversations out there that help people discover their businesses.
+
+What are you trying to get your business known for? Reply and tell me. I’d like to understand what you’re working toward.
+
+Reply to Ekene: mailto:team@thally.io
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+---
+
+First article workflow
+Runtime event: article_workflow
+Timing: First observed untouched workspace +24 hours; saved/analyzed pre-trial profile +3 days
+Audience: Owner without an approved/generated content workflow
+Relationship: One-time guide; meaningful content work resolves it.
+Subject: What happens before an article goes live
+Preview: I’ll walk you through choosing a topic and reviewing your first draft.
+
+Hi Alex,
+
+Here’s the review process I’d use for a first article. Follow these steps with Autopilot and Blog autopilot off; enabling either can permit publication without a separate review.
+
+1. Review the proposed topics in Content Calendar. Open one, read who it’s for and what it should answer, then choose Approve & schedule. Radar prepares the draft for you to review.
+
+2. Read the draft as someone considering your product. Correct the facts, add an example you know firsthand and check its links. Connect your publishing destination, then approve and schedule the article when it’s ready.
+
+Follow the topic’s status in Content Calendar after approval and again after scheduling, so you can see where it is in the publishing process.
+
+Choose my first article: https://radar.thally.io/email/learn?lesson=organic_search
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+---
+
+AI Visibility lesson
+Runtime event: weekly:ai_visibility
+Timing: Weekly course lesson 1, first eligible daytime/cap slot after enrollment
+Audience: Eligible verified accounts across access stages
+Relationship: Uses the existing AI Visibility lesson, with access-aware copy.
+Subject: Does ChatGPT or Claude recommend Fieldnote?
+Preview: A mention and a citation tell you different things. Here’s what to look for.
+
+Hi Alex,
+
+An assistant can name Fieldnote without linking to your site. I’d read the answer itself to understand what it says about you, what it recommends you for and which sources it relies on. Radar collects these answers from ChatGPT, Claude, Gemini, Perplexity and Grok.
+
+1. Open Performance → AI Visibility and add two buyer questions. Try “What should independent studios look for when choosing design tools?”. New questions are collected overnight. You can also open a result and choose Collect now to request an answer sooner.
+
+2. Open a collected answer and follow its citations. Look for whether your business is named, how it is described and which sources support that description. Compare those details with the information on your own site.
+
+Keep the questions stable and compare their Mentioned and Cited your site counts next week. Not collected means an answer is missing; it is different from an answer that didn’t mention you.
+
+Check my AI visibility: https://radar.thally.io/email/learn?lesson=ai_visibility
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+---
+
+Daily Brief lesson
+Runtime event: weekly:daily_brief
+Timing: Weekly course lesson 2, at least 7 days after lesson 1 acceptance
+Audience: Eligible verified accounts across access stages
+Relationship: Uses the existing Daily Brief lesson, separate from action-conditioned reminders.
+Subject: Add a real example to Fieldnote’s replies
+Preview: Bring an example from your own work into the conversation.
+
+Hi Alex,
+
+A suggested reply is a starting point. Before posting it, I’d add something only you could contribute: an example from your work, a useful detail or an answer to the person’s exact question. Daily Brief brings the threads and draft replies together so you can do that.
+
+1. Open Daily Brief and read the original thread for one promising conversation. Edit the suggested reply to answer the person’s question. Add an example or detail from your own knowledge.
+
+2. Copy the reply, post it in the conversation and mark it posted in Radar. Build up to five useful replies this week if you find five good fits. Mention your product when it helps, and disclose your connection to it.
+
+Mark a reply posted only after you’ve published it. The copied and posted states show your follow-through; the original thread is where you’ll find responses and follow-up questions.
+
+Open my Daily Brief: https://radar.thally.io/email/learn?lesson=daily_brief
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+---
+
+Backlinks lesson
+Runtime event: weekly:backlinks
+Timing: Weekly course lesson 3, at least 7 days after lesson 2 acceptance
+Audience: Eligible verified accounts; joining the network remains optional
+Relationship: Uses the existing Backlinks lesson rather than adding a duplicate introduction.
+Subject: How Fieldnote could appear on another site
+Preview: I’d look for a mention that helps the other site’s reader.
+
+Hi Alex,
+
+Someone reading another founder’s site could be looking for exactly what Fieldnote offers. I built the Backlinks network to help participating businesses find relevant places to mention each other.
+
+1. Open Backlinks and join the network if you haven’t already. Choose topics that fit your business and review your preferences for links from your site. Keep manual approval while you learn how the proposals work.
+
+2. When a proposal arrives, read the surrounding sentence and open the destination. Check the anchor, disclosure and link attribute. Approve a mention that helps the reader, or decline it. The partner may still need to place an approved link.
+
+Approval and live placement are separate. Backlinks → Live links shows placement and verification status, with Re-check when you need it. Search rankings and AI recommendations can vary.
+
+Explore my backlink network: https://radar.thally.io/email/learn?lesson=backlinks
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+---
+
+Search Console refresh guide
+Runtime event: search_refresh
+Timing: Later of first observed usable Search Console data +24 hours and Organic Search lesson acceptance +7 days
+Audience: Primary business owner with connected, recent measured page data
+Relationship: One-time public guide; relevant data is rechecked before delivery.
+Subject: Your next article might be a page you already have
+Preview: Before writing something new, I’d look at the pages people already find.
+
+Hi Alex,
+
+Before you spend time on another article, I’d look at what people are already finding on your site. Your Search Console data can help you choose a page worth improving.
+
+I’d investigate a page with impressions and few clicks, or a query around positions 10–20. Read the page and the search results to understand what the searcher expected before deciding what to change.
+
+1. Open Performance and review the Pages and Queries tables over the same period. Pick a page to investigate. Use Google Search Console itself if you need to filter queries for that particular page.
+
+2. Choose one change you can justify: a clearer title, an updated example or a missing explanation. Review Radar’s suggestions and add a useful change to Content Calendar. Check it before anything publishes.
+
+Record the date of the update. Compare clicks and impressions once more data is available, using a similar period. The page-two refresh guide shows how to evaluate the opportunity before deciding what to change.
+
+Read the page refresh guide: https://radar.thally.io/blog/page-two-refresh
+
+Ekene
+Founder, Radar
+team@thally.io
+
+Privacy: https://radar.thally.io/privacy · Terms: https://radar.thally.io/terms
+
+Email preferences: https://radar.thally.io/email-preferences?token=preview-only-not-valid
+
+Fairspleet LLC · 348 Business Bay, Dubai, UAE
+
+---

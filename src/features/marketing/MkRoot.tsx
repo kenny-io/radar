@@ -3,9 +3,11 @@
 // shared parts of features/feature.js. Each effect cleans up on unmount.
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { createField, type Field } from './field';
 import { cleanSite, startHref, SITE_ERROR, SITE_NOTE } from './domain';
 import { RadarMark } from './mark';
+import { FEATURE_LINKS } from './marketing-links';
 
 type Kind = 'home' | 'fp';
 interface Mk { kind: Kind; value: string; setValue: (v: string) => void; field: React.RefObject<Field | null>; setNogl: (v: boolean) => void }
@@ -48,6 +50,7 @@ export function HeroField() {
  *  Feature pages: always `.day`. */
 export function Nav() {
   const { kind } = useMk(); const home = kind === 'home';
+  const pathname = usePathname();
   const [day, setDay] = useState(!home); const [sc, setSc] = useState(false);
   useEffect(() => {
     let HH = innerHeight, ET = 1e9, q = 0;
@@ -60,9 +63,18 @@ export function Nav() {
     return () => { removeEventListener('scroll', onScroll); removeEventListener('resize', measure); removeEventListener('load', measure); ro.disconnect(); cancelAnimationFrame(q); };
   }, [home]);
   return <header className={`nav${day ? ' day' : ''}${sc ? ' sc' : ''}`} id="nav">
-    <div className="wrap nav-in">{home
-      ? <><a className="brand" href="#top" aria-label="Radar home"><RadarMark s={22} /><span>Radar</span></a><nav className="nav-r" aria-label="Primary"><a className="lnk mhide-sm" href="#features">Features</a><a className="lnk mhide-sm" href="#pricing">Pricing</a><a className="lnk mhide-sm" href="#faq">Questions</a><a className="lnk" href="/signin">Sign in</a><a className="mbtn mbtn-solid" href="/signup">Get started</a></nav></>
-      : <><Link className="brand" href="/" aria-label="Radar home"><RadarMark s={22} /><span>Radar</span></Link><nav className="nav-r" aria-label="Primary"><Link className="lnk mhide-sm" href="/#features">Features</Link><Link className="lnk mhide-sm" href="/#pricing">Pricing</Link><a className="lnk" href="/signin">Sign in</a><a className="mbtn mbtn-solid" href="/signup">Get started</a></nav></>}
+    <div className="wrap nav-in">
+      <Link className="brand" href={home ? '#top' : '/'} aria-label="Radar home"><RadarMark s={22} /><span>Radar</span></Link>
+      <nav className="nav-r" aria-label="Primary">
+        {home && <a className="lnk mhide-sm" href="#how">How it works</a>}
+        <div className="dd mhide-sm">
+          <Link className="lnk" href={home ? '#features' : '/#features'} aria-current={pathname?.startsWith('/features/') ? 'page' : undefined}>Features<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></Link>
+          <div className="dd-p">{FEATURE_LINKS.map(item => <Link key={item.href} href={item.href} aria-current={pathname === item.href ? 'page' : undefined}><b>{item.name}</b><span>{item.line}</span></Link>)}</div>
+        </div>
+        <Link className="lnk mhide-sm" href={home ? '#pricing' : '/#pricing'}>Pricing</Link>
+        <Link className="lnk mhide-sm" href="/blog" aria-current={pathname?.startsWith('/blog') ? 'page' : undefined}>Blog</Link>
+        <a className="lnk" href="/signin">Sign in</a><a className="mbtn mbtn-solid" href="/signup">Get started</a>
+      </nav>
     </div></header>;
 }
 

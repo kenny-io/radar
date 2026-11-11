@@ -1,0 +1,27 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-weekly-education/radar-push
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/sender-metadata.test.ts (6 tests) 77ms
+stdout | .factory/lifecycle-refinement/qa/founder-voice/legacy-transport.test.ts > LC2 actual legacy senders with fake provider transport > actual invitation uses the signed single-use link, preserves Viewer authorization, and escapes dynamic HTML/header data
+[team] invite 5b2d14f3-6739-44f1-8f37-d0443a6edc0f accepted by user 182483fa-c957-4486-9185-da78bb592de8
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/legacy-transport.test.ts (3 tests) 249ms
+stdout | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > subscription sync and trial extensions never create a reminder
+[billing] 7e813e57-1b28-4843-809d-28f4fa956ecb subscription sub_local none → trialing
+
+stdout | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > subscription sync and trial extensions never create a reminder
+[billing] 7e813e57-1b28-4843-809d-28f4fa956ecb subscription sub_local trialing → trialing
+
+stdout | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > subscription sync and trial extensions never create a reminder
+[billing] 7e813e57-1b28-4843-809d-28f4fa956ecb subscription sub_local trialing → trialing
+
+stderr | .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts > Independent retired trial-ending reminder > retires queued history even when delivery credentials are absent
+[lifecycle] RESEND_API_KEY missing; queued mail retained
+
+ ✓ .factory/lifecycle-refinement/qa/founder-voice/retirement.test.ts (13 tests) 125ms
+
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+   Start at  01:16:42
+   Duration  2.80s (transform 414ms, setup 0ms, collect 1.89s, tests 451ms, environment 0ms, prepare 110ms)
+

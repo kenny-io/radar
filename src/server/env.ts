@@ -4,7 +4,7 @@ const e = process.env;
 export const env = {
   appUrl: (e.APP_URL || 'http://localhost:3000').replace(/\/$/, ''),
   secretKey: e.RADAR_SECRET_KEY || '',
-  devStubs: e.RADAR_DEV_STUBS === '1',
+  devStubs: e.RADAR_DEV_STUBS === '1' && e.NODE_ENV !== 'production',
   /** DEV ONLY, with RADAR_DEV_STUBS=1: blog connector types that skip their stub and call the real platform, e.g.
    * "wordpress,ghost,webhook" (local Docker instances, see scripts/connectors/). Ignored without dev stubs. */
   realConnectors: (e.RADAR_REAL_CONNECTORS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
@@ -72,13 +72,15 @@ export const env = {
   // Storage
   storageDir: e.STORAGE_DIR || '.data/uploads',
   s3Bucket: e.S3_BUCKET || '', s3Region: e.S3_REGION || 'us-east-1', s3Endpoint: e.S3_ENDPOINT || '', s3PublicUrl: e.S3_PUBLIC_URL || '',
-  crawlerUserAgent: e.CRAWLER_USER_AGENT || 'RadarBot/1.0 (+https://radar.app/bot)',
+  crawlerUserAgent: e.CRAWLER_USER_AGENT || `RadarBot/1.0 (+${(e.APP_URL || 'https://radar.thally.io').replace(/\/$/, '')}/bot)`,
   // Trial billing (Stripe over REST, .factory/marketing-trial-gating/architecture.md §7, §11). RADAR_BILLING and
   // RADAR_BILLING_GRANDFATHER_BEFORE are read at call time (src/server/flags.ts), not frozen here.
   stripeSecretKey: e.STRIPE_SECRET_KEY || '',
   /** Read on the server and passed to /start-trial as a prop (not NEXT_PUBLIC_*, which would be inlined at build time). */
   stripePublishableKey: e.STRIPE_PUBLISHABLE_KEY || '',
   stripeWebhookSecret: e.STRIPE_WEBHOOK_SECRET || '',
+  // Dedicated Radar customer portal configuration; empty uses the account default.
+  stripePortalConfigurationId: e.STRIPE_PORTAL_CONFIGURATION_ID || '',
   /** The $50/month recurring USD price. */
   stripePriceId: e.STRIPE_PRICE_ID || '',
   /** Pinned Stripe-Version header. Code reads items.data[0].current_period_end, which needs Basil (2025-03-31) or later. */
@@ -86,7 +88,10 @@ export const env = {
   // Abuse limits for anonymous onboarding (§8). RADAR_ANALYSIS_GLOBAL_PER_HOUR is read at call time (abuse/rateLimit.ts).
   /** X-Forwarded-For entries added by trusted proxies; the client IP is this many entries from the right. */
   trustedProxyHops: Math.max(1, Number(e.RADAR_TRUSTED_PROXY_HOPS) || 1),
-  /** Cloudflare Turnstile secret. Unset → the human check passes (seam only; no widget is shipped). */
+  /** Opt-in challenge. Shared IP/address/global budgets always protect signup/security mail. */
+  signupTurnstileRequired: e.RADAR_SIGNUP_TURNSTILE === '1',
   turnstileSecretKey: e.TURNSTILE_SECRET_KEY || '',
+  guestTurnstileSecretKey: e.GUEST_TURNSTILE_SECRET_KEY || '',
+  turnstileSiteKey: e.TURNSTILE_SITE_KEY || '',
 };
 export const oauthRedirect = (provider: string) => `${env.appUrl}/api/oauth/${provider}/callback`;

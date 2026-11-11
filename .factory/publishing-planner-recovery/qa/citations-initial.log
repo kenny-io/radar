@@ -1,0 +1,9 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/publishing-planner-recovery/radar-push
+
+ ✓ .factory/publishing-planner-recovery/qa/citations.test.ts (19 tests) 47ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  01:35:32
+   Duration  2.32s (transform 536ms, setup 0ms, collect 2.09s, tests 47ms, environment 0ms, prepare 35ms)

@@ -4,15 +4,16 @@ import { and, eq } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
 import { db, schema } from '../db';
 import { RadarError, notFound } from '../errors';
-import { calendarSettingsOf, entryFromRow } from '../workspace';
+import { articleV, calendarSettingsOf, entryFromRow } from '../workspace';
 import { startDraft } from '../services/drafting/start';
 import { startBodyImages } from '../services/drafting/bodyImages';
-import { assertNoArticleWork, assertNoDraftWork, lockArticle } from '../services/drafting/guard';
+import { assertArticleEditable, assertNoArticleWork, assertNoDraftWork, lockArticle } from '../services/drafting/guard';
 import { rewriteSelection } from '../services/drafting/rewrite';
 import { suggestVideos } from '../services/drafting/youtube';
 import { renderImage } from '../services/images';
 import { defaultArticle, statNumbers } from '@/features/article/blocks';
 import type { Article, Profile } from '@/lib/types';
+import { recordEngagement, resolveCalendarForEntries } from '../services/lifecycle/engagement';
 
 const E = schema.calendarEntries;
 const BlockZ = z.union([z.tuple([z.enum(['p', 'h2', 'h3']), z.string().max(20000)]), z.tuple([z.literal('ul'), z.array(z.string().max(5000)).max(200)])]);
@@ -27,57 +28,75 @@ const Patch = z.object({
 async function load(bid: string, entryId: string) {
   const r = (await db.select().from(E).where(and(eq(E.id, entryId), eq(E.businessId, bid))).limit(1))[0];
   if (!r) throw notFound('That article');
-  const a = (await db.select().from(schema.articles).where(eq(schema.articles.entryId, entryId)).limit(1))[0];
+  const a = (await db.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
   const e = entryFromRow(r);
-  return { row: r, e, a: ({ ...defaultArticle(e), ...((a?.data as Article) || {}) }) as Article };
+  return { row: r, e, a: ({ ...defaultArticle(e), ...((a?.data as Article) || {}) }) as Article, v: articleV(a?.updatedAt) };
 }
-async function save(bid: string, entryId: string, change: (latest: Article) => Article) {
+/** Returns the row's new `v` and the `v` it replaced, read under the article lock: a client holding `prev` knows nobody wrote in between. */
+async function save(bid: string, entryId: string, change: (latest: Article) => Article, media = false) {
   return db.transaction(async tx => {
     const row = await lockArticle(tx, bid, entryId);
     if (row.status === 'published' || row.status === 'publishing') throw new RadarError('This article is locked while it’s queued or published.');
-    await assertNoDraftWork(tx, bid, entryId);
+    if (media) { assertArticleEditable(row.status, row.publishRemote); await assertNoArticleWork(tx, bid, entryId); }
+    else await assertNoDraftWork(tx, bid, entryId);
     const current = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0];
     const data = change({ ...defaultArticle(entryFromRow(row)), ...((current?.data as Article) || {}) });
-    await tx.insert(schema.articles).values({ entryId, businessId: bid, data, updatedAt: new Date() }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
+    const prev = articleV(current?.updatedAt); const at = new Date(Math.max(Date.now(), prev + 1)); // strictly later, so two saves in one millisecond still differ
+    await tx.insert(schema.articles).values({ entryId, businessId: bid, data, updatedAt: at }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: at } });
+    return { v: at.getTime(), prev };
   });
+}
+async function checkMedia(bid: string, entryId: string) {
+  await db.transaction(async tx => { const row = await lockArticle(tx, bid, entryId); assertArticleEditable(row.status, row.publishRemote); await assertNoArticleWork(tx, bid, entryId); });
 }
 const profileOf = (biz: any): Profile => ({ ...(biz.profile as Profile), domain: biz.domain });
 async function render(bid: string, biz: any, title: string, a: Article): Promise<Article['img']> {
   const p = profileOf(biz);
-  const url = await renderImage({ bid, style: a.img.style, brand: p.brand, headline: title, name: p.business.name, seed: a.img.seed, prompt: a.img.prompt, w: 1200, h: 628, kind: 'hero' });
+  const url = await renderImage({ bid, style: a.img.style, brand: p.brand, headline: title, name: p.business.name, seed: a.img.seed, prompt: a.img.prompt, modelRequired: a.img.modelRequired, w: 1200, h: 628, kind: 'hero' });
   return { ...a.img, url, urlKey: `${a.img.style}:${a.img.seed}` };
 }
 
 export const actions: ActionMap = {
+  /** One whole article for the Article workspace; the workspace itself carries only `ArticleSummary` (first-five architecture §3.3). */
+  'article.get': action({ read: true, input: z.object({ entryId: z.string().min(1).max(100) }), run: async (ctx, { entryId }) => {
+    const { a, v } = await load(ctx.bid, entryId);
+    return { article: a, v };
+  } }),
+
   /** Autosave: brief, SEO, image fields, videos, edited blocks. */
   'article.save': action({ input: z.object({ entryId: z.string(), patch: Patch }), run: async (ctx, { entryId, patch }) => {
     const { e, a, row } = await load(ctx.bid, entryId);
     if (row.status === 'published' || row.status === 'publishing') throw new RadarError('This article is locked while it’s queued or published.');
+    if (patch.img) await checkMedia(ctx.bid, entryId);
     const next: Article = { ...a, ...(patch.body ? { body: patch.body as any } : {}), brief: { ...a.brief, ...(patch.brief || {}) }, seo: { ...a.seo, ...(patch.seo || {}) }, img: { ...a.img, ...(patch.img || {}) }, ...(patch.videos ? { videos: patch.videos } : {}) };
     if (patch.seo?.slug != null) next.seo.slug = patch.seo.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     // A new style needs a new hero render (template styles are instant; photo styles use the image model when configured).
     if (patch.img?.style && patch.img.style !== a.img.style && next.generated) {
-      try { next.img = await render(ctx.bid, ctx.biz, e.title, next); } catch { next.img = { ...next.img, url: null, urlKey: null }; }
+      try { next.img = await render(ctx.bid, ctx.biz, e.title, next); } catch (error) { if (next.img.modelRequired) { if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); } next.img = { ...next.img, url: null, urlKey: null }; }
     }
-    await save(ctx.bid, entryId, latest => ({
+    const at = await save(ctx.bid, entryId, latest => {
+      if (patch.img?.style && patch.img.style !== a.img.style && (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt || latest.img.url !== a.img.url)) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
+      return {
       ...latest,
       ...(patch.body ? { body: patch.body as Article['body'] } : {}),
       brief: { ...latest.brief, ...patch.brief }, seo: { ...latest.seo, ...patch.seo, ...(patch.seo?.slug != null ? { slug: next.seo.slug } : {}) },
       img: { ...latest.img, ...patch.img, ...(patch.img?.style && patch.img.style !== a.img.style ? { url: next.img.url, urlKey: next.img.urlKey } : {}) },
       ...(patch.videos ? { videos: patch.videos } : {}),
-    }));
-    return { ok: true };
+    }; }, !!patch.img);
+    return { ok: true, ...at };
   } }),
 
-  /** Regenerate image → new seed + server render. */
-  'article.regenerateImage': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
+  /** A supplied prompt explicitly requires the image model, even for an older template style. */
+  'article.regenerateImage': action({ input: z.object({ entryId: z.string(), prompt: z.string().trim().min(1, 'Describe the image you want.').max(1000).optional() }), run: async (ctx, { entryId, prompt }) => {
+    await checkMedia(ctx.bid, entryId); // preflight before spending provider time
     const { e, a } = await load(ctx.bid, entryId);
-    const next = { ...a, img: { ...a.img, seed: (a.img.seed || 1) + 1 } };
-    next.img = await render(ctx.bid, ctx.biz, e.title, next);
+    const next = { ...a, img: { ...a.img, seed: (a.img.seed || 1) + 1, ...(prompt !== undefined ? { prompt, modelRequired: true } : {}) } };
+    try { next.img = await render(ctx.bid, ctx.biz, e.title, next); }
+    catch (error: any) { console.error('[article] cover generation failed', error?.message); if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); }
     await save(ctx.bid, entryId, latest => {
-      if (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
-      return { ...latest, img: { ...latest.img, url: next.img.url, urlKey: next.img.urlKey, seed: next.img.seed } };
-    });
+      if (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt || latest.img.url !== a.img.url) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
+      return { ...latest, img: { ...latest.img, url: next.img.url, urlKey: next.img.urlKey, seed: next.img.seed, prompt: next.img.prompt, modelRequired: next.img.modelRequired } };
+    }, true);
     return { url: next.img.url, seed: next.img.seed };
   } }),
 
@@ -118,8 +137,8 @@ export const actions: ActionMap = {
   'article.source': action({ input: z.object({ entryId: z.string(), index: z.number().int().min(0), removed: z.boolean() }), run: async (ctx, { entryId, index, removed }) => {
     const { a } = await load(ctx.bid, entryId);
     if (!a.sources[index]) throw notFound('That source');
-    await save(ctx.bid, entryId, latest => ({ ...latest, sources: latest.sources.map((s, i) => i === index ? { ...s, removed } : s) }));
-    return { ok: true };
+    const at = await save(ctx.bid, entryId, latest => ({ ...latest, sources: latest.sources.map((s, i) => i === index ? { ...s, removed } : s) }));
+    return { ok: true, ...at };
   } }),
 
   /** "Publish to" select (several connections). */
@@ -138,17 +157,25 @@ export const actions: ActionMap = {
       const a = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, ctx.bid))).limit(1))[0]?.data as Article | undefined;
       if (!a?.generated) throw new RadarError('Radar hasn’t drafted this article yet.');
       if (!['review', 'draft', 'approved'].includes(row.status)) throw new RadarError('This article can’t be approved right now.');
-      if (withoutPublishing) { await tx.update(E).set({ status: 'approved' }).where(eq(E.id, entryId)); return { status: 'approved' }; }
+      if (withoutPublishing) {
+        await tx.update(E).set({ status: 'approved', autopilotActivationId: null }).where(eq(E.id, entryId));
+        await resolveCalendarForEntries(tx, ctx.bid, [entryId]);
+        await recordEngagement(tx, { businessId: ctx.bid, kind: 'article_social', ref: entryId });
+        return { status: 'approved' };
+      }
       const conns = await tx.select({ id: schema.connections.id }).from(schema.connections).where(eq(schema.connections.businessId, ctx.bid));
       if (!conns.length) throw new RadarError('Connect your blog to schedule this article.');
-      await tx.update(E).set({ status: 'scheduled', publishError: null }).where(eq(E.id, entryId));
+      await tx.update(E).set({ status: 'scheduled', publishError: null, autopilotActivationId: null }).where(eq(E.id, entryId));
+      await resolveCalendarForEntries(tx, ctx.bid, [entryId]);
+      await recordEngagement(tx, { businessId: ctx.bid, kind: 'article_social', ref: entryId });
+
       return { status: 'scheduled' };
     });
   } }),
 
   /** CONTRACT: scheduled → review ("Unscheduled. The draft is kept.") */
   'article.unschedule': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
-    const r = await db.update(E).set({ status: 'review' }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'scheduled'))).returning({ id: E.id });
+    const r = await db.update(E).set({ status: 'review', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'scheduled'))).returning({ id: E.id });
     if (!r.length) throw new RadarError('This article isn’t queued.');
     return { status: 'review' };
   } }),

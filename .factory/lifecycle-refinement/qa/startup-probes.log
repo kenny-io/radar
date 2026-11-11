@@ -1,0 +1,3 @@
+{"check":"migrated13 ready","pass":true}
+[worker] waiting for database migrations before processing jobs
+{"check":"prior12 refused until migration13","pass":true}

@@ -1,0 +1,22 @@
+{
+  "status": "approved-source-plan",
+  "destinationHead": "dbfb0f0b66b1a607bd3f0b2587a84064464c52b3",
+  "plannerSha256": "9b04bb27a91cb8cd2528fbf3fbe8af25e425a87ec3787772d4b78e0fb64fb7de",
+  "route": "/rent/dubai/1-bedroom-apartments",
+  "articlePath": "apps/web/app/rent/dubai/hubs.ts",
+  "files": [
+    "apps/web/app/rent/dubai/hubs.ts",
+    "apps/web/app/rent/dubai/[slug]/page.tsx"
+  ],
+  "requests": 6,
+  "calls": [
+    "github.integration.discover",
+    "github.integration.discover",
+    "github.integration.discover",
+    "github.integration.plan",
+    "github.integration.review"
+  ],
+  "elapsedMs": 104337,
+  "runtimeVerified": false,
+  "scope": "Real configured providers, pinned local Git source and exact saved payload; DB deliberately unreachable; network restricted to AI providers; no destination writes. Full trace and proposed files remain private ignored local evidence."
+}

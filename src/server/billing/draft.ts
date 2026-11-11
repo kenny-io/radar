@@ -29,14 +29,23 @@ export async function draftOf(ownerId: string, q: Q = db): Promise<BizRow | null
 
 /** Commit a draft: status active, timezone from onboarding.tz, committedAt; Search Console marked skipped if never connected;
  *  `business.onboarded` tracked once. Idempotent (only the call that flips the status does anything). Bumps the revision in
- *  the same UPDATE. Returns the bid when this call committed it, else null. Pass `q` + `later` inside a transaction. */
+ *  the same UPDATE. Returns the bid when this call committed it, else null. Pass `q` + `later` inside a transaction.
+ *  The same UPDATE writes `onboarding.firstRun = { at }` (the once-per-business claim for the first-week run, first-five
+ *  architecture §1); the three jobs are enqueued after the transaction commits (`later`). With a transaction and no
+ *  `later` nothing can be enqueued here (it would wait on this row), so the Dashboard offers Retry after a minute. */
 export async function commitDraft(bid: string, q: Q = db, later?: Later): Promise<string | null> {
+  if (q === db) {
+    const deferred: Later = later || [];
+    const result = await db.transaction(tx => commitDraft(bid, tx, deferred));
+    if (!later) await runLater(deferred);
+    return result;
+  }
   const B = schema.businesses;
   const cur = (await q.select({ onboarding: B.onboarding, timezone: B.timezone }).from(B).where(and(eq(B.id, bid), eq(B.status, 'onboarding'))).limit(1))[0];
   if (!cur) return null;
   const tz = validTz(cur.onboarding?.tz) ? cur.onboarding.tz : cur.timezone;
   const committedAt = new Date().toISOString();
-  const r = await q.update(B).set({ status: 'active', timezone: tz, onboarding: sql`${B.onboarding} || ${JSON.stringify({ committedAt })}::jsonb`, rev: sql`${B.rev} + 1`, updatedAt: new Date() })
+  const r = await q.update(B).set({ status: 'active', timezone: tz, onboarding: sql`${B.onboarding} || ${JSON.stringify({ committedAt, firstRun: { at: committedAt } })}::jsonb`, rev: sql`${B.rev} + 1`, updatedAt: new Date() })
     .where(and(eq(B.id, bid), eq(B.status, 'onboarding'))).returning({ id: B.id, ownerId: B.ownerId });
   if (!r[0]) return null;
   const G = schema.gscConnections;
@@ -45,5 +54,7 @@ export async function commitDraft(bid: string, q: Q = db, later?: Later): Promis
   else if (g.status === 'none') await q.update(G).set({ status: 'skipped' }).where(eq(G.businessId, bid));
   const t = () => track('business.onboarded', { bid, uid: r[0].ownerId });
   if (later) later.push(t); else await t();
+  // Loaded on demand: the job queue imports billing/access, which imports this module.
+  if (later) later.push(async () => (await import('../services/firstRun')).startFirstRun(bid));
   return bid;
 }

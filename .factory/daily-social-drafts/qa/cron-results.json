@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-09",
+  "concurrentTicks": "one queued job",
+  "backgroundJob": "completed without UI visit",
+  "packId": "auto-7cad5156-2d08-45ba-97c5-c96661b64476-2026-11-09",
+  "source": "profile-only",
+  "platforms": [
+    "x",
+    "linkedin"
+  ],
+  "publications": 0,
+  "idempotentRetry": true
+}

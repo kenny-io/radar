@@ -3,6 +3,7 @@
 import { eq } from 'drizzle-orm';
 import { schema } from '../db';
 import { track } from '../events';
+import { queueLifecycle } from '../services/lifecycle/queue';
 import { limitBilling } from '../abuse/rateLimit';
 import { FEE_CENTS } from '@/lib/billing';
 import { accountGrants, ownAccess } from './access';
@@ -26,7 +27,7 @@ export async function start(u: BillingUser, pmId: string, ip: string): Promise<S
   const p = await needProvider();
   if (await ownAccess({ id: u.id, email: u.email, guest: false })) throw BillingError.alreadyActive();
   await limitBilling(u.id, ip);
-  const price = priceId(p); void checkPriceOnce(p, price);
+  const price = priceId(p); await checkPriceOnce(p, price);
   const customer = await ensureCustomer(p, u);
   return withBillingLock(u.id, async (tx, later): Promise<StartResult> => {
     const a = await lockAccount(tx, u.id);
@@ -98,6 +99,7 @@ export async function activateIn(p: BillingProvider, tx: Tx, later: Later, pi: P
     const T = t0 - nowSec() < 3600 ? Math.floor(trialEndFrom().getTime() / 1000) : t0;
     let sub = await adopt(p, customer, pi.id);
     if (!sub) {
+      await checkPriceOnce(p, priceId(p));
       try {
         sub = (await p.createSubscription({ customer, price: priceId(p), defaultPaymentMethod: pi.payment_method, trialEnd: T, metadata: { radar_user_id: uid, radar_pi: pi.id } }, `radar:sub:${pi.id}:${T}`)).sub;
       } catch (e) {
@@ -115,15 +117,21 @@ export async function activateIn(p: BillingProvider, tx: Tx, later: Later, pi: P
     const fp = (await p.getPaymentMethod(pi.payment_method)).card?.fingerprint;
     if (fp) await tx.insert(F).values({ fingerprint: fp, userId: uid, paymentIntentId: pi.id }).onConflictDoNothing();
     await tx.update(A).set({ trialStartedAt: new Date() }).where(eq(A.userId, uid));
+    const current = (await tx.select({ status: A.status, trialEnd: A.trialEnd }).from(A).where(eq(A.userId, uid)))[0];
+    if (subId && current?.status === 'trialing' && current.trialEnd && current.trialEnd.getTime() > Date.now()) {
+      await queueLifecycle(tx, { type: 'trial_started', userId: uid, eventKey: `trial:${subId}`,
+        data: { subscriptionId: subId, trialEnd: current.trialEnd.toISOString() } });
+    }
     const d = await draftOf(uid, tx);
     if (d?.onboarding?.savedAt) committed = await commitDraft(d.id, tx, later);
     later.push(() => track('trial.started', { uid, ref: subId, props: { via } }));
   }
   if (!a.trialCreditedAt) {
-    try {
-      await p.creditBalance(customer, FEE_CENTS, 'Card confirmation credit', `radar:credit:${pi.id}`);
-      await tx.update(A).set({ trialCreditedAt: new Date() }).where(eq(A.userId, uid));
-    } catch (e: any) { console.error(`[billing] card confirmation credit for ${pi.id} failed; retried on the next activation:`, e?.message); }
+    // The credit is part of the advertised price. A failure must keep the webhook unprocessed so Stripe retries it.
+    // If the transaction rolls back after subscription creation, the next activation adopts that subscription; the
+    // credit uses the same idempotency key even if its provider request succeeded before a network failure.
+    await p.creditBalance(customer, FEE_CENTS, 'Card confirmation credit', `radar:credit:${pi.id}`);
+    await tx.update(A).set({ trialCreditedAt: new Date() }).where(eq(A.userId, uid));
   }
   return { subId, committed };
 }

@@ -1,0 +1,51 @@
+{
+  "buildId": "czUdLkPfcM7IJjQMcg_y1",
+  "environment": "Final optimized production with dispatcher-only priority fix; same isolated QA DB; no auth/customer mutation; no worker/provider",
+  "checks": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "location": null,
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    },
+    {
+      "path": "/api/me/education-preferences",
+      "status": 401,
+      "location": null,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    },
+    {
+      "path": "/email-preferences",
+      "status": 307,
+      "location": "/signin?next=%2Femail-preferences",
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "no-referrer",
+      "pass": true
+    },
+    {
+      "path": "/email/learn?lesson=ai_visibility",
+      "status": 303,
+      "location": "http://127.0.0.1:3940/signin?next=%2Femail%2Flearn%3Flesson%3Dai_visibility",
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    },
+    {
+      "path": "/signin",
+      "status": 200,
+      "location": null,
+      "cache": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "robots": "noindex, follow",
+      "referrer": "strict-origin-when-cross-origin",
+      "pass": true
+    }
+  ]
+}

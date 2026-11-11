@@ -1,0 +1,152 @@
+{
+  "families": 29,
+  "variants": 72,
+  "testedVariants": 4,
+  "numbering": "contiguous family numbers; unique variant references",
+  "results": [
+    {
+      "reference": "28A",
+      "id": "ai-weekly-report",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).\n\nThat’s a change of +10.0 percentage points.\n\nMost missed question: “Which design tools work well for small studios?”\n\nA topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28A",
+      "id": "ai-weekly-report",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).\n\nThat’s a change of +10.0 percentage points.\n\nMost missed question: “Which design tools work well for small studios?”\n\nA topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28B",
+      "id": "ai-weekly-report-no-miss",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).\n\nThat’s a change of +10.0 percentage points.\n\nThis report has no missed question to highlight.\n\nI’d read the answers to see how the assistants described your business.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28B",
+      "id": "ai-weekly-report-no-miss",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).\n\nThat’s a change of +10.0 percentage points.\n\nThis report has no missed question to highlight.\n\nI’d read the answers to see how the assistants described your business.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28C",
+      "id": "ai-weekly-report-no-comparison",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: No answers were collected.\n\nThere isn’t enough comparable data to show a change yet. Adding or changing tracked questions starts a new comparison.\n\nMost missed question: “Which design tools work well for small studios?”\n\nA topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28C",
+      "id": "ai-weekly-report-no-comparison",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: No answers were collected.\n\nThere isn’t enough comparable data to show a change yet. Adding or changing tracked questions starts a new comparison.\n\nMost missed question: “Which design tools work well for small studios?”\n\nA topic based on this question is saved in your Content Calendar for review. Review the answers before deciding what to publish.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28D",
+      "id": "ai-weekly-report-no-topic",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 390,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).\n\nThat’s a change of +10.0 percentage points.\n\nMost missed question: “Which design tools work well for small studios?”\n\nI’d read the answers to this question before choosing what to write or update.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "reference": "28D",
+      "id": "ai-weekly-report-no-topic",
+      "family": "ai-weekly-report",
+      "format": "HTML + plain text",
+      "width": 600,
+      "pass": true,
+      "overflow": false,
+      "h1": 0,
+      "bodyText": "This week covers 2026-11-02 through 2026-11-08, using completed UTC days.\n\nThis week: Your business was mentioned in 6 of 20 collected answers (30%).\n\nPrevious week, using the same tracked questions: Your business was mentioned in 4 of 20 collected answers (20%).\n\nThat’s a change of +10.0 percentage points.\n\nMost missed question: “Which design tools work well for small studios?”\n\nI’d read the answers to this question before choosing what to write or update.\n\nMissing or failed collections are excluded from these figures. AI answers can change between checks.\n\nReview all answers\n\nEkene\nFounder, Radar\nteam@thally.io\n\nEmail preferences",
+      "images": [],
+      "preheaders": [
+        {
+          "text": "This week’s collected answers, with the previous period alongside.",
+          "hidden": true
+        }
+      ]
+    }
+  ]
+}

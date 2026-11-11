@@ -14,10 +14,12 @@ import { StubCardFields } from './StubCardFields';
 import { addMonthIso, D_PLACEHOLDER, DW_PLACEHOLDER, fmtD, fmtDW } from './dates';
 import { billingErrorOutcome, cardErrorMessage, trialCopy, type DateNode } from './copy';
 import { firstError, type CardErrors } from './elementErrors';
+import { PortalButton } from './PortalButton';
+import { SignedInFooter } from './SignedInFooter';
 
 interface StartRes { ok: true; clientSecret?: string; paymentIntentId?: string; subscriptionId?: string; trialEnd?: string; activated?: boolean; state?: BillingState }
 
-export function TrialPage({ state, publishableKey }: TrialPageProps) {
+export function TrialPage({ state, publishableKey, email }: TrialPageProps) {
   const [err, setErr] = useState<CardErrors>({}); const [busy, setBusy] = useState(false); const [fail, setFail] = useState('');
   const [done, setDone] = useState<BillingState | null>(null);
   const card = useRef<CardHandle | null>(null);
@@ -31,7 +33,7 @@ export function TrialPage({ state, publishableKey }: TrialPageProps) {
   useEffect(() => { if (refocus) card.current?.focus('num'); }, [refocus]);
   const stop = (msg: string) => { setBusy(false); setFail(msg); setRefocus(n => n + 1); };
   const pay = async (e?: React.FormEvent) => {
-    e && e.preventDefault(); if (busy || !card.current) return;
+    e && e.preventDefault(); if (!mounted || busy || !card.current) return;
     const er = card.current.validate(); setErr(er); setFail('');
     const first = firstError(er); if (first) { card.current.focus(first); return; }
     setBusy(true);
@@ -65,15 +67,18 @@ export function TrialPage({ state, publishableKey }: TrialPageProps) {
       <ol className="col" style={{ listStyle: 'none', margin: '4px 0 2px', padding: 0 }} aria-label={state.mode === 'restart' ? 'How the restart works' : 'How the trial works'}>
         {steps.map(([col, t, d], i) => <li key={i} className="row" style={{ gap: 12, alignItems: 'flex-start', padding: '11px 0', borderTop: i ? '1px solid var(--line2)' : 0 }}><i className="dot" style={{ background: col, marginTop: 7 }} /><span className="col grow" style={{ gap: 1, minWidth: 0 }}><span className="small" style={{ fontWeight: 500 }}>{parts(t)}</span><span className="xs sub">{d}</span></span></li>)}
       </ol>
-      {state.provider === 'stub' ? <StubCardFields err={err} handle={card} disabled={busy} /> : <CardFields publishableKey={publishableKey} err={err} handle={card} disabled={busy} />}
+      {state.provider === 'stub' ? <StubCardFields err={err} handle={card} disabled={!mounted || busy} /> : <CardFields publishableKey={publishableKey} err={err} handle={card} disabled={!mounted || busy} />}
       {fail && <p className="small enter" role="alert" style={{ color: 'var(--bad)' }}>{fail}</p>}
-      <Btn kind="primary" size="lg" className="btn-block" type="submit" loading={busy} style={{ marginTop: 4 }}>{busy ? c.busy : c.button}</Btn>
+      <Btn kind="primary" size="lg" className="btn-block" type="submit" disabled={!mounted} loading={busy} style={{ marginTop: 4 }}>{busy ? c.busy : c.button}</Btn>
       {c.fine && <p className="xs sub">{parts(c.fine)}</p>}
+      {state.mode === 'restart' && state.provider === 'stripe' && <PortalButton label="Manage billing in Stripe" kind="link" disabled={busy} />}
+      <SignedInFooter email={email} />
     </form>
     : <div className="col enter" style={{ gap: 18, maxWidth: 400, width: '100%', margin: '0 auto', position: 'relative' }} role="status">
       <span style={{ width: 48, height: 48, borderRadius: 99, background: 'var(--ink)', color: 'var(--on-ink)', display: 'grid', placeItems: 'center' }}><Icon n="check" s={22} w={2} /></span>
       <div className="col" style={{ gap: 6 }}><h1 className="h1">{c.doneH1}</h1><p className="sub">{parts(c.doneBody(done))}</p></div>
       <Btn kind="primary" size="lg" className="btn-block" iconR="arrow" autoFocus onClick={() => window.location.assign(c.doneHref)} style={{ marginTop: 6 }}>Open dashboard</Btn>
+      <SignedInFooter email={email} />
     </div>}
   </AuthShell>;
 }

@@ -21,6 +21,6 @@ export function PackThumb({ p, brand, onClick }: PackThumbProps) {
   const { B } = useApp(); const n = B?.social.publishing ? scheduledCount(p.posts) : 0;
   return <button className="card tap col" onClick={onClick} style={{ padding: 10, textAlign: 'left', cursor: 'pointer', gap: 12, borderRadius: 18 }}>
     <Visual style={p.style} brand={brand} headline={headline} seed={first ? first.seed : 1} name="" radius={11} ratio={1.6} url={first && first.photo ? first.imageUrl : null} />
-    <span className="col" style={{ padding: '0 6px 6px', gap: 2 }}><span className="trunc" style={{ fontWeight: 500 }}>{p.name}</span><span className="xs sub">{fmtD(p.created)} · {keys.map(k => plat(k).l).join(', ')}{n ? ` · ${n} scheduled` : ''}{p.auto ? ' · Auto' : ''}</span></span>
+    <span className="col" style={{ padding: '0 6px 6px', gap: 2 }}><span className="trunc" style={{ fontWeight: 500 }}>{p.name}</span><span className="xs sub">{fmtD(p.created)} · {keys.map(k => plat(k).l).join(', ')}{n ? ` · ${n} scheduled` : ''}</span>{p.auto && <span className="xs sub">Prepared by Radar</span>}</span>
   </button>;
 }

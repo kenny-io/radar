@@ -1,23 +1,44 @@
 // Settings → AI models, Calendar defaults, Request a feature (01-screens.md §11, 02-system.md §2, §15).
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { action, type ActionMap } from './define';
 import { db, schema } from '../db';
 import { RadarError } from '../errors';
 import { env } from '../env';
-import { AI_DEFAULT, aiFind, MARKETS, langs } from '@/lib/constants';
+import { aiFind, MARKETS, langs, INSTRUCTION_KEYS, INSTRUCTION_MAX, cleanInstruction } from '@/lib/constants';
 import { sendMail } from '../services/mail';
+import { setAutopilot, requestAutopilotRun } from '../services/autopilot/control';
+import { aiPrefsOf } from '../workspace';
 
 export const actions: ActionMap = {
+  'settings.autopilot': action({ role: 'Owner', input: z.object({ enabled: z.boolean() }), run: (ctx, { enabled }) => setAutopilot(ctx, enabled) }),
+  'settings.autopilotRun': action({ role: 'Owner', input: z.object({}), run: ctx => requestAutopilotRun(ctx) }),
   /** Settings → AI models. The only place model ids are chosen; never echoed in copy elsewhere. */
   'settings.ai': action({
     role: 'Admin',
     input: z.object({ task: z.enum(['writing', 'research']), model: z.string() }),
     run: async (ctx, { task, model }) => {
       if (!aiFind(model)) throw new RadarError('Choose a model from the list.', 400, 'invalid_model');
-      const ai = { ...AI_DEFAULT, ...(ctx.biz.ai || {}), [task]: model };
-      await db.update(schema.businesses).set({ ai }).where(eq(schema.businesses.id, ctx.bid));
-      return { ai };
+      // Merge one key in SQL (re-evaluated under the row lock) so a writing instruction saved meanwhile is never erased.
+      const B = schema.businesses;
+      await db.update(B).set({ ai: sql`${B.ai} || jsonb_build_object(${task}::text, ${model}::text)` }).where(eq(B.id, ctx.bid));
+      return { ai: { ...aiPrefsOf(ctx.biz), [task]: model } };
+    },
+  }),
+  /** Settings → Writing instructions: one set per call. Empty text removes the set. The result never carries the text
+   *  (action results are recorded in events; `text` is dropped from the recorded input, `set` is kept). */
+  'settings.instructions': action({
+    role: 'Editor',
+    input: z.strictObject({ set: z.enum(INSTRUCTION_KEYS), text: z.string().max(20000) }),
+    run: async (ctx, { set, text }) => {
+      const t = cleanInstruction(text);
+      if (t.length > INSTRUCTION_MAX) throw new RadarError('Keep each instruction to 1,500 characters or fewer.', 400, 'too_long');
+      // One statement, so two members saving different sets (or a model change) never clobber each other.
+      const B = schema.businesses;
+      const cur = sql`(CASE WHEN jsonb_typeof(${B.ai}->'instructions') = 'object' THEN ${B.ai}->'instructions' ELSE '{}'::jsonb END)`;
+      const next = t ? sql`${cur} || jsonb_build_object(${set}::text, ${t}::text)` : sql`${cur} - ${set}::text`;
+      await db.update(B).set({ ai: sql`jsonb_set(${B.ai}, '{instructions}', ${next})` }).where(eq(B.id, ctx.bid));
+      return { ok: true };
     },
   }),
 
@@ -55,7 +76,7 @@ export const actions: ActionMap = {
       if (to) {
         const body = [`From: ${ctx.user.name} <${ctx.user.email}>`, `Business: ${(ctx.biz.profile as any)?.business?.name || ''} (${ctx.biz.domain})`, `Role: ${ctx.role}`, `Request id: ${row.id}`, '', t].join('\n');
         // Stored first; a mail hiccup must not lose or fail the request (the inbox can be re-sent from feature_requests).
-        await sendMail(to, `Feature request — ${ctx.biz.domain}`, body).catch(e => console.error('[feature.request] mail failed', e?.message || e));
+        await sendMail(to, `Feature request — ${ctx.biz.domain}`, body, undefined, { identity: 'service' }).catch(e => console.error('[feature.request] mail failed', e?.message || e));
       } else console.warn('[feature.request] SUPPORT_INBOX is not set; request stored only', row.id);
       return { id: row.id };
     },

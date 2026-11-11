@@ -1,0 +1,5 @@
+# Generated browser evidence stays local; scripts regenerate these artifacts.
+*.png
+*.log
+*.json
+!tsconfig.qa.json

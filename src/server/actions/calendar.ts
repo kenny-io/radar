@@ -6,12 +6,13 @@ import { action, type ActionMap } from './define';
 import { db, schema } from '../db';
 import { enqueue } from '../jobs/queue';
 import { RadarError, notFound } from '../errors';
-import { calendarSettingsOf, entryFromRow } from '../workspace';
+import { calendarSettingsOf, entryFromRow, laterV } from '../workspace';
 import { alternativesFor } from '../services/calendar/alternatives';
 import { ENTRY_TYPES } from '@/lib/constants';
 import { kwIntentHeuristic } from '@/lib/constants';
 import { slugify } from '@/lib/format';
 import type { Keyword, Profile } from '@/lib/types';
+import { resolveCalendarForEntries } from '../services/lifecycle/engagement';
 
 const E = schema.calendarEntries;
 const ISO = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -33,18 +34,27 @@ export const actions: ActionMap = {
   } }),
 
   'calendar.approve': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
-    await db.update(E).set({ status: 'approved' }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'proposed')));
+    await db.transaction(async tx => {
+      const rows = await tx.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+      await resolveCalendarForEntries(tx, ctx.bid, rows.map(r => r.id));
+    });
+
     return { ok: true };
   } }),
 
   'calendar.approveAll': action({ input: z.object({}).optional(), run: async (ctx) => {
-    const r = await db.update(E).set({ status: 'approved' }).where(and(eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+    const r = await db.transaction(async tx => {
+      const rows = await tx.update(E).set({ status: 'approved', autopilotActivationId: null }).where(and(eq(E.businessId, ctx.bid), eq(E.status, 'proposed'))).returning({ id: E.id });
+      await resolveCalendarForEntries(tx, ctx.bid, rows.map(r => r.id));
+      return rows;
+    });
+
     return { count: r.length };
   } }),
 
   /** approved ("Scheduled") → proposed */
   'calendar.unschedule': action({ input: z.object({ entryId: z.string() }), run: async (ctx, { entryId }) => {
-    await db.update(E).set({ status: 'proposed' }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'approved')));
+    await db.update(E).set({ status: 'proposed', autopilotActivationId: null }).where(and(eq(E.id, entryId), eq(E.businessId, ctx.bid), eq(E.status, 'approved')));
     return { ok: true };
   } }),
 
@@ -108,7 +118,7 @@ export const actions: ActionMap = {
     if (r.status !== 'proposed') throw new RadarError('Only proposed topics can be replaced.');
     await db.update(E).set({ title: alt.title, kw: alt.kw, type: alt.type, vol: alt.vol, kd: alt.kd, mode: alt.mode, url: alt.url ?? null, measured: alt.measured ?? null, audience: alt.audience, relevance: alt.relevance }).where(eq(E.id, entryId));
     const data = { entryId, generated: false, body: [], brief: { angle: alt.relevance, outline: alt.outline || [], words: 1400 }, seo: { title: alt.title, meta: '', slug: slugify(alt.kw) }, img: { style: defaultArticleImageStyle(), seed: 1, prompt: 'Calm, editorial image about ' + alt.kw, alt: '', url: null, urlKey: null }, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: null };
-    await db.insert(schema.articles).values({ entryId, businessId: ctx.bid, data }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: new Date() } });
+    await db.insert(schema.articles).values({ entryId, businessId: ctx.bid, data }).onConflictDoUpdate({ target: schema.articles.entryId, set: { data, updatedAt: laterV() } });
     return { ok: true };
   } }),
 };

@@ -5,20 +5,31 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 const H = vi.hoisted(() => { process.env.RADAR_DEV_STUBS = '1'; return { jar: new Map<string, string>() }; });
 vi.mock('next/headers', async () => (await import('@/server/testing/jar')).headersMock(() => H.jar));
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, desc } from 'drizzle-orm';
 import { db, schema } from '../db';
-import { encrypt, randomToken } from '../crypto';
+import { encrypt, decrypt, randomToken } from '../crypto';
 import { Fixtures, uniq, type TUser } from '../testing/fixtures';
 import { GUEST_COOKIE, SESSION_COOKIE, hashPassword } from './session';
 import { claimGuest } from './claim';
+import { GOOGLE_STATE_COOKIE } from './googleState';
 import { BIZ_COOKIE, getMe } from './users';
+import { POST as VERIFY } from '@/app/api/auth/verify-email/route';
 import { POST as SIGNUP } from '@/app/api/auth/signup/route';
 import { POST as SIGNIN } from '@/app/api/auth/signin/route';
 import { GET as GOOGLE } from '@/app/api/auth/google/callback/route';
 
 const ON = !!process.env.DATABASE_URL;
 const F = new Fixtures();
-const post = (fn: any, body: any) => fn(new Request('http://t/api/auth', { method: 'POST', body: JSON.stringify(body) }));
+const post = (fn: any, body: any) => fn(new Request('http://t/api/auth', { method: 'POST', headers: { 'x-real-ip': `claim-${uniq()}` }, body: JSON.stringify(body) }));
+async function signupAndConfirm(body: any) {
+  const initial = await post(SIGNUP, body);
+  expect(await initial.json()).toEqual({ ok: true, verificationRequired: true });
+  expect(H.jar.has(SESSION_COOKIE)).toBe(false);
+  const [mail] = await db.select().from(schema.outboxEmails).where(eq(schema.outboxEmails.to, body.email)).orderBy(desc(schema.outboxEmails.createdAt)).limit(1);
+  const text = decrypt<{text: string}>(mail.text.slice('encrypted-auth:'.length))!.text;
+  const token = text.match(/#token=([A-Za-z0-9_-]+)/)![1];
+  return post(VERIFY, { token, password: 'longenough1' });
+}
 const S = schema;
 afterEach(() => { delete process.env.RADAR_BILLING; H.jar.clear(); });
 
@@ -57,7 +68,7 @@ describe.skipIf(!ON)('claim (database)', () => {
     process.env.RADAR_BILLING = 'on';
     const { g, d } = await guestWithDraft({ saved: true });
     const email = `claim-${uniq()}@test.local`;
-    const r = await post(SIGNUP, { name: 'Ada', email, password: 'longenough1' });
+    const r = await signupAndConfirm({ name: 'Ada', email });
     const j = await r.json();
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);
     expect(j).toEqual({ ok: true, next: '/start-trial' });
@@ -98,9 +109,11 @@ describe.skipIf(!ON)('claim (database)', () => {
 
   it('D2: Google sign-in into an existing account with a business opens the claimed profile too', async () => {
     const u = await F.user();
+    await db.update(schema.users).set({ googleSub: 'dev-google-' + u.email }).where(eq(schema.users.id, u.id));
     await F.biz(u, { status: 'active', createdAt: new Date(Date.now() - 864e5) });
     const { d } = await guestWithDraft({ saved: true });
     const state = randomToken(8);
+    H.jar.set(GOOGLE_STATE_COOKIE, state);
     await db.insert(S.oauthStates).values({ state, provider: 'google-signin', data: { next: '/' } });
     const r = await GOOGLE(new Request(`http://t/api/auth/google/callback?state=${state}&code=${encodeURIComponent('dev:' + u.email)}`));
     const to = new URL(r.headers.get('location')!);
@@ -113,6 +126,7 @@ describe.skipIf(!ON)('claim (database)', () => {
     const { g, d } = await guestWithDraft();
     const email = `g-${uniq()}@test.local`;
     const state = randomToken(8);
+    H.jar.set(GOOGLE_STATE_COOKIE, state);
     await db.insert(S.oauthStates).values({ state, provider: 'google-signin', data: { next: '/' } });
     const r = await GOOGLE(new Request(`http://t/api/auth/google/callback?state=${state}&code=${encodeURIComponent('dev:' + email)}`));
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);
@@ -124,7 +138,7 @@ describe.skipIf(!ON)('claim (database)', () => {
   it('an invite next is honoured and the draft is still claimed', async () => {
     const { g, d } = await guestWithDraft({ saved: true });
     const email = `inv-${uniq()}@test.local`;
-    const r = await post(SIGNUP, { name: 'Ada', email, password: 'longenough1', next: '/api/invites/tok123' });
+    const r = await signupAndConfirm({ name: 'Ada', email, next: '/api/invites/tok123' });
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);
     expect(await r.json()).toEqual({ ok: true, next: '/api/invites/tok123' });
     await expectClaimed(d.id, g, u.id, email);
@@ -139,10 +153,10 @@ describe.skipIf(!ON)('claim (database)', () => {
     expect((await db.select().from(S.businesses).where(eq(S.businesses.id, d.id)))[0].ownerId).toBe(winner.id);
   });
 
-  it('nothing is claimed when signup fails, and a guest email can’t sign up', async () => {
+  it('nothing is claimed by duplicate signup, and a guest email can’t sign up', async () => {
     const { g, d } = await guestWithDraft();
     const taken = await F.user();
-    expect((await post(SIGNUP, { name: 'Ada', email: taken.email, password: 'longenough1' })).status).toBe(409);
+    expect((await post(SIGNUP, { name: 'Ada', email: taken.email, password: 'longenough1' })).status).toBe(200);
     expect((await post(SIGNUP, { name: 'Ada', email: `x+1@guest.radar.invalid`, password: 'longenough1' })).status).toBe(400);
     expect((await post(SIGNIN, { email: g.email, password: 'whatever1' })).status).toBe(401);
     expect((await db.select().from(S.businesses).where(eq(S.businesses.id, d.id)))[0].ownerId).toBe(g.id);
@@ -152,7 +166,7 @@ describe.skipIf(!ON)('claim (database)', () => {
   it('a stale guest cookie (cleaned-up guest) is cleared and signup proceeds', async () => {
     H.jar.set(GUEST_COOKIE, 'gone');
     const email = `stale-${uniq()}@test.local`;
-    const r = await post(SIGNUP, { name: 'Ada', email, password: 'longenough1' });
+    const r = await signupAndConfirm({ name: 'Ada', email });
     const u = (await db.select().from(S.users).where(eq(S.users.email, email)))[0]; F.track(u.id);
     expect(await r.json()).toEqual({ ok: true, next: '/onboarding' });
     expect(H.jar.has(GUEST_COOKIE)).toBe(false);

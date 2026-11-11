@@ -1,5 +1,6 @@
-import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, check, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { MailSenderMeta } from '../services/mailIdentity';
 import type { OnboardingState, SubStatus } from '@/lib/types';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
@@ -11,12 +12,14 @@ export const users = pgTable('users', {
   email: text('email').notNull(),
   passwordHash: text('password_hash'),
   googleSub: text('google_sub'),
+  /** Mailbox ownership, separate from knowledge of a password. */
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   /** Settings → Account → Appearance */
   appearance: text('appearance').$type<'system' | 'light' | 'dark'>().notNull().default('system'),
   /** Anonymous onboarding visitor (architecture B1): synthetic `guest+<uuid>@guest.radar.invalid` email, empty name, own cookie. */
   guest: boolean('guest').notNull().default(false),
   createdAt: created(),
-}, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub), index('users_guest_created_idx').on(t.createdAt).where(sql`guest`)]);
+}, t => [uniqueIndex('users_email_uq').on(t.email), uniqueIndex('users_google_uq').on(t.googleSub), index('users_education_eligible_idx').on(t.emailVerifiedAt, t.id).where(sql`NOT guest AND email_verified_at IS NOT NULL`), index('users_guest_created_idx').on(t.createdAt).where(sql`guest`)]);
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(), // sha256 of the cookie token
@@ -24,6 +27,16 @@ export const sessions = pgTable('sessions', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: created(),
 });
+
+/** Only hashes of the bearer token are stored. Token-bearing email bodies are redacted in production. */
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  next: text('next'),
+  createdAt: created(),
+}, t => [index('email_verification_user_idx').on(t.userId), index('email_verification_expiry_idx').on(t.expiresAt)]);
 
 export const businesses = pgTable('businesses', {
   id: id(),
@@ -40,6 +53,7 @@ export const businesses = pgTable('businesses', {
   calendarSettings: jsonb('calendar_settings').$type<any>().notNull().default({}),
   calendarGeneratedAt: timestamp('calendar_generated_at', { withTimezone: true }),
   blog: jsonb('blog').$type<any>().notNull().default({}),
+  autopilot: jsonb('autopilot').$type<any>().notNull().default({}),
   socialAuto: jsonb('social_auto').$type<any>().notNull().default({}),
   socialImg: jsonb('social_img').$type<any>(),
   briefSettings: jsonb('brief_settings').$type<any>().notNull().default({}),
@@ -47,6 +61,8 @@ export const businesses = pgTable('businesses', {
   backlinks: jsonb('backlinks').$type<any>().notNull().default({}),
   /** Onboarding draft state {step, savedAt, tz, committedAt} (architecture B3). */
   onboarding: jsonb('onboarding').$type<OnboardingState>().notNull().default({}),
+  /** Last time a signed-in member used the app (first-five architecture §2.1). Never moved by jobs, crons or background refreshes. */
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -60,6 +76,8 @@ export const members = pgTable('members', {
   status: text('status').$type<'active' | 'invited'>().notNull().default('active'),
   tokenHash: text('token_hash'),
   invitedAt: timestamp('invited_at', { withTimezone: true }),
+  /** Activity read cursor: notifications newer than this are unread for the member (first-five architecture §4). */
+  activitySeenAt: timestamp('activity_seen_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: created(),
 }, t => [uniqueIndex('members_biz_email_uq').on(t.businessId, t.email), index('members_user_idx').on(t.userId)]);
 
@@ -119,6 +137,7 @@ export const calendarEntries = pgTable('calendar_entries', {
   status: text('status').notNull().default('proposed'),
   publishError: jsonb('publish_error').$type<any>(),
   publishedUrl: text('published_url'),
+  autopilotActivationId: text('autopilot_activation_id'),
   publishAttempts: integer('publish_attempts').notNull().default(0),
   /** publishing area: the remote draft created for this entry ({ connId, id, url }) so retries reuse it instead of duplicating */
   publishRemote: jsonb('publish_remote').$type<any>(),
@@ -162,6 +181,8 @@ export const briefDays = pgTable('brief_days', {
   candidates: jsonb('candidates').$type<any[]>().notNull().default([]),
   /** Per-platform scan outcome for the day: threads read (all scans), so the page can say where nothing fit. */
   stats: jsonb('stats').$type<Record<string, { read: number }>>().notNull().default({}),
+  /** Last time a member copied, posted, skipped or scheduled an item of this day; earns the next background rescan (first-five architecture §2.4). */
+  actedAt: timestamp('acted_at', { withTimezone: true }),
 }, t => [primaryKey({ columns: [t.businessId, t.date] })]);
 
 export const aiPrompts = pgTable('ai_prompts', {
@@ -278,11 +299,73 @@ export const outboxEmails = pgTable('outbox_emails', {
   subject: text('subject').notNull(),
   text: text('text').notNull(),
   html: text('html'),
+  /** NULL retains historical transport identity; new records freeze their full sender metadata. */
+  senderMeta: jsonb('sender_meta').$type<MailSenderMeta>(),
   status: text('status').$type<'queued' | 'sent' | 'failed' | 'logged'>().notNull().default('queued'),
   error: text('error'),
   createdAt: created(),
   sentAt: timestamp('sent_at', { withTimezone: true }),
 });
+
+/** New lifecycle mail only. Frozen provider bodies (including reset links) are encrypted at rest. */
+export const lifecycleEmails = pgTable('lifecycle_emails', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  businessId: uuid('business_id').references(() => businesses.id, { onDelete: 'cascade' }),
+  eventKey: text('event_key').notNull(),
+  type: text('type').notNull(),
+  payloadEnc: text('payload_enc').notNull(),
+  status: text('status').$type<'queued' | 'sending' | 'sent' | 'failed' | 'suppressed' | 'logged'>().notNull().default('queued'),
+  attempts: integer('attempts').notNull().default(0),
+  nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+  firstAttemptAt: timestamp('first_attempt_at', { withTimezone: true }),
+  claimedAt: timestamp('claimed_at', { withTimezone: true }),
+  claimToken: text('claim_token'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  providerId: text('provider_id'),
+  lastError: text('last_error'),
+  createdAt: created(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+}, t => [uniqueIndex('lifecycle_event_uq').on(t.eventKey), index('lifecycle_due_idx').on(t.status, t.nextAttemptAt), index('lifecycle_report_business_sent_idx').on(t.businessId,t.sentAt).where(sql`type = 'ai_weekly_report' AND status = 'sent'`)]);
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: created(),
+}, t => [index('reset_user_idx').on(t.userId)]);
+
+export const userEmailPreferences = pgTable('user_email_preferences', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  onboarding: boolean('onboarding').notNull().default(true),
+  /** null inherits the earlier optional setup choice until explicitly changed. */
+  education: boolean('education'),
+  dailyBrief: boolean('daily_brief').notNull().default(true),
+  calendarReminders: boolean('calendar_reminders').notNull().default(true),
+  articleSocial: boolean('article_social').notNull().default(true),
+  dailyBriefSince: timestamp('daily_brief_since', { withTimezone: true }),
+  calendarRemindersSince: timestamp('calendar_reminders_since', { withTimezone: true }),
+  articleSocialSince: timestamp('article_social_since', { withTimezone: true }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** References to newly completed work only, never scraped content or an implicit historical subscription. */
+export const engagementEvents = pgTable('engagement_events', {
+  id: id(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  kind: text('kind').$type<'brief_reply' | 'calendar_review' | 'article_social' | 'social_publish'>().notNull(),
+  sourceKey: text('source_key').notNull(),
+  sourceRef: jsonb('source_ref').$type<{ ref: string; entryIds?: string[] }>().notNull(),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+  eligibleAt: timestamp('eligible_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolvedReason: text('resolved_reason'),
+  lifecycleEmailId: uuid('lifecycle_email_id').references(() => lifecycleEmails.id, { onDelete: 'set null' }),
+  createdAt: created(),
+}, t => [uniqueIndex('engagement_source_uq').on(t.sourceKey), index('engagement_due_idx').on(t.userId, t.eligibleAt).where(sql`resolved_at IS NULL`)]);
 
 export const aiCalls = pgTable('ai_calls', {
   id: id(),
@@ -380,6 +463,7 @@ export const socialPubs = pgTable('social_pubs', {
   /** Provider status/body excerpt: logs only, never shown, never in events. */
   errDetail: text('err_detail'),
   auto: boolean('auto').notNull().default(false),
+  autopilotActivationId: text('autopilot_activation_id'),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: created(),
@@ -410,6 +494,8 @@ export const billingAccounts = pgTable('billing_accounts', {
   trialStartedAt: timestamp('trial_started_at', { withTimezone: true }),
   /** The $1 credited to month one (§21.3); set once the balance credit succeeds. */
   trialCreditedAt: timestamp('trial_credited_at', { withTimezone: true }),
+  /** When the subscription went active → past_due; starts the grace period. NULL otherwise (first-five architecture §5). */
+  pastDueAt: timestamp('past_due_at', { withTimezone: true }),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -441,3 +527,61 @@ export const rateLimits = pgTable('rate_limits', {
   windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
   count: integer('count').notNull().default(0),
 }, t => [primaryKey({ columns: [t.key, t.windowStart] }), index('rate_limits_window_idx').on(t.windowStart)]);
+
+/** One finite, account-wide five-lesson sequence; completed and blocked rows are permanent tombstones. */
+export const educationEnrollments = pgTable('education_enrollments', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  version: integer('version').notNull().default(1),
+  nextLesson: integer('next_lesson').notNull().default(0),
+  nextDueAt: timestamp('next_due_at', { withTimezone: true }).notNull().defaultNow(),
+  lastAcceptedAt: timestamp('last_accepted_at', { withTimezone: true }),
+  pendingEmailId: uuid('pending_email_id').references(() => lifecycleEmails.id, { onDelete: 'restrict' }),
+  status: text('status').$type<'active' | 'completed' | 'paused' | 'blocked'>().notNull().default('active'),
+  reason: text('reason'),
+  createdAt: created(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [index('education_due_idx').on(t.nextDueAt, t.userId).where(sql`status = 'active' AND pending_email_id IS NULL`),
+  check('education_version_check', sql`${t.version} = 1`), check('education_lesson_check', sql`${t.nextLesson} BETWEEN 0 AND 5`),
+  check('education_status_check', sql`${t.status} IN ('active', 'completed', 'paused', 'blocked')`)]);
+
+/** Account-wide one-time guide history, independent of the five-lesson course. */
+export const lifecycleGuideStates = pgTable('lifecycle_guide_states', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  guideId: text('guide_id').$type<'article_workflow' | 'search_refresh' | 'autopilot_intro'>().notNull(),
+  firstObservedAt: timestamp('first_observed_at', { withTimezone: true }).notNull().defaultNow(),
+  dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  pendingEmailId: uuid('pending_email_id').references(() => lifecycleEmails.id, { onDelete: 'restrict' }),
+  sourceBusinessId: uuid('source_business_id').references(() => businesses.id, { onDelete: 'set null' }),
+  status: text('status').$type<'waiting' | 'queued' | 'sent' | 'skipped' | 'blocked'>().notNull().default('waiting'),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  reason: text('reason'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [primaryKey({ columns: [t.userId, t.guideId] }), index('lifecycle_guides_due_idx').on(t.dueAt, t.userId).where(sql`status = 'waiting'`),
+  index('lifecycle_guides_observe_idx').on(t.updatedAt, t.userId).where(sql`status = 'waiting'`),
+  check('lifecycle_guide_id_check', sql`${t.guideId} IN ('article_workflow', 'search_refresh', 'autopilot_intro')`),
+  check('lifecycle_guide_status_check', sql`${t.status} IN ('waiting', 'queued', 'sent', 'skipped', 'blocked')`)]);
+
+/** Append-only observations: failed attempts are explicit; stale successes are never copied to a new day. */
+export const aiObservations = pgTable('ai_observations', {
+  id: id(), businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  promptId: uuid('prompt_id').notNull().references(() => aiPrompts.id, { onDelete: 'cascade' }),
+  prompt: text('prompt').notNull(), engine: text('engine').notNull(), series: text('series').notNull(),
+  day: date('day').notNull(), status: text('status').$type<'mentioned' | 'not-mentioned' | 'not-collected'>().notNull(),
+  pos: integer('pos'), cites: jsonb('cites').$type<string[]>().notNull().default([]), measuredAt: timestamp('measured_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [index('ai_observations_series_day').on(t.businessId, t.series, t.day), index('ai_observations_business_day').on(t.businessId,t.day)]);
+
+/** A real, proposed calendar entry for a missed buyer question. One topic per prompt/series, across assistants. */
+export const aiMissTopics = pgTable('ai_miss_topics', {
+  businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  promptId: uuid('prompt_id').notNull().references(() => aiPrompts.id, { onDelete: 'cascade' }),
+  series: text('series').notNull(),
+  entryId: text('entry_id').notNull().references(() => calendarEntries.id, { onDelete: 'cascade' }), createdAt: created(),
+}, t => [primaryKey({ columns: [t.businessId, t.promptId, t.series] })]);
+
+/** Independent optional weekly measurement report; missing preference is on. */
+export const visibilityPreferences = pgTable('visibility_preferences', {
+  businessId: uuid('business_id').primaryKey().references(() => businesses.id, { onDelete: 'cascade' }),
+  weeklyEmail: boolean('weekly_email').notNull().default(true),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "education-long-name",
+    "pass": true,
+    "viewport": 390,
+    "width": 390,
+    "body": 390
+  },
+  {
+    "id": "invite-long-name",
+    "pass": true,
+    "viewport": 390,
+    "width": 390,
+    "body": 390
+  },
+  {
+    "id": "local-report-long-prompt",
+    "pass": true,
+    "viewport": 390,
+    "width": 390,
+    "body": 390
+  }
+]

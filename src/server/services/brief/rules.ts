@@ -41,6 +41,38 @@ function dropSentencesNaming(t: string, name: string) {
   return tidy(t.split(/\n/).map(line => (line.match(/[^.!?]+[.!?]*["”’)]*\s*/g) || [line]).filter(s => !namesBusiness(s, name)).join('')).join('\n'));
 }
 
+const words = (t: string) => t.trim().split(/\s+/).filter(Boolean);
+const sentences = (t: string) => t.match(/[^.!?]+(?:[.!?]+["”’)]*|$)/g)?.map(s => s.trim()).filter(Boolean) || [];
+/** Keep complete sentences where possible; an unusually long sentence ends at a word boundary. */
+function shortParagraph(t: string, maxWords = 50): string {
+  if (words(t).length <= maxWords) return t;
+  let out = '';
+  for (const sentence of sentences(t)) {
+    if (words(`${out} ${sentence}`).length > maxWords) break;
+    out = `${out} ${sentence}`.trim();
+  }
+  return out || words(t).slice(0, maxWords).join(' ').replace(/[,;:]$/, '') + '…';
+}
+
+/** A final guard for AI replies only, including a disclosure added after generation. */
+function compactReply(t: string, mentionName?: string): string {
+  const paragraphs = t.replace(/\r\n?/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  if (paragraphs.length <= 3 && paragraphs.every(p => words(p).length <= 50)) return paragraphs.join('\n\n');
+  if (!mentionName) return paragraphs.slice(0, 3).map(p => shortParagraph(p)).join('\n\n');
+
+  // Keep useful advice first and reserve the final paragraph for the product relationship.
+  // It may be buried late in the output or at the end of one overlong paragraph.
+  const isPlug = (s: string) => namesBusiness(s, mentionName) || hasDisclosure(s);
+  const plugText = paragraphs.flatMap(sentences).filter(isPlug).join(' ');
+  let plug = shortParagraph(plugText);
+  if (!namesBusiness(plug, mentionName) || !hasDisclosure(plug)) {
+    const disclosure = `Disclosure: I work on ${mentionName}.`;
+    plug = [shortParagraph(plugText, Math.max(0, 50 - words(disclosure).length)), disclosure].filter(Boolean).join(' ');
+  }
+  const help = paragraphs.map(p => sentences(p).filter(s => !isPlug(s)).join(' ')).filter(Boolean).slice(0, 2).map(p => shortParagraph(p));
+  return [...help, plug].filter(Boolean).join('\n\n');
+}
+
 export interface RuleCtx { plat: BriefPlatform; name: string; domain: string }
 /** Clean any community-reply draft. variant 'help' must not mention the business; 'mention' must disclose. */
 export function cleanReply(text: string, variant: 'help' | 'mention', c: RuleCtx): string {
@@ -51,11 +83,12 @@ export function cleanReply(text: string, variant: 'help' | 'mention', c: RuleCtx
     const add = c.plat === 'x' ? ` (I work on ${c.name}.)` : `\n\nDisclosure: I work on ${c.name}.`;
     t = c.plat === 'x' ? fitLength(t, X_LIMIT - add.length) + add : t + add;
   }
+  t = compactReply(t, variant === 'mention' ? c.name : undefined);
   if (c.plat === 'x' && t.length > X_LIMIT) {
     if (variant === 'mention') {
       // keep the disclosure: trim the body before it
       const m = t.match(/\s*\((?:I work|Disclosure)[^)]*\)\s*$|\s*Disclosure:[^\n]*$/i);
-      const tail = m ? m[0].trim() : '';
+      const tail = m && namesBusiness(m[0], c.name) ? m[0].trim() : `(I work on ${c.name}.)`;
       const body = m ? t.slice(0, t.length - m[0].length) : t;
       t = tail ? fitLength(body, X_LIMIT - tail.length - 1) + ' ' + tail : fitLength(t);
     } else t = fitLength(t);
@@ -78,6 +111,7 @@ export const hasUnsupportedFigures = (text: string, allowedSrc: string) => dropU
 export function cleanBrand(text: string, c: RuleCtx, allowedSrc: string): string {
   let t = stripLinks(stripEmoji(stripHashtags(unwrap(text))), [c.domain]);
   t = dropUnsupportedFigures(t, allowedSrc);
+  t = compactReply(t);
   if (c.plat === 'x') t = fitLength(t);
   return tidy(t);
 }

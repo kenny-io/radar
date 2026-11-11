@@ -2,6 +2,7 @@
 // Implementation divergence (logged): a small in-repo queue instead of Inngest/Trigger.dev/BullMQ — no extra infrastructure.
 import { JOB_OUTCOME, jobProducedOutcome, trackSoon } from '@/server/events';
 import os from 'node:os';
+import { holdAlerts, reportFailure, sanitizeDiagnostic, withFailureContext } from '../observability/failures';
 import { and, eq, inArray, lte, sql } from 'drizzle-orm';
 import { db, pool, schema } from '../db';
 import { RadarError } from '../errors';
@@ -76,9 +77,12 @@ async function lapsed(job: JobRow): Promise<boolean> {
 }
 
 async function execute(job: JobRow, workerId: string) {
+  return withFailureContext({ source: 'job', operation: job.kind, jobId: job.id, businessId: job.businessId, ref: job.ref, attempt: job.attempts, maxAttempts: job.maxAttempts }, () => executeInContext(job, workerId));
+}
+async function executeInContext(job: JobRow, workerId: string) {
   const def = registry.get(job.kind);
-  if (!def) { await db.update(schema.jobs).set({ status: 'failed', error: `Unknown job kind ${job.kind}`, finishedAt: new Date() }).where(eq(schema.jobs.id, job.id)); return; }
-  if (await lapsed(job).catch((e: any) => { console.error(`[job ${job.kind} ${job.id}] access check failed; running`, e?.message || e); return false; })) {
+  if (!def) { if (job.kind !== 'observability.alert') await reportFailure(new Error(`Unknown job kind ${job.kind}`), { source: 'job', operation: job.kind }); await db.update(schema.jobs).set({ status: 'failed', error: `Unknown job kind ${job.kind}`, finishedAt: new Date() }).where(eq(schema.jobs.id, job.id)); return; }
+  if (await lapsed(job).catch(async (e: any) => { await reportFailure(e, { source: 'job', operation: `${job.kind}.accessCheck`, degraded: true }); return false; })) {
     await db.update(schema.jobs).set({ status: 'done', result: { skipped: 'no_access' }, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
     console.info(`[job ${job.kind} ${job.id}] skipped: the owner has no active subscription`);
     return;
@@ -90,8 +94,11 @@ async function execute(job: JobRow, workerId: string) {
     progress: async (p) => { pending = p; if (Date.now() - last > 250) await flush(); else if (!timer) timer = setTimeout(() => { timer = null; flush().catch(() => {}); }, 260); },
     touch: async () => { if (job.businessId) await bump(job.businessId); },
   };
+  // While attempts remain, whether a failure inside this one matters to an operator depends on how the attempt ends.
+  const settle = job.kind !== 'observability.alert' && job.attempts < job.maxAttempts ? holdAlerts() : null;
   try {
     const result = await (def.timeoutMs ? Promise.race([def.run(ctx), new Promise((_, rej) => setTimeout(() => rej(new Error('Job timed out')), def.timeoutMs))]) : def.run(ctx));
+    await settle?.(true); // finished, so anything reported on the way was not retried: email it
     if (timer) clearTimeout(timer); await flush();
     await db.update(schema.jobs).set({ status: 'done', result: result ?? null, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
     trackSoon(`job.${job.kind}`, { bid: job.businessId, ref: job.ref, props: { status: 'done', attempt: job.attempts, ms: Date.now() - started, result } });
@@ -100,7 +107,9 @@ async function execute(job: JobRow, workerId: string) {
     if (timer) clearTimeout(timer); await flush().catch(() => {});
     const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
     const msg = e instanceof RadarError ? e.userMessage : 'Radar couldn’t finish this. Try again.';
-    console.error(`[job ${job.kind} ${job.id}] attempt ${job.attempts} failed:`, e?.message || e);
+    await settle?.(permanent, e); // ended for good: email what was held; retried: drop only the alerts for the failure being retried
+    if (job.kind !== 'observability.alert') await reportFailure(e, { source: 'job', operation: job.kind, retrying: !permanent && job.attempts < job.maxAttempts });
+    else console.error('[radar.alert.retry_failed]', sanitizeDiagnostic(e?.message || 'Alert delivery failed'));
     if (!permanent && job.attempts < job.maxAttempts) {
       const delay = def.backoffMs ? def.backoffMs(job.attempts) : Math.min(15 * 60e3, 5000 * Math.pow(3, job.attempts - 1));
       await db.update(schema.jobs).set({ status: 'queued', runAt: new Date(Date.now() + delay), lockedAt: null, error: msg }).where(owned(job.id, workerId));
@@ -120,19 +129,19 @@ export async function startWorker({ concurrency = Number(process.env.WORKER_CONC
   let active = 0; let stopping = false;
   await recoverStale();
   const beat = setInterval(() => {
-    db.update(schema.jobs).set({ lockedAt: new Date() }).where(and(eq(schema.jobs.status, 'running'), eq(schema.jobs.lockedBy, workerId))).catch(() => {});
-    recoverStale().catch(() => {});
+    db.update(schema.jobs).set({ lockedAt: new Date() }).where(and(eq(schema.jobs.status, 'running'), eq(schema.jobs.lockedBy, workerId))).catch(e => reportFailure(e, { source: 'system', operation: 'worker.heartbeat', incidentKey: 'worker.heartbeat' }));
+    recoverStale().catch(e => reportFailure(e, { source: 'system', operation: 'worker.recoverStale', incidentKey: 'worker.recoverStale' }));
   }, 20_000);
   const loop = async () => {
     while (!stopping) {
       if (active >= concurrency) { await new Promise(r => setTimeout(r, 100)); continue; }
-      const job = await claim(workerId).catch(e => { console.error('[worker] claim failed', e.message); return null; });
+      const job = await claim(workerId).catch(async e => { await reportFailure(e, { source: 'system', operation: 'worker.claim', incidentKey: 'worker.claim' }); return null; });
       if (!job) { await new Promise(r => setTimeout(r, 400)); continue; }
       active++;
-      execute(job, workerId).finally(() => { active--; });
+      execute(job, workerId).catch(e => job.kind === 'observability.alert' ? undefined : reportFailure(e, { source: 'system', operation: 'worker.execute', jobId: job.id, businessId: job.businessId })).finally(() => { active--; });
     }
   };
-  loop();
+  loop().catch(e => reportFailure(e, { source: 'system', operation: 'worker.loop' }));
   return {
     stop: async () => {
       stopping = true; clearInterval(beat);

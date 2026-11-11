@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "database": "radar_autopilot_intro_qa_20261110",
+      "scenario": "current0016 validated allowlist",
+      "ready": true,
+      "pass": true
+    },
+    {
+      "database": "radar_intro_readiness_0015_1794263954725",
+      "scenario": "old0015 identical columns rejects new GuideId",
+      "ready": false,
+      "pass": true
+    },
+    {
+      "database": "radar_intro_readiness_0015_1794263954725",
+      "scenario": "unrelated table matching constraint cannot bypass readiness",
+      "ready": false,
+      "pass": true
+    },
+    {
+      "database": "radar_intro_readiness_0015_1794263954725",
+      "scenario": "upgraded0016 admits new guide",
+      "ready": true,
+      "pass": true
+    },
+    {
+      "database": "radar_intro_readiness_0015_1794263954725",
+      "scenario": "unvalidated correct-table allowlist rejected",
+      "ready": false,
+      "pass": true
+    },
+    {
+      "database": "radar_intro_readiness_0015_1794263954725",
+      "scenario": "validation restores readiness",
+      "ready": true,
+      "pass": true
+    }
+  ]
+}

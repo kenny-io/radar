@@ -1,3 +1,4 @@
+import { reportFailure } from '@/server/observability/failures';
 // Link verification: fetch the page that should carry the link and confirm an <a href> to the target exists with the right rel.
 import * as cheerio from 'cheerio';
 import { env } from '../../env';
@@ -33,7 +34,10 @@ export async function checkLink(from: string, to: string, expectRel: string, stu
     http = r.status;
     // A page that's gone (404/410) no longer carries the link. Anything else non-2xx is inconclusive.
     if (r.status === 404 || r.status === 410) return { reachable: true, found: false, relOk: false, rel: null, anchorText: null, http };
-    if (!r.ok) return { reachable: false, found: false, relOk: false, rel: null, anchorText: null, http };
+    if (!r.ok) {
+      await reportFailure(new Error('Link verification request failed'), { source: 'system', operation: 'backlinks.linkcheck', status: r.status, degraded: true });
+      return { reachable: false, found: false, relOk: false, rel: null, anchorText: null, http };
+    }
     const html = (await r.text()).slice(0, 3_000_000);
     const $ = cheerio.load(html);
     const target = norm(to); const base = r.url || absUrl(from);
@@ -50,6 +54,7 @@ export async function checkLink(from: string, to: string, expectRel: string, stu
     });
     return best || { reachable: true, found: false, relOk: false, rel: null, anchorText: null, http };
   } catch (e: any) {
+    await reportFailure(e, { source: 'system', operation: 'backlinks.linkcheck', degraded: true });
     console.warn('[backlinks] link check failed', from, e?.message || e);
     return { reachable: false, found: false, relOk: false, rel: null, anchorText: null, http };
   }

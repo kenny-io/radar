@@ -1,10 +1,12 @@
 // Claim: the guest's onboarding draft moves to the account at signup, signin or Google sign-in (architecture §6, AC-G5).
 // One transaction with a FOR UPDATE lock on the guest row: two tabs or a double submit move it exactly once. Everything is
 // keyed by business_id (GSC tokens, crawl pages, jobs, logo), so moving the owner and the member row moves all of it.
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql, isNotNull } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { decrypt } from '../crypto';
+import { unauthorized } from '../errors';
 import { track } from '../events';
+import { RadarError } from '../errors';
 import { revoke, type GscTokens } from '../services/gsc/client';
 import { entryAfterAuth } from '../billing/guard';
 import { clearGuestCookie, createSession, currentGuest, type SessionUser } from './session';
@@ -12,11 +14,19 @@ import { setCurrentBusiness } from './users';
 
 export interface ClaimResult { claimed: string | null; replaced: string[] }
 
-export async function claimGuest(guestId: string, user: { id: string; email: string }): Promise<ClaimResult> {
+export async function claimGuest(guestId: string, user: { id: string; email: string }, expectedPasswordHash?: string): Promise<ClaimResult> {
   const B = schema.businesses;
   const out: ClaimResult = { claimed: null, replaced: [] };
   const revokeLater: (GscTokens | null)[] = [];
   await db.transaction(async tx => {
+    // Reset holds this same user lock. Validate the password proof before changing or replacing drafts,
+    // and keep it locked throughout the claim so reset cannot invalidate the proof between those writes.
+    if (expectedPasswordHash !== undefined) {
+      const [account] = await tx.select({ hash: schema.users.passwordHash }).from(schema.users)
+        .where(and(eq(schema.users.id, user.id), eq(schema.users.guest, false))).for('update');
+      if (!account || account.hash !== expectedPasswordHash)
+        throw new RadarError('That email and password don’t match. Sign in again.', 401, 'invalid_credentials');
+    }
     const g = await tx.execute(sql`SELECT id FROM users WHERE id = ${guestId} AND guest FOR UPDATE`);
     if (!g.rows.length) return;                                   // cleaned up, or another tab already claimed it
     const draft = (await tx.select({ id: B.id }).from(B).where(and(eq(B.ownerId, guestId), eq(B.status, 'onboarding'))).orderBy(sql`${B.createdAt} desc`).limit(1))[0];
@@ -48,11 +58,13 @@ export async function claimGuest(guestId: string, user: { id: string; email: str
 /** The end of every sign-in path (route handlers only: sets cookies). Claims this browser's guest, clears radar_guest,
  *  starts the session, makes a profile committed here the current business (radar_biz) and returns where to go
  *  (AuthResult.next). A claimed draft that waits for payment is made current by /api/billing/confirm instead. */
-export async function finishAuth(user: SessionUser, next?: string | null): Promise<{ next: string; claimed: string | null }> {
+export async function finishAuth(user: SessionUser, next?: string | null, expectedPasswordHash?: string): Promise<{ next: string; claimed: string | null }> {
+  const [trusted] = await db.select({ id: schema.users.id }).from(schema.users).where(and(eq(schema.users.id, user.id), eq(schema.users.guest, false), isNotNull(schema.users.emailVerifiedAt))).limit(1);
+  if (!trusted) throw unauthorized();
   const g = await currentGuest();
-  const r = g ? await claimGuest(g.id, user) : { claimed: null };
+  const r = g ? await claimGuest(g.id, user, expectedPasswordHash) : { claimed: null };
   await clearGuestCookie();
-  await createSession(user.id);
+  await createSession(user.id, expectedPasswordHash);
   const e = await entryAfterAuth(user, next);
   if (e.committed) await setCurrentBusiness(e.committed);
   return { next: e.next, claimed: r.claimed };

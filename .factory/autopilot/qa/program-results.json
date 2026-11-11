@@ -1,0 +1,107 @@
+{
+  "at": "2026-11-09T19:48:34.569Z",
+  "businessId": "27b353d8-6011-4991-800c-750d90cfe381",
+  "results": [
+    {
+      "name": "AC2/3/4/5 Empty program queues durable calendar, social and Brief work once without changing saved preferences",
+      "pass": true,
+      "detail": {
+        "calendarQueued": true,
+        "socialQueued": true,
+        "scanQueued": true,
+        "storedIndividualPreferencesUnchanged": true
+      }
+    },
+    {
+      "name": "AC2/3/4/5 Registered child workers generate calendar, daily social pack and fresh Daily Brief",
+      "pass": true,
+      "detail": {
+        "calendarTopics": 12,
+        "oneDailyPack": true,
+        "briefItems": 7,
+        "localDate": "2026-11-09",
+        "timezone": "Pacific/Honolulu"
+      }
+    },
+    {
+      "name": "AC2/4/5 Coordinator schedules supported feed posts, drafts article and emails manual edited Reddit reply",
+      "pass": true,
+      "detail": {
+        "scheduled": 3,
+        "capAtMostTwoPerPlatform": true,
+        "articleQueued": true,
+        "exactEditedRedditHandoff": true,
+        "unsupportedNeverMarkedPosted": true
+      }
+    },
+    {
+      "name": "AC2/4 Scheduled social workers publish valid posts and repeated tick cannot duplicate create",
+      "pass": true,
+      "detail": {
+        "posted": 3,
+        "allStubProviders": true,
+        "duplicateCreates": 0
+      }
+    },
+    {
+      "name": "AC3 Article worker schedules without review and due publisher completes connected blog publication",
+      "pass": true,
+      "detail": {
+        "draftedAndScheduledWithoutApproval": true,
+        "syntheticDateAdvancedToDue": true,
+        "publishedViaExistingConnector": true
+      }
+    },
+    {
+      "name": "AC2/5 Repeated program pass preserves posted state, pack IDs and existing owner handoffs",
+      "pass": true,
+      "detail": {
+        "oneDailyPack": true,
+        "noDuplicatePublications": true,
+        "noDuplicateManualHandoff": true
+      }
+    },
+    {
+      "name": "AC6 Reenable adopts untouched old proposals without reviving queued old publications or manual schedules",
+      "pass": true,
+      "detail": {
+        "newActivation": true,
+        "untouchedProposalEligible": true,
+        "oldQueuedPublicationHeld": true,
+        "manualSchedulePreserved": true
+      }
+    },
+    {
+      "name": "AC5 Final failed autonomous social generation escalates to owner handoff",
+      "pass": true,
+      "detail": {
+        "finalGenerationFailureEscalated": true
+      }
+    },
+    {
+      "name": "AC8 Lapsed billing blocks coordinator work instead of failing open",
+      "pass": true,
+      "detail": {
+        "lapsedOwnerNoNewWork": true
+      }
+    },
+    {
+      "name": "AC5 Expired scheduled accounts and uncertain publication outcomes reach the owner without automatic resend",
+      "pass": true,
+      "detail": {
+        "expiredAccountHandoff": true,
+        "unknownOutcomeWarning": true,
+        "noAutomaticResend": true
+      }
+    },
+    {
+      "name": "AC6 Explicit manual article adoption clears revoked program provenance",
+      "pass": true,
+      "detail": {
+        "manualApprovalClearsProvenance": true,
+        "explicitPublishNowClearsProvenance": true,
+        "manualJobRecorded": true
+      }
+    }
+  ]
+}

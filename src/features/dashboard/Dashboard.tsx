@@ -11,6 +11,7 @@ import { openSocial, useNowMs } from '@/features/social/channels/useSocial';
 import { socialItems } from '@/lib/socialPublish';
 import { platLabel } from '@/lib/constants';
 import { fmtD, fmtDW, fmtN } from '@/lib/format';
+import { FirstWeek } from './FirstWeek';
 import type { Brand, Workspace } from '@/lib/types';
 
 function greet() { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; }
@@ -23,6 +24,8 @@ export function Dashboard() {
   const app = useApp(); const { B, go } = app;
   const top = useTopSuggestion(app); const now = useNowMs();
   if (!B) return null;
+  // A Viewer can't retry or dismiss a failed first run, so they only see it while something is still working.
+  if (B.firstRun && (B.role !== 'Viewer' || B.firstRun.items.some(i => i.status === 'queued' || i.status === 'running'))) return <FirstWeek />;
   const pubOn = !!B.social.publishing;
   const cal = B.calendar.entries; const packs = B.social.packs;
   const first = (app.user.name || '').split(' ')[0];
@@ -31,7 +34,7 @@ export function Dashboard() {
   const upcoming = cal.filter(e => e.date >= B.today && ['approved', 'scheduled', 'draft', 'proposed'].includes(e.status)).slice(0, 5);
   const issues = dashIssues(app, B, top, now);
   let head: React.ReactNode, act: React.ReactNode;
-  if (review.length) { head = `${review.length} article${review.length > 1 ? 's are' : ' is'} ready for your review.`; act = <Btn kind="primary" size="lg" iconR="arrow" onClick={() => go('article', review[0].id)}>Review “{review[0].title.length > 34 ? review[0].title.slice(0, 32) + '…' : review[0].title}”</Btn>; }
+  if (review.length) { head = `${review.length} article${review.length > 1 ? 's are' : ' is'} ready for your review.`; act = <Btn kind="primary" size="lg" iconR="arrow" onClick={() => go('article', { id: review[0].id, back: '/dashboard' })}>Review “{review[0].title.length > 34 ? review[0].title.slice(0, 32) + '…' : review[0].title}”</Btn>; }
   else if (issues.some(i => i.tone !== 'signal')) { const i0 = issues.find(i => i.tone !== 'signal')!; head = i0.head; act = i0.btn; }
   else if (!cal.length) { head = 'Plan the next 30 days of articles.'; act = <Btn kind="primary" size="lg" icon="calendar" onClick={() => go('calendar')}>Generate your content calendar</Btn>; }
   else {
@@ -53,7 +56,7 @@ export function Dashboard() {
         {socialItems(B, now).some(i => i.status === 'scheduled') && <p className="xs sub" style={{ marginTop: 10 }}>Drag a scheduled post to another day to reschedule it.</p>}
       </Section>
       <Section title="Awaiting review">
-        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
+        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', { id: e.id, back: '/dashboard' })}>
           <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
       </Section>
     </> :<div className="grid-2" style={{ columnGap: 48, rowGap: 8 }}>
@@ -62,7 +65,7 @@ export function Dashboard() {
           <span className="mono sub" style={{ width: 52, flex: 'none' }}>{fmtD(e.date)}</span><span className="grow trunc up-t">{e.title}</span><EntryStatus s={e.status} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>Nothing scheduled. <a href="#" onClick={e => { e.preventDefault(); go('calendar'); }}>Open the calendar</a></p>}
       </Section>
       <Section title="Awaiting review" style={{ minWidth: 0 }}>
-        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', e.id)}>
+        {review.length ? <div>{review.map(e => <div key={e.id} className="list-row tap" style={{ margin: '0 -10px', padding: '12px 10px', borderRadius: 10 }} onClick={() => go('article', { id: e.id, back: '/dashboard' })}>
           <span className="col grow" style={{ minWidth: 0 }}><span className="trunc">{e.title}</span><span className="xs sub">Publishes {fmtDW(e.date)}</span></span><Icon n="chevR" s={16} style={{ color: 'var(--faint)' }} /></div>)}</div> : <p className="sub small" style={{ padding: '12px 0' }}>No drafts waiting. Generated articles appear here before they publish.</p>}
       </Section>
     </div>}
@@ -118,10 +121,7 @@ function dashIssues(app: AppCtx, B: Workspace, sg: { top: Suggestion | null; hig
   if (B.gsc.status === 'error') out.push({ id: 'gsc', tone: 'bad', label: 'Search Console sync paused', head: 'Search Console stopped syncing.', body: 'Google returned a temporary error.' + (B.gsc.lastSyncedThrough ? ` Data up to ${fmtD(B.gsc.lastSyncedThrough)} is safe.` : ''), btn: <Btn kind="primary" size="lg" icon="refresh" onClick={resumeGsc}>Resume sync</Btn>, btnSmall: <Btn size="sm" icon="refresh" onClick={resumeGsc}>Resume</Btn> });
   const failed = B.calendar.entries.find(e => e.status === 'failed');
   if (failed) {
-    const conn = B.blog.conns.find(c => c.id === (failed.dest || B.blog.defaultId)) || B.blog.conns[0];
-    const platform = failed.publishError?.platform || platLabel(conn?.type);
-    const http = failed.publishError?.http;
-    out.push({ id: 'pub', tone: 'bad', label: 'Publishing failed', head: 'An article didn’t publish.', body: `“${failed.title}” — ${platform} rejected the request${http ? ` (${http})` : ''}.`, btn: <Btn kind="primary" size="lg" onClick={() => go('article', failed.id)}>Fix and retry</Btn>, btnSmall: <Btn size="sm" onClick={() => go('article', failed.id)}>Fix</Btn> });
+    out.push({ id: 'pub', tone: 'bad', label: 'Publishing failed', head: 'Radar is unable to publish this post.', body: `“${failed.title}” Your article is saved.`, btn: <Btn kind="primary" size="lg" onClick={() => go('article', failed.id)}>View article</Btn>, btnSmall: <Btn size="sm" onClick={() => go('article', failed.id)}>View article</Btn> });
   }
   // Social channels (publishing on): a post that didn't go out, and accounts that need reconnecting.
   if (B.social.publishing) for (const x of socialIssues(B, now)) {
