@@ -1,0 +1,13 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": { "buildCommand": "echo model-proxy" },
+  "deploy": {
+    "startCommand": "npm run model-proxy",
+    "healthcheckPath": "/model/health",
+    "healthcheckTimeout": 60,
+    "numReplicas": 1,
+    "overlapSeconds": 0,
+    "drainingSeconds": 30,
+    "restartPolicyType": "ALWAYS"
+  }
+}

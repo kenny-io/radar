@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const H = vi.hoisted(() => ({ values: (_row: any): any => Promise.resolve(), inserted: [] as any[] }));
 vi.mock('../db', () => ({ db: { insert: () => ({ values: (row: any) => { H.inserted.push(row); return H.values(row); } }) }, schema: { aiCalls: {} } }));
 import { env } from '../env';
-import { recordAiCall } from './record';
+import { costOf } from './prices';
+import { recordAiCall, recordAiCallNow } from './record';
 
 const saved = { ...env };
 const base = { businessId: 'biz', task: 'writing', purpose: 'social.post', model: 'claude-opus-5.5', provider: 'Anthropic', latencyMs: 120, ok: true };
@@ -88,5 +89,80 @@ describe('recordAiCall never reaches the work it records', () => {
   it('a record that cannot even be read does not throw', () => {
     const hostile: any = { ...base, get error() { throw new Error('getter'); } };
     expect(() => recordAiCall(hostile)).not.toThrow();
+  });
+});
+
+// Prompt caching, as the sandbox publisher's model proxy reports it: uncached input, cache reads and cache writes are
+// separate counts billed at separate rates. Rates: platform.claude.com/docs/en/about-claude/pricing (2026-11-12).
+describe('costOf: prompt-cache tokens', () => {
+  const cached = { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 100_000, cacheWriteTokens: 20_000, cacheWrite1hTokens: 5_000 };
+  it('prices uncached input, cache reads, 5-minute writes, 1-hour writes and output each at its own rate', () => {
+    // Opus 5.5: 4 in, 20 out, 0.20 read, 5 write, 8 one-hour write, per 1M.
+    expect(costOf('claude-opus-5.5', cached, 'Anthropic')).toBeCloseTo((1000 * 4 + 500 * 20 + 100_000 * 0.20 + 20_000 * 5 + 5_000 * 8) / 1e6, 10);
+    expect(costOf('claude-opus-5-5', cached)).toBeCloseTo(0.174, 10);
+    expect(costOf('claude-sonnet-5-5', { inputTokens: 0, outputTokens: 0, cacheReadTokens: 1_000_000 })).toBeCloseTo(0.10, 10);
+    expect(costOf('claude-fable-5-2', { cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, cacheWrite1hTokens: 1_000_000 })).toBeCloseTo(0.20 + 10 + 16, 10);
+  });
+  it('a cache read is far cheaper than the same tokens uncached, and a cache write dearer', () => {
+    const uncached = costOf('claude-opus-5-5', { inputTokens: 100_000, outputTokens: 0 })!;
+    expect(costOf('claude-opus-5-5', { inputTokens: 0, outputTokens: 0, cacheReadTokens: 100_000 })!).toBeCloseTo(uncached / 20, 10);
+    expect(costOf('claude-opus-5-5', { inputTokens: 0, outputTokens: 0, cacheWriteTokens: 100_000 })!).toBeCloseTo(uncached * 1.25, 10);
+    expect(costOf('claude-opus-5-5', { inputTokens: 0, outputTokens: 0, cacheWrite1hTokens: 100_000 })!).toBeCloseTo(uncached * 2, 10);
+  });
+  it('a call that reports no cache tokens costs exactly what it did before', () => {
+    expect(costOf('claude-opus-5.5', { inputTokens: 1000, outputTokens: 500 })).toBeCloseTo(0.014, 10);
+    expect(costOf('claude-opus-5.5', { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 0, cacheWriteTokens: null })).toBeCloseTo(0.014, 10);
+    expect(costOf('gpt-6-sol', { inputTokens: 1000, outputTokens: 500 })).toBeCloseTo(0.007, 10);
+  });
+  it('cached tokens on a model with no published cache rate are an unknown cost, never a guess', () => {
+    expect(costOf('gpt-6-sol', { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 10 })).toBeNull();
+    expect(costOf('grok-4.7', { inputTokens: 1000, outputTokens: 500, cacheWriteTokens: 10 })).toBeNull();
+    expect(costOf('unknown-model', { cacheReadTokens: 10 })).toBeNull();
+  });
+  it('the long-prompt threshold counts cached tokens as part of the prompt', () => {
+    // Haiku 5.5 over 100,000 prompt tokens: 0.50 in, 0.05 read. Under: 0.10 in, 0.01 read.
+    expect(costOf('claude-haiku-5-5', { inputTokens: 10_000, outputTokens: 0, cacheReadTokens: 95_000 })).toBeCloseTo((10_000 * 0.50 + 95_000 * 0.05) / 1e6, 12);
+    expect(costOf('claude-haiku-5-5', { inputTokens: 10_000, outputTokens: 0, cacheReadTokens: 80_000 })).toBeCloseTo((10_000 * 0.10 + 80_000 * 0.01) / 1e6, 12);
+    expect(costOf('claude-haiku-5-5', { inputTokens: 100_000, outputTokens: 0 })).toBeCloseTo(0.01, 12);
+  });
+});
+
+describe('recordAiCallNow: the awaited writer', () => {
+  const proxyCall = { businessId: 'biz', task: 'writing', purpose: 'github.integration.agent', model: 'claude-opus-5.5', provider: 'Anthropic', latencyMs: 900, ok: true };
+  it('writes the same columns as recordAiCall, with cached tokens folded into the one input column and priced apart', async () => {
+    await recordAiCallNow({ ...proxyCall, inputTokens: 1000, outputTokens: 500, cacheReadTokens: 100_000, cacheWriteTokens: 20_000, cacheWrite1hTokens: 5_000 });
+    expect(H.inserted).toEqual([{ businessId: 'biz', task: 'writing', purpose: 'github.integration.agent', model: 'claude-opus-5.5', provider: 'Anthropic', latencyMs: 900, inputTokens: 126_000, outputTokens: 500, costUsd: expect.closeTo(0.174, 10), ok: true, error: null }]);
+  });
+  it('recordAiCall folds and prices cached tokens the same way', () => {
+    recordAiCall({ ...proxyCall, inputTokens: 1000, outputTokens: 500, cacheReadTokens: 100_000 });
+    expect(H.inserted[0]).toMatchObject({ inputTokens: 101_000, outputTokens: 500, costUsd: expect.closeTo((1000 * 4 + 500 * 20 + 100_000 * 0.20) / 1e6, 10) });
+  });
+  it('a cost the caller worked out wins, and a call with no usage keeps null tokens', async () => {
+    await recordAiCallNow({ ...proxyCall, inputTokens: 10, outputTokens: 10, cacheReadTokens: 10, costUsd: 0.5 });
+    await recordAiCallNow({ ...proxyCall, ok: false, error: 'HTTP 529' });
+    expect(H.inserted.map(r => [r.inputTokens, r.outputTokens, r.costUsd, r.ok, r.error])).toEqual([[20, 10, 0.5, true, null], [null, null, null, false, 'HTTP 529']]);
+  });
+  it('resolves only after the insert has finished', async () => {
+    let finish!: () => void, done = false;
+    H.values = () => new Promise<void>(resolve => { finish = resolve; });
+    const pending = recordAiCallNow({ ...proxyCall, inputTokens: 1, outputTokens: 1 }).then(() => { done = true; });
+    await new Promise(r => setTimeout(r, 10));
+    expect(done).toBe(false);
+    finish();
+    await pending;
+    expect(done).toBe(true);
+  });
+  it('rejects with the insert error, so the caller can report it: failing asynchronously, synchronously or while reading the record', async () => {
+    H.values = () => Promise.reject(new Error('connection terminated'));
+    await expect(recordAiCallNow({ ...proxyCall })).rejects.toThrow('connection terminated');
+    H.values = () => { throw new Error('pool is closed'); };
+    await expect(recordAiCallNow({ ...proxyCall })).rejects.toThrow('pool is closed');
+    const hostile: any = { ...proxyCall, get error() { throw new Error('getter'); } };
+    await expect(recordAiCallNow(hostile)).rejects.toThrow('getter');
+  });
+  it('removes provider keys from the error it stores', async () => {
+    Object.assign(env, { anthropicKey: 'sk-ant-SECRET' });
+    await recordAiCallNow({ ...proxyCall, ok: false, error: new Error('HTTP 401: sk-ant-SECRET rejected') });
+    expect(H.inserted[0].error).toBe('HTTP 401: [redacted] rejected');
   });
 });
