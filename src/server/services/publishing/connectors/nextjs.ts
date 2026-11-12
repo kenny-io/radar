@@ -380,7 +380,19 @@ function agentLine(value: unknown, limit: number): string {
     .replace(/[\\[\]]/g, '\\$&')
     .replace(/(?:[\w.-]+\/[\w.-]+)?#\d+\b|\bGH-\d+\b|@[A-Za-z0-9][\w/-]*|\b(?=[a-f]*\d)(?=\d*[a-f])[0-9a-f]{7,40}\b/gi, reference => '`' + reference + '`')
     .replace(/\s+/g, ' ').trim();
-  return shortenAgentText(text, limit);
+  return closeCodeSpan(shortenAgentText(text, limit));
+}
+/** Every backtick left in an agent line is one this function wrote around a reference (the agent's own were replaced
+ *  above). When the text is shortened inside or just after such a reference, its closing backtick is lost and GitHub
+ *  would link the reference again. The open span is closed in front of the shortened marker, without growing the line:
+ *  a span that had only just opened is dropped, otherwise its last character gives way to the closing backtick. */
+function closeCodeSpan(text: string): string {
+  if ((text.match(/`/g) || []).length % 2 === 0) return text;
+  const marker = AGENT_TEXT.shortenedMarker;
+  const at = text.endsWith(marker) ? text.length - marker.length : text.length;
+  const head = text.slice(0, at), tail = text.slice(at);
+  if (head.endsWith('`')) return head.slice(0, -1) + tail;
+  return (head.length - head.lastIndexOf('`') > 2 ? head.slice(0, -1) : head) + '`' + tail;
 }
 /** How every piece of agent-written text enters the pull request body: as one line (`agentLine`), after words Radar
  *  wrote, on Radar's line. Markdown recognises a block (a heading, a quote, a list or task-list item, a table, a code
