@@ -393,6 +393,7 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
       notRun: [...SANDBOX_NOT_RUN],
       mediaOmitted: gated.mediaOmitted,
       ...(gated.unchanged ? { unchanged: true as const } : {}),
+      ...(gated.facts ? { facts: gated.facts } : {}),
     };
   };
 

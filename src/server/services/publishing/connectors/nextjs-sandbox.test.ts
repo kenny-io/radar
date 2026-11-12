@@ -496,36 +496,31 @@ describe('a refused or failed sandbox attempt writes nothing to Git (SBX-4)', ()
 describe('pull request body (SBX-5)', () => {
   beforeEach(() => sandboxOn());
 
-  it('lists only Radar’s checks as run, however the agent describes its own work', async () => {
+  it('says what Radar checked and nothing the agent claims about builds: only its deviations appear, as unverified', async () => {
     turns = [payload => ({ ...registryIntegration(registry(), payload), report: {
       summary: 'Added the record. I ran `npm run build` and the build passed; lint and tests passed too. cc @acme/owners',
       conventions: [{ path: 'package.json', rule: 'npm run build completed successfully' }],
-      deviations: [{ kind: 'media-omitted', detail: 'BlogSection has no image field, so the body image was left out' }],
+      deviations: [{ kind: 'media-omitted', detail: 'BlogSection has no image field, so the body image was left out. cc @acme/owners' }],
     } })];
     const draft = await createDraft();
     expect(draft.extra.review.runtimeVerified).toBe(false);
     await publish(draft);
     const body = prs[0].body;
-    const section = (title: string) => body.split(/\n### /).find(part => part.startsWith(title))!;
-    const ran = section('Checks Radar ran');
-    // Exactly the control-plane checks, each with the gate's own detail.
-    expect(ran.split('\n').filter(line => line.startsWith('- ')).map(line => /^- \*\*(.+?)\*\*: /.exec(line)![1])).toEqual(['Protected paths', 'Credential scan', 'Size and count limits', 'Regular files only', 'Syntax', 'Existing content preserved', 'Article fidelity', 'Article identity']);
-    for (const check of draft.extra.checks) expect(ran).toContain(check.detail);
-    expect(ran).not.toMatch(/build|lint|tests? passed|npm/i);
-    // The peer-content count is disclosed: no original line of the registry was removed or altered.
-    expect(ran).toMatch(/Existing content preserved\*\*: 1 existing file edited; 0 of \d+ original lines removed or altered/);
-    // The agent's claim is printed, under the unverified heading only, and cannot mention anyone.
-    const agent = section('What the agent reported (not verified by Radar)');
-    expect(agent).toContain('Radar did not verify them and none of them is a check that ran.');
-    expect(agent).toContain('the build passed');
-    expect(agent).toContain('`@acme/owners`');
-    expect(body.split('the build passed')).toHaveLength(2);
-    // Media and links the typed registry cannot carry are disclosed, with the fixed not-run list.
-    const omitted = section('Media and links not carried over');
-    for (const reference of draft.extra.mediaOmitted) expect(omitted).toContain('`' + reference + '`');
+    // The agent's summary and the rules it says it followed are not printed, so no claim of a build can be.
+    expect(body).not.toMatch(/build passed|completed successfully|npm run|lint|tests? passed/i);
+    expect(body).toContain('Radar did not build or run the site. Check the article on the deployment preview before merging.');
+    // What Radar says it checked comes from the gate's own counts for this change: the registry kept every line.
+    expect(draft.extra.facts).toEqual({ existingLinesChanged: 0, articleLinesReplaced: 0, notWordForWord: 0, undecided: 0, headings: expect.any(Number), headingsMissing: 0 });
+    expect(body).toContain('\n- Checked by Radar: no existing line was removed or changed; the article text is carried over word for word.\n');
+    // None of the operator's check details reaches the owner.
+    for (const check of draft.extra.checks) expect(body).not.toContain(check.detail);
+    expect(body).not.toMatch(/bytes|limit \d|###/);
+    // The deviation is printed once, under the unverified label, and cannot mention anyone.
+    expect(body).toContain('\n- Reported by the agent that made the change (not verified by Radar):\n  - Deviation 1: media-omitted: BlogSection has no image field, so the body image was left out. cc `@acme/owners`\n');
+    // Media and links the typed registry cannot carry are listed.
     expect(draft.extra.mediaOmitted.length).toBeGreaterThan(0);
-    expect(section('Not run').split('\n').filter(line => line.startsWith('- '))).toEqual(SANDBOX_NOT_RUN.map(item => `- ${item}`));
-    expect(body).toContain('Radar did not install dependencies, build, lint, test or preview this repository');
+    expect(body).toContain(`\n- Not carried over: ${draft.extra.mediaOmitted.length} images, videos or links from the article, because Radar did not find them in the change:\n`);
+    for (const reference of draft.extra.mediaOmitted) expect(body).toContain('\n  - `' + reference + '`\n');
   });
 
   it('renders a persisted sandbox draft as reviewed text', async () => {
@@ -543,80 +538,128 @@ describe('pull request body (SBX-5)', () => {
       agentNotes: { conventions: ['apps/web/app/blog/posts.ts: records use single-quoted strings and trailing commas'], deviations: ['media-omitted: BlogSection has no image field'] },
       notRun: ['nothing was skipped'], mediaOmitted: ['https://files.radar.example/b_demo/body/costs-chart.png', 'Qm3xT7kLp9A'],
       review: { summary: 'Radar ran 3 checks on the exact files in this change.', runtimeVerified: false },
+      facts: { existingLinesChanged: 0, articleLinesReplaced: 0, notWordForWord: 0, undecided: 0, headings: 9, headingsMissing: 0 },
     } };
-    // A persisted entry outside the fixed check list fails validation rather than being printed as a check.
+    // A persisted entry outside the fixed check list fails validation rather than being accepted as a check.
     await expect(publish(draft, payload)).rejects.toMatchObject({ http: 422, kind: 'config' });
     draft.extra.checks.pop();
     await publish(draft, payload);
     expect(prs[0].body).toMatchInlineSnapshot(`
       "An independent six-week review of Larkfield Commons covering rent, fees, noise and transport.
 
-      **Draft for review.** The article is not live. Radar did not install dependencies, build, lint, test or preview this repository, so nothing below is a build or runtime result.
+      **Draft for review.** The article is not live. Scheduled for 2026-11-12.
 
-      Scheduled for 2026-11-12. Article file: \`apps/web/app/blog/posts.ts\`. Public route reported by the agent: \`/blog/larkfield-commons-review\` (not checked against a running site).
+      - Article: \`apps/web/app/blog/posts.ts\`, expected at \`/blog/larkfield-commons-review\`
+      - Checked by Radar: no existing line was removed or changed; the article text is carried over word for word.
+      - Not carried over: 2 images, videos or links from the article, because Radar did not find them in the change:
+        - \`https://files.radar.example/b_demo/body/costs-chart.png\`
+        - \`Qm3xT7kLp9A\`
+      - Reported by the agent that made the change (not verified by Radar):
+        - Deviation 1: media-omitted: BlogSection has no image field
 
-      ### Checks Radar ran
-
-      Radar ran these itself, on the exact file contents it committed. All of them passed; a failed check stops publishing before any commit is written.
-
-      - **Protected paths**: 1 candidate path passes the repository write rules, with no duplicate or nested path
-      - **Existing content preserved**: 1 existing file edited; 0 of 2528 original lines removed or altered (at most 24 in all), 96 lines added
-      - **Article fidelity**: 23 of 23 paragraphs and list items present; 9 of 9 headings present; 3 media or link references not carried
-
-      ### What the agent reported (not verified by Radar)
-
-      An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.
-
-      Summary: Added the article as one record at the end of the posts registry. The build passed.
-
-      Repository rules it says it followed:
-      - Rule 1: apps/web/app/blog/posts.ts: records use single-quoted strings and trailing commas
-
-      Deviations it reported:
-      - Deviation 1: media-omitted: BlogSection has no image field
-
-      ### Media and links not carried over
-
-      Radar did not find these 2 references from the article (image addresses, video ids, source and link addresses) in the changed files. The site’s content format may not be able to carry them:
-
-      - \`https://files.radar.example/b_demo/body/costs-chart.png\`
-      - \`Qm3xT7kLp9A\`
-
-      ### Not run
-
-      Neither Radar nor the agent ran any of these:
-
-      - dependency installation
-      - repository build
-      - lint
-      - tests
-      - deployment preview
-
-      ### Files
-
-      - \`apps/web/app/blog/posts.ts\`
-
-      Before marking this pull request ready: run the repository’s build and CI checks and use its deployment preview to verify the article route, blog listing and navigation.
+      Radar did not build or run the site. Check the article on the deployment preview before merging.
 
       Opened by Radar."
     `);
   });
 
   /** A valid sandbox draft as publish() would receive it, for rendering the body directly. */
+  const CLEAN = { existingLinesChanged: 0, articleLinesReplaced: 0, notWordForWord: 0, undecided: 0, headings: 8, headingsMissing: 0 };
   const extraWith = (over: Record<string, unknown> = {}) => ({
     base: 'main', path: REGISTRY_PATH, slug: P().slug, layout: 'sandbox-agent', files: [REGISTRY_PATH], route: REGISTRY_ROUTE(P().slug), draft: true,
-    summary: 'Added the article as one record.', checks: [{ id: 'paths', outcome: 'passed', detail: '1 candidate path passes the repository write rules' }],
-    agentNotes: { conventions: [], deviations: [] }, notRun: [...SANDBOX_NOT_RUN], mediaOmitted: [], review: { summary: 'Radar ran 1 check.', runtimeVerified: false }, ...over,
+    summary: 'Added the article as one record.', checks: PUBLISH_CHECK_IDS.map(id => ({ id, outcome: 'passed', detail: `operator detail of ${id}: 196224 bytes (limit 1000000)` })),
+    agentNotes: { conventions: [], deviations: [] }, notRun: [...SANDBOX_NOT_RUN], mediaOmitted: [], review: { summary: 'Radar ran 8 checks.', runtimeVerified: false }, facts: CLEAN, ...over,
   });
-  /** The lines of the body that carry agent-written text. */
-  const agentLines = (body: string) => {
-    const section = body.split(/\n### /).find(part => part.startsWith('What the agent reported'))!;
-    return section.split('\n').filter(line => line.startsWith('Summary: ') || line.startsWith('- '));
-  };
+  const deviationsOf = (deviations: string[], over: Record<string, unknown> = {}) => extraWith({ agentNotes: { conventions: [], deviations }, ...over });
+  const AGENT_LABEL = '- Reported by the agent that made the change (not verified by Radar):';
+  /** The lines of the body that carry agent-written text: the deviations, each a nested item behind Radar's label. */
+  const agentLines = (body: string) => body.split('\n').filter(line => line.startsWith('  - Deviation '));
   /** The agent's own text on one of those lines: what follows Radar's label. */
-  const agentText = (line: string) => line.replace(/^(?:Summary|- Rule \d+|- Deviation \d+): /, '');
+  const agentText = (line: string) => line.replace(/^ {2}- Deviation \d+: /, '');
   /** Text of a line with its code spans taken out: what GitHub still reads as Markdown. */
   const outsideCode = (line: string) => line.replace(/`[^`]*`/g, '');
+  const FIRST = `${P().meta}\n\n**Draft for review.** The article is not live. Scheduled for ${P().date}.`;
+  const ARTICLE_LINE = `- Article: \`${REGISTRY_PATH}\`, expected at \`${REGISTRY_ROUTE(P().slug)}\``;
+  const CHECKED = '- Checked by Radar: no existing line was removed or changed; the article text is carried over word for word.';
+  const LAST = 'Radar did not build or run the site. Check the article on the deployment preview before merging.\n\nOpened by Radar.';
+
+  it('a plain new article is the description, the draft notice, two bullets and the closing lines, with no filler', () => {
+    const body = sandboxPullRequestBody(P(), extraWith({ summary: 'I ran the build and it passed.', agentNotes: { conventions: ['package.json: npm run build passed'], deviations: [] } }));
+    expect(body).toBe([FIRST, '', ARTICLE_LINE, CHECKED, '', LAST].join('\n'));
+    // Nothing is said about media, links or deviations when there are none, and nothing of the removed sections is left.
+    expect(body).not.toMatch(/carried over:|Reported by the agent|nothing to carry|Not run|Files|Summary|Rule \d|bytes|###/);
+    // An article with no description starts at the draft notice.
+    expect(sandboxPullRequestBody(P({ meta: '' }), extraWith()).startsWith('**Draft for review.**')).toBe(true);
+  });
+
+  it('lists what was not carried over and the agent’s deviations, each only when there are any', () => {
+    const references = ['https://files.radar.example/b_demo/body/costs-chart.png', 'Qm3xT7kLp9A'];
+    const notes = ['media-omitted: BlogSection has no image field, so two body images were left out', 'other: The supplied article ends mid-sentence'];
+    expect(sandboxPullRequestBody(P(), deviationsOf(notes, { mediaOmitted: references }))).toBe([
+      FIRST, '', ARTICLE_LINE, CHECKED,
+      '- Not carried over: 2 images, videos or links from the article, because Radar did not find them in the change:', '  - `https://files.radar.example/b_demo/body/costs-chart.png`', '  - `Qm3xT7kLp9A`',
+      AGENT_LABEL, '  - Deviation 1: media-omitted: BlogSection has no image field, so two body images were left out', '  - Deviation 2: other: The supplied article ends mid-sentence',
+      '', LAST,
+    ].join('\n'));
+    expect(sandboxPullRequestBody(P(), extraWith({ mediaOmitted: [references[0]] }))).toBe([
+      FIRST, '', ARTICLE_LINE, CHECKED, '- Not carried over: 1 image, video or link from the article, because Radar did not find it in the change:', `  - \`${references[0]}\``, '', LAST,
+    ].join('\n'));
+    expect(sandboxPullRequestBody(P(), deviationsOf([notes[1]]))).toBe([FIRST, '', ARTICLE_LINE, CHECKED, AGENT_LABEL, `  - Deviation 1: ${notes[1]}`, '', LAST].join('\n'));
+    // Blank and non-text entries of a persisted draft are not counted or printed.
+    expect(sandboxPullRequestBody(P(), deviationsOf(['  ', 7 as any], { mediaOmitted: ['', null] }))).toBe([FIRST, '', ARTICLE_LINE, CHECKED, '', LAST].join('\n'));
+  });
+
+  it('shows at most ten omitted references and eight deviations, then says how many more there are', () => {
+    const references = Array.from({ length: 23 }, (_unused, index) => `https://files.radar.example/body/image-${index + 1}.png`);
+    const notes = Array.from({ length: 20 }, (_unused, index) => `structure: note number ${index + 1}`);
+    const lines = sandboxPullRequestBody(P(), deviationsOf(notes, { mediaOmitted: references })).split('\n');
+    const from = lines.indexOf('- Not carried over: 23 images, videos or links from the article, because Radar did not find them in the change:');
+    expect(lines.slice(from + 1, from + 12)).toEqual([...references.slice(0, 10).map(reference => `  - \`${reference}\``), '  - and 13 more']);
+    expect(lines.slice(from + 12, from + 22)).toEqual([AGENT_LABEL, ...notes.slice(0, 8).map((note, index) => `  - Deviation ${index + 1}: ${note}`), '  - and 12 more']);
+    expect(lines.slice(from + 22)).toEqual(['', ...LAST.split('\n')]);
+    // Exactly at the caps nothing is hidden, so no "more" line is printed.
+    const exact = sandboxPullRequestBody(P(), deviationsOf(notes.slice(0, 8), { mediaOmitted: references.slice(0, 10) }));
+    expect(exact).not.toMatch(/ more$/m);
+    expect(exact.split('\n').filter(line => line.startsWith('  - '))).toHaveLength(18);
+    expect(sandboxPullRequestBody(P(), deviationsOf(notes.slice(0, 9))).split('\n').filter(line => line.startsWith('  - ')).at(-1)).toBe('  - and 1 more');
+  });
+
+  it('says only what the gate’s counts prove, and keeps what a reviewer must look at', () => {
+    const checked = (facts: Record<string, unknown> | undefined, over: Record<string, unknown> = {}, payload: PublishPayload = P()) => sandboxPullRequestBody(payload, extraWith({ facts, ...over })).split('\n').find(line => line.startsWith('- Checked by Radar: '))?.slice('- Checked by Radar: '.length);
+    expect(checked(CLEAN)).toBe('no existing line was removed or changed; the article text is carried over word for word.');
+    // Existing lines the change altered are counted and pointed at: the gate proves they were kept, not what they now say.
+    expect(checked({ ...CLEAN, existingLinesChanged: 1 })).toBe('no existing line was removed, and 1 existing line was changed (review it in the diff: Radar checks that existing text is kept, not what was added to it); the article text is carried over word for word.');
+    expect(checked({ ...CLEAN, existingLinesChanged: 3 })).toMatch(/^no existing line was removed, and 3 existing lines were changed \(review them in the diff/);
+    // Headings a template replaced, and places Radar could not decide, are said rather than covered by "word for word".
+    expect(checked({ ...CLEAN, headings: 9, headingsMissing: 2 })).toBe('no existing line was removed or changed; the article’s paragraphs and list items are carried over word for word, and 2 of its 9 headings are not in the change as written.');
+    expect(checked({ ...CLEAN, undecided: 1 })).toBe('no existing line was removed or changed; the article text is carried over word for word; Radar could not tell whether words were added beside 1 passage (check the diff).');
+    expect(checked({ ...CLEAN, notWordForWord: 2, headings: 4, headingsMissing: 1 })).toBe('no existing line was removed or changed; 2 paragraphs or list items of the article have other words or markup between the article’s words (check the diff); 1 of its 4 headings is not in the change as written.');
+    // A refresh replaces its own article, so nothing claims that no line was removed there.
+    const refresh = P({ mode: 'refresh', refreshUrl: '/blog/larkfield-commons-review' });
+    expect(checked({ ...CLEAN, articleLinesReplaced: 41 }, {}, refresh)).toBe('the update replaced 41 lines of the article file; outside that file no existing line was removed or changed; the article text is carried over word for word.');
+    expect(checked({ ...CLEAN, articleLinesReplaced: 41, existingLinesChanged: 2 }, {}, refresh)).toMatch(/^the update replaced 41 lines of the article file; outside that file 2 existing lines were removed or changed \(review them in the diff/);
+    expect(checked(CLEAN, {}, refresh)).toBe('no existing line was removed or changed; the article text is carried over word for word.');
+    expect(checked({ ...CLEAN, existingLinesChanged: 1 }, {}, refresh)).toMatch(/^1 existing line was removed or changed \(review it in the diff/);
+    // A draft saved before the counts were recorded, or with counts that are not counts, claims nothing specific.
+    const general = 'the change passed Radar’s checks that existing content is kept and that the article text is carried over.';
+    expect(checked(undefined)).toBe(general);
+    for (const damaged of [{ ...CLEAN, existingLinesChanged: -1 }, { ...CLEAN, undecided: '0' }, { ...CLEAN, headings: 1.5 }, { existingLinesChanged: 0 }, 'none', []]) expect(checked(damaged as any)).toBe(general);
+    // ...and without both checks on record, nothing at all.
+    expect(checked(undefined, { checks: [{ id: 'paths', outcome: 'passed', detail: 'ok' }] })).toBeUndefined();
+    expect(checked(undefined, { checks: [{ id: 'peer-content', outcome: 'failed', detail: 'x' }, { id: 'article-fidelity', outcome: 'passed', detail: 'ok' }] })).toBeUndefined();
+  });
+
+  it('each continuation is one short sentence, and a resumed draft leaves out what was not kept', () => {
+    const body = (continuation: string, over: Record<string, unknown> = {}) => sandboxPullRequestBody(P(), deviationsOf(['other: a note'], { continuation, mediaOmitted: ['Qm3xT7kLp9A'], ...over }));
+    const rest = ['- Not carried over: 1 image, video or link from the article, because Radar did not find it in the change:', '  - `Qm3xT7kLp9A`', AGENT_LABEL, '  - Deviation 1: other: a note', '', LAST];
+    expect(body('added')).toBe([FIRST, '', 'This attempt added a commit to an existing article branch. Radar’s checks cover that commit and the article file, not the earlier commits on the branch.', '', ARTICLE_LINE, CHECKED, ...rest].join('\n'));
+    // No commit was written, so nothing is said about existing lines: only the article file was checked.
+    expect(body('unchanged')).toBe([FIRST, '', 'The article was already complete on its branch, so this attempt added no commit. Radar’s check covers the article file only.', '', ARTICLE_LINE, '- Checked by Radar: the article text is carried over word for word.', ...rest].join('\n'));
+    // Resumed: the earlier attempt's counts, notes and omitted list were never kept, so none is printed, even if a draft carries some.
+    expect(body('resumed')).toBe([FIRST, '', 'This continues an earlier attempt whose commit had passed Radar’s checks. Its notes were not kept, so compare the article’s images and links with the diff.', '', ARTICLE_LINE, '', LAST].join('\n'));
+    // The slug note is one sentence and comes before the continuation.
+    expect(body('added', { taken: true, slug: 'larkfield-commons-review-2' }).split('\n').slice(3, 6)).toEqual(['', 'The proposed slug `larkfield-commons-review` was unavailable; this change uses `larkfield-commons-review-2`.', '']);
+  });
 
   it('D4: no form of link or image in agent text reaches the body as one, and repository paths stay readable', () => {
     const hostile: [string, string][] = [
@@ -641,29 +684,30 @@ describe('pull request body (SBX-5)', () => {
       ['a task box', '[x] Build passed'],
     ];
     for (const [label, text] of hostile) {
-      for (const extra of [extraWith({ summary: text }), extraWith({ agentNotes: { conventions: [text], deviations: [text] } })]) {
-        const body = sandboxPullRequestBody(P(), extra);
-        const lines = agentLines(body);
-        expect(lines.length, label).toBeGreaterThan(0);
-        for (const line of lines) {
-          const live = outsideCode(agentText(line));
-          expect(live, label).not.toMatch(/evil\.example|:\/\/|www\./i);
-          // Every bracket and backslash that is left is escaped, so nothing can pair into a link, image, definition or task box.
-          expect(live.replace(/\\[\\[\]]/g, ''), label).not.toMatch(/[\\[\]]/);
-          expect(live, label).not.toMatch(/<|&(?!amp;|lt;)/);
-          expect(live, label).not.toMatch(/[@#]\w/);
-        }
+      // The same text as the summary and as a rule is not printed at all; as a deviation it is printed neutralised.
+      const body = sandboxPullRequestBody(P(), extraWith({ summary: text, agentNotes: { conventions: [text], deviations: [text] } }));
+      const lines = agentLines(body);
+      expect(lines.length, label).toBe(1);
+      expect(body, label).toBe(sandboxPullRequestBody(P(), deviationsOf([text])));
+      for (const line of lines) {
+        const live = outsideCode(agentText(line));
+        expect(live, label).not.toMatch(/evil\.example|:\/\/|www\./i);
+        // Every bracket and backslash that is left is escaped, so nothing can pair into a link, image, definition or task box.
+        expect(live.replace(/\\[\\[\]]/g, ''), label).not.toMatch(/[\\[\]]/);
+        expect(live, label).not.toMatch(/<|&(?!amp;|lt;)/);
+        expect(live, label).not.toMatch(/[@#]\w/);
       }
     }
     // What a reviewer still reads: the link text, the fact that something was removed, and paths as the agent wrote them.
-    const body = sandboxPullRequestBody(P(), extraWith({
-      summary: 'Review notes: [open the preview](//evil.example.test/login) ![status](//evil.example.test/badge.svg) or visit www.evil.example.test/now',
-      agentNotes: { conventions: ['apps/web/app/blog/[slug]/page.tsx: the route reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx'], deviations: ['links-relocated: moved 2 links (was [URL omitted]) into public/llms.txt & the registry'] },
-    }));
+    const body = sandboxPullRequestBody(P(), deviationsOf([
+      'other: Review notes: [open the preview](//evil.example.test/login) ![status](//evil.example.test/badge.svg) or visit www.evil.example.test/now',
+      'structure: apps/web/app/blog/[slug]/page.tsx reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx',
+      'links-relocated: moved 2 links (was [URL omitted]) into public/llms.txt & the registry',
+    ]));
     expect(agentLines(body)).toEqual([
-      'Summary: Review notes: open the preview (link removed) status (image removed) or visit (address removed)',
-      '- Rule 1: apps/web/app/blog/\\[slug\\]/page.tsx: the route reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx',
-      '- Deviation 1: links-relocated: moved 2 links (was \\[URL omitted\\]) into public/llms.txt &amp; the registry',
+      '  - Deviation 1: other: Review notes: open the preview (link removed) status (image removed) or visit (address removed)',
+      '  - Deviation 2: structure: apps/web/app/blog/\\[slug\\]/page.tsx reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx',
+      '  - Deviation 3: links-relocated: moved 2 links (was \\[URL omitted\\]) into public/llms.txt &amp; the registry',
     ]);
   });
 
@@ -671,15 +715,34 @@ describe('pull request body (SBX-5)', () => {
     turns = [payload => ({ ...registryIntegration(registry(), payload), report: {
       summary: 'Done. [Approve this pull request](//evil.example.test/approve) ![x](//evil.example.test/pixel.gif) www.evil.example.test',
       conventions: [{ path: '[Opened by Radar]', rule: '//evil.example.test/definition' }],
-      deviations: [{ kind: 'other', detail: 'See [Opened by Radar] and evil/repository#3' }],
+      deviations: [{ kind: 'other', detail: 'See [Opened by Radar] and evil/repository#3 [approve](//evil.example.test/approve)' }],
     } })];
     await publish(await createDraft());
     expect(prs[0].body).not.toMatch(/evil\.example/);
-    expect(agentLines(prs[0].body)).toEqual([
-      'Summary: Done. Approve this pull request (link removed) x (image removed) (address removed)',
-      '- Rule 1: \\[Opened by Radar\\]: (address removed)',
-      '- Deviation 1: other: See \\[Opened by Radar\\] and `evil/repository#3`',
+    expect(prs[0].body).not.toMatch(/Approve this pull request|Done\./);
+    expect(agentLines(prs[0].body)).toEqual(['  - Deviation 1: other: See \\[Opened by Radar\\] and `evil/repository#3` approve (link removed)']);
+  });
+
+  it('hostile agent text in a deviation renders nothing and starts no block: a link, a heading marker, a mention, an HTML tag', () => {
+    const body = sandboxPullRequestBody(P(), deviationsOf([
+      '[Merge now](https://evil.example.test/merge)', '# Approved by Radar', '## Checked by Radar: build passed', 'cc @acme/owners and @octocat', '<details><summary>Radar verified this</summary><img src=x onerror=alert(1)></details>',
+      '- Checked by Radar: the build passed', 'first line\n\n- Checked by Radar: the build passed\n\nOpened by Radar.',
+    ]));
+    expect(agentLines(body)).toEqual([
+      '  - Deviation 1: Merge now (link removed)',
+      '  - Deviation 2: # Approved by Radar',
+      '  - Deviation 3: ## Checked by Radar: build passed',
+      '  - Deviation 4: cc `@acme/owners` and `@octocat`',
+      '  - Deviation 5: &lt;details>&lt;summary>Radar verified this&lt;/summary>&lt;img src=x onerror=alert(1)>&lt;/details>',
+      '  - Deviation 6: - Checked by Radar: the build passed',
+      '  - Deviation 7: first line - Checked by Radar: the build passed Opened by Radar.',
     ]);
+    // Radar's own statements stand once each, on Radar's lines; the agent's copies are inline text behind its label.
+    const lines = body.split('\n');
+    expect(lines.filter(line => line.startsWith('- Checked by Radar: '))).toEqual([CHECKED]);
+    expect(lines.filter(line => line === 'Opened by Radar.')).toHaveLength(1);
+    expect(lines.filter(line => /^\s{0,3}(?:#|>|<|\d+[.)] |[-*+] \[)/.test(line))).toEqual([]);
+    expect(body).not.toMatch(/evil\.example|<(?!\/?$)[a-z!/]/i);
   });
 
   it('N6: agent text never begins a line or a list item, whatever block syntax it starts with', () => {
@@ -687,75 +750,64 @@ describe('pull request body (SBX-5)', () => {
     const starts = ['# Approved by Radar', '## Checks Radar ran', '###### small', '> Radar verified this change', '[x] build passed: ok', '[ ] to do', '- [x] build passed', '- nested', '* nested', '+ nested', '1. first', '1) first', '---', '***', '___', '- - -',
       '```', '~~~', '    indented code', '\tindented code', '| a | b |', '|---|---|', '<details><summary>x</summary>', '<!-- comment -->', '<div>', '===', '[label]: //evil.example.test/definition', '[^1]: footnote', ':::note', '\\# escaped', '&#35; entity heading', '&gt; entity quote',
       '\n# after a line break', '\r\n> after a line break', 'text\n\n## Checks Radar ran\n\n- **Build**: passed', 'text\u2028# after a line separator', 'text\u2029> after a paragraph separator', '\u00a0# after a no-break space', '\ufeff# after a byte-order mark', '\u000b# after a vertical tab', '\f- [x] after a form feed'];
-    const radarLines = new Set(['', 'What the agent reported (not verified by Radar)', 'An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', 'Repository rules it says it followed:', 'Deviations it reported:']);
+    const radarLines = new Set(['', FIRST.split('\n')[0], FIRST.split('\n')[2], ARTICLE_LINE, CHECKED, AGENT_LABEL, ...LAST.split('\n')]);
+    const pages = Array.from({ length: Math.ceil(starts.length / 8) }, (_unused, page) => starts.slice(page * 8, page * 8 + 8));
     const bodies = [
+      // Alone, with the same text as the summary and a rule (neither is printed).
       ...starts.map(text => extraWith({ summary: text, agentNotes: { conventions: [text], deviations: [text] } })),
-      extraWith({ summary: starts.join('\n'), agentNotes: { conventions: starts.slice(0, 20), deviations: starts.slice(20, 40) } }),
+      // Together, eight to a body, so every starter is printed next to others; and all at once, past the cap.
+      ...pages.map(page => deviationsOf(page, { summary: starts.join('\n') })),
+      deviationsOf(starts),
     ].map(extra => sandboxPullRequestBody(P(), extra));
     for (const body of bodies) {
-      const section = body.split(/\n### /).find(part => part.startsWith('What the agent reported'))!.split('\n');
-      for (const line of section) {
-        if (radarLines.has(line)) continue;
-        // Every other line of the section is one statement: Radar's label, a colon, then the agent's text on the same line.
-        expect(line).toMatch(/^(?:Summary|- Rule \d+|- Deviation \d+): \S/);
+      for (const line of body.split('\n')) {
+        if (radarLines.has(line) || /^ {2}- and \d+ more$/.test(line)) continue;
+        // Every other line is one statement: Radar's label, a colon, then the agent's text on the same line.
+        expect(line).toMatch(/^ {2}- Deviation \d+: \S/);
         expect(line).not.toMatch(/[\x00-\x1f\x7f\u2028\u2029]/);
       }
-      // Radar's five section headings are the only headings in the body, once each.
-      expect(body.split('\n').filter(line => /^ {0,3}#/.test(line))).toEqual(['### Checks Radar ran', '### What the agent reported (not verified by Radar)', '### Media and links not carried over', '### Not run', '### Files']);
-      // A list item of the body begins with Radar's bold label, Radar's numbered label, a code span, or a fixed not-run item.
-      for (const line of body.split('\n').filter(line => /^\s*[-*+] /.test(line))) expect(line).toMatch(/^- (?:\*\*[A-Z][a-z ]+\*\*: |Rule \d+: |Deviation \d+: |`[^`]*`$|(?:dependency installation|repository build|lint|tests|deployment preview)$)/);
+      // The body has no heading at all, so none can be imitated.
+      expect(body.split('\n').filter(line => /^ {0,3}#/.test(line))).toEqual([]);
     }
-    const one = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: '# Approved by Radar', agentNotes: { conventions: ['[x] build passed: ok', '   '], deviations: ['> quoted'] } })));
-    expect(one).toEqual(['Summary: # Approved by Radar', '- Rule 1: \\[x\\] build passed: ok', '- Deviation 1: &gt; quoted'.replace('&gt;', '>')]);
+    expect(agentLines(bodies.at(-1)!)).toHaveLength(8);
+    expect(bodies.at(-1)).toContain(`\n  - and ${starts.length - 8} more\n`);
+    const one = agentLines(sandboxPullRequestBody(P(), deviationsOf(['[x] build passed: ok', '   ', '> quoted', '# Approved by Radar'])));
+    expect(one).toEqual(['  - Deviation 1: \\[x\\] build passed: ok', '  - Deviation 2: > quoted', '  - Deviation 3: # Approved by Radar']);
   });
 
-  it('D3: agent text is printed whole up to its limit and is otherwise cut at a word boundary with a visible marker', () => {
+  it('D3: a deviation is printed whole up to its limit and is otherwise cut at a word boundary with a visible marker', () => {
     const words = (count: number, word = 'word') => Array.from({ length: count }, (_, i) => `${word}${i}`).join(' ');
     const marker = AGENT_TEXT.shortenedMarker;
-    const whole = words(400);
-    expect(whole.length).toBeGreaterThan(1600);
-    expect(whole.length).toBeLessThan(AGENT_TEXT.summaryChars);
-    expect(agentLines(sandboxPullRequestBody(P(), extraWith({ summary: whole })))[0]).toBe(`Summary: ${whole}`);
+    const text = (extra: Record<string, unknown>, index = 0) => agentText(agentLines(sandboxPullRequestBody(P(), extra))[index]);
+    const whole = words(50);
+    expect(whole.length).toBeGreaterThan(300);
+    expect(whole.length).toBeLessThan(AGENT_TEXT.noteChars);
+    expect(text(deviationsOf([whole]))).toBe(whole);
 
-    // A persisted draft is not trusted to have been bounded: an over-long summary and note are bounded here.
-    const long = words(900); const note = words(120, 'rule');
-    expect(long.length).toBeGreaterThan(AGENT_TEXT.summaryChars);
-    const lines = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: long, agentNotes: { conventions: [note, 'A short rule'], deviations: [] } })));
-    for (const [line, prefix, full, limit] of [[lines[0], 'Summary: ', long, AGENT_TEXT.summaryChars], [lines[1], '- Rule 1: ', note, AGENT_TEXT.noteChars]] as const) {
-      const text = line.slice(prefix.length);
-      expect(text.length).toBeLessThanOrEqual(limit);
-      expect(text.length).toBeGreaterThan(limit - 40);
-      expect(text.endsWith(marker)).toBe(true);
-      const kept = text.slice(0, -marker.length).split(' ');
-      expect(kept).toEqual(full.split(' ').slice(0, kept.length));
-    }
-    expect(lines[2]).toBe('- Rule 2: A short rule');
+    // A persisted draft is not trusted to have been bounded: an over-long note is bounded here.
+    const long = words(120, 'note');
+    expect(long.length).toBeGreaterThan(AGENT_TEXT.noteChars);
+    const cut = text(deviationsOf([long, 'A short note']));
+    expect(cut.length).toBeLessThanOrEqual(AGENT_TEXT.noteChars);
+    expect(cut.length).toBeGreaterThan(AGENT_TEXT.noteChars - 40);
+    expect(cut.endsWith(marker)).toBe(true);
+    const kept = cut.slice(0, -marker.length).split(' ');
+    expect(kept).toEqual(long.split(' ').slice(0, kept.length));
+    expect(text(deviationsOf([long, 'A short note']), 1)).toBe('A short note');
     // Escaping makes text longer; the bound applies to what is printed, and the cut never splits an escape.
-    const bracketed = Array.from({ length: 900 }, (_, i) => `[p${i}]`).join(' ');
-    const printed = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: bracketed })))[0].slice('Summary: '.length);
-    expect(printed.length).toBeLessThanOrEqual(AGENT_TEXT.summaryChars);
+    const bracketed = Array.from({ length: 200 }, (_, i) => `[p${i}]`).join(' ');
+    const printed = text(deviationsOf([bracketed]));
+    expect(printed.length).toBeLessThanOrEqual(AGENT_TEXT.noteChars);
     expect(printed.endsWith(marker)).toBe(true);
     expect(printed.slice(0, -marker.length).split(' ').every(token => /^\\\[p\d+\\\]$/.test(token))).toBe(true);
     // Padding with white space does not hide a long text, and does not shorten one that fits.
-    const padded = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: long.replace(/ /g, ' \n\t      ') })))[0].slice('Summary: '.length);
-    expect(padded).toBe(lines[0].slice('Summary: '.length));
-    expect(agentLines(sandboxPullRequestBody(P(), extraWith({ summary: whole.replace(/ /g, '  \n\n     ') })))[0]).toBe(`Summary: ${whole}`);
+    expect(text(deviationsOf([long.replace(/ /g, ' \n\t      ')]))).toBe(cut);
+    expect(text(deviationsOf([whole.replace(/ /g, '  \n\n     ')]))).toBe(whole);
     // One word longer than the limit is still cut and marked.
-    const unbroken = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: 'x'.repeat(9000) })))[0].slice('Summary: '.length);
-    expect(unbroken).toBe('x'.repeat(AGENT_TEXT.summaryChars - marker.length) + marker);
-  });
-
-  it('says there was nothing to carry when the article has no media or links, and that all were found only when it has some', () => {
-    const section = (payload: PublishPayload, over: Record<string, unknown> = {}) => sandboxPullRequestBody(payload, extraWith(over)).split(/\n### /).find(part => part.startsWith('Media and links not carried over'))!.split('\n').slice(2).join('\n').trim();
-    const bare = P({ bodyImages: [], videos: [], sources: [], html: '<p>No link in this body, only <b>text</b> and a relative <a href="/pricing">link</a>.</p>' });
-    expect(section(bare)).toBe('The article has no images, videos, sources or links, so there was nothing to carry over.');
-    expect(section(bare)).not.toMatch(/found every/);
-    // The fixture article has a body image, a video and sources.
-    expect(section(P())).toBe('Radar found every image address, video id, source and link address of the article in the changed files.');
-    expect(section({ ...bare, html: '<p>See <a href="https://transit.example.net/ferry">the timetable</a>.</p>' })).toMatch(/^Radar found every image address/);
-    expect(section({ ...bare, sources: [{ title: 'Survey', url: 'https://sources.example.org/survey' }] })).toMatch(/^Radar found every image address/);
-    expect(section(P(), { mediaOmitted: ['https://files.radar.example/b_demo/body/costs-chart.png'] })).toMatch(/^Radar did not find this reference from the article/);
-    expect(section(bare, { continuation: 'resumed' })).toBe('Not available for this pull request. Compare the article’s images, videos and links with the diff.');
+    expect(text(deviationsOf(['x'.repeat(9000)]))).toBe('x'.repeat(AGENT_TEXT.noteChars - marker.length) + marker);
+    // The whole body stays short whatever the agent wrote: twenty notes of the longest size, a hundred references.
+    const largest = sandboxPullRequestBody(P(), deviationsOf(Array.from({ length: 20 }, () => long), { summary: 'x'.repeat(9000), mediaOmitted: Array.from({ length: 100 }, (_unused, i) => `https://files.radar.example/${i}/${'p'.repeat(280)}`) }));
+    expect(largest.length).toBeLessThan(8 * (AGENT_TEXT.noteChars + 20) + 10 * 310 + 1200);
   });
 
   it.each([
@@ -805,10 +857,10 @@ describe('retries and identity (SBX-7)', () => {
     expect(prs).toHaveLength(1);
     expect(written()).toEqual([['POST', '/pulls'], ['POST', '/pulls']]);
     expect(commits.get(refs.get(BR)!)!.parents).toEqual(['base-sha']);
-    // The resumed pull request says what it does not know instead of repeating details nobody kept.
-    expect(prs[0].body).toContain('No agent ran this time.');
-    expect(prs[0].body).toContain('Not available: the agent’s statements from the earlier attempt were not kept.');
-    expect(prs[0].body).toContain('Not available for this pull request. Compare the article’s images, videos and links with the diff.');
+    // The resumed pull request leaves out what nobody kept instead of repeating or explaining it.
+    expect(draft.extra.facts).toBeUndefined();
+    expect(prs[0].body).toContain('\n\nThis continues an earlier attempt whose commit had passed Radar’s checks. Its notes were not kept, so compare the article’s images and links with the diff.\n\n');
+    expect(prs[0].body).not.toMatch(/Checked by Radar|Not carried over|Reported by the agent|not available/i);
   });
 
   // FINDING D5 of QA-1: the resume path trusted a commit trailer that anyone with push access can copy or rewrite.
@@ -847,8 +899,11 @@ describe('retries and identity (SBX-7)', () => {
     expect(refs.get(BR)).toBe('foreign-commit');
     await publish(draft);
     expect(prs).toHaveLength(1);
-    expect(prs[0].body).not.toMatch(/That attempt passed every check|No agent ran this time|continues an earlier attempt/);
-    expect(prs[0].body).toContain('The checks below ran on the article file already on the branch.');
+    expect(prs[0].body).not.toMatch(/continues an earlier attempt|had passed Radar’s checks/);
+    // Only the article file was checked, so nothing is said about the branch's other lines, the foreign commit's included.
+    expect(prs[0].body).toContain('\n\nThe article was already complete on its branch, so this attempt added no commit. Radar’s check covers the article file only.\n\n');
+    expect(prs[0].body).toContain('\n- Checked by Radar: the article text is carried over word for word.\n');
+    expect(prs[0].body).not.toMatch(/existing line/);
   });
 
   it('D5: a trailer whose tree, signature or any signed field was altered is not resumed', async () => {
@@ -982,7 +1037,10 @@ describe('retries and identity (SBX-7)', () => {
       expect(draft.extra).toMatchObject({ continuation: 'added' });
       expect(draft.extra.checks.find((check: any) => check.id === 'peer-content').detail).toMatch(/^compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of \d+ original lines removed or altered/);
       await publish(draft, retitled);
-      expect(prs[0].body).toMatch(/\*\*Existing content preserved\*\*: compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of \d+ original lines removed or altered/);
+      // The pull request says the same from the gate's counts, which were taken against the default branch.
+      expect(draft.extra.facts).toMatchObject({ existingLinesChanged: 0, notWordForWord: 0 });
+      expect(prs[0].body).toContain('\n\nThis attempt added a commit to an existing article branch. Radar’s checks cover that commit and the article file, not the earlier commits on the branch.\n\n');
+      expect(prs[0].body).toContain('\n- Checked by Radar: no existing line was removed or changed; the article text is carried over word for word.\n');
     });
 
     it('a retry that drops a peer record is refused, with one repair turn and nothing written', async () => {
@@ -1072,7 +1130,7 @@ describe('retries and identity (SBX-7)', () => {
     expect(draft.extra).toMatchObject({ layout: 'sandbox-agent', continuation: 'unchanged', path: REGISTRY_PATH, files: [REGISTRY_PATH] });
     await publish(draft, edited);
     expect(prs).toHaveLength(1);
-    expect(prs[0].body).toContain('wrote no new commit');
+    expect(prs[0].body).toContain('this attempt added no commit');
   });
 
   it('a version 2 (planner) commit is continued by the sandbox with its slug and article path, never replaced', async () => {
@@ -1115,7 +1173,7 @@ describe('retries and identity (SBX-7)', () => {
     expect(provider.calls).toHaveLength(0);
     expect(prs[0]).toMatchObject({ head: BR, draft: true, html_url: url });
     expect(prs[0].body).toContain('Static checks:');
-    expect(prs[0].body).not.toContain('### Checks Radar ran');
+    expect(prs[0].body).not.toContain('Checked by Radar');
   });
 
   it('a sandbox draft saved before the switch was turned off still opens its pull request', async () => {
@@ -1125,7 +1183,7 @@ describe('retries and identity (SBX-7)', () => {
     await publish(draft);
     expect(written()).toEqual([['POST', '/pulls']]);
     expect(H.plan).not.toHaveBeenCalled();
-    expect(prs[0].body).toContain('### Checks Radar ran');
+    expect(prs[0].body).toContain('- Checked by Radar: ');
   });
 
   it('an older content-only draft is upgraded through the sandbox engine with its slug kept', async () => {

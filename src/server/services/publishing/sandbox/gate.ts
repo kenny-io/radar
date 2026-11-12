@@ -438,5 +438,6 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
   ];
   // Listed in the shared order of PUBLISH_CHECK_IDS, so the pull request prints them the same way every time.
   checks.sort((a, b) => PUBLISH_CHECK_IDS.indexOf(a.id) - PUBLISH_CHECK_IDS.indexOf(b.id));
-  return { files: changed.map(file => ({ path: file.path, content: file.content })), checks, mediaOmitted, unchanged: changed.length === 0 };
+  const facts = { existingLinesChanged: peerRemoved, articleLinesReplaced: replacedRemoved, notWordForWord: fidelity.interleaved.length, undecided: fidelity.undecided.length, headings: fidelity.counts.headings, headingsMissing: fidelity.headingsMissing.length };
+  return { files: changed.map(file => ({ path: file.path, content: file.content })), checks, mediaOmitted, unchanged: changed.length === 0, facts };
 };

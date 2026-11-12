@@ -102,6 +102,8 @@ describe('publication gate: accepted integrations', () => {
 
     expect(detailOf(result, 'peer-content')).toMatch(/^1 existing file edited; 0 of \d+ original lines removed or altered \(0 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed\), \d+ lines added$/);
     expect(detailOf(result, 'article-fidelity')).toContain('13 of 13 paragraphs and 7 of 7 list items present, 20 of them word for word; 8 of 8 headings present');
+    // The same result as counts, which is what the pull request reads.
+    expect(result.facts).toEqual({ existingLinesChanged: 0, articleLinesReplaced: 0, notWordForWord: 0, undecided: 0, headings: 8, headingsMissing: 0 });
     expect(detailOf(result, 'syntax')).toBe('1 changed file is UTF-8 text; 0 JSON parsed; 1 JavaScript or TypeScript parsed without syntax errors');
     expect(detailOf(result, 'ceilings')).toContain(`1 changed file (limit ${GATE_LIMITS.changedFiles})`);
     // Plain-string paragraphs cannot carry the image, video or citations: disclosed, not fatal.
@@ -162,6 +164,7 @@ describe('publication gate: accepted integrations', () => {
       expect(final).toContain('<footer class="site-footer">');
       expect(final).toContain('<h2>Costs you should plan for</h2>');
       expect(detailOf(result, 'peer-content')).toMatch(/^1 existing file edited; in the article file being replaced, 9 earlier lines gave way to \d+ new ones/);
+      expect(result.facts).toMatchObject({ existingLinesChanged: 0, articleLinesReplaced: 9, notWordForWord: 0 });
     }
   });
   it('refresh whose target is a typed hub record: accepts the article as that record’s HTML string field', async () => {
@@ -181,7 +184,7 @@ describe('publication gate: accepted integrations', () => {
     const tree = treeOf(new Map([...mdxRepository, [articlePath, committed]]));
     const result = await runPublicationGate(gateInput(tree, payload, { files: {}, articlePath, route: POST_ROUTE(payload.slug) }, { retry: { slug: payload.slug, articlePath } }));
     expectPassed(result);
-    expect(result).toMatchObject({ unchanged: true, files: [], mediaOmitted: [] });
+    expect(result).toMatchObject({ unchanged: true, files: [], mediaOmitted: [], facts: { existingLinesChanged: 0, articleLinesReplaced: 0, notWordForWord: 0 } });
     expect(detailOf(result, 'article-fidelity')).toContain('verified on the article file already on the branch');
     expect(detailOf(result, 'identity')).toContain('the retry keeps the slug and article path of the earlier attempt');
     expect(tree.reads).toEqual([tree.entries.get(articlePath)!.sha]);
@@ -475,6 +478,7 @@ describe('publication gate: one refusal per rule', () => {
     const appended = await runPublicationGate(gateInput(tree(), payload, withFiles({ [ONE_LINE_PATH]: oneLineRegistry([...peerSlugs, payload.slug]) })));
     expectPassed(appended);
     expect(detailOf(appended, 'peer-content')).toBe('1 existing file edited; 1 of 42 original lines removed or altered (1 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), 2 lines added. Review the 1 existing line this change altered: Radar checks that existing text is kept, not what was added to it');
+    expect(appended.facts).toMatchObject({ existingLinesChanged: 1, articleLinesReplaced: 0 });
     for (const [gone, removed] of [[[7], 1], [[3, 18, 31], 3], [[39], 1]] as const) {
       const kept = peerSlugs.filter((_, i) => !(gone as readonly number[]).includes(i));
       const error = await failureOf(gateInput(tree(), payload, withFiles({ [ONE_LINE_PATH]: oneLineRegistry([...kept, payload.slug]) })));
@@ -877,6 +881,7 @@ describe('publication gate: what it reads and what it reports', () => {
       const unknown = await run(`content/blog/${small.slug}.txt`, text);
       expectPassed(unknown);
       expect(detailOf(unknown, 'article-fidelity')).toContain('2 of them word for word (not decided for 2: only markup or line structure Radar does not classify separates unit 0, 1 from the text beside them; check the diff for words added there); 0 of 0 headings present');
+      expect(unknown.facts).toMatchObject({ undecided: 2, notWordForWord: 0, headings: 0, headingsMissing: 0 });
     });
     it('checks the article already on the branch, by its path, when a retry changes nothing', async () => {
       const line = body().split('\n').find(text => text.startsWith('- ' + firstItem.slice(0, 20)))!;

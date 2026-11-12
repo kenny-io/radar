@@ -29,8 +29,7 @@ import { jsonBody, PublishError, req, reqJson, publishingTimeRemaining, reposito
 import { planRepositoryPost, safeRepositoryPath, RepositorySourceTooLargeError, SOURCE_FILE_BYTES, type RepoEntry, type RepositoryPostPlan } from './nextjs-agent';
 import { sandboxPublisher } from '../sandbox/config';
 import { integrateWithSandbox } from '../sandbox/run';
-import { articleReferences } from '../sandbox/fidelity';
-import { AGENT_TEXT, COMMIT_MARKER_KEY_PURPOSE, GATE_LIMITS, PUBLISH_CHECK_IDS, SANDBOX_BUDGET, SANDBOX_DRAFT_LAYOUT, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, shortenAgentText, type PublishCheck, type SandboxCommitMarker, type SandboxContinuation, type SandboxDraftExtra, type SandboxIntegration } from '../sandbox/types';
+import { AGENT_TEXT, COMMIT_MARKER_KEY_PURPOSE, GATE_LIMITS, PUBLISH_CHECK_IDS, SANDBOX_BUDGET, SANDBOX_DRAFT_LAYOUT, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, shortenAgentText, type GateFacts, type PublishCheck, type SandboxCommitMarker, type SandboxContinuation, type SandboxDraftExtra, type SandboxIntegration } from '../sandbox/types';
 
 const API = 'https://api.github.com';
 const h = (c: ConnCtx) => ({ authorization: `Bearer ${c.creds.access_token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'Radar' });
@@ -156,7 +155,7 @@ export function markerBindsCommit(saved: any, commitTree: string): boolean {
 const gitBlobSha = (data: Buffer, algorithm: 'sha1' | 'sha256') => createHash(algorithm).update(`blob ${data.length}\0`).update(data).digest('hex');
 
 /** RemoteDraft.extra for a gated sandbox integration. Also used by the replay harness to render the pull request body. */
-export function sandboxDraftExtra(base: string, p: PublishPayload, plan: Pick<SandboxIntegration, 'slug' | 'path' | 'summary' | 'route' | 'checks' | 'agentNotes' | 'mediaOmitted' | 'review'> & { files: string[] }, continuation?: SandboxContinuation): SandboxDraftExtra {
+export function sandboxDraftExtra(base: string, p: PublishPayload, plan: Pick<SandboxIntegration, 'slug' | 'path' | 'summary' | 'route' | 'checks' | 'agentNotes' | 'mediaOmitted' | 'review' | 'facts'> & { files: string[] }, continuation?: SandboxContinuation): SandboxDraftExtra {
   return {
     base, path: plan.path, slug: plan.slug, layout: SANDBOX_DRAFT_LAYOUT,
     // A retry may leave the article file as it already is on the branch; it is still the file the checks were about.
@@ -165,6 +164,7 @@ export function sandboxDraftExtra(base: string, p: PublishPayload, plan: Pick<Sa
     review: { summary: plan.review.summary, runtimeVerified: false }, draft: true,
     ...(p.mode === 'new' && plan.slug !== p.slug ? { taken: true as const } : {}),
     ...(continuation ? { continuation } : {}),
+    ...(plan.facts ? { facts: plan.facts } : {}),
   };
 }
 
@@ -205,8 +205,8 @@ async function createRepositoryDraft(c: ConnCtx, p: PublishPayload, b: Awaited<R
   if (retry && gatedRoute) {
     // The branch head is the commit Radar itself wrote for exactly this article (its signed marker names this tree),
     // and such a commit is written only after the publication gate passed. An attempt that was interrupted after the
-    // ref update resumes here: no sandbox run and no second commit. The gate's details and the agent's notes were
-    // never persisted, so the draft says so.
+    // ref update resumes here: no sandbox run and no second commit. The gate's details and counts and the agent's
+    // notes were never persisted, so the pull request leaves those parts out.
     const head = await gh<{ files?: { filename?: unknown; status?: unknown }[] }>(c, `${API}/repos/${b.repo}/commits/${parent}`, { headers: h(c) });
     const files = (Array.isArray(head.files) ? head.files : []).filter(file => file?.status !== 'removed' && typeof file?.filename === 'string' && safeRepositoryPath(file.filename, true)).map(file => String(file.filename)).slice(0, GATE_LIMITS.candidates);
     return { id: branch, extra: sandboxDraftExtra(b.branch, p, {
@@ -348,17 +348,13 @@ function pullRequestBody(p: PublishPayload, extra: any): string {
   return lines.join('\n');
 }
 
-const CHECK_LABELS: Record<PublishCheck['id'], string> = {
-  identity: 'Article identity', paths: 'Protected paths', 'file-modes': 'Regular files only', ceilings: 'Size and count limits',
-  credentials: 'Credential scan', syntax: 'Syntax', 'peer-content': 'Existing content preserved', 'article-fidelity': 'Article fidelity',
-};
 const validCheck = (check: any): check is PublishCheck => (PUBLISH_CHECK_IDS as readonly string[]).includes(check?.id) && check.outcome === 'passed' && typeof check.detail === 'string';
 /** Persisted and model-written text is printed as one plain line: no markup of its own, and an @name is shown as code
  * so GitHub notifies nobody. */
 const plainLine = (value: unknown, limit: number) => String(value ?? '').replace(/[\x00-\x1f\x7f]+/g, ' ').replace(/`/g, "'").replace(/</g, '&lt;').replace(/@[A-Za-z0-9][\w/-]*/g, name => '`' + name + '`').replace(/\s+/g, ' ').trim().slice(0, limit);
 const codeSpan = (value: unknown) => '`' + String(value ?? '').replace(/[`\x00-\x1f\x7f]/g, '').slice(0, 300) + '`';
 
-// Agent-written text (the summary, conventions and deviations) is also kept from rendering any link or image.
+// Agent-written text (the deviations a pull request shows) is also kept from rendering any link or image.
 const LINK_DESTINATION = String.raw`\(\s*(?:<[^<>]*>|[^()\s]*(?:\([^()\s]*\)[^()\s]*)*)(?:\s+(?:"[^"]*"|'[^']*'|\([^()]*\)))?\s*\)`;
 const INLINE_IMAGE = new RegExp(String.raw`!\[([^\[\]]*)\]` + LINK_DESTINATION, 'g');
 const INLINE_LINK = new RegExp(String.raw`\[([^\[\]]*)\]` + LINK_DESTINATION, 'g');
@@ -394,51 +390,79 @@ function agentLine(value: unknown, limit: number): string {
  *  item. That removes the class; it does not depend on which markers exist. */
 const agentStatement = (label: string, value: unknown, limit: number, empty = 'none given') => `${label}: ${agentLine(value, limit) || empty}`;
 
-/** The sandbox engine's pull request. Three kinds of statement are kept apart: what Radar checked itself, what the
- * agent says (unverified), and what nobody ran. No v1 run installs, builds or executes anything from the repository,
- * so this body never reports a build or runtime result, whatever the agent wrote. */
-export function sandboxPullRequestBody(p: PublishPayload, extra: any): string {
-  const checks: PublishCheck[] = (Array.isArray(extra?.checks) ? extra.checks : []).filter(validCheck);
-  const list = (values: unknown, limit: number): string[] => (Array.isArray(values) ? values : []).filter(value => typeof value === 'string' && value.trim()).slice(0, limit);
-  const conventions = list(extra?.agentNotes?.conventions, 20); const deviations = list(extra?.agentNotes?.deviations, 20);
-  const omitted = list(extra?.mediaOmitted, 50); const files = list(extra?.files, 16);
-  const resumed = extra?.continuation === 'resumed';
-  const lines = [
-    plainLine(p.meta, 1000), '',
-    '**Draft for review.** The article is not live. Radar did not install dependencies, build, lint, test or preview this repository, so nothing below is a build or runtime result.', '',
-    `Scheduled for ${p.date}. Article file: ${codeSpan(extra?.path)}. Public route reported by the agent: ${codeSpan(extra?.route)} (not checked against a running site).`,
-  ];
-  if (extra?.taken) lines.push('', `The proposed slug ${codeSpan(p.slug)} was unavailable; this change uses ${codeSpan(extra.slug)}.`);
-  if (extra?.continuation === 'added') lines.push('', 'This attempt added a commit to an existing article branch. The checks below cover the files changed in this attempt and the article file; earlier commits on the branch came from an earlier attempt.');
-  if (extra?.continuation === 'unchanged') lines.push('', 'This attempt found the article already complete on its branch and wrote no new commit. The checks below ran on the article file already on the branch.');
-  if (resumed) lines.push('', 'This pull request continues an earlier attempt that was interrupted after its commit was written. No agent ran this time. That attempt passed every check below before it wrote the commit, but its check details, the agent’s notes and its list of omitted media were not kept.');
+/** How many of each list the pull request shows before "and N more". */
+const BODY_SHOWN = { omitted: 10, deviations: 8 } as const;
+const counted = (count: number, one: string, many = one + 's') => `${count} ${count === 1 ? one : many}`;
+/** A persisted draft is not trusted to hold well-formed counts: anything else reads as "not known". */
+const gateFacts = (value: any): GateFacts | null => (value && typeof value === 'object'
+  && (['existingLinesChanged', 'articleLinesReplaced', 'notWordForWord', 'undecided', 'headings', 'headingsMissing'] as const).every(key => Number.isSafeInteger(value[key]) && value[key] >= 0) ? value : null);
 
-  lines.push('', '### Checks Radar ran', '', 'Radar ran these itself, on the exact file contents it committed. All of them passed; a failed check stops publishing before any commit is written.', '');
-  for (const check of checks) lines.push(`- **${CHECK_LABELS[check.id]}**: ${plainLine(check.detail, 500)}`);
-
-  lines.push('', '### What the agent reported (not verified by Radar)', '');
-  if (resumed) lines.push('Not available: the agent’s statements from the earlier attempt were not kept.');
-  else {
-    lines.push('An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', '', agentStatement('Summary', extra?.summary, AGENT_TEXT.summaryChars));
-    // Each note follows a label and number of Radar's, so no note begins its list item.
-    if (conventions.length) { lines.push('', 'Repository rules it says it followed:'); conventions.forEach((note, index) => lines.push(`- ${agentStatement(`Rule ${index + 1}`, note, AGENT_TEXT.noteChars, 'nothing readable')}`)); }
-    if (deviations.length) { lines.push('', 'Deviations it reported:'); deviations.forEach((note, index) => lines.push(`- ${agentStatement(`Deviation ${index + 1}`, note, AGENT_TEXT.noteChars, 'nothing readable')}`)); }
+/** What Radar itself checked, as one sentence written from the gate's counts (never from its check details, which are
+ *  for an operator, and never from anything the agent wrote). It claims only what a passed gate proves, and keeps the
+ *  two things a reviewer must look at: existing lines the change altered (the gate proves existing text was kept, not
+ *  what a changed line now says) and places where Radar could not tell whether words were added. null when nothing is
+ *  known: a resumed draft, whose counts were never kept. */
+function checkedByRadar(p: PublishPayload, extra: any): string | null {
+  if (extra?.continuation === 'resumed') return null;
+  const facts = gateFacts(extra?.facts);
+  if (!facts) {
+    // A draft saved before the counts were recorded: say which checks passed and nothing more specific.
+    const ran = new Set((Array.isArray(extra?.checks) ? extra.checks : []).filter(validCheck).map((check: PublishCheck) => check.id));
+    return ran.has('peer-content') && ran.has('article-fidelity') ? 'the change passed Radar’s checks that existing content is kept and that the article text is carried over.' : null;
   }
+  const parts: string[] = [];
+  // An attempt that wrote no commit changed no existing line, so there is nothing to say about them.
+  if (extra?.continuation !== 'unchanged') {
+    const changed = facts.existingLinesChanged; const were = changed === 1 ? 'was' : 'were';
+    const review = ` (review ${changed === 1 ? 'it' : 'them'} in the diff: Radar checks that existing text is kept, not what was added to it)`;
+    if (p.mode === 'refresh') {
+      if (facts.articleLinesReplaced) parts.push(`the update replaced ${counted(facts.articleLinesReplaced, 'line')} of the article file`);
+      const elsewhere = facts.articleLinesReplaced ? 'outside that file ' : '';
+      parts.push(changed ? `${elsewhere}${counted(changed, 'existing line')} ${were} removed or changed${review}` : `${elsewhere}no existing line was removed or changed`);
+    } else parts.push(changed ? `no existing line was removed, and ${counted(changed, 'existing line')} ${were} changed${review}` : 'no existing line was removed or changed');
+  }
+  const missing = facts.headingsMissing ? `${facts.headingsMissing} of its ${counted(facts.headings, 'heading')} ${facts.headingsMissing === 1 ? 'is' : 'are'} not in the change as written` : '';
+  if (facts.notWordForWord) parts.push(`${counted(facts.notWordForWord, 'paragraph or list item', 'paragraphs or list items')} of the article ${facts.notWordForWord === 1 ? 'has' : 'have'} other words or markup between the article’s words (check the diff)`, ...(missing ? [missing] : []));
+  else parts.push(missing ? `the article’s paragraphs and list items are carried over word for word, and ${missing}` : 'the article text is carried over word for word');
+  if (facts.undecided) parts.push(`Radar could not tell whether words were added beside ${counted(facts.undecided, 'passage')} (check the diff)`);
+  return parts.join('; ') + '.';
+}
 
-  lines.push('', '### Media and links not carried over', '');
-  if (resumed) lines.push('Not available for this pull request. Compare the article’s images, videos and links with the diff.');
-  else if (omitted.length) {
-    lines.push(`Radar did not find ${omitted.length === 1 ? 'this reference' : `these ${omitted.length} references`} from the article (image addresses, video ids, source and link addresses) in the changed files. The site’s content format may not be able to carry them:`, '');
-    for (const reference of omitted) lines.push(`- ${codeSpan(reference)}`);
-  } else if (!articleReferences(p).length) lines.push('The article has no images, videos, sources or links, so there was nothing to carry over.');
-  else lines.push('Radar found every image address, video id, source and link address of the article in the changed files.');
+/** The sandbox engine's pull request, written for a site owner deciding whether to merge: what the article is, where it
+ *  went, what Radar checked, and what differs from the article they approved. Three kinds of statement stay apart:
+ *  what Radar checked itself, what the agent says (unverified), and that nothing was built or run. No v1 run installs,
+ *  builds or executes anything from the repository, so this body never reports a build or runtime result, whatever the
+ *  agent wrote. Of the agent's report only its deviations are shown; its summary and the rules it says it followed are
+ *  not printed. */
+export function sandboxPullRequestBody(p: PublishPayload, extra: any): string {
+  const list = (values: unknown): string[] => (Array.isArray(values) ? values : []).filter(value => typeof value === 'string' && value.trim());
+  const resumed = extra?.continuation === 'resumed';
+  // A resumed draft kept neither the agent's notes nor the list of what was not carried over.
+  const deviations = resumed ? [] : list(extra?.agentNotes?.deviations); const omitted = resumed ? [] : list(extra?.mediaOmitted);
+  const meta = plainLine(p.meta, 1000);
+  const lines = [...(meta ? [meta, ''] : []), `**Draft for review.** The article is not live. Scheduled for ${p.date}.`];
+  if (extra?.taken) lines.push('', `The proposed slug ${codeSpan(p.slug)} was unavailable; this change uses ${codeSpan(extra.slug)}.`);
+  if (extra?.continuation === 'added') lines.push('', 'This attempt added a commit to an existing article branch. Radar’s checks cover that commit and the article file, not the earlier commits on the branch.');
+  if (extra?.continuation === 'unchanged') lines.push('', 'The article was already complete on its branch, so this attempt added no commit. Radar’s check covers the article file only.');
+  if (resumed) lines.push('', 'This continues an earlier attempt whose commit had passed Radar’s checks. Its notes were not kept, so compare the article’s images and links with the diff.');
 
-  lines.push('', '### Not run', '', 'Neither Radar nor the agent ran any of these:', '');
-  for (const item of SANDBOX_NOT_RUN) lines.push(`- ${item}`);
-
-  lines.push('', '### Files', '');
-  for (const file of files) lines.push(`- ${codeSpan(file)}`);
-  lines.push('', 'Before marking this pull request ready: run the repository’s build and CI checks and use its deployment preview to verify the article route, blog listing and navigation.', '', 'Opened by Radar.');
+  // The route is the agent's; the last paragraph says nothing was run, and "expected" says it was not looked up.
+  lines.push('', `- Article: ${codeSpan(extra?.path)}, expected at ${codeSpan(extra?.route)}`);
+  const checked = checkedByRadar(p, extra);
+  if (checked) lines.push(`- Checked by Radar: ${checked}`);
+  const more = (hidden: number) => (hidden > 0 ? [`  - and ${hidden} more`] : []);
+  if (omitted.length) {
+    lines.push(`- Not carried over: ${counted(omitted.length, 'image, video or link', 'images, videos or links')} from the article, because Radar did not find ${omitted.length === 1 ? 'it' : 'them'} in the change:`);
+    for (const reference of omitted.slice(0, BODY_SHOWN.omitted)) lines.push(`  - ${codeSpan(reference)}`);
+    lines.push(...more(omitted.length - BODY_SHOWN.omitted));
+  }
+  if (deviations.length) {
+    // Each note follows a label and number of Radar's, so no note begins its list item.
+    lines.push('- Reported by the agent that made the change (not verified by Radar):');
+    deviations.slice(0, BODY_SHOWN.deviations).forEach((note, index) => lines.push(`  - ${agentStatement(`Deviation ${index + 1}`, note, AGENT_TEXT.noteChars, 'nothing readable')}`));
+    lines.push(...more(deviations.length - BODY_SHOWN.deviations));
+  }
+  lines.push('', 'Radar did not build or run the site. Check the article on the deployment preview before merging.', '', 'Opened by Radar.');
   return lines.join('\n');
 }
 

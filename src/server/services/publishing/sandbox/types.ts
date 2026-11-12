@@ -328,7 +328,8 @@ export const SANDBOX_AI_PURPOSE = 'github.integration.agent';
 export const PUBLISH_CHECK_IDS = ['paths', 'credentials', 'ceilings', 'file-modes', 'syntax', 'peer-content', 'article-fidelity', 'identity'] as const;
 /** A check the control plane ran on the exact bytes that will be committed. A failing check never produces one: the gate throws. */
 export interface PublishCheck { id: typeof PUBLISH_CHECK_IDS[number]; outcome: 'passed'; detail: string }
-/** Always printed in the pull request as not run. No v1 run installs, builds or executes anything from the repository. */
+/** Recorded on every sandbox draft as not run (the pull request says it in one sentence). No v1 run installs, builds or
+ *  executes anything from the repository. */
 export const SANDBOX_NOT_RUN = ['dependency installation', 'repository build', 'lint', 'tests', 'deployment preview'] as const;
 
 export interface PublicationGateInput {
@@ -364,6 +365,25 @@ export interface PublicationGateResult {
   mediaOmitted: string[];
   /** A retry that found the branch already complete: no commit is written. */
   unchanged: boolean;
+  /** Set by the gate (gate.ts). Optional so a test double can leave it out. */
+  facts?: GateFacts;
+}
+/** The counts behind the one line a pull request says about a passed gate (the `peer-content` and `article-fidelity`
+ *  checks). Numbers only, never article or source text. The pull request reads these instead of the check details,
+ *  which are written for an operator. */
+export interface GateFacts {
+  /** Existing lines the change altered (a new article never removes one) or, for a refresh, removed or altered, outside
+   *  an article file being replaced. "Existing" is what the default branch holds. */
+  existingLinesChanged: number;
+  /** A refresh only: lines of the article file being replaced that gave way to the new body. */
+  articleLinesReplaced: number;
+  /** Paragraphs and list items that are present but not word for word (0 unless FIDELITY.interleaved* is raised). */
+  notWordForWord: number;
+  /** Units where Radar could not tell whether words were added beside the article's own. */
+  undecided: number;
+  /** The article's headings, and how many of them the change does not carry as written. */
+  headings: number;
+  headingsMissing: number;
 }
 /** Throws PublishError(422, reason, '', 'config', { code, stage: 'validation', reason, path?, actual?, limit?, issues? })
  *  on the first violation; every reason has passed publishingDiagnosticText. */
@@ -385,6 +405,8 @@ export interface SandboxIntegration extends RepositoryPostPlan {
   mediaOmitted: string[];
   /** A retry found the branch already complete; no new commit. */
   unchanged?: true;
+  /** From the gate: what the pull request says Radar checked. */
+  facts?: GateFacts;
 }
 export interface SandboxIntegrationInput {
   config: SandboxPublisherConfig;
@@ -448,6 +470,8 @@ export interface SandboxDraftExtra {
   /** The proposed slug was unavailable. */
   taken?: true;
   continuation?: SandboxContinuation;
+  /** Absent on a resumed draft and on a draft saved before the pull request body read them. */
+  facts?: GateFacts;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

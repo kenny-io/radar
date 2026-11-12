@@ -37,10 +37,11 @@ const extraOf = (summary: string, conventions: string[], deviations: string[]) =
   checks: PUBLISH_CHECK_IDS.map(id => ({ id, outcome: 'passed' as const, detail: 'synthetic detail for a rendering test' })),
   agentNotes: { conventions, deviations }, review: { summary: 'synthetic', runtimeVerified: false },
 });
-const HEADINGS = ['Checks Radar ran', 'What the agent reported (not verified by Radar)', 'Media and links not carried over', 'Not run', 'Files'];
 const count = (html: string, pattern: RegExp) => (html.match(pattern) ?? []).length;
-/** From the text of the agent section's heading to the opening tag of the next section's heading. */
-const agentPart = (html: string) => { const from = html.indexOf('What the agent reported'); const next = html.indexOf('Media and links not carried over'); const to = html.lastIndexOf('<h3', next); expect(from).toBeGreaterThan(-1); expect(to).toBeGreaterThan(from); return html.slice(from, to); };
+/** How many deviations the body prints before "and N more" (BODY_SHOWN.deviations in nextjs.ts). */
+const SHOWN = 8;
+/** From Radar's label of the agent's deviations to the closing paragraph: the nested list that holds them. */
+const agentPart = (html: string) => { const from = html.indexOf('Reported by the agent that made the change (not verified by Radar):'); const to = html.indexOf('Radar did not build or run the site.'); expect(from).toBeGreaterThan(-1); expect(to).toBeGreaterThan(from); return html.slice(from, to); };
 /** Block structure in a piece of rendered HTML. */
 const blocksIn = (html: string) => ({
   headings: count(html, /<h[1-6][\s>]/g), quotes: count(html, /<blockquote/g), rules: count(html, /<hr/g), code: count(html, /<pre/g), tables: count(html, /<table/g),
@@ -51,43 +52,55 @@ const linksIn = (html: string) => ({
   mentions: html.match(/<a[^>]*class="[^"]*user-mention[^"]*"[^>]*>|<a[^>]*data-hovercard-type="(?:user|organization|team)"[^>]*>/gi) ?? [],
   references: html.match(/<a[^>]*class="[^"]*(?:issue-link|commit-link)[^"]*"[^>]*>|<a[^>]*data-hovercard-type="(?:issue|pull_request|commit)"[^>]*>/gi) ?? [],
 });
-/** What the agent section must be, whatever the agent wrote: paragraphs and, per kind of note, one flat list. */
-function expectPlain(body: string, notes: { conventions: number; deviations: number }, label: string) {
+/** What the body must be, whatever the agent wrote: Radar's four paragraphs and one list, with the deviations as one
+ *  flat list nested under Radar's label. `deviations` is how many the draft holds; at most SHOWN are printed. */
+function expectPlain(body: string, deviations: number, label: string) {
   const whole = render(body); const section = agentPart(whole); const found = blocksIn(section);
-  expect([label, found]).toEqual([label, { headings: 0, quotes: 0, rules: 0, code: 0, tables: 0, taskBoxes: 0, details: 0, lists: (notes.conventions ? 1 : 0) + (notes.deviations ? 1 : 0), items: notes.conventions + notes.deviations, breaks: 0, divs: 0 }]);
-  // Radar's own five headings are the only headings of the whole body, once each, so none can be imitated.
-  expect([label, count(whole, /<h[1-6][\s>]/g)]).toEqual([label, HEADINGS.length]);
-  for (const heading of HEADINGS) expect([label, heading, count(whole, new RegExp(`<h3[^>]*>[^<]*${heading.replace(/[()]/g, '\\$&')}`, 'g'))]).toEqual([label, heading, 1]);
-  // Every note is in its list item behind Radar's label.
-  expect([label, count(section, /<li>(?:Rule|Deviation) \d+: /g)]).toEqual([label, notes.conventions + notes.deviations]);
-  expect([label, count(section, /<p[^>]*>Summary: /g)]).toEqual([label, 1]);
-  const links = linksIn(section);
-  expect([label, links]).toEqual([label, { anchors: [], images: [], mentions: [], references: [] }]);
+  const shown = Math.min(deviations, SHOWN); const more = deviations > SHOWN ? 1 : 0;
+  expect([label, found]).toEqual([label, { headings: 0, quotes: 0, rules: 0, code: 0, tables: 0, taskBoxes: 0, details: 0, lists: 1, items: shown + more, breaks: 0, divs: 0 }]);
+  // The whole body: no heading, quote, rule, code block, table, task box or HTML block anywhere; Radar's list (the
+  // article, what Radar checked, the label) with the deviations nested in it; and Radar's four paragraphs.
+  expect([label, blocksIn(whole)]).toEqual([label, { headings: 0, quotes: 0, rules: 0, code: 0, tables: 0, taskBoxes: 0, details: 0, lists: 2, items: 3 + shown + more, breaks: 0, divs: 0 }]);
+  expect([label, count(whole, /<p[\s>]/g)]).toEqual([label, 4]);
+  // Every note is in its list item behind Radar's label, and Radar's own statements stand once each.
+  expect([label, count(section, /<li>Deviation \d+: /g)]).toEqual([label, shown]);
+  expect([label, count(section, /<li>and \d+ more<\/li>/g)]).toEqual([label, more]);
+  for (const own of ['<li>Checked by Radar: ', '<li>Article: ', 'Opened by Radar.', 'Radar did not build or run the site.']) expect([label, own, whole.split(own).length - 1]).toEqual([label, own, 1]);
+  expect([label, linksIn(whole)]).toEqual([label, { anchors: [], images: [], mentions: [], references: [] }]);
   expect([label, count(whole, new RegExp(`<[^>]*${HOST.replace(/\./g, '\\.')}[^>]*>`, 'gi'))]).toEqual([label, 0]);
 }
+const pages = (values: string[]) => Array.from({ length: Math.ceil(values.length / SHOWN) }, (_unused, page) => values.slice(page * SHOWN, page * SHOWN + SHOWN));
 
 describe.skipIf(!ON)('GitHub renders agent text in the sandbox pull request as inline text only (live, read-only)', { timeout: 300_000 }, () => {
   it('positive control: the same block starters, not through the pull request body, do render as blocks', () => {
     const found = blocksIn(render(['# Approved by Radar', '> Radar verified this change', '- [x] build passed', '---', '```\ncode\n```', '| a | b |\n|---|---|\n| 1 | 2 |', '<details><summary>x</summary>y</details>'].join('\n\n')));
     expect(found.headings).toBe(1); expect(found.quotes).toBe(1); expect(found.taskBoxes).toBeGreaterThan(0); expect(found.rules).toBe(1); expect(found.code).toBe(1); expect(found.tables).toBe(1); expect(found.details).toBe(1);
-    // And the labelled form of a note is what stops it: the same task-box text behind a label is plain text.
-    expect(blocksIn(render('- Rule 1: [x] build passed')).taskBoxes).toBe(0);
-    expect(blocksIn(render('- [x] build passed')).taskBoxes).toBeGreaterThan(0);
+    // And the labelled form of a note is what stops it: the same task-box text behind a label is plain text, nested or not.
+    expect(blocksIn(render('- Deviation 1: [x] build passed')).taskBoxes).toBe(0);
+    expect(blocksIn(render('- Reported:\n  - Deviation 1: [x] build passed')).taskBoxes).toBe(0);
+    expect(blocksIn(render('- Reported:\n  - [x] build passed')).taskBoxes).toBeGreaterThan(0);
   });
 
-  it('every block starter, alone as the summary, a rule and a deviation, renders as inline text', () => {
-    for (const start of BLOCK_STARTS) expectPlain(sandboxPullRequestBody(P, extraOf(start, [start], [start])), { conventions: 1, deviations: 1 }, JSON.stringify(start));
+  it('a body with no deviations and nothing omitted is four paragraphs and a two-item list', () => {
+    const whole = render(sandboxPullRequestBody(P, extraOf('# Approved by Radar', ['- [x] build passed'], [])));
+    expect(blocksIn(whole)).toEqual({ headings: 0, quotes: 0, rules: 0, code: 0, tables: 0, taskBoxes: 0, details: 0, lists: 1, items: 2, breaks: 0, divs: 0 });
+    expect(count(whole, /<p[\s>]/g)).toBe(4);
+    // The agent's summary and the rules it says it followed are not printed at all.
+    expect(whole).not.toMatch(/Approved by Radar|build passed/);
   });
 
-  it('all block starters together, twenty notes of each kind, render as two flat lists and one summary paragraph', () => {
-    const body = sandboxPullRequestBody(P, extraOf(BLOCK_STARTS.join('\n'), BLOCK_STARTS.slice(0, 20), BLOCK_STARTS.slice(20, 40)));
-    expectPlain(body, { conventions: 20, deviations: 20 }, 'all together');
-    const rest = BLOCK_STARTS.slice(40);
-    expect(rest.length).toBeGreaterThan(0);
-    expectPlain(sandboxPullRequestBody(P, extraOf(BLOCK_STARTS.join(' '), rest, [])), { conventions: rest.length, deviations: 0 }, 'the rest');
+  it('every block starter, alone as a deviation (and as the summary and a rule, which are not printed), renders as inline text', () => {
+    for (const start of BLOCK_STARTS) expectPlain(sandboxPullRequestBody(P, extraOf(start, [start], [start])), 1, JSON.stringify(start));
+  });
+
+  it('all block starters together render as one flat nested list: eight to a body, and all at once past the cap', () => {
+    pages(BLOCK_STARTS).forEach((page, index) => expectPlain(sandboxPullRequestBody(P, extraOf(BLOCK_STARTS.join('\n'), BLOCK_STARTS.slice(0, 20), page)), page.length, `page ${index + 1}`));
+    expect(BLOCK_STARTS.length).toBeGreaterThan(SHOWN);
+    expectPlain(sandboxPullRequestBody(P, extraOf(BLOCK_STARTS.join(' '), [], BLOCK_STARTS)), BLOCK_STARTS.length, 'all together');
   });
 
   it('links, images, mentions and references in the labelled lines stay neutralised', () => {
-    expectPlain(sandboxPullRequestBody(P, extraOf(INLINE.join(' '), INLINE.slice(0, 20), INLINE.slice(0, 20))), { conventions: Math.min(20, INLINE.length), deviations: Math.min(20, INLINE.length) }, 'inline vectors');
+    pages(INLINE).forEach((page, index) => expectPlain(sandboxPullRequestBody(P, extraOf(INLINE.join(' '), INLINE.slice(0, 20), page)), page.length, `inline vectors, page ${index + 1}`));
+    expectPlain(sandboxPullRequestBody(P, extraOf('Summary.', [], [INLINE.join(' ')])), 1, 'inline vectors in one note');
   });
 });
