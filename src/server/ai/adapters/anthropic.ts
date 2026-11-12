@@ -23,6 +23,10 @@ export function billedWith(e: any, prior: Pick<ProviderResult, 'inputTokens' | '
   try { const b = e.billed || {}; e.billed = { inputTokens: sum(prior.inputTokens, b.inputTokens), outputTokens: sum(prior.outputTokens, b.outputTokens), costUsd: sum(prior.costUsd, b.costUsd), searches: sum(prior.searches, b.searches) }; } catch { /* not an object we can annotate */ }
   return e;
 }
+/** Stop reasons that end an answer before the model finished it: the output-token limit, or the model's context window
+ *  filling up while it wrote. The text so far stops mid-sentence, so the result is marked `truncated` and ai.run treats
+ *  it as a failed attempt. */
+const cutOffStop = (stop: unknown) => stop === 'max_tokens' || stop === 'model_context_window_exceeded';
 /** output_config for one request: the structured-output format and the effort share one object; neither → no field. */
 const outputConfig = (effort?: Effort, format?: any) => (format || effort ? { output_config: { ...(format ? { format } : {}), ...(effort ? { effort } : {}) } } : {});
 
@@ -36,7 +40,7 @@ function collect(res: any): ProviderResult {
     if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) for (const r of b.content) if (r.url) citations.push({ url: r.url, title: r.title });
   }
   const searches = res.usage?.server_tool_use?.web_search_requests;
-  return { text, json, citations, ...usage, ...(searches ? { searches } : {}), ...(res.stop_reason === 'max_tokens' ? { truncated: true } : {}) };
+  return { text, json, citations, ...usage, ...(searches ? { searches } : {}), ...(cutOffStop(res.stop_reason) ? { truncated: true } : {}) };
 }
 
 /** JSON Schema subset accepted by Claude structured outputs: objects closed, no numeric/length bounds, minItems ≤ 1. */
@@ -124,6 +128,10 @@ export async function anthropicRun(c: ProviderCall): Promise<ProviderResult> {
     }
     // Declined mid-stream: the text already shown is partial. Fail the attempt (the next one starts with onReset).
     if (stop === 'refusal') throw refusalError(category, { inputTokens: inTok, outputTokens: outTok });
-    return { text, citations: [], inputTokens: inTok, outputTokens: outTok };
+    // A stream that closes without a stop reason was cut off mid-answer (the connection dropped, a proxy closed it):
+    // never save a truncated answer. An ordinary failed attempt, so it is retried; what was reported is still costed.
+    if (!stop) throw Object.assign(new Error('Anthropic stream ended before the answer finished'), { transient: true, ...(inTok || outTok ? { billed: { inputTokens: inTok, outputTokens: outTok } } : {}) });
+    // Stopped at the output limit: the text is partial. Marked, as in collect(), so ai.run fails the attempt and retries with more room.
+    return { text, citations: [], inputTokens: inTok, outputTokens: outTok, ...(cutOffStop(stop) ? { truncated: true } : {}) };
   } finally { clearTimeout(t); }
 }

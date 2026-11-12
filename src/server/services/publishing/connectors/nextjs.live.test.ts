@@ -52,8 +52,8 @@ describe.skipIf(!ON)('Repository-aware GitHub (live)', { timeout: 900_000 }, () 
     const pr = (await gh(`/pulls/${url.split('/').pop()}`)).body;
     expect(pr.state).toBe('open');
     expect(pr.draft).toBe(true);
-    expect(pr.body).toContain(sandbox ? '### Checks Radar ran' : 'not been run by Radar');
-    if (sandbox) expect(pr.body).toContain('### Not run');
+    expect(pr.body).toContain(sandbox ? '- Checked by Radar: ' : 'not been run by Radar');
+    if (sandbox) expect(pr.body).toContain('Radar did not build or run the site.');
     const files = (await gh(`/pulls/${url.split('/').pop()}/files?per_page=100`)).body;
     expect(files.map((file: any) => file.filename)).toEqual(expect.arrayContaining(d.extra.files));
     expect(pr.head.ref).toBe(d.id);

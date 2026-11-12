@@ -884,6 +884,142 @@ describe('an answer cut off at the output-token limit', () => {
     expect(calls.map(c => c.body.max_output_tokens)).toEqual([8000, 16000]);
     expect(H.inserted[0]).toMatchObject({ ok: false, outputTokens: 8000, error: 'Structured output cut off at the 8000-token output limit (OpenAI)' });
   });
+  /* ── plain text: no schema can show that the answer is whole, so a cut-off one is never returned ── */
+  const PARTIAL = 'A landlord who responds calmly and specifically to a';
+  const WHOLE = 'A landlord who responds calmly and specifically to a complaint is a good sign.';
+  /** An Anthropic text stream; `stop` null leaves out the closing message_delta and message_stop, as a dropped connection does. */
+  const anStream = (text: string, stop: string | null, output = 20) => sse([
+    { type: 'message_start', message: { usage: { input_tokens: 900, output_tokens: 1 } } },
+    ...(text.match(/.{1,16}/gs) || []).map(part => ({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: part } })),
+    ...(stop ? [{ type: 'message_delta', delta: { stop_reason: stop }, usage: { output_tokens: output } }, { type: 'message_stop' }] : []),
+  ]);
+  /** An OpenAI Responses text stream that ends with the events given after the text. */
+  const oaStream = (text: string, ...last: any[]) => sse([...(text.match(/.{1,16}/gs) || []).map(delta => ({ type: 'response.output_text.delta', delta })), ...last]);
+  const oaDone = { type: 'response.completed', response: { usage: { input_tokens: 900, output_tokens: 20 } } };
+  const oaIncomplete = (reason: string) => ({ type: 'response.incomplete', response: { status: 'incomplete', incomplete_details: { reason }, usage: { input_tokens: 900, output_tokens: 13000 } } });
+  /** What the article editor does with the stream: add each delta, and start again when an attempt is discarded. */
+  const reader = () => { const seen = { text: '', resets: 0 }; return { seen, onDelta: (d: string) => { seen.text += d; }, onReset: () => { seen.resets++; seen.text = ''; } }; };
+  const providerCall = (over: any = {}) => ({ apiModel: 'm', prompt: 'p', maxTokens: 100, timeoutMs: 5000, onDelta: () => {}, ...over });
+
+  it('Anthropic stream that stops at max_tokens: the adapter marks it, the attempt fails, and the retry gets twice the room', async () => {
+    const ai = await boot(only); fastRetries();
+    const { anthropicRun } = await import('./adapters/anthropic');
+    mockFetch(() => anStream(PARTIAL, 'max_tokens', 100));
+    expect(await anthropicRun(providerCall())).toEqual({ text: PARTIAL, citations: [], inputTokens: 900, outputTokens: 100, truncated: true });
+    mockFetch(() => anStream(WHOLE, 'end_turn'));
+    expect(await anthropicRun(providerCall())).toEqual({ text: WHOLE, citations: [], inputTokens: 900, outputTokens: 20 });
+
+    // The article draft: premium, so 5,000 asked for plus 8,000 of headroom. The cut-off text never becomes the answer.
+    let n = 0;
+    mockFetch(() => (++n === 1 ? anStream(PARTIAL, 'max_tokens', 13000) : anStream(WHOLE, 'end_turn')));
+    const { seen, onDelta, onReset } = reader();
+    const out = await ai.run('writing', draft({ onDelta, onReset }), { businessId: 'biz' });
+    expect(out.text).toBe(WHOLE);
+    expect(seen).toEqual({ text: WHOLE, resets: 2 });
+    expect(calls.map(c => c.body.max_tokens)).toEqual([13000, 26000]);
+    expect(calls.every(c => c.body.stream === true)).toBe(true);
+    expect(H.inserted).toEqual([
+      expect.objectContaining({ ok: false, purpose: 'article.draft', provider: 'Anthropic', inputTokens: 900, outputTokens: 13000, error: 'Answer cut off at the 13000-token output limit (Anthropic)' }),
+      expect.objectContaining({ ok: true, purpose: 'article.draft', provider: 'Anthropic' }),
+    ]);
+  });
+  it('Anthropic stream that ends with no stop reason: a retryable failure, never an answer', async () => {
+    const ai = await boot(only); fastRetries();
+    const { anthropicRun } = await import('./adapters/anthropic');
+    mockFetch(() => anStream(PARTIAL, null));
+    const error = await caught(anthropicRun(providerCall()));
+    expect(error).toMatchObject({ message: 'Anthropic stream ended before the answer finished', billed: { inputTokens: 900, outputTokens: 0 } });
+    // Not marked as stopped at the limit (more room would not help) and not permanent: the ordinary retry runs.
+    expect(error.truncated).toBeUndefined();
+    expect(error.permanent).toBeUndefined();
+    // A stream that closes before any event is the same failure.
+    mockFetch(() => sse([]));
+    expect((await caught(anthropicRun(providerCall()))).message).toBe('Anthropic stream ended before the answer finished');
+
+    let n = 0;
+    mockFetch(() => (++n === 1 ? anStream(PARTIAL, null) : anStream(WHOLE, 'end_turn')));
+    const { seen, onDelta, onReset } = reader();
+    const out = await ai.run('writing', draft({ onDelta, onReset }), { businessId: 'biz' });
+    expect(out.text).toBe(WHOLE);
+    expect(seen.text).toBe(WHOLE);
+    expect(calls.map(c => c.body.max_tokens)).toEqual([13000, 13000]);
+    expect(H.inserted).toEqual([
+      expect.objectContaining({ ok: false, inputTokens: 900, error: 'Anthropic stream ended before the answer finished' }),
+      expect.objectContaining({ ok: true }),
+    ]);
+  });
+  it('OpenAI stream: response.incomplete at the output limit is marked, and any other early end is a failure', async () => {
+    const ai = await boot({ ANTHROPIC_API_KEY: undefined, XAI_API_KEY: undefined }); fastRetries();
+    const { openaiRun } = await import('./adapters/openai');
+    const cfg = { base: 'https://api.openai.com/v1', key: 'k' };
+    mockFetch(() => oaStream(PARTIAL, oaIncomplete('max_output_tokens')));
+    expect(await openaiRun(providerCall(), cfg)).toEqual({ text: PARTIAL, citations: [], inputTokens: 900, outputTokens: 13000, truncated: true });
+    // Nothing written before the limit (reasoning used it all) is the same stop, not a server error.
+    mockFetch(() => oaStream('', oaIncomplete('max_output_tokens')));
+    expect(await openaiRun(providerCall(), cfg)).toMatchObject({ text: '', truncated: true });
+    // Incomplete for another reason, and a stream that just closes: the partial text is not returned.
+    mockFetch(() => oaStream(PARTIAL, oaIncomplete('content_filter')));
+    expect((await caught(openaiRun(providerCall(), cfg))).message).toBe('Stream response.incomplete:  content_filter');
+    mockFetch(() => oaStream(PARTIAL));
+    const closed = await caught(openaiRun(providerCall(), cfg));
+    expect(closed).toMatchObject({ message: 'Stream ended before the answer finished' });
+    expect([closed.truncated, closed.permanent]).toEqual([undefined, undefined]);
+    mockFetch(() => oaStream(WHOLE, oaDone));
+    expect(await openaiRun(providerCall(), cfg)).toEqual({ text: WHOLE, citations: [], inputTokens: 900, outputTokens: 20 });
+    // An endpoint that ends its stream with [DONE] instead of response.completed has finished.
+    mockFetch(() => oaStream(WHOLE, 'data: [DONE]\n\n'));
+    expect(await openaiRun(providerCall(), cfg)).toMatchObject({ text: WHOLE });
+
+    let n = 0;
+    mockFetch(() => (++n === 1 ? oaStream(PARTIAL, oaIncomplete('max_output_tokens')) : oaStream(WHOLE, oaDone)));
+    const { seen, onDelta, onReset } = reader();
+    const out = await ai.run('writing', draft({ onDelta, onReset }));
+    expect(out.text).toBe(WHOLE);
+    expect(seen.text).toBe(WHOLE);
+    expect(calls.every(c => c.url === OA)).toBe(true);
+    const [first, second] = calls.map(c => c.body.max_output_tokens);
+    expect(second).toBe(2 * first);
+    expect(H.inserted[0]).toMatchObject({ ok: false, provider: 'OpenAI', outputTokens: 13000, error: `Answer cut off at the ${first}-token output limit (OpenAI)` });
+    expect(H.inserted.at(-1)).toMatchObject({ ok: true });
+  });
+  it('plain text cut off on every attempt: the call fails, having doubled the room on each route up to the ceiling', async () => {
+    const ai = await boot(only); fastRetries();
+    mockFetch(() => anStream(PARTIAL, 'max_tokens', 13000));
+    const { seen, onDelta, onReset } = reader();
+    const error = await caught(ai.run('writing', draft({ onDelta, onReset }), { businessId: 'biz' }));
+    expect(error).toMatchObject({ code: 'ai_failed', status: 502 });
+    expect(error.cause).toMatchObject({ truncated: true, message: 'Answer cut off at the 20000-token output limit (Anthropic)' });
+    // The premium model's three attempts, then the plan's next model with its own three: each route starts from its own
+    // limit and doubles it, and the premium one stops at the ceiling.
+    expect(calls.map(c => [tag(c), c.body.max_tokens])).toEqual([
+      ['an:claude-fable-5-2', 13000], ['an:claude-fable-5-2', 26000], ['an:claude-fable-5-2', 32000],
+      ['an:claude-opus-5-5', 5000], ['an:claude-opus-5-5', 10000], ['an:claude-opus-5-5', 20000],
+    ]);
+    // Every attempt began by discarding what the one before had shown, and none was recorded as an answer.
+    expect(seen.resets).toBe(6);
+    expect(H.inserted.map(row => [row.ok, row.error])).toEqual([13000, 26000, 32000, 5000, 10000, 20000].map(limit => [false, `Answer cut off at the ${limit}-token output limit (Anthropic)`]));
+  });
+  it('plain text that is not streamed is held to the same rule, on Anthropic and through OpenRouter', async () => {
+    // The Daily Brief rewrite: plain text, no stream, one retry.
+    const rewrite = { purpose: 'brief.rewrite', prompt: 'shorten this reply', maxTokens: 900 };
+    let ai = await boot(only); fastRetries();
+    let n = 0;
+    mockFetch(() => (++n === 1 ? cut(PARTIAL) : anText(WHOLE)));
+    expect((await ai.run('writing', rewrite, { retries: 1 })).text).toBe(WHOLE);
+    const [first, second] = calls.map(c => c.body.max_tokens);
+    expect(second).toBe(2 * first);
+    expect(H.inserted[0]).toMatchObject({ ok: false, outputTokens: 8000, error: `Answer cut off at the ${first}-token output limit (Anthropic)` });
+    mockFetch(() => cut(PARTIAL));
+    expect(await caught(ai.run('writing', rewrite, { retries: 1 }))).toMatchObject({ code: 'ai_failed' });
+    expect(calls).toHaveLength(2);
+
+    H.inserted.length = 0; n = 0;
+    ai = await bootOR({ ...only, ANTHROPIC_API_KEY: undefined });
+    mockFetch(() => (++n === 1 ? orText(PARTIAL, { prompt_tokens: 900, completion_tokens: 2948, cost: 0.004 }, 'length') : orText(WHOLE)));
+    expect((await ai.run('writing', rewrite, { retries: 1 })).text).toBe(WHOLE);
+    expect(calls.map(c => c.body.max_tokens)).toEqual([first, second]);
+    expect(H.inserted[0]).toMatchObject({ ok: false, provider: 'openrouter', costUsd: 0.004, error: `Answer cut off at the ${first}-token output limit (openrouter)` });
+  });
   it('the Daily Brief ranking call asks for 8,000 tokens', async () => {
     const src = (await import('node:fs')).readFileSync(new URL('../services/brief/rank.ts', import.meta.url), 'utf8');
     expect(src).toMatch(/purpose: 'brief\.rank'[^\n]*maxTokens: 8000/);

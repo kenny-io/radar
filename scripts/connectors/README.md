@@ -234,38 +234,67 @@ or PR. In production without `RADAR_SECRET_KEY` nothing is signed, so nothing is
 
 A sandbox PR keeps three kinds of statement apart.
 
-- **Checks Radar ran**: run by Radar itself on the exact file contents it committed, all passed (a failed check stops
-  before any commit). They are: article identity (slug, article path, route; a retry or refresh keeps them), protected
-  paths (the same write rules as the planner: no CI, dependency manifests, lockfiles, auth or deployment files),
-  regular files only (no link, submodule or special file), size and count limits (at most 16 files, 1 MB each),
-  credential scan, syntax (JSON, JavaScript and TypeScript parse), existing content preserved (below), and article
-  fidelity (every paragraph and list item present once, in order and word for word: a unit with a word added between
-  the article's words is refused, as is one shortened or reworded, and one with words added directly before or after
-  it; only format conversion is tolerated. See "Where a unit ends" below).
-- **What the agent reported (not verified by Radar)**: the agent's own summary, the repository rules it says it
-  followed and the deviations it declared. These are claims. If the agent writes that a build passed, that sentence
-  appears here and nowhere else; it could not have run one. The text is printed so that GitHub renders no link or image
-  from it: a Markdown link or image keeps its words and reads "(link removed)" or "(image removed)", an address
-  (`scheme://`, `//host`, `www.`) reads "(address removed)", square brackets are escaped (a path such as
-  `app/[slug]/page.tsx` still reads as written), and an @name, an issue reference or a commit hash is shown as code.
-  The summary is printed up to 4,000 characters and each rule or deviation up to 400; a longer one is cut at a word
-  boundary and ends with "… (truncated by Radar)". Every statement is one line that begins with Radar's own label
-  (`Summary:`, `Rule 1:`, `Deviation 1:`). Markdown only starts a heading, quote, list or task item, table, code block,
-  rule or HTML block at the beginning of a line or list item, so whatever the agent's text begins with (`#`, `>`,
-  `[x]`, `-`, `1.`, three backticks) is printed as plain characters and cannot imitate one of Radar's sections.
-- **Not run**: always the same list: dependency installation, repository build, lint, tests, deployment preview.
-  Nothing from the repository is installed, built or executed, so `runtimeVerified` is false for every sandbox draft.
+The description is written for the site owner deciding whether to merge, and is short on purpose (shortened on
+12 Nov 2026 after the first production PR; see section 15 of the architecture). It has no headings:
+
+```
+<the article's meta description>
+
+**Draft for review.** The article is not live. Scheduled for <date>.
+
+- Article: `<article file>`, expected at `<route>`
+- Checked by Radar: no existing line was removed or changed; the article text is carried over word for word.
+- Not carried over: 2 images, videos or links from the article, because Radar did not find them in the change:
+  - `<reference>`
+- Reported by the agent that made the change (not verified by Radar):
+  - Deviation 1: <one line>
+
+Radar did not build or run the site. Check the article on the deployment preview before merging.
+
+Opened by Radar.
+```
+
+- **Checked by Radar**: one sentence, written from counts the publication gate returns for the exact file contents
+  Radar committed (`facts` on the saved draft), never from anything the agent wrote. All eight checks still run and a
+  failed one still stops publishing before any commit: article identity (slug, article path, route; a retry or refresh
+  keeps them), protected paths (the same write rules as the planner: no CI, dependency manifests, lockfiles, auth or
+  deployment files), regular files only (no link, submodule or special file), size and count limits (at most 16 files,
+  1 MB each), credential scan, syntax (JSON, JavaScript and TypeScript parse), existing content preserved (below), and
+  article fidelity (every paragraph and list item present once, in order and word for word: a unit with a word added
+  between the article's words is refused, as is one shortened or reworded, and one with words added directly before or
+  after it; only format conversion is tolerated. See "Where a unit ends" below). The sentence says more only when a
+  reviewer has something to look at: how many existing lines the change altered ("review them in the diff: Radar
+  checks that existing text is kept, not what was added to it"), how many of the article's headings are not in the
+  change as written, and for how many passages Radar could not tell whether words were added beside them. For a
+  refresh it says how many lines of the article file were replaced and whether anything outside that file changed.
+  The per-check details (counts, byte sizes, limits) stay on the saved draft (`checks`) for operators and are not
+  printed.
+- **Reported by the agent (not verified by Radar)**: only the deviations the agent declared, because they tell the
+  owner where the result differs from the article they approved (an image the site's format cannot carry, sources moved
+  into a link list). The agent's summary and the repository rules it says it followed are not printed, so a sentence
+  such as "the build passed" has nowhere to appear. At most 8 deviations are shown, then "and N more". Each is printed
+  so that GitHub renders no link or image from it: a Markdown link or image keeps its words and reads "(link removed)"
+  or "(image removed)", an address (`scheme://`, `//host`, `www.`) reads "(address removed)", square brackets are
+  escaped (a path such as `app/[slug]/page.tsx` still reads as written), and an @name, an issue reference or a commit
+  hash is shown as code. Each is printed up to 400 characters; a longer one is cut at a word boundary and ends with
+  "… (truncated by Radar)". Every deviation is one line that begins with Radar's own label (`Deviation 1:`). Markdown
+  only starts a heading, quote, list or task item, table, code block, rule or HTML block at the beginning of a line or
+  list item, so whatever the agent's text begins with (`#`, `>`, `[x]`, `-`, `1.`, three backticks) is printed as
+  plain characters and cannot imitate one of Radar's own lines.
+- **Nothing was built or run**: the closing sentence says so in every sandbox PR. Nothing from the repository is
+  installed, built or executed, so `runtimeVerified` is false for every sandbox draft, and the route is printed as
+  "expected at" because it is the agent's and was not looked up on a running site.
 
 Existing content preserved, for a new article: in every existing file the change edits, no original line may be
 removed, and at most 6 may be altered (24 across all files). A line is altered when the same line comes back in the
 same place with one small edit: it shares a beginning and an end with the original, and what the original lost between
 them is at most 24 characters and at most half of the line (a comma or bracket added, a name added to an import list,
 a counter, date or flag changed). A line that is deleted, moved, re-indented beyond that, rewritten, or replaced by a
-different record is removed, and the change is refused. The check prints both counts, and when any existing line was
-altered it asks the reviewer to look at those lines. A refresh keeps its own tolerance (the article file may have its
-body replaced; other files max(10, 1%) of their lines, 60 in all). On a retry or legacy migration the same rules
-apply, measured against the default-branch commit the article branch started from (the check says so): lines an
-earlier attempt added may be replaced freely, lines of the default branch may not.
+different record is removed, and the change is refused. The check records both counts, and when any existing line was
+altered the pull request says how many and asks the reviewer to look at those lines. A refresh keeps its own tolerance
+(the article file may have its body replaced; other files max(10, 1%) of their lines, 60 in all). On a retry or legacy
+migration the same rules apply, measured against the default-branch commit the article branch started from (the check
+says so): lines an earlier attempt added may be replaced freely, lines of the default branch may not.
 
 This check bounds what can happen to existing text; it does not judge what added code does. An altered line may gain
 any text (a record commented out with `//` is an altered line), and added lines are not examined (an added
@@ -278,15 +307,18 @@ Markdown and MDX, a paragraph (ended by a blank line), a list item or a heading 
 block-level tags (inline tags such as `<a>`, `<em>` and `<br>` do not end it); in JavaScript, TypeScript and JSON, one
 string (strings joined with `+` or through `${}` are one string, and a string written as a JSX child belongs to its
 element); in YAML, one scalar. Words added inside that piece of text, before or after the unit, are refused with the
-unit's index. Two cases cannot be decided and are disclosed in the check instead ("not decided for N …"): a unit set
-off from other text only by a component or custom element, and a file of a type Radar has no rules for.
+unit's index. Two cases cannot be decided and are disclosed instead (in the check, "not decided for N …"; in the pull
+request, "Radar could not tell whether words were added beside N passages"): a unit set off from other text only by a
+component or custom element, and a file of a type Radar has no rules for.
 
-It also lists **media and links not carried over** (image addresses, video ids, source and link addresses from the
-article that Radar did not find in the changed files, usually because the site's content format has no place for them).
-That is disclosed, not a failure; an article with no media or links at all says there was nothing to carry over. A PR
-that continues an existing article branch says so, and a PR resumed from an interrupted attempt says that the earlier
-attempt's details were not kept. As with the planner, the PR is a draft and
-merging it is the reviewer's decision after the repository's own CI and preview.
+**Not carried over** lists image addresses, video ids, source and link addresses from the article that Radar did not
+find in the changed files, usually because the site's content format has no place for them: at most 10, then "and N
+more". That is disclosed, not a failure. When nothing was left out the bullet is absent, and so is the agent's bullet
+when it declared no deviation. A PR whose slug had to change says so in one sentence. A PR that continues an existing
+article branch says so in one sentence (Radar's checks cover this attempt's commit and the article file, not earlier
+commits). A PR resumed from an interrupted attempt says that its commit had passed Radar's checks and leaves out what
+was not kept: the checked sentence, the list of what was not carried over and the agent's deviations. As with the
+planner, the PR is a draft and merging it is the reviewer's decision after the repository's own CI and preview.
 
 ### Tests
 

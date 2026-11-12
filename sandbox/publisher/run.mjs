@@ -424,7 +424,7 @@ const REPORT_CONTRACT = (reportPath) => `Write ${reportPath} with the Write tool
 - "summary": what you changed and why, at most 4000 characters
 - "evidence": at most 24 objects { "role": "content" | "route" | "listing" | "navigation" | "config", "path": repository path, "note": what that file proves }
 - "conventions": at most 20 objects { "path": the file that states or shows the rule, "rule": the rule you conformed to }
-- "deviations": at most 20 objects { "kind": "punctuation" | "media-omitted" | "links-relocated" | "structure" | "other", "detail": what differs from the supplied article and why }
+- "deviations": at most 20 objects { "kind": "punctuation" | "media-omitted" | "links-relocated" | "structure" | "other", "detail": one short plain sentence, at most 160 characters, that the site owner can read without knowing the code: what differs from the supplied article and why }
 - "reason": null, or with status "cannot_integrate" the specific reason
 Report only what you did and read. Never state that a build, lint, test, audit or preview ran or passed: nothing was run.`;
 
