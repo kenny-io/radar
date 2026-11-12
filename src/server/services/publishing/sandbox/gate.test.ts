@@ -99,7 +99,7 @@ describe('publication gate: accepted integrations', () => {
     expect(linesSurvive(registry, final)).toBe(true);
     expect(final.length).toBeGreaterThan(registry.length);
 
-    expect(detailOf(result, 'peer-content')).toMatch(/^1 existing file edited; 0 of \d+ original lines removed or altered \(limit 60\), \d+ lines added$/);
+    expect(detailOf(result, 'peer-content')).toMatch(/^1 existing file edited; 0 of \d+ original lines removed or altered \(limit 6 per file, 24 in all\), \d+ lines added$/);
     expect(detailOf(result, 'article-fidelity')).toContain('13 of 13 paragraphs and 7 of 7 list items present, 20 of them word for word; 8 of 8 headings present');
     expect(detailOf(result, 'syntax')).toBe('1 changed file is UTF-8 text; 0 JSON parsed; 1 JavaScript or TypeScript parsed without syntax errors');
     expect(detailOf(result, 'ceilings')).toContain(`1 changed file (limit ${GATE_LIMITS.changedFiles})`);
@@ -132,7 +132,7 @@ describe('publication gate: accepted integrations', () => {
     expect(pages.at(-1)).toMatchObject({ slug: payload.slug, excerpt: ARTICLE[0][1] });
     // Every original line is still there, in order: the appended record ends with the closing brace the old last record had.
     expect(linesSurvive(index, result.files.find(file => file.path === INDEX_PATH)!.content)).toBe(true);
-    expect(detailOf(result, 'peer-content')).toMatch(/^1 existing file edited; 0 of \d+ original lines removed or altered \(limit 60\), \d+ lines added$/);
+    expect(detailOf(result, 'peer-content')).toMatch(/^1 existing file edited; 0 of \d+ original lines removed or altered \(limit 6 per file, 24 in all\), \d+ lines added$/);
     expect(detailOf(result, 'syntax')).toContain('1 JSON parsed');
   });
 
@@ -380,7 +380,7 @@ describe('publication gate: one refusal per rule', () => {
     expect(postsOf(String(output.files[REGISTRY_PATH]))).toHaveLength(PEER_RECORDS + 1);
     const error = await failureOf(gateInput(treeOf(repository), payload, output));
     expectFailure(error, 'peer-content-changed', true);
-    expect(error.diagnostic).toMatchObject({ path: REGISTRY_PATH, limit: Math.ceil(registry.split('\n').length * PEER_CONTENT.lineShare) });
+    expect(error.diagnostic).toMatchObject({ path: REGISTRY_PATH, limit: PEER_CONTENT.newLines });
     expect(error.diagnostic!.actual!).toBeGreaterThan(2000);
     expect(error.diagnostic!.reason).toContain('existing lines removed or altered');
   });
@@ -398,24 +398,98 @@ describe('publication gate: one refusal per rule', () => {
     expect(postsOf(deleted)).toHaveLength(PEER_RECORDS);
     const removal = await failureOf(gateInput(treeOf(repository), payload, { files: { [REGISTRY_PATH]: deleted }, articlePath: REGISTRY_PATH, route: '/blog/' + payload.slug }));
     expectFailure(removal, 'peer-content-changed', true);
-    // The record's own lines (its slug, title, paragraphs) are gone; brackets it shares with the new record are not counted.
-    expect(removal.diagnostic!.actual!).toBeGreaterThan(removal.diagnostic!.limit!);
-    expect(removal.diagnostic!.actual!).toBeLessThanOrEqual(starts[6] - starts[5]);
-    expect(removal.diagnostic!.reason).toMatch(/has at least \d+ of its \d+ existing lines removed or altered; the limit for this file is 24\./);
+    expect(removal.diagnostic).toMatchObject({ actual: starts[6] - starts[5], limit: PEER_CONTENT.newLines });
+    expect(removal.diagnostic!.reason).toMatch(/has \d+ of its \d+ existing lines removed or altered; the limit for this file is 6\./);
     const bylines = await failureOf(gateInput(treeOf(repository), payload, { files: { [REGISTRY_PATH]: integrated.replace(/author: 'Editorial team',/g, "author: 'Example Rentals',") }, articlePath: REGISTRY_PATH, route: '/blog/' + payload.slug }));
     expectFailure(bylines, 'peer-content-changed', true);
     expect(bylines.diagnostic!.actual).toBe(PEER_RECORDS);
   });
-  it('peer content: small edits in many files add up past the total', async () => {
+  it('peer content, new article: a 13-line record deleted from the index is refused', async () => {
+    const repository = generatedIndexRepository(); const index = repository.get(INDEX_PATH)!;
+    const output = pageAndIndexRecord(index, payload);
+    const lines = String(output.files[INDEX_PATH]).split('\n');
+    const start = lines.findIndex((line, i) => i > 100 && line === '    {'); const end = lines.findIndex((line, i) => i > start && line === '    },');
+    expect(end - start + 1).toBe(13);
+    const deleted = [...lines.slice(0, start), ...lines.slice(end + 1)].join('\n');
+    // Still valid JSON with the new record in it, and the same number of pages as before: only the line rule can see the loss.
+    expect(JSON.parse(deleted).pages).toHaveLength(INDEXED_PAGES);
+    const error = await failureOf(gateInput(treeOf(repository), payload, { ...output, files: { ...output.files, [INDEX_PATH]: deleted } }));
+    expectFailure(error, 'peer-content-changed', true);
+    expect(error.diagnostic).toMatchObject({ path: INDEX_PATH, actual: 13, limit: 6 });
+    expect(error.diagnostic!.reason).toBe(`${INDEX_PATH} has 13 of its ${index.split('\n').length - 1} existing lines removed or altered; the limit for this file is 6. Add the article without reformatting or rewriting existing lines`);
+  });
+  /** A small authored registry next to the blog: one seven-line record per category, plus a few one-line settings. */
+  const categories = (() => {
+    const record = (i: number) => ['  {', `    "slug": "category-${i}",`, `    "title": "Category ${i}",`, `    "order": ${i},`, `    "featured": ${i % 2 === 0},`, `    "updatedAt": "2026-0${1 + (i % 9)}-10"`, '  },'];
+    const lines = ['[', ...Array.from({ length: 12 }, (_, i) => record(i + 1)).flat()];
+    lines[lines.length - 1] = '  }';
+    return [...lines, ']', ''].join('\n');
+  })();
+  const CATEGORIES_PATH = 'src/data/categories.json';
+  const settings = "import { postSlugs } from './blog';\n\nexport const postsPerPage = 8;\nexport const postCount = 8;\nexport const lastPublished = '2026-08-15';\nexport const featured = ['harbour-notes', 'quarry-walks'];\nexport const feedTitle = 'Example Rentals blog';\nexport const feedLimit = 20;\nexport const showAuthors = false;\nexport const allSlugs = () => postSlugs();\n";
+  const SETTINGS_PATH = 'src/lib/blog-settings.ts';
+  const sideFiles = () => treeOf(new Map([...mdxRepository, [CATEGORIES_PATH, categories], [SETTINGS_PATH, settings]]));
+  it('peer content, new article: a 7-line record deleted is refused', async () => {
+    expect(JSON.parse(categories)).toHaveLength(12);
+    const lines = categories.split('\n'); const start = lines.indexOf('    "slug": "category-5",') - 1;
+    const deleted = [...lines.slice(0, start), ...lines.slice(start + 7)].join('\n');
+    expect(JSON.parse(deleted)).toHaveLength(11);
+    const error = await failureOf(gateInput(sideFiles(), payload, withFiles({ [CATEGORIES_PATH]: deleted })));
+    expectFailure(error, 'peer-content-changed', true);
+    expect(error.diagnostic).toMatchObject({ path: CATEGORIES_PATH, actual: 7, limit: PEER_CONTENT.newLines });
+  });
+  it.each([
+    ['a 3-line touch', 3, { postCount: true, lastPublished: true, featured: true }],
+    ['a 6-line touch, at the limit', 6, { postCount: true, lastPublished: true, featured: true, postsPerPage: true, feedLimit: true, showAuthors: true }],
+  ])('peer content, new article: %s on existing lines still passes and is counted', async (_label, touched, edits: Record<string, boolean>) => {
+    let edited = settings.replace('postCount = 8', 'postCount = 9').replace("lastPublished = '2026-08-15'", `lastPublished = '${payload.date}'`).replace("['harbour-notes', 'quarry-walks']", `['${payload.slug}', 'harbour-notes']`);
+    if (edits.postsPerPage) edited = edited.replace('postsPerPage = 8', 'postsPerPage = 9').replace('feedLimit = 20', 'feedLimit = 21').replace('showAuthors = false', 'showAuthors = true');
+    const result = await runPublicationGate(gateInput(sideFiles(), payload, withFiles({ [SETTINGS_PATH]: edited })));
+    expectPassed(result);
+    expect(result.files.map(file => file.path).sort()).toEqual([articlePath, SETTINGS_PATH].sort());
+    expect(detailOf(result, 'peer-content')).toBe(`1 existing file edited; ${touched} of 10 original lines removed or altered (limit 6 per file, 24 in all), ${touched} lines added`);
+  });
+  it('peer content, new article: one line more than the per-file limit is refused', async () => {
+    const edited = settings.replace(/ = (8|20|false|'2026-08-15');/g, ' = 0;').replace("['harbour-notes', 'quarry-walks']", '[]').replace("'Example Rentals blog'", "'Blog'");
+    const error = await failureOf(gateInput(sideFiles(), payload, withFiles({ [SETTINGS_PATH]: edited })));
+    expectFailure(error, 'peer-content-changed', true);
+    expect(error.diagnostic).toMatchObject({ path: SETTINGS_PATH, actual: 7, limit: 6 });
+  });
+  it('peer content, new article: touches inside each file’s limit add up past the total', async () => {
     const glossary = (seed: number) => { const random = seeded(seed); return Array.from({ length: 1200 }, (_, i) => `${i + 1}. ${paragraph(random, 1)}`).join('\n') + '\n'; };
-    const files = new Map(Array.from({ length: 6 }, (_, i): [string, string] => [`content/glossary/part-${i + 1}.md`, glossary(600 + i)]));
-    const edited = Object.fromEntries([...files].map(([path, text]) => [path, text.split('\n').map((line, i) => (i % 100 === 0 && i < 1100 ? line + ' See the review.' : line)).join('\n')]));
+    const files = new Map(Array.from({ length: 5 }, (_, i): [string, string] => [`content/glossary/part-${i + 1}.md`, glossary(600 + i)]));
+    const edited = Object.fromEntries([...files].map(([path, text]) => [path, text.split('\n').map((line, i) => (i % 100 === 0 && i < 500 ? line + ' See the review.' : line)).join('\n')]));
     const error = await failureOf(gateInput(treeOf(new Map([...mdxRepository, ...files])), payload, withFiles(edited)));
     expectFailure(error, 'peer-content-changed', true);
-    expect(error.diagnostic).toMatchObject({ actual: 66, limit: PEER_CONTENT.totalLines });
-    // Each file alone is inside its own limit: five of them pass.
-    const five = Object.fromEntries(Object.entries(edited).slice(0, 5));
-    expectPassed(await runPublicationGate(gateInput(treeOf(new Map([...mdxRepository, ...files])), payload, withFiles(five))));
+    expect(error.diagnostic).toMatchObject({ actual: 25, limit: PEER_CONTENT.newTotalLines });
+    // Five lines in each of four files is inside both limits.
+    const four = Object.fromEntries(Object.entries(edited).slice(0, 4));
+    const result = await runPublicationGate(gateInput(treeOf(new Map([...mdxRepository, ...files])), payload, withFiles(four)));
+    expectPassed(result);
+    expect(detailOf(result, 'peer-content')).toBe('4 existing files edited; 20 of 4800 original lines removed or altered (limit 6 per file, 24 in all), 20 lines added');
+  });
+  it('peer content, retry and legacy of a new article: the article file keeps the replace rule, other files the flat limit', async () => {
+    const partial = String(mdxPostFrom(payload, ARTICLE.slice(0, 9)).files[articlePath]);
+    const tree = treeOf(new Map([...mdxRepository, [articlePath, partial], [CATEGORIES_PATH, categories]]));
+    const lines = categories.split('\n'); const start = lines.indexOf('    "slug": "category-5",') - 1;
+    const deleted = [...lines.slice(0, start), ...lines.slice(start + 7)].join('\n');
+    const error = await failureOf(gateInput(tree, payload, withFiles({ [CATEGORIES_PATH]: deleted }), { retry: { slug: payload.slug, articlePath } }));
+    expectFailure(error, 'peer-content-changed', true);
+    expect(error.diagnostic).toMatchObject({ path: CATEGORIES_PATH, actual: 7, limit: 6 });
+  });
+  it('peer content, refresh: a file other than the article file keeps the earlier tolerance', async () => {
+    const repository = guideRepository(); const original = repository.get(GUIDE_PATH)!;
+    const refresh = payloadFor(ARTICLE, { mode: 'refresh', refreshUrl: GUIDE_REFRESH_URL });
+    const output = guideRefreshed(original, refresh);
+    const tree = () => treeOf(new Map([...repository, [SETTINGS_PATH, settings], [CATEGORIES_PATH, categories]]));
+    const eight = settings.replace(/ = (8|20|false|'2026-08-15');/g, ' = 0;').replace("['harbour-notes', 'quarry-walks']", '[]').replace("'Example Rentals blog'", "'Blog'").replace('postSlugs();', 'postSlugs().sort();');
+    const passedResult = await runPublicationGate(gateInput(tree(), refresh, { ...output, files: { ...output.files, [SETTINGS_PATH]: eight } }));
+    expectPassed(passedResult);
+    expect(detailOf(passedResult, 'peer-content')).toMatch(/^2 existing files edited; 8 of 10 original lines removed or altered \(limit 60 in all\), 8 lines added; in the article file being replaced, /);
+    // Twelve lines of an 87-line file is past max(10, 1%).
+    const error = await failureOf(gateInput(tree(), refresh, { ...output, files: { ...output.files, [CATEGORIES_PATH]: categories.replace(/"order": \d+,/g, '"order": 0,') } }));
+    expectFailure(error, 'peer-content-changed', true);
+    expect(error.diagnostic).toMatchObject({ path: CATEGORIES_PATH, actual: 12, limit: PEER_CONTENT.lineFloor });
   });
   it('peer content: existing lines kept but shuffled count as a rewrite, within the time the gate has', async () => {
     const random = seeded(9);

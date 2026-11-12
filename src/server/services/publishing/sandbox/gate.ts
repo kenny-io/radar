@@ -14,19 +14,29 @@ import {
   type PublicationGateInput, type PublicationGateResult, type PublishCheck, type RunPublicationGate, type SandboxDiagnosticCode,
 } from './types';
 
-/** Peer-content thresholds (§7 step 8). Line counts are of the original file. */
+/** Peer-content thresholds (§7 step 8, tightened for new articles by the PM after ENG-3). Line counts are of the original file. */
 export const PEER_CONTENT = {
-  /** Original lines one existing file may lose or have altered: max(lineFloor, lineShare of its lines)... */
+  /** A new article (mode `new`): original lines one existing file may lose or have altered. A flat number with no share
+   *  of the file, because an honest append touches one to three existing lines (a trailing comma, a closing bracket, an
+   *  import list) and a percentage of a large registry is room to delete a whole peer record. */
+  newLines: 6,
+  /** ...and at most this many across every existing file of a new article. */
+  newTotalLines: 24,
+  /** A refresh (mode `refresh`), for files other than the article file: max(lineFloor, lineShare of the file's lines),
+   *  the design's original tolerance, since a refresh may need a paired type and renderer change... */
   lineFloor: 10,
   lineShare: 0.01,
-  /** ...and at most this many across every existing file of the change. */
+  /** ...and at most this many across those files. */
   totalLines: 60,
-  /** The article file of a refresh, retry or legacy migration is exempt from the two limits above but must satisfy
+  /** The article file of a refresh, retry or legacy migration is exempt from the limits above but must satisfy
    *  removed <= replaceFactor * added + replaceAllowance: enough to replace one body, not enough to wipe peers. */
   replaceFactor: 3,
   replaceAllowance: 40,
   /** Bound on the line diff's edit script. A larger edit counts as a rewrite. */
   maxEditLength: 4000,
+  /** When at least this many original lines exist nowhere in the final file and that alone breaks the limit, the file is
+   *  refused on that lower bound ("at least N") without running the diff. Below it the diff runs and the count is exact. */
+  lowerBoundLines: 500,
 } as const;
 const REASON_CHARS = 600;
 const PATH_CHARS = 200;
@@ -91,8 +101,8 @@ const splitLines = (text: string) => { const lines = text.split('\n'); if (lines
 
 interface LineChange { removed: number; added: number; addedText: string; /** False when `removed` is only a lower bound. */ exact: boolean }
 /** Line diff of original against final. `allowed(added)` is the caller's ceiling on removed lines; when a cheap count of
- *  original lines that no longer exist anywhere in the file already exceeds it, that lower bound is returned without
- *  diffing. null when the edit script exceeds the diff bound, which the caller treats as a rewrite. */
+ *  original lines that no longer exist anywhere in the file is large and already exceeds it, that lower bound is returned
+ *  without diffing. null when the edit script exceeds the diff bound, which the caller treats as a rewrite. */
 function lineChange(original: string, final: string, allowed: (added: number) => number): LineChange | null {
   const before = splitLines(original); const after = splitLines(final);
   const remaining = new Map<string, number>();
@@ -100,7 +110,7 @@ function lineChange(original: string, final: string, allowed: (added: number) =>
   let gone = 0;
   for (const line of before) { const left = remaining.get(line) ?? 0; if (left) remaining.set(line, left - 1); else gone++; }
   const fresh = after.length - (before.length - gone);
-  if (gone > allowed(fresh)) return { removed: gone, added: fresh, addedText: '', exact: false };
+  if (gone >= PEER_CONTENT.lowerBoundLines && gone > allowed(fresh)) return { removed: gone, added: fresh, addedText: '', exact: false };
   let head = 0; const shortest = Math.min(before.length, after.length);
   while (head < shortest && before[head] === after[head]) head++;
   let tail = 0;
@@ -260,13 +270,15 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
 
   // 8 Peer content: existing lines of edited files survive.
   const replaceable = (path: string) => path === articlePath && (payload.mode === 'refresh' || !!options.retry || (!!options.legacy && path === options.legacy.articlePath));
+  const newArticle = payload.mode !== 'refresh';
+  const peerTotal = newArticle ? PEER_CONTENT.newTotalLines : PEER_CONTENT.totalLines;
   let peerRemoved = 0; let peerAdded = 0; let peerLines = 0; let edited = 0; let replacedRemoved = 0; let replacedAdded = 0; let replacedFiles = 0;
   let articleAdded: string | null = null;
   for (const file of changed) {
     if (file.original === null) { if (file.path === articlePath) articleAdded = file.content; continue; }
     edited++;
     const lines = splitLines(file.original).length;
-    const peerLimit = Math.max(PEER_CONTENT.lineFloor, Math.ceil(PEER_CONTENT.lineShare * lines));
+    const peerLimit = newArticle ? PEER_CONTENT.newLines : Math.max(PEER_CONTENT.lineFloor, Math.ceil(PEER_CONTENT.lineShare * lines));
     const replaceLimit = (added: number) => PEER_CONTENT.replaceFactor * added + PEER_CONTENT.replaceAllowance;
     const change = lineChange(file.original, file.content, replaceable(file.path) ? replaceLimit : () => peerLimit);
     if (!change) fail('peer-content-changed', `${safePath(file.path)} was rewritten: more than ${PEER_CONTENT.maxEditLength} of its lines differ. Existing lines must be left exactly as they are`, { path: file.path, limit: PEER_CONTENT.maxEditLength });
@@ -281,7 +293,7 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     const limit = peerLimit;
     if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} has ${atLeast}${change.removed} of its ${lines} existing lines removed or altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: change.removed, limit });
     peerRemoved += change.removed; peerAdded += change.added; peerLines += lines;
-    if (peerRemoved > PEER_CONTENT.totalLines) fail('peer-content-changed', `the change removes or alters ${peerRemoved} existing lines across the edited files; the limit is ${PEER_CONTENT.totalLines}`, { actual: peerRemoved, limit: PEER_CONTENT.totalLines });
+    if (peerRemoved > peerTotal) fail('peer-content-changed', `the change removes or alters ${peerRemoved} existing lines across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
   }
 
   // 9 Article fidelity. A retry may find the article already on the branch: then the pinned file is what is verified.
@@ -313,7 +325,7 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     passed('syntax', `${changed.length} changed ${changed.length === 1 ? 'file is' : 'files are'} UTF-8 text; ${jsonFiles} JSON parsed; ${scriptFiles} JavaScript or TypeScript parsed without syntax errors`),
     passed('peer-content', edited
       ? `${edited} existing ${edited === 1 ? 'file' : 'files'} edited`
-        + (edited > replacedFiles ? `; ${peerRemoved} of ${peerLines} original lines removed or altered (limit ${PEER_CONTENT.totalLines}), ${peerAdded} lines added` : '')
+        + (edited > replacedFiles ? `; ${peerRemoved} of ${peerLines} original lines removed or altered (limit ${newArticle ? PEER_CONTENT.newLines + ' per file, ' : ''}${peerTotal} in all), ${peerAdded} lines added` : '')
         + (replacedFiles ? `; in the article file being replaced, ${replacedRemoved} earlier lines gave way to ${replacedAdded} new ones (limit ${PEER_CONTENT.replaceFactor} removed per added line plus ${PEER_CONTENT.replaceAllowance})` : '')
       : 'no existing file was edited; every changed file is new'),
     passed('article-fidelity', fidelity.detail + `; ${mediaOmitted.length} media or link references not carried` + (changed.length ? '' : '; verified on the article file already on the branch')),

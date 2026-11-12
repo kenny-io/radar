@@ -63,3 +63,29 @@ ENG-2 verified by the PM (99 tests rerun, typecheck clean) and committed as `165
 Owner-approved Railway service created in project `radar`, environment `production`: `model-proxy` (service id `9049cb36-e0f8-4d6f-8d81-b9ecdeb4d231`), domain `https://model-proxy-production-260d14ba.up.railway.app`. Variables by name: `ANTHROPIC_API_KEY` (reference to the shared variable), `DATABASE_URL` (reference to Postgres), `RADAR_PUBLISH_CAPABILITY_SECRET` (generated locally, also in `.env.local`), `NODE_ENV`, `RAILPACK_START_CMD` (`npm run model-proxy`), `RAILPACK_BUILD_CMD` (`echo model-proxy`). `railway environment edit --service-config` reported "No changes to apply" for start, build and health-check settings, so the Railpack variables carry the commands and no health-check path is set on the service yet. Deployed with `railway up` from the working tree at `165bb4dc` (a development deploy, not connected to the GitHub repository). At rollout: connect it to `kenny-io/radar` `main` like `web` and `worker`, set the health-check path `/model/health`, and reference the secret from the worker as `${{model-proxy.RADAR_PUBLISH_CAPABILITY_SECRET}}`.
 
 Local development variables in `.env.local` (git-ignored): `DAYTONA_API_KEY`, `RADAR_PUBLISH_CAPABILITY_SECRET`, `RADAR_PUBLISH_MODEL_PROXY_URL`. Still to add after ENG-1: `RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID`.
+
+## ENG-1 to ENG-4 integrated (12 Nov 2026)
+
+Commits: `165bb4dc` (ENG-2 proxy and capability), `c961594e` (ENG-4 provider and orchestration), `11591094` (ENG-1 runner and snapshot script), `a8519f0a` (ENG-3 gate and fidelity). PM reran on the combined tree: `npm run typecheck` clean; `npx vitest run src/server/services/publishing` 27 files passed, 9 skipped; 944 tests passed, 51 skipped.
+
+PM rulings:
+- ENG-3 `unitCoverage` 1 (stricter than the design's 0.9) and the added interleaving rule: accepted; tune on replays.
+- ENG-3 peer-content tolerance let a 13-line peer record be deleted. Sent back to ENG-3: in new-article mode at most 6 original lines removed or altered per existing file (flat, no percentage), 24 in total. In progress; commit separately.
+- ENG-2 proxy refusals (server tools, `mcp_servers`, `container`) and stripped fields (`speed`, `inference_geo`, `fallbacks`): accepted.
+- ENG-1 runner uses the Agent SDK's `bypassPermissions` mode, as Thally's runner does (`sandbox/track-docs-agent/run.mjs` line 1592); the tool list and hooks are the fence. Accepted; disclose to the owner.
+
+Facts for ENG-5 from ENG-1's loopback run of SDK 0.3.251: the capability arrives in `x-api-key`; requests are `POST /model/v1/messages?beta=true` with `stream: true`, `max_tokens: 32000`, seven `anthropic-beta` values and `context_management`, `output_config`, `thinking` in the body; an unauthenticated `HEAD /model/api/hello` comes first and a 404 is tolerated. The proxy forwards `anthropic-beta` up to 2048 characters.
+
+Model proxy: first `railway up` uploaded the main checkout (the Railway link belongs to it), so the service crashed on a missing script; redeployed with `railway up "$PWD" --path-as-root` from the worktree.
+
+Snapshot build started with the Thally key (`scripts/operations/build-publisher-snapshot.mjs`).
+
+Next action: confirm proxy health and snapshot id, add the id to `.env.local`, dispatch ENG-5 (connector integration, lifecycle, docs, live probe, smoke and replay).
+
+## Development snapshot and proxy ready (12 Nov 2026)
+
+- Model proxy redeploy `f46544db` is SUCCESS: `GET /model/health` 200, `GET /` 404, `POST /model/v1/messages` without a capability 401.
+- Daytona snapshot built in the Thally organization from `sandbox/publisher/Dockerfile` at `11591094`: name `radar-publisher-b30e5aa91f99`, id `626beb11-4c8f-41ca-b28d-dd467f4be58f`, active. Saved as `RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID` in `.env.local`.
+- ENG-5 dispatched (connector integration, lifecycle, docs, live probe, smoke and one LivedHQ replay; at most three agent runs). ENG-3 follow-up on the peer-content limit in progress.
+
+ENG-3 follow-up verified by the PM (gate 78 and fidelity 30 tests pass) and committed: for a new article an existing file may have at most 6 original lines removed or altered, 24 across files; refresh keeps the earlier tolerance for files other than the article file. Accepted residual risk: overwriting a small existing record in place (4 changed lines in the engineer's probe) still passes; the removed-or-altered count is printed in the `peer-content` check detail for the PR reviewer.
