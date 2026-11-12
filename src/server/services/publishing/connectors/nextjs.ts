@@ -19,14 +19,16 @@
 //  - 401 = bad credentials; rate limits are 403 or 429 ("API rate limit exceeded" / "secondary rate limit");
 //    an org that restricts OAuth apps answers 403 "…the `org` organization has enabled OAuth App access restrictions…",
 //    and one with SAML single sign-on answers 403 "Resource protected by organization SAML enforcement…"
-import { createHash } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { env } from '@/server/env';
 import { reportFailure } from '@/server/observability/failures';
 import type { Connector, ConnCtx, PublishPayload, RemoteDraft, Target } from '../types';
 import { jsonBody, PublishError, req, reqJson, publishingTimeRemaining, repositoryPublishingError } from '../http';
 import { planRepositoryPost, safeRepositoryPath, RepositorySourceTooLargeError, SOURCE_FILE_BYTES, type RepoEntry, type RepositoryPostPlan } from './nextjs-agent';
 import { sandboxPublisher } from '../sandbox/config';
 import { integrateWithSandbox } from '../sandbox/run';
-import { GATE_LIMITS, PUBLISH_CHECK_IDS, SANDBOX_BUDGET, SANDBOX_DRAFT_LAYOUT, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, type PublishCheck, type SandboxContinuation, type SandboxDraftExtra, type SandboxIntegration } from '../sandbox/types';
+import { articleReferences } from '../sandbox/fidelity';
+import { AGENT_TEXT, COMMIT_MARKER_KEY_PURPOSE, GATE_LIMITS, PUBLISH_CHECK_IDS, SANDBOX_BUDGET, SANDBOX_DRAFT_LAYOUT, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, shortenAgentText, type PublishCheck, type SandboxCommitMarker, type SandboxContinuation, type SandboxDraftExtra, type SandboxIntegration } from '../sandbox/types';
 
 const API = 'https://api.github.com';
 const h = (c: ConnCtx) => ({ authorization: `Bearer ${c.creds.access_token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'Radar' });
@@ -107,6 +109,32 @@ export const publishAttemptMs = (businessId: string) => (sandboxPublisher(busine
 
 /** Marker version 3: identifies the article a sandbox commit was gated for. A retry with the same article reuses that commit. */
 const articleBodyHash = (p: PublishPayload) => createHash('sha256').update(JSON.stringify([p.title, p.slug, p.markdown, p.html, p.meta, p.date, p.mode, p.refreshUrl])).digest('hex').slice(0, 16);
+
+// A commit trailer is text anyone with push access to the repository can copy onto a later commit, so the marker of a
+// sandbox commit is bound to what Radar committed: it names the tree it was written for and carries an HMAC over its
+// identity fields. The key is derived from the application secret for this purpose alone and never leaves the control
+// plane (it is not given to the sandbox, the model proxy or GitHub). Without the application secret in production
+// nothing is signed, so nothing is ever resumed; development and tests use the same fallback as the rest of the app.
+type MarkerIdentity = Pick<SandboxCommitMarker, 'entryId' | 'hint' | 'slug' | 'articlePath' | 'route' | 'body'> & { tree: string };
+function markerKey(): Buffer | null {
+  const secret = env.secretKey || (env.isProd ? '' : 'radar-dev-only-key');
+  return secret ? createHmac('sha256', secret).update(COMMIT_MARKER_KEY_PURPOSE).digest() : null;
+}
+/** HMAC-SHA256, base64url, over the marker's identity fields in a fixed order. null when there is no key to sign with. */
+export function markerSignature(marker: MarkerIdentity): string | null {
+  const key = markerKey();
+  return key ? createHmac('sha256', key).update(JSON.stringify(['Radar-Post', 3, 'sandbox', marker.entryId, marker.hint, marker.slug, marker.articlePath, marker.route, marker.body, marker.tree])).digest('base64url') : null;
+}
+/** True only for a marker Radar signed whose tree is the tree of the commit it sits on. A marker with no signature
+ *  (written before signing existed, or without a key), a changed field, a forged signature or another tree is false. */
+export function markerBindsCommit(saved: any, commitTree: string): boolean {
+  const fields = [saved?.entryId, saved?.hint, saved?.slug, saved?.articlePath, saved?.route, saved?.body, saved?.tree, saved?.sig];
+  if (!fields.every(value => typeof value === 'string' && value.length > 0 && value.length <= 2000)) return false;
+  const expected = markerSignature(saved);
+  if (!expected) return false;
+  const given = Buffer.from(saved.sig, 'base64url'); const wanted = Buffer.from(expected, 'base64url');
+  return given.length === wanted.length && timingSafeEqual(given, wanted) && saved.tree === commitTree;
+}
 const gitBlobSha = (data: Buffer, algorithm: 'sha1' | 'sha256') => createHash(algorithm).update(`blob ${data.length}\0`).update(data).digest('hex');
 
 /** RemoteDraft.extra for a gated sandbox integration. Also used by the replay harness to render the pull request body. */
@@ -147,7 +175,9 @@ async function createRepositoryDraft(c: ConnCtx, p: PublishPayload, b: Awaited<R
     const matches = versioned && saved.entryId === p.entryId && saved.hint === hint && validSlug(saved.slug) && typeof saved.articlePath === 'string' && safeRepositoryPath(saved.articlePath, true);
     if (matches) {
       retry = { slug: saved.slug, articlePath: saved.articlePath };
-      if (saved.version === 3 && saved.engine === 'sandbox' && saved.body === articleBodyHash(p) && typeof saved.route === 'string' && saved.route.startsWith('/') && !/[\x00-\x20\x7f]/.test(saved.route)) gatedRoute = saved.route;
+      // Resumed only when the marker is Radar's own for exactly this commit. Any other version 3 marker (unsigned,
+      // altered, or copied onto a commit with another tree) is an ordinary retry: the engine runs on the branch head.
+      if (saved.version === 3 && saved.engine === 'sandbox' && saved.body === articleBodyHash(p) && typeof saved.route === 'string' && saved.route.startsWith('/') && !/[\x00-\x20\x7f]/.test(saved.route) && markerBindsCommit(saved, commit.tree.sha)) gatedRoute = saved.route;
     }
     else if (storedLegacy && !versioned && (!saved?.entryId || saved.entryId === p.entryId)) legacy = { slug: storedLegacy.extra.slug, articlePath: storedLegacy.extra.path };
     else {
@@ -155,9 +185,10 @@ async function createRepositoryDraft(c: ConnCtx, p: PublishPayload, b: Awaited<R
     }
   }
   if (retry && gatedRoute) {
-    // The branch head is a sandbox commit for exactly this article, and such a commit is written only after the
-    // publication gate passed. An attempt that was interrupted after the ref update resumes here: no sandbox run and
-    // no second commit. The gate's details and the agent's notes were never persisted, so the draft says so.
+    // The branch head is the commit Radar itself wrote for exactly this article (its signed marker names this tree),
+    // and such a commit is written only after the publication gate passed. An attempt that was interrupted after the
+    // ref update resumes here: no sandbox run and no second commit. The gate's details and the agent's notes were
+    // never persisted, so the draft says so.
     const head = await gh<{ files?: { filename?: unknown; status?: unknown }[] }>(c, `${API}/repos/${b.repo}/commits/${parent}`, { headers: h(c) });
     const files = (Array.isArray(head.files) ? head.files : []).filter(file => file?.status !== 'removed' && typeof file?.filename === 'string' && safeRepositoryPath(file.filename, true)).map(file => String(file.filename)).slice(0, GATE_LIMITS.candidates);
     return { id: branch, extra: sandboxDraftExtra(b.branch, p, {
@@ -250,8 +281,10 @@ async function createRepositoryDraft(c: ConnCtx, p: PublishPayload, b: Awaited<R
     return { path: file.path, mode: existing?.mode || '100644', type: 'blob', content: file.content };
   });
   const createdTree = await gh<{ sha: string }>(c, `${API}/repos/${b.repo}/git/trees`, { method: 'POST', ...jsonBody({ base_tree: commit.tree.sha, tree: changes }, h(c)) });
-  const identity = sandbox
-    ? { version: 3, entryId: p.entryId, hint, slug: plan.slug, articlePath: plan.path, route: plan.route, engine: 'sandbox', body: articleBodyHash(p) }
+  const signed: MarkerIdentity = { entryId: p.entryId, hint, slug: plan.slug, articlePath: plan.path, route: plan.route, body: articleBodyHash(p), tree: createdTree.sha };
+  const sig = sandbox ? markerSignature(signed) : null;
+  const identity: SandboxCommitMarker | Record<string, unknown> = sandbox
+    ? { version: 3, entryId: signed.entryId, hint, slug: signed.slug, articlePath: signed.articlePath, route: signed.route, engine: 'sandbox', body: signed.body, tree: signed.tree, ...(sig ? { sig } : {}) }
     : { version: 2, entryId: p.entryId, hint, slug: plan.slug, articlePath: plan.path };
   const createdCommit = await gh<{ sha: string }>(c, `${API}/repos/${b.repo}/git/commits`, { method: 'POST', ...jsonBody({ message: `${previous || p.mode === 'refresh' ? 'Update' : 'Add'} post: ${p.title}\n\nRadar-Post: ${JSON.stringify(identity)}`, tree: createdTree.sha, parents: [parent] }, h(c)) });
   if (previous) await gh(c, `${API}/repos/${b.repo}/git/refs/heads/${encPath(branch)}`, { method: 'PATCH', ...jsonBody({ sha: createdCommit.sha, force: false }, h(c)) });
@@ -285,6 +318,35 @@ const validCheck = (check: any): check is PublishCheck => (PUBLISH_CHECK_IDS as 
 const plainLine = (value: unknown, limit: number) => String(value ?? '').replace(/[\x00-\x1f\x7f]+/g, ' ').replace(/`/g, "'").replace(/</g, '&lt;').replace(/@[A-Za-z0-9][\w/-]*/g, name => '`' + name + '`').replace(/\s+/g, ' ').trim().slice(0, limit);
 const codeSpan = (value: unknown) => '`' + String(value ?? '').replace(/[`\x00-\x1f\x7f]/g, '').slice(0, 300) + '`';
 
+// Agent-written text (the summary, conventions and deviations) is also kept from rendering any link or image.
+const LINK_DESTINATION = String.raw`\(\s*(?:<[^<>]*>|[^()\s]*(?:\([^()\s]*\)[^()\s]*)*)(?:\s+(?:"[^"]*"|'[^']*'|\([^()]*\)))?\s*\)`;
+const INLINE_IMAGE = new RegExp(String.raw`!\[([^\[\]]*)\]` + LINK_DESTINATION, 'g');
+const INLINE_LINK = new RegExp(String.raw`\[([^\[\]]*)\]` + LINK_DESTINATION, 'g');
+/** One plain line of agent-written text in which GitHub renders no link and no image, whatever the agent wrote:
+ *  - a Markdown link or image keeps its text and loses its destination, whatever the destination is;
+ *  - an address is removed wherever it stands: any scheme://, a protocol-relative //host, a bare www. name;
+ *  - every square bracket and backslash is escaped, so no link, image, reference-style link, link definition or task
+ *    box can form from what is left, and a repository path such as app/[slug]/page.tsx still reads as written;
+ *  - "&" and "<" are written as character references, so no tag or autolink in angle brackets can form;
+ *  - an @name, an issue or pull request reference (#12, owner/repo#12, GH-12) and a commit hash are shown as code,
+ *    which GitHub does not link.
+ *  The result is bounded at `limit`, cut at a word boundary with the visible shortened marker. */
+function agentLine(value: unknown, limit: number): string {
+  // White space is collapsed before the working copy is bounded, so padding cannot hide that a text was longer.
+  let text = String(value ?? '').replace(/[\x00-\x1f\x7f\s]+/g, ' ').trim().slice(0, 4 * limit).replace(/`/g, "'");
+  // Twice, for an image used as the text of a link.
+  for (let pass = 0; pass < 2; pass++) text = text.replace(INLINE_IMAGE, '$1 (image removed)').replace(INLINE_LINK, '$1 (link removed)');
+  text = text
+    .replace(/[A-Za-z][A-Za-z0-9+.-]{0,30}:\/\/[^\s<>"')]*/g, '(address removed)')
+    .replace(/(^|[^\w:/.@-])\/\/[^\s/<>"')]*\.[^\s<>"')]*/g, '$1(address removed)')
+    .replace(/(^|[^A-Za-z0-9/.@-])www\.[^\s<>"')]*/gi, '$1(address removed)')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/[\\[\]]/g, '\\$&')
+    .replace(/(?:[\w.-]+\/[\w.-]+)?#\d+\b|\bGH-\d+\b|@[A-Za-z0-9][\w/-]*|\b(?=[a-f]*\d)(?=\d*[a-f])[0-9a-f]{7,40}\b/gi, reference => '`' + reference + '`')
+    .replace(/\s+/g, ' ').trim();
+  return shortenAgentText(text, limit);
+}
+
 /** The sandbox engine's pull request. Three kinds of statement are kept apart: what Radar checked itself, what the
  * agent says (unverified), and what nobody ran. No v1 run installs, builds or executes anything from the repository,
  * so this body never reports a build or runtime result, whatever the agent wrote. */
@@ -310,9 +372,9 @@ export function sandboxPullRequestBody(p: PublishPayload, extra: any): string {
   lines.push('', '### What the agent reported (not verified by Radar)', '');
   if (resumed) lines.push('Not available: the agent’s statements from the earlier attempt were not kept.');
   else {
-    lines.push('An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', '', `Summary: ${plainLine(extra?.summary, 4000) || 'none given'}`);
-    if (conventions.length) { lines.push('', 'Repository rules it says it followed:'); for (const note of conventions) lines.push(`- ${plainLine(note, 400)}`); }
-    if (deviations.length) { lines.push('', 'Deviations it reported:'); for (const note of deviations) lines.push(`- ${plainLine(note, 400)}`); }
+    lines.push('An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', '', `Summary: ${agentLine(extra?.summary, AGENT_TEXT.summaryChars) || 'none given'}`);
+    if (conventions.length) { lines.push('', 'Repository rules it says it followed:'); for (const note of conventions) lines.push(`- ${agentLine(note, AGENT_TEXT.noteChars)}`); }
+    if (deviations.length) { lines.push('', 'Deviations it reported:'); for (const note of deviations) lines.push(`- ${agentLine(note, AGENT_TEXT.noteChars)}`); }
   }
 
   lines.push('', '### Media and links not carried over', '');
@@ -320,7 +382,8 @@ export function sandboxPullRequestBody(p: PublishPayload, extra: any): string {
   else if (omitted.length) {
     lines.push(`Radar did not find ${omitted.length === 1 ? 'this reference' : `these ${omitted.length} references`} from the article (image addresses, video ids, source and link addresses) in the changed files. The site’s content format may not be able to carry them:`, '');
     for (const reference of omitted) lines.push(`- ${codeSpan(reference)}`);
-  } else lines.push('Radar found every image address, video id, source and link address of the article in the changed files.');
+  } else if (!articleReferences(p).length) lines.push('The article has no images, videos, sources or links, so there was nothing to carry over.');
+  else lines.push('Radar found every image address, video id, source and link address of the article in the changed files.');
 
   lines.push('', '### Not run', '', 'Neither Radar nor the agent ran any of these:', '');
   for (const item of SANDBOX_NOT_RUN) lines.push(`- ${item}`);

@@ -1,5 +1,6 @@
 // Shared contracts for the sandbox publisher (.factory/sandbox-publisher/architecture.md). Types, schemas and constants
-// only: no behavior lives here, and nothing here imports @daytona/sdk, the AI client or the database.
+// only: no behavior lives here beyond `shortenAgentText`, the one bound the orchestration and the pull request body both
+// apply to agent-written text, and nothing here imports @daytona/sdk, the AI client or the database.
 // Section numbers (§) refer to that design. Sizes are decimal (1 MB = 1,000,000 bytes), as in the design's task limits.
 import { z } from 'zod';
 import type { Block } from '@/lib/types';
@@ -208,6 +209,29 @@ export type ArticleUnitsOf = (blocks: Block[]) => ArticleUnit[];
 // ---------------------------------------------------------------------------------------------------------------------
 // Run outputs (§3). Both files are untrusted input to the control plane: parse with these schemas after the size check.
 
+/** Agent-written text that reaches a pull request: the summary is bounded at the report contract's own limit, each
+ *  convention or deviation note at `noteChars`. A longer text is cut at a word boundary and ends with `shortenedMarker`,
+ *  so a reader can see that it was shortened; `wordSearchChars` is how far back a word boundary is looked for before
+ *  the cut falls inside a word. */
+export const AGENT_TEXT = { summaryChars: 4000, noteChars: 400, shortenedMarker: ' … (truncated by Radar)', wordSearchChars: 80 } as const;
+/** `text` unchanged when it fits in `limit` characters; otherwise its start, cut at a word boundary, plus the marker,
+ *  within `limit` in all. */
+export function shortenAgentText(text: string, limit: number): string {
+  if (text.length <= limit) return text;
+  const marker = AGENT_TEXT.shortenedMarker;
+  // A limit too small to hold the marker never occurs with the limits above; the text is then simply cut.
+  if (limit <= marker.length) return text.slice(0, Math.max(0, limit));
+  const room = limit - marker.length;
+  let cut = room;
+  if (!/\s/.test(text.charAt(room))) {
+    const floor = Math.max(0, room - AGENT_TEXT.wordSearchChars);
+    let at = room;
+    while (at > floor && !/\s/.test(text.charAt(at - 1))) at--;
+    if (at > floor) cut = at;
+  }
+  return text.slice(0, cut).trimEnd() + marker;
+}
+
 const EvidenceRole = z.enum(['content', 'route', 'listing', 'navigation', 'config']);
 /** /output/report.json, written by the agent. Its statements are shown as unverified; none of them is a check. */
 export const AgentReportSchema = z.object({
@@ -216,7 +240,7 @@ export const AgentReportSchema = z.object({
   slug: z.string(),
   articlePath: z.string(),
   route: z.string(),
-  summary: z.string().max(4000),
+  summary: z.string().max(AGENT_TEXT.summaryChars),
   evidence: z.array(z.object({ role: EvidenceRole, path: z.string(), note: z.string() }).strict()).max(24),
   conventions: z.array(z.object({ path: z.string(), rule: z.string() }).strict()).max(20),
   deviations: z.array(z.object({ kind: z.enum(['punctuation', 'media-omitted', 'links-relocated', 'structure', 'other']), detail: z.string() }).strict()).max(20),
@@ -370,6 +394,20 @@ export interface SandboxIntegrationInput {
 }
 /** Resolves with a gated integration or throws PublishError; the sandbox is destroyed before it settles either way. */
 export type IntegrateWithSandbox = (input: SandboxIntegrationInput) => Promise<SandboxIntegration>;
+
+/** The `Radar-Post:` trailer of a commit the sandbox engine wrote (§8, amended after QA-1 defect D5). `body` is 16 hex
+ *  characters of a SHA-256 over the article (title, slug, markdown, html, meta, date, mode, refreshUrl). `tree` is the
+ *  SHA of the tree the commit was written with, and `sig` an HMAC-SHA256 (base64url) over entryId, hint, slug,
+ *  articlePath, route, body and tree, keyed with a key derived from the application secret (RADAR_SECRET_KEY) for
+ *  COMMIT_MARKER_KEY_PURPOSE. A retry reuses the commit only when `sig` verifies and the head commit's tree is `tree`.
+ *  Markers written before signing existed have neither field; they, and any marker that fails either check, are
+ *  handled like a version 2 marker: the engine runs again on the branch head with the retry identity. */
+export interface SandboxCommitMarker {
+  version: 3; entryId: string; hint: string; slug: string; articlePath: string; route: string; engine: 'sandbox'; body: string;
+  tree?: string; sig?: string;
+}
+/** Domain separation for the marker key: HMAC-SHA256(application secret, this string) is the key, used for nothing else. */
+export const COMMIT_MARKER_KEY_PURPOSE = 'radar:publishing:commit-marker:v1';
 
 export const SANDBOX_DRAFT_LAYOUT = 'sandbox-agent';
 /** How a sandbox draft relates to what was already on the article branch. Absent for the first commit on a new branch.

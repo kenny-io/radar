@@ -9,7 +9,7 @@ import { PublishError } from '../http';
 import { FakeSandboxProvider, type FakeCall, type FakeExecCall, type FakeSandbox, type FakeSandboxOptions } from './fake';
 import { classifyAgentError, integrateWithSandbox, RUNNER_MANIFEST, SANDBOX_COMMANDS, SANDBOX_ENV, type SandboxRunDependencies } from './run';
 import {
-  RUNNER_COMMANDS, RUNNER_SCRIPTS, SANDBOX_DIAGNOSTIC_CODES, SANDBOX_NOT_RUN, SANDBOX_PATHS,
+  AGENT_TEXT, RUNNER_COMMANDS, RUNNER_SCRIPTS, SANDBOX_DIAGNOSTIC_CODES, SANDBOX_NOT_RUN, SANDBOX_PATHS,
   type AgentReport, type ArticleUnit, type PublicationGateInput, type PublicationGateResult, type RunnerResult, type SandboxExecResult,
   type SandboxIntegrationInput, type SandboxProvider, type SandboxPublisherConfig,
 } from './types';
@@ -404,6 +404,56 @@ describe('no credential crosses the provider boundary (SBX-2)', () => {
     expect(said).not.toContain('rdrcap1.');
     expect(said).not.toContain(SECRET.githubToken);
     expect(said).not.toContain('\\u0007');
+  });
+
+  it('carries a summary of up to 4,000 characters whole, and marks a longer text as shortened at a word boundary', async () => {
+    const words = (count: number) => Array.from({ length: count }, (_, i) => `word${i}`).join(' ');
+    const whole = words(400);
+    expect(whole.length).toBeGreaterThan(3000);
+    const first = setup({ script: { turns: [box => leave(box, { report: goodReport({ summary: whole }) })] } });
+    expect((await first.start()).summary).toBe(whole);
+
+    // Inside the contract's 4,000 characters as written, longer once its 100 secret-shaped values are redacted. A token
+    // past character 1,600 is redacted like one before it.
+    const token = 'ghp_' + 'Lt4'.repeat(12);
+    const written = `${words(350)} ${token} ${Array.from({ length: 100 }, () => 'key=x').join(' ')} ${words(20)}`;
+    expect(written.length).toBeLessThanOrEqual(4000);
+    expect(written.indexOf(token)).toBeGreaterThan(1600);
+    const sanitized = `${words(350)} [redacted] ${Array.from({ length: 100 }, () => 'key=[redacted]').join(' ')} ${words(20)}`;
+    expect(sanitized.length).toBeGreaterThan(4000);
+    const note = (count: number) => Array.from({ length: count }, (_, i) => `rule${i}`).join(' ');
+    const second = setup({ script: { turns: [box => leave(box, { report: goodReport({
+      summary: written,
+      conventions: [{ path: 'a.md', rule: note(100) }, { path: 'b.md', rule: 'Short rule' }],
+      deviations: [{ kind: 'other', detail: note(100) }],
+    }) })] } });
+    const integration = await second.start();
+    const marker = AGENT_TEXT.shortenedMarker;
+    expect(marker).toMatch(/truncated by Radar/);
+    for (const [text, limit, full] of [
+      [integration.summary, 4000, sanitized],
+      [integration.agentNotes.conventions[0], 400, `a.md: ${note(100)}`],
+      [integration.agentNotes.deviations[0], 400, `other: ${note(100)}`],
+    ] as const) {
+      expect(text.length).toBeLessThanOrEqual(limit);
+      expect(text.length).toBeGreaterThan(limit - 40);
+      expect(text.endsWith(marker)).toBe(true);
+      // What is kept is whole words of the full text: the cut never falls inside one.
+      const kept = text.slice(0, -marker.length).split(' ');
+      expect(kept).toEqual(full.split(' ').slice(0, kept.length));
+      expect(text).not.toContain(token);
+    }
+    expect(integration.agentNotes.conventions[1]).toBe('b.md: Short rule');
+
+    // Indentation, blank lines and control characters neither hide that a note is long nor make a short one look long.
+    const padded = (count: number) => Array.from({ length: count }, (_, i) => `rule${i}`).join(' \n\n\t        \u0007\u0007  ');
+    const third = setup({ script: { turns: [box => leave(box, { report: goodReport({ conventions: [{ path: 'a.md', rule: padded(100) }, { path: 'b.md', rule: padded(40) }], deviations: [] }) })] } });
+    const notes = (await third.start()).agentNotes.conventions;
+    expect(notes[0].length).toBeLessThanOrEqual(400);
+    expect(notes[0].endsWith(marker)).toBe(true);
+    const keptWords = notes[0].slice(0, -marker.length).split(' ');
+    expect(keptWords).toEqual(`a.md: ${note(100)}`.split(' ').slice(0, keptWords.length));
+    expect(notes[1]).toBe(`b.md: ${note(40)}`);
   });
 });
 

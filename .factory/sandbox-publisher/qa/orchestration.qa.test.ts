@@ -199,7 +199,7 @@ describe('secrets: what crosses the provider boundary (SBX-2)', () => {
   // FINDING D3 (minor). The report contract and the pull-request builder allow an agent summary of 4,000 characters,
   // but the shared sanitizer cuts every string to 1,600. The summary is cut mid-word with no mark that it was cut
   // (seen live: the LivedHQ refresh pull-request body ends "... community-content.ts, rent/duba").
-  it.fails('D3: an agent summary within its 4,000-character limit reaches the pull request whole, or is marked as cut', async () => {
+  it('D3: an agent summary within its 4,000-character limit reaches the pull request whole, or is marked as cut', async () => {
     const w = world();
     const summary = Array.from({ length: 400 }, (_unused, n) => `word${n}`).join(' '); // about 3,300 characters
     w.turns = [(sandbox, call) => ({ ...goodTurn(sandbox, call), report: { summary } })];

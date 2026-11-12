@@ -147,17 +147,42 @@ describe('fidelity refuses a shortened, reworded, repeated or padded article', (
     const result = check(edited);
     expect(result.issues).toEqual([{ rule: 'altered', detail: '2 of 20 paragraphs and list items have changed or dropped words: paragraph 6, paragraph 18' }]);
   });
-  it('discloses one paragraph that gained a word, and refuses words added to several', () => {
-    // An inserted word leaves every original word in place, so it cannot be told from leftover inline markup: one such
-    // paragraph is tolerated and named for the reviewer; more than the allowance is a refusal.
+  it('refuses a paragraph or list item that gained a word, and names its unit index (D2)', () => {
+    // An inserted word leaves every original word in place and can reverse the sentence. Nothing that is present but
+    // not word for word is allowed.
+    expect(FIDELITY).toMatchObject({ interleavedShare: 0, interleavedFloor: 0 });
     const negated = check(payload.markdown.replace('which the lease requires', 'which the lease no longer requires'));
-    expect(negated).toMatchObject({ ok: true, interleaved: [16], counts: { interleaved: 1, interleavedAllowed: 2 } });
-    expect(negated.detail).toContain("19 of them word for word and 1 with other words or markup between the article's words (unit index 16; 2 allowed)");
+    expect(negated).toMatchObject({ ok: false, interleaved: [16], counts: { interleaved: 1, interleavedAllowed: 0 } });
+    expect(negated.issues).toEqual([{ rule: 'interleaved', detail: "1 of 20 paragraphs and list items are present but not word for word: other words or markup sit between the article's words (none may be): paragraph 16" }]);
+    expect(units[16]).toMatchObject({ index: 16, kind: 'paragraph' });
+    const item = check(payload.markdown.replace('quiet after 9 pm, with double glazing', 'quiet after 9 pm, but never with double glazing'));
+    expect(item.issues).toEqual([{ rule: 'interleaved', detail: "1 of 20 paragraphs and list items are present but not word for word: other words or markup sit between the article's words (none may be): item 7" }]);
     const several = check(payload.markdown
       .replace('which the lease requires', 'which the lease no longer requires')
       .replace('the crossing takes eleven', 'the crossing usually takes eleven')
       .replace('and parcels are signed for at the desk', 'and, as you would hope, parcels are signed for at the desk'));
-    expect(several.issues).toEqual([{ rule: 'interleaved', detail: "3 of 20 paragraphs and list items have other words or markup between the article's words (at most 2 may): paragraph 3, paragraph 16, paragraph 18" }]);
+    expect(several.issues).toEqual([{ rule: 'interleaved', detail: "3 of 20 paragraphs and list items are present but not word for word: other words or markup sit between the article's words (none may be): paragraph 3, paragraph 16, paragraph 18" }]);
+    // A word inserted through a markup-looking wrapper that is not markup is still a word.
+    expect(check(payload.markdown.replace('which the lease requires', 'which the lease {never} requires')).ok).toBe(false);
+  });
+  it('still reads markup between the words as markup, not as inserted words', () => {
+    const marked = payload.markdown
+      .replace('which the lease requires', 'which the **lease** <em>requires</em>')
+      .replace('the crossing takes eleven', 'the [crossing](/ferry "Crossing times") takes eleven');
+    expect(marked).not.toBe(payload.markdown);
+    expect(check(marked)).toMatchObject({ ok: true, interleaved: [] });
+    expect(check(marked).detail).toContain('20 of them word for word;');
+  });
+  it('finds a unit word for word when the file needs a different reading than the rest of it', () => {
+    // An HTML body escapes the tag the prose mentions and leaves its backslashes alone; a JSON string does the opposite.
+    const blocks: Block[] = [['p', 'Add a <meta> tag inside the <head> element of every page, then write the folder as C:\\new\\templates in the settings file before you publish the site again.'], ['p', 'The caf\u00e9 keeps a <strong> opinion about the building\u2019s lifts, and says so on the notice board by the door.'], ['p', paragraph(seeded(3))]];
+    expect(check(blocksToHtml(blocks), blocks)).toMatchObject({ ok: true, interleaved: [] });
+    const asciiJson = JSON.stringify({ paragraphs: blocks.map(block => block[1]) }).replace(/[\u0080-\uffff]/g, ch => '\\u' + ch.charCodeAt(0).toString(16).padStart(4, '0'));
+    expect(asciiJson).toContain('caf\\u00e9');
+    expect(check(asciiJson, blocks)).toMatchObject({ ok: true, interleaved: [] });
+    // The same files with one word added are still refused.
+    expect(check(blocksToHtml(blocks).replace('before you publish', 'before you ever publish'), blocks).ok).toBe(false);
+    expect(check(asciiJson.replace('says so on', 'never says so on'), blocks).ok).toBe(false);
   });
   it('refuses an article written twice, in one file or across two files', () => {
     const body = payloadFor(ARTICLE, { sources: [], videos: [], bodyImages: [] }).markdown;

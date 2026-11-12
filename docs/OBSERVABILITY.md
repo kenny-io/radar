@@ -83,6 +83,25 @@ of an API error (never from model output or repository files), removes control c
 and anything shaped like one, and cuts it to 300 characters; the worker sanitizes it again like every other
 diagnostic. Other agent failures (turn limit, a thrown SDK error, a missing report) carry the token alone.
 
+Two gate reasons an operator will see after the QA-1 fixes:
+
+- `peer-content-changed` for a new article names the file and counts removed and altered lines separately, for
+  example `src/data/posts.json has 3 of its 172 existing lines removed and 1 altered; a new article may remove none
+  (limit 0).` `actual` is the removed count and `limit` is 0; when only the altered count is over, `actual` is that
+  count and `limit` is 6 (or 24 for the total across files). A line counts as altered only when the same line returns
+  in place with one small edit (at most 24 characters and half of the line lost); anything else that is gone is removed.
+- `article-fidelity` with "present but not word for word" lists the unit indexes (0-based, as in `article.json`) of
+  paragraphs or list items that have other words or markup between the article's words. None is allowed.
+
+Both are repairable: the agent gets one repair turn with the same sentence, and the entry fails only if that turn is
+refused too (`stage: repair`).
+
+A retry that does not reuse the commit already on the article branch is not a failure and reports nothing: a sandbox
+commit is reused only when its `Radar-Post` marker carries Radar's signature (keyed from `RADAR_SECRET_KEY`) and names
+the tree of the commit at the branch head. Otherwise the run line below shows a second sandbox run for the entry, and
+the pull request says either that the article was already complete on its branch or that a commit was added. Expect
+this once per in-flight entry after `RADAR_SECRET_KEY` is rotated and for commits written before markers were signed.
+
 Gate failures leave nothing behind: no tree, commit, ref or pull request is written. GitHub's own errors (401, 403,
 404, 422, rate limits) keep their existing meaning and retry behavior.
 

@@ -14,16 +14,30 @@ import {
   type PublicationGateInput, type PublicationGateResult, type PublishCheck, type RunPublicationGate, type SandboxDiagnosticCode,
 } from './types';
 
-/** Peer-content thresholds (§7 step 8, tightened for new articles by the PM after ENG-3). Line counts are of the original file. */
+/** Peer-content thresholds (§7 step 8; the new-article rule was set by the PM after QA-1, defect D1). Line counts are of
+ *  the original file. */
 export const PEER_CONTENT = {
-  /** A new article (mode `new`): original lines one existing file may lose or have altered. A flat number with no share
-   *  of the file, because an honest append touches one to three existing lines (a trailing comma, a closing bracket, an
-   *  import list) and a percentage of a large registry is room to delete a whole peer record. */
+  /** A new article (mode `new`), for every existing file except a replaceable article file. An original line that the
+   *  line diff reports as gone is *altered* when a near-identical line replaces it in the same hunk (`nearIdenticalLine`)
+   *  and *removed* otherwise. Removed lines are never allowed: a line limit, however small, is room to delete whole
+   *  one-line records or to replace a small file outright. */
+  newRemovedLines: 0,
+  /** ...altered lines: at most this many in one existing file. An honest append touches one to three existing lines (a
+   *  trailing comma, a closing bracket, an import list, a counter or a date). */
   newLines: 6,
   /** ...and at most this many across every existing file of a new article. */
   newTotalLines: 24,
-  /** A refresh (mode `refresh`), for files other than the article file: max(lineFloor, lineShare of the file's lines),
-   *  the design's original tolerance, since a refresh may need a paired type and renderer change... */
+  /** The near-identical rule (`nearIdenticalLine`): the replacement is the original line with one run of characters
+   *  edited. The original may lose at most this many characters in that run (a full ISO date-time value)... */
+  twinLostChars: 24,
+  /** ...and at most this share of its own text (white space at its ends not counted), so most of the line is kept. */
+  twinLostShare: 0.5,
+  /** Characters compared while pairing altered lines in one file. When it is spent, the lines still unpaired count as
+   *  removed, so the bound can only make the gate stricter. */
+  twinCompareChars: 2_000_000,
+  /** A refresh (mode `refresh`), for files other than the article file: max(lineFloor, lineShare of the file's lines)
+   *  original lines removed or altered, the design's original tolerance, since a refresh may need a paired type and
+   *  renderer change... */
   lineFloor: 10,
   lineShare: 0.01,
   /** ...and at most this many across those files. */
@@ -99,30 +113,82 @@ function matchLineEndings(original: string, final: string): string {
 }
 const splitLines = (text: string) => { const lines = text.split('\n'); if (lines.at(-1) === '') lines.pop(); return lines; };
 
-interface LineChange { removed: number; added: number; addedText: string; /** False when `removed` is only a lower bound. */ exact: boolean }
+/** The similarity rule behind an *altered* line (PEER_CONTENT.twin*). `replacement` is near-identical to `original`
+ *  when it is the same line with one run of characters edited: the two share a prefix and a suffix, and the characters
+ *  of the original between them (what the line lost) number at most twinLostChars and at most twinLostShare of the
+ *  line's own text. What the replacement gained in that place is not limited, so a comma, a bracket or an import name
+ *  added to a line, and a counter or date value changed in it, all qualify; a line rewritten, or swapped for another
+ *  record, does not. A blank line only twins with a blank line. One pass over the shorter line; `budget.chars` is
+ *  charged with what was compared. */
+export function nearIdenticalLine(original: string, replacement: string, budget: { chars: number } = { chars: Infinity }): boolean {
+  const own = original.trim().length;
+  const mayLose = Math.min(PEER_CONTENT.twinLostChars, Math.floor(own * PEER_CONTENT.twinLostShare));
+  budget.chars--;
+  if (replacement.length < original.length - mayLose) return false;
+  if (!own) return !replacement.trim() && replacement.length >= original.length && (replacement.startsWith(original) || replacement.endsWith(original));
+  const shortest = Math.min(original.length, replacement.length);
+  let prefix = 0;
+  while (prefix < shortest && original.charCodeAt(prefix) === replacement.charCodeAt(prefix)) prefix++;
+  let suffix = 0;
+  while (suffix < shortest - prefix && original.charCodeAt(original.length - 1 - suffix) === replacement.charCodeAt(replacement.length - 1 - suffix)) suffix++;
+  budget.chars -= prefix + suffix;
+  return original.length - prefix - suffix <= mayLose;
+}
+/** How many of a hunk's removed lines have a near-identical twin among its added lines. Pairs are taken in order and
+ *  never cross (each removed line takes the first unused added line after the previous pair), and an added line serves
+ *  one removed line only, so moving or reordering lines cannot stand in for keeping them. */
+function alteredInHunk(removed: string[], added: string[], budget: { chars: number }): number {
+  let altered = 0; let from = 0;
+  for (const line of removed) {
+    for (let at = from; at < added.length && budget.chars > 0; at++) {
+      if (nearIdenticalLine(line, added[at], budget)) { altered++; from = at + 1; break; }
+    }
+  }
+  return altered;
+}
+
+interface LineChange {
+  /** Original lines the diff reports as gone, altered ones included. */
+  removed: number;
+  /** Of `removed`, the lines a near-identical line replaced in the same hunk. 0 unless pairing was asked for. */
+  altered: number;
+  added: number; addedText: string;
+  /** False when `removed` is only a lower bound. */
+  exact: boolean;
+}
 /** Line diff of original against final. `allowed(added)` is the caller's ceiling on removed lines; when a cheap count of
  *  original lines that no longer exist anywhere in the file is large and already exceeds it, that lower bound is returned
- *  without diffing. null when the edit script exceeds the diff bound, which the caller treats as a rewrite. */
-function lineChange(original: string, final: string, allowed: (added: number) => number): LineChange | null {
+ *  without diffing. `pair` also classifies each removed line as altered or not. null when the edit script exceeds the
+ *  diff bound, which the caller treats as a rewrite. */
+function lineChange(original: string, final: string, allowed: (added: number) => number, pair = false): LineChange | null {
   const before = splitLines(original); const after = splitLines(final);
   const remaining = new Map<string, number>();
   for (const line of after) remaining.set(line, (remaining.get(line) ?? 0) + 1);
   let gone = 0;
   for (const line of before) { const left = remaining.get(line) ?? 0; if (left) remaining.set(line, left - 1); else gone++; }
   const fresh = after.length - (before.length - gone);
-  if (gone >= PEER_CONTENT.lowerBoundLines && gone > allowed(fresh)) return { removed: gone, added: fresh, addedText: '', exact: false };
+  if (gone >= PEER_CONTENT.lowerBoundLines && gone > allowed(fresh)) return { removed: gone, altered: 0, added: fresh, addedText: '', exact: false };
   let head = 0; const shortest = Math.min(before.length, after.length);
   while (head < shortest && before[head] === after[head]) head++;
   let tail = 0;
   while (tail < shortest - head && before[before.length - 1 - tail] === after[after.length - 1 - tail]) tail++;
   const parts = diffArrays(before.slice(head, before.length - tail), after.slice(head, after.length - tail), { maxEditLength: PEER_CONTENT.maxEditLength });
   if (!parts) return null;
-  let removed = 0; let added = 0; const addedLines: string[] = [];
+  let removed = 0; let added = 0; let altered = 0; const addedLines: string[] = [];
+  // A hunk is a run of removed and added parts with no unchanged line between them.
+  const budget = { chars: PEER_CONTENT.twinCompareChars };
+  let hunkRemoved: string[] = []; let hunkAdded: string[] = [];
+  const closeHunk = () => {
+    if (pair && hunkRemoved.length && hunkAdded.length) altered += alteredInHunk(hunkRemoved, hunkAdded, budget);
+    hunkRemoved = []; hunkAdded = [];
+  };
   for (const part of parts) {
-    if (part.removed) removed += part.value.length;
-    else if (part.added) { added += part.value.length; addedLines.push(...part.value); }
+    if (part.removed) { removed += part.value.length; if (pair) hunkRemoved.push(...part.value); }
+    else if (part.added) { added += part.value.length; addedLines.push(...part.value); if (pair) hunkAdded.push(...part.value); }
+    else closeHunk();
   }
-  return { removed, added, addedText: addedLines.join('\n'), exact: true };
+  closeHunk();
+  return { removed, altered, added, addedText: addedLines.join('\n'), exact: true };
 }
 
 function syntaxError(path: string, content: string): string | null {
@@ -272,6 +338,7 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
   const replaceable = (path: string) => path === articlePath && (payload.mode === 'refresh' || !!options.retry || (!!options.legacy && path === options.legacy.articlePath));
   const newArticle = payload.mode !== 'refresh';
   const peerTotal = newArticle ? PEER_CONTENT.newTotalLines : PEER_CONTENT.totalLines;
+  // For a new article `peerRemoved` counts altered lines only: a removed line never passes.
   let peerRemoved = 0; let peerAdded = 0; let peerLines = 0; let edited = 0; let replacedRemoved = 0; let replacedAdded = 0; let replacedFiles = 0;
   let articleAdded: string | null = null;
   for (const file of changed) {
@@ -280,17 +347,27 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     const lines = splitLines(file.original).length;
     const peerLimit = newArticle ? PEER_CONTENT.newLines : Math.max(PEER_CONTENT.lineFloor, Math.ceil(PEER_CONTENT.lineShare * lines));
     const replaceLimit = (added: number) => PEER_CONTENT.replaceFactor * added + PEER_CONTENT.replaceAllowance;
-    const change = lineChange(file.original, file.content, replaceable(file.path) ? replaceLimit : () => peerLimit);
+    const replace = replaceable(file.path);
+    const change = lineChange(file.original, file.content, replace ? replaceLimit : () => peerLimit, newArticle && !replace);
     if (!change) fail('peer-content-changed', `${safePath(file.path)} was rewritten: more than ${PEER_CONTENT.maxEditLength} of its lines differ. Existing lines must be left exactly as they are`, { path: file.path, limit: PEER_CONTENT.maxEditLength });
     if (file.path === articlePath) articleAdded = change.addedText;
     const atLeast = change.exact ? '' : 'at least ';
-    if (replaceable(file.path)) {
+    if (replace) {
       const limit = replaceLimit(change.added);
       if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} loses ${atLeast}${change.removed} of its ${lines} existing lines while adding ${change.added}; replacing the article body may remove at most ${limit}, so other records in the file must stay`, { path: file.path, actual: change.removed, limit });
       replacedRemoved += change.removed; replacedAdded += change.added; replacedFiles++;
       continue;
     }
     const limit = peerLimit;
+    if (newArticle && change.exact) {
+      // An original line is either altered (a near-identical line took its place) or removed. None may be removed.
+      const altered = change.altered; const removed = change.removed - altered;
+      if (removed > PEER_CONTENT.newRemovedLines) fail('peer-content-changed', `${safePath(file.path)} has ${removed} of its ${lines} existing lines removed${altered ? ` and ${altered} altered` : ''}; a new article may remove none (limit ${PEER_CONTENT.newRemovedLines}). A line counts as removed when it is deleted, moved, reformatted or rewritten. Keep every existing line where it is and add the article beside them; an existing line may only gain characters or have one short value changed`, { path: file.path, actual: removed, limit: PEER_CONTENT.newRemovedLines });
+      if (altered > limit) fail('peer-content-changed', `${safePath(file.path)} has ${altered} of its ${lines} existing lines altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: altered, limit });
+      peerRemoved += altered; peerAdded += change.added; peerLines += lines;
+      if (peerRemoved > peerTotal) fail('peer-content-changed', `the change alters ${peerRemoved} existing lines across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
+      continue;
+    }
     if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} has ${atLeast}${change.removed} of its ${lines} existing lines removed or altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: change.removed, limit });
     peerRemoved += change.removed; peerAdded += change.added; peerLines += lines;
     if (peerRemoved > peerTotal) fail('peer-content-changed', `the change removes or alters ${peerRemoved} existing lines across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
@@ -325,7 +402,7 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     passed('syntax', `${changed.length} changed ${changed.length === 1 ? 'file is' : 'files are'} UTF-8 text; ${jsonFiles} JSON parsed; ${scriptFiles} JavaScript or TypeScript parsed without syntax errors`),
     passed('peer-content', edited
       ? `${edited} existing ${edited === 1 ? 'file' : 'files'} edited`
-        + (edited > replacedFiles ? `; ${peerRemoved} of ${peerLines} original lines removed or altered (limit ${newArticle ? PEER_CONTENT.newLines + ' per file, ' : ''}${peerTotal} in all), ${peerAdded} lines added` : '')
+        + (edited > replacedFiles ? `; ${peerRemoved} of ${peerLines} original lines removed or altered (${newArticle ? `${peerRemoved} altered, ${PEER_CONTENT.newRemovedLines} removed; limit ${PEER_CONTENT.newLines} altered per file and ${peerTotal} in all, ${PEER_CONTENT.newRemovedLines} removed` : `limit ${peerTotal} in all`}), ${peerAdded} lines added` : '')
         + (replacedFiles ? `; in the article file being replaced, ${replacedRemoved} earlier lines gave way to ${replacedAdded} new ones (limit ${PEER_CONTENT.replaceFactor} removed per added line plus ${PEER_CONTENT.replaceAllowance})` : '')
       : 'no existing file was edited; every changed file is new'),
     passed('article-fidelity', fidelity.detail + `; ${mediaOmitted.length} media or link references not carried` + (changed.length ? '' : '; verified on the article file already on the branch')),

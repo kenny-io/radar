@@ -17,11 +17,12 @@ export const FIDELITY = {
    *  price, a date); 1 means every word of the unit is found in its original run of words. */
   unitCoverage: 1,
   /** A long unit can be present by the rule above and still have other words or leftover markup between its own words,
-   *  because an insertion leaves every original word inside a found shingle. Such units are listed for disclosure and
-   *  allowed up to max(interleavedFloor, interleavedShare of the paragraphs and items): room for a format whose inline
-   *  markup cannot be stripped, not for words added throughout the article. */
-  interleavedShare: 0.1,
-  interleavedFloor: 1,
+   *  because an insertion leaves every original word inside a found shingle. Such a unit is not word for word, and one
+   *  inserted word can reverse a sentence, so none is allowed (PM ruling after QA-1, defect D2; every live run so far
+   *  was word for word throughout). The allowance stays max(interleavedFloor, interleavedShare of the paragraphs and
+   *  items) so it can be raised for a format whose inline markup cannot be stripped. */
+  interleavedShare: 0,
+  interleavedFloor: 0,
   /** F2: share of headings that must be present; a template may supply a structural heading. */
   headingsPresent: 0.8,
   /** F3: share of present paragraphs and items that must appear in the article's order. */
@@ -65,7 +66,7 @@ export const articleUnits: ArticleUnitsOf = (blocks: Block[]): ArticleUnit[] => 
 // Normalisation. Units are plain text (Block[] carries no markup), so their tokens are taken as written. A candidate is
 // a file in some format, so its markup is removed and its escapes and character references are decoded first; because
 // that decoding can misread prose that merely looks like markup (a tag or a backslash mentioned in a sentence inside a
-// plain string), a unit that is not found that way is also looked for in the candidate's undecoded text.
+// plain string), a unit that is not found that way is also looked for in the candidate's other readings (READINGS).
 
 const NAMED: Record<string, string> = {
   amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ensp: ' ', emsp: ' ', thinsp: ' ', shy: '', zwj: '', zwnj: '',
@@ -123,18 +124,27 @@ function stripMarkup(text: string): string {
     // Tags, including a JSON-escaped closing slash. An escaped bracket (Markdown `\<`) is prose and is left alone.
     .replace(/(?<!\\)<\\?\/?[A-Za-z][A-Za-z0-9:.-]*(?:\s[^<>]*)?\\?\/?>/g, ' ');
 }
+/** How a candidate file is read before it is tokenised. `true` is the main reading: markup removed, then string
+ *  escapes and character references decoded. `false` is the text as written. `'markup'` removes markup and decodes
+ *  character references but leaves backslashes alone (an HTML file whose prose mentions a Windows path); `'escapes'`
+ *  decodes string escapes only (a JSON string whose prose mentions a tag). */
+export type FidelityReading = boolean | 'markup' | 'escapes';
+/** The readings tried, in order, for a unit the main reading did not find word for word. A unit is word for word when
+ *  its words are one uninterrupted run in at least one reading. */
+const READINGS: FidelityReading[] = [false, 'markup', 'escapes'];
 /** Tokens are runs of letters, digits and combining marks after NFKC and lower-casing, so punctuation, quoting, line
- *  wrapping and invisible formatting characters never matter. `decode` is for candidate files: it removes markup and
- *  decodes string escapes and character references before tokenising. */
-export function fidelityTokens(text: string, decode: boolean): string[] {
-  const plain = (decode ? decodeEntities(decodeEscapes(stripMarkup(text))) : text).normalize('NFKC').replace(/[\u00ad\u200b-\u200f\u2060\ufeff]/g, '').toLowerCase();
+ *  wrapping and invisible formatting characters never matter. `decode` is the reading, for candidate files; units are
+ *  tokenised as written. */
+export function fidelityTokens(text: string, decode: FidelityReading): string[] {
+  const read = decode === true ? decodeEntities(decodeEscapes(stripMarkup(text))) : decode === 'markup' ? decodeEntities(stripMarkup(text)) : decode === 'escapes' ? decodeEscapes(text) : text;
+  const plain = read.normalize('NFKC').replace(/[\u00ad\u200b-\u200f\u2060\ufeff]/g, '').toLowerCase();
   return plain.match(/[\p{L}\p{N}\p{M}]+/gu) ?? [];
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Occurrence index: only the token windows the units need are looked for, in one pass over each candidate.
 
-interface Needle { tokens: string[]; start: number; length: number; /** Occurrences in decoded candidates. */ count: number; positions: number[]; /** Occurrences in undecoded candidates. */ raw: number }
+interface Needle { tokens: string[]; start: number; length: number; /** Occurrences in the main reading of the candidates. */ count: number; positions: number[]; /** Occurrences in their other readings. */ raw: number }
 class Needles {
   private byKey = new Map<string, Needle>();
   private byFirst = new Map<string, Needle[]>();
@@ -247,8 +257,11 @@ export function checkArticleFidelity(input: FidelityInput): FidelityResult {
     const endFound = found(shingles[shingles.length - 1]);
     return { present: coverage >= FIDELITY.unitCoverage && found(shingles[0]) && endFound, coverage, endFound };
   };
-  // Second look, in undecoded text, only when decoding left a unit unfound or not word for word.
-  if (probes.some(probe => !found(probe.whole))) for (const content of input.contents) index.scan(fidelityTokens(content, false), 0, true);
+  // Further looks, in the other readings, only while the readings so far leave a unit unfound or not word for word.
+  for (const reading of READINGS) {
+    if (!probes.some(probe => !found(probe.whole))) break;
+    for (const content of input.contents) index.scan(fidelityTokens(content, reading), 0, true);
+  }
 
   const prose = probes.filter(probe => probe.unit.kind !== 'heading');
   const headings = probes.filter(probe => probe.unit.kind === 'heading');
@@ -278,7 +291,7 @@ export function checkArticleFidelity(input: FidelityInput): FidelityResult {
   // Present, but not word for word.
   const interleaved = prose.filter(probe => state.get(probe)!.present && !found(probe.whole));
   const interleavedAllowed = Math.max(FIDELITY.interleavedFloor, Math.floor(FIDELITY.interleavedShare * prose.length));
-  if (interleaved.length > interleavedAllowed) issues.push({ rule: 'interleaved', detail: `${interleaved.length} of ${prose.length} paragraphs and list items have other words or markup between the article's words (at most ${interleavedAllowed} may): ${listed(interleaved.map(probe => probe.unit))}` });
+  if (interleaved.length > interleavedAllowed) issues.push({ rule: 'interleaved', detail: `${interleaved.length} of ${prose.length} paragraphs and list items are present but not word for word: other words or markup sit between the article's words (${interleavedAllowed ? `at most ${interleavedAllowed} may be` : 'none may be'}): ${listed(interleaved.map(probe => probe.unit))}` });
 
   // F2 headings.
   const headingsMissing = headings.filter(probe => !state.get(probe)!.present).map(probe => probe.unit);
@@ -327,8 +340,9 @@ const escapedForms = (value: string) => [...new Set([
   value.replace(/[\s()<>{}\\]/g, ch => '%' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')),
 ])];
 
-/** Body-image URLs, video ids, source URLs and links of `payload.html` that no final file carries as a literal. */
-export function omittedMedia(payload: Pick<PublishPayload, 'html' | 'bodyImages' | 'videos' | 'sources'>, contents: string[]): string[] {
+/** Every media and link reference the article carries: body-image URLs, video ids, source URLs and the absolute links
+ *  of `payload.html`. Empty for an article that has none, so there is nothing a destination could fail to carry. */
+export function articleReferences(payload: Pick<PublishPayload, 'html' | 'bodyImages' | 'videos' | 'sources'>): string[] {
   const wanted: string[] = [];
   const want = (value: unknown) => { if (typeof value === 'string' && value.trim() && !wanted.includes(value)) wanted.push(value); };
   for (const image of payload.bodyImages ?? []) want(image?.url);
@@ -340,7 +354,12 @@ export function omittedMedia(payload: Pick<PublishPayload, 'html' | 'bodyImages'
     // A video's own watch link is covered by its id.
     if (/^https?:\/\//i.test(href) && !videoIds.some(id => href.includes(id))) want(href);
   }
-  return wanted
+  return wanted;
+}
+
+/** The article's references (`articleReferences`) that no final file carries as a literal. */
+export function omittedMedia(payload: Pick<PublishPayload, 'html' | 'bodyImages' | 'videos' | 'sources'>, contents: string[]): string[] {
+  return articleReferences(payload)
     .filter(value => !contents.some(content => escapedForms(value).some(form => content.includes(form))))
     .slice(0, FIDELITY.mediaListed)
     .map(value => value.slice(0, FIDELITY.mediaChars));

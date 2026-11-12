@@ -84,7 +84,7 @@ describe('SBX-1: a registry shape the developers did not use (one JSON document 
 
   // FINDING D1. SBX-1 (as amended): "the gate proves peer content unchanged". In a registry that keeps one record per
   // line, a new-article run may delete up to 6 whole peer records per file and still pass, because the limit is 6 lines.
-  it.fails('D1: refuses a new-article change that deletes three whole peer records from a one-record-per-line registry', async () => {
+  it('D1: refuses a new-article change that deletes three whole peer records from a one-record-per-line registry', async () => {
     const without = PEERS.filter((_record, n) => ![10, 77, 140].includes(n));
     await gateFailure(() => runPublicationGate(gateInput(REPO(), P, goodLines(without))));
   });
@@ -165,7 +165,7 @@ describe('SBX-4 fidelity: a subtly changed article is refused', () => {
   // FINDING D2. SBX-4: "not shortened or rewritten beyond format conversion". A word inserted between the article's own
   // words leaves every original word inside a found 4-word window, so the unit counts as present ("interleaved"), and
   // one such unit (or 10% of them) is allowed. One inserted "not" reverses the meaning of a sentence and passes.
-  it.fails('D2: refuses a paragraph whose meaning was reversed by one inserted word', async () => {
+  it('D2: refuses a paragraph whose meaning was reversed by one inserted word', async () => {
     await gateFailure(() => runPublicationGate(gateInput(REPO(), P, asMarkdown(change(11, text => text.replace('is usually old', 'is not usually old'))))));
   });
   it('D2 evidence: the inserted word passes and is disclosed only as "other words or markup between the article’s words"', async () => {

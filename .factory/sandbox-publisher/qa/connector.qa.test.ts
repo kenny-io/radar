@@ -250,7 +250,7 @@ describe('a new article through the sandbox engine (SBX-1, SBX-2, SBX-5)', () =>
   // FINDING D4 (minor). Agent statements are shown as unverified, but they can still carry a working link: the
   // sanitizer removes http(s) addresses, not protocol-relative Markdown links or bare www addresses, and plainLine
   // neutralises backticks, "<" and @names only.
-  it.fails('D4: agent text cannot place a clickable link or remote image in the pull request body', async () => {
+  it('D4: agent text cannot place a clickable link or remote image in the pull request body', async () => {
     agent = payload => ({ ...faithful(payload), report: { summary: 'Review notes: [open the preview](//attacker.example.test/login) ![status](//attacker.example.test/badge.svg) or visit www.attacker.example.test/now' } });
     await publish(await createDraft());
     expect(git.pulls[0].body).not.toContain('attacker.example.test');

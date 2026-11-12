@@ -127,6 +127,10 @@ reported by name.
 The `model-proxy` service needs exactly `RADAR_PUBLISH_CAPABILITY_SECRET`, `ANTHROPIC_API_KEY`, `DATABASE_URL` and
 `PORT`, and warns at start if it also holds `RADAR_SECRET_KEY`, `DAYTONA_API_KEY` or `GITHUB_CLIENT_SECRET`.
 
+No new variable is needed for retries: the worker signs each sandbox commit's marker (see "Retries and the commit
+marker" below) with a key derived from its existing `RADAR_SECRET_KEY`, which it already needs to read the connection.
+That key is used for the marker only and is never given to the sandbox, the model proxy or GitHub.
+
 Switched on with something missing or invalid, publishing does not stop: the attempt uses the planner and reports
 `publishing.sandbox.config` with the variable names (see `docs/OBSERVABILITY.md`).
 
@@ -199,6 +203,24 @@ draft saved before it was turned off, still open their PR. A retry that finds it
 branch for the same article reuses that commit, with the switch on or off, and never opens a second PR. A sandbox
 failure is never retried on the planner inside the same attempt.
 
+### Retries and the commit marker
+
+The last line of a sandbox commit's message is its marker:
+`Radar-Post: {"version":3,"entryId","hint","slug","articlePath","route","engine":"sandbox","body","tree","sig"}`.
+`body` is a short hash of the article, `tree` is the SHA of the tree the commit was written with, and `sig` is an
+HMAC-SHA256 over the entry id, hint, slug, article path, route, body hash and tree, keyed from `RADAR_SECRET_KEY`.
+
+A retry reuses the commit, with no sandbox run and no new commit, only when all of these hold: the marker is for this
+entry, folder hint and article; its signature verifies; and the tree of the commit at the branch head is the tree the
+marker names. A commit trailer can be copied by anyone who can push to the repository, so a later commit that keeps
+the trailer (its tree differs), a trailer with an edited field, and a signature Radar did not make are not reused.
+
+A marker that is not reused is not an error. The retry runs the sandbox engine on the branch head with the earlier
+slug and article path, exactly as for a planner (version 2) marker, and the gate checks the article file there and
+whatever this attempt changes. The same applies to version 3 markers written before signing was added (they have no
+`tree` or `sig`) and to every marker after `RADAR_SECRET_KEY` is rotated: one extra sandbox run, never a second branch
+or PR. In production without `RADAR_SECRET_KEY` nothing is signed, so nothing is reused.
+
 ### What the pull request says
 
 A sandbox PR keeps three kinds of statement apart.
@@ -207,19 +229,34 @@ A sandbox PR keeps three kinds of statement apart.
   before any commit). They are: article identity (slug, article path, route; a retry or refresh keeps them), protected
   paths (the same write rules as the planner: no CI, dependency manifests, lockfiles, auth or deployment files),
   regular files only (no link, submodule or special file), size and count limits (at most 16 files, 1 MB each),
-  credential scan, syntax (JSON, JavaScript and TypeScript parse), existing content preserved (how many original lines
-  were removed or altered: for a new article at most 6 per existing file and 24 in all), and article fidelity (every
-  paragraph and list item present once, in order, not shortened or reworded beyond format conversion).
+  credential scan, syntax (JSON, JavaScript and TypeScript parse), existing content preserved (below), and article
+  fidelity (every paragraph and list item present once, in order and word for word: a unit with a word added between
+  the article's words is refused, as is one shortened or reworded; only format conversion is tolerated).
 - **What the agent reported (not verified by Radar)**: the agent's own summary, the repository rules it says it
   followed and the deviations it declared. These are claims. If the agent writes that a build passed, that sentence
-  appears here and nowhere else; it could not have run one.
+  appears here and nowhere else; it could not have run one. The text is printed so that GitHub renders no link or image
+  from it: a Markdown link or image keeps its words and reads "(link removed)" or "(image removed)", an address
+  (`scheme://`, `//host`, `www.`) reads "(address removed)", square brackets are escaped (a path such as
+  `app/[slug]/page.tsx` still reads as written), and an @name, an issue reference or a commit hash is shown as code.
+  The summary is printed up to 4,000 characters and each rule or deviation up to 400; a longer one is cut at a word
+  boundary and ends with "… (truncated by Radar)".
 - **Not run**: always the same list: dependency installation, repository build, lint, tests, deployment preview.
   Nothing from the repository is installed, built or executed, so `runtimeVerified` is false for every sandbox draft.
 
+Existing content preserved, for a new article: in every existing file the change edits, no original line may be
+removed, and at most 6 may be altered (24 across all files). A line is altered when the same line comes back in the
+same place with one small edit: it shares a beginning and an end with the original, and what the original lost between
+them is at most 24 characters and at most half of the line (a comma or bracket added, a name added to an import list,
+a counter, date or flag changed). A line that is deleted, moved, re-indented beyond that, rewritten, or replaced by a
+different record is removed, and the change is refused. The check prints both counts. A refresh keeps its own
+tolerance (the article file may have its body replaced; other files max(10, 1%) of their lines, 60 in all), and on a
+retry or legacy migration the article file may be replaced in the same way.
+
 It also lists **media and links not carried over** (image addresses, video ids, source and link addresses from the
 article that Radar did not find in the changed files, usually because the site's content format has no place for them).
-That is disclosed, not a failure. A PR that continues an existing article branch says so, and a PR resumed from an
-interrupted attempt says that the earlier attempt's details were not kept. As with the planner, the PR is a draft and
+That is disclosed, not a failure; an article with no media or links at all says there was nothing to carry over. A PR
+that continues an existing article branch says so, and a PR resumed from an interrupted attempt says that the earlier
+attempt's details were not kept. As with the planner, the PR is a draft and
 merging it is the reviewer's decision after the repository's own CI and preview.
 
 ### Tests

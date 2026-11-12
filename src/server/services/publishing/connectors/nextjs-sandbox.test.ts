@@ -11,7 +11,7 @@ import type { SandboxIntegrationInput } from '../sandbox/types';
 
 const H = vi.hoisted(() => ({
   plan: vi.fn(), report: vi.fn(async (..._args: any[]) => {}), provider: null as any, providerKeys: [] as string[], runCalls: [] as unknown[][],
-  env: {} as Record<string, string>,
+  env: {} as Record<string, string>, production: false,
   // The publisher lifecycle tests at the end of this file.
   row: null as any, article: null as any, connection: null as any, connector: null as any, business: null as any,
 }));
@@ -23,11 +23,13 @@ vi.mock('../sandbox/run', async importOriginal => {
   return { ...real, integrateWithSandbox: (...args: Parameters<typeof real.integrateWithSandbox>) => { H.runCalls.push(args); return real.integrateWithSandbox(...args); } };
 });
 vi.mock('../sandbox/daytona', async importOriginal => ({ ...await importOriginal<typeof import('../sandbox/daytona')>(), daytonaProvider: (key: string) => { H.providerKeys.push(key); return H.provider; } }));
-// src/server/env.ts freezes its values at import; the four sandbox settings are read from H.env instead.
+// src/server/env.ts freezes its values at import; the four sandbox settings and the application secret are read from
+// H.env instead, and H.production stands in for NODE_ENV=production where a test needs it.
 vi.mock('@/server/env', async importOriginal => {
   const real = await importOriginal<typeof import('@/server/env')>();
   const env = { ...real.env };
-  for (const key of ['daytonaKey', 'publishSandboxSnapshotId', 'publishModelProxyUrl', 'publishCapabilitySecret']) Object.defineProperty(env, key, { enumerable: true, get: () => H.env[key] ?? '' });
+  for (const key of ['daytonaKey', 'publishSandboxSnapshotId', 'publishModelProxyUrl', 'publishCapabilitySecret', 'secretKey']) Object.defineProperty(env, key, { enumerable: true, get: () => H.env[key] ?? '' });
+  Object.defineProperty(env, 'isProd', { enumerable: true, get: () => H.production });
   return { ...real, env };
 });
 // Only the publisher lifecycle tests reach these.
@@ -52,10 +54,10 @@ vi.mock('../store', () => ({ ctxFromRow: (business: any, connection: any) => ({ 
 vi.mock('./index', () => ({ connectorFor: () => H.connector }));
 
 import { PublishError } from '../http';
-import { branchOf, nextjs, publishAttemptMs } from './nextjs';
+import { branchOf, markerBindsCommit, markerSignature, nextjs, publishAttemptMs, sandboxPullRequestBody } from './nextjs';
 import { FakeSandboxProvider, type FakeExecCall, type FakeSandbox } from '../sandbox/fake';
 import { SANDBOX_COMMANDS } from '../sandbox/run';
-import { PUBLISH_CHECK_IDS, RUNNER_COMMANDS, SANDBOX_BUDGET, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, SANDBOX_PATHS, type AgentReport, type RunnerResult, type SandboxExecResult } from '../sandbox/types';
+import { AGENT_TEXT, PUBLISH_CHECK_IDS, RUNNER_COMMANDS, SANDBOX_BUDGET, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, SANDBOX_PATHS, type AgentReport, type RunnerResult, type SandboxExecResult } from '../sandbox/types';
 import { ARTICLE, payloadFor } from '../sandbox/__fixtures__/article';
 import { blobSha, treeOf, type AgentOutput } from '../sandbox/__fixtures__/tree';
 import { PEER_RECORDS, REGISTRY_PATH, REGISTRY_ROUTE, recordSource, registryIntegration, registryReformatted, toRecord, typedRegistryRepository, withRecord } from '../sandbox/__fixtures__/typedRegistry';
@@ -201,7 +203,7 @@ beforeEach(() => {
   commits = new Map([['base-sha', { tree: { sha: 'base-tree' }, message: 'Initial site', parents: [] }]]);
   turns = [good]; probe = undefined; nonRegular = undefined;
   provider = new FakeSandboxProvider({ exec: runner });
-  H.provider = provider; H.providerKeys = []; H.runCalls = []; H.env = {};
+  H.provider = provider; H.providerKeys = []; H.runCalls = []; H.env = {}; H.production = false;
   H.report.mockClear(); H.plan.mockReset();
   // The planner, when it is the engine: one new file and a touched index, like the transport suite's planner.
   H.plan.mockImplementation(async (_hint: string, payload: PublishPayload, snapshot: RepoSnapshot, options: RepositoryPostOptions) => {
@@ -299,7 +301,9 @@ describe('a new article through the sandbox engine (SBX-1, SBX-2)', () => {
     expect(commit.parents).toEqual(['base-sha']);
     expect(commit.message.startsWith(`Add post: ${P().title}\n\nRadar-Post: `)).toBe(true);
     expect(ref).toEqual({ ref: `refs/heads/${BR}`, sha: refs.get(BR) });
-    expect(markerOf(BR)).toEqual({ version: 3, entryId: P().entryId, hint: HINT, slug: P().slug, articlePath: REGISTRY_PATH, route: REGISTRY_ROUTE(P().slug), engine: 'sandbox', body: expect.stringMatching(/^[0-9a-f]{16}$/) });
+    // The marker names the tree this commit was written with and is signed (retries: "retries and identity" below).
+    expect(markerOf(BR)).toEqual({ version: 3, entryId: P().entryId, hint: HINT, slug: P().slug, articlePath: REGISTRY_PATH, route: REGISTRY_ROUTE(P().slug), engine: 'sandbox', body: expect.stringMatching(/^[0-9a-f]{16}$/), tree: commit.tree, sig: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/) });
+    expect(commits.get(refs.get(BR)!)!.tree.sha).toBe(commit.tree);
 
     // The registry gained exactly one record and every original line is still there, in order.
     const final = branchFiles(BR).get(REGISTRY_PATH)!;
@@ -591,6 +595,133 @@ describe('pull request body (SBX-5)', () => {
     `);
   });
 
+  /** A valid sandbox draft as publish() would receive it, for rendering the body directly. */
+  const extraWith = (over: Record<string, unknown> = {}) => ({
+    base: 'main', path: REGISTRY_PATH, slug: P().slug, layout: 'sandbox-agent', files: [REGISTRY_PATH], route: REGISTRY_ROUTE(P().slug), draft: true,
+    summary: 'Added the article as one record.', checks: [{ id: 'paths', outcome: 'passed', detail: '1 candidate path passes the repository write rules' }],
+    agentNotes: { conventions: [], deviations: [] }, notRun: [...SANDBOX_NOT_RUN], mediaOmitted: [], review: { summary: 'Radar ran 1 check.', runtimeVerified: false }, ...over,
+  });
+  /** The lines of the body that carry agent-written text. */
+  const agentLines = (body: string) => {
+    const section = body.split(/\n### /).find(part => part.startsWith('What the agent reported'))!;
+    return section.split('\n').filter(line => line.startsWith('Summary: ') || line.startsWith('- '));
+  };
+  /** Text of a line with its code spans taken out: what GitHub still reads as Markdown. */
+  const outsideCode = (line: string) => line.replace(/`[^`]*`/g, '');
+
+  it('D4: no form of link or image in agent text reaches the body as one, and repository paths stay readable', () => {
+    const hostile: [string, string][] = [
+      ['an inline link to a protocol-relative address', 'See [the preview](//evil.example.test/login) first'],
+      ['an inline link with a scheme and a title', 'See [the preview](https://evil.example.test/a "Preview") first'],
+      ['an inline link to a site-relative path', 'See [the settings](/acme/site/settings/keys) first'],
+      ['an inline link with an angle destination', 'See [the preview](<//evil.example.test/a b>) first'],
+      ['an inline link with a javascript destination', 'See [the preview](javascript:alert(1)) first'],
+      ['an image', 'Status ![badge](//evil.example.test/badge.svg) here'],
+      ['an image inside a link', 'Open [![badge](//evil.example.test/b.svg)](//evil.example.test/go) now'],
+      ['a reference-style link and its definition', 'See [the preview][p] and [p] [p]: //evil.example.test/ref'],
+      ['a link definition on its own', '[Opened by Radar]: //evil.example.test/def'],
+      ['an autolink in angle brackets', 'Visit <https://evil.example.test/auto> or <mailto:owner@evil.example.test>'],
+      ['a bare address with a scheme', 'Visit https://evil.example.test/bare and ftp://evil.example.test/file'],
+      ['a bare www address', 'Visit www.evil.example.test/now or (www.evil.example.test)'],
+      ['a bare protocol-relative address', 'Visit //evil.example.test/now'],
+      ['an email address', 'Write to owner@evil.example.test'],
+      ['a raw HTML link and image', '<a href="//evil.example.test/x">preview</a> <img src="//evil.example.test/p.png">'],
+      ['a link whose brackets are already escaped', 'See \\[the preview](//evil.example.test/esc) first'],
+      ['a character reference standing for a bracket or an at sign', 'See &#91;the preview&#93;(//evil.example.test/ent) and &#64;octocat'],
+      ['an issue reference in another repository', 'Fixes evil/repository#12 and #7 and GH-9'],
+      ['a task box', '[x] Build passed'],
+    ];
+    for (const [label, text] of hostile) {
+      for (const extra of [extraWith({ summary: text }), extraWith({ agentNotes: { conventions: [text], deviations: [text] } })]) {
+        const body = sandboxPullRequestBody(P(), extra);
+        const lines = agentLines(body);
+        expect(lines.length, label).toBeGreaterThan(0);
+        for (const line of lines) {
+          const live = outsideCode(line.replace(/^- /, ''));
+          expect(live, label).not.toMatch(/evil\.example|:\/\/|www\./i);
+          // Every bracket and backslash that is left is escaped, so nothing can pair into a link, image, definition or task box.
+          expect(live.replace(/\\[\\[\]]/g, ''), label).not.toMatch(/[\\[\]]/);
+          expect(live, label).not.toMatch(/<|&(?!amp;|lt;)/);
+          expect(live, label).not.toMatch(/[@#]\w/);
+        }
+      }
+    }
+    // What a reviewer still reads: the link text, the fact that something was removed, and paths as the agent wrote them.
+    const body = sandboxPullRequestBody(P(), extraWith({
+      summary: 'Review notes: [open the preview](//evil.example.test/login) ![status](//evil.example.test/badge.svg) or visit www.evil.example.test/now',
+      agentNotes: { conventions: ['apps/web/app/blog/[slug]/page.tsx: the route reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx'], deviations: ['links-relocated: moved 2 links (was [URL omitted]) into public/llms.txt & the registry'] },
+    }));
+    expect(agentLines(body)).toEqual([
+      'Summary: Review notes: open the preview (link removed) status (image removed) or visit (address removed)',
+      '- apps/web/app/blog/\\[slug\\]/page.tsx: the route reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx',
+      '- links-relocated: moved 2 links (was \\[URL omitted\\]) into public/llms.txt &amp; the registry',
+    ]);
+  });
+
+  it('D4: hostile agent text goes through the whole flow without leaving an address in the pull request', async () => {
+    turns = [payload => ({ ...registryIntegration(registry(), payload), report: {
+      summary: 'Done. [Approve this pull request](//evil.example.test/approve) ![x](//evil.example.test/pixel.gif) www.evil.example.test',
+      conventions: [{ path: '[Opened by Radar]', rule: '//evil.example.test/definition' }],
+      deviations: [{ kind: 'other', detail: 'See [Opened by Radar] and evil/repository#3' }],
+    } })];
+    await publish(await createDraft());
+    expect(prs[0].body).not.toMatch(/evil\.example/);
+    expect(agentLines(prs[0].body)).toEqual([
+      'Summary: Done. Approve this pull request (link removed) x (image removed) (address removed)',
+      '- \\[Opened by Radar\\]: (address removed)',
+      '- other: See \\[Opened by Radar\\] and `evil/repository#3`',
+    ]);
+  });
+
+  it('D3: agent text is printed whole up to its limit and is otherwise cut at a word boundary with a visible marker', () => {
+    const words = (count: number, word = 'word') => Array.from({ length: count }, (_, i) => `${word}${i}`).join(' ');
+    const marker = AGENT_TEXT.shortenedMarker;
+    const whole = words(400);
+    expect(whole.length).toBeGreaterThan(1600);
+    expect(whole.length).toBeLessThan(AGENT_TEXT.summaryChars);
+    expect(agentLines(sandboxPullRequestBody(P(), extraWith({ summary: whole })))[0]).toBe(`Summary: ${whole}`);
+
+    // A persisted draft is not trusted to have been bounded: an over-long summary and note are bounded here.
+    const long = words(900); const note = words(120, 'rule');
+    expect(long.length).toBeGreaterThan(AGENT_TEXT.summaryChars);
+    const lines = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: long, agentNotes: { conventions: [note, 'A short rule'], deviations: [] } })));
+    for (const [line, prefix, full, limit] of [[lines[0], 'Summary: ', long, AGENT_TEXT.summaryChars], [lines[1], '- ', note, AGENT_TEXT.noteChars]] as const) {
+      const text = line.slice(prefix.length);
+      expect(text.length).toBeLessThanOrEqual(limit);
+      expect(text.length).toBeGreaterThan(limit - 40);
+      expect(text.endsWith(marker)).toBe(true);
+      const kept = text.slice(0, -marker.length).split(' ');
+      expect(kept).toEqual(full.split(' ').slice(0, kept.length));
+    }
+    expect(lines[2]).toBe('- A short rule');
+    // Escaping makes text longer; the bound applies to what is printed, and the cut never splits an escape.
+    const bracketed = Array.from({ length: 900 }, (_, i) => `[p${i}]`).join(' ');
+    const printed = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: bracketed })))[0].slice('Summary: '.length);
+    expect(printed.length).toBeLessThanOrEqual(AGENT_TEXT.summaryChars);
+    expect(printed.endsWith(marker)).toBe(true);
+    expect(printed.slice(0, -marker.length).split(' ').every(token => /^\\\[p\d+\\\]$/.test(token))).toBe(true);
+    // Padding with white space does not hide a long text, and does not shorten one that fits.
+    const padded = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: long.replace(/ /g, ' \n\t      ') })))[0].slice('Summary: '.length);
+    expect(padded).toBe(lines[0].slice('Summary: '.length));
+    expect(agentLines(sandboxPullRequestBody(P(), extraWith({ summary: whole.replace(/ /g, '  \n\n     ') })))[0]).toBe(`Summary: ${whole}`);
+    // One word longer than the limit is still cut and marked.
+    const unbroken = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: 'x'.repeat(9000) })))[0].slice('Summary: '.length);
+    expect(unbroken).toBe('x'.repeat(AGENT_TEXT.summaryChars - marker.length) + marker);
+  });
+
+  it('says there was nothing to carry when the article has no media or links, and that all were found only when it has some', () => {
+    const section = (payload: PublishPayload, over: Record<string, unknown> = {}) => sandboxPullRequestBody(payload, extraWith(over)).split(/\n### /).find(part => part.startsWith('Media and links not carried over'))!.split('\n').slice(2).join('\n').trim();
+    const bare = P({ bodyImages: [], videos: [], sources: [], html: '<p>No link in this body, only <b>text</b> and a relative <a href="/pricing">link</a>.</p>' });
+    expect(section(bare)).toBe('The article has no images, videos, sources or links, so there was nothing to carry over.');
+    expect(section(bare)).not.toMatch(/found every/);
+    // The fixture article has a body image, a video and sources.
+    expect(section(P())).toBe('Radar found every image address, video id, source and link address of the article in the changed files.');
+    expect(section({ ...bare, html: '<p>See <a href="https://transit.example.net/ferry">the timetable</a>.</p>' })).toMatch(/^Radar found every image address/);
+    expect(section({ ...bare, sources: [{ title: 'Survey', url: 'https://sources.example.org/survey' }] })).toMatch(/^Radar found every image address/);
+    expect(section(P(), { mediaOmitted: ['https://files.radar.example/b_demo/body/costs-chart.png'] })).toMatch(/^Radar did not find this reference from the article/);
+    expect(section(bare, { continuation: 'resumed' })).toBe('Not available for this pull request. Compare the article’s images, videos and links with the diff.');
+  });
+
   it.each([
     ['another article’s branch', (extra: any, draft: RemoteDraft) => { draft.id = 'radar/unrelated'; }],
     ['no base branch', (extra: any) => { delete extra.base; }],
@@ -642,6 +773,136 @@ describe('retries and identity (SBX-7)', () => {
     expect(prs[0].body).toContain('No agent ran this time.');
     expect(prs[0].body).toContain('Not available: the agent’s statements from the earlier attempt were not kept.');
     expect(prs[0].body).toContain('Not available for this pull request. Compare the article’s images, videos and links with the diff.');
+  });
+
+  // FINDING D5 of QA-1: the resume path trusted a commit trailer that anyone with push access can copy or rewrite.
+  /** Replaces the trailer of the commit a ref points at. */
+  const setMarker = (ref: string, marker: unknown) => { const commit = commits.get(refs.get(ref)!)!; commit.message = commit.message.split('\n').slice(0, -1).join('\n') + '\n' + 'Radar-Post: ' + JSON.stringify(marker); };
+  /** A retry that must not be resumed: the engine runs on the branch head with the retry identity, as for a version 2 marker. */
+  async function expectNotResumed(label: string): Promise<RemoteDraft> {
+    const head = refs.get(BR)!; const created = provider.count('create'); calls = [];
+    // The agent finds the article already on the branch and changes nothing.
+    turns = [payload => ({ files: {}, articlePath: REGISTRY_PATH, route: REGISTRY_ROUTE(payload.slug) })];
+    const draft = await createDraft();
+    expect(provider.count('create'), label).toBe(created + 1);
+    expect(taskOf(provider.sandboxes.at(-1)!), label).toMatchObject({ repository: { commitSha: head }, identity: { retry: { slug: P().slug, articlePath: REGISTRY_PATH }, legacy: null } });
+    expect(draft.extra.continuation, label).not.toBe('resumed');
+    expect(H.plan, label).not.toHaveBeenCalled();
+    return draft;
+  }
+
+  it('D5: a later commit that keeps the signed trailer is not resumed, and nothing claims an earlier attempt checked it', async () => {
+    sandboxOn();
+    await createDraft();
+    const gated = refs.get(BR)!;
+    // Someone with push access adds a commit to the article branch and copies Radar's trailer onto it.
+    const listing = 'apps/web/app/blog/page.tsx';
+    trees.set('foreign-tree', new Map([...branchFiles(BR), [listing, 'export default function Blog() { return "changed by someone else"; }\n']]));
+    commits.set('foreign-commit', { tree: { sha: 'foreign-tree' }, message: `Tweak the listing\n\n${commits.get(gated)!.message.split('\n').at(-1)}`, parents: [gated] });
+    refs.set(BR, 'foreign-commit');
+    expect(markerOf(BR)).toEqual(markerOf(gated));
+
+    const draft = await expectNotResumed('copied trailer');
+    // The gate ran again, on the article file of this branch head; no commit was needed and none was written.
+    expect(draft.extra).toMatchObject({ layout: 'sandbox-agent', continuation: 'unchanged', path: REGISTRY_PATH });
+    expect(draft.extra.checks.map((check: any) => check.id).sort()).toEqual([...PUBLISH_CHECK_IDS].sort());
+    expect(draft.extra.checks.every((check: any) => !/passed in the earlier attempt|were not kept/.test(check.detail))).toBe(true);
+    expect(writes()).toHaveLength(0);
+    expect(refs.get(BR)).toBe('foreign-commit');
+    await publish(draft);
+    expect(prs).toHaveLength(1);
+    expect(prs[0].body).not.toMatch(/That attempt passed every check|No agent ran this time|continues an earlier attempt/);
+    expect(prs[0].body).toContain('The checks below ran on the article file already on the branch.');
+  });
+
+  it('D5: a trailer whose tree, signature or any signed field was altered is not resumed', async () => {
+    sandboxOn();
+    await createDraft();
+    const gated = refs.get(BR)!; const honest = markerOf(BR);
+    const treeSha = commits.get(gated)!.tree.sha;
+    expect(honest.tree).toBe(treeSha);
+    // A commit with another tree whose trailer was rewritten to name that tree: the signature no longer covers it.
+    trees.set('foreign-tree', new Map([...branchFiles(BR), ['apps/web/app/blog/page.tsx', 'export default function Blog() { return null; }\n']]));
+    commits.set('foreign-commit', { tree: { sha: 'foreign-tree' }, message: `Tweak\n\nRadar-Post: ${JSON.stringify({ ...honest, tree: 'foreign-tree' })}`, parents: [gated] });
+    refs.set(BR, 'foreign-commit');
+    await expectNotResumed('tree rewritten in the trailer');
+    refs.set(BR, gated);
+
+    const forgedWith = (secret: string) => { const before = H.env.secretKey; H.env.secretKey = secret; try { return markerSignature(honest)!; } finally { if (before === undefined) delete H.env.secretKey; else H.env.secretKey = before; } };
+    const altered: [string, Record<string, unknown>][] = [
+      ['route', { ...honest, route: '/blog/somewhere-else' }],
+      ['tree', { ...honest, tree: 'f'.repeat(40) }],
+      ['a signature of the right shape that Radar did not make', { ...honest, sig: Buffer.alloc(32, 7).toString('base64url') }],
+      ['a signature made with another key', { ...honest, sig: forgedWith('someone-elses-secret-' + 'F3'.repeat(12)) }],
+      ['a signature cut short', { ...honest, sig: honest.sig.slice(0, 20) }],
+      ['an empty signature', { ...honest, sig: '' }],
+      ['a signature that is not a string', { ...honest, sig: 12345 }],
+      ['no signature', (({ sig: _sig, ...rest }) => rest)(honest)],
+      ['no tree', (({ tree: _tree, ...rest }) => rest)(honest)],
+    ];
+    for (const [label, marker] of altered) {
+      setMarker(BR, marker);
+      expect(markerBindsCommit(marker, treeSha), label).toBe(false);
+      await expectNotResumed(label);
+      expect(writes(), label).toHaveLength(0);
+    }
+    // Fields that also select the article (entry, hint, slug, path, body) fail the signature as well as their own check.
+    for (const field of ['entryId', 'hint', 'slug', 'articlePath', 'body'] as const) expect(markerBindsCommit({ ...honest, [field]: honest[field] + 'x' }, treeSha), field).toBe(false);
+    expect(markerBindsCommit(honest, treeSha)).toBe(true);
+    expect(markerBindsCommit(honest, 'foreign-tree')).toBe(false);
+    // The honest trailer, put back, is resumed again: no sandbox, no commit.
+    setMarker(BR, honest);
+    const created = provider.count('create'); calls = [];
+    expect((await createDraft()).extra.continuation).toBe('resumed');
+    expect(provider.count('create')).toBe(created);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it('D5: a version 3 marker written before signing existed is treated as unsigned, and its retry still completes on one branch and one pull request', async () => {
+    sandboxOn();
+    await publish(await createDraft());
+    const { tree: _tree, sig: _sig, ...earlier } = markerOf(BR);
+    expect(earlier).toEqual({ version: 3, entryId: P().entryId, hint: HINT, slug: P().slug, articlePath: REGISTRY_PATH, route: REGISTRY_ROUTE(P().slug), engine: 'sandbox', body: expect.any(String) });
+    setMarker(BR, earlier);
+    const head = refs.get(BR)!;
+    const draft = await expectNotResumed('unsigned earlier marker');
+    expect(draft.extra).toMatchObject({ continuation: 'unchanged', path: REGISTRY_PATH });
+    expect(refs.get(BR)).toBe(head);
+    const { url } = await publish(draft);
+    expect(prs).toHaveLength(1);
+    expect(url).toBe(prs[0].html_url);
+  });
+
+  it('D5: the key comes from the application secret; a rotated secret stops resuming, and production without one signs nothing', async () => {
+    sandboxOn();
+    H.env.secretKey = SECRET.radarSecretKey;
+    await createDraft();
+    const marker = markerOf(BR); const treeSha = commits.get(refs.get(BR)!)!.tree.sha;
+    // Neither the secret nor anything derived from it other than the signature is written anywhere.
+    expect(JSON.stringify([...commits.values()]) + provider.transcript()).not.toContain(SECRET.radarSecretKey);
+    expect(markerBindsCommit(marker, treeSha)).toBe(true);
+    calls = [];
+    expect((await createDraft()).extra.continuation).toBe('resumed');
+    expect(provider.count('create')).toBe(1);
+    expect(writes()).toHaveLength(0);
+
+    // Another secret (rotation, or another deployment) does not verify it: the retry runs the engine instead.
+    H.env = { ...CONFIGURED, secretKey: 'a-different-application-secret-' + 'N8'.repeat(8) };
+    expect(markerBindsCommit(marker, treeSha)).toBe(false);
+    await expectNotResumed('rotated secret');
+    // The development fallback key is not the configured key either.
+    H.env = { ...CONFIGURED };
+    expect(markerBindsCommit(marker, treeSha)).toBe(false);
+
+    // In production there is no fallback: with no application secret nothing is signed and nothing verifies.
+    H.production = true;
+    try {
+      expect(markerSignature(marker)).toBeNull();
+      expect(markerBindsCommit(marker, treeSha)).toBe(false);
+      H.env = { ...CONFIGURED, secretKey: SECRET.radarSecretKey };
+      expect(markerSignature(marker)).toBe(marker.sig);
+      expect(markerBindsCommit(marker, treeSha)).toBe(true);
+    } finally { H.production = false; }
   });
 
   it('reuses a gated version 3 commit after the switch is turned off (rollback)', async () => {

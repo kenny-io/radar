@@ -17,8 +17,8 @@ import { PublishError, publishingDeadlineError, publishingDiagnosticText } from 
 import { daytonaProvider } from './daytona';
 import { articleFiles, buildPublishTask, feedbackFile, taskFile, withPinnedArchive, workspaceTooLarge } from './workspace';
 import {
-  AgentReportSchema, GATE_LIMITS, PROVIDER_ERROR_LIMITS, REPAIRABLE_GATE_CODES, RUN_OUTPUT_MAX_BYTES, RUNNER_COMMANDS, RUNNER_ENV, RUNNER_SCRIPTS, RUNNER_SOURCE_DIR,
-  RunnerResultSchema, SANDBOX_BUDGET, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, SANDBOX_PATHS, SANDBOX_TEARDOWN_FAILED_CODE, SANDBOX_WORKLOAD,
+  AGENT_TEXT, AgentReportSchema, GATE_LIMITS, PROVIDER_ERROR_LIMITS, REPAIRABLE_GATE_CODES, RUN_OUTPUT_MAX_BYTES, RUNNER_COMMANDS, RUNNER_ENV, RUNNER_SCRIPTS, RUNNER_SOURCE_DIR,
+  RunnerResultSchema, SANDBOX_BUDGET, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, SANDBOX_PATHS, SANDBOX_TEARDOWN_FAILED_CODE, SANDBOX_WORKLOAD, shortenAgentText,
   type AgentReport, type ArticleUnitsOf, type IntegrateWithSandbox, type MintPublishCapability, type PublicationGateResult, type RepairFeedback,
   type RunnerResult, type RunPublicationGate, type SandboxDiagnosticCode, type SandboxExecResult, type SandboxHandle, type SandboxIntegration,
   type SandboxIntegrationInput, type SandboxLabels,
@@ -332,21 +332,25 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
     }
 
     const { report } = collected;
-    const statement = (text: string, limit: number) => safe(text.replace(/`([^`\n]{1,200})`/g, '$1'), limit);
+    // White space is reduced to single characters first (line breaks kept for the sanitizer's line rules), so the
+    // sanitizer's own cut cannot hide how long the text is. It is then sanitized whole, to just past the limit so a
+    // longer text is known to be longer, and cut at a word boundary with a visible marker instead of inside a word.
+    const single = (text: string) => text.replace(/[\x00-\x09\x0b-\x1f\x7f]+/g, ' ').replace(/\s*\n\s*/g, '\n').replace(/[^\S\n]+/g, ' ').trim();
+    const statement = (text: string, limit: number) => shortenAgentText(safe(single(text.replace(/`([^`\n]{1,200})`/g, '$1')), limit + 2), limit);
     return {
       engine: 'sandbox',
       slug: report.slug,
       path: report.articlePath,
       files: gated.files,
-      summary: statement(report.summary, 4000),
+      summary: statement(report.summary, AGENT_TEXT.summaryChars),
       route: report.route,
       discovery: [],
       review: { summary: `Radar ran ${gated.checks.length} checks on the exact files in this change: ${gated.checks.map(check => check.id).join(', ')}. Nothing from the repository was installed, built or executed.`, runtimeVerified: false },
       draft: true,
       checks: gated.checks,
       agentNotes: {
-        conventions: report.conventions.map(note => statement(`${note.path}: ${note.rule}`, 400)).filter(Boolean),
-        deviations: report.deviations.map(note => statement(`${note.kind}: ${note.detail}`, 400)).filter(Boolean),
+        conventions: report.conventions.map(note => statement(`${note.path}: ${note.rule}`, AGENT_TEXT.noteChars)).filter(Boolean),
+        deviations: report.deviations.map(note => statement(`${note.kind}: ${note.detail}`, AGENT_TEXT.noteChars)).filter(Boolean),
       },
       notRun: [...SANDBOX_NOT_RUN],
       mediaOmitted: gated.mediaOmitted,
