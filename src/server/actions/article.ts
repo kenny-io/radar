@@ -10,9 +10,11 @@ import { startBodyImages } from '../services/drafting/bodyImages';
 import { assertArticleEditable, assertNoArticleWork, assertNoDraftWork, lockArticle } from '../services/drafting/guard';
 import { rewriteSelection } from '../services/drafting/rewrite';
 import { suggestVideos } from '../services/drafting/youtube';
-import { renderImage } from '../services/images';
+import { resolveImageDirections } from '../services/drafting/imageDirections';
+import { MODEL_STYLES, renderImageFile } from '../services/images';
 import { defaultArticle, statNumbers } from '@/features/article/blocks';
-import type { Article, Profile } from '@/lib/types';
+import { coverDirectionIsOwners, defaultCoverDirection, fallbackImageDirections, withCover } from '@/lib/articleImages';
+import type { Article, ArticleImageDirections, Profile } from '@/lib/types';
 import { recordEngagement, resolveCalendarForEntries } from '../services/lifecycle/engagement';
 
 const E = schema.calendarEntries;
@@ -50,11 +52,29 @@ async function checkMedia(bid: string, entryId: string) {
   await db.transaction(async tx => { const row = await lockArticle(tx, bid, entryId); assertArticleEditable(row.status, row.publishRemote); await assertNoArticleWork(tx, bid, entryId); });
 }
 const profileOf = (biz: any): Profile => ({ ...(biz.profile as Profile), domain: biz.domain });
-async function render(bid: string, biz: any, title: string, a: Article): Promise<Article['img']> {
+/** Render the cover and return it with its url, urlKey and placeholder mark. A direction Radar wrote is drawn literally;
+ *  one a person typed goes to the model as written. `strict`: a person asked for a new picture, so a model style never
+ *  answers with the template (a request option; it is not stored in `img.modelRequired`). */
+async function render(bid: string, biz: any, title: string, a: Article, o: { strict?: boolean } = {}): Promise<Article['img']> {
   const p = profileOf(biz);
-  const url = await renderImage({ bid, style: a.img.style, brand: p.brand, headline: title, name: p.business.name, seed: a.img.seed, prompt: a.img.prompt, modelRequired: a.img.modelRequired, w: 1200, h: 628, kind: 'hero' });
-  return { ...a.img, url, urlKey: `${a.img.style}:${a.img.seed}` };
+  const file = await renderImageFile({ bid, style: a.img.style, brand: p.brand, headline: title, name: p.business.name, seed: a.img.seed, prompt: a.img.prompt, literal: a.img.promptBy === 'radar', modelRequired: !!a.img.modelRequired || !!o.strict, w: 1200, h: 628, kind: 'hero' });
+  return withCover(a.img, file);
 }
+/** The stored cover fields with an autosave patch applied. A direction or alt text a person changed is marked theirs,
+ *  so Radar never rewrites it. The creation default (`Calm, editorial image about <keyword>`) is nobody's: a tab or an
+ *  older browser bundle that missed the draft still sends it with every image edit, so it never replaces a direction
+ *  Radar wrote and is never marked the owner's; over a direction a person typed it is stored with no author. */
+function patchedCover(before: Article['img'], patch: Partial<Pick<Article['img'], 'style' | 'prompt' | 'alt'>> | undefined, kw: string): Article['img'] {
+  let img: Article['img'] = { ...before, ...patch };
+  if (patch?.prompt !== undefined && patch.prompt !== before.prompt) {
+    if (patch.prompt.trim() !== defaultCoverDirection(kw)) img.promptBy = 'owner';
+    else if (before.promptBy === 'radar') img.prompt = before.prompt;
+    else { const { promptBy: _author, ...rest } = img; img = rest; }
+  }
+  if (patch?.alt !== undefined && patch.alt !== before.alt) img.altBy = 'owner';
+  return img;
+}
+const withoutPlaceholder = ({ placeholder: _mark, ...img }: Article['img']): Article['img'] => img;
 
 export const actions: ActionMap = {
   /** One whole article for the Article workspace; the workspace itself carries only `ArticleSummary` (first-five architecture §3.3). */
@@ -68,11 +88,13 @@ export const actions: ActionMap = {
     const { e, a, row } = await load(ctx.bid, entryId);
     if (row.status === 'published' || row.status === 'publishing') throw new RadarError('This article is locked while it’s queued or published.');
     if (patch.img) await checkMedia(ctx.bid, entryId);
-    const next: Article = { ...a, ...(patch.body ? { body: patch.body as any } : {}), brief: { ...a.brief, ...(patch.brief || {}) }, seo: { ...a.seo, ...(patch.seo || {}) }, img: { ...a.img, ...(patch.img || {}) }, ...(patch.videos ? { videos: patch.videos } : {}) };
+    const next: Article = { ...a, ...(patch.body ? { body: patch.body as any } : {}), brief: { ...a.brief, ...(patch.brief || {}) }, seo: { ...a.seo, ...(patch.seo || {}) }, img: patchedCover(a.img, patch.img, e.kw), ...(patch.videos ? { videos: patch.videos } : {}) };
     if (patch.seo?.slug != null) next.seo.slug = patch.seo.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     // A new style needs a new hero render (template styles are instant; photo styles use the image model when configured).
-    if (patch.img?.style && patch.img.style !== a.img.style && next.generated) {
-      try { next.img = await render(ctx.bid, ctx.biz, e.title, next); } catch (error) { if (next.img.modelRequired) { if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); } next.img = { ...next.img, url: null, urlKey: null }; }
+    // Not strict: a model style with no usable model stores the template with the placeholder mark, and the panel says so.
+    const restyled = !!patch.img?.style && patch.img.style !== a.img.style && next.generated;
+    if (restyled) {
+      try { next.img = await render(ctx.bid, ctx.biz, e.title, next); } catch (error) { if (next.img.modelRequired) { if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); } next.img = { ...withoutPlaceholder(next.img), url: null, urlKey: null }; }
     }
     const at = await save(ctx.bid, entryId, latest => {
       if (patch.img?.style && patch.img.style !== a.img.style && (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt || latest.img.url !== a.img.url)) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
@@ -80,24 +102,56 @@ export const actions: ActionMap = {
       ...latest,
       ...(patch.body ? { body: patch.body as Article['body'] } : {}),
       brief: { ...latest.brief, ...patch.brief }, seo: { ...latest.seo, ...patch.seo, ...(patch.seo?.slug != null ? { slug: next.seo.slug } : {}) },
-      img: { ...latest.img, ...patch.img, ...(patch.img?.style && patch.img.style !== a.img.style ? { url: next.img.url, urlKey: next.img.urlKey } : {}) },
+      // An older client sends style, prompt and alt together on any image edit, so ownership is decided against the latest copy.
+      // After a restyle the placeholder mark follows the new render: set when it fell back, removed otherwise.
+      img: (img => (restyled ? { ...withoutPlaceholder(img), url: next.img.url, urlKey: next.img.urlKey, ...(next.img.placeholder ? { placeholder: next.img.placeholder } : {}) } : img))(patchedCover(latest.img, patch.img, e.kw)),
       ...(patch.videos ? { videos: patch.videos } : {}),
     }; }, !!patch.img);
     return { ok: true, ...at };
   } }),
 
-  /** A supplied prompt explicitly requires the image model, even for an older template style. */
+  /** A supplied prompt explicitly requires the image model, even for an older template style. It is a person's wording
+   *  only when it differs from the stored direction or that direction is already theirs: the Media field is prefilled,
+   *  so "Generate from prompt" often sends back text nobody typed. Otherwise (and with no prompt, in a model style) a
+   *  drafted article gets a direction read from its current text. */
   'article.regenerateImage': action({ input: z.object({ entryId: z.string(), prompt: z.string().trim().min(1, 'Describe the image you want.').max(1000).optional() }), run: async (ctx, { entryId, prompt }) => {
-    await checkMedia(ctx.bid, entryId); // preflight before spending provider time
+    await checkMedia(ctx.bid, entryId); // role, tenant, locks and active work, before any provider time is spent
     const { e, a } = await load(ctx.bid, entryId);
-    const next = { ...a, img: { ...a.img, seed: (a.img.seed || 1) + 1, ...(prompt !== undefined ? { prompt, modelRequired: true } : {}) } };
-    try { next.img = await render(ctx.bid, ctx.biz, e.title, next); }
+    let img: Article['img'] = { ...a.img, seed: (a.img.seed || 1) + 1 };
+    let directions: ArticleImageDirections | undefined;
+    const modelStyle = MODEL_STYLES.includes(img.style);
+    const owners = coverDirectionIsOwners(a.img, e.kw);
+    const sameText = (x: string, y: string) => x.trim().replace(/\s+/g, ' ') === y.trim().replace(/\s+/g, ' ');
+    const typed = prompt !== undefined && (owners || !sameText(prompt, a.img.prompt || ''));
+    // "Generate from prompt" on a direction nobody typed: a generated picture is asked for, and the direction stays as it is.
+    const pressed = prompt !== undefined && !typed;
+    // A typed direction replaces Radar's scene, so the alt Radar wrote for that scene no longer describes the cover: it
+    // becomes the neutral built-in alt. An alt a person typed is theirs and stays.
+    const neutralAlt = typed && a.img.altBy !== 'owner' ? fallbackImageDirections(e.title, a.body, []).cover.alt : undefined;
+    if (typed) img = { ...img, prompt: prompt!, promptBy: 'owner', modelRequired: true, ...(neutralAlt !== undefined ? { alt: neutralAlt } : {}) };
+    else if (a.generated && a.body.length && (modelStyle || pressed) && !owners) {
+      // Cached on the article when the text has not changed since the last draft; otherwise one small text call.
+      directions = await resolveImageDirections(ctx.bid, profileOf(ctx.biz), e, a, { budgetMs: 20_000 });
+      img = { ...img, prompt: directions.cover.prompt, promptBy: 'radar', ...(a.img.altBy === 'owner' ? {} : { alt: directions.cover.alt }) };
+    }
+    // A person asked for a new picture: a model style, and "Generate from prompt" in any style, never answers with the
+    // template. Strict for this request only; nothing is stored that makes later renders strict. On failure the cover is kept.
+    try { img = await render(ctx.bid, ctx.biz, e.title, { ...a, img }, { strict: modelStyle || pressed }); }
     catch (error: any) { console.error('[article] cover generation failed', error?.message); if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); }
     await save(ctx.bid, entryId, latest => {
       if (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt || latest.img.url !== a.img.url) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');
-      return { ...latest, img: { ...latest.img, url: next.img.url, urlKey: next.img.urlKey, seed: next.img.seed, prompt: next.img.prompt, modelRequired: next.img.modelRequired } };
+      return {
+        ...latest,
+        img: {
+          ...withoutPlaceholder(latest.img), url: img.url, urlKey: img.urlKey, seed: img.seed, prompt: img.prompt, modelRequired: img.modelRequired,
+          ...(img.promptBy ? { promptBy: img.promptBy } : {}),
+          ...((directions || neutralAlt !== undefined) && latest.img.altBy !== 'owner' ? { alt: img.alt } : {}),
+          ...(img.placeholder ? { placeholder: img.placeholder } : {}),
+        },
+        ...(directions ? { imageDirections: directions } : {}),
+      };
     }, true);
-    return { url: next.img.url, seed: next.img.seed };
+    return { url: img.url, seed: img.seed };
   } }),
 
   'article.regenerateBodyImages': action({ input: z.object({ entryId: z.string().min(1).max(100) }), run: async (ctx, { entryId }) => ({ jobId: await startBodyImages(ctx.bid, entryId) }) }),

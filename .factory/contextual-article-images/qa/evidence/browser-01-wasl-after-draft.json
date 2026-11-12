@@ -1,0 +1,39 @@
+{
+    "img": {
+        "alt": "Illustration of Wasl 611 Reviews: Tenant Ratings and What to Check First",
+        "url": "/api/files/0ed73cba-ab99-4365-8852-63f50644879e/hero/1794516137738-IN9S4JL6.png",
+        "seed": 1,
+        "style": "branded",
+        "prompt": "A wide street-level view of the place that Wasl 611 Reviews: Tenant Ratings and What to Check First is about, seen from outside in daylight.",
+        "urlKey": "branded:1",
+        "promptBy": "radar"
+    },
+    "blocks": 12,
+    "status": "review",
+    "bodyImages": [
+    ],
+    "bodyImagesIssue": {
+        "at": "2026-11-12T20:42:17.756Z",
+        "reason": "unavailable"
+    },
+    "imageDirections": {
+        "at": "2026-11-12T20:42:17.436Z",
+        "key": "d91d9b7e5c41c0668ff3abf9",
+        "cover": {
+            "alt": "Illustration of Wasl 611 Reviews: Tenant Ratings and What to Check First",
+            "prompt": "A wide street-level view of the place that Wasl 611 Reviews: Tenant Ratings and What to Check First is about, seen from outside in daylight."
+        },
+        "source": "ai",
+        "subject": null,
+        "sections": [
+            {
+                "alt": "Illustration of What wasl 611 reviews really involves",
+                "prompt": "A close view of a desk where someone is busy with What wasl 611 reviews really involves, with a notebook and a cup beside a laptop."
+            },
+            {
+                "alt": "Illustration of Where tools help",
+                "prompt": "An interior room connected with Where tools help, seen from the doorway, with furniture near a bright window."
+            }
+        ]
+    }
+}

@@ -1,0 +1,92 @@
+## 1. New draft, image model answers (faked provider)
+job: done; entry: review
+img: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/215331a1-8b87-4e50-a2f0-e0d7babf417c/hero/1794517206940-8VSE25xw.png","seed":1,"style":"illustration","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight.","urlKey":"illustration:1","promptBy":"radar"}
+imageDirections: {"at":"2026-11-12T21:00:06.650Z","key":"118b6fd1b81a95c48bdba967","cover":{"alt":"Illustration of Wasl 611 seen from its entrance gate","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight."},"source":"ai","subject":{"kind":"building","name":"Wasl 611"},"sections":[{"alt":"Illustration of What wasl 611 reviews really involves","prompt":"A furnished bedroom with two single beds and a wardrobe, seen from the doorway."},{"alt":"Illustration of Where tools help","prompt":"A staff bus waiting beside a main gate in the early morning, with workers boarding."}]}
+bodyImages: [{"id":"abi_Z8HyBN28","alt":"Illustration of What wasl 611 reviews really involves","url":"/api/files/215331a1-8b87-4e50-a2f0-e0d7babf417c/article-body/1794517206964-ZZLVQ-bT.png","seed":2,"after":{"block":2,"heading":"what wasl 611 reviews really involves","occurrence":0},"prompt":"A furnished bedroom with two single beds and a wardrobe, seen from the doorway."},{"id":"abi_c4LbbEtB","alt":"Illustration of Where tools help","url":"/api/files/215331a1-8b87-4e50-a2f0-e0d7babf417c/article-body/1794517206987-heXNle4c.png","seed":3,"after":{"block":9,"heading":"where tools help","occurrence":0},"prompt":"A staff bus waiting beside a main gate in the early morning, with workers boarding."}]
+bodyImagesIssue: null
+provider request 0: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 1. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+provider request 1: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: A furnished bedroom with two single beds and a wardrobe, seen from the doorway. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 2. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+provider request 2: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: A staff bus waiting beside a main gate in the early morning, with workers boarding. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 3. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+ai_calls: [{"task":"research","purpose":"article.research","provider":"Anthropic","model":"claude-opus-5.5","ok":true},{"task":"premium","purpose":"article.draft","provider":"Anthropic","model":"claude-fable-5.2","ok":true},{"task":"utility","purpose":"article.destat","provider":"Anthropic","model":"claude-haiku-5.5","ok":true},{"task":"utility","purpose":"article.imageDirections","provider":"Anthropic","model":"claude-haiku-5.5","ok":true},{"task":"utility","purpose":"article.meta","provider":"Anthropic","model":"claude-haiku-5.5","ok":true},{"task":"image","purpose":"image.hero","provider":"OpenAI","model":"gpt-image-1","ok":true},{"task":"image","purpose":"image.article-body","provider":"OpenAI","model":"gpt-image-1","ok":true},{"task":"image","purpose":"image.article-body","provider":"OpenAI","model":"gpt-image-1","ok":true}]
+
+## 2. One bad slot
+section prompts: ["A literal, realistic scene showing What wasl 611 reviews really involves, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. At its core, wasl 611 reviews is about making a decision once so you don’t have to make it every week. Start with what your clients already expect, then decide what you’re willing to change.","A staff bus waiting beside a main gate in the early morning, with workers boarding."]
+
+## 3. Direction step fails
+throws: job=done, entry=review, source=fallback, subject=null, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. If you’re one of the tenants who has looked into wasl 611 reviews, you’ve probably found advice written for much bigger teams. The trade-offs are different when you do the work yourself — and simpler than they look.
+returns an object of the wrong shape: job=done, entry=review, source=fallback, subject=null, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. If you’re one of the tenants who has looked into wasl 611 reviews, you’ve probably found advice written for much bigger teams. The trade-offs are different when you do the work yourself — and simpler than they look.
+returns every slot unusable: job=done, entry=review, source=fallback, subject=null, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. If you’re one of the tenants who has looked into wasl 611 reviews, you’ve probably found advice written for much bigger teams. The trade-offs are different when you do the work yourself — and simpler than they look.
+
+## 4. Owner-typed direction
+after typing: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/7f7b3545-8bad-48c6-9a33-c1f179554d1a/hero/1794517216659-n8JI1BDD.png","seed":1,"style":"illustration","prompt":"A watercolour of the Al Warsan skyline at dusk, seen from a rooftop","urlKey":"illustration:1","promptBy":"owner"}
+after "Rewrite from brief": job=done; img={"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/7f7b3545-8bad-48c6-9a33-c1f179554d1a/hero/1794517216659-n8JI1BDD.png","seed":1,"style":"illustration","prompt":"A watercolour of the Al Warsan skyline at dusk, seen from a rooftop","urlKey":"illustration:1","promptBy":"owner"}
+provider request 0: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: A furnished bedroom with two single beds and a wardrobe, seen from the doorway. Overall look the owner asked for: A watercolour of the Al Warsan skyline at dusk, seen from a rooftop. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 4. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+provider request 1: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: A staff bus waiting beside a main gate in the early morning, with workers boarding. Overall look the owner asked for: A watercolour of the Al Warsan skyline at dusk, seen from a rooftop. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 5. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+after "Generate from prompt": {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/7f7b3545-8bad-48c6-9a33-c1f179554d1a/hero/1794517218460-g-JOVQrC.png","seed":2,"style":"illustration","prompt":"A watercolour of the Al Warsan skyline at dusk, seen from a rooftop","urlKey":"illustration:2","promptBy":"owner","modelRequired":true}
+provider request: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Subject: A watercolour of the Al Warsan skyline at dusk, seen from a rooftop. Made for Lived QA's blog. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 2. No words, letters, numbers, logos or watermarks anywhere in the image.
+
+## 5. Provider answers 503 during a new draft
+job=done; entry=review
+img: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/6da7dded-49d7-4d83-a4a6-e07430b5ae5a/hero/1794517220323-PzaLYDYi.png","seed":1,"style":"illustration","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight.","urlKey":"illustration:1","promptBy":"radar","placeholder":{"at":"2026-11-12T21:00:20.323Z","reason":"failed"}}
+bodyImages: []; issue: {"at":"2026-11-12T21:00:20.326Z","reason":"failed"}
+stored objects: ["hero"]
+Regenerate while failing: {"status":502,"body":{"ok":false,"error":"Radar couldn’t generate this image. Your previous cover is kept. Try again.","code":"image_failed"}}
+after a successful Regenerate: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/6da7dded-49d7-4d83-a4a6-e07430b5ae5a/hero/1794517220381-qCLXHltT.png","seed":2,"style":"illustration","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight.","urlKey":"illustration:2","promptBy":"radar"}; direction calls: 0
+after a successful body-image job: ["A furnished bedroom with two single beds and a wardrobe, seen from the doorway.","A staff bus waiting beside a main gate in the early morning, with workers boarding."]; issue present: false
+
+## 6. Legacy article
+stored before: {"style":"illustration","seed":4,"prompt":"Calm, editorial image about wasl 611 reviews","alt":"Old alt","url":"/api/files/78434bf7-18f3-404a-a28c-f7d622026532/hero/old.png","urlKey":"illustration:4"}
+after Regenerate: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/78434bf7-18f3-404a-a28c-f7d622026532/hero/1794517220607-RRQf07lv.png","seed":5,"style":"illustration","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight.","urlKey":"illustration:5","promptBy":"radar"}
+provider request: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 5. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+after the body-image job: [{"prompt":"A furnished bedroom with two single beds and a wardrobe, seen from the doorway.","alt":"Illustration of What tenants say about the rooms"},{"prompt":"A staff bus waiting beside a main gate in the early morning, with workers boarding.","alt":"Illustration of What to check before you sign"}]; direction calls: 0
+legacy typed direction after Regenerate: {"alt":"Old alt","url":"/api/files/3636f3ff-da10-4fa3-9ef5-5bdbda6f11cf/hero/1794517220762-lZPNXame.png","seed":5,"style":"illustration","prompt":"Calm, editorial image about wasl 611 reviews, at sunset","urlKey":"illustration:5"}
+
+## 7. Stale tab sends the old default direction back
+before: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/025b1d2f-81ed-41f9-93e7-abbcdb3425ff/hero/1794517222562-CMOeXViv.png","seed":1,"style":"illustration","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight.","urlKey":"illustration:1","promptBy":"radar"}
+patch:  {"style":"illustration","prompt":"Calm, editorial image about wasl 611 reviews","alt":"A new alt typed in a stale tab"}
+reply 200; after: {"alt":"A new alt typed in a stale tab","url":"/api/files/025b1d2f-81ed-41f9-93e7-abbcdb3425ff/hero/1794517222562-CMOeXViv.png","seed":1,"altBy":"owner","style":"illustration","prompt":"Calm, editorial image about wasl 611 reviews","urlKey":"illustration:1","promptBy":"owner"}
+after a later rewrite: {"alt":"A new alt typed in a stale tab","url":"/api/files/025b1d2f-81ed-41f9-93e7-abbcdb3425ff/hero/1794517222562-CMOeXViv.png","seed":1,"altBy":"owner","style":"illustration","prompt":"Calm, editorial image about wasl 611 reviews","urlKey":"illustration:1","promptBy":"owner"}
+body request 0: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: A furnished bedroom with two single beds and a wardrobe, seen from the doorway. Overall look the owner asked for: Calm, editorial image about wasl 611 reviews. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived QA's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 4. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+=> the generic sentence is now treated as the owner's: promptBy=owner, prompt=Calm, editorial image about wasl 611 reviews
+
+## 8. Boundaries
+outsider article.get: 404 {"ok":false,"error":"Business wasn’t found.","code":"not_found"}
+outsider article.save: 404 {"ok":false,"error":"Business wasn’t found.","code":"not_found"}
+outsider article.regenerateImage: 404 {"ok":false,"error":"Business wasn’t found.","code":"not_found"}
+outsider article.regenerateBodyImages: 404 {"ok":false,"error":"Business wasn’t found.","code":"not_found"}
+other business article.get: 404 {"ok":false,"error":"That article wasn’t found.","code":"not_found"}
+other business article.save: 404 {"ok":false,"error":"That article wasn’t found.","code":"not_found"}
+other business article.regenerateImage: 404 {"ok":false,"error":"That article wasn’t found.","code":"not_found"}
+other business article.regenerateBodyImages: 404 {"ok":false,"error":"That article wasn’t found.","code":"not_found"}
+viewer article.get: 200; sees placeholder: true; sees bodyImagesIssue: true
+viewer article.save: 403
+viewer article.regenerateImage: 403
+viewer article.regenerateBodyImages: 403
+viewer article.draft: 403
+owner autosave with forged fields: 200; article unchanged: true
+owner article.regenerateImage while scheduled: 409 article_locked
+owner article.regenerateBodyImages while scheduled: 409 article_locked
+owner restyle while scheduled: 409
+owner article.regenerateImage while publishing: 409 article_locked
+owner article.regenerateBodyImages while publishing: 409 article_locked
+owner restyle while publishing: 400
+owner article.regenerateImage while published: 409 article_locked
+owner article.regenerateBodyImages while published: 409 article_locked
+owner restyle while published: 400
+
+## 9. Publishing
+placeholder cover, bodyImages []: html has figure=false, html has <img=false, markdown has image=false, payload.bodyImages=[], cover=http://localhost:3000/api/files/3f3ff8eb-3104-430c-82e6-b01fd88ac025/hero/1794517228034-Ii5w544-.png
+publishEntry: {"status":"published","url":"https://lived.test/post"}
+legacy with two body images: html figures=2, markdown images=2, keys added to the stored article=[], keys added to img=[]
+legacy html excerpt: <figure class="radar-body-image"><img src="<origin>/api/files/2b63835f-9cdd-483f-8b9a-757614ea95b5/article-body/l1.png" alt="Legacy body one" width="1200" height="675" loading="lazy" /></figure>
+
+## 11. Observations
+(a) legacy hand-written alt after "Rewrite from brief": "Illustration of Wasl 611 seen from its entrance gate" (was: "Front gate of Wasl 611 at dusk, hand-written by the owner in October")
+(b) no image model: two Regenerate clicks -> 503 image_unavailable, 503 image_unavailable; direction text calls made and thrown away: 2; article unchanged: true
+(b) no image model: one "Add body images" click -> job queued after the first attempt, queued after the second (the queue allows two); direction text calls in total now: 4
+
+## 10. Provider answers 402 (no credit), the outage in the brief
+job=done; entry=review
+img: {"alt":"Illustration of Wasl 611 seen from its entrance gate","url":"/api/files/228aa200-9989-4ce9-871f-77cab15bbe3b/hero/1794517232196-_8BQlz4S.png","seed":1,"style":"illustration","prompt":"The exterior of Wasl 611, a gated staff accommodation community, seen from outside the entrance gate in daylight.","urlKey":"illustration:1","promptBy":"radar","placeholder":{"at":"2026-11-12T21:00:32.196Z","reason":"unavailable"}}
+bodyImages: []; issue: {"at":"2026-11-12T21:00:32.201Z","reason":"unavailable"}
+Regenerate: {"status":503,"body":{"ok":false,"error":"Image generation is temporarily unavailable. Your previous image is kept. Please contact support.","code":"image_unavailable"}}

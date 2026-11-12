@@ -1,0 +1,598 @@
+
+### good answer, named building with a number in its name
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### text: a sign reading
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### text: quoted wording
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### text: straight quotes
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### text: caption
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### text: chart
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### text: infographic
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### symbolic: metaphor
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"symbolic"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### symbolic: abstract
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"symbolic"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### symbolic: symbolising
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"symbolic"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+REJECTED (expected a reason for each): {"sign reading":"asks for writing","quoted wording":"asks for writing","straight quotes":"asks for writing","caption":"asks for writing","chart":"asks for writing","infographic":"asks for writing","metaphor":"symbolic","abstract":"symbolic","symbolising":"symbolic"}
+
+### miss: the word X painted on
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A shop window near Wasl 611 with the word SALE painted across the glass in large type.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### miss: sign showing the name
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The entrance gate of Wasl 611 with a large sign showing the name of the community above it.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### miss: written on a whiteboard
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A whiteboard in the Wasl 611 office with the house rules written on it in marker pen.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### miss: single quotes
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The entrance gate of Wasl 611 with a board that shows ‘Rooms available’ beside the barrier.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### miss: price list poster
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A poster listing room prices pinned to the notice board in the lobby of Wasl 611.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### miss: icons and collage
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A collage of icons for beds, buses and kitchens arranged around the Wasl 611 building.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### miss: split screen
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A split screen comparing a tidy room and an untidy room inside Wasl 611 staff accommodation.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+FALSE-ACCEPT PROBES (null = accepted by the validator): {"the word SALE painted":null,"sign that shows the name":null,"written on a whiteboard":null,"single-quoted wording":null,"price list poster":null,"icon collage":null,"split screen":null}
+
+### ok: Wasl 611 named
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The exterior of Wasl 611 in Al Warsan, Dubai, seen from the street outside the main gate.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### ok: a road sign without wording
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The main gate of Wasl 611 with a blank road sign and a barrier, seen from the street.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### ok: the word number
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A large number of staff waiting for the bus outside the main gate of Wasl 611 in the morning.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### ok: signs then reading
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A quiet lounge in Wasl 611 with blank signs, reading chairs and a low table by the window.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### ok?: words reading
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A tenant sitting on a single bed in Wasl 611, with few words, reading a paperback in the afternoon.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### ok: 131 ensuite rooms
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A corridor inside Wasl 611 lined with doors to some of its 131 ensuite rooms.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### ok: 15 minutes
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A staff bus on the road from Al Warsan towards a metro station about 15 minutes away. The subject shown is Wasl 611.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: luggage label
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: says no logo
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: a place called Chart House
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: graph paper
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: headline
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: the word abstract in a literal sense
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"symbolic"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: conceptual
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"symbolic"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### rejected?: inch marks
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+FALSE-REJECTION PROBES (null = kept): {"number-named building":null,"the word sign":null,"the word number":null,"signs, reading":null,"person reading text messages":null,"number in article 131":null,"number in article 15":null,"label as a noun for a thing":"asks for writing","logo-free building":"asks for writing","chart house":"asks for writing","graph paper":"asks for writing","headline act":"asks for writing","abstract of title":"symbolic","conceptual":"symbolic","inches":"asks for writing"}
+
+### number: 33 low-rise blocks (not in article)
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"number not in the article"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 12-storey
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"number not in the article"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 611, then comma
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The gate of Wasl 611, with three buildings behind it in Al Warsan, Dubai.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 611 at sentence end
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: Three residential buildings behind a gate in Al Warsan, Dubai. This is Wasl 611.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 61 is a substring of 611
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"number not in the article"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 1 alone
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"number not in the article"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 1,310
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"number not in the article"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: 1st floor
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"number not in the article"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: spelled out (not checked)
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The exterior of Wasl 611, a community of thirty-three low-rise blocks in Al Warsan, Dubai.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### number: Arabic-Indic digits (not checked)
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The exterior of Wasl 611, a community of ٣٣ low-rise blocks in Al Warsan, Dubai.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+NUMBER PROBES: {"invented 33":"number not in the article","invented 12-storey":"number not in the article","611 with comma":null,"611 with full stop":null,"substring 61":"number not in the article","substring 1":"number not in the article","1,310 vs 131":"number not in the article","ordinal 1st":"number not in the article","spelled out":null,"arabic-indic digits":null}
+
+### near-duplicate of the cover, and two identical sections
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"section 0","why":"repeats another picture"},{"slot":"section 2","why":"repeats another picture"}]
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### three different scenes that all name the subject and place
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: An ensuite room inside Wasl 611 staff accommodation in Al Warsan, Dubai, with two single beds and a wardrobe.  || alt: Illustration of What tenants say about the rooms
+section 1: The staff bus outside the main gate of Wasl 611 staff accommodation in Al Warsan, Dubai, in the morning.  || alt: Illustration of What to check before you sign
+section 2: The shared kitchen inside Wasl 611 staff accommodation in Al Warsan, Dubai, with counters and cooking hobs.  || alt: Illustration of Is Wasl 611 right for your team
+  -> replaced for sharing the subject: []
+
+### section numbers out of range
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### section number repeated (first one wins)
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"section 2","why":"missing"}]
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### section numbers 0.5 and "1"
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: all empty strings
+subject: null
+replaced: [{"slot":"cover","why":"too short"},{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: no cover
+subject: null
+replaced: [{"slot":"cover","why":"missing"},{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: no sections key
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: [{"slot":"cover","why":"too short"},{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: empty object
+subject: null
+replaced: [{"slot":"cover","why":"missing"},{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: cover without alt
+subject: null
+replaced: [{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: The exterior of a residential building behind a gate in Al Warsan, Dubai.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: section without alt or direction
+subject: null
+replaced: [{"slot":"cover","why":"too short"},{"slot":"section 0","why":"too short"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed: numbers where strings belong
+subject: {"name":"611","kind":"building"}
+replaced: [{"slot":"cover","why":"too short"},{"slot":"section 0","why":"too short"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed (not an object): null
+THREW TypeError: Cannot read properties of null (reading 'subject')
+
+### malformed (not an object): undefined
+THREW TypeError: Cannot read properties of undefined (reading 'subject')
+
+### malformed (not an object): a string
+subject: null
+replaced: [{"slot":"cover","why":"missing"},{"slot":"section 0","why":"missing"},{"slot":"section 1","why":"missing"},{"slot":"section 2","why":"missing"}]
+cover: A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A literal, realistic scene showing What tenants say about the rooms, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Rooms are ensuite and furnished with two single beds and a wardrobe. Several reviews mention the air conditioning and the laundry room on the ground floor.  || alt: Illustration of What tenants say about the rooms
+section 1: A literal, realistic scene showing What to check before you sign, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Check the deposit terms, the notice period and who pays for utilities. Visit the shared kitchen and the laundry room in person.  || alt: Illustration of What to check before you sign
+section 2: A literal, realistic scene showing Is Wasl 611 right for your team, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. It suits employers who need many rooms in one place. Compare it with other staff accommodation in Dubai before deciding.  || alt: Illustration of Is Wasl 611 right for your team
+
+### malformed (not an object): section null
+THREW TypeError: Cannot read properties of null (reading 'i')
+
+INPUTS ON WHICH cleanImageDirections ITSELF THROWS (resolveImageDirections must absorb these): ["null: TypeError: Cannot read properties of null (reading 'subject')","undefined: TypeError: Cannot read properties of undefined (reading 'subject')","section null: TypeError: Cannot read properties of null (reading 'i')"]
+
+### subject not in the article
+subject: null
+replaced: []
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### subject given with kind none
+subject: null
+replaced: []
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### subject in another case and with doubled spaces
+subject: {"name":"WASL 611","kind":"building"}
+replaced: []
+cover: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight.  || alt: Illustration of Wasl 611 staff accommodation in Al Warsan, Dubai
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### cover that omits the subject, alt that omits it
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+cover: A gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from the street. The subject shown is Wasl 611.  || alt: Illustration of Wasl 611
+section 0: An ensuite room furnished with two single beds and a wardrobe, seen from the doorway, with an air conditioning unit on the wall.  || alt: Illustration of What tenants say about the rooms
+section 1: A staff bus waiting at the main gate of a residential community in the early morning, with workers boarding.  || alt: Illustration of What to check before you sign
+section 2: A shared kitchen with counters and cooking hobs, with a person inspecting the cupboards during a visit.  || alt: Illustration of Is Wasl 611 right for your team
+
+### subject named Chart House (name contains a refused word)
+subject: {"name":"Chart House","kind":"building"}
+replaced: []
+cover: The exterior of Chart House, a low-rise residential building near the marina, seen from the street.  || alt: Illustration of Chart House
+section 0: A furnished bright room with a balcony door standing open.  || alt: Illustration of Rooms
+section 1: A bus stop outside the entrance of a low-rise residential building.  || alt: Illustration of Transport
+  -> Chart House cover replaced: []
+
+### subject with a straight apostrophe where the article uses a curly one
+subject: null
+replaced: []
+cover: The exterior of Queen's Wharf Tower, a residential high-rise beside the river, seen from the far bank.  || alt: Illustration of Queen's Wharf Tower
+section 0: A flat with an open kitchen and a dining table near the window.  || alt: Illustration of Flats
+  -> subject kept when only the apostrophe differs: null
+
+### 2 MB direction
+subject: {"name":"Wasl 611","kind":"building"}
+replaced: []
+  2 MB direction: 301 ms, threw="", cover kept at 2120065 chars, alt cut to 24 chars
+  unterminated 200k quote: 4 ms
+
+### Arabic article, English directions, Arabic alt, subject as the article writes it
+subject: {"name":"وصل 611","kind":"building"}
+replaced: []
+cover: The exterior of a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the gate. The subject shown is وصل 611.  || alt: رسم توضيحي لمجمع وصل 611 السكني
+section 0: A furnished room with two single beds and a wardrobe, seen from the doorway.  || alt: رسم توضيحي: ماذا يقول المستأجرون عن الغرف
+section 1: A staff bus leaving a main gate in the morning light.  || alt: رسم توضيحي: الوصول إلى العمل
+  -> Arabic: replaced []
+  -> Arabic fallback cover: A literal, realistic scene showing the subject of an article titled مراجعات وصل 611: تقييمات المستأجرين وما يجب التحقق منه أولاً. وصل 611 مجمع سكني للموظفين مسوّر يتكون من ثلاثة مبانٍ في الورسان، دبي. || Illustration for مراجعات وصل 611: تقييمات المستأجرين وما يجب التحقق منه أولاً
+
+### Chinese article: two identical Chinese directions (does the duplicate check see them?)
+subject: null
+replaced: []
+cover: 迪拜一栋员工宿舍楼的外观，从大门外看过去，白天，三栋建筑并排而立，门口有保安亭。  || alt: Illustration for 迪拜员工宿舍评价
+section 0: 迪拜一栋员工宿舍楼的外观，从大门外看过去，白天，三栋建筑并排而立，门口有保安亭。  || alt: Illustration of 房间
+section 1: 迪拜一栋员工宿舍楼的外观，从大门外看过去，白天，三栋建筑并排而立，门口有保安亭。  || alt: Illustration of 交通
+  -> identical non-Latin directions replaced as duplicates: []
+
+### dev stub answer, title: Wasl 611 Reviews: Tenant Ratings and What to Check First
+subject: null
+replaced: []
+cover: A wide street-level view of the place that Wasl 611 Reviews: Tenant Ratings and What to Check First is about, seen from outside in daylight.  || alt: Illustration of Wasl 611 Reviews: Tenant Ratings and What to Check First
+section 0: A close view of a desk where someone is busy with What tenants say about the rooms, with a notebook and a cup beside a laptop.  || alt: Illustration of What tenants say about the rooms
+section 1: An interior room connected with What to check before you sign, seen from the doorway, with furniture near a bright window.  || alt: Illustration of What to check before you sign
+section 2: An outdoor path linked to Is Wasl 611 right for your team, seen from above, with plants and paving stones around it.  || alt: Illustration of Is Wasl 611 right for your team
+  -> stub slots replaced: []
+
+### dev stub answer, title: How to Design a Logo: “Simple” Rules
+subject: null
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled How to Design a Logo: “Simple” Rules. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for How to Design a Logo: “Simple” Rules
+section 0: A close view of a desk where someone is busy with What tenants say about the rooms, with a notebook and a cup beside a laptop.  || alt: Illustration of What tenants say about the rooms
+section 1: An interior room connected with What to check before you sign, seen from the doorway, with furniture near a bright window.  || alt: Illustration of What to check before you sign
+section 2: An outdoor path linked to Is Wasl 611 right for your team, seen from above, with plants and paving stones around it.  || alt: Illustration of Is Wasl 611 right for your team
+  -> stub slots replaced: [{"slot":"cover","why":"asks for writing"}]
+
+### dev stub answer, title: Abstract Art for Offices
+subject: null
+replaced: [{"slot":"cover","why":"symbolic"}]
+cover: A literal, realistic scene showing the subject of an article titled Abstract Art for Offices. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for Abstract Art for Offices
+section 0: A close view of a desk where someone is busy with What tenants say about the rooms, with a notebook and a cup beside a laptop.  || alt: Illustration of What tenants say about the rooms
+section 1: An interior room connected with What to check before you sign, seen from the doorway, with furniture near a bright window.  || alt: Illustration of What to check before you sign
+section 2: An outdoor path linked to Is Wasl 611 right for your team, seen from above, with plants and paving stones around it.  || alt: Illustration of Is Wasl 611 right for your team
+  -> stub slots replaced: [{"slot":"cover","why":"symbolic"}]
+
+### dev stub answer, title: 10 Charts Every Landlord Needs
+subject: null
+replaced: [{"slot":"cover","why":"asks for writing"}]
+cover: A literal, realistic scene showing the subject of an article titled 10 Charts Every Landlord Needs. Wasl 611 is a gated staff accommodation community of three buildings in Al Warsan, Dubai, with 131 ensuite rooms. Tenants rate it for the shared kitchens and the staff bus.  || alt: Illustration for 10 Charts Every Landlord Needs
+section 0: A close view of a desk where someone is busy with What tenants say about the rooms, with a notebook and a cup beside a laptop.  || alt: Illustration of What tenants say about the rooms
+section 1: An interior room connected with What to check before you sign, seen from the doorway, with furniture near a bright window.  || alt: Illustration of What to check before you sign
+section 2: An outdoor path linked to Is Wasl 611 right for your team, seen from above, with plants and paving stones around it.  || alt: Illustration of Is Wasl 611 right for your team
+  -> stub slots replaced: [{"slot":"cover","why":"asks for writing"}]
+
+resolve: ai.run rejects with an Error -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run rejects with a string -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run rejects with undefined -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run json is null -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run json is undefined -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run json is a string -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run json is an empty object -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run json has sections: [null] -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run resolves to undefined -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run json is an array -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run every slot unusable -> source=fallback, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tena…
+
+resolve: ai.run never answers -> source=fallback after 303 ms (budget 300)
+
+resolve: empty body -> source=fallback, sections=0, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check F
+
+resolve: one paragraph -> source=fallback, sections=1, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check F
+
+resolve: headings only -> source=fallback, sections=0, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check F
+
+resolve: huge -> source=fallback, sections=3, cover=A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check F

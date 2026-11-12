@@ -1,19 +1,22 @@
 // Article drafting (02-system.md §7): research first (web search + the user's own pages + Search Console), then stream
-// the article with the writing model, map every statistic to a source, never invent statistics, then render the hero.
+// the article with the writing model, map every statistic to a source, never invent statistics, read the finished text
+// for what its pictures should show, then render the hero and the body images.
 import { RadarError } from '@/server/errors';
 import { z } from 'zod';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { ai, profileContext } from '../../ai';
-import { renderImage, defaultArticleImageStyle } from '../images';
+import { renderImageFile, defaultArticleImageStyle, MODEL_STYLES } from '../images';
 import { normKw, topQueries } from '../gsc/metrics';
 import { fmtN, slugify } from '@/lib/format';
 import { blockText, defaultArticle, extractClaims, normNum, parseBlocks, splitStream, statNumbers } from '@/features/article/blocks';
 import { tokens } from '../calendar/research';
-import type { Article, Block, CalendarEntry, Profile, Source } from '@/lib/types';
+import { coverDirectionIsOwners, withCover } from '@/lib/articleImages';
+import type { Article, ArticleBodyImage, Block, CalendarEntry, Profile, Source } from '@/lib/types';
 import type { JobCtx } from '../../jobs/queue';
 import './stubs';
 import { generateArticleBodyImages } from './bodyImages';
+import { resolveImageDirections } from './imageDirections';
 
 const MARKS = /\s*\[\d{1,2}\]/g;
 const ResearchOut = z.object({ sources: z.array(z.object({ title: z.string(), url: z.string(), use: z.string(), notes: z.array(z.string()) })) });
@@ -145,6 +148,10 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
     claims = claims.filter(c => { const b = body[c.block]; return b && blockText(b).includes(c.text); });
   }
 
+  // What the cover and each body image should show, read from the text that is now final. Never throws: a failed
+  // step returns directions built from the title, headings and section text. Always fresh: the body is new.
+  const dir = await resolveImageDirections(bid, profile, e, { ...a, body }, { fresh: true });
+
   // SEO + alt text.
   const keepSeo = a.generated || a.seo.meta || (a.seo.title && a.seo.title !== e.title);
   let seo = { ...a.seo };
@@ -167,17 +174,44 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   if (!seo.slug) seo.slug = slugify(e.kw);
 
   // Hero image (1200×628) in the article's style.
-  const img = { ...a.img, alt };
+  let img: Article['img'] = { ...a.img, alt };
   // Entries created before AI images were available kept the template default; upgrade it on the first real draft
   // unless the user picked a style themselves (the default direction text is untouched).
   if (img.style === 'branded' && !(a.body || []).length && /^Calm, editorial image about /.test(img.prompt || '') && defaultArticleImageStyle() === 'illustration') img.style = 'illustration';
   const key = `${img.style}:${img.seed}`;
-  if (!img.url || img.urlKey !== key) {
-    try { img.url = await renderImage({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: img.prompt, modelRequired: img.modelRequired, w: 1200, h: 628, kind: 'hero' }); img.urlKey = key; }
-    catch (err: any) { console.error('[draft] image failed', err?.message); if (img.modelRequired) throw err; img.url = null; img.urlKey = null; }
+  const hadCover = !!a.img.url && a.img.urlKey === key;
+  const owners = coverDirectionIsOwners(a.img, e.kw);
+  const modelStyle = MODEL_STYLES.includes(img.style);
+  // Take Radar's new direction when there is no usable cover, the cover is a placeholder, or it predates contextual directions.
+  const adopt = !owners && (!hadCover || !!a.img.placeholder || a.img.promptBy !== 'radar');
+  const next: Partial<Article['img']> = adopt ? { prompt: dir.cover.prompt, promptBy: 'radar', ...(a.img.altBy !== 'owner' && (a.generated || !a.img.alt) ? { alt: dir.cover.alt } : {}) } : {};
+  const render = !hadCover || (adopt && modelStyle);
+  const strict = !!img.modelRequired || hadCover; // an existing picture is never replaced by a template
+  if (render) {
+    try {
+      img = withCover({ ...img, ...next }, await renderImageFile({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: next.prompt ?? img.prompt, literal: (next.promptBy ?? img.promptBy) === 'radar', modelRequired: strict, w: 1200, h: 628, kind: 'hero' }));
+    } catch (err: any) {
+      console.error('[draft] image failed', err?.message);
+      if (hadCover) { /* keep the cover and its direction exactly as they were; the next rewrite tries again */ }
+      else if (img.modelRequired) throw err; // a missing custom cover is never downgraded
+      else { const { placeholder: _stale, ...rest } = img; img = { ...rest, ...next, url: null, urlKey: null }; }
+    }
+  } else if (adopt) img = { ...img, ...next };
+  if (owners) img.promptBy = 'owner';
+
+  // Body images are never a template. When they cannot be made (no image model, a provider or storage failure) the
+  // draft still completes without them, and the article records why so the Media panel can say so and offer a retry.
+  let bodyImages: ArticleBodyImage[] = []; let issue: 'unavailable' | 'failed' | null = null;
+  try { bodyImages = await generateArticleBodyImages({ businessId: bid, progress: p => ctx.progress({ ...p, blocks: body, partial: '' }) }, e, { ...a, body, img }, profile, dir); }
+  catch (err: any) {
+    if (err?.code === 'empty_article') throw err;
+    console.error('[draft] body images left out', err?.message);
+    issue = err?.code === 'image_unavailable' ? 'unavailable' : 'failed';
   }
-  const bodyImages = await generateArticleBodyImages({ businessId: bid, progress: p => ctx.progress({ ...p, blocks: body, partial: '' }) }, e, { ...a, body, img }, profile);
-  return { ...a, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: new Date().toISOString(), sources, claims, draftedAt: new Date().toISOString() };
+  const now = new Date().toISOString();
+  const { bodyImagesIssue: _previous, ...kept } = a;
+  // bodyImagesGeneratedAt is set either way: it also keeps an older failed body-image job from showing as the current error.
+  return { ...kept, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: now, imageDirections: dir, ...(issue ? { bodyImagesIssue: { reason: issue, at: now } } : {}), sources, claims, draftedAt: now };
 }
 
 interface Bad { block: number; item: number | null; sentence: string }

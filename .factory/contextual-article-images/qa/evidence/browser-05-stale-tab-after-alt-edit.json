@@ -1,0 +1,15 @@
+{
+    "img": {
+        "alt": "Harbour Court from the street",
+        "url": "/api/files/0ed73cba-ab99-4365-8852-63f50644879e/hero/1794516605256-L3qZxomP.png",
+        "seed": 1,
+        "altBy": "owner",
+        "style": "branded",
+        "prompt": "Calm, editorial image about harbour court reviews",
+        "urlKey": "branded:1",
+        "promptBy": "owner"
+    },
+    "draftedAt": "2026-11-12T20:50:05.262Z",
+    "entryStatus": "review",
+    "directionRadarWrote": "A wide street-level view of the place that Harbour Court Reviews, Race Probe 2 is about, seen from outside in daylight."
+}

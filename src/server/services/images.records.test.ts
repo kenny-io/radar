@@ -97,6 +97,15 @@ describe('one row per provider asked', () => {
     expect(urls).toEqual([OR, OA, XA]);
     expect(H.inserted.map(r => [r.provider, r.model, r.ok, r.costUsd])).toEqual([['openrouter', 'google/gemini-nano-banana-2.1', false, null], ['OpenAI', 'gpt-image-1', false, null], ['SpaceX', 'grok-imagine-image', false, null]]);
   });
+  it('a strict article body request with every provider failing: one row per provider asked, under its own purpose, and no template', async () => {
+    const images = await boot(ALL);
+    mockFetch(() => json({ error: { message: 'down' } }, 500));
+    const e = await caught(images.renderImageFile(req({ kind: 'article-body', w: 1200, h: 675, modelRequired: true, literal: true, prompt: SUBJECT })));
+    expect(e?.message).toMatch(/^xai image 500/);
+    expect(H.stored).toHaveLength(0);
+    expect(urls).toEqual([OR, OA, XA]);
+    expect(H.inserted.map(r => [r.purpose, r.provider, r.ok])).toEqual([['image.article-body', 'openrouter', false], ['image.article-body', 'OpenAI', false], ['image.article-body', 'SpaceX', false]]);
+  });
   it('a model style falling back to the brand template has the failed attempt\'s row and nothing for the template', async () => {
     const images = await boot({ OPENAI_API_KEY: ALL.OPENAI_API_KEY });
     mockFetch(() => json({ error: { message: 'down' } }, 500));

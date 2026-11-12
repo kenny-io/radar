@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { ArticleBodyImage, Block } from './types';
-import { articleBodyImageAnchor, planArticleBodyImages } from './articleImages';
+import type { Article, ArticleBodyImage, Block } from './types';
+import { articleBodyImageAnchor, coverDirectionIsOwners, defaultCoverDirection, fallbackImageDirections, planArticleBodyImages, withCover } from './articleImages';
+import { defaultArticle } from '@/features/article/blocks';
 
 const body: Block[] = [['p', 'Intro'], ['h2', 'First section'], ['p', 'One'], ['h3', 'Detail'], ['ul', ['More']], ['h2', 'Second section'], ['p', 'Two'], ['h2', 'Third section'], ['p', 'Three']];
 const image = (heading: string, block: number, occurrence = 0): ArticleBodyImage => ({ id: heading, after: { heading, block, occurrence }, url: 'https://cdn.test/image.png', alt: 'An illustration', seed: 1, prompt: '' });
@@ -29,5 +30,94 @@ describe('article body image placement', () => {
     expect(planArticleBodyImages([['h2', 'Only'], ['p', 'Text']], 2200)).toHaveLength(1);
     expect(planArticleBodyImages([['p', 'A'], ['p', 'B'], ['p', 'C'], ['p', 'D']], 900).map(p => p.after.block)).toEqual([1, 3]);
     expect(planArticleBodyImages([['p', ''], ['h2', 'Empty']], 900)).toEqual([]);
+  });
+});
+
+describe('who wrote the cover direction', () => {
+  const kw = 'tenant reviews';
+  it('every new article starts with the default direction, which is nobody’s', () => {
+    const fresh = defaultArticle({ id: 'e1', kw, title: 'How to read tenant reviews', relevance: '' });
+    expect(fresh.img.prompt).toBe(defaultCoverDirection(kw));
+    expect(coverDirectionIsOwners(fresh.img, kw)).toBe(false);
+  });
+  it('an article saved before the mark existed: only the exact default is Radar’s, an edited tail is the owner’s', () => {
+    expect(coverDirectionIsOwners({ prompt: 'Calm, editorial image about tenant reviews' }, kw)).toBe(false);
+    expect(coverDirectionIsOwners({ prompt: '  Calm, editorial image about tenant reviews  ' }, kw)).toBe(false);
+    expect(coverDirectionIsOwners({ prompt: 'Calm, editorial image about tenant reviews in Dubai Marina' }, kw)).toBe(true);
+    expect(coverDirectionIsOwners({ prompt: 'Calm, editorial image about another keyword' }, kw)).toBe(true);
+    expect(coverDirectionIsOwners({ prompt: 'Sobha Sapphire at sunset' }, kw)).toBe(true);
+  });
+  it('a blank direction is nobody’s, whatever the mark says', () => {
+    expect(coverDirectionIsOwners({ prompt: '' }, kw)).toBe(false);
+    expect(coverDirectionIsOwners({ prompt: '   ', promptBy: 'owner' }, kw)).toBe(false);
+  });
+  it('the mark decides when it is present', () => {
+    expect(coverDirectionIsOwners({ prompt: 'The exterior of a gated community', promptBy: 'radar' }, kw)).toBe(false);
+    expect(coverDirectionIsOwners({ prompt: defaultCoverDirection(kw), promptBy: 'owner' }, kw)).toBe(true);
+  });
+});
+
+describe('the cover after a render', () => {
+  const img: Article['img'] = { style: 'illustration', seed: 4, prompt: 'A gated community', promptBy: 'radar', alt: 'Illustration of a gated community', url: '/old.png', urlKey: 'branded:1' };
+  it('records a template fallback with its reason and time, and keeps every other field', () => {
+    expect(withCover(img, { url: '/new.png', placeholder: 'unavailable' }, '2026-11-12T10:00:00.000Z')).toEqual({ ...img, url: '/new.png', urlKey: 'illustration:4', placeholder: { reason: 'unavailable', at: '2026-11-12T10:00:00.000Z' } });
+  });
+  it('a later render that is not a fallback removes the mark', () => {
+    const marked = withCover(img, { url: '/template.png', placeholder: 'failed' });
+    expect(marked.placeholder).toMatchObject({ reason: 'failed' });
+    const real = withCover(marked, { url: '/real.png' });
+    expect(real).toEqual({ ...img, url: '/real.png', urlKey: 'illustration:4' });
+    expect('placeholder' in real).toBe(false);
+  });
+});
+
+describe('directions built without a model', () => {
+  const article: Block[] = [
+    ['p', 'Wasl 611 is a staff accommodation community in Al Warsan. Tenants rate it for its location.'], ['p', 'This guide covers what residents say.'],
+    ['h2', 'What tenants say about maintenance?'], ['p', 'Repairs are logged at the gate office. Most are handled within the week.'],
+    ['h2', 'Getting to work'], ['p', 'Buses leave from the main entrance every morning.'],
+    ['h2', 'What to check first'], ['p', 'Walk the corridor and look at the shared kitchen before you sign.'],
+  ];
+  const title = 'Wasl 611 Reviews: Tenant Ratings and What to Check First.';
+  it('the cover names the article and leads with its opening, and nothing claims a subject', () => {
+    const d = fallbackImageDirections(title, article, planArticleBodyImages(article, 2200));
+    expect(d.subject).toBeNull();
+    expect(d.cover.prompt).toBe('A literal, realistic scene showing the subject of an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Wasl 611 is a staff accommodation community in Al Warsan. Tenants rate it for its location. This guide covers what residents say.');
+    expect(d.cover.alt).toBe('Illustration for Wasl 611 Reviews: Tenant Ratings and What to Check First');
+  });
+  it('each section gets its own heading and its own text, so no two directions are the same', () => {
+    const plans = planArticleBodyImages(article, 2200);
+    const d = fallbackImageDirections(title, article, plans);
+    expect(d.sections).toHaveLength(3);
+    expect(d.sections[0].prompt).toBe('A literal, realistic scene showing What tenants say about maintenance, in an article titled Wasl 611 Reviews: Tenant Ratings and What to Check First. Repairs are logged at the gate office. Most are handled within the week.');
+    expect(d.sections[1].prompt).toContain('showing Getting to work,');
+    expect(d.sections[1].prompt).toContain('Buses leave from the main entrance every morning.');
+    expect(d.sections[2].prompt).toContain('Walk the corridor and look at the shared kitchen before you sign.');
+    expect(d.sections.map(s => s.alt)).toEqual(['Illustration of What tenants say about maintenance', 'Illustration of Getting to work', 'Illustration of What to check first']);
+    expect(new Set([d.cover.prompt, ...d.sections.map(s => s.prompt)]).size).toBe(4);
+  });
+  it('keeps whole sentences within the limit, and cuts one over-long sentence at a word', () => {
+    const long = 'word '.repeat(80).trim() + '.';
+    const body: Block[] = [['h2', 'Long section'], ['p', `Short opening sentence. ${long}`], ['h2', 'One sentence'], ['p', long]];
+    const d = fallbackImageDirections('Title', body, planArticleBodyImages(body, 900));
+    expect(d.sections[0].prompt).toBe('A literal, realistic scene showing Long section, in an article titled Title. Short opening sentence.');
+    const tail = d.sections[1].prompt.split('titled Title. ')[1];
+    expect(tail.length).toBeLessThanOrEqual(240);
+    expect(tail).toMatch(/^(word )+word$/);
+  });
+  it('prose without headings still gets a direction per image, from the text itself', () => {
+    const body: Block[] = [['p', 'First point about the lease.'], ['p', 'Second point about the deposit.']];
+    const d = fallbackImageDirections('Renting basics', body, planArticleBodyImages(body, 900));
+    expect(d.cover.prompt).toContain('First point about the lease.');
+    expect(d.sections.map(s => s.prompt)).toEqual([
+      'A literal, realistic scene showing Renting basics, in an article titled Renting basics. First point about the lease.',
+      'A literal, realistic scene showing Renting basics, in an article titled Renting basics. Second point about the deposit.',
+    ]);
+    expect(d.sections[0].alt).toBe('Illustration of First point about the lease');
+  });
+  it('an article that opens with a heading takes its cover lead from the first text there is', () => {
+    const body: Block[] = [['h2', 'Start here'], ['p', 'The first real paragraph.']];
+    expect(fallbackImageDirections('Title', body, []).cover.prompt).toBe('A literal, realistic scene showing the subject of an article titled Title. The first real paragraph.');
+    expect(fallbackImageDirections('Title', [], []).cover.prompt).toBe('A literal, realistic scene showing the subject of an article titled Title.');
   });
 });

@@ -12,7 +12,7 @@ vi.mock('../../db', () => {
   return { db: { select: () => ({ from: () => rows }), insert: () => ({ values: (value: any) => { H.inserted.push(value); return Promise.resolve(); } }) }, schema: { aiCalls: {}, businesses: { ai: 'ai', id: 'id' }, crawlPages: { businessId: 'businessId' }, calendarEntries: {} } };
 });
 vi.mock('../../observability/failures', () => ({ reportFailure: vi.fn(async () => {}) }));
-vi.mock('../images', () => ({ renderImage: vi.fn(async () => 'https://images.example.test/hero.png'), defaultArticleImageStyle: () => 'branded' }));
+vi.mock('../images', () => ({ renderImage: vi.fn(async () => 'https://images.example.test/hero.png'), renderImageFile: vi.fn(async () => ({ url: 'https://images.example.test/hero.png', bytes: 1, type: 'image/png' })), defaultArticleImageStyle: () => 'branded', MODEL_STYLES: ['illustration', 'photography'] }));
 vi.mock('./bodyImages', () => ({ generateArticleBodyImages: vi.fn(async () => []) }));
 vi.mock('../gsc/metrics', () => ({ normKw: (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim(), topQueries: async () => [] }));
 vi.mock('../calendar/research', () => ({ tokens: (s: string) => s.toLowerCase().split(/\W+/).filter(word => word.length > 2) }));

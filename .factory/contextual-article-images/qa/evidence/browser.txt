@@ -1,0 +1,69 @@
+Browser observations, T4 QA, revision 121da10a, 2026-11-12/13
+Tool: the Claude desktop app's built-in browser pane (mcp__Claude_Browser__*), a real Chromium tab, 1024x768 and 375x812.
+App: http://127.0.0.1:3217 (Next dev + worker, RADAR_DEV_STUBS=1, no provider keys, database radar_qa_app).
+Sign-in: synthetic users with sessions provisioned in the QA database; the session cookie was set in the tab. No password
+was typed. Text below is page text read from the DOM, and JSON read from the QA database after each step.
+
+B1. New draft about a named building (entry e_ctxqa_wasl, "Wasl 611 Reviews: Tenant Ratings and What to Check First")
+  before the draft, Media > Describe your image: "Calm, editorial image about wasl 611 reviews"
+  clicked "Draft now"; about 8 s later the header read "Ready for review"
+  Describe your image: "A wide street-level view of the place that Wasl 611 Reviews: Tenant Ratings and What to Check First is about, seen from outside in daylight."
+  Alt text: "Illustration of Wasl 611 Reviews: Tenant Ratings and What to Check First"
+  article view: 0 <figure> elements; the only picture is the cover
+  hint: "Radar writes this from your article. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject."
+  Body images: "Radar couldn’t add body images to this article. Image generation is unavailable right now. Your text and cover are not affected." (p role=status, class xs, colour var(--warn)); button "Try again"
+  saved JSON: browser-01-wasl-after-draft.json (promptBy radar, bodyImages [], bodyImagesIssue unavailable, imageDirections.source ai, subject null: the stub names no subject)
+  clicked "Try again": "Creating body images · 0 of 2", then (role=alert) "Radar couldn’t make the body images. Try again. Any existing images are kept."; button "Try again" enabled; fields enabled; title still editable
+
+B2. Same tab, right after the draft landed: typed in Alt text only
+  saved: promptBy "radar" (direction unchanged), altBy "owner". The tab had reloaded the article when the job landed.
+
+B3. Cover placeholder (same article)
+  Style -> Illustration: under the cover, above Style: "Placeholder" / "This cover is a placeholder. Image generation is unavailable right now, so Radar used a title card. Regenerate to try again." / button "Regenerate" (role=status on the text block; the button is outside it)
+  saved: browser-02-wasl-illustration-placeholder.json (placeholder {reason: unavailable})
+  clicked the notice's Regenerate: inline error and toast "Image generation is unavailable right now. Please contact support to enable it."; "Cover image generated" never appeared (watched with a MutationObserver); cover file and saved img identical before and after (diff exit 0)
+  reload: notice still shown
+  Style -> Branded graphic: notice gone; saved img has no placeholder key (browser-03-wasl-back-to-branded.json); reload: still gone
+  Style -> Photography: notice back
+
+B4. Viewer (QA Viewer, same business), article with the placeholder
+  "This cover is a placeholder. Image generation is unavailable right now, so Radar used a title card. An owner or editor can regenerate it."; no button in the notice; Generate from prompt, Regenerate, Try again all disabled; fields disabled
+  from the Viewer's tab: article.save 403, article.regenerateImage 403, article.regenerateBodyImages 403
+  the other business's entry (/article/e_ctxqa_other): "Article not found"; article.get through own business 404, through the other business id 404; no text of that article in any reply
+
+B5. Outsider (owner of another business)
+  /article/e_ctxqa_wasl: "Article not found"; article.get / save / regenerateImage on the business: 404 "Business wasn’t found."; the same entry id through their own business: 404 "That article wasn’t found."
+
+B6. Owner, autosave with forged fields sent from the signed-in tab (promptBy, altBy, placeholder null, url, seed, modelRequired, imageDirections, bodyImagesIssue, bodyImages): reply 200; img, imageDirections, bodyImagesIssue and bodyImages unchanged
+
+B7. Locks (entry status set in the QA database, page reloaded)
+  scheduled ("Queued"): "This cover is a placeholder. Image generation is unavailable right now, so Radar used a title card." with no last sentence and no button; all media buttons disabled
+  published: the same; no button
+  (the Body images section still shows its message and a disabled "Try again" button in both states)
+
+B8. Owner-typed direction
+  typed "The entrance gate of a staff accommodation community at sunrise, typed by the owner" -> saved promptBy "owner"
+  Brief > "Rewrite from brief": after the rewrite the direction, promptBy "owner", the alt (altBy owner) and the cover file are unchanged (browser-04-wasl-owner-direction-after-rewrite.json)
+
+B9. Draft started outside the open tab (the engineer's stale-state probe)
+  a. entry e_ctxqa_stale, Media tab open, draft requested by another client: the tab showed the old direction with the field ENABLED for 4.7 s, then disabled, then the new direction at 5.0 s (the draft had been saved 2.7 s earlier)
+  b. entry e_ctxqa_race1, same set-up, typed "Alt typed by owner" in Alt text 2.5 s after the request:
+     saved img: prompt "Calm, editorial image about harbour court reviews", promptBy "owner", altBy "owner"
+     Radar's direction for that draft was "A wide street-level view of the place that Harbour Court Reviews, Race Probe 1 is about, seen from outside in daylight."
+  c. entry e_ctxqa_race2: web server stopped (the tab's event stream drops), draft queued the way the cron does and finished, 17 s wait, web server started; the stream reconnected (200) and one minute later the tab still showed the undrafted article and the old direction. Typed in Alt text only:
+     saved: browser-05-stale-tab-after-alt-edit.json (prompt = old default, promptBy "owner"); the tab then reloaded and shows the old default sentence as the direction
+  d. entry e_ctxqa_race4, same set-up as b, changed only Style (Infographic): saved direction is Radar's, promptBy "radar"
+
+B10. Second draft, general topic (e_ctxqa_general): direction "A wide street-level view of the place that How to Read a Tenancy Contract Before You Sign is about, seen from outside in daylight."; no figures; the unavailable body message; Try again
+  'failed' reason (seeded in the database on this article): cover "This cover is a placeholder. Radar couldn’t generate the image, so it used a title card. Regenerate to try again."; body "Radar couldn’t make the body images for this article. Your text and cover are not affected."; Viewer sees "... so it used a title card. An owner or editor can regenerate it."
+
+B11. Phone width 375x812 (mobile emulation), article with the notice and the body message
+  document scrollWidth 375 = viewport; notice block 20..355 px; notice button 20..139; body section 20..355; its message 20..355; its button 20..137; no element inside either block wider than its box
+  keyboard: Shift+Tab from the Style select lands on the notice's Regenerate (a <button>, 2 px solid outline); Enter runs it; the error is announced (role=status) and shown as a toast; after the request focus is on <body> (the button is disabled while it loads)
+  the inline error line sits about 450 to 540 px below the notice button, outside the viewport at both sizes; the toast is what a sighted user sees
+
+B12. Legacy articles (rows seeded with none of the new fields)
+  with two stored body images: both figures render inline after the first paragraph of their sections; Media lists them and offers "Regenerate body images"; no notice, no message. Edited the meta description in the SEO tab: the only changed key is seo.meta; no new field appears (browser-06-*.json)
+  without body images: "Add body images"; cover Regenerate on Branded graphic: "Cover image generated", direction untouched, only img.url/seed/urlKey change; "Add body images" fails with "Radar couldn’t make the body images. Try again. Any existing images are kept." and the article stays as it was (browser-07-*.json)
+
+B13. The state the publisher leaves after drawing a missing cover at publish time (img.url and img.placeholder set, urlKey null; seeded, published): the Media tab shows NO placeholder notice and draws the live template instead of the stored file.

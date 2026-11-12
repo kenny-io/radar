@@ -19,12 +19,12 @@ import { addDays, fmtDW, fmtTime } from '@/lib/format';
 import { parseBlocks } from './blocks';
 import { REVIEW_LIST_URL, afterApprove, reviewList, reviewPos, safeBack } from './review';
 import { ArticleLoadError, ArticleLoading } from './ArticleLoad';
+import { articleSave, coverDirectionHint, type ArtPatch } from './autosave';
 import { articleBodyImageAnchor } from '@/lib/articleImages';
 import { BodyImage, BodyImagesPanel } from './BodyImage';
 import { RewriteBar, VideoEmbed, VideoPicker } from './RewriteBar';
 import type { Article, Block as BlockT, CalendarEntry, ConnectionPublic, VideoRef, Workspace } from '@/lib/types';
 
-type ArtPatch = { body?: BlockT[]; brief?: Article['brief']; seo?: Article['seo']; img?: Partial<Article['img']>; videos?: string[] };
 /** The workspace keeps one editable field of an article, for the calendar's Undo of "Replace topic": its outline. */
 const patchOutline = (id: string, outline: string[]) => (B: Workspace): Workspace => ({ ...B, articles: { ...B.articles, [id]: { ...(B.articles[id] || { generated: false, v: 0 }), outline } } });
 const patchEntry = (id: string, patch: Partial<CalendarEntry>) => (B: Workspace): Workspace => ({ ...B, calendar: { ...B.calendar, entries: B.calendar.entries.map(x => (x.id === id ? { ...x, ...patch } : x)) } });
@@ -81,10 +81,8 @@ export function ArticleWorkspace() {
     const cur = { ...A, ...p, img: { ...A.img, ...(p.img || {}) } };
     art.patch(a => ({ ...a, ...p, img: { ...a.img, ...(p.img || {}) } }));
     const opt = p.brief ? patchOutline(id, cur.brief.outline) : undefined;
-    const patch: any = {};
-    if (p.body) patch.body = cur.body; if (p.brief) patch.brief = cur.brief; if (p.seo) patch.seo = cur.seo; if (p.videos) patch.videos = cur.videos;
-    if (p.img) patch.img = { style: cur.img.style, prompt: cur.img.prompt, alt: cur.img.alt };
-    const key = 'art:' + id + ':' + Object.keys(patch).join(',');
+    // Only what this edit changed is sent; an image edit sends only its own field (see articleSave).
+    const { key, patch } = articleSave(id, cur, p);
     if (later) app.actLater(key, 'article.save', { entryId: id, patch }, { optimistic: opt, done: art.saved });
     else app.act('article.save', { entryId: id, patch }, { optimistic: opt }).then(art.saved, art.reload);
   };
@@ -110,6 +108,8 @@ export function ArticleWorkspace() {
   };
   const publishNow = (retry = false) => { setMenu(false); app.act(retry ? 'publish.retry' : 'publish.now', { entryId: id }, { optimistic: patchEntry(id, { status: 'publishing' }) }).catch(() => {}); };
   const heroUrl = A.img.url && A.img.urlKey === `${A.img.style}:${A.img.seed}` ? A.img.url : null;
+  // The cover on screen is the brand template because a model style could not be generated (the server sets and clears the mark).
+  const placeholder = heroUrl ? A.img.placeholder || null : null;
   const removedSrc = new Set(A.sources.map((s, i) => (s.removed ? i : -1)).filter(i => i >= 0));
   const flagged = (bi: number) => A.claims.filter(c => c.block === bi && removedSrc.has(c.source)).map(c => c.text);
   const statusLine = st === 'scheduled' ? <Status tone={blog.paused ? 'warn' : 'ok'}>{blog.paused ? 'Paused · ' : 'Publishes '}{fmtDW(e.date)} · {fmtTime(blog.time)} {tzShort(blog.tz)}</Status> : st === 'publishing' ? <Status tone="signal" pulse>Publishing…</Status> : <EntryStatus s={st} />;
@@ -183,13 +183,21 @@ export function ArticleWorkspace() {
         {tab === 'image' && <div className="col" style={{ gap: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Cover image</h3>
           <Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} radius={10} busy={imgBusy} url={heroUrl} />
+          {placeholder && <div className="col" style={{ gap: 8, minWidth: 0 }}>
+            {/* The button sits outside the live region, so its loading state is not read out as a change to the notice. */}
+            <div role="status" className="col" style={{ gap: 6, minWidth: 0 }}>
+              <Status tone="warn">Placeholder</Status>
+              <span className="xs">This cover is a placeholder. {placeholder.reason === 'unavailable' ? 'Image generation is unavailable right now, so Radar used a title card.' : 'Radar couldn’t generate the image, so it used a title card.'}{mediaLocked ? '' : B.role === 'Viewer' ? ' An owner or editor can regenerate it.' : ' Regenerate to try again.'}</span>
+            </div>
+            {!mediaLocked && B.role !== 'Viewer' && <Btn size="sm" icon="refresh" loading={imgBusy} disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn>}
+          </div>}
           <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); art.patch(a => ({ ...a, img: { ...a.img, style: style as Article['img']['style'] } })); art.reload(); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Describe your image" hint="Describe the cover you want. After generating a custom cover, its direction also guides body images. Generated scenes may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
+          <Field label="Describe your image" hint={coverDirectionHint(A.generated)}><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
           <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
           {imageError && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageError}</span>}
           <span className="xs sub">Uses {B.profile.business.name}’s colors <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.primary, verticalAlign: -1 }} /> <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.secondary, verticalAlign: -1 }} /> from your Business Profile.</span>
-          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={imgBusy || genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} onGenerate={generateBodyImages} />}
+          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={imgBusy || genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} issue={!bodyImages.length && !bodyError ? A.bodyImagesIssue?.reason ?? null : null} onGenerate={generateBodyImages} />}
           <VideoPicker vids={vids || []} loading={vidBusy} on={A.videos} onToggle={(v, has) => { setA({ videos: has ? A.videos.filter(x => x !== v.id) : [...A.videos, v.id] }, false); toast(has ? 'Video removed' : 'Video embedded after the first section'); }} />
         </div>}
         {tab === 'sources' && <div className="col">{A.sources.map((s, i) => <div key={i} className="row" style={{ padding: '14px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 10, alignItems: 'flex-start' }}>

@@ -1,0 +1,29 @@
+{
+    "img": {
+        "alt": "Illustration of Wasl 611 Reviews: Tenant Ratings and What to Check First (edited by QA)",
+        "url": "/api/files/0ed73cba-ab99-4365-8852-63f50644879e/hero/1794516271895-Mg1ovPbK.png",
+        "seed": 1,
+        "altBy": "owner",
+        "style": "photography",
+        "prompt": "The entrance gate of a staff accommodation community at sunrise, typed by the owner",
+        "urlKey": "photography:1",
+        "promptBy": "owner",
+        "placeholder": {
+            "at": "2026-11-12T20:44:31.896Z",
+            "reason": "unavailable"
+        }
+    },
+    "status": "review",
+    "draftedAt": "2026-11-12T20:46:45.215Z",
+    "bodyImages": [
+    ],
+    "bodyImagesIssue": {
+        "at": "2026-11-12T20:46:45.215Z",
+        "reason": "unavailable"
+    },
+    "directionsCover": {
+        "alt": "Illustration of Wasl 611 Reviews: Tenant Ratings and What to Check First",
+        "prompt": "A wide street-level view of the place that Wasl 611 Reviews: Tenant Ratings and What to Check First is about, seen from outside in daylight."
+    },
+    "directionsSource": "ai"
+}
