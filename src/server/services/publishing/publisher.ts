@@ -47,10 +47,12 @@ async function heroImage(b: BizRow, e: CalendarEntry, a: Article): Promise<strin
   if (a.img?.url) return a.img.url;
   const p = b.profile as Profile;
   try {
-    const { url, placeholder } = await renderImageFile({ bid: b.id, style: a.img?.style || 'branded', brand: { primary: p.brand.primary, secondary: p.brand.secondary }, headline: e.title, name: p.business.name || b.domain, seed: a.img?.seed ?? 1, prompt: a.img?.prompt, literal: a.img?.promptBy === 'radar', w: 1200, h: 628, kind: 'hero' });
-    // Keep it on the article so the editor shows the same image that went live. A model style that fell back to the
+    const style = a.img?.style || 'branded', seed = a.img?.seed ?? 1;
+    const { url, placeholder } = await renderImageFile({ bid: b.id, style, brand: { primary: p.brand.primary, secondary: p.brand.secondary }, headline: e.title, name: p.business.name || b.domain, seed, prompt: a.img?.prompt, literal: a.img?.promptBy === 'radar', w: 1200, h: 628, kind: 'hero' });
+    // Keep it on the article so the editor shows the same image that went live: the url with the style and variation it
+    // was drawn for (the editor shows a stored cover only when `urlKey` matches). A model style that fell back to the
     // brand template is published as it is, and marked in the same statement so the editor says so afterwards.
-    const withUrl = sql`jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true)`;
+    const withUrl = sql`jsonb_set(jsonb_set(${schema.articles.data}, '{img,url}', ${JSON.stringify(url)}::jsonb, true), '{img,urlKey}', ${JSON.stringify(`${style}:${seed}`)}::jsonb, true)`;
     const data = placeholder ? sql`jsonb_set(${withUrl}, '{img,placeholder}', ${JSON.stringify({ reason: placeholder, at: new Date().toISOString() })}::jsonb, true)` : withUrl;
     await db.update(schema.articles).set({ data, updatedAt: laterV() }).where(eq(schema.articles.entryId, e.id));
     return url;

@@ -68,11 +68,14 @@ const SYMBOLIC = /\b(metaphor\w*|symboli[sz]\w*|abstract|conceptual)\b/i;
 const numbersIn = (s: string) => (s.match(/\d[\d.,]*/g) || []).map(n => n.replace(/,/g, '').replace(/\.+$/, ''));
 const jaccard = (a: Set<string>, b: Set<string>) => { if (!a.size || !b.size) return 0; let both = 0; for (const t of a) if (b.has(t)) both++; return both / (a.size + b.size - both); };
 
-/** Why a direction cannot be used, or null. `accepted` are the token sets of the slots already kept. */
-function refusal(direction: string, known: Set<string>, accepted: Set<string>[]): string | null {
+/** Why a direction cannot be used, or null. `accepted` are the token sets of the slots already kept. `subject` is the
+ *  accepted subject's name: the wording and symbolic checks read the direction without it, so a building called
+ *  "Chart House" or "The Abstract Hotel" is not refused for being named. Nothing else is excused. */
+function refusal(direction: string, known: Set<string>, accepted: Set<string>[], subject: string): string | null {
   if (direction.length < 25) return 'too short';
-  if (ASKS_FOR_WRITING.test(direction)) return 'asks for writing';
-  if (SYMBOLIC.test(direction)) return 'symbolic';
+  const wording = subject ? direction.replace(new RegExp(subject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'), 'gi'), ' ') : direction;
+  if (ASKS_FOR_WRITING.test(wording)) return 'asks for writing';
+  if (SYMBOLIC.test(wording)) return 'symbolic';
   if (numbersIn(direction).some(n => !known.has(n))) return 'number not in the article';
   const mine = new Set(tokens(direction));
   if (accepted.some(other => jaccard(mine, other) >= 0.6)) return 'repeats another picture';
@@ -89,10 +92,14 @@ export function cleanImageDirections(raw: DirectionsAnswer, ctx: { title: string
   const fallback = fallbackImageDirections(ctx.title, ctx.body, ctx.plans);
   const article = oneLine(ctx.title + '\n' + bodyText(ctx.body));
   const known = new Set(numbersIn(article));
+  // The subject is settled first: it is kept only when the article itself names it.
+  const name = oneLine(raw.subject || '');
+  const stated = !!name && raw.subjectKind !== 'none' && article.toLowerCase().includes(name.toLowerCase());
+  const subject = stated ? { name, kind: raw.subjectKind as Exclude<DirectionsAnswer['subjectKind'], 'none'> } : null;
   const accepted: Set<string>[] = []; const replaced: CleanDirections['replaced'] = [];
   const slot = (name: string, given: { direction: string; alt: string } | undefined, spare: ImageDirection): ImageDirection => {
     const direction = oneLine(given?.direction || '');
-    const why = given ? refusal(direction, known, accepted) : 'missing';
+    const why = given ? refusal(direction, known, accepted, subject?.name || '') : 'missing';
     if (why) { replaced.push({ slot: name, why }); accepted.push(new Set(tokens(spare.prompt))); return spare; }
     accepted.push(new Set(tokens(direction)));
     const alt = oneLine(given!.alt);
@@ -104,9 +111,6 @@ export function cleanImageDirections(raw: DirectionsAnswer, ctx: { title: string
   for (const s of raw.sections || []) if (Number.isInteger(s.i) && s.i >= 0 && s.i < ctx.plans.length && !byIndex.has(s.i)) byIndex.set(s.i, s);
   const sections = ctx.plans.map((_plan, i) => slot(`section ${i}`, byIndex.get(i), fallback.sections[i]));
 
-  const name = oneLine(raw.subject || '');
-  const stated = !!name && raw.subjectKind !== 'none' && article.toLowerCase().includes(name.toLowerCase());
-  const subject = stated ? { name, kind: raw.subjectKind as Exclude<DirectionsAnswer['subjectKind'], 'none'> } : null;
   if (subject) {
     const has = (s: string) => s.toLowerCase().includes(subject.name.toLowerCase());
     cover = { prompt: has(cover.prompt) ? cover.prompt : `${cover.prompt} The subject shown is ${subject.name}.`, alt: has(cover.alt) ? cover.alt : cut(`Illustration of ${subject.name}`, 200) };

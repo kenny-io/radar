@@ -296,6 +296,23 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     expect(saved.img).toMatchObject({ prompt: 'A lighthouse above a calm harbour', alt: 'Cover alt', seed: 2 });
     expect(saved.imageDirections).toBeUndefined();
   });
+  it('a typed direction replaces the alt Radar wrote for its own scene with the neutral one; an alt the owner typed stays', async () => {
+    const f = await fixture({ img: { ...older, prompt: 'The exterior of a gated community', promptBy: 'radar', alt: 'Illustration of a gated community seen from its entrance gate' } });
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'A lighthouse above a calm harbour' });
+    let saved = await article(f.id);
+    expect(saved.img).toMatchObject({ prompt: 'A lighthouse above a calm harbour', promptBy: 'owner', modelRequired: true, alt: 'Illustration for Keep docs current' });
+    expect(saved.img.altBy).toBeUndefined();
+    // The usual path: the typed direction was autosaved first, so it is already the owner's when Generate from prompt runs.
+    const g = await fixture({ img: { ...older, prompt: 'The exterior of a gated community', promptBy: 'radar', alt: 'Illustration of a gated community seen from its entrance gate' } });
+    await actions['article.save'].run(g.ctx, { entryId: g.id, patch: { img: { prompt: 'A lighthouse above a calm harbour' } } });
+    await actions['article.regenerateImage'].run(g.ctx, { entryId: g.id, prompt: 'A lighthouse above a calm harbour' });
+    expect((await article(g.id)).img.alt).toBe('Illustration for Keep docs current');
+    // An alt a person typed is theirs.
+    const h = await fixture({ img: { ...older, prompt: 'The exterior of a gated community', promptBy: 'radar', alt: 'My own words', altBy: 'owner' } });
+    await actions['article.regenerateImage'].run(h.ctx, { entryId: h.id, prompt: 'A lighthouse above a calm harbour' });
+    saved = await article(h.id);
+    expect(saved.img).toMatchObject({ prompt: 'A lighthouse above a calm harbour', promptBy: 'owner', alt: 'My own words', altBy: 'owner' });
+  });
   it('Regenerate on a template style draws a new template variation from the title and runs no direction step', async () => {
     const f = await fixture({ img: { prompt: 'Calm, editorial image about docs updates' } });
     await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id });
@@ -355,6 +372,60 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     await runDefined(await startBodyImages(f.biz.id, f.id));
     expect(M.render.mock.calls.every(c => c[0].prompt.endsWith(' Overall look the owner asked for: The same community at dusk'))).toBe(true);
   });
+  /* ── the creation default sent back by a tab or bundle that missed the draft (QA D1) ── */
+  const DEFAULT = 'Calm, editorial image about docs updates';
+  const radars = { prompt: 'The exterior of a gated community', promptBy: 'radar' as const, alt: 'Illustration of a gated community' };
+  it('an alt edit that carries the old default direction keeps Radar’s direction and its mark, and saves the alt as the owner’s', async () => {
+    const f = await fixture({ img: radars });
+    // What a browser that still shows the undrafted article sends when the person types in Alt text only.
+    await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { style: 'branded', prompt: DEFAULT, alt: 'A new alt' } } });
+    const saved = await article(f.id);
+    expect(saved.img).toEqual({ ...f.a.img, alt: 'A new alt', altBy: 'owner' });
+    expect(saved.img).toMatchObject({ prompt: 'The exterior of a gated community', promptBy: 'radar' });
+    // So the body images are still drawn from Radar's sections alone, with no "overall look" taken from the default sentence.
+    await runDefined(await startBodyImages(f.biz.id, f.id));
+    expect(M.render.mock.calls.map(c => c[0].prompt).join(' ')).not.toContain('Calm, editorial image about');
+    expect(M.render.mock.calls.map(c => c[0].prompt).join(' ')).not.toContain('Overall look the owner asked for');
+  });
+  it('the default direction on its own, with surrounding spaces, or with a new style never replaces Radar’s direction', async () => {
+    const f = await fixture({ img: radars });
+    await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { prompt: DEFAULT } } });
+    await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { prompt: `  ${DEFAULT} ` } } });
+    expect(await article(f.id)).toEqual(f.a);
+    // A restyle from the stale tab draws Radar's scene, literally, not the default sentence.
+    await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { style: 'illustration', prompt: DEFAULT, alt: radars.alt } } });
+    expect(M.render.mock.calls[0][0]).toMatchObject({ style: 'illustration', prompt: radars.prompt, literal: true });
+    expect((await article(f.id)).img).toMatchObject({ style: 'illustration', prompt: radars.prompt, promptBy: 'radar', alt: radars.alt });
+    expect((await article(f.id)).img.altBy).toBeUndefined();
+  });
+  it('an alt-only patch changes the alt and nothing about the direction', async () => {
+    const f = await fixture({ img: radars });
+    await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { alt: 'Only the alt' } } });
+    expect((await article(f.id)).img).toEqual({ ...f.a.img, alt: 'Only the alt', altBy: 'owner' });
+    const legacy = await fixture({ img: { prompt: DEFAULT } });
+    await actions['article.save'].run(legacy.ctx, { entryId: legacy.id, patch: { img: { alt: 'Only the alt' } } });
+    expect((await article(legacy.id)).img).toEqual({ ...legacy.a.img, alt: 'Only the alt', altBy: 'owner' });
+  });
+  it('a direction a person really typed still becomes theirs, including one that only starts like the default', async () => {
+    for (const typed of ['A lighthouse above a calm harbour', DEFAULT + ', seen from the canal']) {
+      const f = await fixture({ img: radars });
+      await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { prompt: typed } } });
+      expect((await article(f.id)).img).toEqual({ ...f.a.img, prompt: typed, promptBy: 'owner' });
+    }
+  });
+  it('retyping the default over a direction a person typed stores it as nobody’s, so Radar may write the next one', async () => {
+    for (const owners of [{ prompt: 'A lighthouse above a calm harbour', promptBy: 'owner' as const }, { prompt: 'A lighthouse above a calm harbour' }]) {
+      const f = await fixture({ img: owners });
+      await actions['article.save'].run(f.ctx, { entryId: f.id, patch: { img: { style: 'branded', prompt: DEFAULT, alt: 'Cover alt' } } });
+      const saved = await article(f.id);
+      expect(saved.img).toEqual({ style: 'branded', seed: 1, prompt: DEFAULT, alt: 'Cover alt', url: f.a.img.url, urlKey: 'branded:1' });
+      expect('promptBy' in saved.img).toBe(false);
+    }
+    // The default over the default it already had: nothing changes and nothing is marked.
+    const untouched = await fixture({ img: { prompt: DEFAULT } });
+    await actions['article.save'].run(untouched.ctx, { entryId: untouched.id, patch: { img: { style: 'branded', prompt: DEFAULT, alt: 'Cover alt' } } });
+    expect(await article(untouched.id)).toEqual(untouched.a);
+  });
   it('choosing a model style with no usable image model stores the title card and marks it; choosing a template clears the mark', async () => {
     const f = await fixture({ img: { prompt: 'The exterior of a gated community', promptBy: 'radar' } });
     M.render.mockImplementation(async req => ({ url: `/api/files/${req.bid}/hero/${req.style}.png`, bytes: 1, type: 'image/png', ...(req.style === 'illustration' ? { placeholder: 'unavailable' } : {}) }));
@@ -401,13 +472,21 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     expect(M.render.mock.calls[0][0]).toMatchObject({ kind: 'hero', style: 'illustration', literal: true, prompt: older.prompt });
     expect(payload.image!.url).toContain('/hero/late.png');
     let saved = await article(f.id);
-    expect(saved.img).toEqual({ ...f.a.img, url: `/api/files/${f.biz.id}/hero/late.png`, placeholder: { reason: 'failed', at: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) } });
+    // url, urlKey and the mark land together: the Media tab shows a stored cover and its notice only when urlKey matches style:seed.
+    expect(saved.img).toEqual({ ...f.a.img, url: `/api/files/${f.biz.id}/hero/late.png`, urlKey: 'illustration:1', placeholder: { reason: 'failed', at: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) } });
+    expect(saved.img.urlKey).toBe(`${saved.img.style}:${saved.img.seed}`);
     // A real picture at publish time writes the url and no mark.
     const g = await fixture({ img: { ...older, url: null, urlKey: null } });
     M.render.mockImplementation(async req => `/api/files/${req.bid}/hero/real.png`);
     await buildPayload(g.biz, entryFromRow(g.entry), g.a);
     saved = await article(g.id);
-    expect(saved.img).toEqual({ ...g.a.img, url: `/api/files/${g.biz.id}/hero/real.png` });
+    expect(saved.img).toEqual({ ...g.a.img, url: `/api/files/${g.biz.id}/hero/real.png`, urlKey: 'illustration:1' });
+    // A cover whose style or variation changed after it was stored (stale urlKey, url kept) is not redrawn at publish time.
+    const stale = await fixture({ img: { ...older, seed: 4, urlKey: 'branded:1' } });
+    M.render.mockClear();
+    await buildPayload(stale.biz, entryFromRow(stale.entry), stale.a);
+    expect(M.render).not.toHaveBeenCalled();
+    expect(await article(stale.id)).toEqual(stale.a);
   });
   it('an article saved before this change loads, autosaves and builds its payload with none of the new fields appearing', async () => {
     const f = await fixture(); const e = entryFromRow(f.entry);

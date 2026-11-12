@@ -13,7 +13,7 @@ import { suggestVideos } from '../services/drafting/youtube';
 import { resolveImageDirections } from '../services/drafting/imageDirections';
 import { MODEL_STYLES, renderImageFile } from '../services/images';
 import { defaultArticle, statNumbers } from '@/features/article/blocks';
-import { coverDirectionIsOwners, withCover } from '@/lib/articleImages';
+import { coverDirectionIsOwners, defaultCoverDirection, fallbackImageDirections, withCover } from '@/lib/articleImages';
 import type { Article, ArticleImageDirections, Profile } from '@/lib/types';
 import { recordEngagement, resolveCalendarForEntries } from '../services/lifecycle/engagement';
 
@@ -60,9 +60,19 @@ async function render(bid: string, biz: any, title: string, a: Article, o: { str
   const file = await renderImageFile({ bid, style: a.img.style, brand: p.brand, headline: title, name: p.business.name, seed: a.img.seed, prompt: a.img.prompt, literal: a.img.promptBy === 'radar', modelRequired: !!a.img.modelRequired || !!o.strict, w: 1200, h: 628, kind: 'hero' });
   return withCover(a.img, file);
 }
-/** A person changed the cover direction or the alt text: mark it theirs, so Radar never rewrites it. */
-function ownerMarks(img: Article['img'], patch: { prompt?: string; alt?: string } | undefined, before: Article['img']): Article['img'] {
-  return { ...img, ...(patch?.prompt !== undefined && patch.prompt !== before.prompt ? { promptBy: 'owner' as const } : {}), ...(patch?.alt !== undefined && patch.alt !== before.alt ? { altBy: 'owner' as const } : {}) };
+/** The stored cover fields with an autosave patch applied. A direction or alt text a person changed is marked theirs,
+ *  so Radar never rewrites it. The creation default (`Calm, editorial image about <keyword>`) is nobody's: a tab or an
+ *  older browser bundle that missed the draft still sends it with every image edit, so it never replaces a direction
+ *  Radar wrote and is never marked the owner's; over a direction a person typed it is stored with no author. */
+function patchedCover(before: Article['img'], patch: Partial<Pick<Article['img'], 'style' | 'prompt' | 'alt'>> | undefined, kw: string): Article['img'] {
+  let img: Article['img'] = { ...before, ...patch };
+  if (patch?.prompt !== undefined && patch.prompt !== before.prompt) {
+    if (patch.prompt.trim() !== defaultCoverDirection(kw)) img.promptBy = 'owner';
+    else if (before.promptBy === 'radar') img.prompt = before.prompt;
+    else { const { promptBy: _author, ...rest } = img; img = rest; }
+  }
+  if (patch?.alt !== undefined && patch.alt !== before.alt) img.altBy = 'owner';
+  return img;
 }
 const withoutPlaceholder = ({ placeholder: _mark, ...img }: Article['img']): Article['img'] => img;
 
@@ -78,7 +88,7 @@ export const actions: ActionMap = {
     const { e, a, row } = await load(ctx.bid, entryId);
     if (row.status === 'published' || row.status === 'publishing') throw new RadarError('This article is locked while it’s queued or published.');
     if (patch.img) await checkMedia(ctx.bid, entryId);
-    const next: Article = { ...a, ...(patch.body ? { body: patch.body as any } : {}), brief: { ...a.brief, ...(patch.brief || {}) }, seo: { ...a.seo, ...(patch.seo || {}) }, img: ownerMarks({ ...a.img, ...(patch.img || {}) }, patch.img, a.img), ...(patch.videos ? { videos: patch.videos } : {}) };
+    const next: Article = { ...a, ...(patch.body ? { body: patch.body as any } : {}), brief: { ...a.brief, ...(patch.brief || {}) }, seo: { ...a.seo, ...(patch.seo || {}) }, img: patchedCover(a.img, patch.img, e.kw), ...(patch.videos ? { videos: patch.videos } : {}) };
     if (patch.seo?.slug != null) next.seo.slug = patch.seo.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
     // A new style needs a new hero render (template styles are instant; photo styles use the image model when configured).
     // Not strict: a model style with no usable model stores the template with the placeholder mark, and the panel says so.
@@ -92,9 +102,9 @@ export const actions: ActionMap = {
       ...latest,
       ...(patch.body ? { body: patch.body as Article['body'] } : {}),
       brief: { ...latest.brief, ...patch.brief }, seo: { ...latest.seo, ...patch.seo, ...(patch.seo?.slug != null ? { slug: next.seo.slug } : {}) },
-      // The client sends style, prompt and alt together on any image edit, so ownership is decided against the latest copy.
+      // An older client sends style, prompt and alt together on any image edit, so ownership is decided against the latest copy.
       // After a restyle the placeholder mark follows the new render: set when it fell back, removed otherwise.
-      img: (img => (restyled ? { ...withoutPlaceholder(img), url: next.img.url, urlKey: next.img.urlKey, ...(next.img.placeholder ? { placeholder: next.img.placeholder } : {}) } : img))(ownerMarks({ ...latest.img, ...patch.img }, patch.img, latest.img)),
+      img: (img => (restyled ? { ...withoutPlaceholder(img), url: next.img.url, urlKey: next.img.urlKey, ...(next.img.placeholder ? { placeholder: next.img.placeholder } : {}) } : img))(patchedCover(latest.img, patch.img, e.kw)),
       ...(patch.videos ? { videos: patch.videos } : {}),
     }; }, !!patch.img);
     return { ok: true, ...at };
@@ -108,7 +118,10 @@ export const actions: ActionMap = {
     let img: Article['img'] = { ...a.img, seed: (a.img.seed || 1) + 1 };
     let directions: ArticleImageDirections | undefined;
     const modelStyle = MODEL_STYLES.includes(img.style);
-    if (prompt !== undefined) img = { ...img, prompt, promptBy: 'owner', modelRequired: true };
+    // A typed direction replaces Radar's scene, so the alt Radar wrote for that scene no longer describes the cover: it
+    // becomes the neutral built-in alt. An alt a person typed is theirs and stays.
+    const neutralAlt = prompt !== undefined && a.img.altBy !== 'owner' ? fallbackImageDirections(e.title, a.body, []).cover.alt : undefined;
+    if (prompt !== undefined) img = { ...img, prompt, promptBy: 'owner', modelRequired: true, ...(neutralAlt !== undefined ? { alt: neutralAlt } : {}) };
     else if (a.generated && a.body.length && modelStyle && !coverDirectionIsOwners(a.img, e.kw)) {
       // Cached on the article when the text has not changed since the last draft; otherwise one small text call.
       directions = await resolveImageDirections(ctx.bid, profileOf(ctx.biz), e, a, { budgetMs: 20_000 });
@@ -124,7 +137,7 @@ export const actions: ActionMap = {
         img: {
           ...withoutPlaceholder(latest.img), url: img.url, urlKey: img.urlKey, seed: img.seed, prompt: img.prompt, modelRequired: img.modelRequired,
           ...(img.promptBy ? { promptBy: img.promptBy } : {}),
-          ...(directions && latest.img.altBy !== 'owner' ? { alt: img.alt } : {}),
+          ...((directions || neutralAlt !== undefined) && latest.img.altBy !== 'owner' ? { alt: img.alt } : {}),
           ...(img.placeholder ? { placeholder: img.placeholder } : {}),
         },
         ...(directions ? { imageDirections: directions } : {}),

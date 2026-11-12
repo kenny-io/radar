@@ -84,6 +84,31 @@ describe('checking the answer against the article', () => {
     expect(clean.sections[2].prompt).toBe(good.sections[2].direction);
     expect(clean.cover.prompt).toBe(good.cover.direction);
   });
+  it.each([
+    ['Chart House', 'building', 'The exterior of Chart House, a brick waterfront building, seen from the quay in daylight.'],
+    ['The Abstract Hotel', 'building', 'The entrance of The Abstract Hotel on a quiet street, with a doorman under the canopy.'],
+    ['Logo Labels', 'organisation', 'The shopfront of logo labels on a market street, with rolls of blank stickers in the window.'],
+  ] as const)('a subject called %s does not get its own pictures refused for its name', (name, kind, direction) => {
+    const named: Block[] = [['p', `${name} is reviewed here by people who have been inside.`], ...body.slice(1)];
+    const named_ctx = { title: `${name} reviews`, body: named, plans: planArticleBodyImages(named, 2200) };
+    const clean = cleanImageDirections({ ...good, subject: name, subjectKind: kind, cover: { direction, alt: `Illustration of ${name}` }, sections: [{ ...good.sections[0], direction: `A maintenance worker repairing a door hinge in a corridor of ${name}, with a toolbox on the floor.` }, good.sections[1], good.sections[2]] }, named_ctx);
+    expect(clean.replaced).toEqual([]);
+    expect(clean.subject).toEqual({ name, kind });
+    expect(clean.cover.prompt).toBe(direction);
+    expect(clean.sections[0].prompt).toContain(name);
+  });
+  it('the name is all that is excused: the same pictures are still refused for what else they ask, or when the article does not name the subject', () => {
+    const named: Block[] = [['p', 'Chart House is reviewed here by people who have been inside.'], ...body.slice(1)];
+    const named_ctx = { title: 'Chart House reviews', body: named, plans: planArticleBodyImages(named, 2200) };
+    const answer = (direction: string, subject = 'Chart House') => cleanImageDirections({ ...good, subject, subjectKind: 'building', cover: { direction, alt: 'Illustration of Chart House' } }, named_ctx).replaced;
+    expect(answer('The exterior of Chart House with a bar chart of its ratings painted on the wall.')).toEqual([{ slot: 'cover', why: 'asks for writing' }]);
+    expect(answer('The exterior of Chart House with a sign reading its name above the door.')).toEqual([{ slot: 'cover', why: 'asks for writing' }]);
+    expect(answer('An abstract arrangement of shapes that stands for Chart House and its tenants.')).toEqual([{ slot: 'cover', why: 'symbolic' }]);
+    // A subject the article does not name is not accepted, so nothing is excused for it.
+    expect(answer('The exterior of Graph Tower, a brick waterfront building, seen from the quay.', 'Graph Tower')).toEqual([{ slot: 'cover', why: 'asks for writing' }]);
+    // With no subject at all the checks are exactly as before.
+    expect(cleanImageDirections({ ...good, subject: '', subjectKind: 'none', cover: { direction: 'The exterior of Chart House, a brick waterfront building, seen from the quay.', alt: 'Illustration of a building' } }, named_ctx).replaced).toEqual([{ slot: 'cover', why: 'asks for writing' }]);
+  });
   it('accepts numbers the article states, however they are punctuated', () => {
     const clean = cleanImageDirections({ ...good, cover: { ...good.cover, direction: 'The exterior of Wasl 611, a community with 131 rooms across three buildings in Al Warsan.' } }, ctx);
     expect(clean.replaced).toEqual([]);
