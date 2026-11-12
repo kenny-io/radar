@@ -58,8 +58,8 @@ describe('one row per provider asked', () => {
     expect(urls).toEqual([OR, OA]);
     expect(H.inserted).toEqual([
       { ...ROW, model: 'google/gemini-nano-banana-2.1', provider: 'openrouter', latencyMs: expect.any(Number), inputTokens: null, outputTokens: null, costUsd: null, ok: false, error: expect.stringMatching(/^openrouter image 500/) },
-      // gpt-image-1 has no published rate in the price table: its tokens are kept and the cost stays null, never a guess.
-      { ...ROW, model: 'gpt-image-1', provider: 'OpenAI', latencyMs: expect.any(Number), inputTokens: 40, outputTokens: 4160, costUsd: null, ok: true, error: null },
+      // The default OpenAI image model is priced per token: 40 text input at $5/M plus 4,160 image output at $30/M.
+      { ...ROW, model: 'gpt-image-2.5-flare', provider: 'OpenAI', latencyMs: expect.any(Number), inputTokens: 40, outputTokens: 4160, costUsd: 0.125, ok: true, error: null },
     ]);
   });
   it('xAI bills per image: $0.02, and the row names the model asked', async () => {
@@ -95,7 +95,7 @@ describe('one row per provider asked', () => {
     expect(e?.message).toMatch(/^xai image 500/);
     expect(H.stored).toHaveLength(0);
     expect(urls).toEqual([OR, OA, XA]);
-    expect(H.inserted.map(r => [r.provider, r.model, r.ok, r.costUsd])).toEqual([['openrouter', 'google/gemini-nano-banana-2.1', false, null], ['OpenAI', 'gpt-image-1', false, null], ['SpaceX', 'grok-imagine-image', false, null]]);
+    expect(H.inserted.map(r => [r.provider, r.model, r.ok, r.costUsd])).toEqual([['openrouter', 'google/gemini-nano-banana-2.1', false, null], ['OpenAI', 'gpt-image-2.5-flare', false, null], ['SpaceX', 'grok-imagine-image', false, null]]);
   });
   it('a strict article body request with every provider failing: one row per provider asked, under its own purpose, and no template', async () => {
     const images = await boot(ALL);

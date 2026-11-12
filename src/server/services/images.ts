@@ -78,9 +78,14 @@ async function openrouterImage(prompt: string, w: number, h: number): Promise<Ge
   if (/svg/i.test(String(img?.media_type || ''))) throw Object.assign(new Error('openrouter image: SVG output is not supported'), { billed: usage });
   return { buf: Buffer.from(b64, 'base64'), usage };
 }
+/** OpenAI's Images API model. `gpt-image-1` was shut down on 2026-10-23; OpenAI's deprecations page and Create image
+ *  reference (read 2026-11-13) name the GPT-Image-2.5 pair as its replacement, and Flare is the one for everyday
+ *  generation. GPT image models always return base64, so no response_format is sent. */
+export const OPENAI_IMAGE_DEFAULT = 'gpt-image-2.5-flare';
+const openaiImageModel = () => process.env.OPENAI_IMAGE_MODEL || OPENAI_IMAGE_DEFAULT;
 async function openaiImage(prompt: string, w: number, h: number): Promise<Generated> {
   const size = w / h > 1.2 ? '1536x1024' : w / h < 0.83 ? '1024x1536' : '1024x1024';
-  const res = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { authorization: `Bearer ${env.openaiKey}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1', prompt, size, n: 1 }) });
+  const res = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { authorization: `Bearer ${env.openaiKey}`, 'content-type': 'application/json' }, body: JSON.stringify({ model: openaiImageModel(), prompt, size, n: 1 }) });
   if (!res.ok) { const t = await res.text(); throw Object.assign(new Error(`openai image ${res.status}: ${t.slice(0, 200)}`), { status: res.status, account: accountFail(res.status, t) }); }
   const j = await res.json(); const usage = { inputTokens: tok(j?.usage?.input_tokens), outputTokens: tok(j?.usage?.output_tokens) };
   const b64 = j.data?.[0]?.b64_json; if (!b64) throw Object.assign(new Error('openai image: empty'), { billed: usage });
@@ -140,7 +145,7 @@ export async function generatePhotoRaw(r: ImageReq): Promise<Buffer> {
     if ((name === 'openrouter' && openrouterDown()) || (imgDown.get(name) || 0) > Date.now()) { accountBlocked++; continue; }
     // The OpenRouter breaker is transient, and only skips its route when an alternative is configured.
     if (name === 'openrouter' && openrouterTripped() && (env.openaiKey || env.xaiKey)) continue;
-    const model = name === 'openrouter' ? openrouterImageModel() : name === 'openai' ? process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1' : process.env.XAI_IMAGE_MODEL || 'grok-imagine-image';
+    const model = name === 'openrouter' ? openrouterImageModel() : name === 'openai' ? openaiImageModel() : process.env.XAI_IMAGE_MODEL || 'grok-imagine-image';
     const t0 = Date.now(); const row = { businessId: r.bid, task: 'image', purpose: `image.${r.kind || 'images'}`, model, provider: IMG_PROVIDER[name] };
     try { const out = await run(); raw = out.buf; recordAiCall({ ...row, ...out.usage, latencyMs: Date.now() - t0, ok: true }); if (name === 'openrouter') noteOpenrouterOutcome(); break; } catch (e: any) {
       last = e;
