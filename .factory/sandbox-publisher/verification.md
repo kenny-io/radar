@@ -38,6 +38,10 @@ Node 22.18.0. Live checks use the Thally Daytona organization (Tier 3), snapshot
 | `b2b77964` | QA-3 | `npm run build` | compiled successfully |
 | `b2b77964` | QA-3, PM | QA offline suite | 401 passed, 25 skipped |
 | `b2b77964` | QA-3 | GitHub Markdown rendering of 115 PR bodies with hostile agent text | no block, link, image or mention in the agent section |
+| `388aa718` (merge of `main` `8f9b52d5`) | PM | `npm run typecheck` | clean |
+| `388aa718` | PM | `npm test` | 2,430 passed, 561 skipped, 1 failed (pre-existing) |
+| `388aa718` | PM | QA offline suite | 401 passed, 25 skipped |
+| `388aa718` | PM | `npm run build` | compiled successfully |
 
 ## Live runs (real sandbox, real model, no GitHub write unless stated)
 
@@ -61,7 +65,7 @@ Node 22.18.0. Live checks use the Thally Daytona organization (Tier 3), snapshot
 - Egress, credentials and teardown in a real sandbox (QA-1): proxy reachable, 18 other hosts unreachable; file-tool fence refused 13 hostile calls against the real SDK; 15 QA sandboxes all deleted.
 - Browser smoke (QA-1, dev stubs): 15 of 15 plus 3 of 3 for retry; failed articles show only the generic copy.
 
-Tested revision for release: `b2b77964` (code last changed in `8ce9b640`). Sandboxes left after all rounds: none.
+Tested revision for release: `b2b77964` for QA and live runs (sandbox code last changed in `8ce9b640`); `388aa718` adds a merge of `main` with one conflict in `connectors/nextjs.ts`, covered by the automated checks above and no new live run. Sandboxes left after all rounds: none.
 
 ## Not verified
 
