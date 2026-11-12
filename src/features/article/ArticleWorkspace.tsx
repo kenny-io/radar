@@ -19,12 +19,12 @@ import { addDays, fmtDW, fmtTime } from '@/lib/format';
 import { parseBlocks } from './blocks';
 import { REVIEW_LIST_URL, afterApprove, reviewList, reviewPos, safeBack } from './review';
 import { ArticleLoadError, ArticleLoading } from './ArticleLoad';
+import { articleSave, coverDirectionHint, type ArtPatch } from './autosave';
 import { articleBodyImageAnchor } from '@/lib/articleImages';
 import { BodyImage, BodyImagesPanel } from './BodyImage';
 import { RewriteBar, VideoEmbed, VideoPicker } from './RewriteBar';
 import type { Article, Block as BlockT, CalendarEntry, ConnectionPublic, VideoRef, Workspace } from '@/lib/types';
 
-type ArtPatch = { body?: BlockT[]; brief?: Article['brief']; seo?: Article['seo']; img?: Partial<Article['img']>; videos?: string[] };
 /** The workspace keeps one editable field of an article, for the calendar's Undo of "Replace topic": its outline. */
 const patchOutline = (id: string, outline: string[]) => (B: Workspace): Workspace => ({ ...B, articles: { ...B.articles, [id]: { ...(B.articles[id] || { generated: false, v: 0 }), outline } } });
 const patchEntry = (id: string, patch: Partial<CalendarEntry>) => (B: Workspace): Workspace => ({ ...B, calendar: { ...B.calendar, entries: B.calendar.entries.map(x => (x.id === id ? { ...x, ...patch } : x)) } });
@@ -81,10 +81,8 @@ export function ArticleWorkspace() {
     const cur = { ...A, ...p, img: { ...A.img, ...(p.img || {}) } };
     art.patch(a => ({ ...a, ...p, img: { ...a.img, ...(p.img || {}) } }));
     const opt = p.brief ? patchOutline(id, cur.brief.outline) : undefined;
-    const patch: any = {};
-    if (p.body) patch.body = cur.body; if (p.brief) patch.brief = cur.brief; if (p.seo) patch.seo = cur.seo; if (p.videos) patch.videos = cur.videos;
-    if (p.img) patch.img = { style: cur.img.style, prompt: cur.img.prompt, alt: cur.img.alt };
-    const key = 'art:' + id + ':' + Object.keys(patch).join(',');
+    // Only what this edit changed is sent; an image edit sends only its own field (see articleSave).
+    const { key, patch } = articleSave(id, cur, p);
     if (later) app.actLater(key, 'article.save', { entryId: id, patch }, { optimistic: opt, done: art.saved });
     else app.act('article.save', { entryId: id, patch }, { optimistic: opt }).then(art.saved, art.reload);
   };
@@ -194,7 +192,7 @@ export function ArticleWorkspace() {
             {!mediaLocked && B.role !== 'Viewer' && <Btn size="sm" icon="refresh" loading={imgBusy} disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn>}
           </div>}
           <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); art.patch(a => ({ ...a, img: { ...a.img, style: style as Article['img']['style'] } })); art.reload(); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Describe your image" hint="Radar writes this from your article. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
+          <Field label="Describe your image" hint={coverDirectionHint(A.generated)}><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
           <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
           {imageError && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageError}</span>}
