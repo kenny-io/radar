@@ -4,12 +4,14 @@
 // runTrackPublicRunSandbox, remoteFileSize) and the typings in node_modules/@daytona/sdk/esm.
 // Every SDK timeout is in seconds and 0 means "no timeout", so no call here ever passes less than 1.
 import type { CreateSandboxFromSnapshotParams } from '@daytona/sdk';
-import { SANDBOX_USER, SANDBOX_WORKLOAD, type SandboxHandle, type SandboxProvider, type SandboxSpec } from './types';
+import { SANDBOX_USER, SANDBOX_WORKLOAD, type SandboxHandle, type SandboxLeftover, type SandboxProvider, type SandboxSpec } from './types';
 
 /** Pinned so an ambient SDK variable (DAYTONA_API_URL, DAYTONA_SERVER_URL, a .env file) cannot redirect the key. */
 export const DAYTONA_API_URL = 'https://app.daytona.io/api';
 /** Exec output is untrusted and may quote repository text; callers get a bounded prefix. */
 export const EXEC_OUTPUT_MAX_CHARS = 2000;
+/** Longest provider error kept for a sandbox that could not be deleted. */
+export const LEFTOVER_ERROR_CHARS = 300;
 
 const SNAPSHOT_UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 /** One host name: no scheme, port, path, wildcard, comma or space. Daytona's domainAllowList is comma-separated. */
@@ -42,6 +44,8 @@ export function buildSandboxCreateParameters(spec: SandboxSpec): CreateSandboxFr
 // The part of the SDK this module uses, so a test can stub the module without the real classes.
 interface DaytonaSandbox {
   id: string;
+  /** Lifecycle state as the API reports it (`started`, `creating`, `error`, ...). */
+  state?: string;
   labels?: Record<string, string>;
   domainAllowList?: string;
   fs: {
@@ -116,7 +120,7 @@ export function daytonaProvider(apiKey: string, load: () => Promise<DaytonaSdk> 
       const { sdk, client } = await open();
       return handleOf(await client.create(parameters, { timeout: seconds(spec.timeoutSec) }), sdk);
     },
-    async destroyMatching(labels, timeoutSec) {
+    async destroyMatching(labels, timeoutSec, onLeftover) {
       // An empty or partial filter would match other workloads in the same organization.
       if (labels.workload !== SANDBOX_WORKLOAD || !labels.entry) throw new Error('daytona: leftover deletion needs the workload and entry labels');
       const { sdk, client } = await open();
@@ -125,7 +129,18 @@ export function daytonaProvider(apiKey: string, load: () => Promise<DaytonaSdk> 
       for await (const sandbox of client.list({ labels: { ...labels } })) {
         // Never delete on the strength of the server-side filter alone.
         if (!Object.entries(labels).every(([name, value]) => sandbox.labels?.[name] === value)) continue;
-        try { await sandbox.delete(seconds((endsAt - Date.now()) / 1000), true); } catch (error) { if (!(error instanceof sdk.DaytonaNotFoundError)) throw error; }
+        // A sandbox Daytona is still creating, or one in an error state, can refuse deletion ("state change in
+        // progress"). With a listener that one is reported and the rest are still deleted; one stuck sandbox must not
+        // keep the others alive.
+        const leftover = (error: string): SandboxLeftover => ({ id: String(sandbox.id), state: typeof sandbox.state === 'string' && sandbox.state ? sandbox.state : null, error });
+        if (onLeftover && Date.now() >= endsAt) { onLeftover(leftover('not attempted: the sweep ran out of time')); continue; }
+        try { await sandbox.delete(seconds((endsAt - Date.now()) / 1000), true); } catch (error) {
+          if (!(error instanceof sdk.DaytonaNotFoundError)) {
+            if (!onLeftover) throw error;
+            onLeftover(leftover(`${error instanceof Error ? error.name : 'Error'}: ${error instanceof Error ? error.message : String(error)}`.slice(0, LEFTOVER_ERROR_CHARS)));
+            continue;
+          }
+        }
         deleted++;
       }
       return deleted;

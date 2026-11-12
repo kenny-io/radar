@@ -12,6 +12,8 @@ export interface FixtureTree {
   readBlob(sha: string): Promise<Buffer>;
   /** Blob SHAs the gate asked for, in order. */
   reads: string[];
+  /** True when this tree holds the blob. */
+  holds(sha: string): boolean;
   text(path: string): string;
 }
 /** Builds the recursive tree GitHub returns for a commit: a `tree` entry per directory, a `blob` entry with its real
@@ -33,6 +35,7 @@ export function treeOf(files: Map<string, string | Buffer>, extra: RepoEntry[] =
   const reads: string[] = [];
   return {
     entries, reads,
+    holds: sha => blobs.has(sha),
     async readBlob(sha) { reads.push(sha); const data = blobs.get(sha); if (!data) throw new Error('blob not in fixture: ' + sha); return data; },
     text(path) { const entry = entries.get(path); const data = entry && blobs.get(entry.sha); if (!data) throw new Error('file not in fixture: ' + path); return data.toString('utf8'); },
   };
@@ -41,8 +44,10 @@ export function treeOf(files: Map<string, string | Buffer>, extra: RepoEntry[] =
 export const CAPABILITY = 'rdrcap1.eyJ2IjoxLCJhdWQiOiJyYWRhci1wdWJsaXNoLW1vZGVsIiwicnVuSWQiOiJmaXh0dXJlIn0.c2lnbmF0dXJlLWZvci1maXh0dXJlcy1vbmx5';
 
 export interface AgentOutput { files: Record<string, string | Buffer>; articlePath: string; route: string; slug?: string; report?: Partial<AgentReport>; result?: Partial<RunnerResult> }
-/** The gate input for one hand-written agent output: `files` are what the control plane downloaded from the sandbox. */
-export function gateInput(tree: FixtureTree, payload: PublishPayload, output: AgentOutput, options: Partial<RepositoryPostOptions> = {}): PublicationGateInput {
+/** The gate input for one hand-written agent output: `files` are what the control plane downloaded from the sandbox.
+ *  For a retry or a legacy migration `tree` is the head of the article branch and `base` the default-branch commit that
+ *  branch started from; its blobs are served by the same reader, as the connector's reader serves them. */
+export function gateInput(tree: FixtureTree, payload: PublishPayload, output: AgentOutput, options: Partial<RepositoryPostOptions> = {}, base?: FixtureTree): PublicationGateInput {
   const finals = new Map(Object.entries(output.files).map(([path, value]) => [path, buffer(value)]));
   const report: AgentReport = {
     version: 1, status: 'integrated', slug: output.slug ?? payload.slug, articlePath: output.articlePath, route: output.route,
@@ -54,5 +59,6 @@ export function gateInput(tree: FixtureTree, payload: PublishPayload, output: Ag
     version: 1, status: 'completed', agentError: null, sessionId: 'session-fixture', turns: 12,
     changed: [...finals].map(([path, data]) => ({ path, bytes: data.length })), ...output.result,
   };
-  return { payload, hint: 'content', entries: tree.entries, report, result, finals, readBlob: tree.readBlob, options: { businessId: 'b_fixture', ...options }, capability: CAPABILITY };
+  const readBlob = base ? (sha: string) => (tree.holds(sha) || !base.holds(sha) ? tree.readBlob(sha) : base.readBlob(sha)) : tree.readBlob;
+  return { payload, hint: 'content', entries: tree.entries, ...(base ? { baseEntries: base.entries } : {}), report, result, finals, readBlob, options: { businessId: 'b_fixture', ...options }, capability: CAPABILITY };
 }

@@ -12,6 +12,8 @@
 //  - GET  /repos/{repo}/tarball/<commit SHA> → 302 to codeload.github.com (the token is not sent across that redirect);
 //    GET  /repos/{repo}/git/blobs/<blob SHA> → { encoding: "base64", content }; GET /repos/{repo}/commits/<SHA> → { files: [{ filename, status }] }
 //  - GET/POST /repos/{repo}/git/trees and /git/commits; PATCH /git/refs/heads/<branch> { sha, force: false }
+//  - GET  /repos/{repo}/compare/<base SHA>...<head SHA> → { merge_base_commit: { sha, commit: { tree: { sha } } } };
+//    404 when the two commits share no history
 //  - POST /repos/{repo}/pulls { title, head, base, body, draft: true } (422 = validation, e.g. that head has a PR);
 //    GET /repos/{repo}/pulls?head=owner:branch&state=open
 //  - GET  /user/repos?affiliation=owner,collaborator,organization_member&sort=pushed&per_page=100&page=N → [{ full_name, html_url, permissions.push }]
@@ -265,9 +267,31 @@ async function createRepositoryDraft(c: ConnCtx, p: PublishPayload, b: Awaited<R
       { source: 'publishing', operation: SANDBOX_OPERATIONS.config, incidentKey: SANDBOX_OPERATIONS.config, businessId: c.bid, ref: p.entryId, provider: 'nextjs', degraded: true });
   }
   const options = { businessId: c.bid, deadlineAt: c.publishDeadlineAt, ...(retry ? { retry } : {}), ...(legacy ? { legacy } : {}) };
+  // A retry or a migration continues a branch that already holds an earlier attempt's work, so "existing content" is
+  // not the branch head. The sandbox engine's gate is given the tree of the default-branch commit the article branch
+  // started from, and protects what that commit holds exactly as it does on a first attempt.
+  let baseEntries: RepoEntry[] | undefined;
+  if (engine.enabled && previous) {
+    let compared: { merge_base_commit?: { commit?: { tree?: { sha?: unknown } } } };
+    try { compared = await gh(c, `${API}/repos/${b.repo}/compare/${b.sha}...${parent}?per_page=1`, { headers: h(c) }); } catch (e) {
+      if (notFound(e)) throw repositoryPublishingError('The article branch shares no history with the default branch, so Radar cannot tell existing content from its own earlier changes. Review that branch before retrying, or use a new article branch.');
+      throw e;
+    }
+    const baseTreeSha = compared.merge_base_commit?.commit?.tree?.sha;
+    // An object name only: it goes into a request path.
+    if (typeof baseTreeSha !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(baseTreeSha)) throw repositoryPublishingError('GitHub did not say where the article branch left the default branch. Retry after checking the repository branch.', 'snapshot-mismatch');
+    if (baseTreeSha === commit.tree.sha) baseEntries = tree.tree;
+    else {
+      const baseTree = await gh<{ truncated?: boolean; tree: RepoEntry[] }>(c, `${API}/repos/${b.repo}/git/trees/${baseTreeSha}?recursive=1`, { headers: h(c) });
+      if (baseTree.truncated || !Array.isArray(baseTree.tree) || baseTree.tree.length > 30_000) throw repositoryPublishingError('The repository tree is too large to inspect safely. Connect the website in a smaller repository and try again.', 'tree-unavailable');
+      baseEntries = baseTree.tree;
+      // The gate reads the default branch's version of a changed file through the same verified blob reader.
+      for (const entry of baseTree.tree) if (entry.type === 'blob' && !pinnedBlobs.has(entry.sha)) pinnedBlobs.set(entry.sha, entry.size);
+    }
+  }
   // The hint never selects a framework or limits where a grounded integration may add files.
   const sandbox: SandboxIntegration | null = engine.enabled
-    ? await integrateWithSandbox({ config: engine, hint, payload: p, repo: b.repo, commitSha: parent, entries: tree.tree, fetchArchive, readBlob, options: { ...options, deadlineAt: c.publishDeadlineAt ?? Date.now() + engine.attemptMs } })
+    ? await integrateWithSandbox({ config: engine, hint, payload: p, repo: b.repo, commitSha: parent, entries: tree.tree, ...(baseEntries ? { baseEntries } : {}), fetchArchive, readBlob, options: { ...options, deadlineAt: c.publishDeadlineAt ?? Date.now() + engine.attemptMs } })
     : null;
   const plan: RepositoryPostPlan = sandbox ?? await planRepositoryPost(hint, p, { entries: tree.tree, read }, options);
   if (sandbox?.unchanged) {
@@ -346,6 +370,13 @@ function agentLine(value: unknown, limit: number): string {
     .replace(/\s+/g, ' ').trim();
   return shortenAgentText(text, limit);
 }
+/** How every piece of agent-written text enters the pull request body: as one line (`agentLine`), after words Radar
+ *  wrote, on Radar's line. Markdown recognises a block (a heading, a quote, a list or task-list item, a table, a code
+ *  fence or indented code, a thematic break, an HTML block, a link definition) only where a line, or the content of a
+ *  list item, begins; a table and an underlined heading also need a second line. Agent text never stands at either
+ *  place and never spans a line, so whatever it begins with, it is inline text inside Radar's own paragraph or list
+ *  item. That removes the class; it does not depend on which markers exist. */
+const agentStatement = (label: string, value: unknown, limit: number, empty = 'none given') => `${label}: ${agentLine(value, limit) || empty}`;
 
 /** The sandbox engine's pull request. Three kinds of statement are kept apart: what Radar checked itself, what the
  * agent says (unverified), and what nobody ran. No v1 run installs, builds or executes anything from the repository,
@@ -372,9 +403,10 @@ export function sandboxPullRequestBody(p: PublishPayload, extra: any): string {
   lines.push('', '### What the agent reported (not verified by Radar)', '');
   if (resumed) lines.push('Not available: the agent’s statements from the earlier attempt were not kept.');
   else {
-    lines.push('An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', '', `Summary: ${agentLine(extra?.summary, AGENT_TEXT.summaryChars) || 'none given'}`);
-    if (conventions.length) { lines.push('', 'Repository rules it says it followed:'); for (const note of conventions) lines.push(`- ${agentLine(note, AGENT_TEXT.noteChars)}`); }
-    if (deviations.length) { lines.push('', 'Deviations it reported:'); for (const note of deviations) lines.push(`- ${agentLine(note, AGENT_TEXT.noteChars)}`); }
+    lines.push('An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', '', agentStatement('Summary', extra?.summary, AGENT_TEXT.summaryChars));
+    // Each note follows a label and number of Radar's, so no note begins its list item.
+    if (conventions.length) { lines.push('', 'Repository rules it says it followed:'); conventions.forEach((note, index) => lines.push(`- ${agentStatement(`Rule ${index + 1}`, note, AGENT_TEXT.noteChars, 'nothing readable')}`)); }
+    if (deviations.length) { lines.push('', 'Deviations it reported:'); deviations.forEach((note, index) => lines.push(`- ${agentStatement(`Deviation ${index + 1}`, note, AGENT_TEXT.noteChars, 'nothing readable')}`)); }
   }
 
   lines.push('', '### Media and links not carried over', '');

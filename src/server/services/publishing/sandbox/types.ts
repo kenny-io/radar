@@ -119,10 +119,15 @@ export interface SandboxHandle {
   /** Resolves once deletion is observed; not-found is success. */
   destroy(timeoutSec: number): Promise<void>;
 }
+/** A sandbox a label sweep found and could not delete: its id, the state the provider reports for it (for example
+ *  `creating`), and why the delete did not go through. Untrusted provider text: sanitize it before it is shown. */
+export interface SandboxLeftover { id: string; state: string | null; error: string }
 export interface SandboxProvider {
   create(spec: SandboxSpec): Promise<SandboxHandle>;
-  /** Deletes every sandbox carrying all of these labels; resolves with how many were deleted. */
-  destroyMatching(labels: Record<string, string>, timeoutSec: number): Promise<number>;
+  /** Deletes every sandbox carrying all of these labels; resolves with how many were deleted. Rejects when the
+   *  sandboxes cannot be listed. With `onLeftover`, a sandbox that cannot be deleted is handed to it and the sweep goes
+   *  on to the next one; without it, the first failed delete rejects. */
+  destroyMatching(labels: Record<string, string>, timeoutSec: number, onLeftover?: (leftover: SandboxLeftover) => void): Promise<number>;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -337,7 +342,13 @@ export interface PublicationGateInput {
    *  within GATE_LIMITS.fileBytes. A candidate missing from this map fails the gate. When `result.changed` holds more
    *  than GATE_LIMITS.candidates paths nothing needs downloading: the gate fails on the count. */
   finals: Map<string, Buffer>;
-  /** Pinned blob content, for original-versus-final comparison. */
+  /** On a retry or a legacy migration (`options.retry`, `options.legacy`), `entries` is the head of the article branch,
+   *  which already holds an earlier attempt's work. This is the tree, by path, of the default-branch commit that branch
+   *  started from (its merge base with the default branch). What a file holds there is existing content and is
+   *  protected exactly as on a first attempt; anything else on the branch was written by an earlier attempt and may be
+   *  replaced. Without it, a retry is judged against `entries`, so everything on the branch head is protected. */
+  baseEntries?: Map<string, RepoEntry>;
+  /** Pinned blob content, for original-versus-final comparison. Must also serve the blobs of `baseEntries`. */
   readBlob(sha: string): Promise<Buffer>;
   options: RepositoryPostOptions;
   /** This run's capability string, so the gate can refuse any file that contains it. */
@@ -384,6 +395,9 @@ export interface SandboxIntegrationInput {
   /** The pinned parent the transport commits onto. */
   commitSha: string;
   entries: RepoEntry[];
+  /** A retry or legacy migration only: the tree of the default-branch commit the article branch started from, handed to
+   *  the gate as `PublicationGateInput.baseEntries`. `readBlob` must serve its blobs too. */
+  baseEntries?: RepoEntry[];
   /** GET /repos/{repo}/tarball/{commitSha}. A closure in nextjs.ts that holds the token; run.ts never sees credentials. */
   fetchArchive(signal: AbortSignal): Promise<{ stream: ReadableStream<Uint8Array> }>;
   /** GET /repos/{repo}/git/blobs/{sha} */

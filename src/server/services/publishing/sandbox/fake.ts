@@ -2,7 +2,7 @@
 // each sandbox's files in a Map, runs a scripted exec handler in place of the runner, and records every call with its
 // full arguments so a test can assert order (probe before upload, destroy before return) and the absence of secrets.
 import { readFile } from 'node:fs/promises';
-import type { SandboxExecResult, SandboxHandle, SandboxProvider, SandboxSpec } from './types';
+import type { SandboxExecResult, SandboxHandle, SandboxLeftover, SandboxProvider, SandboxSpec } from './types';
 
 export type FakeCall =
   | { op: 'destroyMatching'; labels: Record<string, string>; timeoutSec: number }
@@ -37,6 +37,9 @@ export interface FakeSandboxOptions {
   appliedAllowDomain?: (spec: SandboxSpec) => string | null;
   /** How many leftover sandboxes destroyMatching reports as deleted. */
   leftovers?: number;
+  /** Sandboxes destroyMatching finds for these labels and cannot delete (stuck in `creating`, say). They are handed to
+   *  the caller's listener; without a listener the first one rejects the call, as the real provider does. */
+  undeletable?: (labels: Record<string, string>) => SandboxLeftover[];
 }
 
 const copy = (value: Record<string, string> | undefined) => (value ? { ...value } : undefined);
@@ -55,8 +58,12 @@ export class FakeSandboxProvider implements SandboxProvider {
     if (error !== undefined) throw error;
   }
 
-  async destroyMatching(labels: Record<string, string>, timeoutSec: number): Promise<number> {
+  async destroyMatching(labels: Record<string, string>, timeoutSec: number, onLeftover?: (leftover: SandboxLeftover) => void): Promise<number> {
     await this.enter({ op: 'destroyMatching', labels: { ...labels }, timeoutSec });
+    for (const leftover of this.options.undeletable?.({ ...labels }) ?? []) {
+      if (!onLeftover) throw new Error(leftover.error);
+      onLeftover({ ...leftover });
+    }
     return this.options.leftovers ?? 0;
   }
 

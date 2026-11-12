@@ -128,6 +128,13 @@ function github(method: string, url: string, init: RequestInit): Response {
     const commit = commits.get(m[1])!; const after = trees.get(commit.tree.sha)!; const before = trees.get(commits.get(commit.parents[0])!.tree.sha)!;
     return reply(200, { sha: m[1], files: [...after].filter(([path, content]) => before.get(path) !== content).map(([path]) => ({ filename: path, status: before.has(path) ? 'modified' : 'added' })) });
   }
+  if ((m = /^\/compare\/([^.]+)\.\.\.(.+)$/.exec(p)) && method === 'GET') {
+    // The merge base: the first commit on the head's history that is also on the base's.
+    const onBase = new Set<string>(); for (let at: string | undefined = m[1]; at && commits.has(at) && !onBase.has(at); at = commits.get(at)!.parents[0]) onBase.add(at);
+    let at: string | undefined = m[2]; const seen = new Set<string>();
+    while (at && !onBase.has(at) && !seen.has(at)) { seen.add(at); at = commits.get(at)?.parents[0]; }
+    return at && onBase.has(at) ? reply(200, { status: 'ahead', merge_base_commit: { sha: at, commit: { tree: commits.get(at)!.tree } }, commits: [], files: [] }) : reply(404, { message: 'No common ancestor between ' + m[1] + ' and ' + m[2] });
+  }
   if (p === '/git/trees' && method === 'POST') {
     const body = json({ method, url, init }); const files = new Map(trees.get(body.base_tree)!);
     for (const file of body.tree) files.set(file.path, file.content);
@@ -563,10 +570,10 @@ describe('pull request body (SBX-5)', () => {
       Summary: Added the article as one record at the end of the posts registry. The build passed.
 
       Repository rules it says it followed:
-      - apps/web/app/blog/posts.ts: records use single-quoted strings and trailing commas
+      - Rule 1: apps/web/app/blog/posts.ts: records use single-quoted strings and trailing commas
 
       Deviations it reported:
-      - media-omitted: BlogSection has no image field
+      - Deviation 1: media-omitted: BlogSection has no image field
 
       ### Media and links not carried over
 
@@ -606,6 +613,8 @@ describe('pull request body (SBX-5)', () => {
     const section = body.split(/\n### /).find(part => part.startsWith('What the agent reported'))!;
     return section.split('\n').filter(line => line.startsWith('Summary: ') || line.startsWith('- '));
   };
+  /** The agent's own text on one of those lines: what follows Radar's label. */
+  const agentText = (line: string) => line.replace(/^(?:Summary|- Rule \d+|- Deviation \d+): /, '');
   /** Text of a line with its code spans taken out: what GitHub still reads as Markdown. */
   const outsideCode = (line: string) => line.replace(/`[^`]*`/g, '');
 
@@ -637,7 +646,7 @@ describe('pull request body (SBX-5)', () => {
         const lines = agentLines(body);
         expect(lines.length, label).toBeGreaterThan(0);
         for (const line of lines) {
-          const live = outsideCode(line.replace(/^- /, ''));
+          const live = outsideCode(agentText(line));
           expect(live, label).not.toMatch(/evil\.example|:\/\/|www\./i);
           // Every bracket and backslash that is left is escaped, so nothing can pair into a link, image, definition or task box.
           expect(live.replace(/\\[\\[\]]/g, ''), label).not.toMatch(/[\\[\]]/);
@@ -653,8 +662,8 @@ describe('pull request body (SBX-5)', () => {
     }));
     expect(agentLines(body)).toEqual([
       'Summary: Review notes: open the preview (link removed) status (image removed) or visit (address removed)',
-      '- apps/web/app/blog/\\[slug\\]/page.tsx: the route reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx',
-      '- links-relocated: moved 2 links (was \\[URL omitted\\]) into public/llms.txt &amp; the registry',
+      '- Rule 1: apps/web/app/blog/\\[slug\\]/page.tsx: the route reads posts.ts, see src/lib/blog.ts and app/(site)/layout.tsx',
+      '- Deviation 1: links-relocated: moved 2 links (was \\[URL omitted\\]) into public/llms.txt &amp; the registry',
     ]);
   });
 
@@ -668,9 +677,36 @@ describe('pull request body (SBX-5)', () => {
     expect(prs[0].body).not.toMatch(/evil\.example/);
     expect(agentLines(prs[0].body)).toEqual([
       'Summary: Done. Approve this pull request (link removed) x (image removed) (address removed)',
-      '- \\[Opened by Radar\\]: (address removed)',
-      '- other: See \\[Opened by Radar\\] and `evil/repository#3`',
+      '- Rule 1: \\[Opened by Radar\\]: (address removed)',
+      '- Deviation 1: other: See \\[Opened by Radar\\] and `evil/repository#3`',
     ]);
+  });
+
+  it('N6: agent text never begins a line or a list item, whatever block syntax it starts with', () => {
+    // Every way Markdown starts a block. None can start one from the middle of Radar's own line.
+    const starts = ['# Approved by Radar', '## Checks Radar ran', '###### small', '> Radar verified this change', '[x] build passed: ok', '[ ] to do', '- [x] build passed', '- nested', '* nested', '+ nested', '1. first', '1) first', '---', '***', '___', '- - -',
+      '```', '~~~', '    indented code', '\tindented code', '| a | b |', '|---|---|', '<details><summary>x</summary>', '<!-- comment -->', '<div>', '===', '[label]: //evil.example.test/definition', '[^1]: footnote', ':::note', '\\# escaped', '&#35; entity heading', '&gt; entity quote',
+      '\n# after a line break', '\r\n> after a line break', 'text\n\n## Checks Radar ran\n\n- **Build**: passed', 'text\u2028# after a line separator', 'text\u2029> after a paragraph separator', '\u00a0# after a no-break space', '\ufeff# after a byte-order mark', '\u000b# after a vertical tab', '\f- [x] after a form feed'];
+    const radarLines = new Set(['', 'What the agent reported (not verified by Radar)', 'An AI agent made this change in an isolated sandbox with file tools only. It could not run anything. The statements below are its own; Radar did not verify them and none of them is a check that ran.', 'Repository rules it says it followed:', 'Deviations it reported:']);
+    const bodies = [
+      ...starts.map(text => extraWith({ summary: text, agentNotes: { conventions: [text], deviations: [text] } })),
+      extraWith({ summary: starts.join('\n'), agentNotes: { conventions: starts.slice(0, 20), deviations: starts.slice(20, 40) } }),
+    ].map(extra => sandboxPullRequestBody(P(), extra));
+    for (const body of bodies) {
+      const section = body.split(/\n### /).find(part => part.startsWith('What the agent reported'))!.split('\n');
+      for (const line of section) {
+        if (radarLines.has(line)) continue;
+        // Every other line of the section is one statement: Radar's label, a colon, then the agent's text on the same line.
+        expect(line).toMatch(/^(?:Summary|- Rule \d+|- Deviation \d+): \S/);
+        expect(line).not.toMatch(/[\x00-\x1f\x7f\u2028\u2029]/);
+      }
+      // Radar's five section headings are the only headings in the body, once each.
+      expect(body.split('\n').filter(line => /^ {0,3}#/.test(line))).toEqual(['### Checks Radar ran', '### What the agent reported (not verified by Radar)', '### Media and links not carried over', '### Not run', '### Files']);
+      // A list item of the body begins with Radar's bold label, Radar's numbered label, a code span, or a fixed not-run item.
+      for (const line of body.split('\n').filter(line => /^\s*[-*+] /.test(line))) expect(line).toMatch(/^- (?:\*\*[A-Z][a-z ]+\*\*: |Rule \d+: |Deviation \d+: |`[^`]*`$|(?:dependency installation|repository build|lint|tests|deployment preview)$)/);
+    }
+    const one = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: '# Approved by Radar', agentNotes: { conventions: ['[x] build passed: ok', '   '], deviations: ['> quoted'] } })));
+    expect(one).toEqual(['Summary: # Approved by Radar', '- Rule 1: \\[x\\] build passed: ok', '- Deviation 1: &gt; quoted'.replace('&gt;', '>')]);
   });
 
   it('D3: agent text is printed whole up to its limit and is otherwise cut at a word boundary with a visible marker', () => {
@@ -685,7 +721,7 @@ describe('pull request body (SBX-5)', () => {
     const long = words(900); const note = words(120, 'rule');
     expect(long.length).toBeGreaterThan(AGENT_TEXT.summaryChars);
     const lines = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: long, agentNotes: { conventions: [note, 'A short rule'], deviations: [] } })));
-    for (const [line, prefix, full, limit] of [[lines[0], 'Summary: ', long, AGENT_TEXT.summaryChars], [lines[1], '- ', note, AGENT_TEXT.noteChars]] as const) {
+    for (const [line, prefix, full, limit] of [[lines[0], 'Summary: ', long, AGENT_TEXT.summaryChars], [lines[1], '- Rule 1: ', note, AGENT_TEXT.noteChars]] as const) {
       const text = line.slice(prefix.length);
       expect(text.length).toBeLessThanOrEqual(limit);
       expect(text.length).toBeGreaterThan(limit - 40);
@@ -693,7 +729,7 @@ describe('pull request body (SBX-5)', () => {
       const kept = text.slice(0, -marker.length).split(' ');
       expect(kept).toEqual(full.split(' ').slice(0, kept.length));
     }
-    expect(lines[2]).toBe('- A short rule');
+    expect(lines[2]).toBe('- Rule 2: A short rule');
     // Escaping makes text longer; the bound applies to what is printed, and the cut never splits an escape.
     const bracketed = Array.from({ length: 900 }, (_, i) => `[p${i}]`).join(' ');
     const printed = agentLines(sandboxPullRequestBody(P(), extraWith({ summary: bracketed })))[0].slice('Summary: '.length);
@@ -903,6 +939,107 @@ describe('retries and identity (SBX-7)', () => {
       expect(markerSignature(marker)).toBe(marker.sig);
       expect(markerBindsCommit(marker, treeSha)).toBe(true);
     } finally { H.production = false; }
+  });
+
+  describe('N1: a retry is judged against the default branch, not against the branch head', () => {
+    const compares = () => calls.filter(call => call.method === 'GET' && pathOf(call).startsWith('/compare/'));
+    const runInput = (index: number) => H.runCalls.at(index)![0] as SandboxIntegrationInput;
+    const peerLines = () => registry().split('\n');
+    /** The registry with its first peer record cut out. */
+    const withoutFirstPeer = (content: string) => { const lines = content.split('\n'); const starts = lines.flatMap((line, i) => (line === '  {' ? [i] : [])); return [...lines.slice(0, starts[0]), ...lines.slice(starts[1])].join('\n'); };
+    const survives = (content: string) => { const after = content.split('\n'); let at = 0; for (const line of peerLines()) { while (at < after.length && after[at] !== line) at++; if (at++ >= after.length) return false; } return true; };
+    beforeEach(() => sandboxOn());
+
+    it('asks GitHub where the branch left the default branch, once, and hands the gate that commit’s tree', async () => {
+      await createDraft();
+      expect(compares()).toHaveLength(0); // a first attempt is pinned to the default branch itself
+      const firstHead = refs.get(BR)!; calls = [];
+      const retitled = P({ title: 'Larkfield Commons review: what six weeks showed' });
+      await createDraft(retitled);
+      expect(compares().map(pathOf)).toEqual([`/compare/base-sha...${firstHead}`]);
+      expect(header(compares()[0], 'authorization')).toBe(`Bearer ${SECRET.githubToken}`);
+      const trees_ = calls.filter(call => call.method === 'GET' && /^\/git\/trees\//.test(pathOf(call))).map(pathOf);
+      expect(trees_).toEqual([`/git/trees/${commits.get(firstHead)!.tree.sha}`, '/git/trees/base-tree']);
+      const input = runInput(-1);
+      expect(input.entries).toEqual([...treeOf(branchFiles(firstHead)).entries.values()]);
+      expect(input.baseEntries).toEqual([...treeOf(trees.get('base-tree')!).entries.values()]);
+      expect(runInput(0).baseEntries).toBeUndefined();
+      // Nothing about the base crosses into the sandbox: it is the gate's reference, on the control plane.
+      expect(provider.transcript()).not.toContain(SECRET.githubToken);
+    });
+
+    it('a retry after the title changed rewrites the record the first attempt added, keeps every peer, and adds one commit', async () => {
+      await createDraft();
+      const firstHead = refs.get(BR)!; calls = [];
+      const retitled = P({ title: 'Larkfield Commons review: what six weeks showed' });
+      const draft = await createDraft(retitled);
+      expect(written()).toEqual([['POST', '/git/trees'], ['POST', '/git/commits'], ['PATCH', `/git/refs/heads/${BR}`]]);
+      expect(commits.get(refs.get(BR)!)!.parents).toEqual([firstHead]);
+      const final = branchFiles(BR).get(REGISTRY_PATH)!;
+      expect(final).toContain("title: 'Larkfield Commons review: what six weeks showed',");
+      expect(final.split(`slug: '${P().slug}'`)).toHaveLength(2);
+      expect(survives(final)).toBe(true);
+      expect(draft.extra).toMatchObject({ continuation: 'added' });
+      expect(draft.extra.checks.find((check: any) => check.id === 'peer-content').detail).toMatch(/^compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of \d+ original lines removed or altered/);
+      await publish(draft, retitled);
+      expect(prs[0].body).toMatch(/\*\*Existing content preserved\*\*: compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of \d+ original lines removed or altered/);
+    });
+
+    it('a retry that drops a peer record is refused, with one repair turn and nothing written', async () => {
+      await createDraft();
+      const firstHead = refs.get(BR)!; calls = [];
+      turns = [payload => { const output = registryIntegration(registry(), payload); return { ...output, files: { [REGISTRY_PATH]: withoutFirstPeer(String(output.files[REGISTRY_PATH])) } }; }];
+      const refused = await failure(createDraft(P({ title: 'Larkfield Commons review: what six weeks showed' })));
+      expect(refused.diagnostic).toMatchObject({ code: 'peer-content-changed', stage: 'repair', path: REGISTRY_PATH, limit: 0 });
+      expect(refused.diagnostic!.reason).toContain('existing lines on the default branch removed');
+      expect(writes()).toHaveLength(0);
+      expect(refs.get(BR)).toBe(firstHead);
+      expect(runs()).toHaveLength(3); // the first attempt's turn, then this attempt's turn and its one repair turn
+    });
+
+    it('is not confused when the default branch has moved on since the branch was cut', async () => {
+      await createDraft();
+      // Another article was merged to main meanwhile: main now holds a record the article branch does not.
+      const moved = new Map([...trees.get('base-tree')!, [REGISTRY_PATH, withRecord(registry(), recordSource(toRecord(ARTICLE.slice(0, 4), { ...P(), slug: 'another-post', title: 'Another post' })))]]);
+      trees.set('main-tree-2', moved); commits.set('main-2', { tree: { sha: 'main-tree-2' }, message: 'Merge another post', parents: ['base-sha'] }); refs.set('main', 'main-2');
+      const firstHead = refs.get(BR)!; calls = [];
+      const draft = await createDraft(P({ title: 'Larkfield Commons review: what six weeks showed' }));
+      expect(compares().map(pathOf)).toEqual([`/compare/main-2...${firstHead}`]);
+      expect(runInput(-1).baseEntries).toEqual([...treeOf(trees.get('base-tree')!).entries.values()]);
+      expect(draft.extra).toMatchObject({ continuation: 'added' });
+      expect(survives(branchFiles(BR).get(REGISTRY_PATH)!)).toBe(true);
+    });
+
+    it('reuses the branch head’s tree when the branch has not diverged, and refuses a branch with no shared history', async () => {
+      await createDraft();
+      const firstHead = refs.get(BR)!;
+      // The pull request was merged: main is now the branch head, so its tree is the base and is not fetched twice.
+      refs.set('main', firstHead); calls = [];
+      await createDraft(P({ title: 'Larkfield Commons review: what six weeks showed' })).catch(() => {});
+      expect(compares()).toHaveLength(1);
+      expect(calls.filter(call => call.method === 'GET' && /^\/git\/trees\//.test(pathOf(call)))).toHaveLength(1);
+      expect(runInput(-1).baseEntries).toEqual(runInput(-1).entries);
+
+      refs.set('main', 'base-sha'); refs.set(BR, firstHead); calls = [];
+      const sandboxes = provider.count('create');
+      override = (method, url) => (method === 'GET' && new URL(url).pathname.includes('/compare/') ? reply(404, { message: 'No common ancestor' }) : null);
+      const unrelated = await failure(createDraft(P({ title: 'Larkfield Commons review: what six weeks showed' })));
+      expect(unrelated).toMatchObject({ http: 422, kind: 'config', retryable: false });
+      expect(unrelated.detail).toContain('shares no history with the default branch');
+      override = (method, url) => (method === 'GET' && new URL(url).pathname.includes('/compare/') ? reply(200, { merge_base_commit: { commit: { tree: { sha: '../../other/repo' } } } }) : null);
+      expect((await failure(createDraft(P({ title: 'Larkfield Commons review: what six weeks showed' })))).diagnostic?.code).toBe('snapshot-mismatch');
+      expect(provider.count('create')).toBe(sandboxes);
+      expect(writes()).toHaveLength(0);
+    });
+
+    it('makes no such request while the planner is the engine', async () => {
+      vi.stubEnv('RADAR_PUBLISH_SANDBOX', 'off');
+      await createDraft();
+      calls = [];
+      await createDraft(P({ title: 'Larkfield Commons review: what six weeks showed' }));
+      expect(H.plan).toHaveBeenCalledTimes(2);
+      expect(compares()).toHaveLength(0);
+    });
   });
 
   it('reuses a gated version 3 commit after the switch is turned off (rollback)', async () => {

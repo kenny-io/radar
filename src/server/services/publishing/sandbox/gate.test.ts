@@ -4,14 +4,15 @@ import type { Block } from '@/lib/types';
 import type { RepoEntry } from '../connectors/nextjs-agent';
 import { blocksToMarkdown } from '../render';
 import { PublishError } from '../http';
-import { PEER_CONTENT, PublicationGateError, isRepairableGateFailure, nearIdenticalLine, runPublicationGate } from './gate';
+import { CHECK_DETAIL_CHARS, PEER_CONTENT, PublicationGateError, isRepairableGateFailure, nearIdenticalLine, runPublicationGate } from './gate';
 import { GATE_LIMITS, PUBLISH_CHECK_IDS, REPAIRABLE_GATE_CODES, SANDBOX_DIAGNOSTIC_CODES, type PublicationGateInput, type PublicationGateResult } from './types';
 import { ARTICLE, BODY_IMAGE, PARAPHRASED, SOURCES, VIDEOS, paragraph, payloadFor, seeded } from './__fixtures__/article';
 import { CAPABILITY, blobSha, gateInput, treeOf, type AgentOutput } from './__fixtures__/tree';
+import { articleUnits } from './fidelity';
 import { PEER_RECORDS, REGISTRY_PATH, recordSource, registryIntegration, registryReformatted, toRecord, typedRegistryRepository, withRecord, type PostRecord } from './__fixtures__/typedRegistry';
 import { GENERATOR_PATH, INDEXED_PAGES, INDEX_PATH, PAGE_PATH, generatedIndexRepository, pageAndBrokenIndex, pageAndIndexRecord, pageAndReserialisedIndex, pageOnly } from './__fixtures__/generatedIndex';
 import { AUDIT_PATH, POST_PATH, POST_ROUTE, mdxAuditRepository, mdxPost, mdxPostFrom, mdxPostParaphrased } from './__fixtures__/mdxAudit';
-import { GUIDE_PATH, GUIDE_REFRESH_URL, GUIDE_ROUTE, GUIDE_SLUG, HUBS_PATH, HUB_COUNT, HUB_ROUTE, guideRefreshed, guideRepository, hubPeersWiped, hubRefreshed, hubRepository } from './__fixtures__/refresh';
+import { GUIDE_PATH, GUIDE_REFRESH_URL, GUIDE_ROUTE, GUIDE_SLUG, HUBS_PATH, HUB_COUNT, HUB_ROUTE, HUB_SLUG, guideRefreshed, guideRepository, hubPeersWiped, hubRefreshed, hubRepository } from './__fixtures__/refresh';
 
 const payload = payloadFor();
 const articlePath = POST_PATH(payload.slug);
@@ -49,7 +50,7 @@ function expectPassed(result: PublicationGateResult) {
   for (const check of result.checks) {
     expect(check.outcome).toBe('passed');
     expect(check.detail.length).toBeGreaterThan(10);
-    expect(check.detail.length).toBeLessThanOrEqual(400);
+    expect(check.detail.length).toBeLessThanOrEqual(CHECK_DETAIL_CHARS);
     expect(check.detail).not.toMatch(ARTICLE_WORDS);
     expect(check.detail).not.toMatch(/https?:\/\//);
   }
@@ -450,7 +451,9 @@ describe('publication gate: one refusal per rule', () => {
     const result = await runPublicationGate(gateInput(sideFiles(), payload, withFiles({ [SETTINGS_PATH]: edited })));
     expectPassed(result);
     expect(result.files.map(file => file.path).sort()).toEqual([articlePath, SETTINGS_PATH].sort());
-    expect(detailOf(result, 'peer-content')).toBe(`1 existing file edited; ${touched} of 10 original lines removed or altered (${touched} altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), ${touched} lines added`);
+    // The count of altered lines is disclosed with a request to review them: the gate proves the old text was kept,
+    // not that what was added to a line is harmless (N2).
+    expect(detailOf(result, 'peer-content')).toBe(`1 existing file edited; ${touched} of 10 original lines removed or altered (${touched} altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), ${touched} lines added. Review the ${touched} existing lines this change altered: Radar checks that existing text is kept, not what was added to it`);
   });
   it('peer content, new article: a list line that drops an existing entry to make room is a removed line', async () => {
     // Until the D1 ruling this rotation was one of the accepted touches: the featured list loses a peer's slug.
@@ -471,7 +474,7 @@ describe('publication gate: one refusal per rule', () => {
     const tree = () => treeOf(new Map([...mdxRepository, [ONE_LINE_PATH, oneLineRegistry(peerSlugs)]]));
     const appended = await runPublicationGate(gateInput(tree(), payload, withFiles({ [ONE_LINE_PATH]: oneLineRegistry([...peerSlugs, payload.slug]) })));
     expectPassed(appended);
-    expect(detailOf(appended, 'peer-content')).toBe('1 existing file edited; 1 of 42 original lines removed or altered (1 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), 2 lines added');
+    expect(detailOf(appended, 'peer-content')).toBe('1 existing file edited; 1 of 42 original lines removed or altered (1 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), 2 lines added. Review the 1 existing line this change altered: Radar checks that existing text is kept, not what was added to it');
     for (const [gone, removed] of [[[7], 1], [[3, 18, 31], 3], [[39], 1]] as const) {
       const kept = peerSlugs.filter((_, i) => !(gone as readonly number[]).includes(i));
       const error = await failureOf(gateInput(tree(), payload, withFiles({ [ONE_LINE_PATH]: oneLineRegistry([...kept, payload.slug]) })));
@@ -584,16 +587,130 @@ describe('publication gate: one refusal per rule', () => {
     const four = Object.fromEntries(Object.entries(edited).slice(0, 4));
     const result = await runPublicationGate(gateInput(treeOf(new Map([...mdxRepository, ...files])), payload, withFiles(four)));
     expectPassed(result);
-    expect(detailOf(result, 'peer-content')).toBe('4 existing files edited; 20 of 4800 original lines removed or altered (20 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), 20 lines added');
+    expect(detailOf(result, 'peer-content')).toBe('4 existing files edited; 20 of 4800 original lines removed or altered (20 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), 20 lines added. Review the 20 existing lines this change altered: Radar checks that existing text is kept, not what was added to it');
   });
-  it('peer content, retry and legacy of a new article: the article file keeps the replace rule, other files the flat limit', async () => {
-    const partial = String(mdxPostFrom(payload, ARTICLE.slice(0, 9)).files[articlePath]);
-    const tree = treeOf(new Map([...mdxRepository, [articlePath, partial], [CATEGORIES_PATH, categories]]));
-    const lines = categories.split('\n'); const start = lines.indexOf('    "slug": "category-5",') - 1;
-    const deleted = [...lines.slice(0, start), ...lines.slice(start + 7)].join('\n');
-    const error = await failureOf(gateInput(tree, payload, withFiles({ [CATEGORIES_PATH]: deleted }), { retry: { slug: payload.slug, articlePath } }));
-    expectFailure(error, 'peer-content-changed', true);
-    expect(error.diagnostic).toMatchObject({ path: CATEGORIES_PATH, actual: 7, limit: 0 });
+  // FINDING N1 of QA-2. A retry or a legacy migration is pinned to the head of the article branch, where an earlier
+  // attempt's work already sits. What the default branch holds gets the first-attempt rule in every attempt; only what an
+  // earlier attempt added may be replaced.
+  describe('N1: a retry or migration protects what the default branch holds', () => {
+    const registry = typedRegistryRepository().get(REGISTRY_PATH)!;
+    const baseTree = () => treeOf(typedRegistryRepository());
+    /** The article branch after an earlier attempt that stopped nine blocks in. */
+    const earlier = String(registryIntegration(registry, { ...payload, title: 'A working title the article no longer has' }, ARTICLE.slice(0, 9)).files[REGISTRY_PATH]);
+    const headTree = () => treeOf(new Map([...typedRegistryRepository(), [REGISTRY_PATH, earlier]]));
+    const retry = { retry: { slug: payload.slug, articlePath: REGISTRY_PATH } };
+    const finished = String(registryIntegration(registry, payload).files[REGISTRY_PATH]);
+    const output = (content: string): AgentOutput => ({ files: { [REGISTRY_PATH]: content }, articlePath: REGISTRY_PATH, route: '/blog/' + payload.slug });
+    /** The same file with its first `count` peer records cut out. */
+    const withoutPeers = (content: string, count: number) => { const lines = content.split('\n'); const starts = lines.flatMap((line, i) => (line === '  {' ? [i] : [])); return [...lines.slice(0, starts[0]), ...lines.slice(starts[count])].join('\n'); };
+
+    it('accepts a retry that replaces the earlier attempt’s own record in a shared registry and keeps every peer', async () => {
+      const tree = headTree(); const base = baseTree();
+      const result = await runPublicationGate(gateInput(tree, payload, output(finished), retry, base));
+      expectPassed(result);
+      expect(postsOf(result.files[0].content)).toHaveLength(PEER_RECORDS + 1);
+      expect(linesSurvive(registry, result.files[0].content)).toBe(true);
+      // The earlier attempt's lines are not on the default branch: replacing them removes no existing line.
+      expect(linesSurvive(earlier, result.files[0].content)).toBe(false);
+      expect(detailOf(result, 'peer-content')).toMatch(/^compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of \d+ original lines removed or altered \(0 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed\), \d+ lines added$/);
+      // Both versions of the file were read: the branch head's, to find the change, and the default branch's, to judge it.
+      expect(tree.reads).toEqual([tree.entries.get(REGISTRY_PATH)!.sha]);
+      expect(base.reads).toEqual([base.entries.get(REGISTRY_PATH)!.sha]);
+    });
+    it('refuses the same retry when it also drops peer records, however few lines they are', async () => {
+      // One record is well inside the rule this file used to get on a retry (removed <= 3 x added + 40).
+      const onePeer = withoutPeers(finished, 1);
+      expect(postsOf(onePeer)).toHaveLength(PEER_RECORDS);
+      const removedLines = finished.split('\n').length - onePeer.split('\n').length;
+      expect(removedLines).toBeLessThan(PEER_CONTENT.replaceAllowance + 3 * (finished.split('\n').length - earlier.split('\n').length));
+      const error = await failureOf(gateInput(headTree(), payload, output(onePeer), retry, baseTree()));
+      expectFailure(error, 'peer-content-changed', true);
+      expect(error.diagnostic).toMatchObject({ path: REGISTRY_PATH, actual: removedLines, limit: 0 });
+      expect(error.diagnostic!.reason).toMatch(/has \d+ of its \d+ existing lines on the default branch removed; a new article may remove none \(limit 0\)\..*Lines an earlier attempt on this branch added are not existing lines and may be changed$/);
+      expectFailure(await failureOf(gateInput(headTree(), payload, output(withoutPeers(finished, 3)), retry, baseTree())), 'peer-content-changed', true);
+      // A legacy migration is held to the same rule.
+      expectFailure(await failureOf(gateInput(headTree(), payload, output(onePeer), { legacy: { slug: payload.slug, articlePath: REGISTRY_PATH } }, baseTree())), 'peer-content-changed', true);
+    });
+    it('counts altered lines against the default branch, so retries cannot add up past the limit', async () => {
+      const settingsHead = settings.replace('postCount = 8', 'postCount = 9').replace("lastPublished = '2026-08-15'", `lastPublished = '${payload.date}'`).replace('postsPerPage = 8', 'postsPerPage = 9').replace('feedLimit = 20', 'feedLimit = 21');
+      const committed = String(good().files[articlePath]);
+      const base = () => treeOf(new Map([...mdxRepository, [SETTINGS_PATH, settings]]));
+      const head = () => treeOf(new Map([...mdxRepository, [SETTINGS_PATH, settingsHead], [articlePath, committed]]));
+      const again = { retry: { slug: payload.slug, articlePath } };
+      // Two more altered lines: six in all against the default branch, at the limit. Against the branch head it would be two.
+      const six = settingsHead.replace('showAuthors = false', 'showAuthors = true').replace("['harbour-notes', 'quarry-walks']", `['${payload.slug}', 'harbour-notes', 'quarry-walks']`);
+      const passedResult = await runPublicationGate(gateInput(head(), payload, { files: { [SETTINGS_PATH]: six }, articlePath, route: POST_ROUTE(payload.slug) }, again, base()));
+      expectPassed(passedResult);
+      expect(detailOf(passedResult, 'peer-content')).toContain('6 of 10 original lines removed or altered (6 altered, 0 removed;');
+      expect(detailOf(passedResult, 'peer-content')).toContain('Review the 6 existing lines the article branch altered');
+      // A seventh is refused, although this attempt itself touched only three lines.
+      const seven = six.replace("'Example Rentals blog'", "'Example Rentals journal'");
+      const error = await failureOf(gateInput(head(), payload, { files: { [SETTINGS_PATH]: seven }, articlePath, route: POST_ROUTE(payload.slug) }, again, base()));
+      expect(error.diagnostic).toMatchObject({ code: 'peer-content-changed', path: SETTINGS_PATH, actual: 7, limit: 6 });
+      // A line the earlier attempt altered can be put back, or altered differently: it is judged against the default branch.
+      const reverted = await runPublicationGate(gateInput(head(), payload, { files: { [SETTINGS_PATH]: settingsHead.replace('feedLimit = 21', 'feedLimit = 20') }, articlePath, route: POST_ROUTE(payload.slug) }, again, base()));
+      expect(detailOf(reverted, 'peer-content')).toContain('3 of 10 original lines removed or altered (3 altered, 0 removed;');
+    });
+    it('lets a retry rewrite a file or a line that only an earlier attempt wrote (the title-change case)', async () => {
+      const listing = (title: string) => `export const listing = [\n  { slug: 'harbour-notes', title: 'Harbour notes' },\n  { slug: '${payload.slug}', title: ${JSON.stringify(title)} },\n];\n`;
+      const LISTING_PATH = 'src/lib/listing.ts';
+      const baseListing = `export const listing = [\n  { slug: 'harbour-notes', title: 'Harbour notes' },\n];\n`;
+      const wrongBody = String(mdxPostFrom(payload, [['p', paragraph(seeded(901))], ['p', paragraph(seeded(902))]]).files[articlePath]);
+      const base = () => treeOf(new Map([...mdxRepository, [LISTING_PATH, baseListing]]));
+      const head = () => treeOf(new Map([...mdxRepository, [LISTING_PATH, listing('A working title that was nothing like the final one')], [articlePath, wrongBody]]));
+      const again = { retry: { slug: payload.slug, articlePath } };
+      const files = { [articlePath]: String(good().files[articlePath]), [LISTING_PATH]: listing(payload.title) };
+      const result = await runPublicationGate(gateInput(head(), payload, { ...good(), files }, again, base()));
+      expectPassed(result);
+      expect(result.files.map(file => file.path).sort()).toEqual([articlePath, LISTING_PATH].sort());
+      expect(detailOf(result, 'peer-content')).toBe('compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of 3 original lines removed or altered (0 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed), 1 lines added; 1 changed file exists only on the article branch, written by an earlier attempt, and is not compared');
+      // The peer's listing line is on the default branch, so the same retry may not drop it.
+      const dropped = await failureOf(gateInput(head(), payload, { ...good(), files: { ...files, [LISTING_PATH]: `export const listing = [\n  { slug: '${payload.slug}', title: ${JSON.stringify(payload.title)} },\n];\n` } }, again, base()));
+      expect(dropped.diagnostic).toMatchObject({ code: 'peer-content-changed', path: LISTING_PATH, actual: 1, limit: 0 });
+      // Without the default-branch tree the gate cannot tell whose lines they are, and protects everything on the branch head.
+      const strict = await failureOf(gateInput(head(), payload, { ...good(), files }, again));
+      expectFailure(strict, 'peer-content-changed', true);
+      expect(strict.diagnostic!.reason).not.toContain('default branch');
+    });
+    it('a legacy migration may rewrite the exported article in place, and nothing the default branch holds', async () => {
+      const legacyPath = `content/posts/${payload.slug}.md`;
+      const base = () => treeOf(new Map([...mdxRepository, [CATEGORIES_PATH, categories]]));
+      const head = () => treeOf(new Map([...mdxRepository, [CATEGORIES_PATH, categories], [legacyPath, '# Draft\n\nAn older export that is not the article.\n']]));
+      const legacy = { legacy: { slug: payload.slug, articlePath: legacyPath } };
+      const rewritten: AgentOutput = { files: { [legacyPath]: payload.markdown }, articlePath: legacyPath, route: POST_ROUTE(payload.slug) };
+      const result = await runPublicationGate(gateInput(head(), payload, rewritten, legacy, base()));
+      expectPassed(result);
+      expect(detailOf(result, 'peer-content')).toBe('compared with the default-branch commit the article branch started from: no file of that commit was edited; every changed file is new or was written by an earlier attempt; 1 changed file exists only on the article branch, written by an earlier attempt, and is not compared');
+      const lines = categories.split('\n'); const start = lines.indexOf('    "slug": "category-5",') - 1;
+      const deleted = [...lines.slice(0, start), ...lines.slice(start + 7)].join('\n');
+      const error = await failureOf(gateInput(head(), payload, { ...rewritten, files: { ...rewritten.files, [CATEGORIES_PATH]: deleted } }, legacy, base()));
+      expectFailure(error, 'peer-content-changed', true);
+      expect(error.diagnostic).toMatchObject({ path: CATEGORIES_PATH, actual: 7, limit: 0 });
+    });
+    it('a refresh that is retried still replaces one body, measured against the default branch', async () => {
+      const repository = hubRepository(); const original = repository.get(HUBS_PATH)!;
+      const refresh = payloadFor(ARTICLE, { mode: 'refresh', refreshUrl: 'https://rentals.example' + HUB_ROUTE + '/' });
+      const first = hubRefreshed(original, payloadFor(ARTICLE.slice(0, 9), { mode: 'refresh', refreshUrl: refresh.refreshUrl }));
+      const head = () => treeOf(new Map([...repository, [HUBS_PATH, String(first.files[HUBS_PATH])]]));
+      const again = { retry: { slug: HUB_SLUG, articlePath: HUBS_PATH } };
+      const result = await runPublicationGate(gateInput(head(), refresh, hubRefreshed(original, refresh), again, treeOf(repository)));
+      expectPassed(result);
+      expect(detailOf(result, 'peer-content')).toMatch(/^compared with the default-branch commit the article branch started from: 1 existing file edited; in the article file being replaced, 1 earlier lines gave way to 1 new ones/);
+      const wiped = await failureOf(gateInput(head(), refresh, hubPeersWiped(original, refresh), again, treeOf(repository)));
+      expectFailure(wiped, 'peer-content-changed', true);
+      expect(wiped.diagnostic!.reason).toContain('existing lines on the default branch while adding');
+    });
+    it('refuses a file it cannot compare: not text, or not a regular file, on the default branch', async () => {
+      const DATA_PATH = 'src/data/table.txt';
+      const head = () => treeOf(new Map<string, string | Buffer>([...mdxRepository, [DATA_PATH, 'one\ntwo\n'], [articlePath, String(good().files[articlePath])]]));
+      const again = { retry: { slug: payload.slug, articlePath } };
+      const change = { files: { [DATA_PATH]: 'one\ntwo\nthree\n' }, articlePath, route: POST_ROUTE(payload.slug) };
+      const binary = await failureOf(gateInput(head(), payload, change, again, treeOf(new Map<string, string | Buffer>([...mdxRepository, [DATA_PATH, Buffer.from([0xff, 0xfe, 0x00, 0x41])]]))));
+      expectFailure(binary, 'peer-content-changed', false);
+      expect(binary.diagnostic!.reason).toContain('is not UTF-8 text on the default branch');
+      const link: RepoEntry = { path: DATA_PATH, type: 'blob', mode: '120000', sha: blobSha(Buffer.from('target')) };
+      expectFailure(await failureOf(gateInput(head(), payload, change, again, treeOf(mdxRepository, [link]))), 'non-regular-file', false);
+    });
   });
   it('peer content, refresh: a file other than the article file keeps the earlier tolerance', async () => {
     const repository = guideRepository(); const original = repository.get(GUIDE_PATH)!;
@@ -729,6 +846,46 @@ describe('publication gate: what it reads and what it reports', () => {
     const result = await runPublicationGate(input);
     expect(result.files[0].content).toBe(String(good().files[articlePath]));
     expect(blobSha(Buffer.from(result.files[0].content))).toBe(blobSha(input.finals.get(articlePath)!));
+  });
+  // FINDING N3 of QA-2: words placed directly before or after a unit left it "word for word".
+  describe('N3: words added beside a unit, in its own line, element or string', () => {
+    const body = () => String(good().files[articlePath]);
+    const firstItem = String((ARTICLE.find(block => block[0] === 'ul')![1] as string[])[0]);
+    const itemIndex = articleUnits(ARTICLE).find(unit => unit.text === firstItem)!.index;
+    it('refuses "Do not" in front of a list item and a sentence after a paragraph, with one repair turn and the unit named', async () => {
+      const line = body().split('\n').find(text => text.startsWith('- ' + firstItem.slice(0, 20)))!;
+      const reversed = await failureOf(gateInput(mdxTree(), payload, { ...good(), files: { [articlePath]: body().replace(line, '- Do not ' + line.slice(2, 3).toLowerCase() + line.slice(3)) } }));
+      expectFailure(reversed, 'article-fidelity', true);
+      expect(reversed.diagnostic!.path).toBe(articlePath);
+      expect(reversed.diagnostic!.reason).toBe(`the article was not carried over faithfully: 1 of 20 paragraphs and list items have words directly before or after them in their line, element or string: item ${itemIndex}. Each one must stand alone there, with nothing added. Unit numbers are the 0-based indexes in article.json`);
+      expect(reversed.diagnostic!.issues).toEqual([`1 of 20 paragraphs and list items have words directly before or after them in their line, element or string: item ${itemIndex}. Each one must stand alone there, with nothing added (numbers are unit indexes in article.json, counted from 0)`]);
+      const lastLine = body().trimEnd().split('\n\n').findLast(text => /^[A-Z]/.test(text) && text.length > 200)!;
+      const appended = await failureOf(gateInput(mdxTree(), payload, { ...good(), files: { [articlePath]: body().replace(lastLine, lastLine + ' None of this is true.') } }));
+      expectFailure(appended, 'article-fidelity', true);
+      expect(appended.diagnostic!.reason).toContain('have words directly before or after them');
+    });
+    it('reads each file by its own type: the same bytes are one paragraph in an HTML file and two in a Markdown file', async () => {
+      const blocks: Block[] = [['p', paragraph(seeded(41))], ['p', paragraph(seeded(42))]];
+      const small = payloadFor(blocks, { sources: [], videos: [], bodyImages: [] });
+      const text = `Editor's note.\n\n${blocks[0][1]}\n\n${blocks[1][1]}\n`;
+      const run = (path: string, content: string) => runPublicationGate(gateInput(mdxTree(), small, { files: { [path]: content }, articlePath: path, route: POST_ROUTE(small.slug) }));
+      expectPassed(await run(`content/blog/${small.slug}.md`, text));
+      const html = await run(`content/blog/${small.slug}.html`, `<div>${text}</div>`).then(() => null, error => error as PublicationGateError);
+      expect(html?.diagnostic).toMatchObject({ code: 'article-fidelity' });
+      expect(html!.diagnostic!.reason).toContain('2 of 2 paragraphs and list items have words directly before or after them');
+      // A type Radar does not know passes, and the pull request is told that the edges were not decided.
+      const unknown = await run(`content/blog/${small.slug}.txt`, text);
+      expectPassed(unknown);
+      expect(detailOf(unknown, 'article-fidelity')).toContain('2 of them word for word (not decided for 2: only markup or line structure Radar does not classify separates unit 0, 1 from the text beside them; check the diff for words added there); 0 of 0 headings present');
+    });
+    it('checks the article already on the branch, by its path, when a retry changes nothing', async () => {
+      const line = body().split('\n').find(text => text.startsWith('- ' + firstItem.slice(0, 20)))!;
+      const tampered = body().replace(line, '- Never ' + line.slice(2));
+      const tree = treeOf(new Map([...mdxRepository, [articlePath, tampered]]));
+      const error = await failureOf(gateInput(tree, payload, { files: {}, articlePath, route: POST_ROUTE(payload.slug) }, { retry: { slug: payload.slug, articlePath } }));
+      expect(error.diagnostic).toMatchObject({ code: 'article-fidelity' });
+      expect(error.diagnostic!.reason).toContain(`item ${itemIndex}`);
+    });
   });
   it('fails on the first violated rule, in the designed order', async () => {
     // A protected path, a credential and a missing paragraph together: the path rule is reported.

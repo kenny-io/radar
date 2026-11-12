@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { Block } from '@/lib/types';
 import { blocksToHtml, blocksToMarkdown } from '../render';
-import { FIDELITY, articleUnits, checkArticleFidelity, omittedMedia } from './fidelity';
+import { FIDELITY, articleUnits, checkArticleFidelity, markBoundaries, omittedMedia } from './fidelity';
 import { ARTICLE, BODY_IMAGE, PARAPHRASED, SOURCES, VIDEOS, generatedArticle, paragraph, payloadFor, seeded } from './__fixtures__/article';
 import { recordSource, toRecord } from './__fixtures__/typedRegistry';
 import { mdxPost } from './__fixtures__/mdxAudit';
 
 const payload = payloadFor();
 const units = articleUnits(ARTICLE);
-/** Fidelity of one or more final files against the fixture article. `articleAdded` defaults to the first file, as for a new article file. */
-const check = (contents: string | string[], blocks: Block[] = ARTICLE, articleAdded?: string | null) => {
+/** A repository path for a fixture file, by what it holds: the check reads a file's structure by its type. */
+const pathFor = (content: string) => (/^\s*[{["]/.test(content) ? 'content/post.json' : /^\s*(?:<|&lt;)/.test(content) ? 'content/post.html' : /^(?:export |import |const |\s*\{\n\s+slug: ')/.test(content) ? 'content/posts.ts' : 'content/post.mdx');
+/** Fidelity of one or more final files against the fixture article. `articleAdded` defaults to the first file, as for a
+ *  new article file. `paths` defaults to a path of the type each file's content has. */
+const check = (contents: string | string[], blocks: Block[] = ARTICLE, articleAdded?: string | null, paths?: (string | undefined)[]) => {
   const list = Array.isArray(contents) ? contents : [contents];
-  return checkArticleFidelity({ units: articleUnits(blocks), contents: list, articleAdded: articleAdded === undefined ? list[0] : articleAdded });
+  return checkArticleFidelity({ units: articleUnits(blocks), contents: list, paths: paths ?? list.map(pathFor), articleAdded: articleAdded === undefined ? list[0] : articleAdded });
 };
 const rules = (result: ReturnType<typeof check>) => result.issues.map(issue => issue.rule);
 const without = (index: number, blocks: Block[] = ARTICLE) => blocks.filter((_, i) => i !== index);
@@ -245,6 +248,196 @@ describe('fidelity refuses a shortened, reworded, repeated or padded article', (
     const detail = result.issues.find(issue => issue.rule === 'truncated' || issue.rule === 'omitted')!.detail;
     expect(detail.length).toBeLessThan(300);
   });
+});
+
+// FINDING N3 of QA-2: a unit found as one run of words says nothing about the words right next to it.
+describe('unit edges: nothing but the article’s own units shares a unit’s line, element or string (N3)', () => {
+  const SMALL: Block[] = [
+    ['p', 'Clear the gutters before the first storm of the autumn, and check each downpipe while you are up the ladder.'],
+    ['h2', 'Start with the gutters'],
+    ['ul', ['Clear leaves from every gutter run twice before December', 'Flush each downpipe with a hose']],
+    ['h3', 'When to call someone'],
+    ['p', 'Call a roofer if a ceiling stain grows after rain, and a plumber if it grows when nobody has used the bathroom.'],
+  ];
+  const U = articleUnits(SMALL).map(unit => unit.text);
+  const q = (text: string) => "'" + text.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+  /** The same six units in each destination format, one unit per container. */
+  const CARRIERS: Record<string, [path: string, render: (u: string[]) => string]> = {
+    'Markdown': ['content/blog/post.md', u => `---\ntitle: "Gutters"\ndescription: A short guide\n---\n\n${u[0]}\n\n## ${u[1]}\n\n- ${u[2]}\n- ${u[3]}\n\n### ${u[4]}\n\n${u[5]}\n`],
+    'MDX with components': ['content/blog/post.mdx', u => `import { Callout } from '../components';\n\nexport const meta = { title: 'Gutters' };\n\n<Lede>${u[0]}</Lede>\n\n## ${u[1]}\n\n<Steps items={[${JSON.stringify(u[2])}, ${JSON.stringify(u[3])}]} />\n\n<Heading level="3" text="${u[4]}" />\n\n<Callout>\n${u[5]}\n</Callout>\n`],
+    'an HTML page': ['site/guides/gutters.html', u => `<!doctype html>\n<html><head><title>Gutters</title></head>\n<body>\n<main>\n  <p>${u[0]}</p>\n  <h2>${u[1]}</h2>\n  <ul><li>${u[2]}</li><li>${u[3]}</li></ul>\n  <h3 id="call">${u[4]}</h3>\n  <p class="last">\n    ${u[5]}\n  </p>\n</main>\n</body></html>\n`],
+    'a TypeScript record': ['apps/web/lib/posts.ts', u => `export const posts = [\n  {\n    slug: 'gutters',\n    intro: [${q(u[0])}],\n    sections: [\n      { heading: ${q(u[1])}, bullets: [${q(u[2])}, ${q(u[3])}] },\n      { heading: ${q(u[4])}, paragraphs: [\n        ${q(u[5])},\n      ] },\n    ],\n  },\n];\n`],
+    'a JSON document': ['content/posts/gutters.json', u => JSON.stringify({ slug: 'gutters', blocks: [{ type: 'p', text: u[0] }, { type: 'h2', text: u[1] }, { type: 'ul', items: [u[2], u[3]] }, { type: 'h3', text: u[4] }, { type: 'p', text: u[5] }] }, null, 2) + '\n'],
+    'HTML in a JSON string': ['content/posts/gutters.json', u => JSON.stringify({ slug: 'gutters', html: `<p>${u[0]}</p>\n<h2>${u[1]}</h2>\n<ul><li>${u[2]}</li><li>${u[3]}</li></ul><h3>${u[4]}</h3><p>${u[5]}</p>` }) + '\n'],
+    'Markdown in a template literal': ['apps/web/lib/post.ts', u => `export const post = {\n  slug: 'gutters',\n  body: \`\n${u[0]}\n\n## ${u[1]}\n\n- ${u[2]}\n- ${u[3]}\n\n### ${u[4]}\n\n${u[5]}\n\`,\n};\n`],
+    'Markdown in a JSON string': ['content/posts/gutters.json', u => JSON.stringify({ slug: 'gutters', body: `${u[0]}\n\n## ${u[1]}\n\n- ${u[2]}\n- ${u[3]}\n\n### ${u[4]}\n\n${u[5]}\n` }) + '\n'],
+    'a TSX page': ['apps/web/app/blog/gutters/page.tsx', u => `export default function Post() {\n  return (\n    <article>\n      <p>{${JSON.stringify(u[0])}}</p>\n      <h2>${u[1]}</h2>\n      <ul>\n        <li>${u[2]}</li>\n        <li>{${q(u[3])}}</li>\n      </ul>\n      <h3 className="mt-8">${u[4]}</h3>\n      <p>\n        ${u[5]}\n      </p>\n    </article>\n  );\n}\n`],
+    'YAML': ['content/posts/gutters.yaml', u => `title: Gutters\nbody:\n  - p: >-\n      ${u[0].replace(/, /g, ',\n      ')}\n  - h2: ${u[1]}\n  - ul:\n      - ${u[2]}\n      - "${u[3]}"\n  - h3: '${u[4]}'\n  - p: |\n      ${u[5]}\n`],
+  };
+  const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+  const edge = (path: string | undefined, content: string, blocks: Block[] = SMALL) => checkArticleFidelity({ units: articleUnits(blocks), contents: [content], paths: [path], articleAdded: content });
+
+  it.each(Object.entries(CARRIERS))('%s: carries every unit with clear edges, nothing undecided', (_label, [path, render]) => {
+    const result = edge(path, render(U));
+    expect(result.issues).toEqual([]);
+    expect(result).toMatchObject({ ok: true, extended: [], undecided: [], headingsMissing: [], interleaved: [] });
+    expect(result.detail).toMatch(/^2 of 2 paragraphs and 2 of 2 list items present, 4 of them word for word; 2 of 2 headings present; /);
+  });
+
+  // The two reproductions QA recorded, and their siblings, in every format: each is refused, and names the unit.
+  const ADDITIONS: [string, number, (text: string) => string][] = [
+    ['words in front of a list item, reversing it', 2, text => 'Do not ' + lower(text)],
+    ['words after a list item', 3, text => text + ', or never'],
+    ['words in front of a paragraph', 0, text => 'It is a myth that you should ' + lower(text)],
+    ['a sentence after a paragraph', 5, text => text + ' None of this is true.'],
+  ];
+  it.each(Object.entries(CARRIERS).flatMap(([label, [path, render]]) => ADDITIONS.map(([what, index, add]) => [`${label}: ${what}`, path, render, index, add] as const)))('%s is refused', (_label, path, render, index, add) => {
+    const result = edge(path, render(U.map((text, at) => (at === index ? add(text) : text))));
+    expect(result.ok).toBe(false);
+    expect(rules(result)).toEqual(['extended']);
+    expect(result.extended).toEqual([index]);
+    expect(result.issues[0].detail).toBe(`1 of 4 paragraphs and list items have words directly before or after them in their line, element or string: ${index === 0 || index === 5 ? 'paragraph' : 'item'} ${index}. Each one must stand alone there, with nothing added`);
+  });
+  it.each(Object.entries(CARRIERS))('%s: a heading with words added to it is not carried, and two headings cannot spare one', (_label, [path, render]) => {
+    const result = edge(path, render(U.map((text, at) => (at === 1 ? 'Do not ' + lower(text) : text))));
+    expect(result.ok).toBe(false);
+    expect(rules(result)).toEqual(['headings']);
+    expect(result.headingsMissing).toEqual([1]);
+    expect(result.issues[0].detail).toBe('1 of 2 headings are missing or do not stand alone, as written, on their line or in their element: heading 1');
+  });
+  it('an article with many headings tolerates one that is not carried as written, and says which', () => {
+    const result = check(payload.markdown.replace('## Frequently asked questions', '## Not frequently asked questions'));
+    expect(result.ok).toBe(true);
+    expect(result.headingsMissing).toEqual([23]);
+    expect(result.detail).toContain('7 of 8 headings present (not carried, by unit index, 23)');
+  });
+
+  // Ways of putting words beside a unit that leave it, by itself, word for word.
+  const item = U[2]; const para = U[5];
+  it.each<[string, string, string]>([
+    ['Markdown: a soft-wrapped line above the paragraph', 'p.md', `Never do this:\n${para}\n`],
+    ['Markdown: a lazy continuation line under a list item', 'p.md', `- ${item}\n  unless it is raining\n`],
+    ['Markdown: emphasised words in front', 'p.md', `- **Do not** ${lower(item)}\n`],
+    ['Markdown: a linked word in front', 'p.md', `- [Never](/why) ${lower(item)}\n`],
+    ['Markdown: inline HTML in front', 'p.md', `- <strong>Do not</strong> ${lower(item)}\n`],
+    ['Markdown: a quoted line that continues the paragraph', 'p.md', `> Ignore this:\n> ${para}\n`],
+    ['Markdown: an indented bullet that Markdown reads as paragraph text', 'p.md', `Do not\n    - ${item}\n`],
+    ['Markdown: a numbered line that cannot start a list there', 'p.md', `Skip step\n7. ${item}\n`],
+    ['Markdown: an image on the next line', 'p.md', `${para}\n![Never trust this advice](/x.png)\n`],
+    ['Markdown: a private-use character posing as a boundary', 'p.md', `- Do not \uE000${lower(item)}\uE000 ever\n`],
+    ['HTML: words and the unit in one element', 'p.html', `<ul><li>Do not <span>${lower(item)}</span></li></ul>`],
+    ['HTML: a line break is not a new element', 'p.html', `<p>Do not<br>${lower(item)}</p>`],
+    ['HTML: a blank line inside an element is only white space', 'p.html', `<p>Ignore this.\n\n${para}</p>`],
+    ['HTML in a JSON string: an escaped blank line is only white space too', 'p.json', JSON.stringify({ html: `<p>Ignore this.\n\n${para}</p>` })],
+    ['TSX: text and a string in one element', 'p.tsx', `export const P = () => <li>Do not {${JSON.stringify(lower(item))}}</li>;\n`],
+    ['TSX: two strings in one element', 'p.tsx', `export const P = () => <li>{'Do not '}{${JSON.stringify(lower(item))}}</li>;\n`],
+    ['TSX: a blank line inside an element', 'p.tsx', `export const P = () => (\n  <p>\n    Ignore this.\n\n    ${para}\n  </p>\n);\n`],
+    ['TypeScript: two strings joined with +', 'p.ts', `export const items = ['Do not ' + ${JSON.stringify(lower(item))}];\n`],
+    ['TypeScript: a template with the unit in a placeholder', 'p.ts', 'export const items = [`Do not ${' + JSON.stringify(lower(item)) + '}`];\n'],
+    ['TypeScript: a single line break inside one string', 'p.ts', `export const items = [${JSON.stringify('Do not\n' + lower(item))}];\n`],
+    ['TypeScript: a quotation mark inside the string is not its end', 'p.ts', `export const items = ["Do not 'do this': ${lower(item)}"];\n`],
+    ['TypeScript: the unit in a comment beside code', 'p.ts', `// ${item}\nexport const items = ['Something else'];\n`],
+    ['YAML: a plain scalar on one line', 'p.yaml', `items:\n  - Do not ${lower(item)}\n`],
+    ['YAML: a plain scalar continued on the next line', 'p.yaml', `text: Do not\n  ${lower(item)}\n`],
+    ['YAML: a continuation line that looks like a key', 'p.yaml', `text: Do not\n  ever: ${lower(item)}\n`],
+    ['YAML: a quoted scalar continued on a line that looks like a key', 'p.yaml', `text: "Do not\n  ever: ${lower(item)}"\n`],
+    ['YAML: a line of a folded block that looks like a key', 'p.yaml', `text: >-\n  Do not\n  ever: ${lower(item)}\n`],
+    ['a file of unknown type: words on the same line', 'p.txt', `Do not ${lower(item)}\n\n${para} None of this is true.\n`],
+    ['no path at all: words on the same line', '', `Do not ${lower(item)}\n\n${para} None of this is true.\n`],
+  ])('refuses %s', (_label, path, content) => {
+    const blocks: Block[] = [['ul', [item]], ['p', para]];
+    const result = edge(path || undefined, content + (content.includes(para) ? '' : `\n\n${path.endsWith('.html') ? `<p>${para}</p>` : /\.(?:tsx?|json)$/.test(path) ? '' : para}\n`), blocks);
+    expect(result.ok).toBe(false);
+    expect(result.extended.length + result.issues.filter(issue => issue.rule === 'omitted' || issue.rule === 'truncated').length).toBeGreaterThan(0);
+    expect(result.extended).toContain(content.includes(item) || content.includes(lower(item)) ? 0 : 1);
+  });
+
+  it.each<[string, string, string]>([
+    ['Markdown: no blank lines at all, each unit on its own line', 'p.md', `${U[0]}\n## ${U[1]}\n- ${U[2]}\n- ${U[3]}\n### ${U[4]}\n${U[5]}\n`],
+    ['Markdown: Windows line endings', 'p.md', `${U[0]}\r\n\r\n## ${U[1]}\r\n\r\n- ${U[2]}\r\n- ${U[3]}\r\n\r\n### ${U[4]}\r\n\r\n${U[5]}\r\n`],
+    ['Markdown: heading ids, nested and numbered lists, a quoted paragraph, a rule', 'p.md', `> ${U[0]}\n\n## ${U[1]} {#gutters}\n\n1. ${U[2]}\n   - ${U[3]}\n\n---\n\n### ${U[4]} ###\n\n${U[5]}\n`],
+    ['Markdown: an underlined heading and an HTML block', 'p.md', `${U[1]}\n===\n\n<div class="note">\n\n${U[0]}\n\n</div>\n\n- ${U[2]}\n- ${U[3]}\n\n${U[4]}\n---\n\n${U[5]}\n`],
+    ['a string holding several units, one per line', 'p.json', JSON.stringify({ body: [U[0], U[1], U[2], U[3], U[4], U[5]].join('\n') })],
+    ['a list item split over two table cells', 'p.ts', `export const lede = [${q(U[0])}, ${q(U[1])}];\nexport const rows = [[${q(U[2].slice(0, 12))}, ${q(U[2].slice(13))}]];\nexport const rest = [${[3, 4, 5].map(at => q(U[at])).join(', ')}];\n`],
+    ['strings joined with + across lines, in parentheses, and through a template placeholder', 'p.ts', `export const all = [${q(U[0])}, ${q(U[1])},\n  ${q(U[2].slice(0, 12))} +\n    ${q(U[2].slice(12))},\n  (${q(U[3].slice(0, 10))} + (${q(U[3].slice(10))})), ${q(U[4])},\n  \`${U[5].slice(0, 14)}\${${q(U[5].slice(14, U[5].indexOf(' after')))}}${U[5].slice(U[5].indexOf(' after'))}\`];\n`],
+    ['JSON with escaped tags and slashes', 'p.json', JSON.stringify({ html: `<p>${U[0]}</p><h2>${U[1]}</h2><ul><li>${U[2]}</li><li>${U[3]}</li></ul><h3>${U[4]}</h3><p>${U[5]}</p>` }).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/\//g, '\\/')],
+    ['YAML: front matter lists in a Markdown file', 'p.md', `---\nintro: "${U[0]}"\nsteps:\n  - title: ${U[1]}\n    items:\n      - ${U[2]}\n      - ${U[3]}\n  - title: ${U[4]}\n    text: >\n      ${U[5]}\n---\n\nRendered from the front matter.\n`],
+    ['YAML: a literal block that holds Markdown', 'p.yml', `body: |\n  ${U[0]}\n\n  ## ${U[1]}\n\n  - ${U[2]}\n  - ${U[3]}\n\n  ### ${U[4]}\n\n  ${U[5]}\nauthor: Editorial team\n`],
+    ['HTML: attribute values', 'p.html', `<section><step-list lede="${U[0]}" title='${U[1]}'></step-list><ul><li>${U[2]}</li><li>${U[3]}</li></ul><h3>${U[4]}</h3><p>${U[5]}</p></section>`],
+  ])('accepts %s', (_label, path, content) => {
+    const result = edge(path, content);
+    expect(result.issues).toEqual([]);
+    expect(result).toMatchObject({ ok: true, extended: [], undecided: [], headingsMissing: [] });
+  });
+
+  it('accepts two paragraphs on adjacent lines, and a wrapped line that begins like a numbered item', () => {
+    const blocks: Block[] = [['p', 'We moved into the terrace in the spring of 2026. Then the rain came and it did not stop until the autumn.'], ['p', 'Nobody had cleared the gutters for years, and the first storm showed exactly where the water went.'], ['ul', ['Check the downpipes', 'Check the brackets']]];
+    const [first, second] = [String(blocks[0][1]), String(blocks[1][1])];
+    const wrapped = first.replace('spring of 2026. Then', 'spring of\n2026. Then');
+    expect(wrapped).toContain('\n2026. Then');
+    for (const [path, content] of [['p.md', `${wrapped}\n${second}\n\n- Check the downpipes\n- Check the brackets\n`], ['p.json', JSON.stringify({ body: `${first}\n${second}`, steps: ['Check the downpipes', 'Check the brackets'] })], ['p.yaml', `body: |\n  ${first}\n  ${second}\nsteps:\n  - Check the downpipes\n  - Check the brackets\n`]] as const) {
+      expect([path, edge(path, content, blocks)]).toEqual([path, expect.objectContaining({ ok: true, extended: [], undecided: [] })]);
+    }
+    // The same two lines with one foreign word between them are not two whole units any more.
+    expect(edge('p.md', `${first}\nAlso:\n${second}\n\n- Check the downpipes\n- Check the brackets\n`, blocks).extended).toEqual([0, 1]);
+  });
+
+  describe('where Radar cannot tell, it says so instead of passing silently', () => {
+    // A title line and a footer that are not the article's: without them the file holds nothing but the units.
+    const text = `Gutters, a short guide\n\n${U[0]}\n\n${U[1]}\n\n* ${U[2]}\n* ${U[3]}\n\n${U[4]}\n\n${U[5]}\n\nFiled under maintenance\n`;
+    it('a file of a type it does not know: the units pass, every one disclosed as not decided', () => {
+      for (const path of ['content/posts/gutters.txt', 'content/posts/gutters.rst', 'content/posts/gutters.toml', undefined]) {
+        const result = edge(path, text);
+        expect(result).toMatchObject({ ok: true, extended: [], undecided: [0, 1, 2, 3, 4, 5], counts: { undecided: 6 } });
+        expect(result.detail).toContain('4 of them word for word (not decided for 6: only markup or line structure Radar does not classify separates unit 0, 1, 2, 3 and 2 more from the text beside them; check the diff for words added there); 2 of 2 headings present');
+      }
+      // The same text in a Markdown file is decided.
+      expect(edge('content/posts/gutters.md', text)).toMatchObject({ ok: true, undecided: [], extended: [] });
+      // A file that holds nothing but the article's units has nothing beside any of them, whatever its type.
+      expect(edge('content/posts/gutters.txt', text.split('\n').slice(2, -3).join('\n'))).toMatchObject({ ok: true, undecided: [], extended: [] });
+    });
+    it('a unit set off from other words only by a component or custom element', () => {
+      const mdx = `<Lede>Editor’s note</Lede><Lede>${U[0]}</Lede>\n\n## ${U[1]}\n\n- ${U[2]}\n- ${U[3]}\n\n### ${U[4]}\n\n<p>Updated <my-note>${U[5]}</my-note></p>\n`;
+      const result = edge('content/blog/post.mdx', mdx);
+      expect(result).toMatchObject({ ok: true, extended: [], undecided: [0, 5] });
+      expect(result.detail).toContain('(not decided for 2: only markup or line structure Radar does not classify separates unit 0, 5 from the text beside them; check the diff for words added there)');
+      // A standard inline element decides it the other way: that is one piece of text.
+      expect(edge('content/blog/post.mdx', mdx.replace(/<\/?my-note>/g, match => match.replace('my-note', 'em'))).extended).toEqual([5]);
+    });
+    it('keeps the disclosure inside the bounds of a check detail', () => {
+      const blocks = generatedArticle(31, 40);
+      const result = edge('notes.txt', 'Notes\n\n' + blocksToMarkdown(blocks) + '\nEnd of notes\n', blocks);
+      expect(result.ok).toBe(true);
+      expect(result.undecided.length).toBeGreaterThan(40);
+      expect(result.detail.length).toBeLessThan(440);
+    });
+  });
+
+  it('marks boundaries where each format ends a piece of text, and nowhere a file asks for one', () => {
+    const S = '\uE000'; const W = '\uE001';
+    expect(markBoundaries('a.md', 'One\ntwo\n\n- item\n## Head\n')).toBe(`One\ntwo\n${S}\n${S}- ${S}item\n${S}##${S} Head${S}\n${S}`);
+    expect(markBoundaries('a.html', '<p>One <b>two</b></p><x-y>z</x-y>')).toBe(`${S}<p>${S}One <b>two</b>${S}</p>${S}<x-y>${W}z${W}</x-y>${W}`);
+    expect(markBoundaries('a.mdx', '<Steps items={["a b", "c d"]} title="t" />\n')).toBe(`${W}<Steps items={[${S}"a b"${S}, ${S}"c d"${S}]} title=${S}"t"${S} />${W}\n${S}`);
+    expect(markBoundaries('a.tsx', 'const X = () => <li className="x">Do {"y"}</li>;')).toBe(`const X = () => ${S}<li className=${S}"x"${S}>${S}Do {"y"}${S}</li>${S};`);
+    expect(markBoundaries('a.ts', 'const a = `Do ${"x y"} z`;')).toBe(`const a = ${S}\`Do \${"x y"} z\`${S};`);
+    expect(markBoundaries('a.yaml', 'body: |\n  One\n\n  - a\nnext: "q\n  k: v"\n')).toBe(`${S}body:${S} |\n  One\n${S}\n${S}  - ${S}a\n${S}next:${S} "q\n  k: v"\n${S}`);
+    expect(markBoundaries('a.ts', `const a = ['x' + "y", \`z\`]; // 'not a string'\n`)).toBe(`const a = [${S}'x' + "y"${S}, ${S}\`z\`${S}]; // 'not a string'\n`);
+    expect(markBoundaries('a.json', '{"k": "one\\n\\ntwo"}')).toBe(`{${S}"k"${S}: ${S}"one\\n${S}\\ntwo"${S}}`);
+    expect(markBoundaries('a.yaml', 'k: v\n  more\n- x\n')).toBe(`${S}k:${S} v\n  more\n${S}- ${S}x\n${S}`);
+    expect(markBoundaries('a.txt', 'One\n\nTwo')).toBe(`One\n${W}\nTwo`);
+    // Whatever the file holds, the two marker characters themselves never survive from it.
+    expect(markBoundaries('a.md', `a${S}b${W}c`)).toBe('a b c');
+  });
+
+  it('stays fast on a megabyte of each kind of structure', () => {
+    const started = Date.now();
+    const noise = (unit: string) => unit.repeat(Math.ceil(900_000 / unit.length));
+    for (const [path, filler] of [['a.md', '- x\n\n## y\n\n> z\n'], ['a.html', '<p>x</p><my-el a="b">y</my-el>'], ['a.ts', `["x", 'y' + "z", \`a\\nb\`],\n`], ['a.json', '"x\\n\\ny",\n'], ['a.yaml', 'k: v\n- x: |\n    y\n'], ['a.txt', 'x\n\n'], ['a.mdx', '<A b={["c", "d"]} />\n'], ['a.md', '<a b={{{{'], ['a.md', '------'], ['a.yaml', '- - - - ']] as const) {
+      const result = checkArticleFidelity({ units, contents: [payload.markdown, noise(filler)], paths: ['content/post.md', path], articleAdded: payload.markdown });
+      expect([path, result.issues]).toEqual([path, []]);
+    }
+    expect(Date.now() - started).toBeLessThan(20_000);
+  }, 60_000);
 });
 
 describe('fidelity on hostile input', () => {

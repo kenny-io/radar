@@ -234,11 +234,49 @@ describe('the Daytona provider', () => {
         expect(sdk.state.listed).toEqual([]);
       });
 
-    it('stops on a delete failure that is not a 404', async () => {
+    it('stops on a delete failure that is not a 404 when the caller gave no listener', async () => {
       const stuck = sdk.remote('old-3', { ...MATCH, run: 'c' });
       stuck.delete.mockRejectedValue(new sdk.OtherError('delete refused'));
       sdk.state.sandboxes.push(stuck);
       await expect(daytonaProvider(KEY).destroyMatching(MATCH, 30)).rejects.toThrow('delete refused');
+    });
+
+    it('with a listener, hands over a sandbox it cannot delete, with its id and state, and still deletes the others (N5)', async () => {
+      const creating = Object.assign(sdk.remote('stuck-creating', { ...MATCH, run: 'c' }), { state: 'creating' });
+      creating.delete.mockRejectedValue(new sdk.OtherError('Sandbox state change in progress ' + 'x'.repeat(600)));
+      const gone = sdk.remote('already-gone', { ...MATCH, run: 'd' });
+      gone.delete.mockRejectedValue(new sdk.DaytonaNotFoundError('gone'));
+      const stateless = sdk.remote('stuck-stateless', { ...MATCH, run: 'e' });
+      stateless.delete.mockRejectedValue('refused');
+      const healthy = sdk.remote('old-4', { ...MATCH, run: 'f' });
+      sdk.state.sandboxes.push(creating, gone, stateless, healthy);
+      const leftovers: unknown[] = [];
+      expect(await daytonaProvider(KEY).destroyMatching(MATCH, 30, leftover => leftovers.push(leftover))).toBe(2);
+      expect(healthy.delete).toHaveBeenCalledOnce();
+      expect(leftovers).toEqual([
+        { id: 'stuck-creating', state: 'creating', error: expect.stringMatching(/^Error: Sandbox state change in progress x+$/) },
+        { id: 'stuck-stateless', state: null, error: 'Error: refused' },
+      ]);
+      expect((leftovers[0] as { error: string }).error).toHaveLength(300);
+    });
+
+    it('with a listener, still rejects when the sandboxes cannot be listed, and still refuses a partial filter', async () => {
+      const provider = daytonaProvider(KEY, async () => ({ Daytona: class { list() { throw new Error('listing refused'); } }, DaytonaNotFoundError: sdk.DaytonaNotFoundError }) as never);
+      await expect(provider.destroyMatching(MATCH, 30, () => {})).rejects.toThrow('listing refused');
+      await expect(daytonaProvider(KEY).destroyMatching({ workload: 'radar-publisher' }, 30, () => {})).rejects.toThrow(/workload and entry/);
+    });
+
+    it('with a listener, reports what it had no time left to delete instead of calling delete with no time', async () => {
+      const slow = sdk.remote('slow', { ...MATCH, run: 'g' }); const late = sdk.remote('late', { ...MATCH, run: 'h' });
+      const realNow = Date.now; let now = realNow();
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+      slow.delete.mockImplementation(async () => { now += 31_000; });
+      sdk.state.sandboxes.push(slow, late);
+      const leftovers: { id: string; error: string }[] = [];
+      expect(await daytonaProvider(KEY).destroyMatching(MATCH, 30, leftover => leftovers.push(leftover))).toBe(1);
+      expect(late.delete).not.toHaveBeenCalled();
+      expect(leftovers).toEqual([{ id: 'late', state: null, error: 'not attempted: the sweep ran out of time' }]);
+      vi.restoreAllMocks();
     });
   });
 });

@@ -2,6 +2,9 @@
 //   1 delete leftover sandboxes for the entry   2 create (egress = the proxy host only)   3 prove egress is restricted
 //   4 upload the pinned archive and the article  5 run the trusted runner                 6 collect and gate
 //   7 at most one repair turn, then gate again   8 destroy the sandbox, always, before returning or throwing
+// Step 1 is best effort: a leftover that cannot be deleted is reported and the attempt goes on, because a leftover
+// shares nothing with the new sandbox. Step 8 also covers a create that failed or timed out after Daytona had already
+// registered the sandbox: the attempt then looks for sandboxes carrying its own run label and deletes them.
 // Nothing from the repository or the article enters the sandbox before step 3 has passed. The sandbox never receives the
 // GitHub token (it stays in the connector's closures), the Daytona key or the capability secret; the only secret that
 // enters is the per-run capability, in the exec environment of the runner. One absolute deadline governs the attempt:
@@ -21,7 +24,7 @@ import {
   RunnerResultSchema, SANDBOX_BUDGET, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, SANDBOX_PATHS, SANDBOX_TEARDOWN_FAILED_CODE, SANDBOX_WORKLOAD, shortenAgentText,
   type AgentReport, type ArticleUnitsOf, type IntegrateWithSandbox, type MintPublishCapability, type PublicationGateResult, type RepairFeedback,
   type RunnerResult, type RunPublicationGate, type SandboxDiagnosticCode, type SandboxExecResult, type SandboxHandle, type SandboxIntegration,
-  type SandboxIntegrationInput, type SandboxLabels,
+  type SandboxIntegrationInput, type SandboxLabels, type SandboxLeftover, type SandboxProvider,
 } from './types';
 
 type Stage = PublishDiagnostic['stage'];
@@ -45,6 +48,9 @@ const PREPARE_TOO_LARGE = { exitCode: 3, token: /code=[a-z_-]*too[-_]large/ } as
 const PROVIDER_REASON_CHARS = 600;
 /** Development and QA only (config.transcriptDir is always null in production). */
 const TRANSCRIPT_MAX_BYTES = 5_000_000;
+/** A teardown report names at most this many sandboxes that could not be deleted, within this many characters. */
+const LEFTOVERS_LISTED = 5;
+const TEARDOWN_REPORT_CHARS = 900;
 
 export interface SandboxRunDependencies {
   /** Default: gate.ts `runPublicationGate`. */
@@ -157,10 +163,35 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
   };
 
   let handle: SandboxHandle | null = null;
+  /** Set once this attempt has asked the provider for a sandbox: the labels that sandbox carries, the run label included. */
+  let requested: { provider: SandboxProvider; labels: SandboxLabels } | null = null;
   let turns = 0;
   let repaired = false;
   let deps: SandboxRunDependencies;
   try { deps = await resolveDependencies(dependencies); } catch (error) { throw unavailable('plan', 'The sandbox publisher could not be loaded', error); }
+
+  /** Teardown reporting (SBX-6). A sandbox that could not be deleted is an operator's concern, never the attempt's outcome. */
+  const reportTeardown = async (text: string): Promise<void> => {
+    try {
+      await bounded(5, () => deps.report(new Error(safe(text, TEARDOWN_REPORT_CHARS)), { source: 'publishing', operation: SANDBOX_OPERATIONS.teardown, businessId: input.options.businessId, ref: payload.entryId, provider: 'daytona', code: SANDBOX_TEARDOWN_FAILED_CODE }));
+    } catch { /* Reporting never replaces the attempt's outcome. */ }
+  };
+  /** Deletes every sandbox carrying `labels` and reports what it could not delete, or that it could not look. Never
+   *  throws. True when nothing is known to remain. `whose` begins the report: which sandboxes these are. */
+  const sweep = async (provider: SandboxProvider, labels: Record<string, string>, seconds: number, whose: string, consequence: string): Promise<boolean> => {
+    const stuck: SandboxLeftover[] = [];
+    let more = 0;
+    try {
+      await bounded(seconds, () => provider.destroyMatching(labels, seconds, leftover => { if (stuck.length < LEFTOVERS_LISTED) stuck.push(leftover); else more++; }));
+    } catch (error) {
+      await reportTeardown(`${whose} could not be ${stuck.length ? 'fully ' : ''}listed and deleted${error instanceof CallTimeout ? ` within ${seconds} seconds` : ` (${errorName(error)}${error instanceof Error && error.message ? `: ${error.message}` : ''})`}. ${consequence}`);
+      return false;
+    }
+    if (!stuck.length) return true;
+    const named = stuck.map(leftover => `${leftover.id} (state ${leftover.state ?? 'unknown'}; ${leftover.error})`).join('; ');
+    await reportTeardown(`${whose}: ${stuck.length + more} could not be deleted: ${named}${more ? `; and ${more} more` : ''}. ${consequence}`);
+    return false;
+  };
 
   const attempt = async (): Promise<SandboxIntegration> => {
     secondsLeft(workEndsAt, 'plan', 'The sandbox run');
@@ -169,10 +200,16 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
     const labels: SandboxLabels = { workload: SANDBOX_WORKLOAD, env: env.isProd ? 'production' : 'development', entry: payload.entryId, run: runId };
 
     // 1 A previous attempt's sandbox may still be running after a worker restart. The job key allows one run per entry.
-    await provide('Deleting leftover sandboxes', windowOf(B.destroySec), 'plan', timeoutSec => provider.destroyMatching({ workload: labels.workload, env: labels.env, entry: labels.entry }, timeoutSec));
+    // A leftover that cannot be deleted (Daytona refuses while it is still creating one, for instance) is reported and
+    // does not stop this attempt: it holds another run's files and another run's capability, which expires with that
+    // run, it shares nothing with the sandbox created below, and its hard TTL bounds it.
+    await sweep(provider, { workload: labels.workload, env: labels.env, entry: labels.entry }, secondsLeft(windowOf(B.destroySec), 'plan', 'Deleting leftover sandboxes'),
+      'Sandboxes left by an earlier attempt for this entry', `This attempt went on without them: a leftover is isolated from the new sandbox, its model capability expires with its own attempt, and its ${B.ttlMinutes}-minute TTL bounds it.`);
 
-    // 2 Create. A sandbox that appears after this call gave up is deleted rather than left to its TTL.
+    // 2 Create. A sandbox that appears after this call gave up is deleted rather than left to its TTL, and teardown
+    // looks for one the provider registered without ever handing it back.
     const createSeconds = secondsLeft(windowOf(B.createSec), 'plan', 'Creating the sandbox');
+    requested = { provider, labels };
     const creating = provider.create({ snapshotId: config.snapshotId, allowDomain: proxyHost, ttlMinutes: B.ttlMinutes, labels: { ...labels }, env: { ...SANDBOX_ENV }, timeoutSec: createSeconds });
     try { handle = await bounded(createSeconds, () => creating); } catch (error) {
       creating.then(late => late.destroy(B.destroySec).catch(() => {}), () => {});
@@ -225,6 +262,7 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
     const agentEndsAt = Math.min(Date.now() + B.agentMaxSec * 1000, deadlineAt - B.agentReserveSec * 1000);
     let capability = '';
     const entries = new Map(input.entries.map(entry => [entry.path, entry]));
+    const baseEntries = input.baseEntries ? new Map(input.baseEntries.map(entry => [entry.path, entry])) : undefined;
 
     const readOutput = async <S extends z.ZodTypeAny>(file: string, schema: S, endsAt: number, stage: Stage): Promise<z.infer<S> | null> => {
       const found = await provide('Reading the run output', endsAt, stage, () => sandbox.stat(file));
@@ -303,7 +341,7 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
       const seconds = Math.floor((workEndsAt - Date.now()) / 1000);
       if (seconds < 1) throw publishingDeadlineError('validation');
       try {
-        return await bounded(seconds, () => deps.gate({ payload, hint: input.hint, entries, report: collected.report, result: collected.result, finals: collected.finals, readBlob: input.readBlob, options: input.options, capability }));
+        return await bounded(seconds, () => deps.gate({ payload, hint: input.hint, entries, ...(baseEntries ? { baseEntries } : {}), report: collected.report, result: collected.result, finals: collected.finals, readBlob: input.readBlob, options: input.options, capability }));
       } catch (error) {
         if (error instanceof CallTimeout) throw publishingDeadlineError('validation');
         throw error;
@@ -375,14 +413,21 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
    *  it, so the attempt's own outcome stands (SBX-6). */
   const teardown = async (): Promise<boolean> => {
     const sandbox = handle as SandboxHandle | null;
-    if (!sandbox) return true;
+    /** The teardown reserve, or what is left of the attempt when that is less. */
+    const reserve = () => Math.min(B.destroySec, Math.max(1, Math.ceil((deadlineAt - Date.now()) / 1000)));
+    if (!sandbox) {
+      // No handle. If a create was asked for, it failed or timed out, and Daytona can have registered the sandbox all
+      // the same (seen live: "failed to start", or still `creating` when the call gave up). Nothing was uploaded to
+      // it, but it would otherwise sit there until its TTL, so it is looked up by this run's own labels and deleted.
+      const asked = requested as { provider: SandboxProvider; labels: SandboxLabels } | null;
+      if (!asked) return true;
+      return sweep(asked.provider, { ...asked.labels }, reserve(), 'Sandboxes registered by this attempt’s failed or timed-out create',
+        `Nothing from the repository or the article was uploaded to them. The next attempt for this entry tries to delete them again, and the ${B.ttlMinutes}-minute TTL bounds them.`);
+    }
     if (config.transcriptDir) await saveTranscript(sandbox, config.transcriptDir).catch(() => {});
-    const seconds = Math.min(B.destroySec, Math.max(1, Math.ceil((deadlineAt - Date.now()) / 1000)));
+    const seconds = reserve();
     try { await bounded(seconds, () => sandbox.destroy(seconds)); return true; } catch (error) {
-      const text = safe(`Sandbox ${sandbox.id} was not destroyed${error instanceof CallTimeout ? ` within ${seconds} seconds` : ` (${errorName(error)}${error instanceof Error && error.message ? `: ${error.message}` : ''})`}. Its ${B.ttlMinutes}-minute TTL will remove it.`);
-      try {
-        await bounded(5, () => deps.report(new Error(text), { source: 'publishing', operation: SANDBOX_OPERATIONS.teardown, businessId: input.options.businessId, ref: payload.entryId, provider: 'daytona', code: SANDBOX_TEARDOWN_FAILED_CODE }));
-      } catch { /* Reporting never replaces the attempt's outcome. */ }
+      await reportTeardown(`Sandbox ${sandbox.id} was not destroyed${error instanceof CallTimeout ? ` within ${seconds} seconds` : ` (${errorName(error)}${error instanceof Error && error.message ? `: ${error.message}` : ''})`}. Its ${B.ttlMinutes}-minute TTL will remove it.`);
       return false;
     }
   };

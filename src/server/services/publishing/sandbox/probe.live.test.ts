@@ -7,6 +7,9 @@
 // trusted egress probe, then searches the sandbox for the worker's secrets. The search happens here, on data pulled
 // out of the sandbox: no secret is ever sent in to be looked for. Nothing from this file prints a secret; a finding
 // is reported by variable name and location only. The sandbox is deleted at the end and its absence is checked.
+// Setup has its own time limit (Vitest's default of 10 s is shorter than a slow create), and whatever setup leaves
+// behind when it fails or runs out of time is deleted afterwards: the handle if there is one, a create that answers
+// late, and anything Daytona registered under this run's labels without handing it back.
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -27,6 +30,11 @@ const SCAN_OUTPUT = '/tmp/radar-probe/scan.json';
 const MARKER_FILE = '/tmp/radar-probe/marker.txt';
 const HOLDS_KEY_SCRIPT = '/tmp/radar-probe/holds-key.mjs';
 const SCAN_MAX_BYTES = 60_000_000;
+/** Setup: the create at its own budget, the runner upload at its own, and a margin. Never Vitest's 10 s default. */
+const SETUP_TIMEOUT_MS = (SANDBOX_BUDGET.createSec + SANDBOX_BUDGET.uploadSec + 30) * 1000;
+/** Cleanup: a late create is waited for this long, then one delete and one sweep by label, each at the teardown budget. */
+const LATE_CREATE_WAIT_MS = 60_000;
+const CLEANUP_TIMEOUT_MS = LATE_CREATE_WAIT_MS + (2 * SANDBOX_BUDGET.destroySec + 30) * 1000;
 
 /** Runs inside the sandbox as the agent's user. Collects this process's environment, every process's arguments and
  *  environment, and every regular file written since the sandbox was created; the control plane does the searching.
@@ -78,6 +86,8 @@ describe.skipIf(!ON)('Publishing sandbox probes (live)', { timeout: 420_000 }, (
   let config: SandboxPublisherConfig;
   let provider: SandboxProvider;
   let sandbox: SandboxHandle | null = null;
+  /** The create call itself, kept so that cleanup can delete a sandbox that arrives after setup failed or timed out. */
+  let creating: Promise<SandboxHandle> | null = null;
   let proxyHost = '';
   let createdAt = 0;
   const labels = { workload: SANDBOX_WORKLOAD, env: 'development', entry: ENTRY, run: randomUUID() };
@@ -91,14 +101,28 @@ describe.skipIf(!ON)('Publishing sandbox probes (live)', { timeout: 420_000 }, (
     proxyHost = config.proxyUrl.hostname.toLowerCase();
     provider = daytonaProvider(config.daytonaKey);
     createdAt = Date.now();
-    sandbox = await provider.create({ snapshotId: config.snapshotId, allowDomain: proxyHost, ttlMinutes: SANDBOX_BUDGET.ttlMinutes, labels, env: { ...SANDBOX_ENV }, timeoutSec: SANDBOX_BUDGET.createSec });
+    creating = provider.create({ snapshotId: config.snapshotId, allowDomain: proxyHost, ttlMinutes: SANDBOX_BUDGET.ttlMinutes, labels, env: { ...SANDBOX_ENV }, timeoutSec: SANDBOX_BUDGET.createSec });
+    creating.catch(() => {});
+    sandbox = await creating;
     // The runner scripts, installed and verified the way an attempt installs them.
     const directory = path.resolve(process.cwd(), RUNNER_SOURCE_DIR);
     const scripts = await Promise.all(RUNNER_SCRIPTS.map(async name => ({ name, data: await readFile(path.join(directory, name)) })));
     const manifest = scripts.map(script => `${createHash('sha256').update(script.data).digest('hex')}  ${script.name}\n`).join('');
     await sandbox.upload([...scripts.map(script => ({ path: `${SANDBOX_PATHS.runnerDir}/${script.name}`, data: script.data })), { path: `${SANDBOX_PATHS.runnerDir}/${RUNNER_MANIFEST}`, data: Buffer.from(manifest) }], SANDBOX_BUDGET.uploadSec);
-  });
-  afterAll(async () => { await sandbox?.destroy(SANDBOX_BUDGET.destroySec).catch(() => {}); });
+  }, SETUP_TIMEOUT_MS);
+  // Runs whether setup passed, threw or timed out. Nothing here can fail the run; what could not be deleted is printed
+  // by id and state so it can be removed by hand.
+  afterAll(async () => {
+    if (!provider) return;
+    // A setup that timed out leaves the create call pending; the sandbox it eventually returns is this file's too.
+    const late = sandbox ?? (creating ? await Promise.race([creating.catch(() => null), new Promise<null>(resolve => setTimeout(() => resolve(null), LATE_CREATE_WAIT_MS))]) : null);
+    await late?.destroy(SANDBOX_BUDGET.destroySec).catch(() => {});
+    // A create that failed or was abandoned can still have registered a sandbox: look it up by this run's labels.
+    const stuck: string[] = [];
+    await provider.destroyMatching({ ...labels }, SANDBOX_BUDGET.destroySec, leftover => { stuck.push(`${leftover.id} (state ${leftover.state ?? 'unknown'})`); })
+      .catch(error => { stuck.push(`the lookup by label failed (${error instanceof Error ? error.name : 'Error'})`); });
+    if (stuck.length) console.warn('[probe.live] not deleted, remove by hand:', stuck.join('; '));
+  }, CLEANUP_TIMEOUT_MS);
 
   it('the sandbox reports the requested allow-list and runs the uploaded runner unmodified', async () => {
     expect(sandbox!.id).toBeTruthy();

@@ -63,7 +63,7 @@ source, URLs or credentials.
 
 | Code | Meaning | Retried | First thing to check |
 | --- | --- | --- | --- |
-| `sandbox-unavailable` | Daytona create, upload, exec or download failed or timed out, or the runner scripts failed their checksum | yes (502) | Daytona status; the snapshot id; that the worker runs from the repository root |
+| `sandbox-unavailable` | Daytona create, upload, exec or download failed or timed out, or the runner scripts failed their checksum. A leftover sandbox that cannot be deleted is not this code: it is reported as a teardown (below) and the attempt goes on | yes (502) | Daytona status; the snapshot id; that the worker runs from the repository root |
 | `sandbox-egress-unverified` | The sandbox could reach something other than the model proxy, or could not reach the proxy. Nothing from the repository was uploaded | yes (503) | The Daytona organization's tier (Tier 3 or higher); that the proxy's health route answers; the proxy URL |
 | `analysis-unavailable` | The model provider or the proxy was unavailable during the agent run (5xx, 408, 429) | yes (502) | The provider's sentence in the reason, when there is one; `[model-proxy]` `call-failed` lines; provider status |
 | `agent-failed` | The agent turn ended in an error that a retry would repeat: the provider refused the request (for example an Agent SDK too old for the model), turn limit, missing or invalid report | no | The bounded token in the reason, such as `AgentApiError:400`, and the provider's sentence after it; run the live smoke |
@@ -72,7 +72,7 @@ source, URLs or credentials.
 | `workspace-too-large` | The archive or its expansion is over a ceiling (150 MB compressed, 100,000 entries, 1 GB) | no | Repository size |
 | `plan-empty` | The run changed nothing | no | |
 | `protected-path`, `non-regular-file`, `changed-file-count`, `final-output-size`, `credential-detected`, `syntax-invalid`, `peer-content-changed`, `article-fidelity`, `identity-changed` | The publication gate refused the change before any Git write. `stage` is `validation`, or `repair` when the single repair turn also failed (`origin` then names the first refusal) | no | The reason and `issues` say which file, limit or article units |
-| `snapshot-mismatch` | A file GitHub returned did not match the pinned commit | no | Retry; the branch moved or GitHub served stale content |
+| `snapshot-mismatch` | A file GitHub returned did not match the pinned commit, or on a retry GitHub did not say where the article branch left the default branch | no | Retry; the branch moved or GitHub served stale content |
 | `publishing-deadline` | The attempt reached its 13.5 minute deadline | no (manual retry) | Duration in the run line below; repository size |
 
 When the provider or the model proxy rejects a model request, the reason of `agent-failed` and `analysis-unavailable`
@@ -93,8 +93,28 @@ Two gate reasons an operator will see after the QA-1 fixes:
 - `article-fidelity` with "present but not word for word" lists the unit indexes (0-based, as in `article.json`) of
   paragraphs or list items that have other words or markup between the article's words. None is allowed.
 
-Both are repairable: the agent gets one repair turn with the same sentence, and the entry fails only if that turn is
-refused too (`stage: repair`).
+And three after the QA-2 fixes:
+
+- `article-fidelity` with "have words directly before or after them in their line, element or string" lists the
+  paragraphs and list items whose own words are all there, in one run, with other words added beside them where the
+  file keeps one piece of text (a Markdown line or paragraph, an HTML or JSX element, a string in a JavaScript,
+  TypeScript or JSON file, a YAML scalar): "Do not" in front of a list item, a sentence after a paragraph. A heading
+  with words added counts with the missing headings ("missing or do not stand alone, as written"). The same reason is
+  given when the article sits somewhere that is not rendered text, such as a code comment beside code.
+- `peer-content-changed` on a retry or migration says "existing lines on the default branch": the file is compared
+  with the default-branch commit the article branch started from, not with the branch head. Lines an earlier attempt
+  added are not counted. Altered lines are counted against that commit too, so retries cannot add up past the limit.
+- A retry or migration on a branch that shares no history with the default branch is refused with `repository-invalid`
+  before any sandbox run ("shares no history with the default branch"). Review or delete the article branch.
+
+All of the gate reasons above are repairable: the agent gets one repair turn with the same sentence, and the entry
+fails only if that turn is refused too (`stage: repair`).
+
+A passed `article-fidelity` check can carry a disclosure instead: "not decided for N: only markup or line structure
+Radar does not classify separates unit … from the text beside them". The units are word for word, but they are set off
+from other text only by a component or custom element (`<Callout>`, `<my-note>`), or the file is of a type Radar has
+no rules for (plain text, reStructuredText, TOML and the like), so words added next to them would not have been seen.
+It is printed in the pull request; the reviewer should look at those units in the diff.
 
 A retry that does not reuse the commit already on the article branch is not a failure and reports nothing: a sandbox
 commit is reused only when its `Radar-Post` marker carries Radar's signature (keyed from `RADAR_SECRET_KEY`) and names
@@ -111,10 +131,23 @@ Two operations are reported outside the entry's own failure:
   sandbox for a business but a variable is missing or invalid. The message lists variable names only. The attempt
   used the planner, so publishing continued; fix the worker's variables or turn the switch off.
 - `publishing.sandbox.teardown` (code `sandbox-teardown-failed`, `provider: daytona`, `ref` = the entry): a sandbox was
-  not deleted within 30 seconds. The attempt's outcome is unaffected and Daytona's 30-minute TTL still removes the
-  sandbox, and the next attempt for the same entry deletes leftovers first. One alert needs no action. Repeated
-  alerts mean the Daytona API is failing: list sandboxes labelled `workload=radar-publisher` in the organization and
-  delete any older than 30 minutes, since those also count against its concurrency limit.
+  not deleted. The attempt's outcome is never changed by it. There are three messages:
+  - "Sandbox `<id>` was not destroyed …": the attempt's own sandbox could not be deleted within 30 seconds.
+  - "Sandboxes registered by this attempt's failed or timed-out create: N could not be deleted: `<id>` (state
+    `<state>`; `<provider error>`) …", or "… could not be listed and deleted": the create call failed or timed out,
+    Daytona had registered the sandbox anyway, and the attempt's lookup by its own run label could not remove it.
+    Nothing from the repository or the article was uploaded to such a sandbox. The entry's own failure
+    (`sandbox-unavailable`) is reported separately and retried.
+  - "Sandboxes left by an earlier attempt for this entry: N could not be deleted: …", or "… could not be listed and
+    deleted": the sweep at the start of an attempt found a leftover it could not delete (Daytona refuses while a
+    sandbox is still `creating`, "Sandbox state change in progress"). The attempt went on: a leftover shares nothing
+    with the new sandbox and its model capability expires with its own attempt.
+
+  Each message names at most five sandboxes with their state and Daytona's error, and counts the rest. Daytona's
+  30-minute TTL bounds every one of them, and the next attempt for the same entry tries to delete leftovers again. One
+  alert needs no action. Repeated alerts mean the Daytona API is failing or sandboxes are stuck: list sandboxes
+  labelled `workload=radar-publisher` in the organization and delete any older than 30 minutes, since those also count
+  against its concurrency limit.
 
 Each run logs one line on the worker, with no content:
 
@@ -122,7 +155,9 @@ Each run logs one line on the worker, with no content:
 [radar.publish.sandbox] {"entry":"e_…","sandbox":"<id or null>","ms":183420,"turns":41,"repaired":false,"destroyed":true,"outcome":"integrated"}
 ```
 
-`outcome` is `integrated` or the diagnostic code; `destroyed: false` accompanies a teardown report. The `model-proxy`
+`outcome` is `integrated` or the diagnostic code; `destroyed: false` means a sandbox of this attempt was not deleted
+(its own, or one a failed create left registered) and accompanies a teardown report. A leftover of an earlier attempt
+that could not be deleted is reported but does not change `destroyed`. The `model-proxy`
 service logs `[model-proxy]` lines with run, entry and business ids and a fixed word: `budget-exhausted` (`usd`,
 `calls`, `token-counts`), `call-failed` (`status` with the upstream status, `timeout`, `unreachable`, `incomplete`,
 `redirect`, `client`), `model-unpriced` (the configured model has no cache rates in `src/server/ai/prices.ts`, so its

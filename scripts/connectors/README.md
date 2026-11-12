@@ -136,7 +136,10 @@ Switched on with something missing or invalid, publishing does not stop: the att
 
 Timing: a sandbox attempt has one absolute deadline of 13.5 minutes (270 seconds for the planner, unchanged), the
 `publish.entry` job timeout is 16 minutes so the attempt's own deadline always ends the work first, and a sandbox is
-created with a 30-minute hard TTL so one that outlives a killed worker still disappears. A sandbox attempt holds a
+created with a 30-minute hard TTL so one that outlives a killed worker still disappears. Each attempt first deletes
+sandboxes an earlier attempt for the same entry left behind, and when its own create fails or times out it looks up
+and deletes whatever that create registered under its run label; a sandbox that cannot be deleted is reported as
+`publishing.sandbox.teardown` and never stops or fails the attempt (see `docs/OBSERVABILITY.md`). A sandbox attempt holds a
 worker slot for its whole duration: raise `WORKER_CONCURRENCY` (default 4) before enabling it for more than a few
 businesses. Worst-case model spend for one entry is the per-run cap times the job's attempts.
 
@@ -217,7 +220,13 @@ the trailer (its tree differs), a trailer with an edited field, and a signature 
 
 A marker that is not reused is not an error. The retry runs the sandbox engine on the branch head with the earlier
 slug and article path, exactly as for a planner (version 2) marker, and the gate checks the article file there and
-whatever this attempt changes. The same applies to version 3 markers written before signing was added (they have no
+whatever this attempt changes. For that, the connector asks GitHub where the article branch left the default branch
+(`GET /repos/{repo}/compare/<default head>...<branch head>`, the merge base) and reads that commit's tree: the gate
+treats what that commit holds as the existing content, protected exactly as on a first attempt, and treats everything
+else on the branch as an earlier attempt's own work, which a retry may replace. So a retry after the article's title
+or body changed can rewrite the record or listing line the first attempt added, and cannot drop or rewrite a peer. A
+branch that shares no history with the default branch is refused before any sandbox run; review or delete that
+branch (deleting the article branch always gives the next attempt a clean first run). The same applies to version 3 markers written before signing was added (they have no
 `tree` or `sig`) and to every marker after `RADAR_SECRET_KEY` is rotated: one extra sandbox run, never a second branch
 or PR. In production without `RADAR_SECRET_KEY` nothing is signed, so nothing is reused.
 
@@ -231,7 +240,8 @@ A sandbox PR keeps three kinds of statement apart.
   regular files only (no link, submodule or special file), size and count limits (at most 16 files, 1 MB each),
   credential scan, syntax (JSON, JavaScript and TypeScript parse), existing content preserved (below), and article
   fidelity (every paragraph and list item present once, in order and word for word: a unit with a word added between
-  the article's words is refused, as is one shortened or reworded; only format conversion is tolerated).
+  the article's words is refused, as is one shortened or reworded, and one with words added directly before or after
+  it; only format conversion is tolerated. See "Where a unit ends" below).
 - **What the agent reported (not verified by Radar)**: the agent's own summary, the repository rules it says it
   followed and the deviations it declared. These are claims. If the agent writes that a build passed, that sentence
   appears here and nowhere else; it could not have run one. The text is printed so that GitHub renders no link or image
@@ -239,7 +249,10 @@ A sandbox PR keeps three kinds of statement apart.
   (`scheme://`, `//host`, `www.`) reads "(address removed)", square brackets are escaped (a path such as
   `app/[slug]/page.tsx` still reads as written), and an @name, an issue reference or a commit hash is shown as code.
   The summary is printed up to 4,000 characters and each rule or deviation up to 400; a longer one is cut at a word
-  boundary and ends with "… (truncated by Radar)".
+  boundary and ends with "… (truncated by Radar)". Every statement is one line that begins with Radar's own label
+  (`Summary:`, `Rule 1:`, `Deviation 1:`). Markdown only starts a heading, quote, list or task item, table, code block,
+  rule or HTML block at the beginning of a line or list item, so whatever the agent's text begins with (`#`, `>`,
+  `[x]`, `-`, `1.`, three backticks) is printed as plain characters and cannot imitate one of Radar's sections.
 - **Not run**: always the same list: dependency installation, repository build, lint, tests, deployment preview.
   Nothing from the repository is installed, built or executed, so `runtimeVerified` is false for every sandbox draft.
 
@@ -248,9 +261,25 @@ removed, and at most 6 may be altered (24 across all files). A line is altered w
 same place with one small edit: it shares a beginning and an end with the original, and what the original lost between
 them is at most 24 characters and at most half of the line (a comma or bracket added, a name added to an import list,
 a counter, date or flag changed). A line that is deleted, moved, re-indented beyond that, rewritten, or replaced by a
-different record is removed, and the change is refused. The check prints both counts. A refresh keeps its own
-tolerance (the article file may have its body replaced; other files max(10, 1%) of their lines, 60 in all), and on a
-retry or legacy migration the article file may be replaced in the same way.
+different record is removed, and the change is refused. The check prints both counts, and when any existing line was
+altered it asks the reviewer to look at those lines. A refresh keeps its own tolerance (the article file may have its
+body replaced; other files max(10, 1%) of their lines, 60 in all). On a retry or legacy migration the same rules
+apply, measured against the default-branch commit the article branch started from (the check says so): lines an
+earlier attempt added may be replaced freely, lines of the default branch may not.
+
+This check bounds what can happen to existing text; it does not judge what added code does. An altered line may gain
+any text (a record commented out with `//` is an altered line), and added lines are not examined (an added
+`posts.splice(0, 30)`, or records wrapped in an added `/* */`, removes nothing the check can see). The pull request is
+a draft for a person to review, and it states how many existing lines were altered.
+
+Where a unit ends (article fidelity). A paragraph, list item or heading must stand alone in the piece of text that
+carries it, or share it only with other whole units of the article. What one piece of text is depends on the file: in
+Markdown and MDX, a paragraph (ended by a blank line), a list item or a heading line; in HTML and JSX, the text between
+block-level tags (inline tags such as `<a>`, `<em>` and `<br>` do not end it); in JavaScript, TypeScript and JSON, one
+string (strings joined with `+` or through `${}` are one string, and a string written as a JSX child belongs to its
+element); in YAML, one scalar. Words added inside that piece of text, before or after the unit, are refused with the
+unit's index. Two cases cannot be decided and are disclosed in the check instead ("not decided for N …"): a unit set
+off from other text only by a component or custom element, and a file of a type Radar has no rules for.
 
 It also lists **media and links not carried over** (image addresses, video ids, source and link addresses from the
 article that Radar did not find in the changed files, usually because the site's content format has no place for them).
@@ -268,13 +297,22 @@ npx vitest run src/server/services/publishing/sandbox src/server/services/publis
 These need no network: Daytona is an in-memory provider with a scripted runner, GitHub is a mocked tree, commit and ref
 state machine, and the gate, capability and orchestration are real.
 
+```sh
+# What GitHub itself renders from the pull request body when the agent's text starts with block syntax or carries
+# links. Read-only: it posts synthetic text to GitHub's Markdown rendering API through the GitHub CLI's sign-in and
+# creates nothing. About 50 requests.
+RADAR_IT_GITHUB_MARKDOWN=1 npx vitest run src/server/services/publishing/connectors/nextjs-sandbox-markdown.live.test.ts
+```
+
 Live tests use real sandboxes and are skipped unless asked for. Put the worker variables in a git-ignored `.env.local`
 and load it into the test process; vitest does not read it for `process.env`.
 
 ```sh
 # Probe: one sandbox, no model call, no repository content, about 15 seconds. Checks that the proxy health route is
 # reachable and the canaries are not, that no worker secret is in the sandbox's environment, processes or files, that a
-# capability does not outlive the exec it was given to, and that the sandbox is gone afterwards.
+# capability does not outlive the exec it was given to, and that the sandbox is gone afterwards. Setup has its own
+# time limit (a create can take longer than Vitest's 10 s default), and whatever a failed or timed-out setup leaves
+# behind is deleted afterwards by handle and by this run's labels; anything it could not delete is printed by id.
 RADAR_IT_SANDBOX_PROBE=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run src/server/services/publishing/sandbox/probe.live.test.ts
 
 # Smoke: one short agent run on a three-post synthetic repository. Proves the pinned Agent SDK drives the configured

@@ -500,34 +500,132 @@ describe('the sandbox is destroyed exactly once on every path (SBX-6)', () => {
     expect(provider.ops().at(-1)).toBe('destroy');
   });
 
-  it('has nothing to destroy when no sandbox was created', async () => {
-    const { provider, outcome, deps } = setup({ fake: { fail: failOn(call => call.op === 'create') } });
-    expect((await outcome()).error).toMatchObject({ http: 502, retryable: true, diagnostic: { code: 'sandbox-unavailable', stage: 'plan' } });
-    expect(provider.ops()).toEqual(['destroyMatching', 'create']);
-    expect(deps.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sandbox: null, outcome: 'sandbox-unavailable' }));
+  const TEARDOWN = { source: 'publishing', operation: 'publishing.sandbox.teardown', businessId: 'biz_1', ref: 'e_test', provider: 'daytona', code: 'sandbox-teardown-failed' };
+  const ENTRY_LABELS = { workload: 'radar-publisher', env: 'development', entry: 'e_test' };
+  const RUN_LABELS = { ...ENTRY_LABELS, run: RUN_ID };
+  const STUCK = { id: '6f1c2d3e-0000-4000-8000-00000000c0de', state: 'creating', error: 'DaytonaError: Sandbox state change in progress' };
+  const sweeps = (provider: FakeSandboxProvider) => provider.calls.filter((call): call is Extract<FakeCall, { op: 'destroyMatching' }> => call.op === 'destroyMatching');
+  const reported = (deps: { report: { mock: { calls: unknown[][] } } }, index = 0) => (deps.report.mock.calls[index] as [Error, unknown])[0].message;
+
+  describe('when the create fails or times out (N5)', () => {
+    it('looks for sandboxes carrying this run’s own labels and deletes them; with none left, nothing is reported', async () => {
+      const { provider, outcome, deps } = setup({ fake: { fail: failOn(call => call.op === 'create', new Error('Sandbox failed to start with status: error')), leftovers: 1 } });
+      expect((await outcome()).error).toMatchObject({ http: 502, retryable: true, diagnostic: { code: 'sandbox-unavailable', stage: 'plan' } });
+      expect(provider.ops()).toEqual(['destroyMatching', 'create', 'destroyMatching']);
+      expect(sweeps(provider).map(call => call.labels)).toEqual([ENTRY_LABELS, RUN_LABELS]);
+      expect(sweeps(provider)[1].timeoutSec).toBe(30);
+      expect(deps.report).not.toHaveBeenCalled();
+      expect(deps.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sandbox: null, destroyed: true, outcome: 'sandbox-unavailable' }));
+    });
+
+    it('reports a sandbox the failed create left behind and could not delete, by id and state, and keeps the attempt’s own failure', async () => {
+      const { provider, outcome, deps } = setup({ fake: { fail: failOn(call => call.op === 'create', new Error('Sandbox failed to start with status: error')), undeletable: labels => (labels.run ? [STUCK] : []) } });
+      const { error } = await outcome();
+      expect(error).toMatchObject({ http: 502, retryable: true, diagnostic: { code: 'sandbox-unavailable', stage: 'plan' } });
+      expect(error.diagnostic.reason).toContain('Creating the sandbox failed');
+      expect(provider.ops()).toEqual(['destroyMatching', 'create', 'destroyMatching']);
+      expect(deps.report).toHaveBeenCalledExactlyOnceWith(expect.any(Error), TEARDOWN);
+      expect(reported(deps)).toMatch(/registered by this attempt’s failed or timed-out create: 1 could not be deleted: 6f1c2d3e-0000-4000-8000-00000000c0de \(state creating; DaytonaError: Sandbox state change in progress\)\. Nothing from the repository or the article was uploaded to them\..*30-minute TTL/);
+      expect(deps.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sandbox: null, destroyed: false, outcome: 'sandbox-unavailable' }));
+      // Nothing was uploaded anywhere: the security ordering does not depend on the cleanup.
+      expect(provider.count('upload') + provider.count('uploadFile')).toBe(0);
+    });
+
+    it('does the same after a create that never answers: its 120 seconds, then the lookup by run label', async () => {
+      const { provider, outcome, deps } = setup({ fake: { hang: call => call.op === 'create', undeletable: labels => (labels.run ? [STUCK] : []) } });
+      const run = outcome();
+      await reached(() => provider.count('create') === 1);
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect((await run).error).toMatchObject({ http: 502, retryable: true, diagnostic: { code: 'sandbox-unavailable' } });
+      expect(provider.ops()).toEqual(['destroyMatching', 'create', 'destroyMatching']);
+      expect(sweeps(provider)[1].labels).toEqual(RUN_LABELS);
+      expect(deps.report).toHaveBeenCalledExactlyOnceWith(expect.any(Error), TEARDOWN);
+      expect(reported(deps)).toContain('state creating');
+    });
+
+    it('reports a lookup that fails or hangs, bounded by the teardown reserve, without changing the outcome', async () => {
+      let sweepsSeen = 0;
+      const failing = setup({ fake: { fail: call => (call.op === 'create' ? new Error('create refused') : call.op === 'destroyMatching' && sweepsSeen++ === 1 ? new Error(`listing refused for key ${SECRET.daytonaKey}`) : undefined) } });
+      expect((await failing.outcome()).error).toMatchObject({ diagnostic: { code: 'sandbox-unavailable' } });
+      expect(failing.deps.report).toHaveBeenCalledExactlyOnceWith(expect.any(Error), TEARDOWN);
+      expect(reported(failing.deps)).toMatch(/failed or timed-out create could not be listed and deleted \(Error: listing refused/);
+      expect(reported(failing.deps)).not.toContain(SECRET.daytonaKey);
+
+      let seen = 0;
+      const hanging = setup({ fake: { fail: failOn(call => call.op === 'create'), hang: call => call.op === 'destroyMatching' && seen++ === 1 } });
+      const run = hanging.outcome();
+      await reached(() => hanging.provider.count('destroyMatching') === 2);
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect((await run).error).toMatchObject({ diagnostic: { code: 'sandbox-unavailable' } });
+      expect(reported(hanging.deps)).toContain('within 30 seconds');
+    });
+
+    it('makes no lookup when the attempt never asked for a sandbox', async () => {
+      const { provider, outcome, deps } = setup({ deadlineAt: T0 + 60_000 });
+      expect((await outcome()).error).toMatchObject({ diagnostic: { code: 'publishing-deadline' } });
+      expect(provider.calls).toEqual([]);
+      expect(deps.report).not.toHaveBeenCalled();
+    });
+
+    it('deletes a sandbox that only appears after creation was given up on', async () => {
+      let fake!: FakeSandboxProvider;
+      const { outcome } = setup({ provider: inner => { fake = inner; return { destroyMatching: (labels, timeoutSec, onLeftover) => inner.destroyMatching(labels, timeoutSec, onLeftover), create: spec => new Promise(resolve => setTimeout(() => resolve(inner.create(spec)), 200_000)) }; } });
+      const run = outcome();
+      await reached(() => fake.count('destroyMatching') === 1);
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect((await run).error).toMatchObject({ http: 502, diagnostic: { code: 'sandbox-unavailable' } });
+      expect(fake.count('create')).toBe(0);
+      await vi.advanceTimersByTimeAsync(80_000);
+      await reached(() => destroys(fake) === 1);
+      expect(fake.ops()).toEqual(['destroyMatching', 'destroyMatching', 'create', 'destroy']);
+    });
   });
 
-  it('does not create a second sandbox while leftovers cannot be deleted', async () => {
-    const { provider, outcome } = setup({ fake: { fail: failOn(call => call.op === 'destroyMatching') } });
-    expect((await outcome()).error).toMatchObject({ http: 502, diagnostic: { code: 'sandbox-unavailable' } });
-    expect(provider.ops()).toEqual(['destroyMatching']);
-  });
+  describe('leftovers of an earlier attempt (N5)', () => {
+    it('a leftover that cannot be deleted is reported and does not stop the attempt', async () => {
+      const { provider, deps, start } = setup({ fake: { undeletable: labels => (labels.run ? [] : [STUCK, { id: 'second-leftover', state: null, error: `Error: delete refused for key ${SECRET.daytonaKey}` }]) } });
+      const integration = await start();
+      expect(integration.files).toEqual([{ path: ARTICLE_PATH, content: ARTICLE_BODY }]);
+      expect(provider.ops().slice(0, 2)).toEqual(['destroyMatching', 'create']);
+      expect(provider.count('create')).toBe(1);
+      expect(deps.report).toHaveBeenCalledExactlyOnceWith(expect.any(Error), TEARDOWN);
+      const message = reported(deps);
+      expect(message).toMatch(/^Sandboxes left by an earlier attempt for this entry: 2 could not be deleted: 6f1c2d3e-0000-4000-8000-00000000c0de \(state creating; DaytonaError: Sandbox state change in progress\); second-leftover \(state unknown; /);
+      expect(message).toMatch(/This attempt went on without them: a leftover is isolated from the new sandbox, its model capability expires with its own attempt, and its 30-minute TTL bounds it\.$/);
+      expect(message).not.toContain(SECRET.daytonaKey);
+      // The new attempt's own sandbox was destroyed, so the run line still says so.
+      expect(deps.log).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ destroyed: true, outcome: 'integrated' }));
+    });
 
-  it('deletes a sandbox that only appears after creation was given up on', async () => {
-    let fake!: FakeSandboxProvider;
-    const { outcome } = setup({ provider: inner => { fake = inner; return { destroyMatching: (labels, timeoutSec) => inner.destroyMatching(labels, timeoutSec), create: spec => new Promise(resolve => setTimeout(() => resolve(inner.create(spec)), 200_000)) }; } });
-    const run = outcome();
-    await reached(() => fake.count('destroyMatching') === 1);
-    await vi.advanceTimersByTimeAsync(120_000);
-    expect((await run).error).toMatchObject({ http: 502, diagnostic: { code: 'sandbox-unavailable' } });
-    expect(fake.count('create')).toBe(0);
-    await vi.advanceTimersByTimeAsync(80_000);
-    await reached(() => destroys(fake) === 1);
-    expect(fake.ops()).toEqual(['destroyMatching', 'create', 'destroy']);
+    it('a sweep that cannot list, or never answers, is reported and the attempt still runs', async () => {
+      let first = true;
+      const failing = setup({ fake: { fail: call => (call.op === 'destroyMatching' && first ? ((first = false), Object.assign(new Error('Sandbox state change in progress'), { name: 'DaytonaConflictError' })) : undefined) } });
+      expect((await failing.start()).engine).toBe('sandbox');
+      expect(failing.deps.report).toHaveBeenCalledExactlyOnceWith(expect.any(Error), TEARDOWN);
+      expect(reported(failing.deps)).toMatch(/^Sandboxes left by an earlier attempt for this entry could not be listed and deleted \(DaytonaConflictError: Sandbox state change in progress\)\. This attempt went on without them/);
+
+      const hanging = setup({ fake: { hang: call => call.op === 'destroyMatching' } });
+      const run = hanging.outcome();
+      await reached(() => hanging.provider.count('destroyMatching') === 1);
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect((await run).value?.engine).toBe('sandbox');
+      expect(reported(hanging.deps)).toContain('within 30 seconds');
+      expect(hanging.provider.count('create')).toBe(1);
+    });
+
+    it('names at most five leftovers and counts the rest', async () => {
+      const { deps, start } = setup({ fake: { undeletable: labels => (labels.run ? [] : Array.from({ length: 8 }, (_unused, index) => ({ id: `leftover-${index}`, state: 'error', error: 'Error: refused' }))) } });
+      await start();
+      const message = reported(deps);
+      expect(message).toContain('8 could not be deleted');
+      expect(message).toContain('leftover-4');
+      expect(message).not.toContain('leftover-5');
+      expect(message).toContain('and 3 more');
+      expect(message.length).toBeLessThanOrEqual(900);
+    });
   });
 
   describe('when the delete itself fails', () => {
-    const TEARDOWN = { source: 'publishing', operation: 'publishing.sandbox.teardown', businessId: 'biz_1', ref: 'e_test', provider: 'daytona', code: 'sandbox-teardown-failed' };
 
     it('a successful run still returns its integration, and the failure is reported once', async () => {
       const { provider, deps, start } = setup({ fake: { fail: failOn(call => call.op === 'destroy', new Error('delete refused')) } });
@@ -667,12 +765,18 @@ describe('one absolute deadline governs the attempt (SBX-7)', () => {
       let settledAt = -1;
       const run = outcome().then(settled => { settledAt = Date.now(); return settled; });
       await reached(() => provider.calls.length === index + 1);
-      await vi.advanceTimersByTimeAsync(deadlineAt - Date.now());
+      const hungOp = reference.provider.calls[index].op;
+      // A hung leftover sweep costs its own 30 seconds and no more; every other hung call is waited out to the deadline.
+      await vi.advanceTimersByTimeAsync(hungOp === 'destroyMatching' ? 30_000 : deadlineAt - Date.now());
       await reached(() => settledAt >= 0);
       const { error } = await run;
       expect(settledAt, label).toBeLessThanOrEqual(deadlineAt);
-      const hungOp = reference.provider.calls[index].op;
       if (hungOp === 'destroy') {
+        expect(deps.report, label).toHaveBeenCalledOnce();
+      } else if (hungOp === 'destroyMatching') {
+        // The leftover sweep is best effort: it is given up on after its 30 seconds, reported, and the attempt runs.
+        expect(error, label).toBeUndefined();
+        expect(destroys(provider), label).toBe(1);
         expect(deps.report, label).toHaveBeenCalledOnce();
       } else {
         expect(error, label).toBeInstanceOf(PublishError);
@@ -1038,7 +1142,7 @@ describe('error mapping', () => {
   });
 
   it.each([
-    ['leftover deletion', (call: FakeCall) => call.op === 'destroyMatching'], ['creation', (call: FakeCall) => call.op === 'create'], ['the runner upload', (call: FakeCall) => call.op === 'upload'],
+    ['creation', (call: FakeCall) => call.op === 'create'], ['the runner upload', (call: FakeCall) => call.op === 'upload'],
     ['the integrity check', (call: FakeCall) => call.op === 'exec' && call.command === SANDBOX_COMMANDS.verifyRunner], ['the archive upload', (call: FakeCall) => call.op === 'uploadFile'],
     ['preparation', (call: FakeCall) => call.op === 'exec' && call.command === RUNNER_COMMANDS.prepare], ['the agent run', isRun], ['a stat', (call: FakeCall) => call.op === 'stat'], ['a download', (call: FakeCall) => call.op === 'download'],
   ])('reports a provider failure during %s as 502 sandbox-unavailable, which the queue retries', async (_label, matches) => {

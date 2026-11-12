@@ -15,9 +15,12 @@ import {
 } from './types';
 
 /** Peer-content thresholds (§7 step 8; the new-article rule was set by the PM after QA-1, defect D1). Line counts are of
- *  the original file. */
+ *  the original file: the file as the default branch holds it. On a first attempt that is the pinned commit. On a retry
+ *  or a legacy migration the pinned commit is the head of the article branch, so the original is read from the
+ *  default-branch commit that branch started from (QA-2, finding N1): what an earlier attempt added is not original
+ *  content and may be replaced, and what the default branch holds is protected by the same rule in every attempt. */
 export const PEER_CONTENT = {
-  /** A new article (mode `new`), for every existing file except a replaceable article file. An original line that the
+  /** A new article (mode `new`), for every existing file. An original line that the
    *  line diff reports as gone is *altered* when a near-identical line replaces it in the same hunk (`nearIdenticalLine`)
    *  and *removed* otherwise. Removed lines are never allowed: a line limit, however small, is room to delete whole
    *  one-line records or to replace a small file outright. */
@@ -42,7 +45,7 @@ export const PEER_CONTENT = {
   lineShare: 0.01,
   /** ...and at most this many across those files. */
   totalLines: 60,
-  /** The article file of a refresh, retry or legacy migration is exempt from the limits above but must satisfy
+  /** The article file of a refresh is exempt from the limits above but must satisfy
    *  removed <= replaceFactor * added + replaceAllowance: enough to replace one body, not enough to wipe peers. */
   replaceFactor: 3,
   replaceAllowance: 40,
@@ -250,7 +253,9 @@ function checkIdentity(input: PublicationGateInput): string {
 // The gate
 
 interface ChangedFile { path: string; entry: RepoEntry | undefined; original: string | null; originalBytes: number; content: string; bytes: number }
-const passed = (id: PublishCheck['id'], detail: string): PublishCheck => ({ id, outcome: 'passed', detail: safeText(detail, 400) });
+/** Longest detail of a passed check: what the pull request prints for one check. */
+export const CHECK_DETAIL_CHARS = 500;
+const passed = (id: PublishCheck['id'], detail: string): PublishCheck => ({ id, outcome: 'passed', detail: safeText(detail, CHECK_DETAIL_CHARS) });
 
 export const runPublicationGate: RunPublicationGate = async (input: PublicationGateInput): Promise<PublicationGateResult> => {
   const { payload, entries, report, result, finals, options, capability } = input;
@@ -334,27 +339,46 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     if (/\.json$/i.test(file.path)) jsonFiles++; else if (/\.[cm]?[jt]sx?$/i.test(file.path)) scriptFiles++;
   }
 
-  // 8 Peer content: existing lines of edited files survive.
-  const replaceable = (path: string) => path === articlePath && (payload.mode === 'refresh' || !!options.retry || (!!options.legacy && path === options.legacy.articlePath));
+  // 8 Peer content: existing lines of edited files survive. "Existing" is what the default branch holds. A first
+  // attempt is pinned to the default branch, so that is the pinned blob. A retry or a legacy migration is pinned to the
+  // head of the article branch, which also holds what an earlier attempt wrote; each changed file is then compared with
+  // its content on the default-branch commit the branch started from, under exactly the first-attempt rules, whichever
+  // file it is. A file that does not exist there was written by an earlier attempt and holds nothing to protect.
+  const continued = !!options.retry || !!options.legacy;
+  const baseOf = continued ? input.baseEntries ?? entries : null;
+  const where = continued && input.baseEntries ? ' on the default branch' : '';
+  const replaceable = (path: string) => path === articlePath && payload.mode === 'refresh';
   const newArticle = payload.mode !== 'refresh';
   const peerTotal = newArticle ? PEER_CONTENT.newTotalLines : PEER_CONTENT.totalLines;
   // For a new article `peerRemoved` counts altered lines only: a removed line never passes.
-  let peerRemoved = 0; let peerAdded = 0; let peerLines = 0; let edited = 0; let replacedRemoved = 0; let replacedAdded = 0; let replacedFiles = 0;
+  let peerRemoved = 0; let peerAdded = 0; let peerLines = 0; let edited = 0; let replacedRemoved = 0; let replacedAdded = 0; let replacedFiles = 0; let ownFiles = 0;
   let articleAdded: string | null = null;
   for (const file of changed) {
-    if (file.original === null) { if (file.path === articlePath) articleAdded = file.content; continue; }
+    let existing = file.original;
+    if (baseOf) {
+      const baseEntry = baseOf.get(file.path);
+      if (!baseEntry) existing = null;
+      else if (!file.entry || baseEntry.sha !== file.entry.sha) {
+        if (!regular(baseEntry)) fail('non-regular-file', `${safePath(file.path)} is a directory, symbolic link, submodule or special file${where || ' in the commit it is compared with'}; only regular files can be changed`, { path: file.path });
+        const text = strictText(await input.readBlob(baseEntry.sha));
+        if (text === null) fail('peer-content-changed', `${safePath(file.path)} is not UTF-8 text${where || ' in the commit it is compared with'}, so Radar cannot check that its existing content is kept`, { path: file.path, repairable: false });
+        existing = matchLineEndings(file.content, text);
+      }
+      if (existing === null && file.original !== null) ownFiles++;
+    }
+    if (existing === null) { if (file.path === articlePath) articleAdded = file.content; continue; }
     edited++;
-    const lines = splitLines(file.original).length;
+    const lines = splitLines(existing).length;
     const peerLimit = newArticle ? PEER_CONTENT.newLines : Math.max(PEER_CONTENT.lineFloor, Math.ceil(PEER_CONTENT.lineShare * lines));
     const replaceLimit = (added: number) => PEER_CONTENT.replaceFactor * added + PEER_CONTENT.replaceAllowance;
     const replace = replaceable(file.path);
-    const change = lineChange(file.original, file.content, replace ? replaceLimit : () => peerLimit, newArticle && !replace);
-    if (!change) fail('peer-content-changed', `${safePath(file.path)} was rewritten: more than ${PEER_CONTENT.maxEditLength} of its lines differ. Existing lines must be left exactly as they are`, { path: file.path, limit: PEER_CONTENT.maxEditLength });
+    const change = lineChange(existing, file.content, replace ? replaceLimit : () => peerLimit, newArticle && !replace);
+    if (!change) fail('peer-content-changed', `${safePath(file.path)} was rewritten: more than ${PEER_CONTENT.maxEditLength} of its lines differ${where && ' from the file' + where}. Existing lines must be left exactly as they are`, { path: file.path, limit: PEER_CONTENT.maxEditLength });
     if (file.path === articlePath) articleAdded = change.addedText;
     const atLeast = change.exact ? '' : 'at least ';
     if (replace) {
       const limit = replaceLimit(change.added);
-      if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} loses ${atLeast}${change.removed} of its ${lines} existing lines while adding ${change.added}; replacing the article body may remove at most ${limit}, so other records in the file must stay`, { path: file.path, actual: change.removed, limit });
+      if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} loses ${atLeast}${change.removed} of its ${lines} existing lines${where} while adding ${change.added}; replacing the article body may remove at most ${limit}, so other records in the file must stay`, { path: file.path, actual: change.removed, limit });
       replacedRemoved += change.removed; replacedAdded += change.added; replacedFiles++;
       continue;
     }
@@ -362,30 +386,32 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     if (newArticle && change.exact) {
       // An original line is either altered (a near-identical line took its place) or removed. None may be removed.
       const altered = change.altered; const removed = change.removed - altered;
-      if (removed > PEER_CONTENT.newRemovedLines) fail('peer-content-changed', `${safePath(file.path)} has ${removed} of its ${lines} existing lines removed${altered ? ` and ${altered} altered` : ''}; a new article may remove none (limit ${PEER_CONTENT.newRemovedLines}). A line counts as removed when it is deleted, moved, reformatted or rewritten. Keep every existing line where it is and add the article beside them; an existing line may only gain characters or have one short value changed`, { path: file.path, actual: removed, limit: PEER_CONTENT.newRemovedLines });
-      if (altered > limit) fail('peer-content-changed', `${safePath(file.path)} has ${altered} of its ${lines} existing lines altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: altered, limit });
+      if (removed > PEER_CONTENT.newRemovedLines) fail('peer-content-changed', `${safePath(file.path)} has ${removed} of its ${lines} existing lines${where} removed${altered ? ` and ${altered} altered` : ''}; a new article may remove none (limit ${PEER_CONTENT.newRemovedLines}). A line counts as removed when it is deleted, moved, reformatted or rewritten. Keep every existing line where it is and add the article beside them; an existing line may only gain characters or have one short value changed${where && '. Lines an earlier attempt on this branch added are not existing lines and may be changed'}`, { path: file.path, actual: removed, limit: PEER_CONTENT.newRemovedLines });
+      if (altered > limit) fail('peer-content-changed', `${safePath(file.path)} has ${altered} of its ${lines} existing lines${where} altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: altered, limit });
       peerRemoved += altered; peerAdded += change.added; peerLines += lines;
-      if (peerRemoved > peerTotal) fail('peer-content-changed', `the change alters ${peerRemoved} existing lines across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
+      if (peerRemoved > peerTotal) fail('peer-content-changed', `the change alters ${peerRemoved} existing lines${where} across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
       continue;
     }
-    if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} has ${atLeast}${change.removed} of its ${lines} existing lines removed or altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: change.removed, limit });
+    if (change.removed > limit) fail('peer-content-changed', `${safePath(file.path)} has ${atLeast}${change.removed} of its ${lines} existing lines${where} removed or altered; the limit for this file is ${limit}. Add the article without reformatting or rewriting existing lines`, { path: file.path, actual: change.removed, limit });
     peerRemoved += change.removed; peerAdded += change.added; peerLines += lines;
-    if (peerRemoved > peerTotal) fail('peer-content-changed', `the change removes or alters ${peerRemoved} existing lines across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
+    if (peerRemoved > peerTotal) fail('peer-content-changed', `the change removes or alters ${peerRemoved} existing lines${where} across the edited files; the limit is ${peerTotal}`, { actual: peerRemoved, limit: peerTotal });
   }
 
   // 9 Article fidelity. A retry may find the article already on the branch: then the pinned file is what is verified.
   const units = articleUnits(payload.blocks);
   const contents = changed.map(file => file.content);
+  // The path of each content tells the fidelity check where a piece of text ends in that file's format.
+  const paths = changed.map(file => file.path);
   if (!changed.some(file => file.path === articlePath)) {
     const pinned = options.retry ? entries.get(articlePath) : undefined;
     if (!pinned || !regular(pinned)) fail(changed.length ? 'article-fidelity' : 'plan-empty', changed.length ? 'the reported article file is not among the changed files, so the article was not written where the report says' : 'the retry changed no files and the article file is not on the article branch', changed.length ? { path: articlePath } : { actual: 0 });
     const text = strictText(await input.readBlob(pinned.sha));
     if (text === null) fail('article-fidelity', 'the article file on the article branch is not UTF-8 text', { path: articlePath, repairable: false });
-    contents.push(text);
+    contents.push(text); paths.push(articlePath);
   }
-  const fidelity = checkArticleFidelity({ units, contents, articleAdded });
+  const fidelity = checkArticleFidelity({ units, contents, paths, articleAdded });
   // Each issue is written to stand alone: the repair round hands them to the agent one by one.
-  const numbered = ['omitted', 'truncated', 'altered', 'interleaved', 'headings', 'duplicated'];
+  const numbered = ['omitted', 'truncated', 'altered', 'interleaved', 'extended', 'headings', 'duplicated'];
   if (!fidelity.ok) fail('article-fidelity', `the article was not carried over faithfully: ${fidelity.detail}. Unit numbers are the 0-based indexes in article.json`, {
     path: articlePath, repairable: !fidelity.issues.some(issue => issue.rule === 'no-units'),
     issues: fidelity.issues.map(issue => issue.detail + (numbered.includes(issue.rule) ? ' (numbers are unit indexes in article.json, counted from 0)' : '')),
@@ -400,11 +426,14 @@ export const runPublicationGate: RunPublicationGate = async (input: PublicationG
     passed('ceilings', `${changed.length} changed ${changed.length === 1 ? 'file' : 'files'} (limit ${GATE_LIMITS.changedFiles}); largest ${largest} bytes (limit ${GATE_LIMITS.fileBytes}); ${totalBytes} bytes in all (limit ${GATE_LIMITS.totalBytes}); net growth ${growth} bytes (limit ${GATE_LIMITS.netGrowthBytes})`),
     passed('credentials', `no credential-shaped string and no Radar model capability in ${changed.length} changed ${changed.length === 1 ? 'file' : 'files'} or their names`),
     passed('syntax', `${changed.length} changed ${changed.length === 1 ? 'file is' : 'files are'} UTF-8 text; ${jsonFiles} JSON parsed; ${scriptFiles} JavaScript or TypeScript parsed without syntax errors`),
-    passed('peer-content', edited
+    passed('peer-content', (continued ? (input.baseEntries ? 'compared with the default-branch commit the article branch started from: ' : 'compared with the head of the article branch: ') : '') + (edited
       ? `${edited} existing ${edited === 1 ? 'file' : 'files'} edited`
         + (edited > replacedFiles ? `; ${peerRemoved} of ${peerLines} original lines removed or altered (${newArticle ? `${peerRemoved} altered, ${PEER_CONTENT.newRemovedLines} removed; limit ${PEER_CONTENT.newLines} altered per file and ${peerTotal} in all, ${PEER_CONTENT.newRemovedLines} removed` : `limit ${peerTotal} in all`}), ${peerAdded} lines added` : '')
         + (replacedFiles ? `; in the article file being replaced, ${replacedRemoved} earlier lines gave way to ${replacedAdded} new ones (limit ${PEER_CONTENT.replaceFactor} removed per added line plus ${PEER_CONTENT.replaceAllowance})` : '')
-      : 'no existing file was edited; every changed file is new'),
+        // The gate proves that existing text was kept. It does not judge what a changed line now says (finding N2).
+        + (peerRemoved ? `. Review the ${peerRemoved} existing ${peerRemoved === 1 ? 'line' : 'lines'} ${continued ? 'the article branch' : 'this change'} ${newArticle ? 'altered' : 'removed or altered'}: Radar checks that existing text is kept, not what was added to it` : '')
+      : continued ? 'no file of that commit was edited; every changed file is new or was written by an earlier attempt' : 'no existing file was edited; every changed file is new')
+      + (ownFiles ? `; ${ownFiles} changed ${ownFiles === 1 ? 'file exists' : 'files exist'} only on the article branch, written by an earlier attempt, and ${ownFiles === 1 ? 'is' : 'are'} not compared` : '')),
     passed('article-fidelity', fidelity.detail + `; ${mediaOmitted.length} media or link references not carried` + (changed.length ? '' : '; verified on the article file already on the branch')),
   ];
   // Listed in the shared order of PUBLISH_CHECK_IDS, so the pull request prints them the same way every time.
