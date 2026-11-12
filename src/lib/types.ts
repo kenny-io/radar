@@ -63,11 +63,33 @@ export interface ArticleBodyImage {
   after: { heading: string; occurrence: number; block: number };
   url: string; alt: string; prompt: string; seed: number;
 }
+/** unavailable: no image model can be used right now. failed: one was asked and did not deliver. */
+export type ImageIssueReason = 'unavailable' | 'failed';
+export interface ImageDirection { prompt: string; alt: string }
+/** What the cover and each planned body image should literally show, derived from the written article. */
+export interface ArticleImageDirections {
+  /** Hash of the title, body and length these were derived from. A different key means they are stale. */
+  key: string;
+  /** 'ai': the direction step answered. 'fallback': built from the title, headings and section text; never reused. */
+  source: 'ai' | 'fallback';
+  /** The one named real-world thing the article is about, as the article writes it. null for a general topic. */
+  subject: { name: string; kind: 'building' | 'place' | 'product' | 'organisation' | 'other' } | null;
+  cover: ImageDirection;
+  /** One per planned body image, in the order of planArticleBodyImages(body, brief.words). */
+  sections: ImageDirection[];
+  at: string;
+}
 export interface Article {
   entryId: string; generated: boolean; body: Block[];
   brief: { angle: string; outline: string[]; words: 900 | 1400 | 2200 };
   seo: { title: string; meta: string; slug: string };
-  img: { style: ImageStyle; seed: number; prompt: string; /** Explicit custom requests require a model on later regenerations. */ modelRequired?: boolean; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null };
+  img: { style: ImageStyle; seed: number; prompt: string; /** Explicit custom requests require a model on later regenerations. */ modelRequired?: boolean; alt: string; url: string | null; /** `${style}:${seed}` the stored url was rendered for (stale url → render the template live) */ urlKey?: string | null;
+    /** Who wrote `prompt`. 'radar': the direction step; it may be replaced. 'owner': a person; never rewritten. Absent: see coverDirectionIsOwners. */
+    promptBy?: 'radar' | 'owner';
+    /** Set when a person edited the alt text; Radar then leaves it alone. */
+    altBy?: 'owner';
+    /** The stored cover is the brand template because a model style could not be generated. Absent: not a placeholder. */
+    placeholder?: { reason: ImageIssueReason; at: string } | null };
   videos: string[]; videoMeta: VideoRef[]; sources: Source[];
   /** claim spans tied to sources: [blockIndex, text, sourceIndex] — used to flag claims when a source is removed */
   claims: { block: number; text: string; source: number }[];
@@ -76,6 +98,10 @@ export interface Article {
   /** Optional for articles created before inline illustrations were supported. */
   bodyImages?: ArticleBodyImage[];
   bodyImagesGeneratedAt?: string;
+  /** Cached directions for the cover and body images (see ArticleImageDirections.key). */
+  imageDirections?: ArticleImageDirections;
+  /** The last draft could not make body images and left them out. Removed when a set is stored. */
+  bodyImagesIssue?: { reason: ImageIssueReason; at: string } | null;
   /** when videoMeta (YouTube suggestions) was fetched */
   videoFetchedAt?: string | null;
 }
