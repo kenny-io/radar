@@ -1,0 +1,21 @@
+compared 69120 requests without literal (10 styles x 6 kinds x 8 prompts x 3 names x 2 brands x 4 seeds x 3 cropSafe x literal absent/false): 0 differ
+
+social
+  head: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Subject: A tenant reading a tenancy contract at a kitchen table. Made for Lived's social media post. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 7. Keep the main subject in the centre with background to spare on every side, so the image can be cropped. No words, letters, numbers, logos or watermarks anywhere in the image.
+  base: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Subject: A tenant reading a tenancy contract at a kitchen table. Made for Lived's social media post. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 7. Keep the main subject in the centre with background to spare on every side, so the image can be cropped. No words, letters, numbers, logos or watermarks anywhere in the image.
+  identical: true (482 bytes)
+
+brief
+  head: Editorial photograph, natural light, realistic, shallow depth of field. Subject: A quiet residential street in the early morning. Made for Lived's social media post. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 12. No words, letters, numbers, logos or watermarks anywhere in the image.
+  base: Editorial photograph, natural light, realistic, shallow depth of field. Subject: A quiet residential street in the early morning. Made for Lived's social media post. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 12. No words, letters, numbers, logos or watermarks anywhere in the image.
+  identical: true (335 bytes)
+
+ownerCover
+  head: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Subject: The entrance gate of a staff accommodation community at sunrise. Made for Lived's blog. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 3. No words, letters, numbers, logos or watermarks anywhere in the image.
+  base: Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Subject: The entrance gate of a staff accommodation community at sunrise. Made for Lived's blog. Color palette built around the brand colors #0B5FFF and #FFB000, with neutral tones. Variation 3. No words, letters, numbers, logos or watermarks anywhere in the image.
+  identical: true (373 bytes)
+
+literal cover prompt at HEAD:
+  Modern flat editorial illustration, clean geometric shapes, generous negative space, calm and professional. Show exactly this scene: The exterior of Wasl 611, a gated staff accommodation community of three buildings in Al Warsan, Dubai, seen from outside the entrance gate in daylight. Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for Lived's blog. Use the brand colors #0B5FFF and #FFB000 as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation 3. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.
+  literal editorial: Editorial illustration with textured shapes, magazine-cover quality, calm and professional. Show exactly this scene: The exterior of Wasl 61…
+  literal render3d: 3D render with real depth, soft studio lighting and gentle shadows, with glossy glass, soft clay or brushed metal finishes. Show exactly thi…

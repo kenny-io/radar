@@ -56,3 +56,5 @@ Design: `architecture.md`. Accepted as written, with these consequences for the 
 - D9. Any body-image failure inside a draft, storage included, leaves the set out and the draft completes.
 - D10. Dev-stub drafts have no body images (no image model in stubs).
 - D11. Not in this change: the OpenAI image default `gpt-image-1`, which OpenAI's documentation says was shut down on 2026-10-23. Reported to the owner; OpenRouter is the first route and is unaffected.
+- D12 (after QA, 2026-11-13). An alt text with no `altBy` mark (typed or generated before this change) is replaced when Radar writes a new cover direction on a rewrite or a model-style Regenerate. The alt described the old picture; the new one names the subject. An alt edited after this change is marked the owner's and kept.
+- D13 (after QA). QA defects D1, D2, D4 and observations O1 and O6 are fixed in a second round. O2–O5, O7 and O8 are accepted: none loses data or blocks a draft.

@@ -1,0 +1,18 @@
+== src/server/idle.cadence.db.test.ts
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+== src/server/idle.db.test.ts
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+== src/server/services/lifecycle/dispatch.test.ts
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+== src/server/services/lifecycle/education.test.ts
+ Test Files  1 passed (1)
+      Tests  27 passed (27)
+== src/server/services/lifecycle/founderIdentity.test.ts
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+== src/server/services/social/proactive.db.test.ts
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
