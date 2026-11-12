@@ -1,0 +1,12 @@
+Browser observations, T4c recheck, revision 6266ec2c, 2026-11-13
+Tool, app and sign-in as before: built-in browser pane, http://127.0.0.1:3217, stub mode (no image model), database radar_qa_app2,
+a fresh synthetic owner session set as a cookie. "sent" is the request the app itself made, recorded in the tab.
+Entry e_ctxqa_wasl ("Wasl 611 Reviews: Tenant Ratings and What to Check First").
+
+S1. Undrafted, Branded graphic, direction "Calm, editorial image about wasl 611 reviews": clicked "Generate from prompt".
+  sent: article.regenerateImage with that prompt -> 503. Inline error and toast: "Image generation is unavailable right now. Please contact support to enable it."
+  "Cover image generated" never shown. Stored img unchanged (default direction, no promptBy, url null).
+S2. Clicked "Draft now"; "Ready for review". Direction: "A wide street-level view of the place that Wasl 611 Reviews: Tenant Ratings and What to Check First is about, seen from outside in daylight." (promptBy radar).
+  Clicked "Generate from prompt" without touching the field (Branded graphic): sent the same text -> 503; same error; stored img identical before and after (diff exit 0; browser-s1-before-press.json).
+S3. Style -> Illustration (placeholder notice shown). Clicked "Generate from prompt" without touching the field: 503; same error; notice still shown; stored img identical before and after (diff exit 0; browser-s2-illustration-before-press.json): promptBy "radar", alt unchanged, placeholder mark unchanged, no modelRequired.
+Cosmetic, seen in S2: the inline error from S1 stayed on screen after the draft landed, until the next attempt.

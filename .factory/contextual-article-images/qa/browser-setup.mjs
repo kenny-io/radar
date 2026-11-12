@@ -19,7 +19,7 @@ for (const filename of ['.env.example']) {
   for (const line of source.split('\n')) { const match = /^#?\s*([A-Z][A-Z0-9_]*)=/.exec(line); if (match) blank[match[1]] = ''; }
 }
 const environment = {
-  ...blank, DATABASE_URL: 'postgres://postgres@127.0.0.1:55432/radar_qa_app', NODE_ENV: 'development', RADAR_DEV_STUBS: '1', RADAR_BILLING: 'off',
+  ...blank, DATABASE_URL: 'postgres://postgres@127.0.0.1:55432/' + (process.env.QA_APP_DB || 'radar_qa_app'), NODE_ENV: 'development', RADAR_DEV_STUBS: '1', RADAR_BILLING: 'off',
   RADAR_SECRET_KEY: 'contextual-images-local-qa-' + crypto.randomBytes(8).toString('hex'), APP_URL: `http://localhost:${PORT}`, PORT: String(PORT),
   NEXT_DIST_DIR: '.next-qa-images', NEXT_TELEMETRY_DISABLED: '1', STORAGE_DIR: `${output}/uploads`, WORKER_CONCURRENCY: '2',
 };
@@ -67,4 +67,4 @@ await entry(entries.other, 'Elsewhere Tower Reviews', 'elsewhere tower reviews',
 await db.query('INSERT INTO articles(entry_id,business_id,data) VALUES($1,$2,$3)', [entries.other, otherBusiness.id, { ...legacy(entries.other, 'elsewhere', {}), img: { style: 'illustration', seed: 1, prompt: 'OTHER-TENANT-DIRECTION the lobby of Elsewhere Tower', promptBy: 'radar', alt: 'Other tenant alt', url: null, urlKey: null, placeholder: { reason: 'unavailable', at: '2026-11-12T00:00:00.000Z' } }, bodyImagesIssue: { reason: 'unavailable', at: '2026-11-12T00:00:00.000Z' } }]);
 await fs.writeFile(`${output}/fixture.json`, JSON.stringify({ base: environment.APP_URL, businessId: business.id, otherBusinessId: otherBusiness.id, users, sessions, entries }), { mode: 0o600 });
 await db.end();
-console.log(`Seeded radar_qa_app: business ${business.id} (owner, viewer), other business ${otherBusiness.id}, entries ${Object.values(entries).join(', ')}.`);
+console.log(`Seeded ${new URL(environment.DATABASE_URL).pathname.slice(1)}: business ${business.id} (owner, viewer), other business ${otherBusiness.id}, entries ${Object.values(entries).join(', ')}.`);

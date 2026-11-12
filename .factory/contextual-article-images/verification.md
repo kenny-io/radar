@@ -25,3 +25,22 @@ The with-database suite is not stable when all files share one database: the bas
 
 ## Not verified
 - Direction quality and literal-prompt results against a real model (no key with credit anywhere: production routes are out of credit).
+
+## Final integrated checks, source revision 6266ec2c (2026-11-13)
+| Check | Result |
+| --- | --- |
+| `npx tsc --noEmit` | pass |
+| `npm run build` | compiled |
+| Full suite, no database (QA, and PM at 207ac9ab) | 2541 passed, 591 skipped, 1 failed: the parity snapshot that fails on main |
+| Full suite, fresh database `radar_pm2` | 3070 passed, 75 skipped, 2 failed: the parity snapshot and one `idle.cadence.db` test, which passes alone (24 of 24) and fails on main in the shared-database run |
+| Focused image, drafting, publishing, action and article-client files, fresh database (engineer and QA separately) | 1500 passed, 75 skipped, 0 failed |
+| QA probes (`qa/`) | 57 passed; prompts without `literal` byte-identical to 4f1bcf83 across 69,120 requests |
+| Real browser (QA, built-in browser pane, stub mode, 1024 and 375 px wide) | outage path, placeholder notice, body-images message, Viewer, locks, stale tab, both hints: pass |
+
+## Independent QA
+Three passes, in `qa.md`: first pass at 121da10a recommended not shipping (D1 major; D2, D3, D4 minor); D1, D2, D4, O1, O6 fixed in 051ade49 and 207ac9ab and confirmed at 4cc300ba, where N1 was found; N1 fixed in 6266ec2c and confirmed. D3 accepted (brief D12).
+
+## Still not verified
+- Any real text or image provider: direction quality, the literal prompt's results, real pictures.
+- Production behaviour after deploy with provider credit.
+- Screen readers; Editor and Admin roles in the browser.

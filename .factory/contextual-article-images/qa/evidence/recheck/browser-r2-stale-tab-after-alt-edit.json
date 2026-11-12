@@ -1,0 +1,15 @@
+{
+    "img": {
+        "alt": "Harbour Court from the street",
+        "url": "/api/files/07891ee7-edf2-4c79-b06c-0f58f3e697c7/hero/1794518216198-mtxnB3y-.png",
+        "seed": 1,
+        "altBy": "owner",
+        "style": "branded",
+        "prompt": "A wide street-level view of the place that Harbour Court Reviews, Recheck Probe 2 is about, seen from outside in daylight.",
+        "urlKey": "branded:1",
+        "promptBy": "radar"
+    },
+    "draftedAt": "2026-11-12T21:16:56.201Z",
+    "entryStatus": "review",
+    "directionRadarWrote": "A wide street-level view of the place that Harbour Court Reviews, Recheck Probe 2 is about, seen from outside in daylight."
+}

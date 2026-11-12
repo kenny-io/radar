@@ -61,7 +61,7 @@ vi.stubGlobal('fetch', vi.fn(async (input: any, init?: any) => {
 }));
 void realFetch;
 
-const OUT = '.factory/contextual-article-images/qa/evidence/pipeline.txt';
+const OUT = (process.env.QA_EVIDENCE_DIR || '.factory/contextual-article-images/qa/evidence') + '/pipeline.txt';
 const lines: string[] = []; const log = (s: string) => lines.push(s);
 const F = new Fixtures();
 const profile: Profile = {

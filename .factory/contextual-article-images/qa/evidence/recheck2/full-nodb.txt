@@ -1,0 +1,435 @@
+
+ RUN  v3.2.7 /Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/radar-contextual-images-6eb35c
+
+ ✓ src/server/services/publishing/sandbox/runner.test.ts (85 tests) 2294ms
+ ↓ src/server/actions/writingInstructions.db.test.ts (28 tests | 28 skipped)
+ ✓ src/server/services/social/packImage.test.ts (14 tests) 2742ms
+   ✓ packAspect > is the geometric mean of the widest and tallest platform, and a single size keeps its own ratio  314ms
+   ✓ a new pack whose style goes to the image model > asks for 3:2 with Reddit in the pack and 16:9 without it  451ms
+ ↓ src/server/services/drafting/bodyImages.db.test.ts (47 tests | 47 skipped)
+ ✓ src/server/services/publishing/sandbox/gate.test.ts (112 tests) 3500ms
+   ✓ publication gate: one refusal per rule > peer content: existing lines kept but shuffled count as a rewrite, within the time the gate has  2037ms
+ ✓ src/server/services/publishing/sandbox/modelProxy.test.ts (72 tests) 1096ms
+   ✓ upstream failures > a slow but progressing stream is not cut by the idle limit  461ms
+ ✓ src/server/ai/fallbackAlerts.test.ts (9 tests) 2695ms
+   ✓ operator alerts across the AI fallback chain > OpenRouter and OpenAI are out of credit, Claude writes it: both failures are logged and no alert is sent  687ms
+   ✓ operator alerts across the AI fallback chain > a transient error that succeeds on the retry sends no alert; one that fails every retry sends one  1647ms
+ ✓ src/server/ai/tiers.run.test.ts (107 tests) 6142ms
+   ✓ utility tier > OpenRouter: the small model at low effort with a 2,048-token floor, whatever the business chose  393ms
+   ✓ an answer the provider billed and Radar rejected > an empty answer: the same, on every retry  818ms
+   ✓ Settings → AI models > shows the model standard calls really use: Claude Opus 5.5 by default, the old default with tiers off, a saved choice always  428ms
+ ✓ src/server/ai/instructions.run.test.ts (13 tests) 2000ms
+   ✓ dev stub evidence line > logs the received block once per call, and only when there is one  366ms
+ ✓ src/server/services/publishing/connectors/nextjs-sandbox.test.ts (67 tests) 5203ms
+   ✓ retries and identity (SBX-7) > D5: a later commit that keeps the signed trailer is not resumed, and nothing claims an earlier attempt checked it  394ms
+   ✓ retries and identity (SBX-7) > D5: a trailer whose tree, signature or any signed field was altered is not resumed  1144ms
+ ✓ src/server/services/images.records.test.ts (17 tests) 1555ms
+   ✓ recording never reaches the work, and rows hold no content > an insert that rejects, and one that throws, do not fail the image  345ms
+ ✓ src/server/services/publishing/http.test.ts (17 tests) 850ms
+ ✓ src/server/services/publishing/connectors.test.ts (28 tests) 865ms
+   ✓ RADAR_REAL_CONNECTORS (dev-only switch) > the Next.js stub lists real-looking owner/repo targets (id = name = fields.repo) and publishes to that repo  758ms
+ ❯ src/server/ai/openrouter.qa.test.ts (74 tests | 1 failed) 7696ms
+   × parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot 1070ms
+     → expected { …(14) } to deeply equal { …(14) }
+   ✓ parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > an empty OPENROUTER_API_KEY counts as unset (no OpenRouter request) 25ms
+   ✓ route order with OPENROUTER_API_KEY > research: OR(opus) → direct(opus) → OR(gpt-6-sol) → direct → OR(grok) → direct 24ms
+   ✓ route order with OPENROUTER_API_KEY > total transient failure: OR gets 1 try per model, direct keeps its 3 (12 fetches, not more) 86ms
+   ✓ route order with OPENROUTER_API_KEY > OpenRouter only (no direct keys): each model gets the usual 3 attempts on OpenRouter (9 fetches) 70ms
+   ✓ route order with OPENROUTER_API_KEY > a model with no direct key is still served by OpenRouter, in one call 74ms
+   ✓ route order with OPENROUTER_API_KEY > a business-chosen Grok model goes OR(grok) first and keeps temperature only for Grok 39ms
+   ✓ route order with OPENROUTER_API_KEY > OPENROUTER_MODEL_MAP "" sends that model straight to its direct provider 33ms
+   ✓ route order with OPENROUTER_API_KEY > after an OpenRouter account error, later models in the SAME call skip OpenRouter 46ms
+   ✓ OpenRouter failure handling > 401 bad key → 10-minute cooldown for text and images; next calls go direct 62ms
+   ✓ OpenRouter failure handling > 402 no credit → 10-minute cooldown for text and images; next calls go direct 44ms
+   ✓ OpenRouter failure handling > 403 key limit → 10-minute cooldown for text and images; next calls go direct 57ms
+   ✓ OpenRouter failure handling > 429 credit wording → 10-minute cooldown for text and images; next calls go direct 75ms
+   ✓ OpenRouter failure handling > moderation-flagged 403 → this call goes direct, no cooldown (next call tries OpenRouter again) 32ms
+   ✓ OpenRouter failure handling > a moderation-flagged 403 on an IMAGE request does not pause OpenRouter 60ms
+   ✓ OpenRouter failure handling > 404 unknown model → skips OpenRouter for that model only (10 min), others still use it 70ms
+   ✓ OpenRouter failure handling > 404 "no endpoints support the requested parameters" → direct for this call only 45ms
+   ✓ OpenRouter failure handling > 429 rate limit → falls back to direct, no cooldown 35ms
+   ✓ OpenRouter failure handling > 500 → falls back to direct, no cooldown 27ms
+   ✓ OpenRouter failure handling > 502 provider error → falls back to direct, no cooldown 25ms
+   ✓ OpenRouter failure handling > 503 → falls back to direct, no cooldown 25ms
+   ✓ OpenRouter failure handling > network timeout → aborts after timeoutMs, falls back, opens the 2-minute breaker (not the 10-minute cooldown) 88ms
+   ✓ OpenRouter failure handling > network error (fetch rejects) → falls back 38ms
+   ✓ OpenRouter failure handling > in-stream error chunk: partial OR text discarded via onReset, direct answer shown, no partial in result 32ms
+   ✓ OpenRouter failure handling > in-stream credit error (402 chunk) → cooldown 42ms
+   ✓ OpenRouter failure handling > stream that ends with no content → treated as failure and falls back 41ms
+   ✓ OpenRouter failure handling > malformed JSON in structured output → schema validation fails, one OR call, then direct 43ms
+   ✓ OpenRouter failure handling > JSON wrapped in prose/code fences from OpenRouter is still extracted and fitted to the schema 60ms
+   ✓ OpenRouter failure handling > 200 body with an error object (no choices) → fails over 39ms
+   ✓ OpenRouter structured outputs > request shape: json_schema + strict + require_parameters, streamed (PM 2026-10-23) but no JSON deltas shown, no tools 29ms
+   ✓ OpenRouter structured outputs > optional / record fields → strict:false for non-Claude models; Claude models always strict with the Claude subset 30ms
+   ✓ OpenRouter structured outputs > schema 400 → exactly one plain-JSON retry on OpenRouter; a second 400 moves on (no loop) 78ms
+   ✓ OpenRouter structured outputs > schema 400 with OpenRouter as the only route: 2 calls per model, never more 75ms
+   ✓ OpenRouter structured outputs > a non-schema 400 is not retried as plain JSON 18ms
+   ✓ OpenRouter structured outputs > research + schema: web_search pass then structuring pass; failure in pass 2 → direct does both passes (4 fetches) 30ms
+   ✓ OpenRouter structured outputs > plain research (web search, no schema) sends the web_search tool and returns url_citation citations 96ms
+   ✓ images via OpenRouter > aspect ratio for every size Radar requests (hero/linkedin/facebook/quora 1200×628, x/brief 1200×675, reddit 1200×900)  808ms
+   ✓ images via OpenRouter > decodes image/png (with and without data: prefix) and cover-crops to exactly 1200×628 252ms
+   ✓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×900 296ms
+   ✓ images via OpenRouter > decodes image/jpeg (with and without data: prefix) and cover-crops to exactly 1200×675 159ms
+   ✓ images via OpenRouter > missing media_type is fine; SVG and empty data fall back to OpenAI  309ms
+   ✓ images via OpenRouter > renderImage: OR failure with no other image key → brand template (no throw) 144ms
+   ✓ images via OpenRouter > an image account error (402) pauses OpenRouter for text too 105ms
+   ✓ images via OpenRouter > dev stubs: no image model even with a key 71ms
+   ✓ AI Visibility via OpenRouter > each engine → its model, web search tool (not for Sonar), Claude max_tokens 2048, attribution headers 23ms
+   ✓ AI Visibility via OpenRouter > citations: nested url_citation, flat url, Perplexity citations (strings/objects), search_results fallback 73ms
+   ✓ AI Visibility via OpenRouter > Gemini grounding redirect links in OR citations are resolved like the direct path (no key sent to Google) 26ms
+   ✓ AI Visibility via OpenRouter > falls back to the official API on OR failure, with the exact parent-commit direct request 36ms
+   ✓ AI Visibility via OpenRouter > fetch rejection / 429 / 200-with-error → falls back to the official API 27ms
+   ✓ AI Visibility via OpenRouter > OR account error from visibility → cooldown shared with text; next engine call goes direct only 17ms
+   ✓ AI Visibility via OpenRouter > "not collected" semantics: OR fails + no direct key → real error; no OR + no key → EngineUnavailable with zero requests 44ms
+   ✓ AI Visibility via OpenRouter > OR in cooldown + no direct key → reported as "not configured" (EngineUnavailable), no request 27ms
+   ✓ AI Visibility via OpenRouter > dev stubs bypass OpenRouter entirely 185ms
+   ✓ the OpenRouter key never leaks > not in logs, ai_calls rows, thrown errors, visibility errors; only ever sent to openrouter.ai 245ms
+   ✓ the OpenRouter key never leaks > HTTP-Referer is APP_URL without trailing slash; defaults to localhost when APP_URL unset 55ms
+   ✓ the OpenRouter key never leaks > ai_calls row for an OR failure stores the provider error text, not request headers 24ms
+   ✓ retest: OpenRouter streaming for every text call > JSON split at arbitrary byte boundaries (inside the data: line and inside UTF-8 characters) reassembles exactly 32ms
+   ✓ retest: OpenRouter streaming for every text call > plain-text (no onDelta) and visibility calls now send stream:true and parse the reassembled answer 17ms
+   ✓ retest: OpenRouter streaming for every text call > stream that ends with finish_reason but no [DONE] → accepted 31ms
+   ✓ retest: OpenRouter streaming for every text call > a stream that closes mid-answer (no finish_reason, no [DONE]) is treated as a failure and falls back direct 32ms
+   ✓ retest: OpenRouter streaming for every text call > error chunk in the middle of a JSON answer → partial JSON discarded, falls back, counts as one transient strike 16ms
+   ✓ retest: idle cutoff and timers > idle and total timers are cleared after success / HTTP error / JSON body: nothing aborts later, breaker stays closed  326ms
+   ✓ retest: idle cutoff and timers > keep-alive comments count as activity: a slow-but-alive stream is not cut 179ms
+   ✓ retest: idle cutoff and timers > stalled stream after partial text → idle cutoff, partial discarded via onReset, direct answer, breaker opens 168ms
+   ✓ retest: idle cutoff and timers > hang before response headers → idle cutoff also applies 136ms
+   ✓ retest: circuit breaker > 3 consecutive 5xx open it; a success in between resets the count; it closes after 2 minutes 93ms
+   ✓ retest: circuit breaker > 4xx answers (rate limit, schema, moderation) do not count as strikes 36ms
+   ✓ retest: circuit breaker > does not block OpenRouter-only setups: text, images and visibility still use OpenRouter while it is open 209ms
+   ✓ retest: circuit breaker > while open, it is skipped per model only where that model has a direct route 89ms
+   ✓ retest: circuit breaker > an image timeout (60 s total) falls back to OpenAI and opens the breaker for text 254ms
+   ✓ retest: circuit breaker > visibility: idle cutoff falls back to the official API and opens the breaker 124ms
+   ✓ retest: circuit breaker > non-credit 403 (e.g. region block) skips only that model, no global cooldown 49ms
+   ✓ retest: concurrent calls > 6 concurrent calls hitting a 402: each tries OpenRouter at most once, none tries it for a second model, all succeed direct 90ms
+   ✓ retest: concurrent calls > 3 concurrent calls into a hung OpenRouter each wait one idle cutoff, then go direct; the 4th skips OpenRouter 123ms
+ ✓ src/server/services/visibility/engines.records.test.ts (24 tests) 1087ms
+ ✓ src/server/idle.test.ts (22 tests) 3046ms
+   ✓ weekly AI visibility: the schedule over time > nothing missed, eight weeks: every scheduled run is on Sunday, seven days apart  337ms
+   ✓ weekly AI visibility: the schedule over time > nothing missed: at most 8 local days between full runs and every scheduled run on Sunday; one lost Sunday: at most 9  2313ms
+ ✓ src/server/actions/customImages.db.test.ts (12 tests | 11 skipped) 26ms
+ ✓ src/server/services/imageAvailability.test.ts (9 tests) 1995ms
+   ✓ image provider account availability > reports safe unavailability for all three real account-error shapes without storing a template  1055ms
+ ✓ src/server/services/publishing/sandbox/fidelity.test.ts (139 tests) 8363ms
+   ✓ unit edges: nothing but the article’s own units shares a unit’s line, element or string (N3) > stays fast on a megabyte of each kind of structure  2880ms
+   ✓ fidelity on hostile input > stays fast on a megabyte of unclosed markup, and still finds the article beside it  5260ms
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"7cc14cb4-32ac-4444-a12e-e26f5e6e897b","timestamp":"2026-11-12T21:28:58.077Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"d4952c59-2d33-4efb-829e-6ee75f701953","timestamp":"2026-11-12T21:28:58.089Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"390cf150-5cba-4c98-8563-524a920a55fb","timestamp":"2026-11-12T21:28:58.116Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"2728d211-8a75-4de1-9e24-0327559b52e1","timestamp":"2026-11-12T21:28:58.117Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"fc75e757-7ed9-47cd-b86c-bffe22157dc9","timestamp":"2026-11-12T21:28:58.143Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"9930b3dc-fbf7-494a-89d4-3e63b9085327","timestamp":"2026-11-12T21:28:58.148Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","degraded":true},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[images] generation failed, using template openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > cover provider fallback (a request that is not strict) > stores a real template PNG when the image provider fails, and says it is a placeholder; storage failure still propagates
+[radar.failure] {"id":"a8732ed2-eda9-448c-84a6-0360001074b6","timestamp":"2026-11-12T21:28:58.177Z","environment":"test","service":"web","context":{"source":"image","operation":"image.store","businessId":"bid"},"rootOperation":"image.store","error":{"name":"Error","message":"storage unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/publishing/sandbox/config.test.ts (57 tests) 1116ms
+ ✓ src/server/services/drafting/imageDirections.record.test.ts (5 tests) 967ms
+   ✓ the direction step as an AI call > is one request to the utility model at low effort, recorded as one utility row for the business  566ms
+ ✓ src/server/billing/setup.test.ts (22 tests) 292ms
+ ✓ src/server/services/publishing/sandbox/run.test.ts (156 tests) 2161ms
+ ✓ src/server/ai/providers.observability.test.ts (10 tests) 485ms
+   ✓ AI provider failure observability > awaits an exhausted-credit alert before a successful direct fallback  309ms
+stderr | src/server/services/articleImagesFallback.test.ts > article body images are never a template > a failing provider stores nothing and throws
+[radar.failure] {"id":"59505044-67db-4b41-bbb4-a3e9c517df6b","timestamp":"2026-11-12T21:28:58.741Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":false},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body images are never a template > a failing provider stores nothing and throws
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body images are never a template > a failing provider stores nothing and throws
+[radar.failure] {"id":"cfa56787-4ae2-48ac-bd15-1331d05763be","timestamp":"2026-11-12T21:28:58.750Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body images are never a template > no image model, and dev stubs, store nothing and report image_unavailable
+[radar.failure] {"id":"ab01850f-f4e5-46b1-b44b-872e112bd7c3","timestamp":"2026-11-12T21:28:58.751Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"Image generation is unavailable right now. Please contact support to enable it.","status":503,"code":"image_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > article body images are never a template > no image model, and dev stubs, store nothing and report image_unavailable
+[radar.failure] {"id":"21bf1dda-49d2-4fd7-8871-d5cda9cb73bc","timestamp":"2026-11-12T21:28:58.753Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"Image generation is unavailable right now. Please contact support to enable it.","status":503,"code":"image_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/drafting/draft.test.ts (3 tests) 449ms
+   ✓ an article draft whose answer is cut off > stopped at the output limit: the partial text is discarded and the saved draft is the complete retry  361ms
+ ✓ src/server/ai/openrouter.test.ts (47 tests) 463ms
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"c28c07c4-112d-4196-a52f-a394445c0af0","timestamp":"2026-11-12T21:28:58.913Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"Image generation is unavailable right now. Please contact support to enable it.","status":503,"code":"image_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"69b27ba0-b39e-45b3-a073-16670d7183ea","timestamp":"2026-11-12T21:28:58.915Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"Image generation is unavailable right now. Please contact support to enable it.","status":503,"code":"image_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"d5c7789e-642c-4db7-a7e7-e4a136d18781","timestamp":"2026-11-12T21:28:58.923Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid","provider":"openai","model":"gpt-image-1","retrying":false,"degraded":false},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[images] openai image 503: provider down
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > does not store a template when generation is unavailable, disabled in stubs, or fails
+[radar.failure] {"id":"f5fce518-84f8-4eac-af77-90127da5cb44","timestamp":"2026-11-12T21:28:58.926Z","environment":"test","service":"web","context":{"source":"image","operation":"image.generate","businessId":"bid"},"rootOperation":"image.generate","error":{"name":"Error","message":"openai image 503: provider down","status":503},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+stderr | src/server/services/articleImagesFallback.test.ts > explicit custom image requests > propagates custom-image storage failure without a fallback write
+[radar.failure] {"id":"a2723225-aa48-4f80-a885-e18b524d59cc","timestamp":"2026-11-12T21:28:58.955Z","environment":"test","service":"web","context":{"source":"image","operation":"image.store","businessId":"bid"},"rootOperation":"image.store","error":{"name":"Error","message":"storage unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/services/articleImagesFallback.test.ts (14 tests) 884ms
+   ✓ cover provider fallback (a request that is not strict) > a model style with no image model to ask stores the template as an unavailable placeholder, with dev stubs too  417ms
+ ✓ src/server/services/operationalObservability.test.ts (6 tests) 370ms
+ ✓ src/server/services/publishing/reportIssue.test.ts (17 tests) 140ms
+ ✓ src/server/services/publishing/connectors/notion.test.ts (20 tests) 63ms
+ ✓ src/server/services/publishing/sandbox/workspace.test.ts (18 tests) 317ms
+ ✓ src/app/api/health/route.test.ts (2 tests) 48ms
+ ✓ src/server/services/publishing/connectors/nextjs-agent.test.ts (64 tests) 145ms
+ ✓ src/server/services/publishing/connectors/nextjs-structured-refresh.test.ts (7 tests) 130ms
+ ↓ src/server/actions/onboarding.test.ts (6 tests | 6 skipped)
+ ✓ src/server/services/visibility/collect.test.ts (8 tests) 363ms
+ ↓ src/server/actions/visibility.db.test.ts (3 tests | 3 skipped)
+ ✓ src/server/services/publishing/connectors/framer.test.ts (30 tests) 84ms
+stderr | src/server/services/publishing/connectors/wix.test.ts > createDraft + publish (new post) > an image Wix refuses to import is left off; the post is still created
+[wix] hero image import refused: 400 Bad Request: {"message":"Invalid url"}
+
+ ✓ src/server/ai/record.test.ts (22 tests) 64ms
+ ✓ src/server/services/publishing/connectors/wix.test.ts (24 tests) 39ms
+ ✓ src/features/brief/redditCopy.test.ts (31 tests) 71ms
+ ✓ src/server/billing/chargeSafety.test.ts (4 tests) 121ms
+ ✓ src/server/jobs/observability.test.ts (8 tests) 89ms
+ ✓ src/server/services/lifecycle/templates.test.ts (26 tests) 68ms
+ ✓ src/lib/seo.test.ts (10 tests) 35ms
+ ✓ src/server/services/publishing/connectors/webflow.test.ts (18 tests) 35ms
+ ✓ src/server/services/publishing/refreshUrl.test.ts (31 tests) 30ms
+ ✓ src/server/observability/delivery.test.ts (13 tests) 39ms
+ ✓ src/server/services/drafting/imageDirections.test.ts (33 tests) 56ms
+ ✓ src/lib/writingInstructions.test.ts (10 tests) 17ms
+ ✓ src/server/observability/email.test.ts (6 tests) 57ms
+ ✓ src/server/services/publishing/connectors/nextjs.test.ts (63 tests) 134ms
+ ✓ src/server/db/workerReady.test.ts (6 tests) 6ms
+ ✓ src/server/observability/failures.test.ts (11 tests) 69ms
+ ✓ src/server/services/publishing/sandbox/daytona.test.ts (40 tests) 55ms
+ ✓ src/server/services/publishing/connectors/shopify.test.ts (22 tests) 28ms
+ ✓ src/server/services/brief/sources/search.records.test.ts (6 tests) 18ms
+ ✓ src/server/lighterSaves.db.test.ts (10 tests | 9 skipped) 83ms
+ ✓ src/lib/socialPublish.test.ts (39 tests) 38ms
+ ✓ src/server/services/social/publish/adapters.test.ts (14 tests) 73ms
+stderr | src/server/billing/management.test.ts > billing overview and portal routes > has no fake portal in stub/unconfigured mode and no session for a user without a customer
+[radar.failure] {"id":"41ce733c-49ce-429e-bd02-9b7ac3cac0ff","timestamp":"2026-11-12T21:29:01.679Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/billing/portal","requestId":"6e4641a8-8e98-42dc-9441-f04f6ab3864c"},"rootOperation":"POST /api/billing/portal","error":{"name":"Error","message":"Payments aren’t available right now. Try again in a few minutes.","status":503,"code":"billing_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/billing/stripe.test.ts (21 tests) 27ms
+stderr | src/server/billing/management.test.ts > billing overview and portal routes > has no fake portal in stub/unconfigured mode and no session for a user without a customer
+[radar.failure] {"id":"89cabaee-8807-40ea-aea0-fa9ab1d5d7b7","timestamp":"2026-11-12T21:29:01.692Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/billing/portal","requestId":"dd471013-b5e1-4e5a-91a0-83cb99e77153"},"rootOperation":"POST /api/billing/portal","error":{"name":"Error","message":"Payments aren’t available right now. Try again in a few minutes.","status":503,"code":"billing_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/server/billing/management.test.ts (9 tests) 36ms
+ ✓ src/server/services/publishing/oauth.test.ts (22 tests) 59ms
+ ✓ src/server/services/support/input.test.ts (3 tests) 16ms
+ ✓ src/server/ai/ai.test.ts (13 tests) 14ms
+ ✓ src/server/services/autopilot/policy.test.ts (20 tests) 19ms
+ ✓ src/features/billing/notice.test.ts (8 tests) 29ms
+ ✓ src/server/http/handle.observability.test.ts (6 tests) 41ms
+ ✓ src/client/articleSync.test.ts (30 tests) 6ms
+ ✓ src/server/services/publishing/connectors/wpcom.test.ts (12 tests) 20ms
+ ✓ src/server/services/support/mail.test.ts (7 tests) 7ms
+ ✓ src/server/services/drafting/draft.images.test.ts (24 tests) 31ms
+ ✓ src/features/shell/activity.test.ts (16 tests) 9ms
+ ✓ src/features/billing/dates.test.ts (4 tests) 16ms
+stderr | src/app/api/b/[bid]/support/route.test.ts > support authorization and API behavior > propagates safe rate limit and unavailable-mail errors
+[radar.failure] {"id":"aca1ccbd-44a7-4b77-ae80-90ef4efcc95e","timestamp":"2026-11-12T21:29:02.396Z","environment":"test","service":"web","context":{"source":"http","operation":"POST /api/b/biz/support","requestId":"bd0cbab7-5619-4a26-9974-5532f3e89419"},"rootOperation":"POST /api/b/biz/support","error":{"name":"Error","message":"Please retry later.","status":503,"code":"support_unavailable"},"hint":"Check the provider status and Radar service/network logs. Existing action retry/failover behavior is preserved."}
+
+ ✓ src/app/api/b/[bid]/support/route.test.ts (4 tests) 22ms
+stdout | src/server/billing/webhookBody.test.ts > billing webhook public body boundaries > verifies the exact raw UTF-8 body and accepts a valid event/replay unchanged
+[billing] webhook invoice.paid evt_body_fixture: processed
+
+stdout | src/server/billing/webhookBody.test.ts > billing webhook public body boundaries > verifies the exact raw UTF-8 body and accepts a valid event/replay unchanged
+[billing] webhook invoice.paid evt_body_fixture: replay
+
+ ✓ src/server/billing/webhookBody.test.ts (4 tests) 17ms
+ ✓ src/lib/marketing-posts.test.ts (3 tests) 17ms
+ ✓ src/server/env.test.ts (7 tests) 18ms
+ ✓ src/server/observability/qa.test.ts (8 tests | 4 skipped) 32ms
+ ✓ src/server/ai/tiers.test.ts (41 tests) 24ms
+ ✓ src/server/ai/instructions.test.ts (20 tests) 5ms
+ ✓ src/server/abuse/ip.test.ts (3 tests) 4ms
+ ✓ src/server/billing/webhook.test.ts (7 tests) 5ms
+ ✓ src/lib/visual.test.ts (3 tests) 15ms
+ ✓ src/server/actions/publishing.test.ts (10 tests) 6ms
+ ✓ src/server/services/brief/replyBrevity.test.ts (22 tests) 13ms
+ ✓ src/server/services/publishing/observability.test.ts (8 tests) 19ms
+ ✓ src/client/seen.test.ts (4 tests) 25ms
+ ✓ src/server/jobs/cron.observability.test.ts (2 tests) 14ms
+ ✓ src/server/services/publishing/refreshSources.test.ts (2 tests) 26ms
+ ✓ src/features/social/channels/logic.test.ts (20 tests) 13ms
+ ✓ src/server/services/brief/instructions.test.ts (24 tests) 10ms
+ ✓ src/features/billing/copy.test.ts (9 tests) 5ms
+ ✓ src/server/services/analysis/crawl.test.ts (8 tests) 13ms
+ ✓ src/server/billing/price.test.ts (12 tests) 8ms
+ ✓ src/server/auth/requests.test.ts (9 tests | 7 skipped) 27ms
+ ✓ src/server/services/revocationObservability.test.ts (7 tests) 9ms
+ ✓ src/features/marketing/feature-demo-data.test.ts (4 tests) 7ms
+ ✓ src/client/api.test.ts (4 tests) 7ms
+ ✓ src/features/dashboard/firstWeekRows.test.ts (12 tests) 25ms
+ ✓ src/server/services/publishing/render.test.ts (25 tests) 11ms
+ ✓ src/server/events/cache.test.ts (3 tests) 13ms
+ ✓ src/server/http/publicNetwork.test.ts (17 tests) 28ms
+ ✓ src/server/actions/publishing.report.test.ts (8 tests) 5ms
+ ✓ src/server/services/publishing/sandbox/capability.test.ts (27 tests) 9ms
+ ✓ src/features/billing/stubStripe.test.ts (13 tests) 7ms
+ ✓ src/lib/articleImages.test.ts (15 tests) 7ms
+ ✓ src/features/publishing/PublishFailure.test.ts (2 tests) 8ms
+ ✓ src/server/services/support/answer.test.ts (5 tests) 11ms
+ ✓ src/server/services/social/social.test.ts (11 tests) 25ms
+ ✓ src/lib/visibilityCadenceCopy.test.ts (5 tests) 7ms
+ ✓ src/server/services/social/proactive.test.ts (4 tests) 10ms
+ ✓ src/server/services/drafting/bodyImages.test.ts (7 tests) 7ms
+ ✓ src/server/workspace.jobs.test.ts (3 tests) 2ms
+ ✓ src/server/abuse/human.test.ts (3 tests) 5ms
+ ✓ src/server/services/storage.test.ts (5 tests) 8ms
+ ✓ src/server/services/brief/plan.test.ts (16 tests) 9ms
+ ✓ src/features/article/review.test.ts (13 tests) 8ms
+ ✓ src/server/services/lifecycle/education.test.ts (27 tests | 26 skipped) 3ms
+ ✓ src/server/services/lifecycle/educationContent.test.ts (4 tests) 4ms
+ ✓ src/lib/recommendationShare.test.ts (5 tests) 20ms
+ ✓ src/server/services/brief/observability.test.ts (2 tests) 7ms
+ ✓ src/server/services/brief/sources/retryObservability.test.ts (2 tests) 11ms
+ ✓ src/server/services/visibility/digestContent.test.ts (10 tests) 9ms
+ ✓ src/features/billing/overviewCopy.test.ts (4 tests) 8ms
+ ✓ src/components/Visual.test.ts (3 tests) 6ms
+ ✓ src/features/calendar/calendarUrl.test.ts (5 tests) 4ms
+ ✓ src/components/toasts.test.ts (8 tests) 5ms
+ ✓ src/server/services/publishing/bodyImages.test.ts (4 tests) 14ms
+ ✓ src/server/services/social/instructions.test.ts (12 tests) 13ms
+ ✓ src/features/article/autosave.test.ts (9 tests) 6ms
+ ✓ src/server/observability/jobs.test.ts (2 tests) 3ms
+ ✓ src/lib/suggestionPrompt.test.ts (9 tests) 4ms
+ ✓ src/server/services/visibility/collectOne.test.ts (3 tests) 7ms
+ ✓ src/server/services/drafting/instructions.test.ts (6 tests) 4ms
+ ✓ src/lib/promptClipboard.test.ts (3 tests) 4ms
+ ✓ src/server/services/brief/rescan.test.ts (12 tests) 3ms
+ ✓ src/server/services/brief/rules-figures.test.ts (4 tests) 3ms
+ ✓ src/server/services/social/auto.observability.test.ts (1 test) 5ms
+ ✓ src/features/marketing/domain.test.ts (21 tests) 3ms
+stderr | src/server/services/lifecycle/worker.test.ts > dedicated lifecycle dispatch loop > retains the loop after one failed iteration
+[lifecycle] dispatcher iteration failed; durable queue retained
+
+ ✓ src/server/services/lifecycle/worker.test.ts (3 tests) 10ms
+ ✓ src/server/services/support/index.test.ts (3 tests) 4ms
+ ✓ src/client/laterQueue.test.ts (5 tests) 3ms
+ ✓ src/lib/publishingFailure.test.ts (5 tests) 3ms
+ ✓ src/server/actions/visibility.test.ts (3 tests) 4ms
+ ✓ src/features/billing/elementErrors.test.ts (6 tests) 3ms
+ ✓ src/server/billing/guard.test.ts (11 tests | 8 skipped) 3ms
+ ✓ src/lib/imageOptions.test.ts (3 tests) 2ms
+ ✓ src/client/liveUnread.test.ts (5 tests) 2ms
+ ✓ src/server/services/brief/cap.test.ts (6 tests) 3ms
+ ✓ src/server/services/lifecycle/founderIdentity.test.ts (16 tests | 9 skipped) 2ms
+ ↓ src/server/auth/claim.test.ts (9 tests | 9 skipped)
+ ✓ src/server/publishingPublic.test.ts (3 tests) 5ms
+ ↓ src/server/auth/googleIdentity.test.ts (3 tests | 3 skipped)
+ ↓ src/server/idle.cadence.db.test.ts (24 tests | 24 skipped)
+ ↓ src/server/auth/passwordReset.test.ts (7 tests | 7 skipped)
+ ↓ src/server/auth/signupEmails.test.ts (6 tests | 6 skipped)
+ ↓ src/server/billing/access.test.ts (8 tests | 8 skipped)
+ ↓ src/server/actGate.test.ts (6 tests | 6 skipped)
+ ↓ src/server/auth/verification.test.ts (11 tests | 11 skipped)
+ ↓ src/server/abuse/rateLimit.test.ts (6 tests | 6 skipped)
+ ↓ src/server/billing/billingFlow.test.ts (13 tests | 13 skipped)
+ ✓ src/server/billing/grace.test.ts (15 tests | 12 skipped) 2ms
+ ↓ src/server/idle.db.test.ts (9 tests | 9 skipped)
+ ↓ src/server/billing/billingLifecycle.test.ts (8 tests | 8 skipped)
+ ↓ src/server/billing/grandfather.test.ts (2 tests | 2 skipped)
+ ↓ src/server/billing/webhookSync.test.ts (7 tests | 7 skipped)
+ ↓ src/server/billing/restart.test.ts (6 tests | 6 skipped)
+ ↓ src/server/jobs/billingSkip.test.ts (2 tests | 2 skipped)
+ ↓ src/server/jobs/guestCleanup.test.ts (2 tests | 2 skipped)
+ ↓ src/server/services/spendRecords.db.test.ts (2 tests | 2 skipped)
+ ↓ src/server/services/autopilot/autopilot.db.test.ts (15 tests | 15 skipped)
+ ↓ src/server/services/social/proactive.db.test.ts (15 tests | 15 skipped)
+ ↓ src/server/services/activity.db.test.ts (9 tests | 9 skipped)
+ ↓ src/server/services/lifecycle/autopilotIntro.test.ts (17 tests | 17 skipped)
+ ↓ src/server/services/firstRun.test.ts (17 tests | 17 skipped)
+ ↓ src/server/services/lifecycle/autopilotIntegration.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/brief/acted.db.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/brief/scan.test.ts (6 tests | 6 skipped)
+ ↓ src/server/services/lifecycle/dispatch.test.ts (14 tests | 14 skipped)
+ ↓ src/server/services/publishing/publisher.live.test.ts (15 tests | 1 skipped)
+ ↓ src/server/services/lifecycle/guides.test.ts (15 tests | 15 skipped)
+ ↓ src/server/services/lifecycle/educationRoutes.test.ts (4 tests | 4 skipped)
+ ↓ src/server/services/visibility/digest.integration.test.ts (40 tests | 40 skipped)
+ ↓ src/server/services/lifecycle/engagement.test.ts (15 tests | 15 skipped)
+ ↓ src/server/services/lifecycle/engagementPublishing.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/sandbox/probe.live.test.ts (4 tests | 4 skipped)
+ ↓ src/server/services/lifecycle/engagementRoutes.test.ts (9 tests | 9 skipped)
+ ↓ src/server/services/visibility/collect.db.test.ts (4 tests | 4 skipped)
+ ↓ src/server/services/publishing/connectors/framer.live.test.ts (5 tests | 5 skipped)
+ ↓ src/server/services/visibility/emptyRun.db.test.ts (8 tests | 8 skipped)
+ ↓ src/server/services/publishing/connectors/ghost.live.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/connectors/shopify.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/visibility/observations.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webflow.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/connectors/webhook.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/publishing/connectors/wix.live.test.ts (3 tests | 3 skipped)
+ ↓ src/server/services/publishing/sandbox/replay.live.test.ts (1 test | 1 skipped)
+ ↓ src/server/services/publishing/connectors/wordpress.live.test.ts (11 tests | 11 skipped)
+ ↓ src/server/services/publishing/connectors/nextjs-sandbox-markdown.live.test.ts (5 tests | 5 skipped)
+ ↓ src/server/services/publishing/connectors/nextjs.live.test.ts (7 tests | 7 skipped)
+ ↓ src/server/services/social/publish/publish.test.ts (21 tests | 21 skipped)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/server/ai/openrouter.qa.test.ts > parity: OPENROUTER_API_KEY unset behaves exactly like the parent commit > requests, ai_calls rows, logs, retries, images and visibility match the golden snapshot
+AssertionError: expected { …(14) } to deeply equal { …(14) }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -172,11 +172,11 @@[39m
+[2m      "calls": [],[22m
+[2m      "configured": false,[22m
+[2m      "logs": [],[22m
+[2m      "rows": [],[22m
+[2m      "stored": [[22m
+[32m-       "f883614e6a7dfb07",[39m
+[31m+       "91d5409f50974af7",[39m
+[2m      ],[22m
+[2m      "style": "branded",[22m
+[2m    },[22m
+[2m    "p1": {[22m
+[2m      "backoffs": [],[22m
+
+ ❯ src/server/ai/openrouter.qa.test.ts:205:20
+    203|     const actual = await parityScenarios();
+    204|     if (process.env.QA_CAPTURE) { fs.writeFileSync(process.env.QA_CAPT…
+    205|     expect(actual).toEqual(GOLDEN);
+       |                    ^
+    206|   });
+    207|   it('an empty OPENROUTER_API_KEY counts as unset (no OpenRouter reque…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 148 passed | 53 skipped (202)
+      Tests  1 failed | 2541 passed | 591 skipped (3147)
+   Start at  01:28:48
+   Duration  25.21s (transform 7.90s, setup 0ms, collect 113.70s, tests 61.94s, environment 24ms, prepare 11.74s)
+

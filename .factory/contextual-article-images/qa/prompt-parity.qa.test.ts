@@ -22,7 +22,7 @@ beforeAll(async () => {
 });
 afterAll(() => {
   fs.rmSync(dir, { recursive: true, force: true });
-  fs.writeFileSync('.factory/contextual-article-images/qa/evidence/prompt-parity.txt', out.join('\n') + '\n');
+  fs.writeFileSync((process.env.QA_EVIDENCE_DIR || '.factory/contextual-article-images/qa/evidence') + '/prompt-parity.txt', out.join('\n') + '\n');
 });
 
 const styles = ['editorial', 'flat', 'render3d', 'handdrawn', 'photography', 'illustration', 'branded', 'infographic', 'unknown-style', ''];

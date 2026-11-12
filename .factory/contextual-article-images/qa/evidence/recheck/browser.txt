@@ -1,0 +1,42 @@
+Browser observations, T4b recheck, revision 4cc300ba (source last changed in 207ac9ab), 2026-11-13
+Tool: the Claude desktop app's built-in browser pane (mcp__Claude_Browser__*), a real tab, 1024x768 and 375x812.
+App: http://127.0.0.1:3217 (Next dev + worker, RADAR_DEV_STUBS=1, no provider keys, fresh database radar_qa_app2).
+Sign-in as in the first round: synthetic users, sessions provisioned in the QA database, cookie set in the tab; no password typed.
+"sent" below is the article.save request body the app itself sent, recorded by wrapping window.fetch in the tab.
+
+R-B1. D1, reproduction B9 b (entry e_ctxqa_race1): Media tab open on the undrafted article, draft requested by another client, "Alt typed by owner" typed in Alt text 2.5 s later.
+  sent: {"img":{"alt":"Alt typed by owner"}}
+  saved (browser-r1-race-alt-edit.json): prompt "A wide street-level view of the place that Harbour Court Reviews, Recheck Probe 1 is about, seen from outside in daylight.", promptBy "radar", alt "Alt typed by owner", altBy "owner"
+  the tab then reloaded: the field shows Radar's direction and the typed alt.
+
+R-B2. D1, reproduction B9 c (entry e_ctxqa_race2): web server stopped, draft queued as the cron does (done 21:16:56Z), 17 s wait, server started, event stream reconnected (200). At 21:17:54Z the tab still showed the undrafted article and "Calm, editorial image about harbour court reviews". Typed "Harbour Court from the street" in Alt text only.
+  sent: {"img":{"alt":"Harbour Court from the street"}}
+  saved (browser-r2-stale-tab-after-alt-edit.json): Radar's direction, promptBy "radar", altBy "owner"
+  the tab then reloaded to "Ready for review" with Radar's direction in the field.
+
+R-B3. Old bundle, sent from the signed-in tab: article.save with {style, prompt: "Calm, editorial image about harbour court reviews", alt: "Alt sent by an old bundle"} on the same drafted article: reply 200; saved prompt is Radar's, promptBy "radar", alt saved, altBy "owner".
+
+R-B4. Direction, then alt, inside the debounce window (same article): typed in "Describe your image", pressed Tab, typed in Alt text. Last direction keystroke at 8083 ms, first alt keystroke at 8103 ms.
+  sent at 8686 ms: {"img":{"prompt":"…typed by the owner"}}; sent at 8704 ms: {"img":{"alt":"Harbour wall alt typed right after"}}
+  saved (browser-r3-direction-then-alt.json): the typed direction with promptBy "owner"; the alt with altBy "owner".
+
+R-B5. Typed direction through "Rewrite from brief": direction, promptBy "owner", alt and cover file unchanged after the rewrite.
+  Then retyped "Calm, editorial image about harbour court reviews" over it: sent {"img":{"prompt":"Calm, editorial image about harbour court reviews"}}; saved prompt is that sentence and img has no promptBy key (browser-r4-default-retyped.json).
+
+R-B6. O6. Undrafted article: "Radar writes this from your article when it drafts it. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject."
+  Same article after the draft landed, and a legacy drafted article: "Radar writes this from your article. Edit it to describe …" (the first-round text).
+  At 375 px the longer hint spans 20..355 px; document scrollWidth 375.
+
+R-B7. Regressions on e_ctxqa_race1 (drafted, Radar's direction):
+  Style -> Illustration: "Placeholder / This cover is a placeholder. Image generation is unavailable right now, so Radar used a title card. Regenerate to try again." + Regenerate button.
+  Notice Regenerate, "Generate from prompt" and the ghost Regenerate, each pressed once: inline error and toast "Image generation is unavailable right now. Please contact support to enable it."; "Cover image generated" never shown; saved img identical before and after all three (diff exit 0): direction still Radar's, alt still the owner's.
+  Body images: "Radar couldn’t add body images to this article. Image generation is unavailable right now. Your text and cover are not affected." + "Try again"; pressed: role=alert "Radar couldn’t make the body images. Try again. Any existing images are kept."; fields stay enabled.
+  Style -> Branded graphic: notice gone. Style -> Photography: notice back.
+  Viewer: "… so Radar used a title card. An owner or editor can regenerate it."; no notice button; all three buttons and all three fields disabled; article.save with {img:{alt}} and with {img:{prompt}}, regenerateImage with and without a prompt, regenerateBodyImages: 403 each; another business's entry: 404.
+  Scheduled: "… so Radar used a title card." with no last sentence and no button; fields and buttons disabled; article.save {alt}, {prompt}, {style}, regenerateImage with and without a prompt, regenerateBodyImages: 409 article_locked each.
+
+R-B8. D4. Article seeded in the state the fixed publisher writes (img.url, urlKey "illustration:1", placeholder unavailable; published): the Media tab shows the stored cover file and "Placeholder / This cover is a placeholder. Image generation is unavailable right now, so Radar used a title card." with no button. (First round, without urlKey: no notice, live template.)
+
+R-B9. Legacy article with two stored body images: both figures load (1200x675, image/png) after the first paragraph of their sections; Media lists them and offers "Regenerate body images"; no notice. Appended ", edited" to Alt text: sent {"img":{"alt":"Legacy cover alt, edited"}}; the stored article differs in img.alt and img.altBy only (browser-r6-*.json; videoMeta is written by opening the Media tab, as before).
+
+Console: no error entries on the pages visited.

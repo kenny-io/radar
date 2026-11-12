@@ -8,7 +8,7 @@ import { fallbackImageDirections, planArticleBodyImages } from '@/lib/articleIma
 import { ai } from '@/server/ai';
 import type { Block, Profile } from '@/lib/types';
 
-const OUT = '.factory/contextual-article-images/qa/evidence/validator.txt';
+const OUT = (process.env.QA_EVIDENCE_DIR || '.factory/contextual-article-images/qa/evidence') + '/validator.txt'; // QA_EVIDENCE_DIR: the recheck writes beside the first round's files
 const lines: string[] = [];
 const log = (s: string) => { lines.push(s); };
 

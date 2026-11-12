@@ -99,3 +99,75 @@ Output: `qa/evidence/{tsc,full-nodb,focused-db,full-db,full-db-reruns-alone}.txt
 - Processes: none. Web and worker on 3217 were stopped; port 3217 is free.
 - Databases on 127.0.0.1:55432, created by QA and kept for retesting: `radar_qa_app`, `radar_qa_tests`, `radar_qa_tests2`. The synthetic sessions in `radar_qa_app` were deleted.
 - Files outside the repository's tracked tree: `.data/contextual-article-images/qa/` (git-ignored: settings, fixture, uploads, logs).
+
+## Recheck (T4b, 2026-11-13)
+
+**Verdict: ship.** D1, D2 and D4 are fixed; O1 and O6 are done. One new minor finding (N1) and the two things the engineer flagged are below; none of them blocks.
+
+Revision: `git rev-parse HEAD` = `4cc300ba08dd5c4c964db917dec774e1a04e84d0` (source last changed in `207ac9ab`; fixes `051ade49`, `207ac9ab`). Same worktree and rules. Fresh databases `radar_qa_app2` (browser) and `radar_qa_tests3` (tests, probes). Same browser tool and sign-in method as the first round. No real provider was called; the success path again used a mocked `fetch` and the stub text adapter. New probe `qa/recheck.db.qa.test.ts`; evidence in `qa/evidence/recheck/`. The first-round probes now read `QA_EVIDENCE_DIR` so the first-round evidence files are not overwritten.
+
+### Commands and counts
+| Check | Result |
+| --- | --- |
+| `npx tsc --noEmit` | pass |
+| Whole suite, no database | 2541 passed, 584 skipped, 1 failed: the same baseline parity snapshot (one stored-template hash) |
+| `src/server/services/drafting`, the image files, `src/server/services/publishing`, `src/server/actions`, `src/features/article`, `tiers.test.ts` on fresh `radar_qa_tests3` | 1493 passed, 75 skipped, 0 failed |
+| All QA probes (first round and recheck) at this revision | 4 files, 51 passed. Prompt parity: 69,120 requests without `literal` still byte-identical to `4f1bcf83`. Publishing payloads, boundaries, locks, legacy articles as in the first round (`recheck/pipeline.txt`). |
+
+### Retest of the findings
+| Item | Verdict | Basis |
+| --- | --- | --- |
+| D1 | **Fixed** | Browser, both first-round reproductions (R-B1, R-B2): the tab sends `{"img":{"alt":…}}` alone; saved direction is Radar's, `promptBy: 'radar'`, `altBy: 'owner'`; the tab then reloads to Radar's direction. An old bundle's save (style, the default sentence, a new alt), sent from the signed-in tab and through the action route: direction and `promptBy: 'radar'` kept, alt saved (R-B3, `recheck.txt` R1, also with trailing spaces and a newline, and for a fallback direction). A later rewrite still treats the direction as Radar's and no body request carries "Overall look the owner asked for". |
+| Check 2 | Pass | Browser R-B4: direction and alt edited 20 ms apart; two saves sent (`img.prompt`, `img.alt`), both stored, direction marked the owner's. Two concurrent saves at the action level: both stored (R2). |
+| Check 3 | Pass | Browser R-B5, probe R2: a typed direction is the owner's and survives a rewrite; retyping the default sentence stores it with no `promptBy`; the next rewrite then adopts Radar's direction. The default typed over Radar's direction is ignored. |
+| D2 | **Fixed** | Probe R3: "Generate from prompt" with a typed direction stores `Illustration for <title>`; an alt the owner edited is kept; a failed generation changes nothing (also in the browser, R-B7). See N1 and flag 6a for two side effects. |
+| D4 | **Fixed** | Probe R5: the late render writes `url`, `urlKey` and, when it fell back, the mark, for a failing provider, no image model, a working provider and a template style. Browser R-B8: that state now shows the stored cover and the notice. |
+| O1 | **Done** | "Chart House", "The Abstract Hotel", a name in another case or with two spaces, a name with regex characters: kept. A real chart, a caption, quoted wording or a metaphor next to the name: still refused. A subject the article does not name, or with kind `none`, gets no excuse. Residual, not a defect: a common noun returned as the subject (`chart`, kind `other`, in an article about charts) switches the check off for that word (`recheck.txt` R-O1). |
+| O6 | **Done** | Browser R-B6: both hint texts, exact; no overflow at 375 px. |
+| D3 | Not retested | Accepted by brief D12. |
+
+Regressions checked in the browser (R-B7, R-B9): style change, the placeholder notice and its clearing, the body-images message and "Try again", the three generate buttons in an outage, a Viewer, a scheduled article, a legacy article. All as in the first round.
+
+### New finding
+**N1 (minor). "Generate from prompt" pressed on Radar's own, unedited direction turns it into the owner's and replaces Radar's alt.**
+- Steps (needs a working image model; run with the faked provider, `recheck.txt` R4): draft an article in a model style; do not touch "Describe your image"; press "Generate from prompt" (the primary button).
+- Expected: a new picture of the same scene; the direction stays Radar's; the alt naming the subject stays.
+- Actual: `promptBy: 'owner'`, `modelRequired: true`; the request uses the pre-change wrapper (`Subject: …`), not the literal one; the alt becomes `Illustration for <title>`; every later body-image request ends `Overall look the owner asked for: <the cover scene>`; later rewrites never update the direction.
+- The ownership part was already so in the first round and I did not report it then. The alt part is new with the D2 fix. Nothing is lost that the owner typed. In stub mode the button fails, so this cannot be seen in the browser here.
+
+### The two things the engineer flagged
+- **6a. A typed prompt on a legacy article replaces a hand-written alt with the neutral one: confirmed, minor.** "Generate from prompt" on an article saved before this change sets the alt to `Illustration for <title>` in all three cases tried: a new typed direction, the same legacy typed direction generated again unchanged, and a template style (`recheck.txt` R6). At base the alt was never touched by this action. It is the same class as D3 (accepted in D12), with a weaker case when the direction did not change, because the old alt still described the picture. Editing the alt once after this change protects it (`altBy`).
+- **6b. A stale tab on an old bundle reverts the first-draft style upgrade: confirmed, minor, not a regression.** With an image model available the first draft upgrades Branded graphic to Illustration. An old bundle's save from a tab that missed the draft carries `style: 'branded'`: the direction stays Radar's, but the style goes back to Branded graphic and the model-made cover is replaced by a title card (no placeholder mark, because it is a template style). Picking Illustration again costs one new generation and gives a different picture (`recheck.txt` R7). The new bundle sends the alt alone and is not affected. It needs a tab loaded before the deploy that also missed the draft, and base behaved the same way.
+
+### Untested in the recheck
+- Any real provider. Production. Screen readers. Editor and Admin roles in the browser.
+- The whole suite with a database (the focused files and the whole suite without a database were run; the files changed since the first round are all in the focused set).
+
+### Left behind
+- Processes: none; port 3217 is free.
+- Databases created by QA and kept: `radar_qa_app`, `radar_qa_tests`, `radar_qa_tests2` (first round), `radar_qa_app2`, `radar_qa_tests3` (recheck). Synthetic sessions deleted.
+- `tsconfig.json` restored after `next dev` rewrote it again. Uncommitted: this section, `qa/recheck.db.qa.test.ts`, `qa/evidence/recheck/`, and small edits to five first-round QA files (`QA_EVIDENCE_DIR`, `QA_APP_DB`).
+
+## Recheck 2 (T4c, 2026-11-13)
+
+**Verdict: ship. N1 is fixed.**
+
+Revision: `git rev-parse HEAD` = `6266ec2c08a560fbf1df61baf78f813c0757be90`. Fresh test database `radar_qa_tests4`; browser on `radar_qa_app2`. New probe `qa/recheck2.db.qa.test.ts`; evidence in `qa/evidence/recheck2/`. No real provider was called.
+
+| Check | Result |
+| --- | --- |
+| `npx tsc --noEmit` | pass |
+| Whole suite, no database | 2541 passed, 591 skipped, 1 failed (the baseline parity snapshot) |
+| Focused files (as in the first recheck) on fresh `radar_qa_tests4` | 1500 passed, 75 skipped, 0 failed |
+| All QA probes at this revision | 5 files, 57 passed; prompt parity still byte-identical |
+
+1. **N1: fixed.** Action level, model style, faked working model (`recheck2.txt` T1): after pressing "Generate from prompt" on Radar's unedited direction, `promptBy` is `'radar'`, there is no `modelRequired`, the request is the literal one, Radar's alt is kept, the direction step is not called again (cache), and later body requests carry no "Overall look the owner asked for". After the article changes and is rewritten, the cover and its direction are kept (the documented rule for a good cover) and the next press or Regenerate adopts Radar's new direction. A failing provider gives 502, no image model gives 503, and the article is unchanged in both. Browser, stub mode (`recheck2/browser.txt`): the click fails with the existing unavailable message, never says "Cover image generated", and the stored cover is identical before and after, for an undrafted article, for Branded graphic and for Illustration with the placeholder notice.
+2. **Pass.** One changed word makes the direction the owner's (neutral alt, pre-change wrapper, `modelRequired`). The owner's direction pressed again unedited stays theirs. Leading, trailing, doubled spaces and a newline are not an edit. A direction typed in the field, autosaved and then pressed is the owner's. A change of capitals counts as an edit.
+3. **Pass.** Undrafted article, unedited default: a generated picture is stored, the direction stays the default with no `promptBy` and no `modelRequired`, no direction call. The first draft then upgrades the style and adopts Radar's direction with a new literal cover.
+4. **Pass.** Legacy drafted article with the creation default, in Illustration and in Branded graphic: one direction call, Radar's contextual direction and alt, `promptBy: 'radar'`, literal request.
+5. **Branded graphic, unedited prompt, working model (reported, not a defect).** Stored: `style: 'branded'`, `urlKey: 'branded:<seed>'`, no `modelRequired`, no placeholder mark, `promptBy: 'radar'`. The image model is asked once with the literal wrapper and the illustration style text. The stored file is the generated picture and the Media tab shows it (the `urlKey` matches; it does not redraw a template). A rewrite keeps it. The plain "Regenerate" button replaces it with a new title card without asking the model, and so does changing Style away and back. So in Branded graphic the two buttons give different kinds of picture, and the style label still says Branded graphic over a generated picture. A typed direction differs: it stores `modelRequired`, so the plain Regenerate keeps asking the model (developer test, not rerun by hand here).
+6. **Pass.** Cover Regenerate without a prompt, the D1 old-bundle save and the D2 neutral alt behave as in the first recheck; an unedited press keeps an alt the owner edited.
+
+No new defect. Untested: any real provider, production, the whole suite with a database, screen readers.
+
+Left behind: no processes; port 3217 free. Databases created by QA and kept: `radar_qa_tests4` plus the five from the earlier rounds. Synthetic sessions deleted. `tsconfig.json` restored. Uncommitted: the two Recheck sections, `qa/recheck.db.qa.test.ts`, `qa/recheck2.db.qa.test.ts`, `qa/evidence/recheck/`, `qa/evidence/recheck2/`, and the small edits to five first-round QA files.
