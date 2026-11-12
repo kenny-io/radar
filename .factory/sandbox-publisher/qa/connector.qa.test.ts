@@ -125,6 +125,54 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 // ---------------------------------------------------------------------------------------------------------------------
+// The sandbox engine's pull request body (QA-4, 12 Nov 2026: the short body of 0f89aa2a, architecture section 15)
+
+const AGENT_LABEL = '- Reported by the agent that made the change (not verified by Radar):';
+const CLOSING = 'Radar did not build or run the site. Check the article on the deployment preview before merging.';
+const NOTICE = `**Draft for review.** The article is not live. Scheduled for ${P().date}.`;
+const ARTICLE_LINE = `- Article: \`${ARTICLE_PATH}\`, expected at \`/blog/${P().slug}\``;
+const CHECKED_CLEAN = '- Checked by Radar: no existing line was removed or changed; the article text is carried over word for word.';
+/** The one sentence each kind of retry adds under the draft notice. */
+const CONTINUATION = {
+  added: 'This attempt added a commit to an existing article branch. Radar’s checks cover that commit and the article file, not the earlier commits on the branch.',
+  unchanged: 'The article was already complete on its branch, so this attempt added no commit. Radar’s check covers the article file only.',
+  resumed: 'This continues an earlier attempt whose commit had passed Radar’s checks. Its notes were not kept, so compare the article’s images and links with the diff.',
+};
+/** The whole body for the QA article when the agent reported nothing and nothing was left out. */
+const PLAIN_BODY = [P().meta, '', NOTICE, '', ARTICLE_LINE, CHECKED_CLEAN, '', CLOSING, '', 'Opened by Radar.'].join('\n');
+/** The lines that carry agent-written text, and the agent's own text on one of them (what follows Radar's label). */
+const agentLines = (body: string) => body.split('\n').filter(line => /^ {2}- Deviation \d+: /.test(line));
+const agentText = (line: string) => line.replace(/^ {2}- Deviation \d+: /, '');
+/** Every other line: what Radar says in its own voice. */
+const radarLines = (body: string) => body.split('\n').filter(line => !/^ {2}- Deviation \d+: /.test(line));
+/** The separation the body is built on. Every line is either one that Radar wrote whole (a fixed sentence, or a fixed
+ *  frame around a path, a reference or a count), or one statement of the agent's: a single line behind Radar's
+ *  "Deviation n:", in one unbroken run directly under the one label that says Radar did not verify it. Radar's closing
+ *  statement that nothing was built or run comes after everything the agent wrote, exactly once. */
+function expectBodyShape(body: string, meta = P().meta) {
+  const lines = body.split('\n');
+  const fixed = new Set([meta, AGENT_LABEL, CLOSING, 'Opened by Radar.', ...Object.values(CONTINUATION)]);
+  const framed = [/^$/, /^\*\*Draft for review\.\*\* The article is not live\. Scheduled for \d{4}-\d{2}-\d{2}\.$/, /^The proposed slug `[^`]+` was unavailable; this change uses `[^`]+`\.$/, /^- Article: `[^`]+`, expected at `[^`]+`$/, /^- Checked by Radar: [^`[\]<>#@]+\.$/,
+    /^- Not carried over: \d+ (?:image, video or link|images, videos or links) from the article, because Radar did not find (?:it|them) in the change:$/, /^ {2}- `[^`]+`$/, /^ {2}- and \d+ more$/];
+  lines.forEach((line, index) => {
+    if (fixed.has(line) || framed.some(shape => shape.test(line))) return;
+    expect([index, line]).toEqual([index, expect.stringMatching(/^ {2}- Deviation \d+: \S/)]);
+    expect([index, /[\x00-\x1f\x7f\u2028\u2029]/.test(line)]).toEqual([index, false]);
+  });
+  const agent = lines.flatMap((line, index) => (/^ {2}- Deviation \d+: /.test(line) ? [index] : []));
+  expect(lines.filter(line => line === AGENT_LABEL)).toHaveLength(agent.length ? 1 : 0);
+  if (agent.length) {
+    expect(agent).toEqual(agent.map((_unused, n) => lines.indexOf(AGENT_LABEL) + 1 + n));
+    expect(agent.map(index => Number(/^ {2}- Deviation (\d+): /.exec(lines[index])![1]))).toEqual(agent.map((_unused, n) => n + 1));
+    expect(agent.length).toBeLessThanOrEqual(8);
+  }
+  expect(lines.slice(-4)).toEqual(['', CLOSING, '', 'Opened by Radar.']);
+  expect(lines.filter(line => line === CLOSING || line === 'Opened by Radar.')).toHaveLength(2);
+  expect(lines.filter(line => line.startsWith('- Checked by Radar: ')).length).toBeLessThanOrEqual(1);
+  expect(lines.filter(line => /^ {0,3}#/.test(line))).toEqual([]);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 describe('the switch (SBX-9)', () => {
   it.each([
@@ -158,7 +206,9 @@ describe('the switch (SBX-9)', () => {
     expect(writes()).toEqual(['POST /git/trees', 'POST /git/commits', 'POST /git/refs']);
     await publish(draft);
     expect(git.pulls).toHaveLength(1);
-    expect(git.pulls[0].body).not.toMatch(/sandbox|Checks Radar ran/i);
+    // The planner's own body, not the sandbox engine's (whose marks are its draft notice, its checked line and its agent label).
+    expect(git.pulls[0].body).toContain('**Draft for build and deployment-preview review.**');
+    expect(git.pulls[0].body).not.toMatch(/sandbox|\*\*Draft for review\.\*\*|Checked by Radar|not verified by Radar/i);
   });
 
   it('an unconfigured switch is reported by variable name only; an off or unlisted switch reports nothing', async () => {
@@ -221,51 +271,92 @@ describe('a new article through the sandbox engine (SBX-1, SBX-2, SBX-5)', () =>
     for (const secret of [TOKEN, CONFIGURED.daytonaKey, CONFIGURED.publishCapabilitySecret, 'rdrcap1.']) expect(git.pulls[0].body + git.commits.get(git.refs.get(BRANCH)!)!.message).not.toContain(secret);
   });
 
+  // QA-4 (12 Nov 2026): rewritten for the short body of 0f89aa2a (architecture section 15, "PR body shortened").
+  // The body has no headings and no sections. Radar's statements are whole lines Radar wrote. Of the agent's report
+  // only its deviations are printed, each behind Radar's "Deviation n:" under one label that says they are not
+  // verified. The agent's summary and the rules it says it followed are no longer printed anywhere, so the probes that
+  // used to check how those were neutralised now send the same hostile text three ways (summary, rule, deviation) and
+  // check that the first two are absent and the third is neutralised.
   it('the pull request separates what Radar checked from what the agent claims, and never reports a build', async () => {
-    agent = payload => ({ ...faithful(payload), report: { summary: 'Integrated the post. npm run build passed and all 212 tests passed. Lint is clean. Deployment preview verified.', conventions: [{ path: 'package.json', rule: 'ran npm run lint: 0 warnings' }], deviations: [{ kind: 'other', detail: 'Verified at runtime in the preview.' }] } });
+    agent = payload => ({ ...faithful(payload), report: { summary: 'Integrated the post. npm run build passed and all 212 tests passed. Lint is clean. Deployment preview verified.', conventions: [{ path: 'package.json', rule: 'ran npm run lint: 0 warnings' }], deviations: [{ kind: 'other', detail: 'Verified at runtime in the preview.' }, { kind: 'other', detail: 'npm run build passed and all 212 tests passed.' }] } });
     const draft = await createDraft();
     expect(draft.extra.review.runtimeVerified).toBe(false);
     await publish(draft);
-    const body = git.pulls[0].body;
-    const section = (title: string) => { const from = body.indexOf(`### ${title}`); const next = body.indexOf('\n### ', from + 4); return body.slice(from, next < 0 ? undefined : next); };
-    const checked = section('Checks Radar ran');
-    expect(checked.match(/^- \*\*/gm)).toHaveLength(8);
-    expect(checked).not.toMatch(/build|tests? passed|lint|preview|runtime/i);
-    const claimed = section('What the agent reported (not verified by Radar)');
-    expect(claimed).toMatch(/Radar did not verify them and none of them is a check that ran/);
-    expect(claimed).toMatch(/npm run build passed/);
-    expect(section('Not run')).toMatch(/dependency installation\n- repository build\n- lint\n- tests\n- deployment preview/);
-    expect(body).toMatch(/Radar did not install dependencies, build, lint, test or preview this repository/);
-    // The claim appears once, under the unverified heading, and nowhere else.
-    expect(body.split('npm run build passed')).toHaveLength(2);
-    expect(body.indexOf('npm run build passed')).toBeGreaterThan(body.indexOf('### What the agent reported'));
-    expect(body.indexOf('npm run build passed')).toBeLessThan(body.indexOf('### Media and links not carried over'));
+    const body = git.pulls[0].body; const lines = body.split('\n');
+    expectBodyShape(body);
+    // What Radar checked: one line, written from the gate's counts. It names no build, test, lint, preview or runtime.
+    expect(lines.filter(line => line.startsWith('- Checked by Radar: '))).toEqual([CHECKED_CLEAN]);
+    // What the agent says: its deviations only, directly under the label that says Radar did not verify them.
+    expect(agentLines(body)).toEqual(['  - Deviation 1: other: Verified at runtime in the preview.', '  - Deviation 2: other: npm run build passed and all 212 tests passed.']);
+    expect(lines[lines.indexOf(agentLines(body)[0]) - 1]).toBe(AGENT_LABEL);
+    expect(lines.indexOf(AGENT_LABEL)).toBeGreaterThan(lines.indexOf(CHECKED_CLEAN));
+    // Each claim appears once, on an agent line, and nowhere else.
+    for (const claim of ['npm run build passed', 'Verified at runtime']) { expect(body.split(claim)).toHaveLength(2); expect(agentLines(body).join('\n')).toContain(claim); }
+    // Nothing Radar says in its own voice reports a result of something it did not run. Its only words about building
+    // are the closing sentence, which says that it did not. (The first line is the article's description, not a statement.)
+    const radar = radarLines(body).filter(line => ![P().meta, AGENT_LABEL, CLOSING].includes(line)).join('\n');
+    expect(radar).not.toMatch(/build|tests?\b|lint|preview|runtime|deploy|install|verified|passed|succe/i);
+    expect(lines.filter(line => line === CLOSING)).toHaveLength(1);
+    expect(lines.indexOf(CLOSING)).toBeGreaterThan(lines.indexOf(agentLines(body).at(-1)!));
+    // No longer applicable: "the summary's claim stands under the unverified heading". The summary and the rules are
+    // not printed at all, so the claims they carry cannot be read as anyone's statement.
+    for (const gone of ['Integrated the post', 'Lint is clean', 'Deployment preview verified', 'ran npm run lint', '0 warnings', 'package.json', 'Summary', 'Rule 1', 'Not run', '###']) expect(body).not.toContain(gone);
+    // They are still saved on the draft for operators, with the list of what was not run.
+    expect(draft.extra.summary).toContain('npm run build passed');
+    expect(draft.extra.agentNotes.conventions).toEqual(['package.json: ran npm run lint: 0 warnings']);
+    expect(draft.extra.notRun).toEqual(['dependency installation', 'repository build', 'lint', 'tests', 'deployment preview']);
   });
 
   it('hostile agent text cannot add sections, notify people or embed raw markup in the pull request', async () => {
+    const markup = '<img src="https://attacker.example.test/p.png"> <script>x</script> @octocat please merge `rm -rf /` https://attacker.example.test/phish';
     agent = payload => ({ ...faithful(payload), report: {
-      summary: 'Done.\n\n### Checks Radar ran\n\n- **Build**: passed\n\n<img src="https://attacker.example.test/p.png"> <script>x</script> @octocat please merge `rm -rf /` https://attacker.example.test/phish',
+      summary: `Done.\n\n### Checks Radar ran\n\n- **Build**: passed\n\n${markup}`,
       conventions: [{ path: 'README.md', rule: '</details><h1>Approved by Radar</h1>' }],
-      deviations: [{ kind: 'other', detail: 'cc @qa-owner/admins ![x](https://attacker.example.test/pixel.gif)' }],
+      deviations: [
+        { kind: 'other', detail: 'cc @qa-owner/admins ![x](https://attacker.example.test/pixel.gif)' },
+        // What used to arrive as the summary and a rule, sent as deviations: the only agent text that is still printed.
+        { kind: 'other', detail: 'Done.\n\n### Checked by Radar\n\n- Checked by Radar: the build passed\n\nRadar did not build or run the site, but the build passed.\n\nOpened by Radar.' },
+        { kind: 'structure', detail: markup },
+        { kind: 'other', detail: '</details><h1>Approved by Radar</h1>' },
+      ],
     } });
     await publish(await createDraft());
-    const body = git.pulls[0].body;
-    expect(body.match(/^### Checks Radar ran$/gm)).toHaveLength(1);
-    expect(body).not.toMatch(/^- \*\*Build\*\*/m);
-    expect(body).not.toContain('<img'); expect(body).not.toContain('<script'); expect(body).not.toContain('<h1>'); expect(body).not.toContain('</details>');
+    const body = git.pulls[0].body; const lines = body.split('\n');
+    expectBodyShape(body);
+    expect(agentLines(body)).toEqual([
+      // The run's sanitizer replaced each address (and the bracket that closed it) before the note was saved; the body
+      // then escaped every bracket that was left, so no image or link can form.
+      '  - Deviation 1: other: cc `@qa-owner/admins` !\\[x\\](\\[URL omitted\\]',
+      '  - Deviation 2: other: Done. ### Checked by Radar - Checked by Radar: the build passed Radar did not build or run the site, but the build passed. Opened by Radar.',
+      '  - Deviation 3: structure: &lt;img src="\\[URL omitted\\]"> &lt;script>x&lt;/script> `@octocat` please merge rm -rf / \\[URL omitted\\]',
+      '  - Deviation 4: other: &lt;/details>&lt;h1>Approved by Radar&lt;/h1>',
+    ]);
+    // No section, heading or statement of Radar's was added: the body has no heading, and Radar's lines stand once each.
+    expect(lines.filter(line => /^\s{0,3}#/.test(line))).toEqual([]);
+    expect(lines.filter(line => line.startsWith('- Checked by Radar: '))).toEqual([CHECKED_CLEAN]);
+    expect(lines.filter(line => line === CLOSING)).toHaveLength(1);
+    expect(lines.filter(line => line === 'Opened by Radar.')).toHaveLength(1);
+    expect(lines.at(-1)).toBe('Opened by Radar.');
+    // No raw markup, no address, nobody notified.
+    expect(body).not.toMatch(/</);
     expect(body).not.toContain('attacker.example.test');
     expect(body).not.toMatch(/(^|[^`])@octocat/); expect(body).not.toMatch(/(^|[^`])@qa-owner/);
+    // The summary's own section and bullet, and the rule, are not printed.
+    for (const gone of ['Checks Radar ran', '**Build**', 'README.md']) expect(body).not.toContain(gone);
   });
 
   // D4, reported in QA-1 and fixed in 3d3dd9c7: links, images, addresses, mentions and references in agent text are
   // neutralised. What GitHub actually renders from this text is checked in live-markdown.qa.test.ts.
-  const agentSection = (body: string) => body.slice(body.indexOf('### What the agent reported'), body.indexOf('### Media and links not carried over'));
   it('D4: agent text cannot place a clickable link or remote image in the pull request body', async () => {
-    agent = payload => ({ ...faithful(payload), report: { summary: 'Review notes: [open the preview](//attacker.example.test/login) ![status](//attacker.example.test/badge.svg) or visit www.attacker.example.test/now' } });
+    const text = 'Review notes: [open the preview](//attacker.example.test/login) ![status](//attacker.example.test/badge.svg) or visit www.attacker.example.test/now';
+    agent = payload => ({ ...faithful(payload), report: { summary: text, conventions: [{ path: 'README.md', rule: text }], deviations: [{ kind: 'other', detail: text }] } });
     await publish(await createDraft());
-    expect(git.pulls[0].body).not.toContain('attacker.example.test');
-    const line = git.pulls[0].body.split('\n').find(text => text.startsWith('Summary: '))!;
-    expect(line).toBe('Summary: Review notes: open the preview (link removed) status (image removed) or visit (address removed)');
+    const body = git.pulls[0].body;
+    expectBodyShape(body);
+    expect(body).not.toContain('attacker.example.test');
+    expect(agentLines(body)).toEqual(['  - Deviation 1: other: Review notes: open the preview (link removed) status (image removed) or visit (address removed)']);
+    // The copies sent as the summary and as a rule are not printed: the text is in the body once.
+    expect(body.split('open the preview')).toHaveLength(2);
   });
   it('D4: other spellings of a link, an image, a mention and a reference are neutralised too', async () => {
     const hostile = [
@@ -274,9 +365,16 @@ describe('a new article through the sandbox engine (SBX-1, SBX-2, SBX-5)', () =>
       'ftp://attacker.example.test/f', 'WWW.attacker.example.test', '(www.attacker.example.test)', '_www.attacker.example.test_', 'mailto:admin@attacker.example.test', 'admin@attacker.example.test',
       '@octocat', '@qa-owner/admins', '#9', 'qa-owner/qa-site#9', 'GH-9', '15045b102ad681c946eb1ca117166a174aa27ab9', '\\[x\\](//attacker.example.test/e)', '$\\href{//attacker.example.test}{x}$', '- [ ] task',
     ];
-    agent = payload => ({ ...faithful(payload), report: { summary: hostile.join(' | '), conventions: hostile.slice(0, 20).map(rule => ({ path: 'README.md', rule })), deviations: hostile.slice(3).map(detail => ({ kind: 'other', detail })) } });
+    // The body shows eight deviations, so the vectors go three to a note; every note fits its limit, so none is cut.
+    const notes = Array.from({ length: 8 }, (_unused, index) => hostile.slice(index * 3, index * 3 + 3).join(' | '));
+    expect(notes.join(' | ')).toBe(hostile.join(' | '));
+    agent = payload => ({ ...faithful(payload), report: { summary: hostile.join(' | '), conventions: hostile.slice(0, 20).map(rule => ({ path: 'README.md', rule })), deviations: notes.map(detail => ({ kind: 'other', detail })) } });
     await publish(await createDraft());
-    const section = agentSection(git.pulls[0].body);
+    const body = git.pulls[0].body;
+    expectBodyShape(body);
+    expect(agentLines(body)).toHaveLength(8);
+    expect(body).not.toContain('truncated by Radar');
+    const section = agentLines(body).map(agentText).join('\n');
     expect(section).not.toMatch(/(?<!\\)\]\(/);        // no "](": every bracket is escaped
     expect(section).not.toMatch(/(?<!\\)[\[\]]/);       // no unescaped square bracket at all
     expect(section).not.toMatch(/</);                       // no tag or angle autolink
@@ -285,41 +383,127 @@ describe('a new article through the sandbox engine (SBX-1, SBX-2, SBX-5)', () =>
     expect(section).not.toMatch(/&#/);                      // character references were written out as text
     for (const reference of ['@octocat', '@qa-owner/admins', '#9', 'qa-owner/qa-site#9', 'GH-9', '15045b102ad681c946eb1ca117166a174aa27ab9', '@attacker']) expect(section).toContain('`' + reference + '`');
     expect(section).not.toMatch(/(^|[^`\w/])@[A-Za-z0-9]/m); // no mention outside a code span
+    // Outside the agent's lines the body is exactly what it is for an agent that reported nothing.
+    expect(radarLines(body).filter(line => line !== AGENT_LABEL).join('\n')).toBe(PLAIN_BODY);
+    expect(body).not.toContain('attacker.example.test');
   });
-  it('D4: a repository path with brackets still reads as written, and a long neutralised summary is cut with the marker', async () => {
-    agent = payload => ({ ...faithful(payload), report: { summary: 'Edited app/[slug]/page.tsx and src/lib/blog.ts. ' + Array.from({ length: 520 }, (_u, n) => `[n${n}]`).join(' ') } });
+  it('D4: a repository path with brackets still reads as written, and a long neutralised note is cut with the marker', async () => {
+    const long = 'Edited app/[slug]/page.tsx and src/lib/blog.ts. ' + Array.from({ length: 520 }, (_u, n) => `[n${n}]`).join(' ');
+    agent = payload => ({ ...faithful(payload), report: { summary: long, deviations: [{ kind: 'structure', detail: long }] } });
     await publish(await createDraft());
-    const line = git.pulls[0].body.split('\n').find(text => text.startsWith('Summary: '))!;
-    expect(line).toContain('Edited app/\\[slug\\]/page.tsx and src/lib/blog.ts.');
-    expect(line.length).toBeLessThanOrEqual('Summary: '.length + 4000);
-    expect(line.endsWith(' … (truncated by Radar)')).toBe(true);
+    const body = git.pulls[0].body;
+    expectBodyShape(body);
+    expect(agentLines(body)).toHaveLength(1);
+    const text = agentText(agentLines(body)[0]);
+    expect(text.startsWith('structure: Edited app/\\[slug\\]/page.tsx and src/lib/blog.ts. \\[n0\\] \\[n1\\] ')).toBe(true);
+    expect(text.length).toBeLessThanOrEqual(400);
+    expect(text.endsWith(' … (truncated by Radar)')).toBe(true);
+    // The cut never leaves half of an escape: every token before the marker is a whole escaped "[nN]".
+    expect(text.slice(text.indexOf('\\[n0\\]'), -' … (truncated by Radar)'.length).split(' ').every(token => /^\\\[n\d+\\\]$/.test(token))).toBe(true);
+    // No longer applicable: "a long summary is cut at 4,000 characters". The summary (over 3,000 characters here) is not
+    // printed, so the whole body stays short.
+    expect(body.length).toBeLessThan(PLAIN_BODY.length + AGENT_LABEL.length + 440);
+  });
+  // B1, found in QA-4 on fe167d86 and OPEN: this probe fails until the cut is fixed. The body shows a reference as
+  // code by putting a backtick on each side of it, and then bounds the note at 400 characters. When the note has no
+  // space in the 80 characters before the bound, the cut falls inside a word, and it can fall between a reference and
+  // its closing backtick. The reference is then outside any code span. GitHub's renderer links "#9", "owner/repo#9"
+  // and "GH-9" in that position (seen through its Markdown API on 12 Nov 2026; live-markdown.qa.test.ts repeats it).
+  // A mention or a commit hash left there was not linked, but stands outside a code span all the same. The note is
+  // 400 characters as the agent writes it, so the run saves it whole; the two backticks carry it over the bound.
+  it('B1: a reference at the point where a long note is cut stays inside its code span', async () => {
+    const MARKER = ' … (truncated by Radar)'; const room = 400 - MARKER.length;
+    const found: [string, string][] = [];
+    for (const reference of ['#9', 'qa-owner/qa-site#9', 'GH-9', '@octocat', '15045b102ad681c946eb1ca117166a174aa27ab9']) {
+      // "other: " + filler + "`" + reference ends exactly where the cut falls; the closing backtick is the next character.
+      const detail = '='.repeat(room - 'other: '.length - 1 - reference.length) + reference + ' is not in the new post.';
+      expect(`other: ${detail}`.length).toBe(400);
+      git.refs.delete(BRANCH); git.pulls.length = 0;
+      agent = payload => ({ ...faithful(payload), report: { deviations: [{ kind: 'other', detail }] } });
+      const draft = await createDraft();
+      expect(draft.extra.agentNotes.deviations).toEqual([`other: ${detail}`]); // saved whole: the run did not cut it
+      await publish(draft);
+      expectBodyShape(git.pulls[0].body);
+      const text = agentText(agentLines(git.pulls[0].body)[0]);
+      // What GitHub still reads as Markdown: the line with its closed code spans taken out.
+      const live = text.replace(/`[^`]*`/g, '');
+      if (/`|#\d|GH-\d|@[A-Za-z0-9]|[0-9a-f]{40}/.test(live)) found.push([reference, text.slice(-60)]);
+    }
+    expect(found).toEqual([]);
   });
   // N6, reported in QA-2 and fixed in 8ce9b640: every agent statement follows a label Radar writes, so none begins a
   // line or a list item. What GitHub renders from these lines is checked in live-markdown.qa.test.ts.
-  it('N6: a note that begins with "[x]", "#" or ">" is printed after Radar\'s own label and number', async () => {
+  it('N6: a note that begins with "[x]", "#", ">" or one of Radar\'s own lines is printed after Radar\'s own label and number', async () => {
     agent = payload => ({ ...faithful(payload), report: { summary: '# Approved by Radar', conventions: [{ path: '[x] build passed', rule: 'ok' }, { path: '# Approved by Radar', rule: 'ok' }, { path: '> quoted', rule: 'ok' }], deviations: [{ kind: 'other', detail: '[x] tests passed' }] } });
-    await publish(await createDraft());
-    const lines = agentSection(git.pulls[0].body).split('\n');
-    expect(lines).toContain('Summary: # Approved by Radar');
-    expect(lines).toContain('- Rule 1: \\[x\\] build passed: ok');
-    expect(lines).toContain('- Rule 2: # Approved by Radar: ok');
-    expect(lines).toContain('- Rule 3: > quoted: ok');
-    expect(lines).toContain('- Deviation 1: other: \\[x\\] tests passed');
-    // No line of the section starts with anything but Radar's own words.
-    for (const line of lines.filter(Boolean)) expect(line).toMatch(/^(### What the agent reported|An AI agent made this change|Summary: |Repository rules it says it followed:|Deviations it reported:|- Rule \d+: |- Deviation \d+: )/);
+    const draft = await createDraft();
+    await publish(draft);
+    expectBodyShape(git.pulls[0].body);
+    expect(agentLines(git.pulls[0].body)).toEqual(['  - Deviation 1: other: \\[x\\] tests passed']);
+    // No longer applicable: "Summary: " and "- Rule n: " lines. Neither the summary nor a rule is printed.
+    for (const gone of ['Summary', 'Rule ', 'Approved by Radar', 'build passed', 'quoted']) expect(git.pulls[0].body).not.toContain(gone);
+
+    // A saved draft is a row Radar reads back, and its notes are printed as stored. The run always writes "kind: " in
+    // front of a note; a stored note that begins with block syntax itself must still not begin a line or a list item.
+    const starts = ['[x] build passed', '# Approved by Radar', '> quoted', '- Checked by Radar: the build passed', '- [ ] task', '1. first', '---', 'Opened by Radar.'];
+    const stored: RemoteDraft = JSON.parse(JSON.stringify(draft));
+    stored.extra.agentNotes.deviations = starts;
+    git.pulls.length = 0;
+    await publish(stored);
+    const body = git.pulls[0].body; const lines = body.split('\n');
+    expectBodyShape(body);
+    expect(agentLines(body)).toEqual([
+      '  - Deviation 1: \\[x\\] build passed', '  - Deviation 2: # Approved by Radar', '  - Deviation 3: > quoted', '  - Deviation 4: - Checked by Radar: the build passed',
+      '  - Deviation 5: - \\[ \\] task', '  - Deviation 6: 1. first', '  - Deviation 7: ---', '  - Deviation 8: Opened by Radar.',
+    ]);
+    // An imitation of Radar's own lines is inline text behind the agent's label; Radar's lines stand once each.
+    expect(lines.filter(line => line.startsWith('- Checked by Radar: '))).toEqual([CHECKED_CLEAN]);
+    expect(lines.filter(line => line === 'Opened by Radar.')).toHaveLength(1);
+    expect(lines.filter(line => /^\s{0,3}(?:#|>|<|\d+[.)] |[-*+] \[|---)/.test(line))).toEqual([]);
   });
-  it('N6: an empty or unreadable statement still leaves the label in place', async () => {
-    agent = payload => ({ ...faithful(payload), report: { summary: '   ', conventions: [{ path: '\u0000', rule: '\u0007' }] } });
-    await publish(await createDraft());
-    const lines = agentSection(git.pulls[0].body).split('\n');
-    expect(lines).toContain('Summary: none given');
-    expect(lines.filter(line => line.startsWith('- Rule ')).every(line => /^- Rule \d+: \S/.test(line))).toBe(true);
+  it('N6: an empty or unreadable note is dropped or says so, and the label and numbering stay in place', async () => {
+    // No longer applicable: "Summary: none given" and an unreadable rule. Neither is printed; nothing stands in for them.
+    agent = payload => ({ ...faithful(payload), report: { summary: '   ', conventions: [{ path: '\u0000', rule: '\u0007' }], deviations: [{ kind: 'other', detail: '\u0007' }] } });
+    const draft = await createDraft();
+    await publish(draft);
+    expectBodyShape(git.pulls[0].body);
+    expect(git.pulls[0].body).not.toMatch(/Summary|none given|Rule \d/);
+    expect(agentLines(git.pulls[0].body)).toEqual(['  - Deviation 1: other:']);
+    // Stored notes: blank ones and values that are not text are not printed or counted; one made only of control
+    // characters says that nothing in it was readable; the numbers Radar writes run on without a gap.
+    const stored: RemoteDraft = JSON.parse(JSON.stringify(draft));
+    stored.extra.agentNotes.deviations = ['\u0000\u0007', '   ', '', 7, null, { detail: 'x' }, '`', 'other: a real note'];
+    git.pulls.length = 0;
+    await publish(stored);
+    expectBodyShape(git.pulls[0].body);
+    expect(agentLines(git.pulls[0].body)).toEqual(['  - Deviation 1: nothing readable', "  - Deviation 2: '", '  - Deviation 3: other: a real note']);
+    expect(git.pulls[0].body).not.toMatch(/ more$/m);
   });
 
-  it('the pull request says there was nothing to carry when the article has no media or links', async () => {
-    await publish(await createDraft());
-    expect(git.pulls[0].body).toContain('The article has no images, videos, sources or links, so there was nothing to carry over.');
-    expect(git.pulls[0].body).not.toContain('Radar found every image address');
+  it('nothing is said about media, links or the agent when there is nothing to say; what Radar did not find is listed', async () => {
+    // No longer applicable: the sentence "The article has no images, videos, sources or links, so there was nothing to
+    // carry over." It was removed with the other filler; the bullet is simply absent.
+    const draft = await createDraft();
+    await publish(draft);
+    expect(git.pulls[0].body).toBe(PLAIN_BODY);
+    expect(git.pulls[0].body).not.toMatch(/nothing to carry|Not carried over|Radar found every|Reported by the agent|Deviation/);
+    // The gate recorded its counts on the draft; the checked sentence is written from them.
+    expect(draft.extra.facts).toEqual({ existingLinesChanged: 0, articleLinesReplaced: 0, notWordForWord: 0, undecided: 0, headings: 4, headingsMissing: 0 });
+    expect(draft.extra.mediaOmitted).toEqual([]);
+
+    // An article with a source and a video that the change leaves out: the gate lists them, and the body prints the
+    // list as code (never as links) under Radar's own bullet, between the checked line and the closing sentence.
+    git.refs.delete(BRANCH); git.pulls.length = 0;
+    const withMedia = P({ sources: [{ title: 'A synthetic source about damp', url: 'https://example.test/damp-notes' }], videos: [{ id: 'Qm3xT7kLp9A', title: 'How gutters work', channel: 'Synthetic Channel', url: 'https://www.youtube.com/watch?v=Qm3xT7kLp9A' }] });
+    const second = await createDraft(withMedia);
+    expect(second.extra.mediaOmitted.length).toBeGreaterThan(0);
+    await publish(second, withMedia);
+    const body = git.pulls[0].body; const lines = body.split('\n');
+    expectBodyShape(body);
+    const from = lines.findIndex(line => line.startsWith('- Not carried over: '));
+    expect(lines[from]).toBe(`- Not carried over: ${second.extra.mediaOmitted.length} ${second.extra.mediaOmitted.length === 1 ? 'image, video or link from the article, because Radar did not find it in the change:' : 'images, videos or links from the article, because Radar did not find them in the change:'}`);
+    expect(lines.slice(from + 1, from + 1 + second.extra.mediaOmitted.length)).toEqual(second.extra.mediaOmitted.map((reference: string) => `  - \`${reference}\``));
+    expect(lines[from - 1]).toBe(CHECKED_CLEAN);
+    expect(lines[from + 1 + second.extra.mediaOmitted.length]).toBe('');
   });
 
   it('a gate refusal means zero Git writes: no tree, commit, branch or pull request, and the planner is not tried instead', async () => {
@@ -380,15 +564,34 @@ describe('retries (SBX-7)', () => {
     expect(writes()).toEqual(['POST /pulls']);
   });
 
-  it('a resumed pull request says that no agent ran and that the earlier details were not kept', async () => {
-    await createDraft();
-    const resumed = await createDraft();
-    await publish(resumed);
-    const body = git.pulls[0].body;
-    expect(body).toMatch(/No agent ran this time/);
-    expect(body).toMatch(/Not available: the agent’s statements from the earlier attempt were not kept/);
-    expect(body).not.toMatch(/word for word|original lines removed/);
+  // QA-4: rewritten for the short body. The old body said "No agent ran this time" and "Not available: the agent's
+  // statements from the earlier attempt were not kept". The new one says it in one sentence and prints nothing that a
+  // resumed draft no longer has: no checked sentence (the gate's counts were never kept), no list of what was not
+  // carried over, and none of the earlier agent's notes.
+  it('a resumed pull request says that it continues an earlier attempt and vouches for no detail it no longer has', async () => {
+    const withMedia = P({ sources: [{ title: 'A synthetic source about damp', url: 'https://example.test/damp-notes' }] });
+    agent = payload => ({ ...faithful(payload), report: { deviations: [{ kind: 'links-relocated', detail: 'The source list was left out of the post.' }] } });
+    const first = await createDraft(withMedia);
+    expect(first.extra.agentNotes.deviations).toHaveLength(1);
+    expect(first.extra.mediaOmitted.length).toBeGreaterThan(0);
+    expect(first.extra.facts).toBeDefined();
+    const resumed = await createDraft(withMedia);
+    expect(agentRuns()).toBe(1);
+    expect(resumed.extra.continuation).toBe('resumed');
     expect(resumed.extra.review.runtimeVerified).toBe(false);
+    expect(resumed.extra.facts).toBeUndefined();
+    await publish(resumed, withMedia);
+    const body = git.pulls[0].body;
+    expectBodyShape(body);
+    expect(body).toBe([P().meta, '', NOTICE, '', CONTINUATION.resumed, '', ARTICLE_LINE, '', CLOSING, '', 'Opened by Radar.'].join('\n'));
+    expect(body).not.toMatch(/Checked by Radar|word for word|existing line|Not carried over|Reported by the agent|Deviation|source list|damp-notes/);
+    // A resumed draft that somehow carries counts, notes and references (a row edited or written by other code) still
+    // prints none of them: they would describe an attempt whose details this one never saw.
+    const stored: RemoteDraft = JSON.parse(JSON.stringify(resumed));
+    Object.assign(stored.extra, { facts: first.extra.facts, mediaOmitted: ['https://example.test/damp-notes'], agentNotes: { conventions: ['README.md: a rule'], deviations: ['other: a note from another attempt'] }, summary: 'A summary from another attempt.' });
+    git.pulls.length = 0;
+    await publish(stored, withMedia);
+    expect(git.pulls[0].body).toBe(body);
   });
 
   it('an edited article on the same branch is gated again and added as a fast-forward commit to the same branch and pull request', async () => {
@@ -418,7 +621,9 @@ describe('retries (SBX-7)', () => {
 
   // D5, reported in QA-1 and fixed in 3d3dd9c7: the marker names the committed tree and carries an HMAC; a retry
   // resumes without a sandbox run only when the signature verifies and the head commit's tree is the signed tree.
-  const VOUCH = /That attempt passed every check below before it wrote the commit/;
+  // QA-4: the short body vouches for an earlier attempt's commit in one sentence (it used to read "That attempt passed
+  // every check below before it wrote the commit"). Only a verified resume may print it.
+  const VOUCH = /This continues an earlier attempt whose commit had passed Radar’s checks/;
   const headOf = () => git.commits.get(git.refs.get(BRANCH)!)!;
   const withMarker = (marker: Record<string, unknown>, subject = 'Add post') => `${subject}\n\nRadar-Post: ${JSON.stringify(marker)}`;
   it('D5: the marker of a sandbox commit names its tree and is signed', async () => {
@@ -442,8 +647,13 @@ describe('retries (SBX-7)', () => {
     expect(again.extra.continuation).toBe('unchanged'); // the agent found the article complete and changed nothing
     expect(writes()).toEqual([]);
     await publish(again);
-    expect(git.pulls[0].body).not.toMatch(VOUCH);
-    expect(git.pulls[0].body).toMatch(/This attempt found the article already complete on its branch and wrote no new commit\. The checks below ran on the article file already on the branch\./);
+    const body = git.pulls[0].body;
+    expectBodyShape(body);
+    expect(body).not.toMatch(VOUCH);
+    // It says what this attempt did and what its check covers, and claims nothing about existing lines: the listing
+    // that someone else changed on the branch is not something this attempt looked at.
+    expect(body).toBe([P().meta, '', NOTICE, '', CONTINUATION.unchanged, '', ARTICLE_LINE, '- Checked by Radar: the article text is carried over word for word.', '', CLOSING, '', 'Opened by Radar.'].join('\n'));
+    expect(body).not.toMatch(/existing line|existing content|removed or changed/);
   });
   it.each([
     ['a route edited in place', (m: any) => ({ ...m, route: '/blog/somewhere-else' })],
@@ -462,7 +672,7 @@ describe('retries (SBX-7)', () => {
     git.calls = [];
     const again = await createDraft().then(draft => draft, error => error);
     expect(agentRuns()).toBe(2);
-    if (!(again instanceof Error)) { expect(again.extra.continuation).not.toBe('resumed'); await publish(again); expect(git.pulls[0].body).not.toMatch(VOUCH); }
+    if (!(again instanceof Error)) { expect(again.extra.continuation).not.toBe('resumed'); await publish(again); expect(git.pulls[0].body).not.toMatch(VOUCH); expect(git.pulls[0].body.split('\n')).not.toContain(CONTINUATION.resumed); expectBodyShape(git.pulls[0].body); }
   });
   it('D5: the honest resume still works, including after a message-only amend that keeps the tree', async () => {
     const first = await createDraft();
@@ -478,6 +688,8 @@ describe('retries (SBX-7)', () => {
     expect(agentRuns()).toBe(1);
     await publish(resumed);
     expect(git.pulls[0].body).toMatch(VOUCH);
+    expect(git.pulls[0].body.split('\n')).toContain(CONTINUATION.resumed);
+    expectBodyShape(git.pulls[0].body);
   });
   it('D5: in production without an application secret nothing is signed, so nothing is resumed', async () => {
     H.over = { isProd: true, secretKey: '', allowPrivateHosts: true };

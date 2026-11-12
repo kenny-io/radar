@@ -119,7 +119,10 @@ describe.skipIf(!ON)('one real draft pull request through the sandbox engine (li
     expect(draft.extra.review.runtimeVerified).toBe(false);
     expect(draft.extra.checks.map((check: any) => check.id).sort()).toEqual([...PUBLISH_CHECK_IDS].sort());
     expect(draft.extra.continuation).toBeUndefined();
-    record.draft = { path: draft.extra.path, slug: draft.extra.slug, route: draft.extra.route, files: draft.extra.files, checks: draft.extra.checks, mediaOmitted: draft.extra.mediaOmitted.length, notRun: draft.extra.notRun };
+    // QA-4: the gate's counts are saved on the draft; the pull request's "Checked by Radar" sentence is written from them.
+    for (const key of ['existingLinesChanged', 'articleLinesReplaced', 'notWordForWord', 'undecided', 'headings', 'headingsMissing']) expect([key, Number.isSafeInteger(draft.extra.facts?.[key]) && draft.extra.facts[key] >= 0]).toEqual([key, true]);
+    expect([draft.extra.facts.articleLinesReplaced, draft.extra.facts.headings]).toEqual([0, BLOCKS.filter(block => block[0] === 'h2' || block[0] === 'h3').length]);
+    record.draft = { path: draft.extra.path, slug: draft.extra.slug, route: draft.extra.route, files: draft.extra.files, checks: draft.extra.checks, facts: draft.extra.facts, mediaOmitted: draft.extra.mediaOmitted.length, deviations: draft.extra.agentNotes.deviations.length, notRun: draft.extra.notRun };
 
     expect(runLines).toHaveLength(1);
     expect(runLines[0]).toMatchObject({ entry: p.entryId, destroyed: true, outcome: 'integrated' });
@@ -173,16 +176,45 @@ describe.skipIf(!ON)('one real draft pull request through the sandbox engine (li
     const body: string = pr.body;
     await mkdir(OUT, { recursive: true });
     await writeFile(path.join(OUT, `pr-${RUN}.body.md`), body + '\n', { mode: 0o600 });
-    const section = (title: string) => { const from = body.indexOf(`### ${title}`); expect(from, title).toBeGreaterThan(-1); const next = body.indexOf('\n### ', from + 4); return body.slice(from, next < 0 ? undefined : next); };
-    expect(body).toMatch(/\*\*Draft for review\.\*\* The article is not live\. Radar did not install dependencies, build, lint, test or preview this repository/);
-    const checked = section('Checks Radar ran');
-    expect(checked.match(/^- \*\*/gm)).toHaveLength(8);
-    expect(checked).not.toMatch(/\b(build|lint|tests?|preview|deploy)\w* (passed|succeeded|ok|green)/i);
-    expect(section('What the agent reported (not verified by Radar)')).toMatch(/It could not run anything\. The statements below are its own; Radar did not verify them/);
-    expect(section('Not run')).toContain(SANDBOX_NOT_RUN.map(item => `- ${item}`).join('\n'));
-    for (const file of draft!.extra.files) expect(section('Files')).toContain('`' + file + '`');
+    // QA-4 (12 Nov 2026): expectations rewritten for the short body of 0f89aa2a (architecture section 15). Not run
+    // since the rewrite: this file opens a real pull request. The same shape is checked without a network in
+    // connector.qa.test.ts and pr-body.qa.test.ts, and against GitHub's renderer in live-markdown.qa.test.ts.
+    const lines = body.split('\n');
+    const AGENT_LABEL = '- Reported by the agent that made the change (not verified by Radar):';
+    const CLOSING = 'Radar did not build or run the site. Check the article on the deployment preview before merging.';
+    // The description, the draft notice, one list, the closing sentence. No heading anywhere.
+    expect(lines.slice(0, 3)).toEqual([p.meta, '', `**Draft for review.** The article is not live. Scheduled for ${p.date}.`]);
+    expect(lines).toContain(`- Article: \`${draft!.extra.path}\`, expected at \`${draft!.extra.route}\``);
+    expect(lines.slice(-4)).toEqual(['', CLOSING, '', 'Opened by Radar.']);
+    expect(lines.filter(line => /^ {0,3}#/.test(line))).toEqual([]);
+    // What Radar checked: one sentence written from the gate's counts. A first attempt at a new article removed no
+    // existing line, and the sentence names no build, lint, test, preview or runtime result.
+    const checked = lines.filter(line => line.startsWith('- Checked by Radar: '));
+    expect(checked).toHaveLength(1);
+    expect(checked[0]).toMatch(/^- Checked by Radar: no existing line was removed/);
+    expect(checked[0]).not.toMatch(/build|lint|tests?\b|preview|deploy|runtime|install|verified/i);
+    // What the agent says: its deviations only (at most eight), each one line behind Radar's "Deviation n:", in one
+    // run directly under the label that says Radar did not verify them. No label when it reported none.
+    const agent = lines.flatMap((line, index) => (/^ {2}- Deviation \d+: \S/.test(line) ? [index] : []));
+    const shown = Math.min(draft!.extra.agentNotes.deviations.length, 8);
+    expect(agent).toHaveLength(shown);
+    expect(lines.filter(line => line === AGENT_LABEL)).toHaveLength(shown ? 1 : 0);
+    if (shown) expect(agent).toEqual(agent.map((_unused, n) => lines.indexOf(AGENT_LABEL) + 1 + n));
+    expect(lines.filter(line => /^ {2}- and \d+ more$/.test(line)).length).toBe((draft!.extra.agentNotes.deviations.length > 8 ? 1 : 0) + (draft!.extra.mediaOmitted.length > 10 ? 1 : 0));
+    // What Radar did not find in the change is listed as code, and only when there is something to list.
+    expect(lines.some(line => line.startsWith('- Not carried over: '))).toBe(draft!.extra.mediaOmitted.length > 0);
+    // Every line that is not the agent's is one Radar wrote, and none of them reports a result of something not run.
+    const radar = lines.filter((line, index) => !agent.includes(index) && line !== p.meta && line !== CLOSING && line !== AGENT_LABEL && !line.startsWith('- Article: ') && !/^ {2}- `[^`]*`$/.test(line));
+    expect(radar.join('\n')).not.toMatch(/build|lint|tests?\b|preview|deploy|runtime|install|verified/i);
+    // The agent's summary, the rules it says it followed, the per-check list and the "Not run" and "Files" lists are
+    // saved on the draft for operators and are not printed.
+    expect(body).not.toMatch(/^(?:Summary: |- Rule \d+: |- \*\*)/m);
+    expect(body).not.toMatch(/Checks Radar ran|What the agent reported|Not run|bytes \(limit/);
+    expect(draft!.extra.notRun).toEqual([...SANDBOX_NOT_RUN]);
+    expect(typeof draft!.extra.summary).toBe('string');
+    expect(body.length).toBeLessThan(8 * 440 + 10 * 310 + 1500);
     for (const secret of [token, process.env.DAYTONA_API_KEY!, process.env.RADAR_PUBLISH_CAPABILITY_SECRET!, 'rdrcap1.']) expect(body.includes(secret)).toBe(false);
-    record.pr = { number: prNumber, state: pr.state, draft: pr.draft, base: pr.base.ref, commits: pr.commits, changedFiles: pr.changed_files, bodyChars: body.length };
+    record.pr = { number: prNumber, state: pr.state, draft: pr.draft, base: pr.base.ref, commits: pr.commits, changedFiles: pr.changed_files, bodyChars: body.length, deviationsShown: shown };
   });
 
   it('a retry for the same entry runs no sandbox, writes no commit and opens no second pull request (SBX-7)', async () => {
