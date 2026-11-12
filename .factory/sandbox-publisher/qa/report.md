@@ -115,3 +115,65 @@ Next dev server with `RADAR_DEV_STUBS=1`, a throwaway local Postgres 15 cluster 
 ## Files
 
 Probes, live scripts and browser scripts are in this directory; evidence is in `evidence/` (logs, `live-replays-summary.json`, `live-pr-record.json`, browser results and screenshots of the local stub-data app). Redacted live records and PR bodies are in the git-ignored `.data/sandbox-publisher/qa/`.
+
+---
+
+# QA-2 report: recheck of the fixes on `3d3dd9c7`
+
+Written by the PM from the QA specialist's handback. Tested revision `3d3dd9c797cd7379f9440457c11237391e16c91c`, 12 Nov 2026. Only this directory changed; probes and evidence committed as `0ef0adad`.
+
+**Verdict: D3, D4 and D5 fixed; D1 and D2 partly fixed; no blocker or major defect; six new minor findings (N1 to N6). The two live replays did not run** because Daytona could not start sandboxes during the window. QA recommends accepting for merge with the switch off, and not turning the switch on for anyone until the two replays pass on the final revision.
+
+## Verdict per defect
+
+| Defect | Verdict | Evidence |
+| --- | --- | --- |
+| D1 peer content | Partly fixed | A first attempt refuses deletion, in-place replacement, swapping, moving, a twin in another hunk, truncation, small-file replacement and the title rewrite. Honest appends pass in 10 registry shapes. Gaps: N1, N2 |
+| D2 fidelity | Partly fixed | A word or sentence inserted inside a paragraph or list item is refused (6 variants). 11 inline markup forms and 6 of Radar's own exports of a special-character article pass word for word. Gap: N3 |
+| D3 summary cut | Fixed | 3,089 and 4,000 character summaries arrive whole; a long note is cut at a word boundary with the marker. Secrets placed past character 2,900 are redacted. Default `sanitizeDiagnostic` output is byte-identical to `2ded10aa` on a 27-case corpus |
+| D4 links in agent text | Fixed as specified | 53 PR bodies built by the product from 49 hostile vectors, rendered by GitHub's Markdown API: no anchor or image in the agent section, no mention, issue or commit link. Un-neutralised, the same vectors rendered 24 such tags, 2 mentions and 5 references. New minor: N6 |
+| D5 resume marker | Fixed | A copied marker on a later commit, an edited route, tree or signature, a missing field, a pre-fix marker and a signature from another key are not resumed. The honest resume works, including after a message-only amend. Checked against QA's GitHub model only (no GitHub writes this round) |
+
+## New findings (all minor)
+
+- **N1**: on a retry or legacy migration the article file keeps the older rule (removed ≤ 3 × added + 40). When that file is a shared registry, a retry that deletes three peer records passes.
+- **N2**: an altered line may gain any text and added lines are not examined. Six records commented out with `//` pass as "6 altered, 0 removed"; an appended `posts.splice(0, 30)` passes with "0 altered, 0 removed". A line rule cannot close the pure-addition part.
+- **N3**: words placed before or after a paragraph, list item or heading pass as fully word for word. "Do not " in front of a list item reverses it with no disclosure.
+- **N4**: honest edits the stricter rule refuses: a "latest post" pointer whose value is over half its line, a hand-kept "latest three" list that drops its oldest entry, a trailing blank line dropped while appending. Each gets the one repair round with an accurate reason.
+- **N5**: a failed or timed-out create leaves a sandbox the attempt neither deletes nor reports. The next attempt's sweep throws on sandboxes in `creating`, failing that attempt before it creates anything. Seen live three times.
+- **N6**: a convention note whose path begins `[x] build passed` renders as a ticked task box on GitHub. A note beginning `#` or `>` renders as a heading or quote, so a Radar heading can be imitated inside the agent's list; nothing links out.
+
+Also: `probe.live.test.ts` has no hook timeout, so a create slower than 10 s strands its sandbox. A rich-text format that splits a paragraph into marked spans is now refused; none of the live repositories uses one.
+
+PM rulings: fix N1, N3, N5, N6 (ENG-7); accept N2 and N4 for v1 and record them in `architecture.md` section 15.
+
+## Baseline on `3d3dd9c7`
+
+| Command | Result |
+| --- | --- |
+| `npm run typecheck` | clean |
+| `npx vitest run src/server/services/publishing src/server/observability src/server/ai` | 1,423 passed, 60 skipped, 1 failed |
+| `npm test` | 2,281 passed, 557 skipped, 1 failed |
+| `npm run build` | compiled successfully |
+| Offline QA suite | 289 passed, 23 skipped (live files) |
+| `live-markdown.qa.test.ts` | 5 passed |
+
+The one failure is the pre-existing `src/server/ai/openrouter.qa.test.ts`. Five `it.fails` mark N1, N2, N3, N5 and N6.
+
+## Live replays: blocked
+
+| Attempt (UTC) | Case | Outcome | Model calls | Cost |
+| --- | --- | --- | --- | --- |
+| 02:15 | LivedHQ new article, `a44ccfb4` | `sandbox-unavailable`: sandbox "failed to start with status: error … statement timeout" | 0 | 0 |
+| 02:16 | thally-website new article, `c9a3b859` | `sandbox-unavailable`: create did not finish in 120 s | 0 | 0 |
+| 02:55 | LivedHQ again | `sandbox-unavailable`: create did not finish in 120 s | 0 | 0 |
+
+No repository content was uploaded and no agent ran. Indirect evidence only: all six accepted runs on `2ded10aa` altered 0 existing lines and were 100% word for word, so those outputs would pass the stricter rules unchanged.
+
+Sandboxes: 4 created, 1 deleted. Three stayed in `creating` and could not be deleted by QA (`b86705e4`, `c5ad7237`, `60d17fc9`; all `workload=radar-publisher`, holding no upload, capability or repository content).
+
+## Not verified in QA-2
+
+- Honest work on real repositories under the stricter gate (the two replays).
+- The signed-marker resume against real GitHub.
+- Everything listed as not verified in QA-1.

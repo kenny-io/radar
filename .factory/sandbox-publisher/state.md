@@ -1,6 +1,6 @@
 # State
 
-Repository: worktree `.claude/worktrees/radar-post-publishing-cec2ae`, branch `kenny-dev/radar-post-publishing-cec2ae`, base `main` `51cc99bc`. Last integrated revision: `94d23f65` (ENG-0 foundation; nothing calls it yet).
+Repository: worktree `.claude/worktrees/radar-post-publishing-cec2ae`, branch `kenny-dev/radar-post-publishing-cec2ae`, base `main` `51cc99bc`. Last integrated revision: see the newest history section below.
 
 File ownership per task is the table in `architecture.md` section 12; no file has two writers. Engineers do not commit; the PM commits at integration points.
 
@@ -9,15 +9,19 @@ File ownership per task is the table in `architecture.md` section 12; no file ha
 | PM-1 diagnosis, brief, baseline | PM | none | verified | all |
 | ARCH-1 port design from Thally's Daytona agent | factory-architect | PM-1 | verified (PM review, decisions in `brief.md`) | SBX-1 to SBX-11 |
 | ENG-0 contracts and configuration | factory-engineer | ARCH-1 | verified (PM reran typecheck and publishing suite: 465 pass, 51 skip) | SBX-9 |
-| ENG-1 runner image and snapshot script | factory-engineer | ENG-0 | planned (dispatched then stopped at the pause; wrote no files) | SBX-2, SBX-3 |
-| ENG-2 capability and model proxy | factory-engineer | ENG-0 | planned (dispatched then stopped at the pause; wrote no files) | SBX-2, SBX-9 |
-| ENG-3 gate and fidelity | factory-engineer | ENG-0 | planned (dispatched then stopped at the pause; wrote no files) | SBX-1, SBX-4 |
-| ENG-4 provider and orchestration | factory-engineer | ENG-0 | planned (dispatched then stopped at the pause; wrote no files) | SBX-2, SBX-3, SBX-6 |
-| ENG-5 connector integration, lifecycle, docs, live tests | factory-engineer | ENG-1 to ENG-4 | planned | SBX-5, SBX-7, SBX-8, SBX-11 |
-| QA-1 independent verification | factory-qa | ENG-5 integrated | planned | SBX-1 to SBX-10 |
-| PM-2 PR and handoff | PM | QA-1 | planned | SBX-10, SBX-11 |
+| ENG-1 runner image and snapshot script | factory-engineer | ENG-0 | verified (`11591094`, SDK pin `3b024ae8`; live probe and runs) | SBX-2, SBX-3 |
+| ENG-2 capability and model proxy | factory-engineer | ENG-0 | verified (`165bb4dc`; deployed proxy checked by QA-1) | SBX-2, SBX-9 |
+| ENG-3 gate and fidelity | factory-engineer | ENG-0 | verified (`a8519f0a`, `bb5be86d`; tightened in ENG-6) | SBX-1, SBX-4 |
+| ENG-4 provider and orchestration | factory-engineer | ENG-0 | verified (`c961594e`) | SBX-2, SBX-3, SBX-6 |
+| ENG-5 connector integration, lifecycle, docs, live tests | factory-engineer | ENG-1 to ENG-4 | verified (`4db46f63`, `42bce097`, `2ded10aa`) | SBX-5, SBX-7, SBX-8, SBX-11 |
+| QA-1 independent verification | factory-qa | ENG-5 integrated | done on `2ded10aa` (`2f10ee5f`): no blocker or major, minor D1 to D5 | SBX-1 to SBX-10 |
+| ENG-6 fixes for D1 to D5 | factory-engineer | QA-1 | verified by QA-2 (`3d3dd9c7`): D3, D4, D5 fixed; D1, D2 partly (N1, N3) | SBX-1, SBX-4, SBX-5, SBX-7 |
+| QA-2 recheck of the fixes | factory-qa | ENG-6 | done on `3d3dd9c7` (`0ef0adad`): minor N1 to N6; live replays blocked by a Daytona incident | SBX-1, SBX-4 to SBX-7 |
+| ENG-7 fixes for N1, N3, N5, N6 | factory-engineer | QA-2 | in progress | SBX-1, SBX-4, SBX-5, SBX-6 |
+| QA-3 recheck and live replays on the final revision | factory-qa | ENG-7 | planned | SBX-1, SBX-4 to SBX-8 |
+| PM-2 PR and handoff | PM | QA-3 | planned | SBX-10, SBX-11 |
 
-Blockers: none for ENG-0 to ENG-4. Snapshot build and every live sandbox test (ENG-1 development snapshot, ENG-5 probe, smoke and replay, QA live checks) wait on the owner: Daytona organization, key and tier; a publicly reachable model proxy (new Railway service); permission to use the local Daytona key.
+Blockers: none on the owner's side for development (Daytona organization, key, tier and the model proxy were settled on 12 Nov, see below). Open: live replays on the final revision need Daytona to start sandboxes again. Merge, production variables, deployment and retrying the failed entry wait for the owner's go-ahead.
 
 ENG-0 contract additions accepted by the PM: `RADAR_PUBLISH_SANDBOX_MAX_CALLS`, `RUNNER_ENV.model` (`RADAR_AGENT_MODEL`), `mediaOmitted` on the integration and draft shapes, `transcriptDir` on the config, `RUNNER_COMMANDS` with the exit-code rule; invalid caps count as unconfigured. Known pre-existing failure outside this feature: `src/server/ai/openrouter.qa.test.ts` golden snapshot fails identically on clean `51cc99bc`.
 
@@ -106,3 +110,17 @@ PM decision: keep `claude-opus-5-5`; move `@anthropic-ai/claude-agent-sdk` to ex
 - LivedHQ replay (`livedhq-new-registry`, pinned `a44ccfb4`) started by the PM.
 
 Open follow-ups: provider error text is reduced to `AgentApiError:<status>` in `result.json` (ENG-5 defect 2), fix after the live runs since runner scripts are read per run; `SandboxDraftExtra` lacks `continuation` in `types.ts` (ENG-5 defect 5); SDK 0.3.312 retries a 400 up to three times.
+
+## Follow-up fix, QA-1 and ENG-6 (12 Nov 2026)
+
+- `2ded10aa` keeps the provider's error message when an agent run fails (`providerError` in the runner result) and adds `continuation` to `SandboxDraftExtra`. Both ENG-5 follow-ups above are closed.
+- LivedHQ new-article replay accepted on `42bce097`: 94.9 s, 12 model calls, 0.4693 USD; `posts.ts` 186,081 to 190,530 bytes, 0 of 2,528 original lines altered, 73 added, 19 of 19 units word for word.
+- QA-1 on `2ded10aa` (report in `qa/report.md`, probes and evidence committed as `2f10ee5f`): every criterion passed; five minor defects D1 to D5; five live agent runs accepted (1.17 USD); one real draft PR on `kenny-io/radar-connector-test` (pull 9, closed, branch deleted); 15 sandboxes all deleted; browser smoke 15 of 15.
+- ENG-6 fixed D1 to D5 in `3d3dd9c7` and added `architecture.md` section 15. PM rerun before the commit: typecheck clean; `npx vitest run src/server/services/publishing src/server/observability` 1,081 passed, 60 skipped.
+
+## QA-2 and ENG-7 (12 Nov 2026)
+
+- QA-2 on `3d3dd9c7` (probes and evidence `0ef0adad`, results appended to `qa/report.md`): D3, D4, D5 fixed; D1 and D2 partly fixed. New minor findings N1 (retry path keeps the old peer rule), N2 (added text is not judged), N3 (words at the edge of a unit), N4 (three honest edits now refused), N5 (a failed create strands a sandbox and the next sweep fails on it), N6 (agent note renders as a task box, heading or quote). Baseline: typecheck clean; publishing, observability and AI suites 1,423 passed, 60 skipped, 1 failed (pre-existing `openrouter.qa.test.ts`); `npm test` 2,281 passed, 557 skipped, same 1 failed; build compiles; QA offline suite 289 passed, 23 skipped. PM reran the QA offline suite: same counts.
+- The two live replays did not run. Daytona could not start sandboxes between 02:15 and at least 03:15 UTC; three attempts ended `sandbox-unavailable` with 0 model calls and no upload. Three sandboxes stuck in `creating` (`b86705e4`, `c5ad7237`, `60d17fc9`, all `workload=radar-publisher`, holding nothing) could not be deleted; the PM is retrying.
+- PM decisions: fix N1, N3, N5 and N6 now (ENG-7); accept N2 and N4 for v1 and record them in `architecture.md` section 15. Release-ready needs the two replays accepted on the final revision.
+
