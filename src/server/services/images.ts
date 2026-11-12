@@ -1,7 +1,9 @@
 // Image generation (02-system.md §7 Images). Server renders brand templates ("Branded graphic", "Infographic") with
 // @napi-rs/canvas; "Photography" / "Illustration" use an image model when configured: OpenRouter (if OPENROUTER_API_KEY),
 // then the OpenAI Images API, then xAI. Exact sizes per use (cover-cropped).
-// Without an image model configured, Photography/Illustration fall back to the brand template (DIVERGENCES).
+// Without an image model configured, Photography/Illustration fall back to the brand template (DIVERGENCES), and the
+// result says so (`placeholder`) so an article cover can be marked. A strict request (`modelRequired`: custom
+// directions, article body images, a cover a person asked to regenerate) never falls back: it throws.
 import path from 'node:path';
 import fs from 'node:fs';
 import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
@@ -12,6 +14,7 @@ import { reportFailure } from '../observability/failures';
 import { OPENROUTER_BASE, openrouterHeaders, openrouterImageModel, openrouterDown, markOpenrouterDown, openrouterTripped, isOpenrouterAccountError, noteOpenrouterOutcome } from '../ai/adapters/openrouter';
 import { recordAiCall } from '../ai/record';
 import type { Usage } from '../ai/prices';
+import type { ImageIssueReason } from '@/lib/types';
 import { objectKey, putObject } from './storage';
 
 let fontsReady = false;
@@ -23,7 +26,10 @@ function ensureFonts() {
   }
 }
 
-export interface ImageReq { bid: string; style: string; brand: { primary: string; secondary: string }; headline: string; name: string; seed: number; prompt?: string; w: number; h: number; kind?: string; /** Explicit custom requests must never fall back to templates. */ modelRequired?: boolean; /** Ask for a centred subject with spare background (a social pack's shared image, cropped once per platform). */ cropSafe?: boolean }
+export interface ImageReq { bid: string; style: string; brand: { primary: string; secondary: string }; headline: string; name: string; seed: number; prompt?: string; w: number; h: number; kind?: string; /** Never fall back to the template: explicit custom requests, article body images, and a cover a person asked to regenerate. */ modelRequired?: boolean; /** Ask for a centred subject with spare background (a social pack's shared image, cropped once per platform). */ cropSafe?: boolean;
+  /** The prompt is a literal scene direction (article images written by Radar): draw the thing itself, never a
+   *  metaphor. Absent: the prompt every caller gets today, unchanged. */
+  literal?: boolean }
 
 export function renderTemplatePng(r: Omit<ImageReq, 'bid'>): Buffer {
   ensureFonts();
@@ -102,7 +108,18 @@ export const STYLE_PROMPTS: Record<string, string> = {
 /** Styles that go to the image model when one is configured (the rest are brand templates). */
 export const MODEL_STYLES = ['editorial', 'flat', 'render3d', 'handdrawn', 'photography', 'illustration'];
 
-export function imagePrompt(r: Pick<ImageReq, 'style' | 'prompt' | 'headline' | 'name' | 'brand' | 'seed' | 'kind' | 'cropSafe'>): string {
+/** Style texts for literal scenes, where the standard text asks for a metaphor or for abstract objects. */
+export const STYLE_PROMPTS_LITERAL: Record<string, string> = {
+  editorial: 'Editorial illustration with textured shapes, magazine-cover quality, calm and professional',
+  render3d: '3D render with real depth, soft studio lighting and gentle shadows, with glossy glass, soft clay or brushed metal finishes',
+};
+
+export function imagePrompt(r: Pick<ImageReq, 'style' | 'prompt' | 'headline' | 'name' | 'brand' | 'seed' | 'kind' | 'cropSafe' | 'literal'>): string {
+  if (r.literal) {
+    const style = STYLE_PROMPTS_LITERAL[r.style] || STYLE_PROMPTS[r.style] || STYLE_PROMPTS.illustration;
+    const scene = (r.prompt || r.headline).trim().replace(/\s+/g, ' ');
+    return `${style}. Show exactly this scene: ${scene}${/[.!?]$/.test(scene) ? '' : '.'} Draw the real thing described, literally and recognisably, in its setting. Do not replace it with a visual metaphor, symbols, icons or abstract shapes. Made for ${r.name}'s blog. Use the brand colors ${r.brand.primary} and ${r.brand.secondary} as accents where they fit naturally, with realistic, neutral tones elsewhere. Variation ${r.seed}. Any signs, screens or documents in the scene are blank. No words, letters, numbers, logos or watermarks anywhere in the image.`;
+  }
   const style = STYLE_PROMPTS[r.style] || STYLE_PROMPTS.illustration;
   const where = r.kind === 'brief' || r.kind === 'social' ? `${r.name}'s social media post` : `${r.name}'s blog`;
   return `${style}. Subject: ${r.prompt || r.headline}. Made for ${where}. Color palette built around the brand colors ${r.brand.primary} and ${r.brand.secondary}, with neutral tones. Variation ${r.seed}.${r.cropSafe ? ' Keep the main subject in the centre with background to spare on every side, so the image can be cropped.' : ''} No words, letters, numbers, logos or watermarks anywhere in the image.`;
@@ -160,13 +177,17 @@ export async function generatePhoto(r: ImageReq): Promise<Buffer> { return cover
  *  (cropped here to this file's size), or 'template' when that one generation failed. */
 export type ImageSource = { raw: Buffer } | 'template';
 
+export interface RenderedImage { url: string; bytes: number; type: string;
+  /** A model style was asked for and the brand template was stored instead. */
+  placeholder?: ImageIssueReason }
 /** Render or generate a visual and store it. Returns the public URL plus the stored file's size and type (social posting
  *  checks them against each platform's limits without fetching the file). With `from`, no image model is asked: the
- *  file is cut from the shared image, or is the brand template. An explicit custom request (`modelRequired`) ignores it. */
-export async function renderImageFile(r: ImageReq, from?: ImageSource): Promise<{ url: string; bytes: number; type: string }> {
+ *  file is cut from the shared image, or is the brand template. An explicit custom request (`modelRequired`) ignores it.
+ *  `placeholder` is set only when no `from` was given, the style is a model style, and the template was stored. */
+export async function renderImageFile(r: ImageReq, from?: ImageSource): Promise<RenderedImage> {
   let operation = 'image.render';
   try {
-    let png: Buffer;
+    let png: Buffer; let placeholder: ImageIssueReason | undefined;
     if (r.modelRequired) {
       operation = 'image.generate';
       if (!imageModelConfigured()) throw new RadarError('Image generation is unavailable right now. Please contact support to enable it.', 503, 'image_unavailable');
@@ -182,11 +203,17 @@ export async function renderImageFile(r: ImageReq, from?: ImageSource): Promise<
         // Includes decoding/cropping errors after an otherwise successful provider call.
         await reportFailure(e, { source: 'image', operation: 'image.generate', businessId: r.bid, degraded: true });
         console.error('[images] generation failed, using template', e.message); png = renderTemplatePng(r);
+        // Every configured account is blocked, or a provider was asked and did not deliver.
+        placeholder = e?.code === 'image_unavailable' ? 'unavailable' : 'failed';
       }
-    } else png = renderTemplatePng(r);
+    } else {
+      png = renderTemplatePng(r);
+      // A model style with no image model to ask (no keys, or dev stubs).
+      if (MODEL_STYLES.includes(r.style)) placeholder = 'unavailable';
+    }
     operation = 'image.store';
     const url = await putObject(objectKey(r.bid, r.kind || 'images', 'png'), png, 'image/png');
-    return { url, bytes: png.length, type: 'image/png' };
+    return { url, bytes: png.length, type: 'image/png', ...(placeholder ? { placeholder } : {}) };
   } catch (error) {
     await reportFailure(error, { source: 'image', operation, businessId: r.bid });
     throw error;

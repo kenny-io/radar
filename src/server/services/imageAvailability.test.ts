@@ -96,7 +96,7 @@ describe('image provider account availability', () => {
   });
   it('preserves optional background template fallback when every account is unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => accountResponse(String(url))));
-    await expect(images.renderImageFile({ ...req, style: 'illustration', modelRequired: false })).resolves.toMatchObject({ type: 'image/png' });
+    await expect(images.renderImageFile({ ...req, style: 'illustration', modelRequired: false })).resolves.toMatchObject({ type: 'image/png', placeholder: 'unavailable' });
     expect(M.put).toHaveBeenCalledTimes(1);
   });
 });
