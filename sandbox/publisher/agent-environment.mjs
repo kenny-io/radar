@@ -29,6 +29,13 @@ export const TRANSPORT_VARIABLES = Object.freeze([
 ]);
 
 /**
+ * The most output tokens the client asks for in one model call. Mirrors MODEL_PROXY_LIMITS.maxTokens in
+ * modelProxy.ts; runner.test.ts fails on drift. From SDK 0.3.312 the client asks for 128,000 by default, which the
+ * proxy would silently lower: stating the real ceiling keeps the client's own truncation handling honest.
+ */
+export const AGENT_MAX_OUTPUT_TOKENS = 32_000;
+
+/**
  * Build the agent's model, runtime and trusted sandbox transport environment.
  * @param {Record<string, string | undefined>} environment
  * @returns {Record<string, string | undefined>}
@@ -42,6 +49,10 @@ export function buildAgentEnvironment(environment) {
     // outside that boundary.
     DISABLE_AUTO_COMPACT: '1',
     USE_API_CONTEXT_MANAGEMENT: '0',
+    // From SDK 0.3.312 the client adds a sixth, deferred placeholder tool definition for tool search. There are no
+    // MCP tools to search for here, and the wire tool list must stay exactly the five file tools.
+    ENABLE_TOOL_SEARCH: 'false',
+    CLAUDE_CODE_MAX_OUTPUT_TOKENS: String(AGENT_MAX_OUTPUT_TOKENS),
     PATH: environment.PATH,
     HOME: environment.HOME,
   };

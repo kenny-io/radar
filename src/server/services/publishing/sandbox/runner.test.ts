@@ -10,7 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { buildAgentEnvironment, TRANSPORT_VARIABLES } from '../../../../../sandbox/publisher/agent-environment.mjs';
+import { AGENT_MAX_OUTPUT_TOKENS, buildAgentEnvironment, TRANSPORT_VARIABLES } from '../../../../../sandbox/publisher/agent-environment.mjs';
 import {
   buildBaseline, describePreparationFailure, EXIT, extractArchive, gitBlobSha1, isUnsafeArchivePath, PREPARE_LIMITS,
   prepareError, prepareWorkspace, SESSION_FILE, writeBaseline,
@@ -32,6 +32,8 @@ import {
   RUNNER_SCRIPTS, RUNNER_SOURCE_DIR, RunnerResultSchema, SANDBOX_BUDGET, SANDBOX_PATHS, SANDBOX_USER, TASK_LIMITS,
   WORKSPACE_LIMITS, type ArticlePayloadFile, type PublishTask, type RepairFeedback,
 } from './types';
+// Read-only: the output-token ceiling the proxy enforces, compared with what the runner tells the client.
+import { MODEL_PROXY_LIMITS } from './modelProxy';
 
 const REPOSITORY_ROOT = resolve(__dirname, '../../../../..');
 const RUNNER_DIR = join(REPOSITORY_ROOT, RUNNER_SOURCE_DIR);
@@ -118,13 +120,13 @@ describe('contract constants', () => {
     expect(dockerfile.split('\n').filter(line => !line.startsWith('#')).join('\n')).not.toMatch(/\b(?:git|curl|wget|jq|sudo)\b/);
 
     const manifest = JSON.parse(readFileSync(join(RUNNER_DIR, 'package.json'), 'utf8'));
-    expect(manifest.dependencies).toEqual({ '@anthropic-ai/claude-agent-sdk': '0.3.251', tar: '7.5.22' });
+    expect(manifest.dependencies).toEqual({ '@anthropic-ai/claude-agent-sdk': '0.3.312', tar: '7.5.22' });
     const lock = JSON.parse(readFileSync(join(RUNNER_DIR, 'package-lock.json'), 'utf8'));
     expect(lock.packages[''].dependencies).toEqual(manifest.dependencies);
-    expect(lock.packages['node_modules/@anthropic-ai/claude-agent-sdk'].version).toBe('0.3.251');
+    expect(lock.packages['node_modules/@anthropic-ai/claude-agent-sdk'].version).toBe('0.3.312');
     expect(lock.packages['node_modules/tar'].version).toBe('7.5.22');
     // The Linux build of the SDK's bundled CLI must be locked, or `npm ci` in the image installs no runtime.
-    expect(lock.packages['node_modules/@anthropic-ai/claude-agent-sdk-linux-x64'].version).toBe('0.3.251');
+    expect(lock.packages['node_modules/@anthropic-ai/claude-agent-sdk-linux-x64'].version).toBe('0.3.312');
   });
 });
 
@@ -740,9 +742,14 @@ describe('prompt and tool policy', () => {
     expect(forwarded).toEqual({
       ANTHROPIC_API_KEY: CAPABILITY, ANTHROPIC_BASE_URL: 'https://proxy.example.test/model', PATH: '/usr/bin', HOME: '/home/radar-agent',
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', DISABLE_AUTO_COMPACT: '1', USE_API_CONTEXT_MANAGEMENT: '0',
+      ENABLE_TOOL_SEARCH: 'false', CLAUDE_CODE_MAX_OUTPUT_TOKENS: '32000',
       HTTP_PROXY: 'http://egress:3128', HTTPS_PROXY: 'http://egress:3128', NO_PROXY: 'localhost', NODE_EXTRA_CA_CERTS: '/etc/ca.pem', SSL_CERT_FILE: '/etc/ca.pem', CURL_CA_BUNDLE: '/etc/ca.pem',
     });
     for (const name of TRANSPORT_VARIABLES) expect(name).toMatch(/proxy|CA|CERT/i);
+    // The client is told the ceiling the proxy enforces, so it never asks for output the proxy would cut.
+    expect(AGENT_MAX_OUTPUT_TOKENS).toBe(MODEL_PROXY_LIMITS.maxTokens);
+    // The caller cannot override either setting from its own environment.
+    expect(buildAgentEnvironment({ ENABLE_TOOL_SEARCH: 'true', CLAUDE_CODE_MAX_OUTPUT_TOKENS: '128000' })).toMatchObject({ ENABLE_TOOL_SEARCH: 'false', CLAUDE_CODE_MAX_OUTPUT_TOKENS: '32000' });
   });
 });
 
