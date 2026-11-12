@@ -36,7 +36,7 @@ function collect(res: any): ProviderResult {
     if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) for (const r of b.content) if (r.url) citations.push({ url: r.url, title: r.title });
   }
   const searches = res.usage?.server_tool_use?.web_search_requests;
-  return { text, json, citations, ...usage, ...(searches ? { searches } : {}) };
+  return { text, json, citations, ...usage, ...(searches ? { searches } : {}), ...(res.stop_reason === 'max_tokens' ? { truncated: true } : {}) };
 }
 
 /** JSON Schema subset accepted by Claude structured outputs: objects closed, no numeric/length bounds, minItems ≤ 1. */

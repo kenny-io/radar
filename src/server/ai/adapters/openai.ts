@@ -18,7 +18,8 @@ function collect(res: any, countSearches = false): ProviderResult {
   }
   if (!text && typeof res.output_text === 'string') text = res.output_text;
   const searches = countSearches ? searchCalls(res.output) : 0;
-  return { text, citations, inputTokens: res.usage?.input_tokens, outputTokens: res.usage?.output_tokens, ...(searches ? { searches } : {}) };
+  const truncated = res.status === 'incomplete' && res.incomplete_details?.reason === 'max_output_tokens';
+  return { text, citations, inputTokens: res.usage?.input_tokens, outputTokens: res.usage?.output_tokens, ...(searches ? { searches } : {}), ...(truncated ? { truncated } : {}) };
 }
 
 export async function openaiRun(c: ProviderCall, cfg: { base: string; key: string }): Promise<ProviderResult> {
