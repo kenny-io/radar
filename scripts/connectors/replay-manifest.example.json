@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "example-new-article",
+      "repository": "OWNER/REPOSITORY",
+      "commitSha": "0000000000000000000000000000000000000000",
+      "hint": "content/posts",
+      "mode": "new",
+      "refreshUrl": null,
+      "articleFile": "articles/example-new-article.json",
+      "businessId": "00000000-0000-4000-8000-000000000000",
+      "expected": "accepted"
+    },
+    {
+      "id": "example-refresh",
+      "repository": "OWNER/REPOSITORY",
+      "commitSha": "0000000000000000000000000000000000000000",
+      "hint": "content/posts",
+      "mode": "refresh",
+      "refreshUrl": "https://www.example.com/blog/an-existing-post",
+      "articleFile": "articles/example-refresh.json",
+      "businessId": "00000000-0000-4000-8000-000000000000",
+      "expected": "accepted"
+    }
+  ]
+}

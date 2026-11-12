@@ -89,3 +89,11 @@ Next action: confirm proxy health and snapshot id, add the id to `.env.local`, d
 - ENG-5 dispatched (connector integration, lifecycle, docs, live probe, smoke and one LivedHQ replay; at most three agent runs). ENG-3 follow-up on the peer-content limit in progress.
 
 ENG-3 follow-up verified by the PM (gate 78 and fidelity 30 tests pass) and committed: for a new article an existing file may have at most 6 original lines removed or altered, 24 across files; refresh keeps the earlier tolerance for files other than the article file. Accepted residual risk: overwriting a small existing record in place (4 changed lines in the engineer's probe) still passes; the removed-or-altered count is printed in the `peer-content` check detail for the PR reviewer.
+
+## First live results and SDK pin (12 Nov 2026)
+
+ENG-5 interim report:
+- Live egress probe test passes 4 of 4 in a real sandbox from `radar-publisher-b30e5aa91f99`: proxy health reachable, four canaries blocked, no worker secret in environment, processes or files, sandbox gone afterwards.
+- Live smoke fails at the first model request, identically twice (13 s, 0 tokens, 0 USD, sandboxes deleted): `API Error: 400 Claude Code 2.1.251 does not support this model; version 2.1.280 or newer is required.` Create, runner install, probe, archive upload, prepare and runner start all worked. This is the risk recorded in `architecture.md` section 13.
+
+PM decision: keep `claude-opus-5-5`; move `@anthropic-ai/claude-agent-sdk` to exactly `0.3.312` (published 2026-10-27; latest is 0.3.322). ENG-1 is bumping the pin and re-verifying options, fences, abort, resume and the request shape against the proxy's rules. Then the PM rebuilds the snapshot and ENG-5 runs the smoke and the LivedHQ replay.

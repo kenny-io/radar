@@ -1,5 +1,7 @@
 // Job + cron definitions for "publishing". Register with defineJob()/defineCron(); imported by src/server/jobs/all.ts.
-//  - job  publish.entry {entryId, manual?}  (ref = entryId) — publish one scheduled entry; up to 3 retries with backoff
+//  - job  publish.entry {entryId, manual?}  (ref = entryId) — publish one scheduled entry; up to 3 retries with backoff.
+//    The queue's timeout is a race that does not cancel the handler, so it must stay above the longest attempt deadline
+//    (the sandbox publisher's, plus its teardown): the attempt's own deadline always ends the work first.
 //  - cron publishing.scheduler (every minute) — at blog.time (business timezone) on entry.date, enqueue scheduled entries
 import { canRun } from '../autopilot/guard';
 import { and, eq, inArray, lte } from 'drizzle-orm';
@@ -9,6 +11,7 @@ import { defineJob, enqueue } from '@/server/jobs/queue';
 import { defineCron } from '@/server/jobs/cron';
 import { addDays, nowHMIn, todayIn } from '@/lib/format';
 import { publishEntry } from './publisher';
+import { SANDBOX_BUDGET } from './sandbox/types';
 
 export const PUBLISH_MAX_ATTEMPTS = 4; // first try + 3 retries
 const BACKOFF = env.devStubs ? [3e3, 6e3, 12e3] : [30e3, 120e3, 480e3];
@@ -17,7 +20,7 @@ defineJob<{ entryId: string; manual?: boolean }>({
   kind: 'publish.entry',
   maxAttempts: PUBLISH_MAX_ATTEMPTS,
   backoffMs: attempt => BACKOFF[Math.min(attempt - 1, BACKOFF.length - 1)],
-  timeoutMs: 5 * 60e3,
+  timeoutMs: SANDBOX_BUDGET.jobTimeoutMs,
   run: async ctx => {
     await ctx.progress({ attempt: ctx.attempt });
     return publishEntry(ctx.payload.entryId, { attempt: ctx.attempt, maxAttempts: ctx.job.maxAttempts, manual: ctx.payload.manual });

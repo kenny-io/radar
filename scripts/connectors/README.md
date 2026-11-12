@@ -88,3 +88,179 @@ The writing-model/provider configuration used by article generation also powers 
 ```sh
 npx vitest run src/server/services/publishing/connectors/nextjs.test.ts src/server/services/publishing/connectors/nextjs-agent.test.ts
 ```
+
+## Sandbox publisher for GitHub (behind a switch)
+
+A second engine for the same job. Instead of the planner reading pasted source, an agent works on a full copy of the
+pinned commit inside a disposable Daytona sandbox, Radar checks what it produced, and the existing transport above
+makes the commit and the draft PR. Design: `.factory/sandbox-publisher/architecture.md`. Code:
+`src/server/services/publishing/sandbox/` (control plane), `sandbox/publisher/` (the scripts that run in the sandbox),
+`src/proxy/main.ts` (model proxy service). It is off unless `RADAR_PUBLISH_SANDBOX` turns it on, and with it off
+nothing in this section runs.
+
+One attempt, in order: delete any sandbox left by an earlier attempt for the entry; create a sandbox from the snapshot
+whose only allowed network host is the model proxy; prove that from inside (proxy health answers, four canary hosts do
+not) before any repository byte is uploaded; download the pinned commit archive with the GitHub token and upload the
+bytes; run the agent with file tools only (Read, Write, Edit, Glob, Grep; no shell, nothing from the repository is
+executed); download the changed files and run the publication gate on them; allow at most one repair turn; delete the
+sandbox; only then write the tree, commit and ref. The sandbox never holds the GitHub token, the Daytona key, a provider
+key, `DATABASE_URL` or `RADAR_SECRET_KEY`. Its one secret is a per-run model capability that expires with the attempt,
+is capped in spend and calls, and is refused by the gate if it appears in any file.
+
+### Configuration
+
+Worker (`worker` service) only, unless a row says otherwise. Values are never logged; a missing or invalid one is
+reported by name.
+
+| Variable | Meaning |
+|---|---|
+| `RADAR_PUBLISH_SANDBOX` | The rollout switch, read on every attempt. Unset, empty or `off`: the planner (the default). `all`: every business. Otherwise a comma-separated list of business ids. `off` anywhere in the value wins. |
+| `DAYTONA_API_KEY` | Daytona API key of an organization on Tier 3 or higher. Lower tiers cannot restrict sandbox egress, and the egress check then fails every attempt. Never on `web` or `model-proxy`. |
+| `RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID` | The runner snapshot's UUID (not its name), from the build script below. |
+| `RADAR_PUBLISH_MODEL_PROXY_URL` | `https://<model-proxy host>/model`. https, no credentials, query or fragment, path ending in `/model`. This host is the sandbox's entire network. |
+| `RADAR_PUBLISH_CAPABILITY_SECRET` | HMAC secret for run capabilities, 32 characters or more. The same value on `worker` and `model-proxy`, and nowhere else. Not derived from `RADAR_SECRET_KEY`. |
+| `RADAR_PUBLISH_SANDBOX_MODEL` | Optional. Catalogue id of an Anthropic model; default `claude-opus-5.5`. The proxy forces this model whatever the sandbox asks for. |
+| `RADAR_PUBLISH_SANDBOX_MAX_USD` | Optional. Spend cap per run, default `6`. |
+| `RADAR_PUBLISH_SANDBOX_MAX_CALLS` | Optional. Model-call cap per run, default `200`. |
+| `RADAR_PUBLISH_SANDBOX_TRANSCRIPT_DIR` | Optional, development and QA only: a local directory for the agent transcript of each run. Ignored when `NODE_ENV=production`. A transcript contains repository source; keep it out of shared storage. |
+
+The `model-proxy` service needs exactly `RADAR_PUBLISH_CAPABILITY_SECRET`, `ANTHROPIC_API_KEY`, `DATABASE_URL` and
+`PORT`, and warns at start if it also holds `RADAR_SECRET_KEY`, `DAYTONA_API_KEY` or `GITHUB_CLIENT_SECRET`.
+
+Switched on with something missing or invalid, publishing does not stop: the attempt uses the planner and reports
+`publishing.sandbox.config` with the variable names (see `docs/OBSERVABILITY.md`).
+
+Timing: a sandbox attempt has one absolute deadline of 13.5 minutes (270 seconds for the planner, unchanged), the
+`publish.entry` job timeout is 16 minutes so the attempt's own deadline always ends the work first, and a sandbox is
+created with a 30-minute hard TTL so one that outlives a killed worker still disappears. A sandbox attempt holds a
+worker slot for its whole duration: raise `WORKER_CONCURRENCY` (default 4) before enabling it for more than a few
+businesses. Worst-case model spend for one entry is the per-run cap times the job's attempts.
+
+### Build and publish the runner snapshot
+
+```sh
+node scripts/operations/build-publisher-snapshot.mjs --dry-run                      # prints the plan; no key, no network
+DAYTONA_API_KEY=… node scripts/operations/build-publisher-snapshot.mjs              # builds or reuses, prints the UUID on stdout
+```
+
+The image is `sandbox/publisher/Dockerfile`: Node 22, ripgrep, the pinned Claude Agent SDK and node-tar under an
+unprivileged user. No git, no credential, no Radar code. The snapshot is named `radar-publisher-<12 hex>` from a digest
+of the Dockerfile, `package.json` and `package-lock.json` in `sandbox/publisher`, so unchanged inputs reuse the
+existing snapshot. Set the printed UUID as `RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID` on the worker and restart it. Build with
+the key of the organization the worker will use: a snapshot belongs to one organization.
+
+Rebuild only when one of those three files changes (for example a new Agent SDK version). The runner scripts
+(`run.mjs`, `prepare.mjs`, `probe.mjs`, `agent-environment.mjs`, `write-scope.mjs`) are not in the image: every attempt
+uploads them from the worker's checkout and verifies their checksums in the sandbox, so a prompt or runner fix ships
+with a normal worker deploy. The worker must therefore be started from the repository root, where `sandbox/publisher/`
+is.
+
+The Agent SDK version and the model are a pair: the provider refuses a model from a client older than the model
+requires (measured 12 Nov 2026: SDK 0.3.251, which embeds Claude Code 2.1.251, is refused for `claude-opus-5-5` with
+"version 2.1.280 or newer is required"). After changing either, run the live smoke below before enabling the switch.
+
+### Run and deploy the model proxy
+
+```sh
+npm run model-proxy            # tsx src/proxy/main.ts; needs the four variables above; exits non-zero and names what is missing
+curl -s http://localhost:$PORT/model/health     # "ok"
+```
+
+In production it is its own Railway service (`model-proxy`) with its own public domain, configured by
+`railway.model-proxy.json`: start command `npm run model-proxy`, health check `/model/health`, one replica. It must not
+share a host with `web`: Daytona restricts sandbox egress by host name, not path, so a shared host would put every
+public Radar route within a sandbox's reach. It serves `POST /model/v1/messages`, `POST /model/v1/messages/count_tokens`
+and `GET /model/health`; everything else is 404. Each request must carry a valid run capability; the proxy forces the
+capability's model, caps `max_tokens`, refuses provider-executed tools, stops a run at its spend or call cap with a
+400 the SDK does not retry, and writes one `ai_calls` row per model call (`purpose = 'github.integration.agent'`). The
+per-run budget is kept in memory, which is why there is exactly one replica: a restart mid-run lets that run spend up
+to its cap once more.
+
+Deploy order for a first rollout: deploy `model-proxy` and confirm its health route; set
+`RADAR_PUBLISH_CAPABILITY_SECRET` on `worker` to the same value (a Railway reference to the proxy's variable keeps them
+equal); build the snapshot; set the worker variables; leave `RADAR_PUBLISH_SANDBOX` unset; run the live probe and smoke
+below against that configuration; then set the switch to a list of business ids.
+
+### Rollout and rollback
+
+Turn it on for chosen businesses with `RADAR_PUBLISH_SANDBOX=<business id>,<business id>` on the worker, then restart
+the worker. `all` enables every GitHub connection.
+
+Rollback is the switch: unset `RADAR_PUBLISH_SANDBOX` (or set it to `off`) on the worker and restart. Attempts already
+running finish or hit their deadline, their sandboxes are deleted or expire by TTL, and there is no data to migrate in
+either direction. Drafts keep working across the switch: a planner draft saved before it was turned on, and a sandbox
+draft saved before it was turned off, still open their PR. A retry that finds its own sandbox commit on the article
+branch for the same article reuses that commit, with the switch on or off, and never opens a second PR. A sandbox
+failure is never retried on the planner inside the same attempt.
+
+### What the pull request says
+
+A sandbox PR keeps three kinds of statement apart.
+
+- **Checks Radar ran**: run by Radar itself on the exact file contents it committed, all passed (a failed check stops
+  before any commit). They are: article identity (slug, article path, route; a retry or refresh keeps them), protected
+  paths (the same write rules as the planner: no CI, dependency manifests, lockfiles, auth or deployment files),
+  regular files only (no link, submodule or special file), size and count limits (at most 16 files, 1 MB each),
+  credential scan, syntax (JSON, JavaScript and TypeScript parse), existing content preserved (how many original lines
+  were removed or altered: for a new article at most 6 per existing file and 24 in all), and article fidelity (every
+  paragraph and list item present once, in order, not shortened or reworded beyond format conversion).
+- **What the agent reported (not verified by Radar)**: the agent's own summary, the repository rules it says it
+  followed and the deviations it declared. These are claims. If the agent writes that a build passed, that sentence
+  appears here and nowhere else; it could not have run one.
+- **Not run**: always the same list: dependency installation, repository build, lint, tests, deployment preview.
+  Nothing from the repository is installed, built or executed, so `runtimeVerified` is false for every sandbox draft.
+
+It also lists **media and links not carried over** (image addresses, video ids, source and link addresses from the
+article that Radar did not find in the changed files, usually because the site's content format has no place for them).
+That is disclosed, not a failure. A PR that continues an existing article branch says so, and a PR resumed from an
+interrupted attempt says that the earlier attempt's details were not kept. As with the planner, the PR is a draft and
+merging it is the reviewer's decision after the repository's own CI and preview.
+
+### Tests
+
+```sh
+npx vitest run src/server/services/publishing/sandbox src/server/services/publishing/connectors/nextjs-sandbox.test.ts
+```
+
+These need no network: Daytona is an in-memory provider with a scripted runner, GitHub is a mocked tree, commit and ref
+state machine, and the gate, capability and orchestration are real.
+
+Live tests use real sandboxes and are skipped unless asked for. Put the worker variables in a git-ignored `.env.local`
+and load it into the test process; vitest does not read it for `process.env`.
+
+```sh
+# Probe: one sandbox, no model call, no repository content, about 15 seconds. Checks that the proxy health route is
+# reachable and the canaries are not, that no worker secret is in the sandbox's environment, processes or files, that a
+# capability does not outlive the exec it was given to, and that the sandbox is gone afterwards.
+RADAR_IT_SANDBOX_PROBE=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run src/server/services/publishing/sandbox/probe.live.test.ts
+
+# Smoke: one short agent run on a three-post synthetic repository. Proves the pinned Agent SDK drives the configured
+# model through the proxy from inside the sandbox. Spends model budget (cents when it works). No GitHub access.
+RADAR_IT_SANDBOX_SMOKE=1 node --env-file=.env.local node_modules/vitest/vitest.mjs run src/server/services/publishing/sandbox/replay.live.test.ts
+
+# Replay: pinned commits of real repositories. Each case is a full agent run and can cost up to the per-run cap.
+mkdir -p .data/sandbox-publisher/articles
+cp scripts/connectors/replay-manifest.example.json .data/sandbox-publisher/replay-manifest.json   # then edit it
+RADAR_IT_REPLAY_MANIFEST=.data/sandbox-publisher/replay-manifest.json RADAR_IT_REPLAY_CASE=<case id> \
+  node --env-file=.env.local node_modules/vitest/vitest.mjs run src/server/services/publishing/sandbox/replay.live.test.ts
+```
+
+A replay reads GitHub with `RADAR_IT_GITHUB_TOKEN`, or with `gh auth token` when that is unset; read access to the
+repository is enough. It cannot write to Git: the harness only issues GET requests and calls the sandbox orchestration
+directly, which has no Git transport. The manifest and its article files live under `.data/` (git-ignored); each case
+names a repository, a full commit SHA, the content-folder hint, the mode, an article file (`title`, `slug`, `meta`,
+`keyword`, `date`, `author`, `blocks` as Radar blocks: `["p", text]`, `["h2", text]`, `["h3", text]`,
+`["ul", [items]]`), the business id the model usage is recorded under, and the expected outcome (`accepted`, or one
+diagnostic code). Leave out `RADAR_IT_REPLAY_CASE` to run every case.
+
+Each run writes a redacted record to `.data/sandbox-publisher/replays/<case>-<time>.json`: outcome code, failure stage
+and reason, check details, changed paths with line counts, article unit counts, agent turns, model calls, token usage,
+cost and duration, and whether the sandbox is still listed. It holds no article, repository or agent text. An accepted
+run also writes `<case>-<time>.pr-body.md`, the PR body the connector would have opened.
+`RADAR_IT_REPLAY_KEEP_FILES=1` additionally keeps the changed files and the agent transcript beside the record for
+manual review; both contain repository source. The cost in a record is computed from the transcript at
+`src/server/ai/prices.ts` rates; the proxy's `ai_calls` rows are the authoritative figure.
+
+`nextjs.live.test.ts` (a real GitHub repository, real draft PRs) follows the switch: with `RADAR_PUBLISH_SANDBOX`
+enabling the test business `00000000-0000-0000-0000-000000000000` (or `all`) and the worker variables set, its drafts
+come from the sandbox engine.
