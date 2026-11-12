@@ -1,0 +1,65 @@
+{
+  "at": "2026-11-12T02:27:21.171Z",
+  "context": "kenny-io/radar-connector-test",
+  "vectors": 49,
+  "control": {
+    "tagsNamingHost": 24,
+    "mentions": 2,
+    "references": 5,
+    "images": 3
+  },
+  "bodiesRendered": 53,
+  "rows": [
+    {
+      "body": 0,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 1,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 2,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 3,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 4,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    }
+  ],
+  "noteStarts": {
+    "headings": 5,
+    "quotes": 2,
+    "rules": 2,
+    "codeBlocks": 2,
+    "tables": 0,
+    "checkedTaskBoxes": 2,
+    "details": 0,
+    "externalAnchors": 0,
+    "images": 0
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "revision": "3d3dd9c797cd7379f9440457c11237391e16c91c",
+  "note": "QA-2 live replays. Every attempt failed while Daytona was creating the sandbox; no repository content was uploaded, no agent ran, no model call was made.",
+  "attempts": [
+    {
+      "case": "qa2-livedhq-new-registry",
+      "repository": "kenny-io/LivedHQ",
+      "commitSha": "a44ccfb45cc9a09e4c48bb7837ae00e3dc1c02bc",
+      "startedAt": "2026-11-12T02:15:26.058Z",
+      "durationMs": 30050,
+      "outcome": "sandbox-unavailable",
+      "retryable": true,
+      "stage": "plan",
+      "reason": "Creating the sandbox failed (DaytonaError: Sandbox ea0a9111-b032-45c2-84fb-5a8b609b9d5f failed to start with status: error, error reason: canceling statement due to statement timeout).",
+      "agentTurns": 0,
+      "modelCalls": 0,
+      "stillListedAfterTheAttempt": 1
+    },
+    {
+      "case": "qa2-livedhq-new-registry",
+      "repository": "kenny-io/LivedHQ",
+      "commitSha": "a44ccfb45cc9a09e4c48bb7837ae00e3dc1c02bc",
+      "startedAt": "2026-11-12T02:55:17.743Z",
+      "durationMs": 121797,
+      "outcome": "sandbox-unavailable",
+      "retryable": true,
+      "stage": "plan",
+      "reason": "Creating the sandbox did not finish within 120 seconds.",
+      "agentTurns": 0,
+      "modelCalls": 0,
+      "stillListedAfterTheAttempt": 1
+    },
+    {
+      "case": "qa2-thally-new-emdash",
+      "repository": "thallylabs/thally-website",
+      "commitSha": "c9a3b859cd208ff380d4737659ec536fb967c9a8",
+      "startedAt": "2026-11-12T02:16:45.246Z",
+      "durationMs": 120228,
+      "outcome": "sandbox-unavailable",
+      "retryable": true,
+      "stage": "plan",
+      "reason": "Creating the sandbox did not finish within 120 seconds.",
+      "agentTurns": 0,
+      "modelCalls": 0,
+      "stillListedAfterTheAttempt": 1
+    }
+  ]
+}

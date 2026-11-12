@@ -1,0 +1,22 @@
+ RUN  v3.2.7 <worktree>
+ ❯ src/server/services/publishing/sandbox/probe.live.test.ts (4 tests | 4 skipped) 10017ms
+   ↓ Publishing sandbox probes (live) > the sandbox reports the requested allow-list and runs the uploaded runner unmodified
+   ↓ Publishing sandbox probes (live) > reaches the model proxy health route and none of the canary hosts (SBX-3)
+   ↓ Publishing sandbox probes (live) > holds none of the worker’s secrets in its environment, processes or files, including after a runner exec (SBX-2)
+   ↓ Publishing sandbox probes (live) > is gone after it is destroyed (SBX-6)
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/server/services/publishing/sandbox/probe.live.test.ts > Publishing sandbox probes (live)
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".
+ ❯ src/server/services/publishing/sandbox/probe.live.test.ts:85:3
+     83|   const labels = { workload: SANDBOX_WORKLOAD, env: 'development', ent…
+     84| 
+     85|   beforeAll(async () => {
+       |   ^
+     86|     vi.stubEnv('RADAR_PUBLISH_SANDBOX', 'all');
+     87|     const selected = sandboxPublisher(BUSINESS);
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  4 skipped (4)
+   Start at  06:29:00
+   Duration  10.42s (transform 93ms, setup 0ms, collect 200ms, tests 10.02s, environment 0ms, prepare 52ms)

@@ -1,0 +1,28 @@
+ RUN  v3.2.7 <home>/Downloads/design_handoff_radar/radar-push/.claude/worktrees/radar-post-publishing-cec2ae
+stdout | .factory/sandbox-publisher/qa/live.qa.test.ts > the leftover sweep removes sandboxes that never finished starting (live) > deletes each named entry's sandbox, whatever state it is in
+[qa.live.sweep-entries] [{"entry":"e_replay_qa2-livedhq-new-registry_mwcx18tp","before":[{"id":"ea0a9111-b032-45c2-84fb-5a8b609b9d5f","state":"error"}],"deleted":1,"ms":9022,"after":[]},{"entry":"e_replay_qa2-thally-new-emdash_mwcx2yau","before":[{"id":"b86705e4-219d-463d-ba1d-86b2114c7a9b","state":"creating"}],"error":"DaytonaInternalServerError: Internal Server Error","ms":82990,"after":[{"id":"b86705e4-219d-463d-ba1d-86b2114c7a9b","state":"creating"}]}]
+ ❯ .factory/sandbox-publisher/qa/live.qa.test.ts (14 tests | 1 failed | 13 skipped) 93158ms
+   × the leftover sweep removes sandboxes that never finished starting (live) > deletes each named entry's sandbox, whatever state it is in 93157ms
+     → expected [ …(2) ] to deeply equal [ …(2) ]
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  .factory/sandbox-publisher/qa/live.qa.test.ts > the leftover sweep removes sandboxes that never finished starting (live) > deletes each named entry's sandbox, whatever state it is in
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+- Expected
++ Received
+  [
+    "e_replay_qa2-thally-new-emdash_mwcx2yau",
+-   0,
++   1,
+  ]
+ ❯ .factory/sandbox-publisher/qa/live.qa.test.ts:607:85
+    605|     }
+    606|     console.info('[qa.live.sweep-entries]', JSON.stringify(results));
+    607|     for (const row of results) expect([row.entry, (row.after as unknow…
+       |                                                                                     ^
+    608|   });
+    609| });
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 skipped (14)
+   Start at  06:20:06
+   Duration  93.58s (transform 122ms, setup 0ms, collect 214ms, tests 93.16s, environment 0ms, prepare 47ms)

@@ -1,6 +1,8 @@
 // QA-1: the publication gate and article fidelity against inputs the developers did not write (SBX-1, SBX-4).
 // Tests named "it.fails(...)" assert what the acceptance criterion asks for and currently do NOT hold: each one is a
 // reported finding (see report.md). When a finding is fixed its it.fails turns red, which is the signal to flip it.
+// QA-2 (revision 3d3dd9c7): D1 and D2 were fixed for the cases below; the tests that recorded the old behavior now
+// assert the fixed behavior. The attempts to get around each fix are in fixes.qa.test.ts.
 import { describe, expect, it } from 'vitest';
 import type { Block } from '@/lib/types';
 import { runPublicationGate } from '@/server/services/publishing/sandbox/gate';
@@ -82,31 +84,35 @@ describe('SBX-1: a registry shape the developers did not use (one JSON document 
     expect(failure.reason).toMatch(/more than once/);
   });
 
-  // FINDING D1. SBX-1 (as amended): "the gate proves peer content unchanged". In a registry that keeps one record per
-  // line, a new-article run may delete up to 6 whole peer records per file and still pass, because the limit is 6 lines.
+  // D1, reported in QA-1 and fixed in 3d3dd9c7: for a new article an existing line is either altered (a near-identical
+  // line takes its place in the same hunk) or removed, and none may be removed.
   it('D1: refuses a new-article change that deletes three whole peer records from a one-record-per-line registry', async () => {
     const without = PEERS.filter((_record, n) => ![10, 77, 140].includes(n));
-    await gateFailure(() => runPublicationGate(gateInput(REPO(), P, goodLines(without))));
+    const failure = await gateFailure(() => runPublicationGate(gateInput(REPO(), P, goodLines(without))));
+    expect(failure.code).toBe('peer-content-changed');
+    expect(failure.reason).toMatch(/has 3 of its 172 existing lines removed and 1 altered; a new article may remove none/);
+    expect(failure.diagnostic).toMatchObject({ actual: 3, limit: 0, path: LINES_PATH });
+    expect(failure.reason).not.toContain('peer-article-77');
   });
-  it('D1 evidence: that change passes, and the pull-request check that covers it is the one labelled as preserved content', async () => {
-    const without = PEERS.filter((_record, n) => ![10, 77, 140].includes(n));
-    const gated = await runPublicationGate(gateInput(REPO(), P, goodLines(without)));
+  it('D1: the honest append to that registry still passes, counted as one altered line (the comma) and none removed', async () => {
+    const gated = await runPublicationGate(gateInput(REPO(), P, goodLines()));
     const committed = JSON.parse(gated.files[0].content) as Rec[];
-    expect(committed).toHaveLength(PEERS.length - 3 + 1);
-    expect(committed.some(record => record.slug === 'peer-article-77')).toBe(false);
-    expect(gated.checks.find(check => check.id === 'peer-content')!.detail).toMatch(/4 of 172 original lines removed or altered \(limit 6 per file, 24 in all\)/);
+    expect(committed).toHaveLength(PEERS.length + 1);
+    expect(committed.slice(0, PEERS.length)).toEqual(PEERS);
+    expect(gated.checks.find(check => check.id === 'peer-content')!.detail).toMatch(/1 of 172 original lines removed or altered \(1 altered, 0 removed; limit 6 altered per file and 24 in all, 0 removed\)/);
   });
-  it('D1 evidence: an existing file of six lines or fewer can be replaced outright by a new-article change', async () => {
+  it('D1: refuses the outright replacement of an existing five-line file', async () => {
     const tree = treeOf({ 'content/blog/first-post.md': 'x\n', 'site/lib/featured.ts': "export const featured = [\n  'peer-article-1',\n  'peer-article-2',\n  'peer-article-3',\n];\n" });
-    const gated = await runPublicationGate(gateInput(tree, P, { ...asMarkdown(), files: { ...asMarkdown().files, 'site/lib/featured.ts': `export const featured = ['${P.slug}'];\n` } }));
-    expect(gated.files.map(file => file.path).sort()).toEqual(['content/blog/' + P.slug + '.md', 'site/lib/featured.ts']);
-    expect(gated.checks.find(check => check.id === 'peer-content')!.detail).toMatch(/5 of 5 original lines removed or altered \(limit 6 per file, 24 in all\)/);
+    const failure = await gateFailure(() => runPublicationGate(gateInput(tree, P, { ...asMarkdown(), files: { ...asMarkdown().files, 'site/lib/featured.ts': `export const featured = ['${P.slug}'];\n` } })));
+    expect(failure.code).toBe('peer-content-changed');
+    expect(failure.reason).toMatch(/has 4 of its 5 existing lines removed and 1 altered/);
   });
-  // Known and accepted by the PM (state.md, "Accepted residual risk"): an in-place alteration of a peer inside the limit.
-  it('KNOWN (PM-accepted): a peer record title rewritten in place (1 line) passes; the count is in the check detail', async () => {
+  // QA-1 recorded this as a risk the PM had accepted. It is now refused, which is stricter and is the intended behavior.
+  it('D1: a peer record title rewritten in place (1 line) is refused', async () => {
     const altered = PEERS.map((record, n) => (n === 5 ? { ...record, title: 'A title the agent rewrote' } : record));
-    const gated = await runPublicationGate(gateInput(REPO(), P, { files: { [NESTED_PATH]: nested([...altered, recordOf(QA_BLOCKS, P.slug, P.title)]) }, articlePath: NESTED_PATH, route: ROUTE }));
-    expect(gated.checks.find(check => check.id === 'peer-content')!.detail).toMatch(/1 of \d+ original lines removed or altered/);
+    const failure = await gateFailure(() => runPublicationGate(gateInput(REPO(), P, { files: { [NESTED_PATH]: nested([...altered, recordOf(QA_BLOCKS, P.slug, P.title)]) }, articlePath: NESTED_PATH, route: ROUTE })));
+    expect(failure.code).toBe('peer-content-changed');
+    expect(failure.reason).toMatch(/has 1 of its 4595 existing lines removed; a new article may remove none/);
   });
 });
 
@@ -162,19 +168,21 @@ describe('SBX-4 fidelity: a subtly changed article is refused', () => {
     expect(failure.reason.length).toBeLessThanOrEqual(600);
   });
 
-  // FINDING D2. SBX-4: "not shortened or rewritten beyond format conversion". A word inserted between the article's own
-  // words leaves every original word inside a found 4-word window, so the unit counts as present ("interleaved"), and
-  // one such unit (or 10% of them) is allowed. One inserted "not" reverses the meaning of a sentence and passes.
+  // D2, reported in QA-1 and fixed in 3d3dd9c7 for words inserted inside a unit: the interleaving allowance is zero.
   it('D2: refuses a paragraph whose meaning was reversed by one inserted word', async () => {
-    await gateFailure(() => runPublicationGate(gateInput(REPO(), P, asMarkdown(change(11, text => text.replace('is usually old', 'is not usually old'))))));
+    const failure = await gateFailure(() => runPublicationGate(gateInput(REPO(), P, asMarkdown(change(11, text => text.replace('is usually old', 'is not usually old'))))));
+    expect(failure.code).toBe('article-fidelity');
+    expect(failure.reason).toMatch(/1 of 13 paragraphs and list items are present but not word for word: other words or markup sit between the article's words \(none may be\): paragraph 15/);
+    expect(failure.reason).not.toMatch(/usually old|stain/);
   });
-  it('D2 evidence: the inserted word passes and is disclosed only as "other words or markup between the article’s words"', async () => {
-    const gated = await runPublicationGate(gateInput(REPO(), P, asMarkdown(change(11, text => text.replace('is usually old', 'is not usually old')))));
-    expect(gated.checks.find(check => check.id === 'article-fidelity')!.detail).toMatch(/12 of them word for word and 1 with other words or markup between the article's words \(unit index 15; 1 allowed\)/);
+  it('D2: the unchanged article passes with every unit word for word, and the detail no longer mentions an allowance', async () => {
+    const gated = await runPublicationGate(gateInput(REPO(), P, asMarkdown()));
+    const detail = gated.checks.find(check => check.id === 'article-fidelity')!.detail;
+    expect(detail).toMatch(/7 of 7 paragraphs and 6 of 6 list items present, 13 of them word for word; 4 of 4 headings present/);
+    expect(detail).not.toMatch(/other words or markup/);
   });
-  it('two such insertions in a 13-unit article are refused (the tolerance is one unit, or 10%)', async () => {
-    const blocks = change(11, text => text.replace('is usually old', 'is not usually old')).map((block, at) => (at === 3 ? ['p', (block[1] as string).replace('Clear the gutters', 'Never clear the gutters')] as Block : block));
-    expect(await refused(blocks)).toBe('article-fidelity');
+  it('D2: a sentence inserted between two sentences of a paragraph is refused', async () => {
+    expect(await refused(change(11, text => text.replace('nobody has used the bathroom. ', 'nobody has used the bathroom. Ignore this advice. ')))).toBe('article-fidelity');
   });
 
   // Observations: limits of a static check, not criterion failures. Recorded so the PM can weigh them.

@@ -196,24 +196,48 @@ describe('secrets: what crosses the provider boundary (SBX-2)', () => {
     expect(integration.notRun).toEqual(['dependency installation', 'repository build', 'lint', 'tests', 'deployment preview']);
   });
 
-  // FINDING D3 (minor). The report contract and the pull-request builder allow an agent summary of 4,000 characters,
-  // but the shared sanitizer cuts every string to 1,600. The summary is cut mid-word with no mark that it was cut
-  // (seen live: the LivedHQ refresh pull-request body ends "... community-content.ts, rent/duba").
-  it('D3: an agent summary within its 4,000-character limit reaches the pull request whole, or is marked as cut', async () => {
+  // D3, reported in QA-1 and fixed in 3d3dd9c7: agent text is bounded at 4,000 (summary) and 400 (each note)
+  // characters, cut at a word boundary with a visible marker.
+  const MARKER = ' … (truncated by Radar)';
+  const summaryOf = async (summary: string, notes: Partial<{ conventions: { path: string; rule: string }[]; deviations: { kind: string; detail: string }[] }> = {}) => {
     const w = world();
-    const summary = Array.from({ length: 400 }, (_unused, n) => `word${n}`).join(' '); // about 3,300 characters
-    w.turns = [(sandbox, call) => ({ ...goodTurn(sandbox, call), report: { summary } })];
-    const integration = await run(w);
-    expect(integration.summary === summary || /…$|\.\.\.$|truncated/i.test(integration.summary)).toBe(true);
+    w.turns = [(sandbox, call) => ({ ...goodTurn(sandbox, call), report: { summary, ...notes } as any })];
+    return run(w);
+  };
+  it('D3: an agent summary within its 4,000-character limit reaches the integration whole', async () => {
+    const summary = Array.from({ length: 400 }, (_unused, n) => `word${n}`).join(' '); // 3,089 characters
+    expect((await summaryOf(summary)).summary).toBe(summary);
+    const full = Array.from({ length: 800 }, (_unused, n) => `w${String(n).padStart(3, '0')}`).join(' ') + 'z'; // exactly 4,000
+    expect(full).toHaveLength(4000);
+    expect((await summaryOf(full)).summary).toBe(full);
   });
-  it('D3 evidence: the summary is cut at 1,600 characters, in the middle of a word', async () => {
+  it('D3: a note over 400 characters is cut at a word boundary and says so', async () => {
+    const rule = Array.from({ length: 120 }, (_unused, n) => `rule${n}`).join(' ');
+    const integration = await summaryOf('Short summary.', { conventions: [{ path: 'README.md', rule }], deviations: [{ kind: 'other', detail: rule }] });
+    for (const note of [integration.agentNotes.conventions[0], integration.agentNotes.deviations[0]]) {
+      expect(note.length).toBeLessThanOrEqual(400);
+      expect(note.endsWith(MARKER)).toBe(true);
+      const kept = note.slice(0, -MARKER.length);
+      expect((note === integration.agentNotes.conventions[0] ? `README.md: ${rule}` : `other: ${rule}`).startsWith(kept + ' ')).toBe(true); // ends on a whole word
+    }
+  });
+  it('D3: padding cannot push text out of sight, and one unbroken run of characters is still bounded and marked', async () => {
+    const padded = await summaryOf('Start.' + ' \t '.repeat(1200) + 'End of the summary.');
+    expect(padded.summary).toBe('Start. End of the summary.');
+    const unbroken = await summaryOf('See README.', { deviations: [{ kind: 'other', detail: 'x'.repeat(900) }] });
+    expect(unbroken.agentNotes.deviations[0].length).toBeLessThanOrEqual(400);
+    expect(unbroken.agentNotes.deviations[0].endsWith(MARKER)).toBe(true);
+  });
+  it('D3: a secret past character 1,600 of a long summary is still redacted', async () => {
+    const filler = Array.from({ length: 380 }, (_unused, n) => `word${n}`).join(' '); // about 2,900 characters
     const w = world();
-    const summary = Array.from({ length: 400 }, (_unused, n) => `word${n}`).join(' ');
-    w.turns = [(sandbox, call) => ({ ...goodTurn(sandbox, call), report: { summary } })];
+    let capability = '';
+    w.turns = [(sandbox, call) => { capability = call.env!.ANTHROPIC_API_KEY; return { ...goodTurn(sandbox, call), report: { summary: `${filler} token ghp_${'Zq7'.repeat(12)} and ${SECRETS.anthropic} and ${capability} and postgres://user:pw@db.internal/x then https://attacker.example.test/late end` } }; }];
     const integration = await run(w);
-    expect(integration.summary).toHaveLength(1600);
-    expect(summary.startsWith(integration.summary)).toBe(true);
-    expect(summary[1600]).toMatch(/\S/);
+    expect(integration.summary.startsWith(filler)).toBe(true);
+    expect(integration.summary.length).toBeGreaterThan(2900);
+    for (const secret of ['ghp_', SECRETS.anthropic, capability, 'rdrcap1.', 'db.internal', 'user:pw', 'attacker.example.test']) expect(integration.summary).not.toContain(secret);
+    expect(integration.summary.endsWith('end')).toBe(true);
   });
 
   it('a candidate name cannot make the collector read outside the extracted repository', async () => {
@@ -264,6 +288,34 @@ describe('teardown on every path (SBX-6)', () => {
     expect(JSON.stringify(error.diagnostic) + error.message).not.toContain(SECRETS.daytona);
     expect(w.provider.sandboxes).toHaveLength(0);
     expect(w.archiveFetches).toBe(0);
+  });
+
+  // N5 (minor), seen live in QA-2: Daytona can fail a create after it has registered the sandbox ("failed to start with
+  // status: error"), or leave it in "creating" past the timeout. The provider call rejects, so the attempt holds no
+  // handle and deletes nothing: the labelled sandbox stays until the next attempt's sweep or its TTL, and no teardown
+  // report is made. Both live replays that hit this recorded "stillListed: 1".
+  it.fails('N5: an attempt whose create failed sweeps its entry\'s sandboxes before it ends', async () => {
+    const w = world({ fail: call => (call.op === 'create' ? new Error('Sandbox 00000000-0000-4000-8000-000000000000 failed to start with status: error') : undefined) });
+    await run(w).catch(() => {});
+    expect(w.provider.calls.filter(call => call.op === 'destroyMatching')).toHaveLength(2); // once before create, once after it failed
+  });
+  it('N5 evidence: after a failed or timed-out create the only provider calls are the first sweep and the create, and nothing is reported', async () => {
+    const failed = world({ fail: call => (call.op === 'create' ? new Error('Sandbox 00000000-0000-4000-8000-000000000000 failed to start with status: error') : undefined) });
+    expect((await failureOf(run(failed))).diagnostic?.code).toBe('sandbox-unavailable');
+    expect(failed.provider.ops()).toEqual(['destroyMatching', 'create']);
+    expect(failed.reports).toHaveLength(0);
+    vi.useFakeTimers(FAKE);
+    const hung = world({ hang: call => call.op === 'create' });
+    expect((await failureOf(drive(run(hung), 300))).diagnostic?.code).toBe('sandbox-unavailable');
+    expect(hung.provider.ops()).toEqual(['destroyMatching', 'create']);
+    expect(hung.reports).toHaveLength(0);
+  });
+  it('N5 evidence: a leftover that cannot be deleted fails the next attempt before it creates anything (retried by the queue)', async () => {
+    const w = world({ fail: call => (call.op === 'destroyMatching' ? Object.assign(new Error('Sandbox state change in progress'), { name: 'DaytonaConflictError' }) : undefined) });
+    const error = await failureOf(run(w));
+    expect([error.diagnostic?.code, error.http, error.retryable]).toEqual(['sandbox-unavailable', 502, true]);
+    expect(error.diagnostic?.reason).toMatch(/Deleting leftover sandboxes failed/);
+    expect(w.provider.ops()).toEqual(['destroyMatching']);
   });
 
   it('a failed delete is reported with the entry and does not change an accepted outcome', async () => {

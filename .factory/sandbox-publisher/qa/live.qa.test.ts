@@ -579,3 +579,31 @@ describe.skipIf(!TTL)('an abandoned sandbox is destroyed by its TTL (live, no mo
     expect(goneAfterMs!).toBeGreaterThan(45_000); // it was the TTL, not an early failure
   });
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// QA-2: what the leftover sweep does with a sandbox that never finished starting (state `error` or `creating`), the
+// state a failed or timed-out create leaves behind. Deletes only the entries named, through the product's own sweep.
+//   RADAR_QA_LIVE_SWEEP_ENTRIES=<entry>,<entry>  (same command as above)
+
+const SWEEP_ENTRIES = READY ? (process.env.RADAR_QA_LIVE_SWEEP_ENTRIES || '').split(',').map(entry => entry.trim()).filter(Boolean) : [];
+describe.skipIf(!SWEEP_ENTRIES.length)('the leftover sweep removes sandboxes that never finished starting (live)', { timeout: 300_000 }, () => {
+  it('deletes each named entry\'s sandbox, whatever state it is in', async () => {
+    const config = configured();
+    const provider = daytonaProvider(config.daytonaKey);
+    const { Daytona } = await import('@daytona/sdk');
+    const client = new Daytona({ apiKey: config.daytonaKey, apiUrl: DAYTONA_API_URL });
+    const listed = async (entry: string) => { const rows: { id: string; state: unknown }[] = []; for await (const item of client.list({ labels: { workload: SANDBOX_WORKLOAD, entry } })) rows.push({ id: item.id, state: (item as any).state }); return rows; };
+    const results: Record<string, unknown>[] = [];
+    for (const entry of SWEEP_ENTRIES) {
+      expect(entry.startsWith('e_')).toBe(true);
+      const before = await listed(entry);
+      const startedAt = Date.now();
+      const outcome = await provider.destroyMatching({ workload: SANDBOX_WORKLOAD, env: 'development', entry }, 60).then(count => ({ deleted: count }), error => ({ error: String((error as Error)?.name || 'Error') + ': ' + String((error as Error)?.message || '').slice(0, 160) }));
+      let after = await listed(entry);
+      for (const since = Date.now(); after.length && Date.now() - since < 60_000;) { await new Promise(resolve => setTimeout(resolve, 5000)); after = await listed(entry); }
+      results.push({ entry, before, ...outcome, ms: Date.now() - startedAt, after });
+    }
+    console.info('[qa.live.sweep-entries]', JSON.stringify(results));
+    for (const row of results) expect([row.entry, (row.after as unknown[]).length]).toEqual([row.entry, 0]);
+  });
+});

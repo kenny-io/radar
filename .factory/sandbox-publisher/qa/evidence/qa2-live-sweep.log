@@ -1,0 +1,35 @@
+ RUN  v3.2.7 <worktree>
+stdout | .factory/sandbox-publisher/qa/live.qa.test.ts > no publishing sandbox is left in the organization (live, read-only) > lists nothing labelled workload=radar-publisher
+[qa.live.sweep] {"labelled":3,"found":[{"id":"60d17fc9-ef78-417d-9f56-4bce56221bb1","entry":"e_replay_qa2-livedhq-new-registry_mwcygiqu","state":"creating"},{"id":"c5ad7237-34a1-47b7-9b4d-61448f785fef","entry":"e_probe_mwcxir17","state":"creating"},{"id":"b86705e4-219d-463d-ba1d-86b2114c7a9b","entry":"e_replay_qa2-thally-new-emdash_mwcx2yau","state":"creating"}]}
+ ❯ .factory/sandbox-publisher/qa/live.qa.test.ts (14 tests | 1 failed | 13 skipped) 3084ms
+   × no publishing sandbox is left in the organization (live, read-only) > lists nothing labelled workload=radar-publisher 3083ms
+     → expected [ { …(3) }, { …(3) }, { …(3) } ] to deeply equal []
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  .factory/sandbox-publisher/qa/live.qa.test.ts > no publishing sandbox is left in the organization (live, read-only) > lists nothing labelled workload=radar-publisher
+AssertionError: expected [ { …(3) }, { …(3) }, { …(3) } ] to deeply equal []
+- Expected
++ Received
+- []
++ [
++   {
++     "entry": "e_replay_qa2-livedhq-new-registry_mwcygiqu",
++     "id": "60d17fc9-ef78-417d-9f56-4bce56221bb1",
++     "state": "creating",
++   },
++   {
++     "entry": "e_probe_mwcxir17",
++     "id": "c5ad7237-34a1-47b7-9b4d-61448f785fef",
++     "state": "creating",
++   },
++   {
++     "entry": "e_replay_qa2-thally-new-emdash_mwcx2yau",
++     "id": "b86705e4-219d-463d-ba1d-86b2114c7a9b",
++     "state": "creating",
++   },
++ ]
+ ❯ .factory/sandbox-publisher/qa/live.qa.test.ts:242:19
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 skipped (14)
+   Start at  07:13:47
+   Duration  3.60s (transform 144ms, setup 0ms, collect 271ms, tests 3.08s, environment 0ms, prepare 73ms)
