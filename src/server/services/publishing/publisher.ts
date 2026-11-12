@@ -17,6 +17,7 @@ import { slugify } from '@/lib/format';
 import type { Article, ArticlePublishError, CalendarEntry, ConnType, Profile } from '@/lib/types';
 import { blocksToHtml, blocksToMarkdown, sourcesList } from './render';
 import { connectorFor } from './connectors';
+import { publishAttemptMs } from './connectors/nextjs';
 import { PublishError } from './http';
 import { resolveRefreshUrl } from './refreshUrl';
 import { ctxFromRow, type ConnRow } from './store';
@@ -137,7 +138,8 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
 
   const type = conn.type as ConnType;
   const c = ctxFromRow(b, conn);
-  if (type === 'nextjs') c.publishDeadlineAt = Date.now() + 270_000;
+  // One absolute deadline per attempt: 270 s for the planner, the sandbox budget when that engine is selected for this business.
+  if (type === 'nextjs') c.publishDeadlineAt = Date.now() + publishAttemptMs(b.id);
   const connector = connectorFor(type);
   try {
     const payload = await buildPayload(b, e, art);

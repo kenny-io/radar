@@ -32,7 +32,10 @@ function safeContext(context: FailureContext): FailureContext {
   return out as unknown as FailureContext;
 }
 
-export function sanitizeDiagnostic(value: unknown): string {
+/** `limit` is the longest text returned, 1,600 characters unless a caller asks for another length. Every redaction runs
+ *  on the whole text before the cut, so nothing past the limit is skipped. */
+export function sanitizeDiagnostic(value: unknown, options?: { limit?: number }): string {
+  const limit = typeof options?.limit === 'number' && options.limit > 0 ? Math.floor(options.limit) : 1600;
   let text = typeof value === 'string' ? value : 'Unknown error';
   for (const [key, secret] of Object.entries(process.env)) {
     if (secret && secret.length >= 5 && /KEY|SECRET|TOKEN|PASSWORD|DATABASE_URL|AUTHORIZATION/i.test(key)) for (const representation of [secret, encodeURIComponent(secret)]) text = text.split(representation).join('[redacted]');
@@ -48,7 +51,7 @@ export function sanitizeDiagnostic(value: unknown): string {
     .replace(/(["']?(?:prompt|messages|input|output|content|b64_json|document)["']?\s*[:=]\s*)[^\n]+/gi, '$1[omitted]')
     .replace(/Structured output failed validation:[\s\S]*/i, 'Structured output failed validation')
     .replace(/data:[^\s,]+;base64,[a-zA-Z0-9+/=]+/g, '[omitted data]')
-    .slice(0, 1600);
+    .slice(0, limit);
 }
 export function failureAlertsEnabled(): boolean {
   if (process.env.RADAR_DEV_STUBS === '1' && process.env.NODE_ENV !== 'production') return false;

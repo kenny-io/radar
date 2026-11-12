@@ -1,0 +1,10 @@
+ RUN  v3.2.7 <worktree>
+stdout | .factory/sandbox-publisher/qa/live-retry.qa.test.ts > A retry after a title change, live (one agent run, no GitHub write) > is judged against the default-branch commit, finishes with the new title, and leaves no sandbox
+[qa3.retry] {"outcome":"accepted","durationMs":93189,"agentTurns":27,"repaired":false,"usage":{"modelCalls":13,"sdkTurns":[27],"costUsd":0.3245},"changed":["public/llms.txt","src/lib/blog.ts"],"stillListed":0,"record":".data/sandbox-publisher/qa/replays-qa3/qa3-retry-title-change-20261112T042548Z.json"}
+ ✓ .factory/sandbox-publisher/qa/live-retry.qa.test.ts (1 test) 100632ms
+   ✓ A retry after a title change, live (one agent run, no GitHub write) > is judged against the default-branch commit, finishes with the new title, and leaves no sandbox  100586ms
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  08:25:43
+   Duration  101.21s (transform 256ms, setup 0ms, collect 382ms, tests 100.63s, environment 0ms, prepare 38ms)
+exit 0

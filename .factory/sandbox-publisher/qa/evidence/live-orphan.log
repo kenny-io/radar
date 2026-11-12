@@ -1,0 +1,11 @@
+ RUN  v3.2.7 <worktree>
+stdout | .factory/sandbox-publisher/qa/live.qa.test.ts > a leftover sandbox is bounded by its TTL and removed by the next attempt (live, no model call) > reports the lifetime and network settings an attempt asks for, and the sweep deletes only its own entry
+[qa.live.orphan] reported {"user":"radar-agent","labels":{"env":"development","run":"6b080410-a5a8-4147-bf4b-a45fbc4ded7c","entry":"e_qa_orphan_a_mwcvhuc0","workload":"radar-publisher","code-toolbox-language":"python"},"public":false,"state":"started","autoStopInterval":0,"autoArchiveInterval":10080,"autoDeleteInterval":0,"networkBlockAll":false,"networkAllowList":null,"domainAllowList":"the proxy host only"}
+stdout | .factory/sandbox-publisher/qa/live.qa.test.ts > a leftover sandbox is bounded by its TTL and removed by the next attempt (live, no model call) > reports the lifetime and network settings an attempt asks for, and the sweep deletes only its own entry
+[qa.live.orphan] swept {"deletedForEntryA":1,"entryBSurvivedSweep":true,"bothGone":true}
+ ✓ .factory/sandbox-publisher/qa/live.qa.test.ts (12 tests | 11 skipped) 29554ms
+   ✓ a leftover sandbox is bounded by its TTL and removed by the next attempt (live, no model call) > reports the lifetime and network settings an attempt asks for, and the sweep deletes only its own entry  28300ms
+ Test Files  1 passed (1)
+      Tests  1 passed | 11 skipped (12)
+   Start at  05:32:19
+   Duration  29.99s (transform 113ms, setup 0ms, collect 234ms, tests 29.55s, environment 0ms, prepare 51ms)

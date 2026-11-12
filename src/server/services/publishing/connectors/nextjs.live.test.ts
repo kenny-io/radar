@@ -4,10 +4,14 @@
 // Optional: RADAR_IT_GITHUB_PATH is a discovery hint (default content/posts); RADAR_IT_GITHUB_REFRESH_URL enables refresh.
 // Article planning additionally needs DATABASE_URL and a configured writing-model provider. It opens only DRAFT PRs.
 // Connection/auth checks still run with repository/token alone. No framework or generated filename is assumed.
+// The engine follows the rollout switch: with RADAR_PUBLISH_SANDBOX set to `all` (or naming this suite's business,
+// 00000000-0000-0000-0000-000000000000) and the worker's sandbox variables set, drafts come from the sandbox publisher
+// (a real Daytona sandbox and model run per article, each up to the per-run cap); otherwise from the planner.
 import { afterAll, describe, expect, it } from 'vitest';
 import { nextjs } from './nextjs';
 import { PublishError } from '../http';
 import { RUN, ctx, payload } from './live-fixtures';
+import { sandboxPublisher } from '../sandbox/config';
 
 const REPO = process.env.RADAR_IT_GITHUB_REPO || ''; const TOKEN = process.env.RADAR_IT_GITHUB_TOKEN || '';
 const FOLDER = process.env.RADAR_IT_GITHUB_PATH || 'content/posts'; const REFRESH = process.env.RADAR_IT_GITHUB_REFRESH_URL || '';
@@ -36,8 +40,10 @@ describe.skipIf(!ON)('Repository-aware GitHub (live)', { timeout: 900_000 }, () 
   it.skipIf(!AI_READY)('createDraft commits the complete inspected integration; publish opens a draft PR to the default branch', async () => {
     const p = payload({ slug: `radar-it-${RUN}`, entryId: `e_it${RUN}` });
     const d = await nextjs.createDraft(c, p); track(d.id);
-    expect(d.extra.layout).toBe('repository-aware');
-    expect(d.extra.discovery.length).toBeGreaterThan(0);
+    const sandbox = d.extra.layout === 'sandbox-agent';
+    expect(d.extra.layout).toBe(sandboxPublisher(c.bid).enabled ? 'sandbox-agent' : 'repository-aware');
+    if (sandbox) { expect(d.extra.checks.length).toBeGreaterThan(0); expect(d.extra.review.runtimeVerified).toBe(false); }
+    else expect(d.extra.discovery.length).toBeGreaterThan(0);
     const file = await gh(`/contents/${d.extra.path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(d.id)}`);
     expect(file.status).toBe(200);
     const mdx = Buffer.from(file.body.content, 'base64').toString('utf8');
@@ -46,7 +52,8 @@ describe.skipIf(!ON)('Repository-aware GitHub (live)', { timeout: 900_000 }, () 
     const pr = (await gh(`/pulls/${url.split('/').pop()}`)).body;
     expect(pr.state).toBe('open');
     expect(pr.draft).toBe(true);
-    expect(pr.body).toContain('not been run by Radar');
+    expect(pr.body).toContain(sandbox ? '### Checks Radar ran' : 'not been run by Radar');
+    if (sandbox) expect(pr.body).toContain('### Not run');
     const files = (await gh(`/pulls/${url.split('/').pop()}/files?per_page=100`)).body;
     expect(files.map((file: any) => file.filename)).toEqual(expect.arrayContaining(d.extra.files));
     expect(pr.head.ref).toBe(d.id);

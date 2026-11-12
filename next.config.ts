@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   // Keep metadata in the initial head for AI/search crawlers as well as social preview bots.
   htmlLimitedBots: /.*/,
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  serverExternalPackages: ['@napi-rs/canvas', 'pg', 'framer-api'],
+  // @daytona/sdk is loaded only by the worker through a dynamic import; keep its OpenTelemetry and AWS tree out of the server bundle.
+  serverExternalPackages: ['@napi-rs/canvas', 'pg', 'framer-api', '@daytona/sdk'],
   images: { unoptimized: true },
   async headers() {
     const privateRoutes = ['signup', 'signin', 'verify-email', 'login', 'start-trial', 'start', 'onboarding', 'dashboard', 'calendar', 'settings', 'brief', 'article', 'performance', 'backlinks', 'profile', 'api'];

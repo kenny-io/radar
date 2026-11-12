@@ -1,0 +1,12 @@
+    203|     const actual = await parityScenarios();
+    204|     if (process.env.QA_CAPTURE) { fs.writeFileSync(process.env.QA_CAPT…
+    205|     expect(actual).toEqual(GOLDEN);
+       |                    ^
+    206|   });
+    207|   it('an empty OPENROUTER_API_KEY counts as unset (no OpenRouter reque…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed | 142 passed | 52 skipped (195)
+      Tests  1 failed | 2243 passed | 557 skipped (2815)
+   Start at  04:53:56
+   Duration  18.74s (transform 5.84s, setup 0ms, collect 90.02s, tests 30.40s, environment 20ms, prepare 10.34s)
+exit 1

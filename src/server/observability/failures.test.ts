@@ -3,6 +3,7 @@ const delivery = vi.hoisted(() => vi.fn(async (..._args: any[]) => {}));
 vi.mock('./delivery', () => ({ persistAndDeliverAlert: delivery }));
 import { failureAlertsEnabled, reportFailure, sanitizeDiagnostic, shouldReportFailure, withFailureContext } from './failures';
 import { RadarError } from '../errors';
+import { publishingDiagnosticText } from '../services/publishing/http';
 
 beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('RADAR_FAILURE_ALERTS', 'on'); vi.stubEnv('RADAR_DEV_STUBS', '0');
@@ -82,5 +83,41 @@ describe('diagnostic redaction', () => {
     for (const secret of ['private+', 'private%', 'abc123', 'Zm9v', 'user:pass', 'sig=secret', 'api_key=hidden', 'PRIVATE CONTENT']) expect(value).not.toContain(secret);
     expect(sanitizeDiagnostic('Cookie: radar_session=private_cookie')).not.toContain('private_cookie');
     expect(sanitizeDiagnostic('Structured output failed validation: generated customer output')).toBe('Structured output failed validation');
+  });
+
+  /** About 2,700 characters of plain words: nothing in it is redacted, so the sanitized text is the text itself. */
+  const longLead = Array.from({ length: 400 }, (_, i) => `word${i}`).join(' ');
+  it('keeps the 1,600-character bound unless a caller asks for another, and redacts the whole text before any cut', () => {
+    expect(longLead.length).toBeGreaterThan(1600);
+    expect(sanitizeDiagnostic(longLead)).toBe(longLead.slice(0, 1600));
+    expect(sanitizeDiagnostic(longLead, {})).toBe(longLead.slice(0, 1600));
+    expect(sanitizeDiagnostic(longLead, { limit: 0 })).toBe(longLead.slice(0, 1600));
+    // Passed straight to map, the element index is not mistaken for a limit.
+    expect([longLead, longLead, longLead].map(sanitizeDiagnostic as unknown as (value: string, index: number) => string)).toEqual(Array(3).fill(longLead.slice(0, 1600)));
+    expect(sanitizeDiagnostic(longLead, { limit: 4000 })).toBe(longLead);
+    expect(sanitizeDiagnostic(longLead, { limit: 100 })).toBe(longLead.slice(0, 100));
+
+    vi.stubEnv('TEST_API_KEY', 'configured-secret-value-93');
+    const token = 'sk-ant-' + 'Zq7'.repeat(8);
+    const late = `${longLead} Bearer late-bearer-credential then ${token} then configured-secret-value-93 then api_key=late-hidden-value end`;
+    // Unchanged by default: the first 1,600 characters, exactly as before the option existed.
+    expect(sanitizeDiagnostic(late)).toBe(longLead.slice(0, 1600));
+    const long = sanitizeDiagnostic(late, { limit: 4000 });
+    expect(long.startsWith(longLead + ' ')).toBe(true);
+    expect(long.endsWith(' end')).toBe(true);
+    for (const secret of ['late-bearer-credential', token, 'configured-secret-value-93', 'late-hidden-value']) expect(long).not.toContain(secret);
+  });
+  it('publishing text: the bound is unchanged up to 1,600, and a longer one still redacts a private key and a token past character 1,600', () => {
+    for (const limit of [300, 1200, 1600]) expect(publishingDiagnosticText(longLead, limit)).toBe(longLead.slice(0, limit).trim());
+    expect(publishingDiagnosticText(longLead)).toBe(longLead.slice(0, 300).trim());
+    const key = `-----BEGIN OPENSSH PRIVATE KEY-----\n${'b3BlbnNzaC1rZXktdjEA'.repeat(12)}\n-----END OPENSSH PRIVATE KEY-----`;
+    const token = 'ghp_' + 'Qz8'.repeat(12);
+    const late = `${longLead} ${key} then ${token} then token=late-hidden-value end`;
+    expect(late.indexOf('-----BEGIN')).toBeGreaterThan(1600);
+    expect(publishingDiagnosticText(late, 1600)).toBe(longLead.slice(0, 1600).trim());
+    const long = publishingDiagnosticText(late, 4000);
+    expect(long.startsWith(longLead + ' ')).toBe(true);
+    expect(long.endsWith(' end')).toBe(true);
+    for (const secret of ['PRIVATE KEY', 'b3BlbnNzaC1rZXk', token, 'ghp_', 'late-hidden-value']) expect(long).not.toContain(secret);
   });
 });

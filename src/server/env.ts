@@ -53,6 +53,16 @@ export const env = {
   wpcomClientId: e.WPCOM_CLIENT_ID || '', wpcomClientSecret: e.WPCOM_CLIENT_SECRET || '',
   githubClientId: e.GITHUB_CLIENT_ID || '', githubClientSecret: e.GITHUB_CLIENT_SECRET || '',
   shopifyApiVersion: e.SHOPIFY_API_VERSION || '2026-10',
+  // Sandbox publisher for GitHub connections (.factory/sandbox-publisher/architecture.md §9). The switch RADAR_PUBLISH_SANDBOX
+  // and its model, cap and transcript options are read at call time (services/publishing/sandbox/config.ts), not frozen here.
+  /** Daytona API key. Worker only: never set it on web or model-proxy. */
+  daytonaKey: e.DAYTONA_API_KEY || '',
+  /** Runner snapshot, as its immutable UUID (never a snapshot name). Worker only. */
+  publishSandboxSnapshotId: e.RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID || '',
+  /** https://<model-proxy host>/model: the only host a publishing sandbox may reach. Worker only. */
+  publishModelProxyUrl: e.RADAR_PUBLISH_MODEL_PROXY_URL || '',
+  /** HMAC secret for per-run model capabilities, 32 characters or more. Worker and model-proxy only; not derived from RADAR_SECRET_KEY. */
+  publishCapabilitySecret: e.RADAR_PUBLISH_CAPABILITY_SECRET || '',
   // Social channels (connected X / LinkedIn accounts). Two LinkedIn apps: profile (Share on LinkedIn + OpenID Connect) and
   // page (Community Management only) — no fallback between them. X_BEARER_TOKEN above stays the Brief's search token.
   /** Also accepts XAPP_CLIENT_ID / XAPP_CLIENT_SECRET (the names used in Railway). */

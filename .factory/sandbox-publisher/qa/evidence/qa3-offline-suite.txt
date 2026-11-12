@@ -1,0 +1,21 @@
+ ✓ .factory/sandbox-publisher/qa/runner-scope.qa.test.ts (60 tests) 69ms
+ ✓ .factory/sandbox-publisher/qa/capability-proxy.qa.test.ts (23 tests) 170ms
+ ↓ .factory/sandbox-publisher/qa/live-retry.qa.test.ts (1 test | 1 skipped)
+ ↓ .factory/sandbox-publisher/qa/live.qa.test.ts (14 tests | 14 skipped)
+ ↓ .factory/sandbox-publisher/qa/live-markdown.qa.test.ts (6 tests | 6 skipped)
+ ↓ .factory/sandbox-publisher/qa/live-hostile.qa.test.ts (1 test | 1 skipped)
+ ↓ .factory/sandbox-publisher/qa/live-pr.qa.test.ts (3 tests | 3 skipped)
+ ✓ .factory/sandbox-publisher/qa/fixes.qa.test.ts (57 tests) 243ms
+ ✓ .factory/sandbox-publisher/qa/qa3.qa.test.ts (94 tests) 381ms
+ ✓ .factory/sandbox-publisher/qa/orchestration.qa.test.ts (47 tests) 1298ms
+ ✓ .factory/sandbox-publisher/qa/gate.qa.test.ts (68 tests) 454ms
+ ✓ .factory/sandbox-publisher/qa/connector.qa.test.ts (52 tests) 583ms
+ Test Files  7 passed | 5 skipped (12)
+      Tests  401 passed | 25 skipped (426)
+
+Probes written it.fails (open findings; they pass while the finding stands):
+fixes.qa.test.ts:122:  it.fails('N2: commenting out a one-line peer record is refused', async () => {
+gate.qa.test.ts:2:// Tests named "it.fails(...)" assert what the acceptance criterion asks for and currently do NOT hold: each one is a
+qa3.qa.test.ts:228:  it.fails('N7a: Radar\'s Markdown export of an article with a video is accepted inside a JSON string', async () => {
+qa3.qa.test.ts:245:  it.fails('N7b: a TOML data file with one unit per key is accepted (as not decided)', async () => {
+qa3.qa.test.ts:301:  it.fails('N8: words separated from a list item only by a hidden <input> are refused or disclosed', async () => {

@@ -1,0 +1,9 @@
+ RUN  v3.2.7 <worktree>
+stdout | .factory/sandbox-publisher/qa/live.qa.test.ts > no publishing sandbox is left in the organization (live, read-only) > lists nothing labelled workload=radar-publisher
+[qa.live.sweep] {"labelled":0,"found":[]}
+ ✓ .factory/sandbox-publisher/qa/live.qa.test.ts (14 tests | 13 skipped) 749ms
+   ✓ no publishing sandbox is left in the organization (live, read-only) > lists nothing labelled workload=radar-publisher  747ms
+ Test Files  1 passed (1)
+      Tests  1 passed | 13 skipped (14)
+   Start at  08:28:34
+   Duration  1.16s (transform 122ms, setup 0ms, collect 224ms, tests 749ms, environment 0ms, prepare 47ms)

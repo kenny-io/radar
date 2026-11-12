@@ -1,0 +1,146 @@
+{
+  "at": "2026-11-12T01:23:00.859Z",
+  "base": "http://localhost:3853",
+  "mode": "smoke",
+  "environment": "Next dev server, RADAR_DEV_STUBS=1, isolated local Postgres, synthetic accounts; Google Chrome (headless) through Playwright",
+  "worktree": "git worktree",
+  "results": [
+    {
+      "name": "an ordinary account signs in through the form and lands in the app",
+      "pass": true,
+      "detail": {
+        "landedOn": "/dashboard",
+        "sessionCookieHttpOnly": true
+      }
+    },
+    {
+      "name": "failed article (fidelity): the banner is the generic one, with Report issue and Retry, before and after a reload",
+      "pass": true,
+      "detail": {
+        "banner": "Publishing failed Radar is unable to publish this post. Your article is saved. Report issue to the team Retry",
+        "sameAfterReload": true,
+        "articleBodyKept": true
+      }
+    },
+    {
+      "name": "failed article (egress): the banner is the generic one, with Report issue and Retry, before and after a reload",
+      "pass": true,
+      "detail": {
+        "banner": "Publishing failed Radar is unable to publish this post. Your article is saved. Report issue to the team Retry",
+        "sameAfterReload": true,
+        "articleBodyKept": true
+      }
+    },
+    {
+      "name": "failed article (agent): the banner is the generic one, with Report issue and Retry, before and after a reload",
+      "pass": true,
+      "detail": {
+        "banner": "Publishing failed Radar is unable to publish this post. Your article is saved. Report issue to the team Retry",
+        "sameAfterReload": true,
+        "articleBodyKept": true
+      }
+    },
+    {
+      "name": "failed article (declined): the banner is the generic one, with Report issue and Retry, before and after a reload",
+      "pass": true,
+      "detail": {
+        "banner": "Publishing failed Radar is unable to publish this post. Your article is saved. Report issue to the team Retry",
+        "sameAfterReload": true,
+        "articleBodyKept": true
+      }
+    },
+    {
+      "name": "failed article (budget): the banner is the generic one, with Report issue and Retry, before and after a reload",
+      "pass": true,
+      "detail": {
+        "banner": "Publishing failed Radar is unable to publish this post. Your article is saved. Report issue to the team Retry",
+        "sameAfterReload": true,
+        "articleBodyKept": true
+      }
+    },
+    {
+      "name": "failed article (teardown): the banner is the generic one, with Report issue and Retry, before and after a reload",
+      "pass": true,
+      "detail": {
+        "banner": "Publishing failed Radar is unable to publish this post. Your article is saved. Report issue to the team Retry",
+        "sameAfterReload": true,
+        "articleBodyKept": true
+      }
+    },
+    {
+      "name": "publishing article: shows \"Publishing…\", no failure banner, no retry",
+      "pass": true,
+      "detail": {
+        "status": "Publishing…",
+        "failureBanner": false
+      }
+    },
+    {
+      "name": "dashboard: the failed article is announced with the same generic sentence and opens by keyboard",
+      "pass": true,
+      "detail": {
+        "openedByKeyboard": "/article/e_lanternqa_one"
+      }
+    },
+    {
+      "name": "what the browser is sent: workspace, job and stream payloads carry only the generic failure",
+      "pass": true,
+      "detail": {
+        "failedEntries": 6,
+        "apiResponsesChecked": 56,
+        "streamBytesChecked": 22
+      }
+    },
+    {
+      "name": "Report issue: one click sends one report; the customer sees a plain confirmation and no technical detail",
+      "pass": true,
+      "detail": {
+        "toast": "Your report was saved locally. No email was sent.",
+        "requests": 1,
+        "responseKeys": [
+          "ok",
+          "data",
+          "rev",
+          "workspace"
+        ]
+      }
+    },
+    {
+      "name": "mobile 390 px: the banner fits, wraps without horizontal scroll, and Retry takes keyboard focus",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "a viewer sees the same banner without Retry and cannot retry through the API",
+      "pass": true,
+      "detail": {
+        "bannerVisible": true,
+        "retryButton": false,
+        "retryApi": 403
+      }
+    },
+    {
+      "name": "another tenant and an anonymous visitor get nothing about the article or its failure",
+      "pass": true,
+      "detail": {
+        "outsider": [
+          404,
+          404,
+          404
+        ],
+        "anonymousRedirectedTo": "sign-in"
+      }
+    },
+    {
+      "name": "no uncaught error in the page",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ],
+  "errors": []
+}

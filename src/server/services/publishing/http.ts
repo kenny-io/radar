@@ -29,7 +29,8 @@ export class PublishError extends Error {
   get hint() { return this.diagnostic ? this.detail : this.kind === 'config' && (this.http === 422 || this.http === 403) && this.detail ? this.detail : null; }
 }
 
-/** Model review text is untrusted. Retain a short reason, never credentials, URLs or source excerpts. */
+/** Model review text is untrusted. Retain a short reason, never credentials, URLs or source excerpts. The shared
+ *  sanitizer keeps its own 1,600-character bound unless the caller asks for a longer text. */
 export function publishingDiagnosticText(value: string, limit = 300): string {
   return sanitizeDiagnostic(value
     .replace(/-----BEGIN [\s\S]*?PRIVATE KEY-----[\s\S]*?(?:-----END [\s\S]*?PRIVATE KEY-----|$)/g, '[redacted]')
@@ -37,7 +38,8 @@ export function publishingDiagnosticText(value: string, limit = 300): string {
     .replace(/(?:https?|postgres(?:ql)?):\/\/[^\s<>"']+/gi, '[URL omitted]')
     .replace(/```[\s\S]*?(?:```|$)/g, '[source omitted]')
     .replace(/`[^`]*`/g, '[source omitted]')
-    .replace(/(["']?(?:token|key|pass|client[_-]?secret|private[_-]?key)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi, '$1[redacted]'))
+    .replace(/(["']?(?:token|key|pass|client[_-]?secret|private[_-]?key)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi, '$1[redacted]'),
+  limit > 1600 ? { limit } : undefined)
     .replace(/[\x00-\x1f\x7f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, limit);
 }
 

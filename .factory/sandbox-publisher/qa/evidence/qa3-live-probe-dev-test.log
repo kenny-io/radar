@@ -1,0 +1,15 @@
+ RUN  v3.2.7 <worktree>
+stdout | src/server/services/publishing/sandbox/probe.live.test.ts > Publishing sandbox probes (live) > reaches the model proxy health route and none of the canary hosts (SBX-3)
+[probe.live] egress probe: radar-probe ok health_attempts=1 canaries=4
+stdout | src/server/services/publishing/sandbox/probe.live.test.ts > Publishing sandbox probes (live) > holds none of the worker’s secrets in its environment, processes or files, including after a runner exec (SBX-2)
+[probe.live] scan: {"user":999,"envNames":32,"processes":4,"processEnvironmentsRead":4,"filesSinceCreation":18,"tooLarge":0,"unreadable":6,"truncated":false}
+stdout | src/server/services/publishing/sandbox/probe.live.test.ts > Publishing sandbox probes (live) > is gone after it is destroyed (SBX-6)
+[probe.live] sandbox destroyed and no longer listed: 242e090b-9743-4216-a78c-33eb92de905c
+ ✓ src/server/services/publishing/sandbox/probe.live.test.ts (4 tests) 13714ms
+   ✓ Publishing sandbox probes (live) > reaches the model proxy health route and none of the canary hosts (SBX-3)  869ms
+   ✓ Publishing sandbox probes (live) > holds none of the worker’s secrets in its environment, processes or files, including after a runner exec (SBX-2)  3330ms
+   ✓ Publishing sandbox probes (live) > is gone after it is destroyed (SBX-6)  4892ms
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  08:05:58
+   Duration  14.41s (transform 192ms, setup 0ms, collect 385ms, tests 13.71s, environment 0ms, prepare 74ms)

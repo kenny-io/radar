@@ -73,10 +73,10 @@ export function safeRepositoryPath(path: string, write = false): boolean {
   if (write && (segments.some(p => ['.github', '.gitlab', '.buildkite'].includes(p)) || /^(?:\.gitlab-ci\.yml|\.travis\.yml|azure-pipelines\.ya?ml|jenkinsfile)$/.test(name) || /^(?:package\.json|pyproject\.toml|requirements(?:[-_.][^/]*)?\.txt|gemfile|composer\.json|cargo\.toml|go\.mod|pom\.xml|build\.gradle(?:\.kts)?)$/.test(name) || /^(?:dockerfile|docker-compose|compose\.|netlify\.toml|vercel\.json|wrangler\.|railway\.|procfile|\.gitignore|\.gitattributes|\.gitmodules)/.test(name) || /\.(?:tf|tfvars)$/.test(name) || segments.some(p => ['.circleci', '.husky', 'infra', 'infrastructure', 'terraform'].includes(p)) || /^(?:src\/)?(?:(?:server|api)\/)?(?:auth|authentication|security)\//.test(path.toLowerCase()) || /(?:^|\/)api\/auth(?:\/|\.)/.test(path.toLowerCase()) || /^(?:middleware\.[cm]?[jt]sx?|auth\.[cm]?[jt]sx?)$/.test(name))) return false;
   return true;
 }
-function containsCredential(source: string): boolean {
+export function containsCredential(source: string): boolean {
   return /-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----/.test(source) || /\bgh[pousr]_[A-Za-z0-9]{25,}\b/.test(source) || /\bgithub_pat_[A-Za-z0-9_]{40,}\b/.test(source) || /\bsk_(?:live|test)_[A-Za-z0-9]{20,}\b/.test(source) || /\bAKIA[A-Z0-9]{16}\b/.test(source) || /\bsk-(?:ant|proj)-[A-Za-z0-9_-]{25,}/.test(source);
 }
-function routeIdentity(value: string, absolute = false): string {
+export function routeIdentity(value: string, absolute = false): string {
   let url: URL;
   try { url = absolute ? new URL(value) : new URL(value, 'https://radar-route.invalid'); } catch { fail('the refresh URL or proposed route is invalid'); }
   if (!['http:', 'https:'].includes(url.protocol)) fail('the refresh URL must be a website URL');

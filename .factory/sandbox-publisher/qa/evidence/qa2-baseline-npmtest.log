@@ -1,0 +1,9 @@
+       |                    ^
+    206|   });
+    207|   it('an empty OPENROUTER_API_KEY counts as unset (no OpenRouter reque…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed | 142 passed | 52 skipped (195)
+      Tests  1 failed | 2281 passed | 557 skipped (2853)
+   Start at  06:11:53
+   Duration  16.45s (transform 5.79s, setup 0ms, collect 78.49s, tests 27.55s, environment 22ms, prepare 9.76s)
+exit 1
