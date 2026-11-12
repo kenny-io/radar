@@ -110,6 +110,8 @@ export function ArticleWorkspace() {
   };
   const publishNow = (retry = false) => { setMenu(false); app.act(retry ? 'publish.retry' : 'publish.now', { entryId: id }, { optimistic: patchEntry(id, { status: 'publishing' }) }).catch(() => {}); };
   const heroUrl = A.img.url && A.img.urlKey === `${A.img.style}:${A.img.seed}` ? A.img.url : null;
+  // The cover on screen is the brand template because a model style could not be generated (the server sets and clears the mark).
+  const placeholder = heroUrl ? A.img.placeholder || null : null;
   const removedSrc = new Set(A.sources.map((s, i) => (s.removed ? i : -1)).filter(i => i >= 0));
   const flagged = (bi: number) => A.claims.filter(c => c.block === bi && removedSrc.has(c.source)).map(c => c.text);
   const statusLine = st === 'scheduled' ? <Status tone={blog.paused ? 'warn' : 'ok'}>{blog.paused ? 'Paused · ' : 'Publishes '}{fmtDW(e.date)} · {fmtTime(blog.time)} {tzShort(blog.tz)}</Status> : st === 'publishing' ? <Status tone="signal" pulse>Publishing…</Status> : <EntryStatus s={st} />;
@@ -183,13 +185,21 @@ export function ArticleWorkspace() {
         {tab === 'image' && <div className="col" style={{ gap: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Cover image</h3>
           <Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} radius={10} busy={imgBusy} url={heroUrl} />
+          {placeholder && <div className="col" style={{ gap: 8, minWidth: 0 }}>
+            {/* The button sits outside the live region, so its loading state is not read out as a change to the notice. */}
+            <div role="status" className="col" style={{ gap: 6, minWidth: 0 }}>
+              <Status tone="warn">Placeholder</Status>
+              <span className="xs">This cover is a placeholder. {placeholder.reason === 'unavailable' ? 'Image generation is unavailable right now, so Radar used a title card.' : 'Radar couldn’t generate the image, so it used a title card.'}{mediaLocked ? '' : B.role === 'Viewer' ? ' An owner or editor can regenerate it.' : ' Regenerate to try again.'}</span>
+            </div>
+            {!mediaLocked && B.role !== 'Viewer' && <Btn size="sm" icon="refresh" loading={imgBusy} disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn>}
+          </div>}
           <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); art.patch(a => ({ ...a, img: { ...a.img, style: style as Article['img']['style'] } })); art.reload(); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Describe your image" hint="Describe the cover you want. After generating a custom cover, its direction also guides body images. Generated scenes may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
+          <Field label="Describe your image" hint="Radar writes this from your article. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject."><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
           <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
           {imageError && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageError}</span>}
           <span className="xs sub">Uses {B.profile.business.name}’s colors <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.primary, verticalAlign: -1 }} /> <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.secondary, verticalAlign: -1 }} /> from your Business Profile.</span>
-          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={imgBusy || genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} onGenerate={generateBodyImages} />}
+          {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={imgBusy || genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} issue={!bodyImages.length && !bodyError ? A.bodyImagesIssue?.reason ?? null : null} onGenerate={generateBodyImages} />}
           <VideoPicker vids={vids || []} loading={vidBusy} on={A.videos} onToggle={(v, has) => { setA({ videos: has ? A.videos.filter(x => x !== v.id) : [...A.videos, v.id] }, false); toast(has ? 'Video removed' : 'Video embedded after the first section'); }} />
         </div>}
         {tab === 'sources' && <div className="col">{A.sources.map((s, i) => <div key={i} className="row" style={{ padding: '14px 0', borderTop: i ? '1px solid var(--line2)' : 0, gap: 10, alignItems: 'flex-start' }}>
