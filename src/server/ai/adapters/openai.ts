@@ -63,20 +63,25 @@ export async function openaiRun(c: ProviderCall, cfg: { base: string; key: strin
       if (!r.ok) { const e: any = new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`); e.status = r.status; e.permanent = r.status >= 400 && r.status < 500 && r.status !== 429; throw e; }
       return r;
     });
-    let text = ''; let usage: any = {}; let searches = 0;
+    let text = ''; let usage: any = {}; let searches = 0; let finished = false; let truncated = false;
     for await (const ev of sseEvents(r)) {
-      if (ev.data === '[DONE]') break;
+      if (ev.data === '[DONE]') { finished = true; break; }
       const d = JSON.parse(ev.data);
       if (d.type === 'response.output_text.delta' && d.delta) { text += d.delta; c.onDelta(d.delta); }
-      if (d.type === 'response.completed') { usage = d.response?.usage || {}; if (billsSearch) searches = searchCalls(d.response?.output); }
+      if (d.type === 'response.completed') { finished = true; usage = d.response?.usage || {}; if (billsSearch) searches = searchCalls(d.response?.output); }
+      // Stopped at the output limit: what was written is partial. Marked, as in collect(), so ai.run fails the attempt
+      // and retries with more room; the usage the event reports is kept so the attempt is still costed.
+      if (d.type === 'response.incomplete' && d.response?.incomplete_details?.reason === 'max_output_tokens') { finished = true; truncated = true; usage = d.response?.usage || {}; if (billsSearch) searches = searchCalls(d.response?.output); break; }
       // Errors arrive inside a 200 stream (e.g. out of credit): surface them so the call fails over instead of returning ''.
+      // An answer left incomplete for any other reason (a content filter) is one of them, with or without text so far.
       if (d.type === 'error' || d.type === 'response.failed' || d.type === 'response.incomplete') {
         const m = d.error?.message || d.message || d.response?.error?.message || d.response?.incomplete_details?.reason || d.type;
         const code = d.error?.code || d.code || d.response?.error?.code || '';
-        if (d.type === 'response.incomplete' && text) break; // truncated by max tokens: keep what was written
         const e: any = new Error(`Stream ${d.type}: ${code} ${m}`.slice(0, 300)); e.status = /quota|credit|billing/i.test(m + code) ? 429 : 500; throw e;
       }
     }
-    return { text, citations: [], inputTokens: usage.input_tokens, outputTokens: usage.output_tokens, ...(searches ? { searches } : {}) };
+    // A stream that closes without response.completed (or [DONE]) was cut off mid-answer: never save a truncated answer.
+    if (!finished) throw Object.assign(new Error('Stream ended before the answer finished'), { transient: true });
+    return { text, citations: [], inputTokens: usage.input_tokens, outputTokens: usage.output_tokens, ...(searches ? { searches } : {}), ...(truncated ? { truncated } : {}) };
   } finally { clearTimeout(t); }
 }

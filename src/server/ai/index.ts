@@ -40,7 +40,7 @@ export interface AiInput<T = any> {
 }
 export interface AiOutput<T = any> { text: string; json: T | null; citations: { url: string; title?: string }[]; model: string; provider: string }
 export interface ProviderCall { apiModel: string; system?: string; prompt: string; jsonSchema?: any; schemaName?: string; webSearch?: boolean; maxTokens: number; temperature?: number; onDelta?: (d: string) => void; timeoutMs: number; /** Reasoning effort, set by the call's tier (never by a caller). Undefined = send no effort field. */ effort?: Effort }
-export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number; /** Web-search tool calls the provider billed (direct Anthropic and OpenAI). */ searches?: number; /** The answer stopped at the output-token limit (stop_reason max_tokens, finish_reason length, incomplete: max_output_tokens). */ truncated?: boolean }
+export interface ProviderResult { text: string; json?: any; citations: { url: string; title?: string }[]; inputTokens?: number; outputTokens?: number; /** Actual cost when the route reports it (OpenRouter usage.cost). */ costUsd?: number; /** Web-search tool calls the provider billed (direct Anthropic and OpenAI). */ searches?: number; /** The answer stopped at the output-token limit (stop_reason max_tokens, finish_reason length, incomplete: max_output_tokens), streamed or not. ai.run fails the attempt unless the answer is structured and still validates. */ truncated?: boolean }
 
 /** Catalogue id → provider API id. Labels in Settings are unchanged; ids verified against provider docs (DIVERGENCES #4). Override with AI_MODEL_MAP='{"gpt-6-sol":"..."}'. */
 const DEFAULT_API_IDS: Record<string, string> = {
@@ -193,7 +193,9 @@ function planRoutes(task: AiTask, steps: Step[]): PlanRoute[] {
   return out;
 }
 
-/** Run a task. Retries transient failures, fails over between providers, validates JSON against the schema. Throws RadarError with generic copy on failure. */
+/** Run a task. Retries transient failures, fails over between providers, validates JSON against the schema. An answer
+ *  cut off at the output limit is a failed attempt (a structured one only when it no longer validates), never a result.
+ *  Throws RadarError with generic copy on failure. */
 export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { businessId?: string | null; retries?: number } = {}): Promise<AiOutput<T>> {
   const settings = await aiSettingsFor(opts.businessId);
   // The model plan comes from the call's purpose (./tiers.ts): a utility purpose never reads the business's choice, a
@@ -264,6 +266,10 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
         // budget can be spent before the answer is written), and the retry on this route gets twice the room.
         const cutOff = (what: string) => Object.assign(new Error(`${what} cut off at the ${call.maxTokens}-token output limit (${logProvider})`), { truncated: true });
         if (!String(res.text || '').trim() && res.json == null) throw res.truncated ? cutOff('Answer') : new Error('Empty response from ' + logProvider);
+        // A plain-text answer has no schema to show that it is whole: one that stopped at the limit ends mid-sentence.
+        // It is never returned as an answer (an article draft would be saved cut off); the attempt fails like the empty
+        // one above, streamed text is discarded by onReset, and the retry gets twice the room.
+        if (res.truncated && !input.schema) throw cutOff('Answer');
         let json: any = null;
         if (input.schema) {
           const raw = fitToSchema(res.json ?? extractJson(res.text), jsonSchema);
