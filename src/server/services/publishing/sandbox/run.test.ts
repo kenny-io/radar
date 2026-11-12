@@ -889,6 +889,65 @@ describe('error mapping', () => {
     expect(error.diagnostic.reason.length).toBeLessThanOrEqual(300);
   });
 
+  describe('what the provider said', () => {
+    const refused = (token: string, providerError: unknown, exitCode = 1): Setup => ({ script: { turns: [box => leave(box, { result: { ...goodResult({ status: 'agent_error', agentError: token, changed: [], turns: 1 }), providerError }, exit: { exitCode, output: '' } })] } });
+    const OUTDATED = "Claude Code 2.1.251 does not support this model; version 2.1.280 or newer is required. Run 'claude update', or update the Claude desktop app, then try again.";
+
+    it('is part of an agent-failed diagnostic, so an operator sees why the request was refused', async () => {
+      // The refusal seen live on 12 Nov 2026. Before this field the reason ended at "after 1 turns."
+      const { outcome, deps } = setup(refused('AgentApiError:400', { type: null, message: OUTDATED }));
+      const { error } = await outcome();
+      expect(error).toMatchObject({ http: 422, kind: 'config', retryable: false, diagnostic: { code: 'agent-failed', stage: 'plan' } });
+      expect(error.diagnostic.reason).toBe(`The agent run ended with an error (AgentApiError:400) after 1 turns. The provider said: ${OUTDATED}`);
+      expect(error.detail).toBe(error.diagnostic.reason);
+      expect(error.message).toContain('version 2.1.280 or newer is required');
+      expect(deps.gate).not.toHaveBeenCalled();
+    });
+
+    it('is part of an analysis-unavailable diagnostic, with the provider’s error type, and the failure is still retried', async () => {
+      const { outcome } = setup(refused('AgentApiError:529', { type: 'overloaded_error', message: 'Overloaded' }));
+      const { error } = await outcome();
+      expect(error).toMatchObject({ http: 502, retryable: true, diagnostic: { code: 'analysis-unavailable', stage: 'plan' } });
+      expect(error.diagnostic.reason).toBe('The model provider was unavailable during the agent run (AgentApiError:529). The provider said: overloaded_error: Overloaded');
+    });
+
+    it('changes nothing when the runner reported none, and is not added to a spent budget', async () => {
+      for (const providerError of [undefined, null]) {
+        const { error } = await setup(refused('AgentApiError:400', providerError)).outcome();
+        expect(error.diagnostic.reason).toBe('The agent run ended with an error (AgentApiError:400) after 1 turns.');
+      }
+      const { error } = await setup(refused('AgentBudgetExhausted', { type: 'invalid_request_error', message: 'run budget exhausted' })).outcome();
+      expect(error.diagnostic).toMatchObject({ code: 'agent-budget', reason: 'The agent run reached its model budget before finishing (AgentBudgetExhausted).' });
+    });
+
+    it('never carries a capability, a worker secret, an address or source text into the diagnostic, whatever result.json holds', async () => {
+      // result.json is untrusted: a runner that failed to redact, or a sandbox that rewrote the file.
+      const other = 'rdrcap1.b3RoZXItcnVu.c2lnbmF0dXJl';
+      const hidden = ['rdrcap1', CAPABILITY, other, SECRET.daytonaKey, SECRET.capabilitySecret, SECRET.githubToken, 'docs.example.test', 'export const posts'];
+      for (const message of [
+        `invalid x-api-key ${CAPABILITY}; also ${other}; ${SECRET.githubToken}`,
+        `invalid x-api-key ${SECRET.daytonaKey}; ${SECRET.capabilitySecret}; see https://docs.example.test/errors?key=1 and \`export const posts = []\``,
+      ]) {
+        expect(message.length).toBeLessThanOrEqual(300);
+        const { outcome, deps } = setup(refused('AgentApiError:401', { type: 'authentication_error', message }));
+        const { error } = await outcome();
+        expect(error.diagnostic.code).toBe('agent-failed');
+        expect(error.diagnostic.reason.startsWith('The agent run ended with an error (AgentApiError:401) after 1 turns. The provider said: authentication_error: invalid x-api-key [redacted]')).toBe(true);
+        const shown = JSON.stringify([error.message, error.detail, error.diagnostic, deps.log.mock.calls]);
+        for (const value of hidden) expect(shown.includes(value), value.slice(0, 12)).toBe(false);
+        expect(error.diagnostic.reason.length).toBeLessThanOrEqual(600);
+      }
+    });
+
+    it('refuses a result whose provider error is over its bound or malformed, and quotes none of it', async () => {
+      for (const providerError of [{ type: null, message: 'LEAKED-TEXT '.repeat(26) }, { type: 'Not An Identifier', message: 'LEAKED-TEXT' }, { type: null, message: 'LEAKED-TEXT', body: 'extra' }, 'LEAKED-TEXT']) {
+        const { error } = await setup(refused('AgentApiError:400', providerError)).outcome();
+        expect(error.diagnostic).toMatchObject({ code: 'agent-failed', reason: 'The runner exited with code 1 and left no valid result.' });
+        expect(JSON.stringify([error.message, error.diagnostic])).not.toContain('LEAKED-TEXT');
+      }
+    });
+  });
+
   it.each([
     [null, 'agent-failed'], ['', 'agent-failed'], ['UnknownError', 'agent-failed'], ['AgentResult:error_max_turns', 'agent-failed'], ['AgentResult:error_max_budget_usd', 'agent-budget'],
     ['proxy_budget_exhausted', 'agent-budget'], ['APIError:500', 'analysis-unavailable'], ['api_error_429', 'analysis-unavailable'], ['RateLimitError', 'analysis-unavailable'],

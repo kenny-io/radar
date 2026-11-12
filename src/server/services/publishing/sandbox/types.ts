@@ -225,6 +225,8 @@ export const AgentReportSchema = z.object({
 }).strict();
 export type AgentReport = z.infer<typeof AgentReportSchema>;
 
+/** Bounds of RunnerResult.providerError. sandbox/publisher/run.mjs mirrors them; runner.test.ts fails on drift. */
+export const PROVIDER_ERROR_LIMITS = { typeChars: 64, messageChars: 300 } as const;
 /** /output/result.json, written by the runner: first as a preliminary failure, then finalised. */
 export const RunnerResultSchema = z.object({
   version: z.literal(1),
@@ -237,6 +239,15 @@ export const RunnerResultSchema = z.object({
   /** Regular files whose git blob hash differs from the baseline (lstat, links never followed). Candidates only: the
    *  gate verifies every one on bytes the control plane downloaded. */
   changed: z.array(z.object({ path: z.string(), bytes: z.number().int().nonnegative() }).strict()),
+  /** Present only with status agent_error, and only when the provider or the model proxy rejected a model request:
+   *  the provider's error type (a lower-case identifier such as invalid_request_error, null when it gave none) and its
+   *  message, as the SDK reported them. The runner removes control characters, redacts the capability and anything
+   *  capability-shaped, and cuts the message to PROVIDER_ERROR_LIMITS.messageChars. Never model output or repository
+   *  text. Still untrusted here: it goes through publishingDiagnosticText before it is shown to an operator. */
+  providerError: z.object({
+    type: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/).nullable(),
+    message: z.string().min(1).max(PROVIDER_ERROR_LIMITS.messageChars),
+  }).strict().nullable().optional(),
 }).strict();
 export type RunnerResult = z.infer<typeof RunnerResultSchema>;
 
@@ -361,6 +372,11 @@ export interface SandboxIntegrationInput {
 export type IntegrateWithSandbox = (input: SandboxIntegrationInput) => Promise<SandboxIntegration>;
 
 export const SANDBOX_DRAFT_LAYOUT = 'sandbox-agent';
+/** How a sandbox draft relates to what was already on the article branch. Absent for the first commit on a new branch.
+ *  added: this attempt committed on top of an earlier attempt's commit. unchanged: the agent ran and the branch was
+ *  already complete, so nothing was committed. resumed: an earlier attempt's gated commit was reused and no agent ran
+ *  (its check details, agent notes and omitted-media list were never persisted, and the pull request says so). */
+export type SandboxContinuation = 'added' | 'unchanged' | 'resumed';
 /** RemoteDraft.extra for a sandbox draft, persisted on the entry and validated again by publish(). */
 export interface SandboxDraftExtra {
   base: string;
@@ -379,6 +395,7 @@ export interface SandboxDraftExtra {
   draft: true;
   /** The proposed slug was unavailable. */
   taken?: true;
+  continuation?: SandboxContinuation;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

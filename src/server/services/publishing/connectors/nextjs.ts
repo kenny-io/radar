@@ -26,7 +26,7 @@ import { jsonBody, PublishError, req, reqJson, publishingTimeRemaining, reposito
 import { planRepositoryPost, safeRepositoryPath, RepositorySourceTooLargeError, SOURCE_FILE_BYTES, type RepoEntry, type RepositoryPostPlan } from './nextjs-agent';
 import { sandboxPublisher } from '../sandbox/config';
 import { integrateWithSandbox } from '../sandbox/run';
-import { GATE_LIMITS, PUBLISH_CHECK_IDS, SANDBOX_BUDGET, SANDBOX_DRAFT_LAYOUT, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, type PublishCheck, type SandboxDraftExtra, type SandboxIntegration } from '../sandbox/types';
+import { GATE_LIMITS, PUBLISH_CHECK_IDS, SANDBOX_BUDGET, SANDBOX_DRAFT_LAYOUT, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, type PublishCheck, type SandboxContinuation, type SandboxDraftExtra, type SandboxIntegration } from '../sandbox/types';
 
 const API = 'https://api.github.com';
 const h = (c: ConnCtx) => ({ authorization: `Bearer ${c.creds.access_token}`, accept: 'application/vnd.github+json', 'x-github-api-version': '2022-11-28', 'user-agent': 'Radar' });
@@ -109,13 +109,8 @@ export const publishAttemptMs = (businessId: string) => (sandboxPublisher(busine
 const articleBodyHash = (p: PublishPayload) => createHash('sha256').update(JSON.stringify([p.title, p.slug, p.markdown, p.html, p.meta, p.date, p.mode, p.refreshUrl])).digest('hex').slice(0, 16);
 const gitBlobSha = (data: Buffer, algorithm: 'sha1' | 'sha256') => createHash(algorithm).update(`blob ${data.length}\0`).update(data).digest('hex');
 
-/** How a sandbox draft relates to what was already on the article branch. Absent for a first commit on a new branch.
- * added: this attempt committed on top of an earlier attempt's commit. unchanged: the agent ran and the branch was
- * already complete, so nothing was committed. resumed: an earlier attempt's gated commit was reused and no agent ran. */
-type SandboxContinuation = 'added' | 'unchanged' | 'resumed';
-type SandboxDraft = SandboxDraftExtra & { continuation?: SandboxContinuation };
 /** RemoteDraft.extra for a gated sandbox integration. Also used by the replay harness to render the pull request body. */
-export function sandboxDraftExtra(base: string, p: PublishPayload, plan: Pick<SandboxIntegration, 'slug' | 'path' | 'summary' | 'route' | 'checks' | 'agentNotes' | 'mediaOmitted' | 'review'> & { files: string[] }, continuation?: SandboxContinuation): SandboxDraft {
+export function sandboxDraftExtra(base: string, p: PublishPayload, plan: Pick<SandboxIntegration, 'slug' | 'path' | 'summary' | 'route' | 'checks' | 'agentNotes' | 'mediaOmitted' | 'review'> & { files: string[] }, continuation?: SandboxContinuation): SandboxDraftExtra {
   return {
     base, path: plan.path, slug: plan.slug, layout: SANDBOX_DRAFT_LAYOUT,
     // A retry may leave the article file as it already is on the branch; it is still the file the checks were about.

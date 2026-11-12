@@ -17,7 +17,7 @@ import { PublishError, publishingDeadlineError, publishingDiagnosticText } from 
 import { daytonaProvider } from './daytona';
 import { articleFiles, buildPublishTask, feedbackFile, taskFile, withPinnedArchive, workspaceTooLarge } from './workspace';
 import {
-  AgentReportSchema, GATE_LIMITS, REPAIRABLE_GATE_CODES, RUN_OUTPUT_MAX_BYTES, RUNNER_COMMANDS, RUNNER_ENV, RUNNER_SCRIPTS, RUNNER_SOURCE_DIR,
+  AgentReportSchema, GATE_LIMITS, PROVIDER_ERROR_LIMITS, REPAIRABLE_GATE_CODES, RUN_OUTPUT_MAX_BYTES, RUNNER_COMMANDS, RUNNER_ENV, RUNNER_SCRIPTS, RUNNER_SOURCE_DIR,
   RunnerResultSchema, SANDBOX_BUDGET, SANDBOX_NOT_RUN, SANDBOX_OPERATIONS, SANDBOX_PATHS, SANDBOX_TEARDOWN_FAILED_CODE, SANDBOX_WORKLOAD,
   type AgentReport, type ArticleUnitsOf, type IntegrateWithSandbox, type MintPublishCapability, type PublicationGateResult, type RepairFeedback,
   type RunnerResult, type RunPublicationGate, type SandboxDiagnosticCode, type SandboxExecResult, type SandboxHandle, type SandboxIntegration,
@@ -41,6 +41,8 @@ export const SANDBOX_COMMANDS = {
 } as const;
 /** prepare.mjs exits with this code, and prints a `code=..._too_large` token, when an archive or expansion ceiling is passed. */
 const PREPARE_TOO_LARGE = { exitCode: 3, token: /code=[a-z_-]*too[-_]large/ } as const;
+/** Longest reason of an agent failure that quotes the provider: the fixed sentence, the provider's type and its message. */
+const PROVIDER_REASON_CHARS = 600;
 /** Development and QA only (config.transcriptDir is always null in production). */
 const TRANSCRIPT_MAX_BYTES = 5_000_000;
 
@@ -120,9 +122,15 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
 
   // ---- failures: bounded, sanitized, and never carrying a secret this module holds --------------------------------
   const safe = (text: string, limit = 300) => publishingDiagnosticText(secrets.reduce((value, secret) => (secret ? value.split(secret).join('[redacted]') : value), text).replace(/rdrcap1\.[A-Za-z0-9._~+/=-]*/g, '[redacted]'), limit);
-  const failure = (http: number, kind: 'http' | 'config', code: SandboxDiagnosticCode, stage: Stage, text: string) => {
-    const reason = safe(text);
+  const failure = (http: number, kind: 'http' | 'config', code: SandboxDiagnosticCode, stage: Stage, text: string, limit = 300) => {
+    const reason = safe(text, limit);
     return new PublishError(http, reason, '', kind, { code, stage, reason });
+  };
+  /** What the provider or the proxy said when it rejected a model request, for the operator's diagnostic. The runner
+   *  bounded and redacted it; result.json is untrusted all the same, so it is sanitized again here like any other text. */
+  const providerSaid = (error: RunnerResult['providerError']) => {
+    const said = error ? safe(`${error.type ? `${error.type}: ` : ''}${error.message}`, PROVIDER_ERROR_LIMITS.typeChars + PROVIDER_ERROR_LIMITS.messageChars) : '';
+    return said ? ` The provider said: ${said}` : '';
   };
   const unavailable = (stage: Stage, what: string, cause?: unknown) => failure(502, 'http', 'sandbox-unavailable', stage,
     `${what}${cause === undefined ? '' : ` (${errorName(cause)}${cause instanceof Error && cause.message ? `: ${cause.message}` : ''})`}.`);
@@ -262,9 +270,10 @@ export async function integrateWithSandbox(input: SandboxIntegrationInput, depen
         if (result?.status === 'agent_error') {
           const token = errorToken(result.agentError);
           const kind = classifyAgentError(result.agentError);
-          if (kind === 'analysis-unavailable') throw failure(502, 'http', kind, stage, `The model provider was unavailable during the agent run (${token}).`);
+          const said = providerSaid(result.providerError);
+          if (kind === 'analysis-unavailable') throw failure(502, 'http', kind, stage, `The model provider was unavailable during the agent run (${token}).${said}`, PROVIDER_REASON_CHARS);
           if (kind === 'agent-budget') throw failure(422, 'config', kind, stage, `The agent run reached its model budget before finishing (${token}).`);
-          throw failure(422, 'config', kind, stage, `The agent run ended with an error (${token}) after ${result.turns} turns.`);
+          throw failure(422, 'config', kind, stage, `The agent run ended with an error (${token}) after ${result.turns} turns.${said}`, PROVIDER_REASON_CHARS);
         }
         throw failure(422, 'config', 'agent-failed', stage, result ? `The runner exited with code ${ran.exitCode}, which contradicts the result it wrote.` : `The runner exited with code ${ran.exitCode} and left no valid result.`);
       }

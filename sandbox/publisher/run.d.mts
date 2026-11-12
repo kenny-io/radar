@@ -13,10 +13,14 @@ export interface RunPaths {
   transcript: string; baseline: string; session: string;
 }
 export declare const RUN_PATHS: Readonly<RunPaths>;
+export declare const PROVIDER_ERROR_LIMITS: Readonly<{ typeChars: number; messageChars: number; scannedChars: number }>;
+export interface ProviderError { type: string | null; message: string }
 export interface RunnerTask { mode: 'new' | 'refresh'; limits: { changedFiles: number; fileBytes: number }; deadlineEpochMs: number | null }
 export interface ChangedFile { path: string; bytes: number }
 export interface RunnerResultValue {
   version: 1; status: 'completed' | 'agent_error' | 'deadline'; agentError: string | null; sessionId: string | null; turns: number; changed: ChangedFile[];
+  /** agent_error only: what the provider or proxy said when it rejected a model request. Bounded and redacted. */
+  providerError?: ProviderError;
 }
 export interface AgentHookMatcher { matcher?: string; hooks: ((input: unknown) => Promise<ToolScopeHookOutput>)[] }
 export interface AgentOptions {
@@ -34,7 +38,7 @@ export declare function findChangedFiles(repo: string, baseline: Map<string, str
 export declare function normalizeReport(value: unknown, maxBytes?: number): { ok: true; report: Record<string, unknown> } | { ok: false; code: 'AgentReportInvalid' | 'AgentReportTooLarge' };
 export declare function finalizeReport(reportPath: string, limits?: RunLimits, secret?: string): Promise<{ ok: true } | { ok: false; code: string }>;
 export declare function buildResult(
-  input: { status: RunnerResultValue['status']; agentError?: string | null; sessionId?: string | null; turns?: number; changed?: ChangedFile[] },
+  input: { status: RunnerResultValue['status']; agentError?: string | null; sessionId?: string | null; turns?: number; changed?: ChangedFile[]; providerError?: { type?: unknown; message?: unknown } | null },
   limits?: RunLimits,
 ): RunnerResultValue;
 export declare function buildPrompt(input: {
@@ -45,6 +49,7 @@ export declare function buildAgentOptions(input: {
   scope: Scope; model: string; environment: Record<string, string | undefined>; abortController: AbortController; resume?: string | null; maxTurns?: number;
 }): AgentOptions;
 export declare function classifyResultMessage(message: unknown): string | null;
+export declare function readProviderError(message: unknown, secret?: string): ProviderError | null;
 export declare function computeStopAt(input: { startedAt: number; deadlineEpochMs: number | null }, limits?: RunLimits): number;
 export declare function runAgent(input: {
   query: AgentQuery; paths?: RunPaths; environment?: Record<string, string | undefined>; limits?: RunLimits; now?: () => number; stopSignal?: AbortSignal;

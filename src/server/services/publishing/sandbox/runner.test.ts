@@ -20,7 +20,7 @@ import {
 } from '../../../../../sandbox/publisher/probe.mjs';
 import {
   buildAgentOptions, buildPrompt, buildResult, classifyResultMessage, computeStopAt, finalizeReport, findChangedFiles,
-  normalizeReport, readBaseline, readFeedback, readTask, RUN_ENV, RUN_LIMITS, RUN_PATHS, runAgent,
+  normalizeReport, PROVIDER_ERROR_LIMITS as RUNNER_PROVIDER_ERROR_LIMITS, readBaseline, readFeedback, readProviderError, readTask, RUN_ENV, RUN_LIMITS, RUN_PATHS, runAgent,
   type AgentOptions, type AgentQuery, type RunPaths,
 } from '../../../../../sandbox/publisher/run.mjs';
 import {
@@ -28,7 +28,7 @@ import {
   type Scope,
 } from '../../../../../sandbox/publisher/write-scope.mjs';
 import {
-  AgentReportSchema, MODEL_PROXY_BASE_PATH, MODEL_PROXY_ROUTES, RUN_OUTPUT_MAX_BYTES, RUNNER_COMMANDS, RUNNER_ENV,
+  AgentReportSchema, MODEL_PROXY_BASE_PATH, MODEL_PROXY_ROUTES, PROVIDER_ERROR_LIMITS, RUN_OUTPUT_MAX_BYTES, RUNNER_COMMANDS, RUNNER_ENV,
   RUNNER_SCRIPTS, RUNNER_SOURCE_DIR, RunnerResultSchema, SANDBOX_BUDGET, SANDBOX_PATHS, SANDBOX_USER, TASK_LIMITS,
   WORKSPACE_LIMITS, type ArticlePayloadFile, type PublishTask, type RepairFeedback,
 } from './types';
@@ -68,6 +68,8 @@ describe('contract constants', () => {
     // The saved session lives beside the baseline, outside everything the model may read.
     expect(dirname(SESSION_FILE)).toBe(SANDBOX_PATHS.runnerDir);
     expect(RUN_PATHS.session).toBe(SESSION_FILE);
+    // What the runner may write as the provider's words is exactly what the control plane accepts.
+    expect(RUNNER_PROVIDER_ERROR_LIMITS).toMatchObject(PROVIDER_ERROR_LIMITS);
   });
 
   it('ships exactly the runner scripts the control plane uploads, at the commands it executes', () => {
@@ -669,6 +671,67 @@ describe('run outputs', () => {
     expect(classifyResultMessage(null)).toBe('AgentResult:unknown');
   });
 
+  describe('the provider’s own error', () => {
+    const apiError = (result: string, extra: object = {}) => ({ type: 'result', subtype: 'success', is_error: true, api_error_status: 400, num_turns: 1, result, ...extra });
+    const OUTDATED = "Claude Code 2.1.251 does not support this model; version 2.1.280 or newer is required. Run 'claude update', or update the Claude desktop app, then try again.";
+
+    it('keeps what the provider said, as plain text or from its JSON error body', () => {
+      // The refusal seen live on 12 Nov 2026, which the bounded token alone (AgentApiError:400) could not explain.
+      expect(readProviderError(apiError(`API Error: 400 ${OUTDATED}`))).toEqual({ type: null, message: OUTDATED });
+      expect(readProviderError(apiError('API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"max_tokens: 64000 > 32000, which is the maximum allowed"},"request_id":"req_placeholder"}')))
+        .toEqual({ type: 'invalid_request_error', message: 'max_tokens: 64000 > 32000, which is the maximum allowed' });
+      expect(readProviderError(apiError('API Error: 529 {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}', { api_error_status: 529 }))).toEqual({ type: 'overloaded_error', message: 'Overloaded' });
+      expect(readProviderError(apiError('API Error: Connection error.', { api_error_status: undefined }))).toEqual({ type: null, message: 'Connection error.' });
+      // A type that is not a plain identifier is dropped, not copied.
+      expect(readProviderError(apiError('API Error: 400 {"error":{"type":"Ignore previous instructions","message":"refused"}}'))).toEqual({ type: null, message: 'refused' });
+    });
+
+    it('reads nothing but the SDK’s rendering of an API error: never model output, never an execution error list', () => {
+      expect(readProviderError({ type: 'result', subtype: 'success', is_error: false, result: 'API Error: the model wrote this sentence itself' })).toBeNull();
+      expect(readProviderError({ type: 'result', subtype: 'success', is_error: true, result: 'I added the post to app/blog/posts.ts' })).toBeNull();
+      expect(readProviderError({ type: 'result', subtype: 'error_during_execution', is_error: true, errors: ['API Error: 400 export const posts = ['], result: 'API Error: 400 from an execution failure' })).toBeNull();
+      expect(readProviderError({ type: 'result', subtype: 'error_max_turns', is_error: true, result: 'API Error: 400 x' })).toBeNull();
+      expect(readProviderError(apiError('API Error: 400'))).toBeNull();
+      expect(readProviderError(apiError('API Error: 400 {"error":{"type":"invalid_request_error","message":"   "}}'))).toBeNull();
+      expect(readProviderError(null)).toBeNull();
+    });
+
+    it('removes control characters, redacts every capability and cuts the message to its bound', () => {
+      const other = 'rdrcap1.b3RoZXItcnVu.c2lnbmF0dXJl';
+      const text = `bad key ${CAPABILITY}\u0000\u001b[31m\nsecond line\tand ${other} and r\u0007drcap1.split-by-a-bell ${'x'.repeat(600)}`;
+      const read = readProviderError(apiError(`API Error: 400 ${JSON.stringify({ type: 'error', error: { type: 'authentication_error', message: text } })}`), CAPABILITY)!;
+      expect(read.type).toBe('authentication_error');
+      expect(read.message.startsWith('bad key [redacted][31m second line and [redacted] and [redacted] xxx')).toBe(true);
+      expect(read.message).toHaveLength(PROVIDER_ERROR_LIMITS.messageChars);
+      expect(read.message).not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+      expect(JSON.stringify(read)).not.toContain('rdrcap1');
+      // An answer that is not JSON gets the same treatment as plain text.
+      expect(readProviderError(apiError(`API Error: 400 ${text}`), CAPABILITY)!.message.startsWith('bad key [redacted][31m second line and [redacted] and [redacted] xxx')).toBe(true);
+      // The run's own capability is removed even when white space breaks it up, where the pattern alone would leave its tail.
+      const broken = readProviderError(apiError(`API Error: 401 invalid x-api-key ${CAPABILITY.slice(0, 20)} ${CAPABILITY.slice(20)}`), CAPABILITY)!;
+      expect(broken.message).toBe('[redacted]');
+      // Text as long as the scan window cannot push a capability past the redaction.
+      const long = readProviderError(apiError(`API Error: 400 ${'y'.repeat(3990)}${CAPABILITY}`), CAPABILITY)!;
+      expect(long.message).toBe('y'.repeat(PROVIDER_ERROR_LIMITS.messageChars));
+    });
+
+    it('enters the result only for a failed turn, inside the schema’s bounds whatever it is handed', () => {
+      const failed = buildResult({ status: 'agent_error', agentError: 'AgentApiError:400', turns: 1, providerError: { type: 'invalid_request_error', message: OUTDATED } });
+      expect(RunnerResultSchema.parse(failed)).toEqual({ version: 1, status: 'agent_error', agentError: 'AgentApiError:400', sessionId: null, turns: 1, changed: [], providerError: { type: 'invalid_request_error', message: OUTDATED } });
+      const oversized = buildResult({ status: 'agent_error', agentError: 'AgentApiError:400', providerError: { type: 'x'.repeat(200), message: `${CAPABILITY}\n${'z'.repeat(5000)}` } });
+      expect(RunnerResultSchema.parse(oversized).providerError).toEqual({ type: null, message: `[redacted] ${'z'.repeat(PROVIDER_ERROR_LIMITS.messageChars - 11)}` });
+      for (const status of ['completed', 'deadline'] as const) expect(buildResult({ status, providerError: { type: null, message: OUTDATED } })).not.toHaveProperty('providerError');
+      for (const providerError of [null, undefined, { type: null, message: '' }, { type: null, message: 7 }]) expect(buildResult({ status: 'agent_error', agentError: 'AgentApiError:400', providerError })).not.toHaveProperty('providerError');
+      // The control plane refuses a result whose provider error is over the bound or carries anything extra.
+      const base = { version: 1, status: 'agent_error', agentError: 'AgentApiError:400', sessionId: null, turns: 1, changed: [] };
+      expect(RunnerResultSchema.safeParse({ ...base, providerError: { type: null, message: 'm'.repeat(PROVIDER_ERROR_LIMITS.messageChars + 1) } }).success).toBe(false);
+      expect(RunnerResultSchema.safeParse({ ...base, providerError: { type: 'Not An Identifier', message: 'm' } }).success).toBe(false);
+      expect(RunnerResultSchema.safeParse({ ...base, providerError: { type: null, message: 'm', body: 'extra' } }).success).toBe(false);
+      expect(RunnerResultSchema.safeParse({ ...base, providerError: null }).success).toBe(true);
+      expect(RunnerResultSchema.safeParse(base).success).toBe(true);
+    });
+  });
+
   it('stops the turn a fixed lead before the exec that runs it ends', () => {
     const lead = SANDBOX_BUDGET.runnerStopLeadSec * 1000;
     expect(computeStopAt({ startedAt: 1_000_000, deadlineEpochMs: null })).toBe(1_000_000 + SANDBOX_BUDGET.agentMaxSec * 1000 - lead);
@@ -901,6 +964,37 @@ describe('a full runner turn with a scripted agent', () => {
     expect(await stored()).toMatchObject({ status: 'agent_error', agentError: 'AgentResult:error_max_turns', turns: 150, sessionId: SESSION });
   });
 
+  it('writes what the provider said into result.json when it refuses the model request, and never the capability', async () => {
+    const said = "Claude Code 2.1.251 does not support this model; version 2.1.280 or newer is required. Run 'claude update', or update the Claude desktop app, then try again.";
+    const refusal = (result: string): AgentQuery => async function* () {
+      yield { type: 'system', subtype: 'init', session_id: SESSION };
+      yield { type: 'assistant', session_id: SESSION, error: 'unknown', message: { content: [{ type: 'text', text: result }] } };
+      yield { type: 'result', subtype: 'success', is_error: true, api_error_status: 400, num_turns: 1, result, session_id: SESSION };
+    };
+    const outcome = await runAgent({ query: refusal(`API Error: 400 ${said}`), paths, environment });
+    // The one output line stays a bounded token; the provider's sentence travels in the result only.
+    expect(outcome.line).toBe('radar-run-failure status=agent_error code=AgentApiError:400 turns=1 changed=0 deleted=0\n');
+    expect(await stored()).toEqual({ version: 1, status: 'agent_error', agentError: 'AgentApiError:400', sessionId: SESSION, turns: 1, changed: [], providerError: { type: null, message: said } });
+
+    // A proxy or provider that echoes the key it was given: this run's capability and any other are redacted on disk.
+    const echoed = `API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key ${CAPABILITY} (also seen: rdrcap1.YW5vdGhlcg.c2ln)"}}`;
+    await runAgent({ query: refusal(echoed), paths, environment });
+    const written = await readFile(paths.result, 'utf8');
+    expect(written).not.toContain('rdrcap1');
+    expect(RunnerResultSchema.parse(JSON.parse(written)).providerError).toEqual({ type: 'authentication_error', message: 'invalid x-api-key [redacted] (also seen: [redacted])' });
+  });
+
+  it('keeps the provider’s words out of a result that ended for another reason', async () => {
+    // A turn that ran out of turns: its `errors` and `result` can quote the repository and are never copied.
+    const maxTurns = await runAgent({ query: integrate({ result: { subtype: 'error_max_turns', is_error: true, num_turns: 150, result: 'API Error: 400 export const posts = [', errors: ['API Error: 400 { slug: "one" }'] } }), paths, environment });
+    expect(maxTurns.result).not.toHaveProperty('providerError');
+    // A clean run whose final text happens to look like an error is the model's text.
+    const clean = await runAgent({ query: integrate({ result: { result: 'API Error: 400 I finished the integration' } }), paths, environment });
+    expect(clean.result).toEqual(expect.objectContaining({ status: 'completed' }));
+    expect(clean.result).not.toHaveProperty('providerError');
+    expect(await readFile(paths.result, 'utf8')).not.toContain('API Error');
+  });
+
   it('maps a thrown SDK error and a stream that ends without a result', async () => {
     const throwing: AgentQuery = async function* () { yield { type: 'system', session_id: SESSION }; throw Object.assign(new Error(`secret ${CAPABILITY}`), { name: 'ProcessTransportError' }); };
     expect((await runAgent({ query: throwing, paths, environment })).line).toBe('radar-run-failure status=agent_error code=AgentThrown:ProcessTransportError turns=0 changed=0 deleted=0\n');
@@ -918,6 +1012,7 @@ describe('a full runner turn with a scripted agent', () => {
     };
     const outcome = await runAgent({ query: refused, paths, environment });
     expect(outcome.line).toBe('radar-run-failure status=agent_error code=AgentBudgetExhausted turns=1 changed=0 deleted=0\n');
+    expect((await stored()).providerError).toEqual({ type: null, message: 'run budget exhausted' });
     // A clean success followed by a late throw stays a success.
     const late: AgentQuery = async function* (parameters) { yield* integrate()(parameters); throw new Error('late'); };
     expect((await runAgent({ query: late, paths, environment })).result.status).toBe('completed');

@@ -14,7 +14,8 @@
  *   RADAR_AGENT_MODEL   the model id handed to the SDK (the proxy enforces the capability's model regardless)
  * Reads   /workspace/input/task.json, /workspace/input/feedback.json (repair turn only),
  *         /opt/radar-agent/baseline.json, /opt/radar-agent/session-id
- * Writes  /output/result.json (first as a preliminary failure, then final), /output/report.json (the agent's,
+ * Writes  /output/result.json (first as a preliminary failure, then final; a failed model request adds the
+ *         provider's own error type and message, bounded and redacted), /output/report.json (the agent's,
  *         normalised to its schema and size ceiling), /output/transcript.jsonl and .gz, /opt/radar-agent/session-id
  * Output  exactly one bounded line
  * Exit    0 only when the final result status is `completed`; 1 otherwise (result.json still says why)
@@ -76,6 +77,17 @@ export const RUN_PATHS = Object.freeze({
   baseline: LAYOUT.baseline,
   session: SESSION_FILE,
 });
+
+/** Bounds of result.json's providerError. Mirror PROVIDER_ERROR_LIMITS in types.ts; runner.test.ts fails on drift. */
+export const PROVIDER_ERROR_LIMITS = Object.freeze({
+  typeChars: 64,
+  messageChars: 300,
+  /** How much of the SDK's error text is looked at. */
+  scannedChars: 4_000,
+});
+const PROVIDER_ERROR_TYPE = /^[a-z][a-z0-9_]{0,63}$/u;
+/** Any model capability, whole or cut short (CAPABILITY_PREFIX in types.ts). */
+const CAPABILITY_SHAPED = /rdrcap1\.[A-Za-z0-9._~+/=-]*/gu;
 
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,119}$/u;
@@ -346,7 +358,8 @@ export async function finalizeReport(reportPath, limits = RUN_LIMITS, secret = '
  * too long to report in full, a completed run is downgraded to an agent error: a truncated list must never read as
  * the whole change.
  * @param {{ status: 'completed' | 'agent_error' | 'deadline', agentError?: string | null, sessionId?: string | null,
- *           turns?: number, changed?: { path: string, bytes: number }[] }} input
+ *           turns?: number, changed?: { path: string, bytes: number }[],
+ *           providerError?: { type?: unknown, message?: unknown } | null }} input
  */
 export function buildResult(input, limits = RUN_LIMITS) {
   const result = {
@@ -357,6 +370,9 @@ export function buildResult(input, limits = RUN_LIMITS) {
     turns: Number.isSafeInteger(input.turns) && input.turns >= 0 ? input.turns : 0,
     changed: [],
   };
+  // Only a failed turn carries the provider's words, and they are bounded again here whatever the caller passed.
+  const providerError = input.status === 'agent_error' ? boundedProviderError(input.providerError) : null;
+  if (providerError) result.providerError = providerError;
   const candidates = (input.changed ?? []).filter(
     (file) => typeof file.path === 'string' && Number.isSafeInteger(file.bytes) && file.bytes >= 0,
   );
@@ -522,9 +538,71 @@ function mentionsBudget(message) {
 }
 
 /**
+ * One line of the provider's text: no control characters, no capability (this run's exact one, or anything shaped
+ * like one), at most `limit` characters.
+ */
+function providerText(value, limit, secret = '') {
+  let text = String(value)
+    .slice(0, PROVIDER_ERROR_LIMITS.scannedChars)
+    .replace(/[\t\n\r\u2028\u2029]+/gu, ' ')
+    .replace(/[\u0000-\u001f\u007f-\u009f]/gu, '');
+  if (secret) {
+    text = text.split(secret).join('[redacted]');
+    // A capability broken up by white space is still a capability to whoever reads the line, and the pattern below
+    // would only remove its first piece: nothing of such a line is kept.
+    if (text.replace(/\s+/gu, '').includes(secret)) text = '[redacted]';
+  }
+  text = text.replace(CAPABILITY_SHAPED, '[redacted]');
+  return text.replace(/\s+/gu, ' ').trim().slice(0, limit).replace(/[\ud800-\udbff]$/, '');
+}
+
+/**
+ * `{ type, message }` within the result contract's bounds, or null when there is no message to keep.
+ * @param {unknown} value
+ * @param {string} [secret] this run's capability
+ * @returns {{ type: string | null, message: string } | null}
+ */
+function boundedProviderError(value, secret = '') {
+  if (!isRecord(value) || typeof value.message !== 'string') return null;
+  const message = providerText(value.message, PROVIDER_ERROR_LIMITS.messageChars, secret);
+  if (!message) return null;
+  return { type: typeof value.type === 'string' && PROVIDER_ERROR_TYPE.test(value.type) ? value.type : null, message };
+}
+
+/**
+ * What the provider (or the model proxy) said when it rejected a model request, or null.
+ *
+ * Read from exactly one place: an SDK result that reports an API error, whose text is the SDK's own "API Error"
+ * rendering of the provider's answer. The text of any other result is the model's and is never read here, and the
+ * `errors` list of an execution failure can quote tool input, so it is never read either. That is what keeps model
+ * output and repository text out of result.json.
+ * @param {unknown} message an SDK result message
+ * @param {string} [secret] this run's capability
+ * @returns {{ type: string | null, message: string } | null}
+ */
+export function readProviderError(message, secret = '') {
+  if (message?.subtype !== 'success' || message.is_error !== true || typeof message.result !== 'string') return null;
+  // The status, when the SDK printed one, is already in the token; what follows it is the provider's answer.
+  const rendered = /^API Error:?\s*(?:\d{3}\b)?\s*([\s\S]*)$/u.exec(message.result.slice(0, PROVIDER_ERROR_LIMITS.scannedChars));
+  if (!rendered || !rendered[1]) return null;
+  let found = { type: null, message: rendered[1] };
+  if (rendered[1].startsWith('{')) {
+    // The provider's JSON error body: { "type": "error", "error": { "type", "message" } }.
+    try {
+      const body = JSON.parse(rendered[1]);
+      const error = isRecord(body) && isRecord(body.error) ? body.error : body;
+      if (isRecord(error) && typeof error.message === 'string') found = { type: error.type, message: error.message };
+    } catch {
+      // Not JSON, or cut short: kept as the bounded text it is.
+    }
+  }
+  return boundedProviderError(found, secret);
+}
+
+/**
  * Reduce an SDK result message to a bounded token, or null for a clean success. Max-turn, provider and execution
- * errors are ordinary result messages, not exceptions. Free text from the provider is only ever matched against a
- * fixed phrase, never copied.
+ * errors are ordinary result messages, not exceptions. The token never carries free text: the provider's text is only
+ * matched against a fixed phrase here. Its bounded, redacted copy travels separately (readProviderError).
  */
 export function classifyResultMessage(message) {
   if (message?.subtype === 'success' && message.is_error === false) return null;
@@ -615,6 +693,7 @@ export async function runAgent({ query, paths = RUN_PATHS, environment = process
   let turns = 0;
   let assistantMessages = 0;
   let agentError = 'RunnerInterrupted';
+  let providerError = null;
   let didComplete = false;
   let didReachDeadline = false;
   let didRunTurn = false;
@@ -690,6 +769,7 @@ export async function runAgent({ query, paths = RUN_PATHS, environment = process
             didSeeResult = true;
             didComplete = token === null;
             agentError = token ?? agentError;
+            providerError = token === null ? null : readProviderError(message, capability);
           }
         }
       };
@@ -746,8 +826,18 @@ export async function runAgent({ query, paths = RUN_PATHS, environment = process
   // A turn the deadline cut short is a deadline, whatever error the abort surfaced as. A turn that had already
   // ended on its own keeps its own outcome.
   const status = didComplete ? 'completed' : didReachDeadline ? 'deadline' : 'agent_error';
+  // The provider's words belong to the model request that failed, so they are kept only while that failure is still
+  // the reason the run ended.
+  const isProviderFailure = status === 'agent_error' && /^Agent(?:ApiError:|BudgetExhausted$)/u.test(agentError);
   const result = buildResult(
-    { status, agentError: status === 'deadline' ? 'RunnerDeadline' : agentError, sessionId, turns, changed: changes.changed },
+    {
+      status,
+      agentError: status === 'deadline' ? 'RunnerDeadline' : agentError,
+      sessionId,
+      turns,
+      changed: changes.changed,
+      providerError: isProviderFailure ? providerError : null,
+    },
     limits,
   );
   let isResultWritten = true;

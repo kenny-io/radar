@@ -149,15 +149,21 @@ of the Dockerfile, `package.json` and `package-lock.json` in `sandbox/publisher`
 existing snapshot. Set the printed UUID as `RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID` on the worker and restart it. Build with
 the key of the organization the worker will use: a snapshot belongs to one organization.
 
-Rebuild only when one of those three files changes (for example a new Agent SDK version). The runner scripts
-(`run.mjs`, `prepare.mjs`, `probe.mjs`, `agent-environment.mjs`, `write-scope.mjs`) are not in the image: every attempt
-uploads them from the worker's checkout and verifies their checksums in the sandbox, so a prompt or runner fix ships
-with a normal worker deploy. The worker must therefore be started from the repository root, where `sandbox/publisher/`
-is.
+Rebuild when, and only when, one of those three files changes. The Agent SDK is installed in the image, so changing
+its version means editing `sandbox/publisher/package.json` and `package-lock.json`, building a new snapshot (the new
+digest gives it a new name and UUID) and setting the new UUID on the worker; a worker still pointing at the old UUID
+keeps running the old SDK. The runner scripts (`run.mjs`, `prepare.mjs`, `probe.mjs`, `agent-environment.mjs`,
+`write-scope.mjs`) are not in the image: every attempt uploads them from the worker's checkout and verifies their
+checksums in the sandbox, so a prompt or runner fix ships with a normal worker deploy and needs no rebuild. The worker
+must therefore be started from the repository root, where `sandbox/publisher/` is.
 
-The Agent SDK version and the model are a pair: the provider refuses a model from a client older than the model
-requires (measured 12 Nov 2026: SDK 0.3.251, which embeds Claude Code 2.1.251, is refused for `claude-opus-5-5` with
-"version 2.1.280 or newer is required"). After changing either, run the live smoke below before enabling the switch.
+The pin is `@anthropic-ai/claude-agent-sdk` 0.3.312, exact, in `sandbox/publisher/package.json` (a test fails if the
+manifest and lockfile disagree with it). The SDK version and the model are a pair: the provider refuses a model from
+a client older than that model requires. On 12 Nov 2026 the earlier pin, 0.3.251 (which embeds Claude Code 2.1.251),
+was refused for `claude-opus-5-5` with "version 2.1.280 or newer is required"; with 0.3.312 the live smoke and a replay
+of a real repository were both accepted on that model. After changing the SDK version or the model, run the live
+smoke below before enabling the switch. If the pair is wrong, every attempt fails as `agent-failed` and the reason
+quotes the provider's sentence.
 
 ### Run and deploy the model proxy
 

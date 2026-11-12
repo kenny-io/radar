@@ -65,8 +65,8 @@ source, URLs or credentials.
 | --- | --- | --- | --- |
 | `sandbox-unavailable` | Daytona create, upload, exec or download failed or timed out, or the runner scripts failed their checksum | yes (502) | Daytona status; the snapshot id; that the worker runs from the repository root |
 | `sandbox-egress-unverified` | The sandbox could reach something other than the model proxy, or could not reach the proxy. Nothing from the repository was uploaded | yes (503) | The Daytona organization's tier (Tier 3 or higher); that the proxy's health route answers; the proxy URL |
-| `analysis-unavailable` | The model provider or the proxy was unavailable during the agent run (5xx, 408, 429) | yes (502) | `[model-proxy]` `call-failed` lines; provider status |
-| `agent-failed` | The agent turn ended in an error that a retry would repeat: the provider refused the request (for example an Agent SDK too old for the model), turn limit, missing or invalid report | no | The bounded token in the reason, such as `AgentApiError:400`; run the live smoke |
+| `analysis-unavailable` | The model provider or the proxy was unavailable during the agent run (5xx, 408, 429) | yes (502) | The provider's sentence in the reason, when there is one; `[model-proxy]` `call-failed` lines; provider status |
+| `agent-failed` | The agent turn ended in an error that a retry would repeat: the provider refused the request (for example an Agent SDK too old for the model), turn limit, missing or invalid report | no | The bounded token in the reason, such as `AgentApiError:400`, and the provider's sentence after it; run the live smoke |
 | `agent-budget` | The run reached its spend or call cap | no | `RADAR_PUBLISH_SANDBOX_MAX_USD`, `RADAR_PUBLISH_SANDBOX_MAX_CALLS`; the entry's `ai_calls` rows |
 | `agent-declined` | The agent reported that it could not ground a complete integration; its sanitized reason follows | no | The repository: this describes the site, not the tool |
 | `workspace-too-large` | The archive or its expansion is over a ceiling (150 MB compressed, 100,000 entries, 1 GB) | no | Repository size |
@@ -74,6 +74,14 @@ source, URLs or credentials.
 | `protected-path`, `non-regular-file`, `changed-file-count`, `final-output-size`, `credential-detected`, `syntax-invalid`, `peer-content-changed`, `article-fidelity`, `identity-changed` | The publication gate refused the change before any Git write. `stage` is `validation`, or `repair` when the single repair turn also failed (`origin` then names the first refusal) | no | The reason and `issues` say which file, limit or article units |
 | `snapshot-mismatch` | A file GitHub returned did not match the pinned commit | no | Retry; the branch moved or GitHub served stale content |
 | `publishing-deadline` | The attempt reached its 13.5 minute deadline | no (manual retry) | Duration in the run line below; repository size |
+
+When the provider or the model proxy rejects a model request, the reason of `agent-failed` and `analysis-unavailable`
+ends with "The provider said:" and the provider's own error type and message, for example
+`The agent run ended with an error (AgentApiError:400) after 1 turns. The provider said: Claude Code 2.1.251 does not
+support this model; version 2.1.280 or newer is required.` The runner copies that text only from the SDK's rendering
+of an API error (never from model output or repository files), removes control characters, redacts the run capability
+and anything shaped like one, and cuts it to 300 characters; the worker sanitizes it again like every other
+diagnostic. Other agent failures (turn limit, a thrown SDK error, a missing report) carry the token alone.
 
 Gate failures leave nothing behind: no tree, commit, ref or pull request is written. GitHub's own errors (401, 403,
 404, 422, rate limits) keep their existing meaning and retry behavior.
