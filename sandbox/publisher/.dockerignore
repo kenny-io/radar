@@ -1,0 +1,4 @@
+# The image copies only the manifest and the lockfile. Runner scripts are uploaded per run, never baked in.
+*
+!package.json
+!package-lock.json
