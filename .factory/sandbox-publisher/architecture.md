@@ -528,5 +528,10 @@ Known limitations accepted for v1:
 - Unit edges are disclosed, not decided, for a unit set off only by non-standard tags and for files of a type the gate has no rules for (see above). Strings assembled at run time are not followed: `['Do not', unit].join(' ')` is two strings to the gate. Inline emphasis in agent text of the pull request body still renders.
 - Foreign commits on the article branch are not re-gated beyond this attempt's changes; what they added counts as not being on the default branch.
 - The spend cap is checked at admission, so calls in flight can exceed it.
+- Found by QA-3 on `b2b77964` and open before the engine is enabled beyond the owner's own businesses:
+  - Radar's Markdown export of an article that contains a video, stored as a string in a data file (a JSON string, a TypeScript template literal, a YAML literal block), is refused: a string holding block HTML is not read by the Markdown line rules. The same text in a `.md` file passes. A repair round cannot fix it (N7a).
+  - One unit per key or entry in a format the gate has no rules for (TOML, a Python list, a PHP array) is refused as "extended". The "disclosed, not decided" fallback above covers prose in such files, not this shape (N7b).
+  - Tags in the block-level list that render nothing or render inline (`input type="hidden"`, `meta`, `link`, `script`, `style`, `template`, `svg`, `button`) count as boundaries, so words placed before such a tag and a unit pass as word for word. It needs a deliberately hostile agent and shows in the diff (N8).
+  - A file absent from the merge-base tree is read as written by an earlier attempt. A default-branch file that reached the article branch by a foreign cherry-pick or rename is therefore not protected on a retry (N1 residual).
 
 No longer a limitation: a retry whose article title changed can rewrite a listing line an earlier attempt added, because that line is not on the default-branch commit the retry is compared with (N1).

@@ -17,9 +17,9 @@ File ownership per task is the table in `architecture.md` section 12; no file ha
 | QA-1 independent verification | factory-qa | ENG-5 integrated | done on `2ded10aa` (`2f10ee5f`): no blocker or major, minor D1 to D5 | SBX-1 to SBX-10 |
 | ENG-6 fixes for D1 to D5 | factory-engineer | QA-1 | verified by QA-2 (`3d3dd9c7`): D3, D4, D5 fixed; D1, D2 partly (N1, N3) | SBX-1, SBX-4, SBX-5, SBX-7 |
 | QA-2 recheck of the fixes | factory-qa | ENG-6 | done on `3d3dd9c7` (`0ef0adad`): minor N1 to N6; live replays blocked by a Daytona incident | SBX-1, SBX-4 to SBX-7 |
-| ENG-7 fixes for N1, N3, N5, N6 | factory-engineer | QA-2 | in progress | SBX-1, SBX-4, SBX-5, SBX-6 |
-| QA-3 recheck and live replays on the final revision | factory-qa | ENG-7 | planned | SBX-1, SBX-4 to SBX-8 |
-| PM-2 PR and handoff | PM | QA-3 | planned | SBX-10, SBX-11 |
+| ENG-7 fixes for N1, N3, N5, N6 | factory-engineer | QA-2 | verified by QA-3 (`8ce9b640`) | SBX-1, SBX-4, SBX-5, SBX-6 |
+| QA-3 recheck and live replays on the final revision | factory-qa | ENG-7 | done on `b2b77964`: N1, N3, N5, N6 fixed; minor N7a, N7b, N8 and an N1 residual accepted; three live runs accepted | SBX-1, SBX-4 to SBX-8 |
+| PM-2 PR and handoff | PM | QA-3 | PR opened; merge and rollout wait for the owner | SBX-10, SBX-11 |
 
 Blockers: none on the owner's side for development (Daytona organization, key, tier and the model proxy were settled on 12 Nov, see below). Open: live replays on the final revision need Daytona to start sandboxes again. Merge, production variables, deployment and retrying the failed entry wait for the owner's go-ahead.
 
@@ -123,4 +123,12 @@ Open follow-ups: provider error text is reduced to `AgentApiError:<status>` in `
 - QA-2 on `3d3dd9c7` (probes and evidence `0ef0adad`, results appended to `qa/report.md`): D3, D4, D5 fixed; D1 and D2 partly fixed. New minor findings N1 (retry path keeps the old peer rule), N2 (added text is not judged), N3 (words at the edge of a unit), N4 (three honest edits now refused), N5 (a failed create strands a sandbox and the next sweep fails on it), N6 (agent note renders as a task box, heading or quote). Baseline: typecheck clean; publishing, observability and AI suites 1,423 passed, 60 skipped, 1 failed (pre-existing `openrouter.qa.test.ts`); `npm test` 2,281 passed, 557 skipped, same 1 failed; build compiles; QA offline suite 289 passed, 23 skipped. PM reran the QA offline suite: same counts.
 - The two live replays did not run. Daytona could not start sandboxes between 02:15 and at least 03:15 UTC; three attempts ended `sandbox-unavailable` with 0 model calls and no upload. Three sandboxes stuck in `creating` (`b86705e4`, `c5ad7237`, `60d17fc9`, all `workload=radar-publisher`, holding nothing) could not be deleted; the PM is retrying.
 - PM decisions: fix N1, N3, N5 and N6 now (ENG-7); accept N2 and N4 for v1 and record them in `architecture.md` section 15. Release-ready needs the two replays accepted on the final revision.
+
+## ENG-7 and QA-3 (12 Nov 2026)
+
+- The three stuck sandboxes were deleted by the PM's retry loop once Daytona recovered (none listed at 04:00 UTC).
+- ENG-7 (`8ce9b640`): retries compare with the default-branch commit the article branch started from; a unit must stand alone in the text that carries it; a failed create is swept and reported and a leftover no longer fails the next attempt; agent statements in the PR body follow a Radar label. N2 and N4 recorded in `architecture.md` section 15. PM rerun: typecheck clean; `npx vitest run src/server/services/publishing src/server/observability` 1,212 passed, 64 skipped; `npm run build` compiles.
+- QA-3 on `b2b77964` (results in `qa/report.md`): N1, N3, N5, N6 fixed. Baseline: typecheck clean; publishing, observability and AI suites 1,554 passed, 64 skipped, 1 failed (pre-existing); `npm test` 2,412 passed, 561 skipped, same 1 failed; build compiles; QA offline suite 401 passed, 25 skipped (PM reran: same). Live, all accepted first pass with no repair round: LivedHQ new article (93.1 s, 0.5479 USD, 0 of 2,528 lines altered, 19 of 19 units), thally-website new article with em dash (106.4 s, 0.6150 USD, 0 of 1,083 altered, 13 of 13 units), and a retry with a changed title (93.2 s, 0.3245 USD, the agent rewrote exactly its own four lines). Four sandboxes created, none left.
+- PM decisions: accept N7a, N7b, N8 and the N1 residual for the first cohort and record them in section 15 as open before any wider rollout. QA's recommendation: merge with the switch off, yes; the owner's own businesses, yes, with a person reviewing each PR and someone watching `publishing.sandbox.teardown`; other customers, not yet.
+- Release-ready revision: the branch tip that adds these records (code unchanged since `8ce9b640`).
 

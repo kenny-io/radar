@@ -177,3 +177,79 @@ Sandboxes: 4 created, 1 deleted. Three stayed in `creating` and could not be del
 - Honest work on real repositories under the stricter gate (the two replays).
 - The signed-marker resume against real GitHub.
 - Everything listed as not verified in QA-1.
+
+---
+
+# QA-3 report: recheck of N1, N3, N5, N6 and the live replays on `b2b77964`
+
+Written by the PM from the QA specialist's handback. Tested revision `b2b779642d19eec080cf562522ac6229b2d34234` (code fixes in `8ce9b640`), 12 Nov 2026. Only this directory changed. No UI changed, so no browser checks.
+
+**Verdict: N1, N3, N5 and N6 fixed; three live runs accepted on the first pass; four new minor or low findings (N7a, N7b, N8, an N1 residual), none blocking the first cohort.**
+
+| Finding | Verdict | Basis |
+| --- | --- | --- |
+| N1 retry can remove default-branch content | Fixed, one low residual | Gate and connector probes, one live retry |
+| N3 words beside a unit | Fixed for the same line, element or string; too strict in two cases (N7a, N7b); one small bypass (N8) | 21 attacks refused, 40 honest carriers accepted |
+| N5 teardown after a failed create | Fixed on the fake provider; not observed live | 47 orchestration probes |
+| N6 agent text renders as a block | Fixed | GitHub's renderer, 115 bodies |
+
+- **N1.** Refused: peer records deleted, a peer title rewritten, a line deleted in another file, re-indent, legacy migration, altered lines summed across attempts (4+3 refused, 4+2 passes with the review sentence), symlink or non-text on base, a base file deleted on the branch and rewritten shorter. A retry makes exactly one compare request and one extra tree request; a first attempt, a signed-marker resume and the planner with the switch off make none. No shared history, a malformed merge base and a truncated base tree are refused before any sandbox is created. Without a base tree the gate is stricter, never weaker.
+- **N3.** Honest work in the three live repositories' conventions and Radar's exports passes (LivedHQ typed registry and hub records, thally `content.mdx`, connector-test MDX, Markdown and HTML exports with images, video and sources, plus Astro, Vue, Svelte, PHP template, TSX, YAML, JSON, txt, rst). The engineer's listed honest refusals are confirmed.
+- **N5.** Leftovers in `creating`, `error`, `destroying` and unknown states are reported with id and state; the next attempt carries on past leftovers, a failing list and a hanging delete (abandoned after 30 s). No content is uploaded before a passing egress probe on any path.
+- **N6.** 38 block starters as summary, rule and deviation plus the 49 hostile vectors: the agent section contains only Radar's `p`, `ul`, `li`; Radar's five headings appear once each. Cosmetic: `$$ x^2 $$` in a rule renders as inline math.
+
+## New findings
+
+- **N7a, minor (honest work refused).** Radar's Markdown export of an article with a video, stored as a string in a data file, is refused; a repair round cannot fix it. `qa3.qa.test.ts:228`, `:231`.
+- **N7b, minor (differs from architecture section 15).** One unit per TOML key, Python list entry or PHP array entry is refused, not disclosed. `qa3.qa.test.ts:245`, `:248`.
+- **N8, minor (bypass).** Block-list tags that render nothing or inline (`input type="hidden"`, `meta`, `link`, `script`, `style`, `template`, `svg`, `button`) count as boundaries, so `- Do not <input type="hidden"> <list item>` passes as word for word. `qa3.qa.test.ts:301`, `:304`.
+- **N1 residual, low.** A default-branch file that reached the article branch by a foreign cherry-pick or rename is read as an earlier attempt's own; a retry can then remove its lines. `qa3.qa.test.ts:111`, `:123`; `connector.qa.test.ts:581`.
+
+PM ruling: accepted for the first cohort and recorded in `architecture.md` section 15 as open before any wider rollout.
+
+## Baseline on `b2b77964`
+
+| Command | Result |
+| --- | --- |
+| `npm run typecheck` | clean |
+| `npx vitest run src/server/services/publishing src/server/observability src/server/ai` | 1,554 passed, 64 skipped, 1 failed |
+| `npm test` | 2,412 passed, 561 skipped, 1 failed |
+| `npm run build` | compiled successfully |
+| Offline QA suite | 401 passed, 25 skipped (live files) |
+
+The one failure is the pre-existing `src/server/ai/openrouter.qa.test.ts`. `it.fails` probes kept for N2, N7a, N7b and N8.
+
+## Live runs: 3 of 4 allowed, 1.4874 of 3 USD
+
+| | LivedHQ new article (`a44ccfb4`) | thally-website new article, em dash (`c9a3b859`) | Retry with a changed title |
+| --- | --- | --- | --- |
+| Outcome | accepted, no repair round | accepted, no repair round | accepted, no repair round |
+| Duration | 93.1 s | 106.4 s | 93.2 s |
+| Agent turns / model calls | 19 / 12 | 34 / 17 | 27 / 13 |
+| Cost (USD) | 0.5479 | 0.6150 | 0.3245 |
+| Files changed | 1 | 6 (4 new) | 2 |
+| Original lines altered / removed | 0 / 0 of 2,528 | 0 / 0 of 1,083 | 0 / 0 of 1,083 against the default branch |
+| Lines added | 76 | 151 | 14 against the default branch |
+| Units word for word | 19 of 19, headings 6 of 6 | 13 of 13, headings 4 of 4 | 13 of 13, headings 4 of 4 |
+| "Not decided" | none | none | none |
+
+- LivedHQ: only `apps/web/app/blog/posts.ts`; records 24 to 25, one insertion block.
+- thally-website: no em dash or entity form in any changed file; disclosed as "Deviation 1: punctuation".
+- Retry: built from the default-branch commit with the first replay's six files laid over it, new title, `options.retry` and `baseEntries` as the connector passes them. The agent rewrote exactly its own four lines; slug and path kept; the old title is in no file.
+
+Sandboxes: 4 created (1 probe, 3 runs), all deleted; final listing at 04:28 UTC shows none with `workload=radar-publisher`.
+
+## Not verified in QA-3
+
+- N5 against a real failed create (Daytona was healthy).
+- The retry through the real connector and Git transport (no GitHub writes allowed).
+- A genuine no-shared-history compare on GitHub; a 404 for a missing commit was confirmed.
+- Whether the built site renders (`runtimeVerified` is false by design and the PR says so).
+- Only two repositories' conventions ran live this round.
+
+## Release recommendation for `b2b77964`
+
+- Merge with the switch off: yes.
+- First cohort (the owner's own businesses): yes, with a person reviewing each pull request and someone watching `publishing.sandbox.teardown` reports for the first runs.
+- Other customers: not yet. Fix or document N7a and N7b, decide N8 and the N1 residual, and collect clean first-cohort publishes including one real retry and one real failed-create teardown.
+

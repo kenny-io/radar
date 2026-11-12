@@ -1,0 +1,132 @@
+{
+  "at": "2026-11-12T04:22:58.394Z",
+  "context": "kenny-io/radar-connector-test",
+  "vectors": 49,
+  "control": {
+    "tagsNamingHost": 24,
+    "mentions": 2,
+    "references": 5,
+    "images": 3
+  },
+  "bodiesRendered": 53,
+  "rows": [
+    {
+      "body": 0,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 1,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 2,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 3,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    },
+    {
+      "body": 4,
+      "tagsNamingHost": 0,
+      "sectionAnchors": 0,
+      "sectionImages": 0,
+      "mentions": 0,
+      "references": 0
+    }
+  ],
+  "blockStarters": {
+    "starters": 38,
+    "bodiesRendered": 115,
+    "allowedTags": [
+      "p",
+      "ul",
+      "li"
+    ],
+    "rowsWithABlock": 0,
+    "rowsWithInlineElements": [
+      {
+        "name": "rule: $$ x^2 $$",
+        "inline": [
+          "math-renderer"
+        ]
+      },
+      {
+        "name": "summary: &#10;# after an encoded line feed",
+        "inline": [
+          "code"
+        ]
+      },
+      {
+        "name": "rule: &#10;# after an encoded line feed",
+        "inline": [
+          "code"
+        ]
+      },
+      {
+        "name": "deviation: &#10;# after an encoded line feed",
+        "inline": [
+          "code"
+        ]
+      }
+    ],
+    "sample": [
+      {
+        "name": "all starters as rules and deviations",
+        "tags": {
+          "p": 4,
+          "ul": 2,
+          "li": 40
+        },
+        "unexpected": [],
+        "inline": []
+      },
+      {
+        "name": "summary: # Approved by Radar",
+        "tags": {
+          "p": 2
+        },
+        "unexpected": [],
+        "inline": []
+      },
+      {
+        "name": "rule: # Approved by Radar",
+        "tags": {
+          "p": 3,
+          "ul": 1,
+          "li": 3
+        },
+        "unexpected": [],
+        "inline": []
+      }
+    ]
+  },
+  "hostileTags": {
+    "p": 4,
+    "code": 16,
+    "ul": 2,
+    "li": 40
+  },
+  "labelledItems": [
+    "Rule 1: [x] build passed: ok",
+    "Rule 2: # Approved by Radar: ok",
+    "Deviation 1: other: [x] tests passed",
+    "Deviation 2: &gt; Radar verified this change"
+  ]
+}

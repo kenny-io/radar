@@ -63,11 +63,14 @@ export function treeOf(files: Record<string, string | Buffer>, extra: RepoEntry[
 export const QA_CAPABILITY = 'rdrcap1.' + Buffer.from(JSON.stringify({ qa: 'placeholder-claims-not-a-real-capability' })).toString('base64url') + '.' + Buffer.from('qa-placeholder-signature-0123456789').toString('base64url');
 
 export interface QaOutput { files: Record<string, string | Buffer>; articlePath: string; route: string; slug?: string; report?: Partial<AgentReport>; result?: Partial<RunnerResult> }
-export function gateInput(tree: QaTree, payload: PublishPayload, output: QaOutput, options: Partial<RepositoryPostOptions> = {}): PublicationGateInput {
+/** `base` (QA-3): on a retry, the tree of the default-branch commit the article branch started from. Its blobs are
+ *  served by the same reader, as the connector does. */
+export function gateInput(tree: QaTree, payload: PublishPayload, output: QaOutput, options: Partial<RepositoryPostOptions> = {}, base?: QaTree): PublicationGateInput {
   const finals = new Map(Object.entries(output.files).map(([path, value]) => [path, typeof value === 'string' ? Buffer.from(value, 'utf8') : value]));
   const report: AgentReport = { version: 1, status: 'integrated', slug: output.slug ?? payload.slug, articlePath: output.articlePath, route: output.route, summary: 'QA scripted output.', evidence: [], conventions: [], deviations: [], reason: null, ...output.report };
   const result: RunnerResult = { version: 1, status: 'completed', agentError: null, sessionId: null, turns: 3, changed: [...finals].map(([path, data]) => ({ path, bytes: data.length })), ...output.result };
-  return { payload, hint: 'content', entries: tree.entries, report, result, finals, readBlob: tree.readBlob, options: { businessId: 'b_qa', ...options }, capability: QA_CAPABILITY };
+  const readBlob = base ? async (sha: string) => tree.blobs.get(sha) ?? base.readBlob(sha) : tree.readBlob;
+  return { payload, hint: 'content', entries: tree.entries, ...(base ? { baseEntries: base.entries } : {}), report, result, finals, readBlob, options: { businessId: 'b_qa', ...options }, capability: QA_CAPABILITY };
 }
 
 /** Deterministic filler sentences for peer records (no real names). */

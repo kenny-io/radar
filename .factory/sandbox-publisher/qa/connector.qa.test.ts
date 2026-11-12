@@ -37,7 +37,7 @@ const ARTICLE_PATH = `content/blog/${P().slug}.md`;
 // GitHub
 
 type Files = Map<string, string>;
-interface Git { refs: Map<string, string>; commits: Map<string, { tree: string; message: string; parents: string[] }>; trees: Map<string, Files>; pulls: { number: number; head: string; base: string; draft: boolean; title: string; body: string; state: string; html_url: string }[]; calls: { method: string; url: string; headers: Record<string, string>; body: any }[]; sandboxesDestroyedAtFirstWrite: number | null }
+interface Git { truncated?: Set<string>; compare?: (base: string, head: string) => Response | null; refs: Map<string, string>; commits: Map<string, { tree: string; message: string; parents: string[] }>; trees: Map<string, Files>; pulls: { number: number; head: string; base: string; draft: boolean; title: string; body: string; state: string; html_url: string }[]; calls: { method: string; url: string; headers: Record<string, string>; body: any }[]; sandboxesDestroyedAtFirstWrite: number | null }
 let git: Git; let seq = 0;
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const entriesOf = (files: Files) => {
@@ -58,11 +58,18 @@ function handle(method: string, url: string, init: RequestInit): Response {
   if (path === '' && method === 'GET') return json(200, { default_branch: 'main', permissions: { push: true } });
   if ((m = /^\/git\/ref\/heads\/(.+)$/.exec(path)) && method === 'GET') return git.refs.has(m[1]) ? json(200, { object: { sha: git.refs.get(m[1]) } }) : json(404, { message: 'Not Found' });
   if ((m = /^\/git\/commits\/(.+)$/.exec(path)) && method === 'GET') { const commit = git.commits.get(m[1])!; return json(200, { tree: { sha: commit.tree }, message: commit.message }); }
-  if ((m = /^\/git\/trees\/(.+)$/.exec(path)) && method === 'GET') return json(200, { sha: m[1], truncated: false, tree: entriesOf(git.trees.get(m[1])!) });
+  if ((m = /^\/git\/trees\/(.+)$/.exec(path)) && method === 'GET') return json(200, { sha: m[1], truncated: !!git.truncated?.has(m[1]), tree: entriesOf(git.trees.get(m[1])!) });
   if ((m = /^\/git\/blobs\/(.+)$/.exec(path)) && method === 'GET') { for (const files of git.trees.values()) for (const content of files.values()) if (blobSha(Buffer.from(content)) === m[1]) return json(200, { encoding: 'base64', content: Buffer.from(content).toString('base64') }); return json(404, {}); }
   if ((m = /^\/contents\/(.+)$/.exec(path)) && method === 'GET') { const content = git.trees.get(git.commits.get(u.searchParams.get('ref')!)!.tree)!.get(m[1]); return content === undefined ? json(404, {}) : json(200, { sha: blobSha(Buffer.from(content)), encoding: 'base64', content: Buffer.from(content).toString('base64'), size: Buffer.byteLength(content) }); }
   if ((m = /^\/tarball\/(.+)$/.exec(path)) && method === 'GET') return new Response(null, { status: 302, headers: { location: `https://codeload.github.com/qa-owner/qa-site/legacy.tar.gz/${m[1]}` } });
   if ((m = /^\/commits\/(.+)$/.exec(path)) && method === 'GET') { const commit = git.commits.get(m[1])!; const after = git.trees.get(commit.tree)!; const before = git.trees.get(git.commits.get(commit.parents[0])!.tree)!; return json(200, { files: [...after].filter(([file, content]) => before.get(file) !== content).map(([file]) => ({ filename: file, status: before.has(file) ? 'modified' : 'added' })) }); }
+  // QA-3: where the article branch left the default branch. The nearest commit that both histories contain; 404 when none.
+  if ((m = /^\/compare\/([^.]+)\.\.\.(.+)$/.exec(path)) && method === 'GET') {
+    const overridden = git.compare?.(m[1], m[2]); if (overridden) return overridden;
+    const ancestors = (sha: string) => { const seen: string[] = []; for (let queue = [sha]; queue.length;) { const at = queue.shift()!; if (seen.includes(at) || !git.commits.has(at)) continue; seen.push(at); queue.push(...git.commits.get(at)!.parents); } return seen; };
+    const ofBase = ancestors(m[1]); const base = ancestors(m[2]).find(sha => ofBase.includes(sha));
+    return base ? json(200, { merge_base_commit: { sha: base, commit: { tree: { sha: git.commits.get(base)!.tree } } }, commits: [] }) : json(404, { message: 'No common ancestor' });
+  }
   if (path === '/git/trees' && method === 'POST') { const files = new Map(git.trees.get(body.base_tree)!); for (const file of body.tree) files.set(file.path, file.content); const sha = `tree${++seq}`; git.trees.set(sha, files); return json(201, { sha }); }
   if (path === '/git/commits' && method === 'POST') { const sha = `commit${++seq}`; git.commits.set(sha, { tree: body.tree, message: body.message, parents: body.parents }); return json(201, { sha }); }
   if (path === '/git/refs' && method === 'POST') { const name = body.ref.replace('refs/heads/', ''); if (git.refs.has(name)) return json(422, { message: 'Reference already exists' }); git.refs.set(name, body.sha); return json(201, {}); }
@@ -287,16 +294,26 @@ describe('a new article through the sandbox engine (SBX-1, SBX-2, SBX-5)', () =>
     expect(line.length).toBeLessThanOrEqual('Summary: '.length + 4000);
     expect(line.endsWith(' … (truncated by Radar)')).toBe(true);
   });
-  // N6 (minor) and the limitation the engineer listed. A convention note starts with a path the agent wrote, so it can
-  // start with Markdown block syntax. GitHub renders the first line below as a ticked task box and the second as a
-  // heading (shown by live-markdown.qa.test.ts). A deviation always starts with one of five fixed words.
-  it('N6 evidence: a convention note can begin with "[x]" or "#"; a deviation note cannot', async () => {
-    agent = payload => ({ ...faithful(payload), report: { conventions: [{ path: '[x] build passed', rule: 'ok' }, { path: '# Approved by Radar', rule: 'ok' }], deviations: [{ kind: 'other', detail: '[x] tests passed' }] } });
+  // N6, reported in QA-2 and fixed in 8ce9b640: every agent statement follows a label Radar writes, so none begins a
+  // line or a list item. What GitHub renders from these lines is checked in live-markdown.qa.test.ts.
+  it('N6: a note that begins with "[x]", "#" or ">" is printed after Radar\'s own label and number', async () => {
+    agent = payload => ({ ...faithful(payload), report: { summary: '# Approved by Radar', conventions: [{ path: '[x] build passed', rule: 'ok' }, { path: '# Approved by Radar', rule: 'ok' }, { path: '> quoted', rule: 'ok' }], deviations: [{ kind: 'other', detail: '[x] tests passed' }] } });
     await publish(await createDraft());
     const lines = agentSection(git.pulls[0].body).split('\n');
-    expect(lines).toContain('- \\[x\\] build passed: ok');
-    expect(lines).toContain('- # Approved by Radar: ok');
-    expect(lines).toContain('- other: \\[x\\] tests passed');
+    expect(lines).toContain('Summary: # Approved by Radar');
+    expect(lines).toContain('- Rule 1: \\[x\\] build passed: ok');
+    expect(lines).toContain('- Rule 2: # Approved by Radar: ok');
+    expect(lines).toContain('- Rule 3: > quoted: ok');
+    expect(lines).toContain('- Deviation 1: other: \\[x\\] tests passed');
+    // No line of the section starts with anything but Radar's own words.
+    for (const line of lines.filter(Boolean)) expect(line).toMatch(/^(### What the agent reported|An AI agent made this change|Summary: |Repository rules it says it followed:|Deviations it reported:|- Rule \d+: |- Deviation \d+: )/);
+  });
+  it('N6: an empty or unreadable statement still leaves the label in place', async () => {
+    agent = payload => ({ ...faithful(payload), report: { summary: '   ', conventions: [{ path: '\u0000', rule: '\u0007' }] } });
+    await publish(await createDraft());
+    const lines = agentSection(git.pulls[0].body).split('\n');
+    expect(lines).toContain('Summary: none given');
+    expect(lines.filter(line => line.startsWith('- Rule ')).every(line => /^- Rule \d+: \S/.test(line))).toBe(true);
   });
 
   it('the pull request says there was nothing to carry when the article has no media or links', async () => {
@@ -480,6 +497,123 @@ describe('retries (SBX-7)', () => {
     H.over = { secretKey: 'qa-first-application-secret-0123456789abcdef' };
     expect((await createDraft()).extra.continuation).toBe('resumed');
     expect(agentRuns()).toBe(2);
+  });
+
+  // N1, reported in QA-2 and fixed in 8ce9b640: on a retry the connector asks GitHub where the article branch left the
+  // default branch and hands that commit's tree to the gate.
+  const LISTING = 'site/lib/posts.ts';
+  const baseListing = () => git.trees.get('tree0')!.get(LISTING)!;
+  const withListing = (payload: PublishPayload, listing: string) => ({ files: { ...faithful(payload).files, [LISTING]: listing } });
+  const mine = (title: string) => `export const mine = { slug: '${P().slug}', title: '${title}' };\n`;
+  const EDITED = () => P({ title: 'A quite different title after an edit', blocks: [...QA_BLOCKS, ['p', 'A closing paragraph added after the first attempt, written for this test only.']], markdown: toMarkdown([...QA_BLOCKS, ['p', 'A closing paragraph added after the first attempt, written for this test only.']]) });
+  const compares = () => git.calls.filter(call => /\/compare\//.test(call.url));
+  /** A commit placed on the article branch by someone else, carrying the gated commit's trailer (not resumable: its tree differs). */
+  const pushForeign = (sha: string, files: Files, parents: string[]) => { git.trees.set(`tree-of-${sha}`, files); git.commits.set(sha, { tree: `tree-of-${sha}`, message: `Foreign\n\n${git.commits.get(git.refs.get(BRANCH)!)!.message.split('\n').at(-1)}`, parents }); git.refs.set(BRANCH, sha); };
+
+  it('N1: only a sandbox retry asks for the merge base: one compare request and one more tree', async () => {
+    await createDraft();
+    expect(compares()).toHaveLength(0); // a first attempt
+    await createDraft();
+    expect(compares()).toHaveLength(0); // a resumed retry
+    git.calls = [];
+    const head = git.refs.get(BRANCH)!;
+    await createDraft(EDITED());
+    expect(compares().map(call => new URL(call.url).pathname)).toEqual([`/repos/qa-owner/qa-site/compare/commit0...${head}`]);
+    expect(git.calls.filter(call => call.method === 'GET' && /\/git\/trees\//.test(call.url)).map(call => new URL(call.url).pathname.split('/').at(-1))).toEqual([git.commits.get(head)!.tree, 'tree0']);
+    expect(compares()[0].headers.authorization).toBe(`Bearer ${TOKEN}`);
+    expect(provider.transcript()).not.toContain(TOKEN);
+  });
+  it('N1: the planner makes no compare request, on a first attempt or a retry', async () => {
+    vi.stubEnv('RADAR_PUBLISH_SANDBOX', 'off');
+    await createDraft();
+    await createDraft(EDITED());
+    expect(H.plan).toHaveBeenCalledTimes(2);
+    expect(H.plan.mock.calls[1][3].retry).toEqual({ slug: P().slug, articlePath: ARTICLE_PATH });
+    expect(compares()).toHaveLength(0);
+    expect(provider.calls).toHaveLength(0);
+  });
+  it('N1: a retry that removes default-branch lines is refused with zero Git writes', async () => {
+    agent = (payload, _sandbox, turn) => (turn === 0 ? withListing(payload, baseListing() + mine('first title')) : withListing(payload, baseListing().split('\n').slice(3).join('\n') + mine(payload.title)));
+    await createDraft();
+    git.calls = [];
+    const error = await failureOf(createDraft(EDITED()));
+    expect(error.diagnostic?.code).toBe('peer-content-changed');
+    expect(error.diagnostic?.reason).toMatch(/site\/lib\/posts\.ts has 3 of its 30 existing lines on the default branch removed/);
+    expect(writes()).toEqual([]);
+    expect(provider.count('create')).toBe(provider.count('destroy'));
+  });
+  it('N1: a retry after a title change rewrites its own listing line and adds a fast-forward commit', async () => {
+    agent = (payload, _sandbox, turn) => withListing(payload, baseListing() + mine(turn === 0 ? 'first title' : payload.title));
+    await publish(await createDraft());
+    git.calls = [];
+    const draft = await createDraft(EDITED());
+    expect(writes()).toEqual(['POST /git/trees', 'POST /git/commits', `PATCH /git/refs/heads/${BRANCH}`]);
+    expect(draft.extra.continuation).toBe('added');
+    expect(draft.extra.checks.find((check: any) => check.id === 'peer-content').detail).toMatch(/^compared with the default-branch commit the article branch started from: 1 existing file edited; 0 of 30 original lines removed or altered/);
+    const committed = git.trees.get(git.commits.get(git.refs.get(BRANCH)!)!.tree)!.get(LISTING)!;
+    expect(committed).toBe(baseListing() + mine('A quite different title after an edit'));
+    await publish(draft, EDITED());
+    expect(git.pulls).toHaveLength(1);
+  });
+  it('N1: the default branch moving on afterwards does not change what the retry is compared with', async () => {
+    agent = (payload, _sandbox, turn) => withListing(payload, baseListing() + mine(turn === 0 ? 'first title' : payload.title));
+    await createDraft();
+    // The default branch drops five of those lines and gains a file. The article branch has neither change.
+    const moved = new Map(git.trees.get('tree0')!); moved.set(LISTING, baseListing().split('\n').slice(5).join('\n')); moved.set('site/lib/new.ts', 'export const added = true;\n');
+    git.trees.set('tree-main1', moved); git.commits.set('main1', { tree: 'tree-main1', message: 'Main moves on', parents: ['commit0'] }); git.refs.set('main', 'main1');
+    git.calls = [];
+    const draft = await createDraft(EDITED());
+    expect(compares().map(call => new URL(call.url).pathname.split('/compare/')[1].split('...')[0])).toEqual(['main1']);
+    expect(draft.extra.checks.find((check: any) => check.id === 'peer-content').detail).toMatch(/0 of 30 original lines removed or altered/);
+  });
+  it('N1: after the default branch is merged into the article branch, what the merge brought in is protected', async () => {
+    await createDraft();
+    const head = git.refs.get(BRANCH)!;
+    const main1 = new Map(git.trees.get('tree0')!); main1.set('site/lib/extra.ts', Array.from({ length: 10 }, (_u, n) => `export const extra${n} = ${n};`).join('\n') + '\n');
+    git.trees.set('tree-main1', main1); git.commits.set('main1', { tree: 'tree-main1', message: 'Add extra', parents: ['commit0'] }); git.refs.set('main', 'main1');
+    const merged = new Map(git.trees.get(git.commits.get(head)!.tree)!); merged.set('site/lib/extra.ts', main1.get('site/lib/extra.ts')!);
+    pushForeign('merge1', merged, [head, 'main1']);
+    agent = payload => ({ files: { ...faithful(payload).files, 'site/lib/extra.ts': 'export const extra0 = 0;\n' } });
+    const error = await failureOf(createDraft(EDITED()));
+    expect(error.diagnostic?.reason).toMatch(/site\/lib\/extra\.ts has 9 of its 10 existing lines on the default branch removed/);
+  });
+  // RESIDUAL (low), the connector side of the gate test in qa3.qa.test.ts: the same file brought over by a cherry-pick.
+  it('RESIDUAL: a default-branch file copied onto the article branch without a merge is treated as the earlier attempt\'s own', async () => {
+    await createDraft();
+    const head = git.refs.get(BRANCH)!;
+    const extra = Array.from({ length: 10 }, (_u, n) => `export const extra${n} = ${n};`).join('\n') + '\n';
+    const main1 = new Map(git.trees.get('tree0')!); main1.set('site/lib/extra.ts', extra);
+    git.trees.set('tree-main1', main1); git.commits.set('main1', { tree: 'tree-main1', message: 'Add extra', parents: ['commit0'] }); git.refs.set('main', 'main1');
+    const picked = new Map(git.trees.get(git.commits.get(head)!.tree)!); picked.set('site/lib/extra.ts', extra);
+    pushForeign('picked1', picked, [head]);
+    agent = payload => ({ files: { ...faithful(payload).files, 'site/lib/extra.ts': 'export const extra0 = 0;\n' } });
+    const draft = await createDraft(EDITED());
+    expect(draft.extra.checks.find((check: any) => check.id === 'peer-content').detail).toMatch(/no file of that commit was edited; .*2 changed files exist only on the article branch, written by an earlier attempt, and are not compared/);
+    // Nine of the ten lines the default branch holds in that file are gone from the commit Radar would open a pull request for.
+    expect(git.trees.get(git.commits.get(git.refs.get(BRANCH)!)!.tree)!.get('site/lib/extra.ts')).toBe('export const extra0 = 0;\n');
+  });
+  it('N1: an article branch with no shared history, an unreadable merge base, or a truncated base tree is refused before any sandbox run', async () => {
+    await createDraft();
+    const head = git.refs.get(BRANCH)!; const headFiles = new Map(git.trees.get(git.commits.get(head)!.tree)!);
+    const runsBefore = provider.count('create');
+    // 1. No common ancestor.
+    pushForeign('orphan1', headFiles, []);
+    expect((await failureOf(createDraft(EDITED()))).message).toMatch(/shares no history with the default branch/);
+    // 2. GitHub answers without a merge base.
+    git.refs.set(BRANCH, head); pushForeign('foreign2', new Map(headFiles).set('README.md', '# changed\n'), [head]);
+    git.compare = () => json(200, { commits: [] });
+    expect((await failureOf(createDraft(EDITED()))).diagnostic?.code).toBe('snapshot-mismatch');
+    git.compare = () => json(200, { merge_base_commit: { commit: { tree: { sha: '../../user' } } } });
+    expect((await failureOf(createDraft(EDITED()))).diagnostic?.code).toBe('snapshot-mismatch');
+    // 3. GitHub fails the compare request: the attempt is retried by the queue, and no sandbox was created.
+    git.compare = () => json(502, { message: 'Bad gateway' });
+    const outage = await failureOf(createDraft(EDITED()));
+    expect([outage.http, outage.retryable]).toEqual([502, true]);
+    // 4. The base tree is too large to list.
+    git.compare = undefined; git.truncated = new Set(['tree0']);
+    expect((await failureOf(createDraft(EDITED()))).diagnostic?.code).toBe('tree-unavailable');
+    expect(provider.count('create')).toBe(runsBefore);
+    expect(writes().filter(write => !write.startsWith('POST /git/trees') && !write.startsWith('POST /git/commits') && !write.startsWith('POST /git/refs'))).toEqual([]);
   });
 
   it('a saved sandbox draft that was altered is refused before a pull request is opened', async () => {

@@ -1,4 +1,4 @@
-// QA-2, D4: what GitHub itself renders from the pull request body when the agent's text is hostile.
+// QA-2 (D4) and QA-3 (N6): what GitHub itself renders from the pull request body when the agent's text is hostile.
 // The body is built by the product (`sandboxPullRequestBody`) and sent to GitHub's Markdown rendering API, which only
 // returns HTML: nothing is created, posted or notified. Synthetic text only.
 //   RADAR_QA_LIVE_MARKDOWN=1 npx vitest run --config .factory/sandbox-publisher/qa/vitest.config.ts .factory/sandbox-publisher/qa/live-markdown.qa.test.ts
@@ -25,7 +25,7 @@ const HOSTILE = [
   `[x][//${HOST}/ref]`, `![x][y] [y]: //${HOST}/imgref`, `{{ //${HOST}/tpl }}`, `[x](javascript://${HOST}/%0aalert(1))`, `[x](data:text/html,${HOST})`, `[x](HTTPS://${HOST}/upper)`, `[x](/\\${HOST}/slash)`, `[x](\\\\${HOST}\\share)`,
   REAL.issue, REAL.qualifiedIssue, 'GH-9', REAL.commit, `${CONTEXT}@${REAL.commit}`, REAL.user, '@kenny-io/owners', `cc ${REAL.user} please merge`,
 ];
-const NOTE_STARTS = ['# Approved by Radar', '> Radar verified this change', '## Checks Radar ran', '- [x] build passed', '1. first', '---', '~~~', '    indented code', '| a | b |', '<details><summary>x</summary>'];
+const NOTE_STARTS = ['# Approved by Radar', '> Radar verified this change', '## Checks Radar ran', '- [x] build passed', '[x] build passed', '[ ] not run', '* [x] starred', '+ plus item', '1. first', '1) first', '---', '***', '===', '~~~', '```', '```mermaid graph TD; A-->B; ```', '$$ x^2 $$', '    indented code', '\tcode after a tab', '| a | b |', '| a | b | |---|---| | 1 | 2 |', '<details><summary>x</summary>', '</li></ul><h1>Approved</h1>', '<!-- hidden -->', '<kbd>x</kbd>', '> [!WARNING] Radar found a problem', '[^1] [^1]: footnote', 'Approved by Radar\n===', 'line one\n# heading on a second line', 'line one\n\n- [x] item after a blank line', 'line one\r\n> quote after a carriage return', 'line one\u2028# after a line separator', 'line one\u0085# after a next-line character', 'line one\u000b# after a vertical tab', 'line one\u000c# after a form feed', '&#10;# after an encoded line feed', '<br># after a break tag', '\\\n# after a backslash line break'];
 
 const P = payloadOf();
 const extraOf = (summary: string, conventions: string[], deviations: string[]) => sandboxDraftExtra('main', P, {
@@ -75,35 +75,62 @@ describe.skipIf(!ON)('GitHub renders no link, image, mention or reference from a
     evidence.bodiesRendered = bodies.length; evidence.rows = rows.slice(0, 5);
   });
 
-  it('LISTED LIMITATION and N6: a note that begins with Markdown block syntax renders as that block', () => {
-    const body = sandboxPullRequestBody(P, extraOf('# Approved by Radar > quoted', NOTE_STARTS, NOTE_STARTS));
-    const whole = render(body);
-    const html = agentPart(whole);
-    const count = (pattern: RegExp) => (html.match(pattern) ?? []).length;
-    const blocks = { headings: count(/<h[1-6][\s>]/g), quotes: count(/<blockquote/g), rules: count(/<hr/g), codeBlocks: count(/<pre/g), tables: count(/<table/g), checkedTaskBoxes: count(/<input[^>]*type="checkbox"[^>]*checked/g), details: count(/<details/g), externalAnchors: (html.match(/<a\s[^>]*href="(?!#)[^"]*"/g) ?? []).length, images: count(/<img\s/g) };
-    evidence.noteStarts = blocks;
-    // What holds: no link out, no image, no raw HTML block, and Radar's own five section headings are all still there, once each.
-    expect(blocks.externalAnchors).toBe(0);
-    expect(blocks.images).toBe(0);
-    expect(blocks.details).toBe(0);
-    expect(blocks.tables).toBe(0);
-    for (const heading of ['Checks Radar ran', 'What the agent reported (not verified by Radar)', 'Media and links not carried over', 'Not run', 'Files']) expect((whole.match(new RegExp(`<h3[^>]*>[^<]*${heading.replace(/[()]/g, '\\$&')}`, 'g')) ?? []).length).toBe(1);
-    // The summary is one paragraph whatever it starts with.
-    expect(html).toContain('Summary: # Approved by Radar &gt; quoted');
-    // The limitation the engineer listed: a heading and a quote do render inside the agent's list.
-    expect(blocks.headings).toBeGreaterThanOrEqual(2);
-    expect(blocks.quotes).toBeGreaterThanOrEqual(1);
-    // N6: an escaped "[x]" at the start of a note is still a task box to GitHub, shown ticked.
-    expect(body).toContain('- - \\[x\\] build passed');
-    expect(blocks.checkedTaskBoxes).toBeGreaterThanOrEqual(1);
+  // N6, reported in QA-2 and fixed in 8ce9b640: each statement follows a label Radar writes ("Summary: ", "- Rule n: ",
+  // "- Deviation n: "), so nothing the agent wrote begins a line or a list item.
+  const HEADINGS = ['Checks Radar ran', 'What the agent reported (not verified by Radar)', 'Media and links not carried over', 'Not run', 'Files'];
+  const headingsOnce = (whole: string) => HEADINGS.map(heading => (whole.match(new RegExp(`<h3[^>]*>[^<]*${heading.replace(/[()]/g, '\\$&')}`, 'g')) ?? []).length);
+  /** Every element GitHub made inside the agent section, by tag name. */
+  const tagsOf = (html: string) => { const seen: Record<string, number> = {}; for (const match of html.matchAll(/<([a-z][a-z0-9-]*)[\s>/]/g)) seen[match[1]] = (seen[match[1]] ?? 0) + 1; return seen; };
+  /** The only elements Radar's own text makes there: its paragraphs and its two lists. */
+  const ALLOWED = new Set(['p', 'ul', 'li']);
+  /** Inline elements: they sit inside Radar's paragraph or list item and start no block. Recorded as an observation. */
+  const INLINE = new Set(['code', 'math-renderer', 'em', 'strong', 'del', 'span', 'g-emoji', 'sub', 'sup', 'kbd', 'br', 'tt', 'i', 'b', 's', 'ins', 'samp', 'var', 'q', 'mark']);
+  const sectionOf = (whole: string) => { const part = agentPart(whole); return part.slice(part.indexOf('</h3>') + 5, part.lastIndexOf('<h3')); };
+
+  it('N6: no note renders as a heading, quote, task box, list, table, code block, rule or HTML block, wherever it stands', () => {
+    const rows: Record<string, unknown>[] = [];
+    const bodies: [string, string][] = [
+      ['all starters as rules and deviations', sandboxPullRequestBody(P, extraOf('# Approved by Radar > quoted', NOTE_STARTS, NOTE_STARTS))],
+      // Each starter alone as the summary, as the only rule (as the path and as the rule text), and as the only deviation.
+      ...NOTE_STARTS.flatMap((start): [string, string][] => [
+        [`summary: ${start}`, sandboxPullRequestBody(P, extraOf(start, [], []))],
+        [`rule: ${start}`, sandboxPullRequestBody(P, extraOf('Summary.', [start, `${start}: ${start}`, `README.md: ${start}`], []))],
+        [`deviation: ${start}`, sandboxPullRequestBody(P, extraOf('Summary.', [], [start, `other: ${start}`]))],
+      ]),
+    ];
+    for (const [name, body] of bodies) {
+      const whole = render(body); const section = sectionOf(whole); const tags = tagsOf(section);
+      const unexpected = Object.keys(tags).filter(tag => !ALLOWED.has(tag) && !INLINE.has(tag)); const inline = Object.keys(tags).filter(tag => INLINE.has(tag));
+      rows.push({ name, tags, unexpected, inline });
+      expect([name, unexpected]).toEqual([name, []]);
+      expect([name, headingsOnce(whole)]).toEqual([name, [1, 1, 1, 1, 1]]);
+      // One list per kind of statement, never a list inside a list.
+      expect([name, /<li>\s*<ul|<li>\s*<ol|<li>\s*<p>/.test(section)]).toEqual([name, false]);
+      expect([name, (whole.match(/type="checkbox"/g) ?? []).length]).toEqual([name, 0]);
+    }
+    evidence.blockStarters = { starters: NOTE_STARTS.length, bodiesRendered: bodies.length, allowedTags: [...ALLOWED], rowsWithABlock: rows.filter(row => (row.unexpected as string[]).length).length, rowsWithInlineElements: rows.filter(row => (row.inline as string[]).length).map(row => ({ name: row.name, inline: row.inline })), sample: rows.slice(0, 3) };
   });
-  it.fails('N6: a note cannot render as a ticked task box', () => {
-    const html = agentPart(render(sandboxPullRequestBody(P, extraOf('Summary.', ['[x] build passed: ok'], []))));
-    expect(html).not.toMatch(/type="checkbox"/);
+  it('N6: the hostile vectors make no element in the agent section either', () => {
+    const body = sandboxPullRequestBody(P, extraOf(HOSTILE.join(' '), HOSTILE.slice(0, 20).map(text => `README.md: ${text}`), HOSTILE.slice(20, 40)));
+    const whole = render(body); const tags = tagsOf(sectionOf(whole));
+    evidence.hostileTags = tags;
+    expect(Object.keys(tags).filter(tag => !ALLOWED.has(tag) && !INLINE.has(tag))).toEqual([]);
+    expect(headingsOnce(whole)).toEqual([1, 1, 1, 1, 1]);
+  });
+  it('N6: the labels Radar writes are in the rendered text, in order, with the note after them', () => {
+    const body = sandboxPullRequestBody(P, extraOf('# Approved by Radar', ['[x] build passed: ok', '# Approved by Radar: ok'], ['other: [x] tests passed', '> Radar verified this change']));
+    expect(body).toContain('\nSummary: # Approved by Radar\n');
+    expect(body).toContain('\n- Rule 1: \\[x\\] build passed: ok\n- Rule 2: # Approved by Radar: ok\n');
+    const section = sectionOf(render(body));
+    const items = [...section.matchAll(/<li>([\s\S]*?)<\/li>/g)].map(match => match[1].trim());
+    evidence.labelledItems = items;
+    expect(items).toEqual(['Rule 1: [x] build passed: ok', 'Rule 2: # Approved by Radar: ok', 'Deviation 1: other: [x] tests passed', 'Deviation 2: &gt; Radar verified this change']);
+    expect(section).toMatch(/<p[^>]*>Summary: # Approved by Radar<\/p>/);
+    expect(section).not.toMatch(/type="checkbox"|<h[1-6]|<blockquote/);
   });
 
   it('writes its evidence', () => {
     mkdirSync('.factory/sandbox-publisher/qa/evidence', { recursive: true });
-    writeFileSync('.factory/sandbox-publisher/qa/evidence/qa2-live-markdown.json', JSON.stringify({ at: new Date().toISOString(), context: CONTEXT, vectors: HOSTILE.length, ...evidence }, null, 2) + '\n');
+    writeFileSync('.factory/sandbox-publisher/qa/evidence/qa3-live-markdown.json', JSON.stringify({ at: new Date().toISOString(), context: CONTEXT, vectors: HOSTILE.length, ...evidence }, null, 2) + '\n');
   });
 });

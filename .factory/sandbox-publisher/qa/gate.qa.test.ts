@@ -191,11 +191,21 @@ describe('SBX-4 fidelity: a subtly changed article is refused', () => {
     const gated = await runPublicationGate(gateInput(REPO(), P, asMarkdown(QA_BLOCKS, text => text + extra)));
     expect(gated.checks.find(check => check.id === 'article-fidelity')!.detail).toMatch(/the article file adds \d+ words against a ceiling of \d+/);
   });
-  it('OBSERVATION: the gate proves the article is in the changed files, not that it is what the page renders', async () => {
-    // The visible record carries reworded prose; the faithful article sits in a block comment of the same file.
+  // QA-1 recorded this as passing. Since 8ce9b640 a unit must stand alone in a string, element or line of its own, so
+  // an article that exists only inside a code comment, beside reworded visible text, is refused.
+  it('a faithful copy kept in a block comment, beside reworded visible prose, is refused', async () => {
     const path = 'site/data/tidewater.ts';
     const visible = QA_BLOCKS.filter(block => block[0] === 'p').map(block => `  ${JSON.stringify('Reworded: ' + filler(String(block[1]).length, 2))},`).join('\n');
     const content = `/*\n${toMarkdown(QA_BLOCKS)}*/\nexport const paragraphs = [\n${visible}\n];\n`;
+    const failure = await gateFailure(() => runPublicationGate(gateInput(REPO(), P, { files: { [path]: content }, articlePath: path, route: ROUTE })));
+    expect(failure.code).toBe('article-fidelity');
+    expect(failure.reason).toMatch(/13 of 13 paragraphs and list items have words directly before or after them/);
+  });
+  it('OBSERVATION: what the page renders is still outside the check: the article in strings nobody renders passes', async () => {
+    const path = 'site/data/tidewater.ts';
+    const visible = QA_BLOCKS.filter(block => block[0] === 'p').map(block => `  ${JSON.stringify('Reworded: ' + filler(String(block[1]).length, 2))},`).join('\n');
+    const hidden = QA_BLOCKS.flatMap(block => (block[0] === 'ul' ? (block[1] as string[]) : [block[1] as string])).map(text => `  ${JSON.stringify(text)},`).join('\n');
+    const content = `const unused = [\n${hidden}\n];\nexport const paragraphs = [\n${visible}\n];\n`;
     const gated = await runPublicationGate(gateInput(REPO(), P, { files: { [path]: content }, articlePath: path, route: ROUTE }));
     expect(gated.files).toHaveLength(1);
   });

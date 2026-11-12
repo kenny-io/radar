@@ -1,6 +1,8 @@
 // QA-2 (revision 3d3dd9c7): attempts to get around the fixes for D1 (peer content) and D2 (fidelity), and a check that
 // honest edits to other registry shapes still pass. Tests written "it.fails" assert what the criterion asks for and
 // do not hold on this revision; each is listed in the QA-2 report (N1 to N4).
+// QA-3 (8ce9b640): N1 and N3 were fixed; their tests here now assert the fixed behavior, and qa3.qa.test.ts holds the
+// attempts to get around those fixes. N2 and N4 are accepted limitations (architecture section 15) and stay as written.
 import { describe, expect, it } from 'vitest';
 import type { Block } from '@/lib/types';
 import { nearIdenticalLine, runPublicationGate } from '@/server/services/publishing/sandbox/gate';
@@ -91,9 +93,9 @@ describe('D1 fix: honest edits to other registry shapes still pass', () => {
 });
 
 describe('D1 fix: what still gets through', () => {
-  // N1 (minor). The fix covers a first attempt. On a retry (or a legacy migration) the article file is exempt from it
-  // and keeps the older rule, removed <= 3 x added + 40. When the article file is a shared registry, that is room to
-  // delete whole peer records.
+  // N1, reported in QA-2 and fixed in 8ce9b640: a retry or migration no longer exempts the article file. These calls
+  // hand the gate no base tree, so it compares with the branch head (the connector normally supplies the default-branch
+  // tree; that path is in qa3.qa.test.ts).
   const regPath = 'site/lib/registry.ts';
   const block = (slug: string, paragraphs: string[]) => `  {\n    slug: '${slug}',\n    title: 'Title of ${slug}',\n    sections: [\n${paragraphs.map(text => `      ${JSON.stringify(text)},`).join('\n')}\n    ],\n  },\n`;
   const units = QA_BLOCKS.flatMap(blockOf => (blockOf[0] === 'ul' ? (blockOf[1] as string[]) : [blockOf[1] as string]));
@@ -103,16 +105,16 @@ describe('D1 fix: what still gets through', () => {
   const retry = { retry: { slug: P.slug, articlePath: regPath } };
   const finishing = (blocks: string[]) => gateInput(treeOf({ [regPath]: branchHead }), P, { files: { [regPath]: shared([...blocks, block(P.slug, units)]) }, articlePath: regPath, route: ROUTE }, retry);
   it('a retry that only finishes the article in a shared registry passes', async () => {
-    expect(await peerDetail(finishing(peerBlocks))).toMatch(/in the article file being replaced, 0 earlier lines gave way to 1 new ones/);
+    expect(await peerDetail(finishing(peerBlocks))).toMatch(/^compared with the head of the article branch: 1 existing file edited; 0 of \d+ original lines removed or altered \(0 altered, 0 removed/);
   });
   it('the same change on a first attempt is refused', async () => {
     expect(await outcome(gateInput(treeOf({ [regPath]: shared(peerBlocks) }), P, { files: { [regPath]: shared([...peerBlocks.slice(3), block(P.slug, units)]) }, articlePath: regPath, route: ROUTE }))).toBe('peer-content-changed');
   });
-  it.fails('N1: a retry that also deletes three peer records from the shared registry is refused', async () => {
-    expect(await outcome(finishing(peerBlocks.slice(3)))).toBe('peer-content-changed');
-  });
-  it('N1 evidence: it passes, reported as 36 earlier lines giving way to 1 new one', async () => {
-    expect(await peerDetail(finishing(peerBlocks.slice(3)))).toMatch(/in the article file being replaced, 36 earlier lines gave way to 1 new ones \(limit 3 removed per added line plus 40\)/);
+  it('N1: a retry that also deletes three peer records from the shared registry is refused', async () => {
+    const failure = await gateFailure(() => runPublicationGate(finishing(peerBlocks.slice(3))));
+    expect(failure.code).toBe('peer-content-changed');
+    expect(failure.reason).toMatch(/has 36 of its \d+ existing lines removed; a new article may remove none/);
+    expect(failure.reason).not.toMatch(/gave way/);
   });
 
   // N2 (minor). An altered line may gain any amount of text, and added lines are not looked at, so existing content can
@@ -139,8 +141,9 @@ describe('D1 fix: what still gets through', () => {
     expect(await peerDetail(beside('site/lib/flags.ts', flags(0), flags(6)))).toMatch(/6 of 10 original lines removed or altered \(6 altered, 0 removed/);
     expect(await peerDetail(withRegistry(registry([...PEERS.slice(0, 5), PEERS[5].replace("peer-article-5'", "old-5'"), ...PEERS.slice(6), MINE])))).toMatch(/1 altered, 0 removed/);
   });
-  // The limitation the engineer listed: a retry after the title changed.
-  it('LISTED LIMITATION: a retry whose title changed cannot rewrite the listing line an earlier attempt added', async () => {
+  // QA-2 listed this as a limitation. It is gone when the gate is given the default-branch tree (qa3.qa.test.ts); with
+  // only the branch head to compare with, as here, the earlier attempt's line still counts as existing content.
+  it('a retry whose title changed, judged against the branch head only, still cannot rewrite the earlier listing line', async () => {
     const listing = (title: string) => `export const posts = [\n  { slug: 'peer-1', title: 'A peer' },\n  { slug: '${P.slug}', title: '${title}', description: 'Synthetic test content.' },\n];\n`;
     const retryMd = { retry: { slug: P.slug, articlePath: mdPath } };
     const attempt = (earlierTitle: string) => gateInput(treeOf({ [mdPath]: md(QA_BLOCKS.slice(0, -1)), 'site/lib/list.ts': listing(earlierTitle) }), P, { files: { [mdPath]: md(), 'site/lib/list.ts': listing(P.title) }, articlePath: mdPath, route: ROUTE }, retryMd);
@@ -190,23 +193,20 @@ describe('D2 fix: insertion inside a unit is refused; legitimate markup is not',
     expect(await outcome(article(spans, `content/blog/${P.slug}.json`))).toBe('article-fidelity');
   });
 
-  // N3 (minor). A unit is found as one uninterrupted run, so words placed immediately before or after it are not seen.
-  // One word in front of a list item or paragraph reverses it and still reads as "word for word".
-  it.fails('N3: words placed in front of a list item are refused', async () => {
-    expect(await outcome(article(md(changeItem(4, 0, text => 'Do not ' + text.charAt(0).toLowerCase() + text.slice(1)))))).toBe('article-fidelity');
+  // N3, reported in QA-2 and fixed in 8ce9b640: a unit must stand alone in its line, element or string.
+  it('N3: words placed in front of a list item are refused', async () => {
+    const failure = await gateFailure(() => runPublicationGate(article(md(changeItem(4, 0, text => 'Do not ' + text.charAt(0).toLowerCase() + text.slice(1))))));
+    expect(failure.code).toBe('article-fidelity');
+    expect(failure.reason).toMatch(/1 of 13 paragraphs and list items have words directly before or after them in their line, element or string: item 4/);
   });
-  it('N3 evidence: words before or after a paragraph, a list item or a heading all pass, reported as fully word for word', async () => {
-    const cases: Block[][] = [
-      changeItem(4, 0, text => 'Do not ' + text.charAt(0).toLowerCase() + text.slice(1)),
-      change(3, text => 'It is a myth that ' + text.charAt(0).toLowerCase() + text.slice(1)),
-      change(11, text => text + ' None of this is true.'),
-      changeItem(9, 2, text => text + ', or never'),
-      change(2, () => 'Do not start with the gutters'),
+  it('N3: words before or after a paragraph, a list item or a heading are each refused', async () => {
+    const cases: [Block[], RegExp][] = [
+      [change(3, text => 'It is a myth that ' + text.charAt(0).toLowerCase() + text.slice(1)), /words directly before or after them.*paragraph 3/],
+      [change(11, text => text + ' None of this is true.'), /words directly before or after them.*paragraph 15/],
+      [changeItem(9, 2, text => text + ', or never'), /words directly before or after them.*item 13/],
+      [change(2, () => 'Do not start with the gutters'), /1 of 4 headings are missing or do not stand alone, as written, on their line or in their element: heading 2/],
     ];
-    for (const blocks of cases) {
-      const gated = await runPublicationGate(article(md(blocks)));
-      expect(gated.checks.find(check => check.id === 'article-fidelity')!.detail).toMatch(/7 of 7 paragraphs and 6 of 6 list items present, 13 of them word for word; 4 of 4 headings present/);
-    }
+    for (const [blocks, reason] of cases) expect((await gateFailure(() => runPublicationGate(article(md(blocks))))).reason).toMatch(reason);
   });
 });
 

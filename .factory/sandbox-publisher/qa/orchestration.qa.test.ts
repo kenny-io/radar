@@ -290,32 +290,107 @@ describe('teardown on every path (SBX-6)', () => {
     expect(w.archiveFetches).toBe(0);
   });
 
-  // N5 (minor), seen live in QA-2: Daytona can fail a create after it has registered the sandbox ("failed to start with
-  // status: error"), or leave it in "creating" past the timeout. The provider call rejects, so the attempt holds no
-  // handle and deletes nothing: the labelled sandbox stays until the next attempt's sweep or its TTL, and no teardown
-  // report is made. Both live replays that hit this recorded "stillListed: 1".
-  it.fails('N5: an attempt whose create failed sweeps its entry\'s sandboxes before it ends', async () => {
-    const w = world({ fail: call => (call.op === 'create' ? new Error('Sandbox 00000000-0000-4000-8000-000000000000 failed to start with status: error') : undefined) });
-    await run(w).catch(() => {});
-    expect(w.provider.calls.filter(call => call.op === 'destroyMatching')).toHaveLength(2); // once before create, once after it failed
-  });
-  it('N5 evidence: after a failed or timed-out create the only provider calls are the first sweep and the create, and nothing is reported', async () => {
-    const failed = world({ fail: call => (call.op === 'create' ? new Error('Sandbox 00000000-0000-4000-8000-000000000000 failed to start with status: error') : undefined) });
-    expect((await failureOf(run(failed))).diagnostic?.code).toBe('sandbox-unavailable');
-    expect(failed.provider.ops()).toEqual(['destroyMatching', 'create']);
-    expect(failed.reports).toHaveLength(0);
-    vi.useFakeTimers(FAKE);
-    const hung = world({ hang: call => call.op === 'create' });
-    expect((await failureOf(drive(run(hung), 300))).diagnostic?.code).toBe('sandbox-unavailable');
-    expect(hung.provider.ops()).toEqual(['destroyMatching', 'create']);
-    expect(hung.reports).toHaveLength(0);
-  });
-  it('N5 evidence: a leftover that cannot be deleted fails the next attempt before it creates anything (retried by the queue)', async () => {
-    const w = world({ fail: call => (call.op === 'destroyMatching' ? Object.assign(new Error('Sandbox state change in progress'), { name: 'DaytonaConflictError' }) : undefined) });
+  // N5, reported in QA-2 and fixed in 8ce9b640. A create can fail or time out after Daytona has registered the
+  // sandbox; teardown now looks that sandbox up by the attempt's own labels (run label included), and the sweep at the
+  // start of an attempt reports what it cannot delete instead of failing the attempt.
+  const CREATE_FAILED = new Error('Sandbox 00000000-0000-4000-8000-000000000000 failed to start with status: error');
+  const contentUploads = (w: World) => w.provider.calls.filter(call => (call.op === 'uploadFile') || (call.op === 'upload' && call.files.some(file => !file.path.startsWith(SANDBOX_PATHS.runnerDir + '/'))));
+  const sweeps = (w: World) => w.provider.calls.filter((call): call is Extract<FakeCall, { op: 'destroyMatching' }> => call.op === 'destroyMatching');
+  it('N5: an attempt whose create failed looks for its own sandbox by run label afterwards', async () => {
+    const w = world({ fail: call => (call.op === 'create' ? CREATE_FAILED : undefined) });
     const error = await failureOf(run(w));
-    expect([error.diagnostic?.code, error.http, error.retryable]).toEqual(['sandbox-unavailable', 502, true]);
-    expect(error.diagnostic?.reason).toMatch(/Deleting leftover sandboxes failed/);
-    expect(w.provider.ops()).toEqual(['destroyMatching']);
+    expect([error.diagnostic?.code, error.retryable]).toEqual(['sandbox-unavailable', true]);
+    expect(w.provider.ops()).toEqual(['destroyMatching', 'create', 'destroyMatching']);
+    const [before, after] = sweeps(w);
+    expect(Object.keys(before.labels).sort()).toEqual(['entry', 'env', 'workload']);
+    // The second sweep is narrower: this run only, so it cannot touch another attempt's sandbox.
+    expect(Object.keys(after.labels).sort()).toEqual(['entry', 'env', 'run', 'workload']);
+    expect(after.labels).toMatchObject({ workload: 'radar-publisher', entry: P.entryId });
+    expect(after.labels.run).toBe((w.provider.calls.find(call => call.op === 'create') as Extract<FakeCall, { op: 'create' }>).spec.labels.run);
+    expect(w.reports).toHaveLength(0); // nothing remained, so nothing to report
+    expect(w.logs[0]).toMatchObject({ destroyed: true, outcome: 'sandbox-unavailable', sandbox: null });
+    expect(w.archiveFetches).toBe(0);
+  });
+  it('N5: a timed-out create is followed by the same lookup', async () => {
+    vi.useFakeTimers(FAKE);
+    const w = world({ hang: call => call.op === 'create' });
+    expect((await failureOf(drive(run(w), 300))).diagnostic?.code).toBe('sandbox-unavailable');
+    expect(w.provider.ops()).toEqual(['destroyMatching', 'create', 'destroyMatching']);
+    expect(sweeps(w)[1].labels.run).toBeTruthy();
+  });
+  it.each(['creating', 'error', 'destroying', 'unknown-new-state'])('N5: the sandbox of a failed create that cannot be deleted (state %s) is reported, and the failure keeps its own code', async state => {
+    const w = world({
+      fail: call => (call.op === 'create' ? CREATE_FAILED : undefined),
+      undeletable: labels => (labels.run ? [{ id: '00000000-0000-4000-8000-000000000000', state, error: `DaytonaConflictError: Sandbox state change in progress key ${SECRETS.daytona}` }] : []),
+    });
+    const error = await failureOf(run(w));
+    expect(error.diagnostic?.code).toBe('sandbox-unavailable');
+    expect(w.reports).toHaveLength(1);
+    const [reported, context] = w.reports[0] as [Error, Record<string, unknown>];
+    expect(context).toMatchObject({ operation: 'publishing.sandbox.teardown', code: 'sandbox-teardown-failed', ref: P.entryId });
+    expect(reported.message).toContain('00000000-0000-4000-8000-000000000000');
+    expect(reported.message).toContain(`state ${state}`);
+    expect(reported.message).toMatch(/Nothing from the repository or the article was uploaded/);
+    expect(reported.message).not.toContain(SECRETS.daytona);
+    expect(reported.message.length).toBeLessThanOrEqual(900);
+    expect(w.logs[0]).toMatchObject({ destroyed: false, outcome: 'sandbox-unavailable' });
+  });
+  it.each([
+    ['a leftover stuck in creating', { undeletable: (labels: Record<string, string>) => (labels.run ? [] : [{ id: 'left-1', state: 'creating', error: 'DaytonaConflictError: Sandbox state change in progress' }]) }, /left-1 \(state creating/],
+    ['leftovers in error and destroying states', { undeletable: (labels: Record<string, string>) => (labels.run ? [] : [{ id: 'left-2', state: 'error', error: 'DaytonaInternalServerError: Internal Server Error' }, { id: 'left-3', state: 'destroying', error: 'DaytonaConflictError: Sandbox state change in progress' }]) }, /2 could not be deleted: left-2 \(state error; .*left-3 \(state destroying/],
+    ['a listing that fails', { fail: (call: FakeCall) => (call.op === 'destroyMatching' ? Object.assign(new Error('Internal Server Error'), { name: 'DaytonaInternalServerError' }) : undefined) }, /could not be listed and deleted \(DaytonaInternalServerError/],
+  ] as const)('N5: the next attempt goes on past %s, reports it once, and publishes', async (_label, options, text) => {
+    const w = world(options as any);
+    const integration = await run(w);
+    expect(integration.files.map(file => file.path)).toEqual([ARTICLE_PATH]);
+    expect(w.reports).toHaveLength(1);
+    const [reported, context] = w.reports[0] as [Error, Record<string, unknown>];
+    expect(context).toMatchObject({ operation: 'publishing.sandbox.teardown', code: 'sandbox-teardown-failed' });
+    expect(reported.message).toMatch(text);
+    expect(reported.message).toMatch(/This attempt went on without them/);
+    // The order of SBX-3 is unchanged: only the runner scripts were uploaded before the probe.
+    const ops = w.provider.ops();
+    expect(ops[0]).toBe('destroyMatching'); expect(ops[1]).toBe('create');
+    expect(ops.indexOf(`exec:${RUNNER_COMMANDS.probe}`)).toBeLessThan(ops.indexOf(`uploadFile:${SANDBOX_PATHS.archive}`));
+    expect(w.provider.count('create')).toBe(1);
+    expect(w.provider.count('destroy')).toBe(1);
+    expect(w.logs[0]).toMatchObject({ destroyed: true, outcome: 'integrated' });
+  });
+  it('N5: a leftover sweep that hangs is abandoned after its 30 seconds, reported, and the attempt still publishes', async () => {
+    vi.useFakeTimers(FAKE);
+    let sweepAt = 0; let createAt = 0;
+    const w = world({ hang: call => { if (call.op === 'destroyMatching') { sweepAt = Date.now(); return true; } if (call.op === 'create') createAt = Date.now(); return false; } });
+    const integration = await drive(run(w), 400);
+    expect(integration.engine).toBe('sandbox');
+    expect(createAt - sweepAt).toBeLessThanOrEqual((SANDBOX_BUDGET.destroySec + 6) * 1000);
+    expect(createAt - sweepAt).toBeGreaterThanOrEqual(SANDBOX_BUDGET.destroySec * 1000);
+    expect(w.reports).toHaveLength(1);
+    expect((w.reports[0] as [Error])[0].message).toMatch(/could not be listed and deleted within 30 seconds/);
+  });
+  it('N5: with leftovers that cannot be deleted AND a failed egress probe, nothing but the runner is ever uploaded', async () => {
+    const scenarios: Partial<ConstructorParameters<typeof FakeSandboxProvider>[0]>[] = [
+      { undeletable: () => [{ id: 'left-9', state: 'creating', error: 'DaytonaConflictError: Sandbox state change in progress' }] },
+      { fail: call => (call.op === 'destroyMatching' ? new Error('list failed') : undefined) },
+    ];
+    for (const options of scenarios) {
+      const w = world(options); w.probe = { exitCode: 1, output: 'radar-probe-failure code=canary_reachable host=example.com route=direct status=200\n' };
+      const error = await failureOf(run(w));
+      expect(error.diagnostic?.code).toBe('sandbox-egress-unverified');
+      expect(contentUploads(w)).toEqual([]);
+      expect(w.archiveFetches).toBe(0);
+      expect(w.capabilitiesSeen).toEqual([]);
+      expect(w.provider.count('destroy')).toBe(1);
+    }
+    // And when create itself fails there is no upload of any kind.
+    const w = world({ fail: call => (call.op === 'create' ? CREATE_FAILED : undefined), undeletable: () => [{ id: 'left-9', state: 'creating', error: 'x' }] });
+    await failureOf(run(w));
+    expect(w.provider.count('upload') + w.provider.count('uploadFile') + w.provider.count('exec')).toBe(0);
+    expect(w.reports.length).toBeGreaterThanOrEqual(1);
+  });
+  it('N5: teardown reporting that itself fails or hangs never changes the outcome', async () => {
+    const w = world({ undeletable: labels => (labels.run ? [] : [{ id: 'left-1', state: 'creating', error: 'x' }]) });
+    const integration = await integrateWithSandbox(inputOf(w), { report: (async () => { throw new Error('alerting is down'); }) as any, log: line => { w.logs.push(line); } });
+    expect(integration.engine).toBe('sandbox');
   });
 
   it('a failed delete is reported with the entry and does not change an accepted outcome', async () => {
