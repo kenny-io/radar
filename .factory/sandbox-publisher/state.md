@@ -55,3 +55,11 @@ PM verification with that key through `@daytona/sdk` 0.207.0 (two ephemeral sand
 - Egress goes through Daytona's proxy variables (`HTTPS_PROXY`, `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE` and others are set in the sandbox), matching Thally's `agent-environment.mjs`, which preserves them.
 
 Remaining owner actions, at rollout only: a production Daytona key on the Railway worker; go-ahead to merge and deploy.
+
+## Model proxy service (12 Nov 2026)
+
+ENG-2 verified by the PM (99 tests rerun, typecheck clean) and committed as `165bb4dc`.
+
+Owner-approved Railway service created in project `radar`, environment `production`: `model-proxy` (service id `9049cb36-e0f8-4d6f-8d81-b9ecdeb4d231`), domain `https://model-proxy-production-260d14ba.up.railway.app`. Variables by name: `ANTHROPIC_API_KEY` (reference to the shared variable), `DATABASE_URL` (reference to Postgres), `RADAR_PUBLISH_CAPABILITY_SECRET` (generated locally, also in `.env.local`), `NODE_ENV`, `RAILPACK_START_CMD` (`npm run model-proxy`), `RAILPACK_BUILD_CMD` (`echo model-proxy`). `railway environment edit --service-config` reported "No changes to apply" for start, build and health-check settings, so the Railpack variables carry the commands and no health-check path is set on the service yet. Deployed with `railway up` from the working tree at `165bb4dc` (a development deploy, not connected to the GitHub repository). At rollout: connect it to `kenny-io/radar` `main` like `web` and `worker`, set the health-check path `/model/health`, and reference the secret from the worker as `${{model-proxy.RADAR_PUBLISH_CAPABILITY_SECRET}}`.
+
+Local development variables in `.env.local` (git-ignored): `DAYTONA_API_KEY`, `RADAR_PUBLISH_CAPABILITY_SECRET`, `RADAR_PUBLISH_MODEL_PROXY_URL`. Still to add after ENG-1: `RADAR_PUBLISH_SANDBOX_SNAPSHOT_ID`.
