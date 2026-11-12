@@ -16,6 +16,15 @@ describe('publishing article body images', () => {
     expect(notion.map(b => b.type)).toEqual(['paragraph', 'heading_2', 'paragraph', 'image', 'heading_2', 'paragraph']);
     expect(notion[3].image).toMatchObject({ type: 'external', external: { url: bodyImages[0].url }, caption: [{ text: { content: bodyImages[0].alt } }] });
   });
+  it('an article whose body images were left out publishes with no figure in any format', () => {
+    const none = { bodyImages: [] as ArticleBodyImage[], videos: [], sources: [] };
+    expect(blocksToHtml(blocks, none)).toBe(blocksToHtml(blocks));
+    expect(blocksToHtml(blocks, none)).not.toContain('radar-body-image');
+    expect(blocksToHtml(blocks, none)).not.toContain('<img');
+    expect(blocksToMarkdown(blocks, none)).toBe(blocksToMarkdown(blocks));
+    expect(blocksToMarkdown(blocks, none)).not.toContain('![');
+    expect(toNotionBlocks(blocks, none).map(b => b.type)).toEqual(['paragraph', 'heading_2', 'paragraph', 'heading_2', 'paragraph']);
+  });
   it('ignores orphaned anchors; legacy bodies serialize unchanged', () => {
     const orphan = [{ ...bodyImages[0], after: { heading: 'deleted', occurrence: 0, block: 0 } }];
     expect(blocksToHtml(blocks, { bodyImages: orphan })).toBe(blocksToHtml(blocks));

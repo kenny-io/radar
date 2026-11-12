@@ -1,5 +1,6 @@
 // Job + cron definitions for "drafting". Imported by src/server/jobs/all.ts.
-//  - article.draft (ref = entryId): research → streamed draft ({ blocks, partial }) → validation → hero image → review|scheduled
+//  - article.draft (ref = entryId): research → streamed draft ({ blocks, partial }) → validation → image directions → hero image → body images → review|scheduled
+//  - article.bodyImages (ref = entryId): image directions (cached on the article) → one strict image per planned section
 //  - cron drafting.due: at blog.time in the business timezone, approved entries with date − 1 ≤ today start drafting.
 //    Autopilot (acknowledged, connected) also auto-approves one proposed article per day. Pausing stops publishing, not drafting.
 import { authorized } from '../autopilot/policy';
@@ -16,6 +17,7 @@ import { addDays, nowHMIn, todayIn } from '@/lib/format';
 import { draftArticle, entriesStatus, type DraftPayload } from './draft';
 import { startDraft } from './start';
 import { generateArticleBodyImages, type BodyImagesPayload } from './bodyImages';
+import { resolveImageDirections } from './imageDirections';
 import { assertArticleEditable, assertArticleJobOwned, assertNoArticleWork, lockArticle } from './guard';
 import type { Article, Profile } from '@/lib/types';
 import { recordEngagement, resolveCalendarForEntries } from '../lifecycle/engagement';
@@ -106,7 +108,11 @@ defineJob<BodyImagesPayload>({
       return { row, a };
     });
     const biz = await getBiz(bid); const profile = { ...(biz.profile as Profile), domain: biz.domain };
-    const bodyImages = await generateArticleBodyImages(ctx, entryFromRow(snapshot.row), snapshot.a, profile);
+    const e = entryFromRow(snapshot.row);
+    // A set cached by the last draft or cover regeneration costs no text call; an older article gets one. Any failure
+    // below fails the job: the previous images are kept and the existing retry state shows.
+    const imageDirections = await resolveImageDirections(bid, profile, e, snapshot.a, { budgetMs: 90_000 });
+    const bodyImages = await generateArticleBodyImages(ctx, e, snapshot.a, profile, imageDirections);
     const bodyImagesGeneratedAt = new Date().toISOString();
     await db.transaction(async tx => {
       const row = await lockArticle(tx, bid, entryId);
@@ -115,7 +121,8 @@ defineJob<BodyImagesPayload>({
       const latest = (await tx.select().from(schema.articles).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid))).limit(1))[0]?.data as Article | undefined;
       if (!latest || JSON.stringify(latest.body) !== JSON.stringify(snapshot.a.body)) throw new RadarError('The article text changed while Radar was making its images. Try again to match the latest text.', 409, 'article_changed');
       if (latest.img.style !== snapshot.a.img.style || latest.img.prompt !== snapshot.a.img.prompt || latest.img.modelRequired !== snapshot.a.img.modelRequired) throw new RadarError('The image direction changed while Radar was generating. Try again.', 409, 'article_changed');
-      await tx.update(schema.articles).set({ data: { ...latest, bodyImages, bodyImagesGeneratedAt }, updatedAt: new Date() }).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid)));
+      const { bodyImagesIssue: _resolved, ...kept } = latest;
+      await tx.update(schema.articles).set({ data: { ...kept, bodyImages, bodyImagesGeneratedAt, imageDirections }, updatedAt: new Date() }).where(and(eq(schema.articles.entryId, entryId), eq(schema.articles.businessId, bid)));
     });
     await ctx.touch();
     return { entryId, bodyImagesGeneratedAt, count: bodyImages.length };

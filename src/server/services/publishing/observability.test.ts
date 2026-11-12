@@ -17,7 +17,7 @@ vi.mock('@/server/db', async () => {
   return { db, schema };
 });
 vi.mock('@/server/workspace', () => ({ getBiz: async () => business, bump: vi.fn(async () => {}), entryFromRow: (row: any) => row, blogOf: () => ({}), connPublic: vi.fn() }));
-vi.mock('@/server/services/images', () => ({ renderImage: H.image }));
+vi.mock('@/server/services/images', () => ({ renderImageFile: H.image }));
 vi.mock('@/server/services/storage', () => ({ storedKey: vi.fn(), readLocal: vi.fn() }));
 vi.mock('@/server/notify', () => ({ notify: vi.fn() }));
 vi.mock('@/server/events', () => ({ trackSoon: vi.fn() }));
