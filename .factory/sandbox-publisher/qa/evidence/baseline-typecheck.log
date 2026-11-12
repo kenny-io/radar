@@ -1,0 +1,3 @@
+> radar@1.0.0 typecheck
+> tsc --noEmit
+typecheck exit 0

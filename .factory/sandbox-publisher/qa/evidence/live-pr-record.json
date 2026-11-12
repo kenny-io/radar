@@ -1,0 +1,124 @@
+{
+  "repository": "kenny-io/radar-connector-test",
+  "branch": "radar/qa-sandbox-publisher-check-mwcuywal-qamwcuywal",
+  "entry": "e_qamwcuywal",
+  "revision": "2ded10aa7793fea7f631fe654e88397981226b59",
+  "startedAt": "2026-11-12T01:17:35.614Z",
+  "mainBefore": "15045b102ad681c946eb1ca117166a174aa27ab9",
+  "createDraftMs": 47201,
+  "draft": {
+    "path": "content/posts/qa-sandbox-publisher-check-mwcuywal.mdx",
+    "slug": "qa-sandbox-publisher-check-mwcuywal",
+    "route": "/posts/qa-sandbox-publisher-check-mwcuywal",
+    "files": [
+      "content/posts/qa-sandbox-publisher-check-mwcuywal.mdx"
+    ],
+    "checks": [
+      {
+        "id": "paths",
+        "outcome": "passed",
+        "detail": "1 candidate path passes the repository write rules, with no duplicate or nested path"
+      },
+      {
+        "id": "credentials",
+        "outcome": "passed",
+        "detail": "no credential-shaped string and no Radar model capability in 1 changed file or their names"
+      },
+      {
+        "id": "ceilings",
+        "outcome": "passed",
+        "detail": "1 changed file (limit 16); largest 1010 bytes (limit 1000000); 1010 bytes in all (limit 2000000); net growth 1010 bytes (limit 400000)"
+      },
+      {
+        "id": "file-modes",
+        "outcome": "passed",
+        "detail": "1 regular file collected; none is or lies under a symbolic link, submodule or special file; 1 new, 0 existing changed, 0 identical to the pinned commit"
+      },
+      {
+        "id": "syntax",
+        "outcome": "passed",
+        "detail": "1 changed file is UTF-8 text; 0 JSON parsed; 0 JavaScript or TypeScript parsed without syntax errors"
+      },
+      {
+        "id": "peer-content",
+        "outcome": "passed",
+        "detail": "no existing file was edited; every changed file is new"
+      },
+      {
+        "id": "article-fidelity",
+        "outcome": "passed",
+        "detail": "4 of 4 paragraphs and 3 of 3 list items present, 7 of them word for word; 2 of 2 headings present; 100% in the article's order; 0 repeated paragraphs (1 allowed); the article file adds 191 words against a ceiling of 662; 0 media or link references not carried"
+      },
+      {
+        "id": "identity",
+        "outcome": "passed",
+        "detail": "the slug, article path and public route are well formed"
+      }
+    ],
+    "mediaOmitted": 0,
+    "notRun": [
+      "dependency installation",
+      "repository build",
+      "lint",
+      "tests",
+      "deployment preview"
+    ]
+  },
+  "run": {
+    "entry": "e_qamwcuywal",
+    "sandbox": "717bce2a-f3d2-4fea-8e4e-31ccb83a8e2e",
+    "ms": 43514,
+    "turns": 8,
+    "repaired": false,
+    "destroyed": true,
+    "outcome": "integrated"
+  },
+  "usage": {
+    "modelCalls": 6,
+    "costUsd": 0.109
+  },
+  "commit": {
+    "sha": "4f4e07b8c66856568099a35ae4c464aa14a4730d",
+    "parent": "15045b102ad681c946eb1ca117166a174aa27ab9",
+    "files": [
+      {
+        "filename": "content/posts/qa-sandbox-publisher-check-mwcuywal.mdx",
+        "status": "added",
+        "additions": 20,
+        "deletions": 0
+      }
+    ]
+  },
+  "pr": {
+    "number": 9,
+    "state": "open",
+    "draft": true,
+    "base": "main",
+    "commits": 1,
+    "changedFiles": 1,
+    "bodyChars": 4041
+  },
+  "retryCreateDraftMs": 1878,
+  "retry": {
+    "sandboxRuns": 1,
+    "headUnchanged": true,
+    "pullRequestsForBranch": 1,
+    "continuation": "resumed"
+  },
+  "cleanup": {
+    "comment": 201,
+    "close": 200,
+    "deleteBranch": 204,
+    "prState": "closed",
+    "prMerged": false,
+    "prDraft": true,
+    "branchAfter": 404,
+    "branchesAfter": [
+      "main"
+    ],
+    "openPullsAfter": 0,
+    "mainAfter": "15045b102ad681c946eb1ca117166a174aa27ab9",
+    "mainUnchanged": true
+  },
+  "pullRequest": "https://github.com/kenny-io/radar-connector-test/pull/9"
+}

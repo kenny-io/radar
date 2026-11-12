@@ -1,0 +1,9 @@
+ RUN  v3.2.7 <worktree>
+stdout | .factory/sandbox-publisher/qa/live.qa.test.ts > an abandoned sandbox is destroyed by its TTL (live, no model call) > disappears on its own within a few minutes of a one-minute TTL
+[qa.live.ttl] {"sandbox":"b4a5a818-5c5f-4db9-a4b6-3aa3d04cd3bc","ttlMinutes":1,"lifetimeFieldsReported":["autoStopInterval=0","autoDeleteInterval=0"],"goneWithoutBeingDeletedAfterSeconds":152}
+ ✓ .factory/sandbox-publisher/qa/live.qa.test.ts (13 tests | 12 skipped) 152109ms
+   ✓ an abandoned sandbox is destroyed by its TTL (live, no model call) > disappears on its own within a few minutes of a one-minute TTL  152108ms
+ Test Files  1 passed (1)
+      Tests  1 passed | 12 skipped (13)
+   Start at  05:33:07
+   Duration  152.56s (transform 124ms, setup 0ms, collect 234ms, tests 152.11s, environment 0ms, prepare 45ms)

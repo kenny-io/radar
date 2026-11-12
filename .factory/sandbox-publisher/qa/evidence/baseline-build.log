@@ -1,0 +1,12 @@
+├ ƒ /start                                 1.13 kB         149 kB
+├ ƒ /start-trial                           7.94 kB         138 kB
+├ ƒ /terms                                 4.23 kB         117 kB
+└ ƒ /verify-email                          2.03 kB         132 kB
++ First Load JS shared by all               103 kB
+  ├ chunks/1255-dc3ddf72a1dc71a7.js        46.6 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js    54.2 kB
+  └ other shared chunks (total)            2.01 kB
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+exit 0

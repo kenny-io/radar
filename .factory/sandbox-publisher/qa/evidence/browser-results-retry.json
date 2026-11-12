@@ -1,0 +1,37 @@
+{
+  "at": "2026-11-12T01:23:24.432Z",
+  "base": "http://localhost:3853",
+  "mode": "retry",
+  "environment": "Next dev server, RADAR_DEV_STUBS=1, isolated local Postgres, synthetic accounts; Google Chrome (headless) through Playwright",
+  "worktree": "git worktree",
+  "results": [
+    {
+      "name": "an ordinary account signs in through the form and lands in the app",
+      "pass": true,
+      "detail": {
+        "landedOn": "/dashboard",
+        "sessionCookieHttpOnly": true
+      }
+    },
+    {
+      "name": "Retry (worker running, stub connector): failed → Publishing… → published, and the banner goes away",
+      "pass": true,
+      "detail": {
+        "states": [
+          "Publishing…",
+          "Published"
+        ],
+        "finalStatus": "published",
+        "persistedAfterReload": true
+      }
+    },
+    {
+      "name": "no uncaught error in the page",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ],
+  "errors": []
+}
