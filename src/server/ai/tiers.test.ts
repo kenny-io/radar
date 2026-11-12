@@ -25,9 +25,9 @@ describe('the purpose table', () => {
   it.each([...Object.keys(PURPOSE_TIER), ...Object.keys(STANDARD_EFFORT)])('%s is a purpose some caller really sends (a rename would silently drop it to standard)', purpose => {
     expect(SOURCES).toContain(`purpose: '${purpose}'`);
   });
-  it('utility is exactly the six scoring, classification and extraction purposes; premium exactly the three chosen tasks', () => {
+  it('utility is exactly the six scoring, classification and extraction purposes plus image directions; premium exactly the three chosen tasks', () => {
     const of = (tier: string) => Object.keys(PURPOSE_TIER).filter(p => PURPOSE_TIER[p] === tier).sort();
-    expect(of('utility')).toEqual(['analysis.classify', 'article.destat', 'article.meta', 'brief.rank', 'keywords.intent', 'visibility.extract']);
+    expect(of('utility')).toEqual(['analysis.classify', 'article.destat', 'article.imageDirections', 'article.meta', 'brief.rank', 'keywords.intent', 'visibility.extract']);
     expect(of('premium')).toEqual(['article.draft', 'calendar.topics', 'suggestions.refreshDraft']);
     expect(of('standard')).toEqual([]);
   });

@@ -1,6 +1,7 @@
 // Model tiers: which model plan a call gets, decided by its `purpose` alone. Pure (constants and process.env only), so
 // routing, Settings and tests share one table. Call sites never name a tier: they keep ai.run('writing' | 'research', …).
-//   utility   scoring, classification, extraction: a small model at low effort; never reads the business's choice.
+//   utility   scoring, classification, extraction, and the image directions read from a finished article: a small
+//             model at low effort; never reads the business's choice.
 //   standard  everything not listed: the business's choice for the kind, else the standard default.
 //   premium   the few tasks worth the strongest model: the premium chain, then the standard plan.
 // Every switch is an environment variable read at call time (web and worker must carry the same values):
@@ -22,6 +23,7 @@ type Kind = 'writing' | 'research';
 export const PURPOSE_TIER: Record<string, AiTier> = {
   'brief.rank': 'utility', 'visibility.extract': 'utility', 'keywords.intent': 'utility',
   'analysis.classify': 'utility', 'article.meta': 'utility', 'article.destat': 'utility',
+  'article.imageDirections': 'utility',
   'article.draft': 'premium', 'suggestions.refreshDraft': 'premium', 'calendar.topics': 'premium',
 };
 export const tierOf = (purpose: string): AiTier => PURPOSE_TIER[purpose] || 'standard';
