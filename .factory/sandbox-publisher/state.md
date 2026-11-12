@@ -97,3 +97,12 @@ ENG-5 interim report:
 - Live smoke fails at the first model request, identically twice (13 s, 0 tokens, 0 USD, sandboxes deleted): `API Error: 400 Claude Code 2.1.251 does not support this model; version 2.1.280 or newer is required.` Create, runner install, probe, archive upload, prepare and runner start all worked. This is the risk recorded in `architecture.md` section 13.
 
 PM decision: keep `claude-opus-5-5`; move `@anthropic-ai/claude-agent-sdk` to exactly `0.3.312` (published 2026-10-27; latest is 0.3.322). ENG-1 is bumping the pin and re-verifying options, fences, abort, resume and the request shape against the proxy's rules. Then the PM rebuilds the snapshot and ENG-5 runs the smoke and the LivedHQ replay.
+
+## Integration committed; SDK 0.3.312; first accepted live run (12 Nov 2026)
+
+- `bb5be86d` ENG-3 peer-content limit; `4db46f63` ENG-5 connector integration, lifecycle, docs, live tests; `3b024ae8` ENG-1 SDK bump to 0.3.312 (plus `ENABLE_TOOL_SEARCH=false` and `CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000` in the agent environment). PM reran on `3b024ae8`: typecheck clean; `npx vitest run src/server/services/publishing` 28 files passed, 11 skipped; 998 tests passed, 56 skipped.
+- New snapshot `radar-publisher-8ff5c7e1f6d2`, id `20968cbf-52e4-4635-8b90-12fcb694ad3f` (in `.env.local`). The first snapshot `radar-publisher-b30e5aa91f99` (`626beb11-...`) is obsolete and can be deleted from the Thally organization.
+- Live smoke on the new snapshot, run by the PM: accepted, 47.7 s, 12 agent turns, 6 model calls, 0.1074 USD, one new file, no sandbox left listed. Record: `.data/sandbox-publisher/replays/smoke-20261112T004252Z.json`.
+- LivedHQ replay (`livedhq-new-registry`, pinned `a44ccfb4`) started by the PM.
+
+Open follow-ups: provider error text is reduced to `AgentApiError:<status>` in `result.json` (ENG-5 defect 2), fix after the live runs since runner scripts are read per run; `SandboxDraftExtra` lacks `continuation` in `types.ts` (ENG-5 defect 5); SDK 0.3.312 retries a 400 up to three times.
