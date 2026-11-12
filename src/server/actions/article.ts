@@ -110,25 +110,33 @@ export const actions: ActionMap = {
     return { ok: true, ...at };
   } }),
 
-  /** A supplied prompt explicitly requires the image model, even for an older template style. Without one, a drafted
-   *  article in a model style gets a direction read from its current text, unless a person wrote the direction. */
+  /** A supplied prompt explicitly requires the image model, even for an older template style. It is a person's wording
+   *  only when it differs from the stored direction or that direction is already theirs: the Media field is prefilled,
+   *  so "Generate from prompt" often sends back text nobody typed. Otherwise (and with no prompt, in a model style) a
+   *  drafted article gets a direction read from its current text. */
   'article.regenerateImage': action({ input: z.object({ entryId: z.string(), prompt: z.string().trim().min(1, 'Describe the image you want.').max(1000).optional() }), run: async (ctx, { entryId, prompt }) => {
     await checkMedia(ctx.bid, entryId); // role, tenant, locks and active work, before any provider time is spent
     const { e, a } = await load(ctx.bid, entryId);
     let img: Article['img'] = { ...a.img, seed: (a.img.seed || 1) + 1 };
     let directions: ArticleImageDirections | undefined;
     const modelStyle = MODEL_STYLES.includes(img.style);
+    const owners = coverDirectionIsOwners(a.img, e.kw);
+    const sameText = (x: string, y: string) => x.trim().replace(/\s+/g, ' ') === y.trim().replace(/\s+/g, ' ');
+    const typed = prompt !== undefined && (owners || !sameText(prompt, a.img.prompt || ''));
+    // "Generate from prompt" on a direction nobody typed: a generated picture is asked for, and the direction stays as it is.
+    const pressed = prompt !== undefined && !typed;
     // A typed direction replaces Radar's scene, so the alt Radar wrote for that scene no longer describes the cover: it
     // becomes the neutral built-in alt. An alt a person typed is theirs and stays.
-    const neutralAlt = prompt !== undefined && a.img.altBy !== 'owner' ? fallbackImageDirections(e.title, a.body, []).cover.alt : undefined;
-    if (prompt !== undefined) img = { ...img, prompt, promptBy: 'owner', modelRequired: true, ...(neutralAlt !== undefined ? { alt: neutralAlt } : {}) };
-    else if (a.generated && a.body.length && modelStyle && !coverDirectionIsOwners(a.img, e.kw)) {
+    const neutralAlt = typed && a.img.altBy !== 'owner' ? fallbackImageDirections(e.title, a.body, []).cover.alt : undefined;
+    if (typed) img = { ...img, prompt: prompt!, promptBy: 'owner', modelRequired: true, ...(neutralAlt !== undefined ? { alt: neutralAlt } : {}) };
+    else if (a.generated && a.body.length && (modelStyle || pressed) && !owners) {
       // Cached on the article when the text has not changed since the last draft; otherwise one small text call.
       directions = await resolveImageDirections(ctx.bid, profileOf(ctx.biz), e, a, { budgetMs: 20_000 });
       img = { ...img, prompt: directions.cover.prompt, promptBy: 'radar', ...(a.img.altBy === 'owner' ? {} : { alt: directions.cover.alt }) };
     }
-    // A person asked for a new picture: a model style never answers with the template. On failure the cover is kept.
-    try { img = await render(ctx.bid, ctx.biz, e.title, { ...a, img }, { strict: modelStyle }); }
+    // A person asked for a new picture: a model style, and "Generate from prompt" in any style, never answers with the
+    // template. Strict for this request only; nothing is stored that makes later renders strict. On failure the cover is kept.
+    try { img = await render(ctx.bid, ctx.biz, e.title, { ...a, img }, { strict: modelStyle || pressed }); }
     catch (error: any) { console.error('[article] cover generation failed', error?.message); if (error instanceof RadarError) throw error; throw new RadarError('Radar couldn’t generate this image. Your previous cover is kept. Try again.', 502, 'image_failed'); }
     await save(ctx.bid, entryId, latest => {
       if (latest.img.seed !== a.img.seed || latest.img.style !== a.img.style || latest.img.prompt !== a.img.prompt || latest.img.url !== a.img.url) throw new RadarError('The cover changed while Radar was rendering it. Try again.', 409, 'article_changed');

@@ -313,6 +313,79 @@ describe.skipIf(!process.env.DATABASE_URL)('article body images (database)', () 
     saved = await article(h.id);
     expect(saved.img).toMatchObject({ prompt: 'A lighthouse above a calm harbour', promptBy: 'owner', alt: 'My own words', altBy: 'owner' });
   });
+  /* ── "Generate from prompt" pressed on a direction nobody typed (QA N1): the field is prefilled, so this is the common click ── */
+  it('Generate from prompt on Radar’s own unedited direction keeps it Radar’s: literal, strict for this request only, Radar’s alt', async () => {
+    const f = await fixture({ img: older });
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id }); // Radar writes the direction and caches the set
+    const before = await article(f.id);
+    expect(before.img.promptBy).toBe('radar');
+    // The workspace sends the field's text trimmed; a stray space or line break typed into it is not an edit either.
+    for (const [n, sent] of [before.img.prompt, `  ${before.img.prompt.replace(' ', '  ')}\n`].entries()) {
+      M.render.mockClear();
+      await actions['article.regenerateImage'].run(f.ctx, actions['article.regenerateImage'].input!.parse({ entryId: f.id, prompt: sent }));
+      const saved = await article(f.id);
+      expect(M.render.mock.calls).toHaveLength(1);
+      expect(M.render.mock.calls[0][0]).toMatchObject({ kind: 'hero', prompt: before.img.prompt, literal: true, modelRequired: true, seed: 3 + n });
+      expect(saved.img).toEqual({ ...before.img, seed: 3 + n, urlKey: `illustration:${3 + n}`, url: saved.img.url });
+      expect(saved.img).toMatchObject({ prompt: before.img.prompt, promptBy: 'radar', alt: before.imageDirections!.cover.alt });
+      expect(saved.img.modelRequired).toBeUndefined();
+      expect(saved.img.url).not.toBe(before.img.url);
+    }
+    expect(M.directions).toHaveLength(1); // the cached set was reused both times
+    // Later body images are drawn from their own sections, with no "overall look" taken from the cover scene.
+    M.render.mockClear();
+    await runDefined(await startBodyImages(f.biz.id, f.id));
+    expect(M.render.mock.calls).toHaveLength(2);
+    expect(M.render.mock.calls.map(c => c[0].prompt).join(' ')).not.toContain('Overall look the owner asked for');
+    // And a rewrite still treats the direction as Radar's.
+    await runDefined(await startDraft(f.biz.id, f.id, 'user'));
+    expect((await article(f.id)).img.promptBy).toBe('radar');
+  }, 15_000);
+  it.each([['a model style', 'illustration' as const], ['a template style', 'branded' as const]])('Generate from prompt on the unedited creation default of an older drafted article in %s gives it Radar’s contextual direction', async (_name, style) => {
+    const f = await fixture({ img: { style, prompt: 'Calm, editorial image about docs updates', urlKey: `${style}:1` } });
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'Calm, editorial image about docs updates' });
+    const saved = await article(f.id);
+    expect(M.directions).toEqual(['Keep docs current']);
+    expect(saved.imageDirections).toMatchObject({ source: 'ai' });
+    expect(saved.img).toMatchObject({ style, seed: 2, urlKey: `${style}:2`, prompt: saved.imageDirections!.cover.prompt, promptBy: 'radar', alt: saved.imageDirections!.cover.alt });
+    expect(saved.img.prompt).toContain('Keep docs current');
+    expect(saved.img.modelRequired).toBeUndefined();
+    // The person asked for a generated picture: the model is required for this request, whatever the style.
+    expect(M.render.mock.calls[0][0]).toMatchObject({ style, prompt: saved.img.prompt, literal: true, modelRequired: true });
+    // Plain Regenerate afterwards is as before: a template style draws a new template and asks no model.
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id });
+    expect(M.render.mock.calls[1][0]).toMatchObject({ style, seed: 3, modelRequired: style === 'illustration', literal: true });
+  });
+  it('Generate from prompt on the unedited default before the first draft marks nothing, and the draft then adopts Radar’s direction', async () => {
+    const f = await fixture({ generated: false, img: { prompt: 'Calm, editorial image about docs updates' } });
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'Calm, editorial image about docs updates' });
+    let saved = await article(f.id);
+    expect(M.directions).toEqual([]); // nothing is drafted, so there is no text to read
+    expect(M.render.mock.calls[0][0]).toMatchObject({ prompt: 'Calm, editorial image about docs updates', literal: false, modelRequired: true, seed: 2 });
+    expect(saved.img).toEqual({ ...f.a.img, seed: 2, urlKey: 'branded:2', url: saved.img.url });
+    expect('promptBy' in saved.img).toBe(false); expect('modelRequired' in saved.img).toBe(false);
+    await runDefined(await startDraft(f.biz.id, f.id, 'user'));
+    saved = await article(f.id);
+    expect(saved.img).toMatchObject({ promptBy: 'radar', prompt: saved.imageDirections!.cover.prompt, alt: 'Cover alt' });
+    expect(saved.img.prompt).not.toBe('Calm, editorial image about docs updates');
+  }, 15_000);
+  it('a direction the person edited before pressing Generate from prompt is still theirs', async () => {
+    const f = await fixture({ img: { ...older, prompt: 'The exterior of a gated community seen from its gate', promptBy: 'radar', alt: 'Illustration of a gated community' } });
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'The exterior of a gated community seen from its gate at dusk' });
+    const saved = await article(f.id);
+    expect(M.directions).toEqual([]);
+    expect(M.render.mock.calls[0][0]).toMatchObject({ prompt: 'The exterior of a gated community seen from its gate at dusk', literal: false, modelRequired: true });
+    expect(saved.img).toMatchObject({ prompt: 'The exterior of a gated community seen from its gate at dusk', promptBy: 'owner', modelRequired: true, alt: 'Illustration for Keep docs current' });
+  });
+  it.each([['marked as theirs', { promptBy: 'owner' as const }], ['typed before the mark existed', {}]])('Generate from prompt on an owner’s unchanged direction (%s) stays the owner’s, as before', async (_name, mark) => {
+    const f = await fixture({ img: { ...older, prompt: 'A lighthouse above a calm harbour', ...mark } });
+    await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id, prompt: 'A lighthouse above a calm harbour' });
+    const saved = await article(f.id);
+    expect(M.directions).toEqual([]);
+    expect(M.render.mock.calls[0][0]).toMatchObject({ prompt: 'A lighthouse above a calm harbour', literal: false, modelRequired: true });
+    expect(saved.img).toMatchObject({ prompt: 'A lighthouse above a calm harbour', promptBy: 'owner', modelRequired: true, seed: 2 });
+    expect(saved.imageDirections).toBeUndefined();
+  });
   it('Regenerate on a template style draws a new template variation from the title and runs no direction step', async () => {
     const f = await fixture({ img: { prompt: 'Calm, editorial image about docs updates' } });
     await actions['article.regenerateImage'].run(f.ctx, { entryId: f.id });
