@@ -4,6 +4,8 @@
 `analysis.site` runs in the worker process. `crawl.ts` parses every crawled page (up to 100 per site) and every sitemap with cheerio, and `brand.ts` parses the home page again, all on the worker's one JavaScript thread. A page under the crawler's 2 MB cap can keep that thread busy for tens of seconds, or end the process. Every other job in the process waits or dies with it.
 
 ## Measured on `main` `8e3a4da3` (macOS arm64, Node 22.18, cheerio 1.2.0)
+Pull request 57 was merged while this work was under way (`main` is now `b3ad2d50`). It changed how logos are read, not the cheerio calls measured here: `crawl.ts` is untouched and `brand.ts` keeps the same selections, so the table holds for `b3ad2d50`.
+
 `probe/run.mjs steps-main.mjs` runs each page in its own process with a 30 s limit and times every cheerio step that `extract`, `classifyPage` and `detectBrand` run. Full rows: `probe/evidence/main-steps.json`. Profiles: `probe/evidence/main-profile.jsonl`.
 
 | Page | Size | What happened |
@@ -54,11 +56,10 @@ New module `src/server/services/analysis/pageReader.ts`:
 - Two failure kinds: `PageUnreadable` (reason `timed_out` | `crashed` | `failed`: the document's fault) and a plain `Error` when the reader cannot be started (ours; stays loud).
 - Exports: `readPage(html, url, origin)`, `readBrandPage(html, origin)`, `readSitemap(xml)`, each with an optional `{ timeoutMs }` for tests, and `PAGE_READ_MS = 5000`.
 - The reader's statements are the ones in `main`'s `extract`, `classifyPage`, `cssColors` (its three selections), `logoCandidates` and `inlineHeaderSvg`, in the same order. Regular expressions shared with the caller (`ARTICLE_PATH`, `LISTING_PATH`, the asset-extension pattern) are written once and placed into the string by their `.source` and `.flags`. No `Function.prototype.toString`. `normUrl` and `sameSite` are needed on both sides: the reader's copies sit beside the TypeScript ones, and a test holds them equal on a table of addresses.
-- Two deliberate differences inside the reader, both only reachable by pages that throw on `main`: `maxSize` uses a `reduce` (a `sizes` attribute with 450,000 entries throws in `Math.max(...)`), and a header SVG that cannot be serialized gives no inline SVG instead of an exception.
 
 `crawl.ts`: no cheerio import. `extract` awaits `readPage`. `parseSitemaps` awaits `readSitemap` and does its own `normUrl`/`sameSite` on the returned texts, sitemap entries first, then URLs, as now. `classifyPage` is no longer exported (nothing else uses it). `ARTICLE_PATH`, `LISTING_PATH`, `uaToken`, `fetchUrl` stay exported from `crawl.ts`.
 
-`brand.ts`: no cheerio import. `detectBrand` awaits `readBrandPage` once and works from its data: `{ css, stylesheets, theme, candidates, svg, htmlLang }`. Keep every other line as it is: pull request 57 (`kenny-dev/safe-logo-decode`, open) rewrites the logo reading in this file, and whichever merges second resolves the overlap.
+`brand.ts`: no cheerio import. `detectBrand` awaits `readBrandPage` once and works from its data: `{ css, stylesheets, theme, candidates, svg, htmlLang }`. The logo reading that pull request 57 added (`readLogo`, `../untrustedImage`) is not touched.
 
 Outcomes when a document is unreadable (`PageUnreadable`):
 - Home page: `crawlSite` throws `CrawlError('unreachable')`. The job fails once, permanently, with the designed copy; no retry and no failure alert for a page nobody can read.
@@ -75,7 +76,7 @@ Outcomes when a document is unreadable (`PageUnreadable`):
 - AC4. Memory: the 173 KB font page fails its read (`crashed`) within the limit and the calling process is still running; the reader has a fixed heap cap under which a dense ordinary 2 MB page still reads, ten times in a row in the same child.
 - AC5. Recovery and queueing: after a failed read the next read succeeds; of several reads queued behind a stalling one, only the stalling one fails.
 - AC6. Outcomes as listed under "Outcomes", each covered by a test through `crawlSite` or `detectBrand`.
-- AC7. Same results: a fixture site and a set of home pages run through `crawlSite` and `detectBrand` give results identical to `main` `8e3a4da3`, compared against a stored record produced by running the same harness on `main`. The fixtures cover every signal the reader computes (see T1). The existing `devsite.test.ts` crawl passes unchanged.
+- AC7. Same results: a fixture site and a set of home pages run through `crawlSite` and `detectBrand` give results identical to `main` `b3ad2d50`, compared against a stored record produced by running the same harness on `main`. The fixtures cover every signal the reader computes (see T1). The existing `devsite.test.ts` crawl passes unchanged.
 - AC8. Lifecycle: the reader does not keep its parent alive, exits when its parent goes away, and stops after 30 s idle.
 - AC9. `npm run typecheck` passes. Full suite: no failure that is not on `main` (`openrouter.qa.test.ts` parity snapshot is known; the shared-database files are flaky and are rerun alone).
 - AC10. `DIVERGENCES.md` O11 and the file headers say what now happens.
@@ -85,4 +86,4 @@ Outcomes when a document is unreadable (`PageUnreadable`):
 - Other in-process cheerio users: `realCover/page.ts`, `realCover/index.ts` (sitemaps), `social/source.ts`, `backlinks/linkcheck.ts`.
 
 ## Delivery
-Branch `kenny-dev/bounded-page-parse` from `main` `8e3a4da3`. Pull request to `main`. No merge, no deploy (`main` auto-deploys to Railway).
+Branch `kenny-dev/bounded-page-parse` from `main` `b3ad2d50`. Pull request to `main`. No merge, no deploy (`main` auto-deploys to Railway).

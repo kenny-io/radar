@@ -1,5 +1,5 @@
 # State
-- Base: `main` `8e3a4da3`. Branch `kenny-dev/bounded-page-parse`, worktree `.claude/worktrees/vigorous-bun-88cc86`.
+- Base: `main` `b3ad2d50` (rebased from `8e3a4da3` when pull request 57 merged). Branch `kenny-dev/bounded-page-parse`, worktree `.claude/worktrees/vigorous-bun-88cc86`.
 - Delivery: pull request to `main`. No merge or deploy without the owner's go-ahead.
 
 | Task | Owner | Status | Covers | Notes |
