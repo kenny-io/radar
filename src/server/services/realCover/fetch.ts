@@ -7,7 +7,7 @@ import { devFetch } from '../analysis/devsite';
 import { ownSiteUrl } from '@/lib/ownSite';
 
 export type SitePictureCode = 'invalid_address' | 'not_your_site' | 'left_site' | 'unreachable' | 'no_picture'
-  | 'off_site_picture' | 'too_large' | 'too_small' | 'not_a_picture';
+  | 'off_site_picture' | 'too_large' | 'too_small' | 'not_a_picture' | 'blank_picture';
 /** `status`: for 'unreachable', the HTTP status when the site did answer (a 404, a 502, one redirect too many).
  *  Absent when there was no answer at all: DNS, a refused or blocked connection, a timeout, no requests left. */
 export class SitePictureError extends Error { constructor(public code: SitePictureCode, public host?: string, public status?: number) { super(code); } }

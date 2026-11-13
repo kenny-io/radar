@@ -10,9 +10,10 @@ import { SitePictureError, type OwnResponse, type SitePictureCode } from './fetc
 
 export const PICTURE_MAX_PIXELS = 25_000_000, PICTURE_MAX_SIDE = 10_000, PICTURE_MIN_W = 600, PICTURE_MIN_H = 314;
 export const COVER_W = 1200, COVER_H = 628, CROP_KEEPS_AT_LEAST = 0.6;
-/** A decoded picture is blank when, drawn `sample` pixels square, nothing in it is visible (alpha under `alpha`
- *  everywhere), or everything visible is one colour (no channel varies by `flat` or more). */
-export const BLANK = { sample: 32, alpha: 16, flat: 8 };
+/** A decoded picture is blank when, drawn `sample` pixels on its longer side (never enlarged), nothing in it is
+ *  visible (alpha under `alpha` everywhere), or everything visible is one colour (no channel varies by `flat` or
+ *  more). The sample is large enough that a thin or small object on a plain background is seen. */
+export const BLANK = { sample: 512, alpha: 16, flat: 8 };
 /** How long one decode and draw may take before its process is stopped. */
 export const DECODE_TIMEOUT_MS = 20_000;
 
@@ -64,8 +65,9 @@ export interface Cover { png: Buffer; w: number; h: number; fit: 'crop' | 'backd
 // picture from stdin, decodes it, and answers on stdout with a 4-byte length, a JSON head and, on success, the PNG.
 // The size is read from the decoded image: the decoder applies EXIF rotation, so a camera file stored on its side is
 // judged and drawn upright.
-// A blank result is refused: a file whose picture data is damaged can decode, without an error, to nothing at all
-// (fully transparent) or to one flat colour. The decoded picture is looked at on a small transparent canvas first.
+// A blank result is refused, as 'blank_picture': a file whose picture data is damaged can decode, without an error,
+// to nothing at all (fully transparent) or to one flat colour. The decoded picture is looked at on a smaller
+// transparent canvas first.
 // Transparent areas alone are fine (a product cut-out). A file damaged part of the way through, which decodes to a
 // picture that is partly blank, is not detected.
 // The draw rule: white first (a transparent source must not leave transparent or black areas), then a centre crop
@@ -87,15 +89,16 @@ process.stdin.on('end', async () => {
   const w = img.width, h = img.height;
   if (!(w >= o.minW && h >= o.minH)) return reply({ code: 'too_small' });
   try {
-    const small = createCanvas(o.sample, o.sample); const look = small.getContext('2d');
-    look.drawImage(img, 0, 0, o.sample, o.sample);
-    const px = look.getImageData(0, 0, o.sample, o.sample).data; const lo = [255, 255, 255], hi = [0, 0, 0]; let visible = 0;
+    const shrink = Math.min(1, o.sample / Math.max(w, h)); const sw = Math.max(1, Math.round(w * shrink)), sh = Math.max(1, Math.round(h * shrink));
+    const small = createCanvas(sw, sh); const look = small.getContext('2d');
+    look.drawImage(img, 0, 0, sw, sh);
+    const px = look.getImageData(0, 0, sw, sh).data; const lo = [255, 255, 255], hi = [0, 0, 0]; let visible = 0;
     for (let i = 0; i < px.length; i += 4) {
       if (px[i + 3] < o.alpha) continue;
       visible++;
       for (let c = 0; c < 3; c++) { if (px[i + c] < lo[c]) lo[c] = px[i + c]; if (px[i + c] > hi[c]) hi[c] = px[i + c]; }
     }
-    if (!visible || Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) < o.flat) return reply({ code: 'not_a_picture' });
+    if (!visible || Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) < o.flat) return reply({ code: 'blank_picture' });
     const canvas = createCanvas(o.W, o.H); const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, o.W, o.H);
     const rs = w / h, rt = o.W / o.H;
@@ -137,7 +140,7 @@ function decodeAndDraw(body: Buffer): Promise<Cover> {
       try {
         const all = Buffer.concat(out); const length = all.readUInt32BE(0);
         const head = JSON.parse(all.toString('utf8', 4, 4 + length)); const png = all.subarray(4 + length);
-        if (head.code === 'too_small') { refuse('too_small'); return; }
+        if (head.code === 'too_small' || head.code === 'blank_picture') { refuse(head.code); return; }
         if (head.code === 'unavailable') { unavailable('the canvas library did not load'); return; }
         const made = probeImage(png);
         if (head.code || !made || made.type !== 'image/png' || !made.complete || made.width !== COVER_W || made.height !== COVER_H || !(head.w > 0 && head.h > 0) || (head.fit !== 'crop' && head.fit !== 'backdrop')) { refuse(); return; }
@@ -156,7 +159,7 @@ function oneAtATime<T>(work: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** The 1200×628 PNG for a fetched picture. Throws SitePictureError('not_a_picture' | 'too_large' | 'too_small'); a
+/** The 1200×628 PNG for a fetched picture. Throws SitePictureError('not_a_picture' | 'too_large' | 'too_small' | 'blank_picture'); a
  *  plain Error only when the decoder itself could not run. */
 export async function readPicture(res: OwnResponse): Promise<Cover> {
   // The header and the bytes need not name the same one of the three (servers mislabel); the bytes decide.

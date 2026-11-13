@@ -92,6 +92,7 @@ const SITE_PICTURE: Record<SitePictureCode, [status: number, message: (domain: s
   too_large: [422, () => 'That picture is too large. Radar accepts pictures up to 8 MB and 25 megapixels.'],
   too_small: [422, () => 'That picture is too small for a cover. It needs to be at least 600 by 314 pixels.'],
   not_a_picture: [422, () => 'That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP.'],
+  blank_picture: [422, () => 'That picture looks blank, so Radar didn’t use it. Try another one.'],
 };
 function sitePictureError(error: SitePictureError, domain: string): RadarError {
   const [status, message] = SITE_PICTURE[error.code] || SITE_PICTURE.unreachable;

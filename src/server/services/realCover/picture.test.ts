@@ -163,11 +163,37 @@ describe('readPicture refuses', () => {
       ['a barely visible wash (alpha under the threshold)', () => flat(1600, 900, 'rgba(200,30,30,0.03)'), 'image/png'],
       ['a single-colour shape on a transparent background', () => { const c = createCanvas(1600, 900); const g = c.getContext('2d'); g.fillStyle = '#17181c'; g.fillRect(400, 200, 800, 500); return c.toBuffer('image/png'); }, 'image/png'],
       ['two colours too close to tell apart', () => { const c = createCanvas(1600, 900); const g = c.getContext('2d'); g.fillStyle = '#336699'; g.fillRect(0, 0, 1600, 900); g.fillStyle = '#35689b'; g.fillRect(0, 0, 800, 900); return c.toBuffer('image/png'); }, 'image/png'],
-    ] as const)('%s is refused', async (_name, make, type) => {
+    ] as const)('%s is refused, with its own code', async (_name, make, type) => {
       const bytes = make();
       expect(probeImage(bytes)).toMatchObject({ complete: true }); // nothing about the file itself says so
-      expect(await code(readPicture(response(bytes, type)))).toBe('not_a_picture');
+      expect(await code(readPicture(response(bytes, type)))).toBe('blank_picture');
       expect(H.spawn).toHaveBeenCalledTimes(1); // it is the decoded picture that is looked at
+    });
+    // QA round 2, N3: real pictures of one thin or small thing on a plain background. Looked at 32 pixels square, the
+    // thing fell between the sample points in some positions; at 512 on the longer side it is seen wherever it is.
+    const on = (w: number, h: number, background: string, paint: (g: ReturnType<ReturnType<typeof createCanvas>['getContext']>) => void) => { const c = createCanvas(w, h); const g = c.getContext('2d'); g.fillStyle = background; g.fillRect(0, 0, w, h); paint(g); return c.toBuffer('image/png'); };
+    const POSITIONS = Array.from({ length: 12 }, (_, i) => i * 7 + (i % 3)); // twelve offsets that walk across the sampling grid
+    it.each([
+      ['a pen: a 900×10 dark bar', (d: number) => on(1600, 900, '#ffffff', g => { g.fillStyle = '#1b1b1b'; g.fillRect(350, 400 + d, 900, 10); })],
+      ['a 900×20 dark bar', (d: number) => on(1600, 900, '#ffffff', g => { g.fillStyle = '#1b1b1b'; g.fillRect(350, 400 + d, 900, 20); })],
+      ['a lamp post: a 10×700 dark bar', (d: number) => on(1600, 900, '#ffffff', g => { g.fillStyle = '#1b1b1b'; g.fillRect(760 + d, 100, 10, 700); })],
+      ['a very small product: a 36×36 square', (d: number) => on(1600, 900, '#ffffff', g => { g.fillStyle = '#c0392b'; g.fillRect(760 + d, 420 + d, 36, 36); })],
+      ['a 60×60 square', (d: number) => on(1600, 900, '#ffffff', g => { g.fillStyle = '#c0392b'; g.fillRect(760 + d, 420 + d, 60, 60); })],
+      ['a necklace: a 3 px circle outline', (d: number) => on(1600, 900, '#ffffff', g => { g.strokeStyle = '#333333'; g.lineWidth = 3; g.beginPath(); g.arc(780 + d, 440 + d, 300, 0, Math.PI * 2); g.stroke(); })],
+      ['a tall thin thing in a portrait picture: a 6×800 bar in 800×1200', (d: number) => on(800, 1200, '#ffffff', g => { g.fillStyle = '#1b1b1b'; g.fillRect(380 + d, 200, 6, 800); })],
+    ] as const)('%s on white is accepted at every one of twelve positions', async (_name, make) => {
+      const outcomes = await Promise.all(POSITIONS.map(d => readPicture(response(make(d))).then(() => 'ok', e => (e as SitePictureError).code)));
+      expect(outcomes).toEqual(POSITIONS.map(() => 'ok'));
+    }, 60_000);
+    it('a swatch with a fine weave (alternate pixels 12 levels apart) is accepted; the same swatch 6 levels apart is one colour', async () => {
+      const weave = (step: number) => { const c = createCanvas(1600, 900); const g = c.getContext('2d'); g.fillStyle = '#7fa8a0'; g.fillRect(0, 0, 1600, 900); const d = g.getImageData(0, 0, 1600, 900); for (let y = 0; y < 900; y++) for (let x = 0; x < 1600; x++) if ((x + y) % 2) { const i = (y * 1600 + x) * 4; d.data[i] += step; d.data[i + 1] += step; d.data[i + 2] += step; } g.putImageData(d, 0, 0); return c.toBuffer('image/png'); };
+      expect(await readPicture(response(weave(12)))).toMatchObject({ fit: 'crop' });
+      expect(await code(readPicture(response(weave(6))))).toBe('blank_picture');
+    });
+    it('a picture smaller than the sample is looked at as it is, not enlarged; an extreme shape still has a sample', async () => {
+      expect(await readPicture(response(on(600, 314, '#ffffff', g => { g.fillStyle = '#1b1b1b'; g.fillRect(100, 150, 400, 2); })))).toMatchObject({ w: 600, h: 314 });
+      expect(await code(readPicture(response(flat(600, 314, '#dddddd'))))).toBe('blank_picture');
+      expect(await readPicture(response(on(9000, 320, '#ffffff', g => { g.fillStyle = '#1b1b1b'; g.fillRect(100, 100, 8000, 60); })))).toMatchObject({ w: 9000, h: 320, fit: 'backdrop' });
     });
     it.each([
       ['a cut-out on a transparent background', () => drawn(1600, 900, 'image/png', true)],
@@ -192,7 +218,7 @@ describe('readPicture refuses', () => {
     ] as const)('%s is refused', async (_name, make, type) => {
       const bytes = make();
       expect(probeImage(bytes)).toMatchObject({ width: 1600, height: 900, complete: true });
-      expect(await code(readPicture(response(bytes, type)))).toBe('not_a_picture');
+      expect(await code(readPicture(response(bytes, type)))).toBe('blank_picture');
     });
     it.each([
       ['a PNG with its middle third overwritten', () => { const b = Buffer.from(whole.png()); b.fill(0x41, Math.floor(b.length / 3), Math.floor(b.length * 2 / 3)); return b; }, 'image/png'],
@@ -203,7 +229,7 @@ describe('readPicture refuses', () => {
       const bytes = make();
       expect(probeImage(bytes)).toMatchObject({ width: 1600, height: 900, complete: true });
       const outcome = await readPicture(response(bytes, type)).then(r => `accepted ${r.w}x${r.h}`, e => (e instanceof SitePictureError ? e.code : 'fault: ' + e?.message));
-      expect(['accepted 1600x900', 'not_a_picture']).toContain(outcome);
+      expect(['accepted 1600x900', 'not_a_picture', 'blank_picture']).toContain(outcome);
       DAMAGED[_name] = outcome;
     });
     it('every partly damaged file got an answer', () => { expect(Object.keys(DAMAGED)).toHaveLength(3); });
@@ -225,7 +251,7 @@ describe('readPicture refuses', () => {
     await readPicture(response(drawn(1600, 900)));
     const [command, args, options] = H.spawn.mock.calls[0];
     expect(command).toBe(process.execPath);
-    expect(args).toHaveLength(3); expect(args[0]).toBe('-e'); expect(JSON.parse(args[2])).toEqual({ W: 1200, H: 628, minW: 600, minH: 314, keeps: 0.6, sample: 32, alpha: 16, flat: 8 });
+    expect(args).toHaveLength(3); expect(args[0]).toBe('-e'); expect(JSON.parse(args[2])).toEqual({ W: 1200, H: 628, minW: 600, minH: 314, keeps: 0.6, sample: 512, alpha: 16, flat: 8 });
     expect(Object.keys(options.env).sort()).toEqual(['NODE_ENV', 'PATH']); // nothing a decoder gone wrong could leak
     expect(options.stdio).toEqual(['pipe', 'pipe', 'ignore']);
   });

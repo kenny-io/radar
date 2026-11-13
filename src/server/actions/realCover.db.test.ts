@@ -233,6 +233,7 @@ describe.skipIf(!process.env.DATABASE_URL)('use a picture from your site (databa
       ['too_large', undefined, 422, () => 'That picture is too large. Radar accepts pictures up to 8 MB and 25 megapixels.'],
       ['too_small', undefined, 422, () => 'That picture is too small for a cover. It needs to be at least 600 by 314 pixels.'],
       ['not_a_picture', undefined, 422, () => 'That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP.'],
+      ['blank_picture', undefined, 422, () => 'That picture looks blank, so Radar didn’t use it. Try another one.'],
       ['not_your_site', 'example.org', 400, (d: string) => `That address isn’t on ${d}. Radar only uses pictures from your own site.`],
       ['invalid_address', undefined, 400, (d: string) => `Enter the address of a page or picture on ${d}.`],
     ] as const)('%s', async (code, host, status, message) => {
