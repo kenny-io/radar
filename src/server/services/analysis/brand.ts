@@ -1,9 +1,12 @@
 // Brand detection (02-system.md §3 "brand"): logo, primary/secondary colors and language.
 // Logo order: <link rel=icon> large sizes → apple-touch-icon → header img/svg → og:image. Stored via storage; null if none.
+// The site being analysed controls every byte read here, and nothing it sends may stop or stall this process: a raster
+// logo is checked from its bytes and decoded only in the child process of ../untrustedImage.ts, SVG is read as text and
+// never decoded, and the color patterns take time linear in the text.
 import * as cheerio from 'cheerio';
-import { loadImage, createCanvas } from '@napi-rs/canvas';
 import { fetchUrl } from './crawl';
 import { objectKey, putObject } from '../storage';
+import { ImageRefused, decodeInChild, overPixelLimits, probeImage } from '../untrustedImage';
 import { langs } from '@/lib/constants';
 
 export interface BrandDetect { logo: string | null; primary: string | null; secondary: string | null; language: string | null; htmlLang: string | null }
@@ -28,7 +31,8 @@ async function cssColors($: cheerio.CheerioAPI, origin: string): Promise<{ prima
   const hrefs = $('link[rel="stylesheet"]').map((_, el) => $(el).attr('href')).get().filter(Boolean).slice(0, 3);
   for (const h of hrefs) { try { const u = new URL(h!, origin); if (u.origin !== origin) continue; const r = await fetchUrl(u.toString(), 'text/css'); if (r.status < 400) css += '\n' + r.body.toString('utf8').slice(0, 300000); } catch { /* */ } }
   const out = { primary: [] as string[], secondary: [] as string[], any: [] as string[] };
-  const re = /--([\w-]+)\s*:\s*(#[0-9a-f]{3,8}\b|rgba?\([^)]*\))/gi; let m: RegExpExecArray | null;
+  // Every repeat is bounded and a name is read only from where it starts, so a long run of anything costs no more than its length.
+  const re = /(?<![\w-])--([\w-]{1,128})\s{0,64}:\s{0,64}(#[0-9a-f]{3,8}\b|rgba?\([^)]{0,100}\))/gi; let m: RegExpExecArray | null;
   while ((m = re.exec(css))) {
     const name = m[1].toLowerCase(); const c = normColor(m[2]); if (!c) continue;
     if (/primary|brand|main/.test(name) && !/text|fg|foreground|bg|background|border/.test(name)) out.primary.push(c);
@@ -40,22 +44,47 @@ async function cssColors($: cheerio.CheerioAPI, origin: string): Promise<{ prima
   return out;
 }
 
-/** Dominant non-neutral colors of a logo (SVG: declared fills; raster: pixel histogram). */
-async function logoColors(body: Buffer, type: string): Promise<string[]> {
-  if (/svg/.test(type)) {
-    const s = body.toString('utf8'); const counts = new Map<string, number>();
-    for (const m of s.matchAll(/(?:fill|stop-color|stroke|color)\s*[=:]\s*["']?(#[0-9a-f]{3,8}|rgba?\([^)]*\))/gi)) { const c = normColor(m[1]); if (c && !neutral(c)) counts.set(c, (counts.get(c) || 0) + 1); }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
-  }
-  try {
-    const img = await loadImage(body); const c = createCanvas(48, 48); const ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0, 48, 48); const d = ctx.getImageData(0, 0, 48, 48).data; const counts = new Map<string, number>();
-    for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; const q = toHex(Math.round(d[i] / 24) * 24, Math.round(d[i + 1] / 24) * 24, Math.round(d[i + 2] / 24) * 24); if (!neutral(q)) counts.set(q, (counts.get(q) || 0) + 1); }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
-  } catch { return []; }
+const byCount = (counts: Map<string, number>) => [...counts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+
+/** Dominant non-neutral colors an SVG declares (fills, strokes, stops). The text is scanned, never rendered; the repeats are bounded as above. */
+export function svgColors(s: string): string[] {
+  const counts = new Map<string, number>();
+  for (const m of s.matchAll(/(?:fill|stop-color|stroke|color)\s{0,64}[=:]\s{0,64}["']?(#[0-9a-f]{3,8}|rgba?\([^)]{0,100}\))/gi)) { const c = normColor(m[1]); if (c && !neutral(c)) counts.set(c, (counts.get(c) || 0) + 1); }
+  return byCount(counts);
 }
 
-const maxSize = (s?: string) => Math.max(0, ...String(s || '').split(/\s+/).map(x => (x === 'any' ? 512 : parseInt(x.split('x')[0]) || 0)));
+/** Dominant non-neutral colors in RGBA pixels: faint pixels (alpha under 200) are left out and each channel is rounded to a multiple of 24. */
+export function pixelColors(d: Uint8Array | Uint8ClampedArray): string[] {
+  const counts = new Map<string, number>();
+  for (let i = 0; i + 3 < d.length; i += 4) { if (d[i + 3] < 200) continue; const q = toHex(Math.round(d[i] / 24) * 24, Math.round(d[i + 1] / 24) * 24, Math.round(d[i + 2] / 24) * 24); if (!neutral(q)) counts.set(q, (counts.get(q) || 0) + 1); }
+  return byCount(counts);
+}
+
+const LOGO_MIN_SIDE = 48, SAMPLE_SIDE = 48, LOGO_DECODE_MS = 10_000;
+const LOGO_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' } as const;
+// What the decoding child does with a decoded logo: the whole picture squeezed onto a small square, sent back as RGBA with the size the decoder saw.
+const SAMPLE = `const c = createCanvas(o.side, o.side); const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, o.side, o.side);
+    const d = ctx.getImageData(0, 0, o.side, o.side).data; reply({ w: img.width, h: img.height }, Buffer.from(d.buffer, d.byteOffset, d.byteLength));`;
+/** SVG text: markup that opens an <svg> element in its first kilobytes (a BOM, an XML declaration, a doctype or comments may come first). */
+const svgText = (b: Buffer) => { const s = b.toString('utf8', 0, 8192).replace(/^\uFEFF/, '').trimStart(); return s.startsWith('<') && /<svg[\s>\/]/i.test(s); };
+
+export interface LogoRead { type: string; ext: string; colors: string[]; /** Why the decoder could not run, when it could not: the logo is still good, its colors are unknown. */ fault?: string }
+/** What a fetched logo candidate is: the type and extension to store it under (from its bytes, not the header) and its colors. null: not a usable logo.
+ *  SVG, when the header and the text agree, is stored as it is and never decoded. Anything else must be a complete, still PNG, JPEG or WebP within
+ *  the pixel limits and at least 48 px on its shorter side, all read from the bytes, before the decoding child sees it; what the child refuses is skipped. */
+export async function readLogo(body: Buffer, header: string): Promise<LogoRead | null> {
+  if (/svg/i.test(header)) return svgText(body) ? { type: 'image/svg+xml', ext: 'svg', colors: svgColors(body.toString('utf8')) } : null;
+  const p = probeImage(body);
+  if (!p || !p.complete || p.animated || !(p.width > 0 && p.height > 0) || overPixelLimits(p) || Math.min(p.width, p.height) < LOGO_MIN_SIDE) return null;
+  const as = { type: p.type, ext: LOGO_EXT[p.type] };
+  try {
+    const { head, data } = await decodeInChild(body, SAMPLE, { side: SAMPLE_SIDE }, { timeoutMs: LOGO_DECODE_MS, maxOutput: 64 * 1024 });
+    if (data.length !== SAMPLE_SIDE * SAMPLE_SIDE * 4 || !(Math.min(head.w, head.h) >= LOGO_MIN_SIDE)) return null;
+    return { ...as, colors: pixelColors(data) };
+  } catch (e: any) { return e instanceof ImageRefused ? null : { ...as, colors: [], fault: String(e?.message || e) }; }
+}
+
+const maxSize = (s?: string) => String(s || '').split(/\s+/).reduce((mx, x) => Math.max(mx, x === 'any' ? 512 : parseInt(x.split('x')[0]) || 0), 0);
 
 /** Candidate logo URLs in the designed order. */
 function logoCandidates($: cheerio.CheerioAPI, base: string): string[] {
@@ -72,7 +101,8 @@ function logoCandidates($: cheerio.CheerioAPI, base: string): string[] {
 function inlineHeaderSvg($: cheerio.CheerioAPI): string | null {
   const el = $('header svg, [class*="logo"] svg').first();
   if (!el.length) return null;
-  const html = $.html(el); if (html.length > 200000) return null;
+  let html: string; try { html = $.html(el); } catch { return null; } // an element nested too deep to write out
+  if (html.length > 200000) return null;
   return html.includes('xmlns') ? html : html.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
 }
 
@@ -89,22 +119,21 @@ export function langFromHtml(tag: string | null | undefined): string | null {
 
 export async function detectBrand(bid: string, homeHtml: string, origin: string): Promise<BrandDetect> {
   const $ = cheerio.load(homeHtml);
-  let logo: string | null = null; let logoCols: string[] = [];
+  let logo: string | null = null; let logoCols: string[] = []; let warned = false;
   for (const u of logoCandidates($, origin).slice(0, 6)) {
     try {
       const r = await fetchUrl(u, 'image/*');
       if (r.status >= 400 || !/^image\//.test(r.type) || r.body.length < 80 || r.body.length > 3 * 1024 * 1024) continue;
-      const type = r.type.split(';')[0].trim();
-      if (!/svg/.test(type)) { try { const img = await loadImage(r.body); if (Math.min(img.width, img.height) < 48) continue; } catch { continue; } }
-      const ext = /svg/.test(type) ? 'svg' : type.split('/')[1].replace('jpeg', 'jpg').replace('x-icon', 'ico').replace('vnd.microsoft.icon', 'ico');
-      logo = await putObject(objectKey(bid, 'logo', ext), r.body, type);
-      logoCols = await logoColors(r.body, type);
+      const read = await readLogo(r.body, r.type.split(';')[0].trim()); if (!read) continue;
+      if (read.fault && !warned) { warned = true; console.warn('[brand] logo kept without its colors:', read.fault); }
+      logo = await putObject(objectKey(bid, 'logo', read.ext), r.body, read.type);
+      logoCols = read.colors;
       break;
     } catch { /* next */ }
   }
   if (!logo) {
     const svg = inlineHeaderSvg($);
-    if (svg) { const b = Buffer.from(svg); logo = await putObject(objectKey(bid, 'logo', 'svg'), b, 'image/svg+xml'); logoCols = await logoColors(b, 'image/svg+xml'); }
+    if (svg) { const b = Buffer.from(svg); logo = await putObject(objectKey(bid, 'logo', 'svg'), b, 'image/svg+xml'); logoCols = svgColors(svg); }
   }
   const css = await cssColors($, origin);
   const cand = [...css.primary, ...logoCols, ...css.secondary, ...css.any].filter(c => !neutral(c));
