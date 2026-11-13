@@ -1,0 +1,1420 @@
+{
+ "script": "steps-main.mjs",
+ "node": "v22.18.0",
+ "platform": "darwin arm64",
+ "limitSeconds": 30,
+ "rows": [
+  {
+   "page": "style elements",
+   "n": 100000,
+   "bytes": 1800125,
+   "totalMs": 14377,
+   "wallMs": 30020,
+   "ended": "stopped at the 30 s limit, in the step after \"extract: main/body text\"",
+   "slow": [
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 13953
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 126
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 90
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 21
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 42
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 21
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 23
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 101
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 13953
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "images in a header",
+   "n": 60000,
+   "bytes": 1549032,
+   "totalMs": 9648,
+   "wallMs": 9837,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 9375
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 114
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 11
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 1
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 3
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 1
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 8
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 89
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 10
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 13
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 2
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 2
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 2
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 2
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 7
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 9375
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 6
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 2
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "header svg nested deep",
+   "n": 64000,
+   "bytes": 448175,
+   "totalMs": 28406,
+   "wallMs": 28598,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "extract: title, h1, description",
+     "ms": 5746
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 1431
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 2812
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 1405
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 1442,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 1406
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 1408
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 1410
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 1391
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 1409
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 1400
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 1413
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 4198
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 1369
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 2,
+     "threw": "Maximum call stack size exceeded"
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 79
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 5746
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 1431
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 2812
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 1405
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 1442,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 85
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 1406
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 0
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 1408
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 1410
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 1391
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 1409
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 1400
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 1413
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 4198
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 1369
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 2,
+     "threw": "Maximum call stack size exceeded"
+    }
+   ]
+  },
+  {
+   "page": "nested divs then images",
+   "n": 16000,
+   "bytes": 368125,
+   "totalMs": 24085,
+   "wallMs": 24205,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "cheerio.load",
+     "ms": 1237
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 335
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 85,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 1192
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 168,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 10278
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 9709
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 242
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 1237
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 335
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 84
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 164
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 87
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 85,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 1192
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 89
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 168,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 83
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 84
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 83
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 85
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 10278
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 9709
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 242
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 80
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "nested divs",
+   "n": 64000,
+   "bytes": 320125,
+   "totalMs": 29663,
+   "wallMs": 30008,
+   "ended": "stopped at the 30 s limit, in the step after \"extract: title, h1, description\"",
+   "slow": [
+    {
+     "step": "cheerio.load",
+     "ms": 24410
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 5253
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 24410
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 5253
+    }
+   ]
+  },
+  {
+   "page": "stylesheet links",
+   "n": 45000,
+   "bytes": 1879015,
+   "totalMs": 4426,
+   "wallMs": 4583,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 4239
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 75
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 9
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 1
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 2
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 1
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 3
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 66
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 6
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 3
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 3
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 4239
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 5
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 4
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 3
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 2
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 3
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 1
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "links",
+   "n": 100000,
+   "bytes": 2289015,
+   "totalMs": 733,
+   "wallMs": 860,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "cheerio.load",
+     "ms": 210
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 210
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 56
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 107
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 24
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 12
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 24
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 120
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 20
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 31
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 13
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 12
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 12
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 13
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 15
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 15
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 37
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 12
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "a long class on an ancestor of n images",
+   "n": 150000,
+   "bytes": 1750145,
+   "totalMs": 536,
+   "wallMs": 663,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 216
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 139
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 21
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 4
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 8
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 4
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 16
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 216
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 17
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 17
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 5
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 4
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 4
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 5
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 32
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 28
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 11
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 5
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "k open font elements, then n paragraphs (each paragraph rebuilds the k fonts)",
+   "n": 3000,
+   "bytes": 17118,
+   "totalMs": 8369,
+   "wallMs": 8550,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "cheerio.load",
+     "ms": 878
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 1122
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 271
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 540
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 270
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 495
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 853
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 367
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 761
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 272
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 277
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 273
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 285
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 296
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 299
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 826
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 284
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 878
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 1122
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 271
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 540
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 270
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 495
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 853
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 367
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 761
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 272
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 277
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 273
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 285
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 296
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 299
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 826
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 284
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "k open font elements, then n paragraphs (each paragraph rebuilds the k fonts)",
+   "n": 30000,
+   "bytes": 173018,
+   "totalMs": 0,
+   "wallMs": 8625,
+   "ended": "process ended: SIGABRT FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory",
+   "slow": [],
+   "steps": []
+  },
+  {
+   "page": "nested divs then time elements",
+   "n": 16000,
+   "bytes": 384125,
+   "totalMs": 9757,
+   "wallMs": 9875,
+   "ended": "finished",
+   "slow": [
+    {
+     "step": "cheerio.load",
+     "ms": 1233
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 1374
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 338
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 656
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 330
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 333,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 1158
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 374
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 666,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 330
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 329
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 332
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 330
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 331
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 329
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 986
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 328
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 1233
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 1374
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 338
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 656
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 330
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 333,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 1158
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 374
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 666,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 330
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 329
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 332
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 330
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 331
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 329
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 986
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 328
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "nested spans with text between",
+   "n": 100000,
+   "bytes": 900125,
+   "totalMs": 29157,
+   "wallMs": 30011,
+   "ended": "stopped at the 30 s limit, in the step after \"extract: second cheerio.load\"",
+   "slow": [
+    {
+     "step": "extract: title, h1, description",
+     "ms": 12851
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 3301
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 6418
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 3174
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 3174,
+     "threw": "Maximum call stack size exceeded"
+    }
+   ],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 98
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 12851
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 3301
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 6418
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 3174
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 3174,
+     "threw": "Maximum call stack size exceeded"
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 141
+    }
+   ]
+  },
+  {
+   "page": "ordinary: blog index of n cards",
+   "n": 500,
+   "bytes": 180509,
+   "totalMs": 64,
+   "wallMs": 171,
+   "ended": "finished",
+   "slow": [],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 30
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 5
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 2
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 1
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 2
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 3
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 13
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 1
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 2
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 0
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 0
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 1
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 1
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 0
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "ordinary: blog index of n cards",
+   "n": 4000,
+   "bytes": 1456009,
+   "totalMs": 306,
+   "wallMs": 414,
+   "ended": "finished",
+   "slow": [],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 86
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 18
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 13
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 9
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 10
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 15
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 87
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 8
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 17
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 5
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 3
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 4
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 4
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 7
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 6
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 10
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 4
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "ordinary: shop home page of n products",
+   "n": 300,
+   "bytes": 200880,
+   "totalMs": 86,
+   "wallMs": 188,
+   "ended": "finished",
+   "slow": [],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 31
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 9
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 6
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 2
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 1
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 4
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 17
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 3
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 3
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 2
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 1
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 2
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 1
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  },
+  {
+   "page": "ordinary: shop home page of n products",
+   "n": 2500,
+   "bytes": 1456580,
+   "totalMs": 344,
+   "wallMs": 452,
+   "ended": "finished",
+   "slow": [],
+   "steps": [
+    {
+     "step": "cheerio.load",
+     "ms": 89
+    },
+    {
+     "step": "extract: title, h1, description",
+     "ms": 33
+    },
+    {
+     "step": "extract: a[href] each + URL",
+     "ms": 16
+    },
+    {
+     "step": "classify: og:type, ld+json",
+     "ms": 13
+    },
+    {
+     "step": "classify: article / time[datetime]",
+     "ms": 6
+    },
+    {
+     "step": "classify: main, body text words",
+     "ms": 16
+    },
+    {
+     "step": "extract: second cheerio.load",
+     "ms": 82
+    },
+    {
+     "step": "extract: remove script,style,…",
+     "ms": 10
+    },
+    {
+     "step": "extract: main/body text",
+     "ms": 11
+    },
+    {
+     "step": "brand: style .map().get()",
+     "ms": 8
+    },
+    {
+     "step": "brand: stylesheet link .map().get()",
+     "ms": 6
+    },
+    {
+     "step": "brand: icon link .map().get()",
+     "ms": 6
+    },
+    {
+     "step": "brand: apple-touch-icon .map().get()",
+     "ms": 6
+    },
+    {
+     "step": "brand: header/logo img select",
+     "ms": 10
+    },
+    {
+     "step": "brand: header/logo img .map().get()",
+     "ms": 9
+    },
+    {
+     "step": "brand: og:image, theme-color, lang",
+     "ms": 17
+    },
+    {
+     "step": "brand: header/logo svg select",
+     "ms": 6
+    },
+    {
+     "step": "brand: $.html(svg)",
+     "ms": 0
+    }
+   ]
+  }
+ ]
+}
