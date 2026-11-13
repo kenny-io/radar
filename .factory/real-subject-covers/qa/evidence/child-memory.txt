@@ -1,0 +1,3 @@
+5000x5000 RGBA png: file 97272 bytes; child exit 0; head {"w":5000,"h":5000,"fit":"backdrop"}; 213 ms; child peak resident memory 190 MB
+10000x2500 RGBA png: file 97269 bytes; child exit 0; head {"w":10000,"h":2500,"fit":"backdrop"}; 201 ms; child peak resident memory 190 MB
+1600x900 RGBA png: file 5674 bytes; child exit 0; head {"w":1600,"h":900,"fit":"crop"}; 157 ms; child peak resident memory 91 MB

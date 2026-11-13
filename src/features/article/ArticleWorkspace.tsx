@@ -20,7 +20,7 @@ import { parseBlocks } from './blocks';
 import { REVIEW_LIST_URL, afterApprove, reviewList, reviewPos, safeBack } from './review';
 import { ArticleLoadError, ArticleLoading } from './ArticleLoad';
 import { articleSave, coverDirectionHint, type ArtPatch } from './autosave';
-import { articleBodyImageAnchor } from '@/lib/articleImages';
+import { articleBodyImageAnchor, realCoverOf } from '@/lib/articleImages';
 import { BodyImage, BodyImagesPanel } from './BodyImage';
 import { RewriteBar, VideoEmbed, VideoPicker } from './RewriteBar';
 import type { Article, Block as BlockT, CalendarEntry, ConnectionPublic, VideoRef, Workspace } from '@/lib/types';
@@ -37,6 +37,8 @@ export function ArticleWorkspace() {
   const [vids, setVids] = useState<VideoRef[] | null>(null); const [vidBusy, setVidBusy] = useState(false); const [starting, setStarting] = useState(false);
   const [bodyStarting, setBodyStarting] = useState(false);
   const [imageError, setImageError] = useState('');
+  // "Use a picture from your site": the address being typed and what the server said about the last one tried.
+  const [siteUrl, setSiteUrl] = useState(''); const [siteError, setSiteError] = useState('');
   const art = useArticle(e ? id : null); const A: Article | null = e ? art.article : null;
   // Review loop (RL-1, RL-2): where Back returns to (`?back=`, only the app's own calendar or dashboard), and this
   // article's place among those awaiting review. Order and status come from the calendar entries, never the article.
@@ -63,7 +65,7 @@ export function ArticleWorkspace() {
   useEffect(() => { if (bodyJob) setBodyStarting(false); }, [bodyJob?.id, bodyJob?.status]);
   useEffect(() => { setBodyStarting(false); }, [id]);
 
-  useEffect(() => { setVids(null); setImageError(''); }, [id]);
+  useEffect(() => { setVids(null); setImageError(''); setSiteUrl(''); setSiteError(''); }, [id]);
   useEffect(() => {
     if (tab !== 'image' || !A || vids) return;
     if (A.videoMeta?.length) { setVids(A.videoMeta.slice(0, 3)); return; }
@@ -108,8 +110,13 @@ export function ArticleWorkspace() {
   };
   const publishNow = (retry = false) => { setMenu(false); app.act(retry ? 'publish.retry' : 'publish.now', { entryId: id }, { optimistic: patchEntry(id, { status: 'publishing' }) }).catch(() => {}); };
   const heroUrl = A.img.url && A.img.urlKey === `${A.img.style}:${A.img.seed}` ? A.img.url : null;
+  // The cover on screen is a real picture from the business's own site (found by Radar, or chosen here by a person).
+  const real = heroUrl ? realCoverOf(A.img) : null;
+  // Where the picture came from. Only an https address becomes a link; anything else is shown as text.
+  const realSource = real ? real.page || real.src : '';
   // The cover on screen is the brand template because a model style could not be generated (the server sets and clears the mark).
-  const placeholder = heroUrl ? A.img.placeholder || null : null;
+  // A real picture is never a placeholder, so the two notices never show together.
+  const placeholder = heroUrl && !real ? A.img.placeholder || null : null;
   const removedSrc = new Set(A.sources.map((s, i) => (s.removed ? i : -1)).filter(i => i >= 0));
   const flagged = (bi: number) => A.claims.filter(c => c.block === bi && removedSrc.has(c.source)).map(c => c.text);
   const statusLine = st === 'scheduled' ? <Status tone={blog.paused ? 'warn' : 'ok'}>{blog.paused ? 'Paused · ' : 'Publishes '}{fmtDW(e.date)} · {fmtTime(blog.time)} {tzShort(blog.tz)}</Status> : st === 'publishing' ? <Status tone="signal" pulse>Publishing…</Status> : <EntryStatus s={st} />;
@@ -122,6 +129,17 @@ export function ArticleWorkspace() {
     setImgBusy(true); setImageError('');
     try { await app.flushLater(); await app.act('article.regenerateImage', { entryId: id, ...(custom ? { prompt: A.img.prompt.trim() } : {}) }); art.reload(); toast('Cover image generated'); }
     catch (error: any) { setImageError(error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous cover is kept. Try again.'); }
+    finally { setImgBusy(false); }
+  };
+  /** A page or picture address on the business's own site becomes the cover. The server decides what is allowed and
+   *  says why not; its message is shown under the field (`silent`: not as a toast as well). Not a React hook. */
+  const useSitePicture = async () => {
+    const url = siteUrl.trim(); if (!url || !canEdit || imgBusy) return;
+    setImgBusy(true); setSiteError(''); setImageError('');
+    // The fetch can take a while: what it says belongs under this article's field, not the next one's in the review loop.
+    const still = () => here.current.on && here.current.id === id;
+    try { await app.flushLater(); await app.act('article.useSitePicture', { entryId: id, url }, { silent: true }); art.reload(); if (still()) setSiteUrl(''); toast('Cover set to the picture from your site'); }
+    catch (error: any) { if (still()) setSiteError(error?.message || 'Radar couldn’t use that picture. Your cover is unchanged. Try again.'); }
     finally { setImgBusy(false); }
   };
   // RL-5: this article's newest draft run failed (live job, or the workspace's record of it after a reload).
@@ -183,6 +201,14 @@ export function ArticleWorkspace() {
         {tab === 'image' && <div className="col" style={{ gap: 18 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Cover image</h3>
           <Visual style={A.img.style} brand={brand} headline={e.title} seed={A.img.seed} name={B.profile.business.name} radius={10} busy={imgBusy} url={heroUrl} />
+          {real && <div className="col" style={{ gap: 8, minWidth: 0 }}>
+            {/* As with the placeholder notice below, the button sits outside the live region. */}
+            <div role="status" className="col" style={{ gap: 6, minWidth: 0 }}>
+              <Status tone="ok">Picture from your site</Status>
+              <span className="xs" style={{ overflowWrap: 'anywhere' }}>{real.by === 'radar' ? `Radar found this picture${real.subject ? ' of ' + real.subject : ''} on your site and used it as the cover.` : 'This cover is a picture from your site.'} Source: {realSource.startsWith('https://') ? <a href={realSource} target="_blank" rel="noopener noreferrer">{realSource.replace(/^https?:\/\/(www\.)?/, '')}</a> : realSource}.{mediaLocked ? '' : B.role === 'Viewer' ? ' An owner or editor can change it.' : ' If it isn’t yours to publish, use a generated cover instead.'}</span>
+            </div>
+            {!mediaLocked && B.role !== 'Viewer' && <Btn size="sm" icon="wand" loading={imgBusy} disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Use a generated cover instead</Btn>}
+          </div>}
           {placeholder && <div className="col" style={{ gap: 8, minWidth: 0 }}>
             {/* The button sits outside the live region, so its loading state is not read out as a change to the notice. */}
             <div role="status" className="col" style={{ gap: 6, minWidth: 0 }}>
@@ -191,11 +217,18 @@ export function ArticleWorkspace() {
             </div>
             {!mediaLocked && B.role !== 'Viewer' && <Btn size="sm" icon="refresh" loading={imgBusy} disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn>}
           </div>}
-          <Field label="Style"><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); art.patch(a => ({ ...a, img: { ...a.img, style: style as Article['img']['style'] } })); art.reload(); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-          <Field label="Describe your image" hint={coverDirectionHint(A.generated)}><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
+          <Field label="Style" hint={real ? 'Used for body images, and for the cover if you switch to a generated one.' : null}><select className="input" value={A.img.style} disabled={!canEdit || imgBusy} onChange={async ev => { const style = ev.target.value; setImgBusy(true); setImageError(''); try { await app.flushLater(); await app.act('article.save', { entryId: id, patch: { img: { style } } }); /* A real picture is not rendered again for a new style: the server moves urlKey with it, and so does this copy, so the picture stays on screen until the reload lands. */ art.patch(a => ({ ...a, img: { ...a.img, style: style as Article['img']['style'], ...(realCoverOf(a.img) && a.img.urlKey === `${a.img.style}:${a.img.seed}` ? { urlKey: `${style}:${a.img.seed}` } : {}) } })); art.reload(); } catch (error: any) { setImageError(error?.message || 'Radar couldn’t generate this image. Try again.'); } finally { setImgBusy(false); } }}>{[['branded', 'Branded graphic'], ['illustration', 'Illustration'], ['photography', 'Photography'], ['infographic', 'Infographic']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <Field label="Describe your image" hint={coverDirectionHint(A.generated, !!real)}><textarea className="input" rows={3} maxLength={1000} value={A.img.prompt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { prompt: ev.target.value } })} /></Field>
           <Field label="Alt text" hint="Describes the image for screen readers and search."><input className="input" value={A.img.alt} disabled={!canEdit || imgBusy} onChange={ev => setA({ img: { alt: ev.target.value } })} /></Field>
-          <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn><Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
+          {/* While the cover is a real picture, "Use a generated cover instead" (in the notice above) is the one way back to generation. */}
+          <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>{!real && <><Btn icon="image" loading={imgBusy} disabled={!canEdit || !A.img.prompt.trim() || A.img.prompt.trim().length > 1000} onClick={() => generateCover(true)}>Generate from prompt</Btn><Btn kind="ghost" icon="refresh" disabled={!canEdit || imgBusy} onClick={() => generateCover()}>Regenerate</Btn></>}<Btn kind="ghost" icon="download" onClick={async () => { const b = await visualBlob(heroUrl, { style: A.img.style, brand, headline: e.title, seed: A.img.seed, name: B.profile.business.name }, 1200, 628, app.bid); if (b) downloadBlob(b, (A.seo.slug || 'image') + '.png'); else toast(DL_ERROR, { tone: 'bad' }); }}>Download</Btn></div>
           {imageError && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageError}</span>}
+          <Field label="Use a picture from your site" hint={`Paste the address of a page or a picture on ${B.profile.domain}. Radar crops it to fit and keeps a copy. Only use pictures you have the right to publish.`}>
+            <input className="input" type="url" inputMode="url" maxLength={2000} placeholder={`https://${B.profile.domain}/…`} value={siteUrl} disabled={!canEdit || imgBusy}
+              onChange={ev => { setSiteUrl(ev.target.value); setSiteError(''); }} onKeyDown={ev => { if (ev.key === 'Enter') { ev.preventDefault(); useSitePicture(); } }} />
+          </Field>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}><Btn icon="globe" loading={imgBusy && !!siteUrl.trim()} disabled={!canEdit || imgBusy || !siteUrl.trim()} onClick={useSitePicture}>Use this picture</Btn></div>
+          {siteError && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{siteError}</span>}
           <span className="xs sub">Uses {B.profile.business.name}’s colors <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.primary, verticalAlign: -1 }} /> <i style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: brand.secondary, verticalAlign: -1 }} /> from your Business Profile.</span>
           {A.generated && <BodyImagesPanel images={bodyImages} busy={bodyBusy} disabled={imgBusy || genActive || mediaLocked || B.role === 'Viewer'} completed={Number(bodyJob?.progress?.completed || 0)} total={Number(bodyJob?.progress?.total || 0)} error={!!bodyError} issue={!bodyImages.length && !bodyError ? A.bodyImagesIssue?.reason ?? null : null} onGenerate={generateBodyImages} />}
           <VideoPicker vids={vids || []} loading={vidBusy} on={A.videos} onToggle={(v, has) => { setA({ videos: has ? A.videos.filter(x => x !== v.id) : [...A.videos, v.id] }, false); toast(has ? 'Video removed' : 'Video embedded after the first section'); }} />

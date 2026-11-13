@@ -24,7 +24,10 @@ export function articleSave(id: string, cur: Pick<Article, 'body' | 'brief' | 's
   return { key: 'art:' + id + ':' + parts.join(','), patch };
 }
 
-/** The hint under "Describe your image". Before the first draft there is no article text for Radar to have read. */
-export const coverDirectionHint = (generated: boolean) => (generated
-  ? 'Radar writes this from your article. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject.'
-  : 'Radar writes this from your article when it drafts it. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject.');
+/** The hint under "Describe your image". Before the first draft there is no article text for Radar to have read.
+ *  `real`: the cover is a picture from the business's own site, so the direction is not what is on screen. */
+export const coverDirectionHint = (generated: boolean, real = false) => (real
+  ? 'Not used while your cover is a picture from your site. It describes the generated cover you’d get instead, and your own wording also guides body images.'
+  : generated
+    ? 'Radar writes this from your article. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject.'
+    : 'Radar writes this from your article when it drafts it. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject.');

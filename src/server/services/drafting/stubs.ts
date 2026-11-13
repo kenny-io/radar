@@ -2,6 +2,7 @@
 // the full flow (research → streaming → validation → review) runs without API keys. Never used in production.
 import { registerStub } from '../../ai/adapters/stub';
 import type { Article, CalendarEntry, Profile, Source } from '@/lib/types';
+import { DEV_PLACES } from '../analysis/devsite';
 
 const lc = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 const seg = (p: Profile, i = 0) => (p.audience.segments[i % Math.max(1, p.audience.segments.length)] || 'small business owners').replace(/\s*\(.*\)/, '');
@@ -53,6 +54,8 @@ registerStub('article.meta', (_i, ctx: { e: CalendarEntry; profile: Profile; sty
 
 // Three different literal scenes built from the title and the section headings, so offline drafts carry directions
 // of the same shape as real ones. Quotes are removed: a direction that quotes wording is refused by the validator.
+// A title that names one of the stub site's places (DEV_PLACES) makes that place the subject, so the search for a
+// real picture of it can be tried offline; any other title has no subject, as before.
 registerStub('article.imageDirections', (_i, ctx: { title: string; kw: string; plans: { heading: string }[] }) => {
   const plain = (s: string) => s.replace(/["“”]/g, '').replace(/[.!?]+$/, '').trim();
   const title = plain(ctx.title);
@@ -61,8 +64,9 @@ registerStub('article.imageDirections', (_i, ctx: { title: string; kw: string; p
     (h: string) => `An interior room connected with ${h}, seen from the doorway, with furniture near a bright window.`,
     (h: string) => `An outdoor path linked to ${h}, seen from above, with plants and paving stones around it.`,
   ];
+  const place = [...DEV_PLACES].sort((x, y) => y.name.length - x.name.length).find(x => ctx.title.toLowerCase().includes(x.name.toLowerCase()));
   return {
-    subject: '', subjectKind: 'none',
+    subject: place ? place.name : '', subjectKind: place ? 'building' : 'none',
     cover: { direction: `A wide street-level view of the place that ${title} is about, seen from outside in daylight.`, alt: `Illustration of ${title}`.slice(0, 200) },
     sections: ctx.plans.map((plan, i) => { const h = plain(plan.heading) || title; return { i, direction: scenes[i % scenes.length](h), alt: `Illustration of ${h}`.slice(0, 200) }; }),
   };

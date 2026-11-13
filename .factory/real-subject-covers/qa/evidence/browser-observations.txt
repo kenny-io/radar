@@ -1,0 +1,112 @@
+Browser observations, T4 QA, real subject covers. 2026-11-13, revision aa16969f.
+App: Next dev + worker from this worktree at http://127.0.0.1:3231, RADAR_DEV_STUBS=1, RADAR_BILLING=off, provider keys blank,
+database radar_qa_app (127.0.0.1:55442), business domain harbour-stays-qa.test (the dev stub site answers; no request left the machine).
+Browser: the Claude desktop app's built-in browser pane, one real tab, real clicks and typing; page state read back from the DOM.
+Viewports 1280x900 and 390x844. Accounts: synthetic Owner, Editor, Viewer (session cookie set in the tab; no password typed).
+No screenshot is stored. Text below is what the page showed.
+
+B1  Owner, article with a generated cover (e_rcqa_one), Media tab
+    field: label "Use a picture from your site", placeholder "https://harbour-stays-qa.test/…", hint "Paste the address of a page or a
+    picture on harbour-stays-qa.test. Radar crops it to fit and keeps a copy. Only use pictures you have the right to publish."
+    "Use this picture" is disabled while the field is empty. The input is inside its <label>.
+B2  page address https://harbour-stays-qa.test/places/harbour-house, button clicked
+    toast (status region): "Cover set to the picture from your site"; field emptied; cover is the stub picture in the article and the panel.
+    notice: "Picture from your site / This cover is a picture from your site. Source: harbour-stays-qa.test/places/harbour-house. If it
+    isn’t yours to publish, use a generated cover instead." link href https://harbour-stays-qa.test/places/harbour-house, target _blank,
+    rel "noopener noreferrer", underlined. Button "Use a generated cover instead" sits outside the role=status region.
+    buttons now: Use a generated cover instead, Download, Use this picture. "Generate from prompt" and "Regenerate" are not rendered.
+    Style hint: "Used for body images, and for the cover if you switch to a generated one."
+    Describe-your-image hint: "Not used while your cover is a picture from your site. It describes the generated cover you’d get instead,
+    and your own wording also guides body images."
+B3  reload: the same notice, link and stored file are shown (persisted).
+B4  picture address typed without a scheme ("harbour-stays-qa.test/media/portrait.png"), Enter pressed in the field
+    toast as B2; notice source harbour-stays-qa.test/media/portrait.png. The portrait picture is shown whole in the middle on a blurred,
+    darkened copy of itself; no pale band at any edge (also measured in picture.qa.test.ts: outer 2 px no brighter than the picture).
+B5  errors, each typed and submitted with Enter: shown inline under the button in red (span role=status), NO toast, cover unchanged, the
+    address stays in the field, and typing one character removes the message
+      https://example.org/a.png                       That address isn’t on harbour-stays-qa.test. Radar only uses pictures from your own site.
+      …/places/mill-lane-studios                      Radar couldn’t find a picture it can use on that page. Try the address of the picture itself.
+      /media/tiny.png                                 That picture is too small for a cover. It needs to be at least 600 by 314 pixels.
+      /media/too-large.png                            That picture is too large. Radar accepts pictures up to 8 MB and 25 megapixels.
+      /media/broken.png                               That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP.
+      /nope                                           Radar couldn’t reach that address. Check it and try again.
+      https://harbour-stays-qa.test:8443/a.png        Enter the address of a page or picture on harbour-stays-qa.test.
+      /media/page.png                                 Radar couldn’t find a picture it can use on that page. Try the address of the picture itself.
+B6  style changed on the real cover (Illustration, Photography, Infographic, Branded graphic): the cover image element was sampled every
+    16 ms across each change and never left the page or changed file; notice stays; no error.
+B7  "Use a generated cover instead" with Illustration (no image model in stub mode): "Image generation is unavailable right now. Please
+    contact support to enable it." as a sticky toast (alert region) and inline; the picture, notice and record are kept.
+    (The inline copy was below the fold at 1280x900; the toast was visible. This is the existing generateCover behaviour.)
+B8  "Use a generated cover instead" with Branded graphic: toast "Cover image generated"; the brand template is the cover at once; notice gone;
+    "Generate from prompt" and "Regenerate" are back; alt became "Illustration for A Guide to Booking a Short Let by the Water";
+    database: img.real absent, img.noReal true.
+B9  automatic, entry "Living at Harbour House: what to expect", Draft now: the cover is the stub Harbour House picture.
+    notice: "Radar found this picture of Harbour House on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house.
+    If it isn’t yours to publish, use a generated cover instead." alt "Harbour House". database: real.by radar, subject Harbour House, fit crop.
+    Rewrite from brief: same file and record afterwards (kept).
+    Use a generated cover instead (Branded graphic), then Rewrite from brief: template cover stays, img.real absent, img.noReal true, no realCoverMiss.
+B10 automatic, entry "A Weekend at Mill Lane Studios", Draft now: generated (template) cover, no notice;
+    database: realCoverMiss {"key":"mill lane studios@harbour-stays-qa.test"}, subject Mill Lane Studios.
+B11 entry "Harbour House in Winter: what changes": a direction typed into "Describe your image" before Draft now: generated cover, no notice,
+    promptBy owner, no real, no realCoverMiss (no search), although the subject is Harbour House.
+B12 Editor: owner action on e_rcqa_two succeeded (notice shown, real.by owner).
+B13 slow action (the entry's row was locked from psql for 13 s so the action waited): while busy the field, Style, the text fields and the cover
+    buttons are disabled and "Use this picture" shows its spinner. "Next article awaiting review" clicked while busy:
+      a) action ends in an error (tiny.png): nothing appears on the next article: no toast, no inline error; back on the first article no error either.
+      b) action ends in success: toast "Cover set to the picture from your site" appears while the next article is on screen; that article's cover and
+         field are untouched; back on the first article the notice and picture are there.
+B14 Viewer on the real-cover article: notice ends "An owner or editor can change it."; no "Use a generated cover instead" button; Style, both text
+    fields and the address field are disabled; Download remains.
+B15 390x844, real cover whose source address is 466 characters with no break opportunities: document scrollWidth 390 = viewport; no element
+    extends past the right edge; no horizontal scroller; the address wraps inside the notice (350 px wide). The address field is full width and
+    "Use this picture" is on its own row.
+B16 scheduled article with a real cover (Owner): notice "This cover is a picture from your site. Source: http://harbour-stays-qa.test/places/harbour-house-annex."
+    with no tail and no button; the source (http, set by QA in the database) is plain text, not a link; all cover controls disabled.
+B17 existing behaviour on generated covers: placeholder article shows "Placeholder / This cover is a placeholder. Image generation is unavailable right now,
+    so Radar used a title card. Regenerate to try again." with its Regenerate button; using a site picture on it replaces that notice with the
+    real-picture notice (never both). On a generated cover: Regenerate → toast "Cover image generated", new template; Generate from prompt → the
+    existing "Image generation is unavailable…" error (stub mode has no model); img.noReal not set by either.
+B18 keyboard: Tab from the address field lands on "Use this picture" with a visible focus ring; Space activates it. After success the button is disabled
+    and focus falls to <body>.
+B19 an article saved before this change (e_rcqa_legacy, no url, no newer fields) opens, and the owner action works on it.
+B20 console: no script error. Only the expected 400/422/503 responses to the refused actions. Server log: no failure report for any refused site picture
+    (the two failure reports are the existing image.generate "unavailable" ones from B7 and B17).
+
+==== Round 2, revision 2b034f26, 2026-11-13 ====
+Same setup as round 1 (http://127.0.0.1:3231, stub mode, fresh radar_qa_app, built-in browser pane, 1280x900, synthetic Owner).
+No client file changed between the rounds, so only the paths the server change touches were repeated.
+
+C1  automatic, "Living at Harbour House: what to expect", Draft now: cover is the Harbour House stub picture.
+    notice "Radar found this picture of Harbour House on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house. …"
+    alt "Harbour House". database: real.by radar, subject Harbour House, src /media/harbour-house.png.
+C2  automatic, "A Stay at Harbour House Annex: what to know", Draft now: cover is the ANNEX stub picture (a different arrangement of blocks).
+    notice "Radar found this picture of Harbour House Annex on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house-annex. …"
+    alt "Harbour House Annex". database: real.by radar, subject Harbour House Annex, page /places/harbour-house-annex, src /media/harbour-house-annex.png.
+C3  automatic, "A Weekend at Mill Lane Studios", Draft now: generated cover, no notice; database realCoverMiss key "mill lane studios@harbour-stays-qa.test".
+C4  switch back on C1 (Branded graphic): toast "Cover image generated", notice gone, Generate from prompt and Regenerate back.
+C5  owner action on an article with no subject (e_rcqa_one):
+      …/places/mill-lane-studios  → inline, no toast: "Radar couldn’t find a picture it can use on that page. Try the address of the picture itself."
+      …/places/harbour-house      → toast "Cover set to the picture from your site"; notice with the page as source;
+                                    Alt text field now reads "Harbour House · photo 1" (round 1: the article title; round-1 D5 closed)
+      /media/portrait.png         → toast; notice source harbour-stays-qa.test/media/portrait.png; alt is the article title (a picture address has no page alt)
+      Use a generated cover instead → toast "Cover image generated"; notice gone.
+C6  console: one expected 422. Web server log: no failure report. Worker log: 3 failure reports, not read before the log was removed
+    (in round 1 the worker's reports were the existing "body images left out … unavailable" ones, one per stub draft; three drafts ran here).
+
+==== Round 3, revision 9e7683c6, 2026-11-13 ====
+Same setup (http://127.0.0.1:3231, stub mode, fresh radar_qa_app, built-in browser pane, 1280x900, synthetic Owner). No client file changed.
+
+E1  automatic, "Living at Harbour House: what to expect", Draft now: cover is the Harbour House stub picture; notice "Radar found this picture of
+    Harbour House on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house. …"; alt "Harbour House";
+    database real.by radar, src /media/harbour-house.png.
+E2  owner action on an article with no subject (e_rcqa_one):
+      …/places/harbour-house           → toast "Cover set to the picture from your site"; notice with the page as source; alt "Harbour House · photo 1"
+      /media/broken.png                → inline, no toast: "That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP."; cover unchanged
+      /media/harbour-house-annex.png   → toast; notice source harbour-stays-qa.test/media/harbour-house-annex.png; alt is the article title
+      Use a generated cover instead    → toast "Cover image generated"; notice gone; Generate from prompt and Regenerate back; database noReal true
+E3  the blank-picture message was NOT seen in the browser: the stub site serves no blank picture (its files are the three place pictures, portrait,
+    tiny, too-large, broken and page). It was checked through the real route instead, with QA's wrapper around the stub site answering a 1600x900
+    PNG of one flat colour for /media/qa-blank.png: 422 blank_picture "That picture looks blank, so Radar didn’t use it. Try another one."
+    (action-outcomes.txt). The panel shows the server's message for this field verbatim, as E2's second line shows for another code.
+E4  console: one expected 422. Web server log: no failure report. Worker log: one failure report, the existing image.generate
+    "Image generation is unavailable right now" for the draft's body images (stub mode has no image model).

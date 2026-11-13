@@ -1,0 +1,38 @@
+[
+  {
+    "request": "qa.localhost/hop1",
+    "headers": {
+      "host": "qa.localhost",
+      "connection": "keep-alive",
+      "user-agent": "RadarBot/1.0 (+https://radar.thally.io/bot)",
+      "accept": "image/webp,image/png,image/jpeg,image/*;q=0.5",
+      "accept-language": "en;q=0.9,*;q=0.5",
+      "sec-fetch-mode": "cors",
+      "accept-encoding": "br, gzip, deflate"
+    }
+  },
+  {
+    "request": "qa.localhost/hop2",
+    "headers": {
+      "host": "qa.localhost",
+      "connection": "keep-alive",
+      "user-agent": "RadarBot/1.0 (+https://radar.thally.io/bot)",
+      "accept": "image/webp,image/png,image/jpeg,image/*;q=0.5",
+      "accept-language": "en;q=0.9,*;q=0.5",
+      "sec-fetch-mode": "cors",
+      "accept-encoding": "br, gzip, deflate"
+    }
+  },
+  {
+    "request": "www.qa.localhost/plain",
+    "headers": {
+      "host": "www.qa.localhost",
+      "connection": "keep-alive",
+      "user-agent": "RadarBot/1.0 (+https://radar.thally.io/bot)",
+      "accept": "image/webp,image/png,image/jpeg,image/*;q=0.5",
+      "accept-language": "en;q=0.9,*;q=0.5",
+      "sec-fetch-mode": "cors",
+      "accept-encoding": "br, gzip, deflate"
+    }
+  }
+]

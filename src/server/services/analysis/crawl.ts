@@ -16,7 +16,7 @@ export class CrawlError extends Error { constructor(public reason: 'unreachable'
 
 const MAX_PAGES = 100;
 const MAX_BYTES = 2 * 1024 * 1024;
-const uaToken = () => (env.crawlerUserAgent.split('/')[0] || 'RadarBot').trim();
+export const uaToken = () => (env.crawlerUserAgent.split('/')[0] || 'RadarBot').trim();
 
 function isPrivateIp(ip: string) {
   if (net.isIPv4(ip)) {
@@ -77,8 +77,8 @@ function normUrl(href: string, base: string): string | null {
   } catch { return null; }
 }
 
-const ARTICLE_PATH = /\/(blog|articles?|posts?|news|guides?|resources|insights|learn|journal|stories|notes)\/(?!(page|tag|tags|category|categories|author)\/)[^/]+\/?$/i;
-const LISTING_PATH = /\/(blog|articles?|posts?|news|guides?|resources|insights|journal)\/?$/i;
+export const ARTICLE_PATH = /\/(blog|articles?|posts?|news|guides?|resources|insights|learn|journal|stories|notes)\/(?!(page|tag|tags|category|categories|author)\/)[^/]+\/?$/i;
+export const LISTING_PATH = /\/(blog|articles?|posts?|news|guides?|resources|insights|journal)\/?$/i;
 /** Article vs page from URL + structure. `sure` = the signal is strong; unsure pages may be refined by the LLM. */
 export function classifyPage($: cheerio.CheerioAPI, path: string): { kind: 'article' | 'page'; sure: boolean } {
   const og = ($('meta[property="og:type"]').attr('content') || '').toLowerCase();

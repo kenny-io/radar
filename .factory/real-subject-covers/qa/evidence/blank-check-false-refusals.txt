@@ -1,0 +1,10 @@
+horizontal bar 900x10 (a pen, a cable, a horizon line): refused as blank in 6 of 12 positions
+horizontal bar 900x20: refused as blank in 3 of 12 positions
+vertical bar 10x700 (a lamp post, a mast): refused as blank in 9 of 12 positions
+square 36x36 (a small product): refused as blank in 2 of 12 positions
+square 60x60: refused as blank in 0 of 12 positions
+
+Partly damaged files on revision 2b034f26 (the accepted limit in decision D18):
+PNG with its middle third overwritten: accepted (1600x900 crop)
+WebP with its second half zeroed: not_a_picture
+JPEG with its second half zeroed (end marker kept): accepted (1600x900 crop)
