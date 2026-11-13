@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Article, ArticleBodyImage, Block } from './types';
-import { articleBodyImageAnchor, coverDirectionIsOwners, defaultCoverDirection, fallbackImageDirections, planArticleBodyImages, withCover } from './articleImages';
+import type { Article, ArticleBodyImage, Block, RealCover } from './types';
+import { articleBodyImageAnchor, coverDirectionIsOwners, defaultCoverDirection, fallbackImageDirections, planArticleBodyImages, realCoverOf, withCover, withRealCover } from './articleImages';
 import { defaultArticle } from '@/features/article/blocks';
 
 const body: Block[] = [['p', 'Intro'], ['h2', 'First section'], ['p', 'One'], ['h3', 'Detail'], ['ul', ['More']], ['h2', 'Second section'], ['p', 'Two'], ['h2', 'Third section'], ['p', 'Three']];
@@ -68,6 +68,69 @@ describe('the cover after a render', () => {
     const real = withCover(marked, { url: '/real.png' });
     expect(real).toEqual({ ...img, url: '/real.png', urlKey: 'illustration:4' });
     expect('placeholder' in real).toBe(false);
+  });
+});
+
+describe('a real picture as the cover', () => {
+  const img: Article['img'] = { style: 'illustration', seed: 4, prompt: 'A tower on the marina', promptBy: 'radar', alt: 'Illustration of a tower on the marina', url: '/generated.png', urlKey: 'branded:1' };
+  const found: Omit<RealCover, 'url'> = { by: 'radar', page: 'https://lived.ae/property/princess-tower', src: 'https://lived.ae/media/princess-tower.jpg', at: '2026-11-13T10:00:00.000Z', w: 1600, h: 2400, fit: 'backdrop', subject: 'Princess Tower' };
+  const record: RealCover = { ...found, url: '/real.png' };
+
+  it('an article saved before real pictures existed has no record', () => {
+    expect(realCoverOf(img)).toBeNull();
+    expect(realCoverOf({ ...img, real: null })).toBeNull();
+  });
+  it('the record applies while it describes the stored cover', () => {
+    expect(realCoverOf({ url: '/real.png', real: record })).toBe(record);
+  });
+  it('the record stops applying when a writer that does not know about it changes the cover', () => {
+    expect(realCoverOf({ url: '/generated-later.png', real: record })).toBeNull();
+    expect(realCoverOf({ url: null, real: record })).toBeNull();
+  });
+  it('storing a real picture sets the url, the urlKey for the current style and seed, the record and the alt, and keeps the rest', () => {
+    const next = withRealCover(img, '/real.png', found, 'Princess Tower');
+    expect(next).toEqual({ ...img, url: '/real.png', urlKey: 'illustration:4', real: record, alt: 'Princess Tower' });
+    expect(realCoverOf(next)).toEqual(record);
+  });
+  it('the record always describes the url that was stored, whatever was passed in with it', () => {
+    const stale = { ...found, url: '/somewhere-else.png' } as Omit<RealCover, 'url'>;
+    expect(withRealCover(img, '/real.png', stale).real?.url).toBe('/real.png');
+  });
+  it('a real picture is not a placeholder', () => {
+    const marked = withCover(img, { url: '/template.png', placeholder: 'failed' });
+    const next = withRealCover(marked, '/real.png', found, 'Princess Tower');
+    expect('placeholder' in next).toBe(false);
+  });
+  it('an alt a person wrote is kept', () => {
+    const owners: Article['img'] = { ...img, alt: 'The tower from the beach', altBy: 'owner' };
+    const next = withRealCover(owners, '/real.png', found, 'Princess Tower');
+    expect(next.alt).toBe('The tower from the beach');
+    expect(next.altBy).toBe('owner');
+  });
+  it('without a new alt the old one stays, and an empty alt is still an alt', () => {
+    expect(withRealCover(img, '/real.png', found).alt).toBe('Illustration of a tower on the marina');
+    expect(withRealCover(img, '/real.png', found, '').alt).toBe('');
+  });
+  it('a second real picture replaces the first record', () => {
+    const first = withRealCover(img, '/real.png', found, 'Princess Tower');
+    const chosen: Omit<RealCover, 'url'> = { by: 'owner', page: null, src: 'https://lived.ae/media/lobby.jpg', at: '2026-11-13T11:00:00.000Z', w: 2000, h: 1200, fit: 'crop' };
+    const second = withRealCover(first, '/real-2.png', chosen);
+    expect(second.real).toEqual({ ...chosen, url: '/real-2.png' });
+    expect(realCoverOf(second)?.by).toBe('owner');
+  });
+  it('a generated or template render removes the record, so the cover is no longer real', () => {
+    const real = withRealCover(img, '/real.png', found, 'Princess Tower');
+    const generated = withCover(real, { url: '/generated-2.png' });
+    expect('real' in generated).toBe(false);
+    expect(realCoverOf(generated)).toBeNull();
+    expect(generated).toEqual({ ...img, alt: 'Princess Tower', url: '/generated-2.png', urlKey: 'illustration:4' });
+    const template = withCover(real, { url: '/template.png', placeholder: 'unavailable' }, '2026-11-13T12:00:00.000Z');
+    expect('real' in template).toBe(false);
+    expect(template.placeholder).toEqual({ reason: 'unavailable', at: '2026-11-13T12:00:00.000Z' });
+  });
+  it('the mark a person left by switching back survives later renders', () => {
+    const switched: Article['img'] = { ...img, noReal: true };
+    expect(withCover(switched, { url: '/generated-2.png' }).noReal).toBe(true);
   });
 });
 

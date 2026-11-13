@@ -79,6 +79,24 @@ export interface ArticleImageDirections {
   sections: ImageDirection[];
   at: string;
 }
+/** A real picture from the business's own site is the cover. It applies only while `url` equals `img.url` (realCoverOf). */
+export interface RealCover {
+  /** 'radar': found during a draft. 'owner': a person gave the address. */
+  by: 'radar' | 'owner';
+  /** The stored 1200×628 file this record describes. */
+  url: string;
+  /** The page the picture was found on. null when the address given was the picture itself. */
+  page: string | null;
+  /** The picture's address on the business's site, after redirects. */
+  src: string;
+  at: string;
+  /** Pixel size of the source picture. */
+  w: number; h: number;
+  /** 'crop': centre-cropped. 'backdrop': shown whole on a blurred copy of itself. */
+  fit: 'crop' | 'backdrop';
+  /** by 'radar': the subject it was matched to. */
+  subject?: string;
+}
 export interface Article {
   entryId: string; generated: boolean; body: Block[];
   brief: { angle: string; outline: string[]; words: 900 | 1400 | 2200 };
@@ -89,7 +107,11 @@ export interface Article {
     /** Set when a person edited the alt text; Radar then leaves it alone. */
     altBy?: 'owner';
     /** The stored cover is the brand template because a model style could not be generated. Absent: not a placeholder. */
-    placeholder?: { reason: ImageIssueReason; at: string } | null };
+    placeholder?: { reason: ImageIssueReason; at: string } | null;
+    /** The cover is a real picture from the business's own site. Read it through realCoverOf, never directly. */
+    real?: RealCover | null;
+    /** A person replaced a real picture with a generated cover. Radar no longer looks for a picture for this article. */
+    noReal?: true };
   videos: string[]; videoMeta: VideoRef[]; sources: Source[];
   /** claim spans tied to sources: [blockIndex, text, sourceIndex] — used to flag claims when a source is removed */
   claims: { block: number; text: string; source: number }[];
@@ -102,6 +124,8 @@ export interface Article {
   imageDirections?: ArticleImageDirections;
   /** The last draft could not make body images and left them out. Removed when a set is stored. */
   bodyImagesIssue?: { reason: ImageIssueReason; at: string } | null;
+  /** Radar looked for a picture of this subject on the business's site and found none it was sure of. */
+  realCoverMiss?: { key: string; at: string } | null;
   /** when videoMeta (YouTube suggestions) was fetched */
   videoFetchedAt?: string | null;
 }

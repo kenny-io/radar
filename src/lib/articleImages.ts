@@ -1,4 +1,4 @@
-import type { Article, ArticleBodyImage, ArticleImageDirections, Block, ImageIssueReason } from './types';
+import type { Article, ArticleBodyImage, ArticleImageDirections, Block, ImageIssueReason, RealCover } from './types';
 
 const normalized = (s: string) => s.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
 const content = (b: Block) => b[0] === 'ul' ? b[1].join(' ') : b[1];
@@ -51,10 +51,21 @@ export function coverDirectionIsOwners(img: Pick<Article['img'], 'prompt' | 'pro
   return p !== defaultCoverDirection(kw); // an article saved before promptBy existed: anything but the creation default was typed
 }
 
-/** The cover after a render: url, urlKey, and the placeholder mark set or removed. */
+/** The cover after a generated or template render: url, urlKey, the placeholder mark set or removed, and no real-picture record. */
 export function withCover(img: Article['img'], f: { url: string; placeholder?: ImageIssueReason }, at = new Date().toISOString()): Article['img'] {
-  const { placeholder: _previous, ...rest } = img;
+  const { placeholder: _previous, real: _real, ...rest } = img;
   return { ...rest, url: f.url, urlKey: `${img.style}:${img.seed}`, ...(f.placeholder ? { placeholder: { reason: f.placeholder, at } } : {}) };
+}
+
+/** The real-picture record, when it describes the cover that is stored now. */
+export function realCoverOf(img: Pick<Article['img'], 'url' | 'real'>): RealCover | null {
+  return img.real && img.url && img.real.url === img.url ? img.real : null;
+}
+
+/** The cover after a real picture is stored. `alt` replaces the alt unless a person wrote it. */
+export function withRealCover(img: Article['img'], url: string, real: Omit<RealCover, 'url'>, alt?: string): Article['img'] {
+  const { placeholder: _previous, ...rest } = img;
+  return { ...rest, url, urlKey: `${img.style}:${img.seed}`, real: { ...real, url }, ...(alt !== undefined && img.altBy !== 'owner' ? { alt } : {}) };
 }
 
 const oneLine = (s: string) => s.trim().replace(/\s+/g, ' ');
