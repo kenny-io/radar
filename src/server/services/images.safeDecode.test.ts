@@ -6,14 +6,14 @@
 // darwin arm64). If one of them were decoded here, this file would not fail a test: the test run would die.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const H = vi.hoisted(() => ({
-  spawn: vi.fn(), start: null as null | ((...args: any[]) => any), active: 0, most: 0,
+  spawn: vi.fn(), start: null as null | ((...args: any[]) => any), active: 0, most: 0, ended: [] as { status: number | null; signal: string | null }[],
   rows: [] as any[], packs: [] as any[], stored: [] as { key: string; body: Buffer }[], reports: [] as any[],
 }));
 vi.mock('node:child_process', async original => {
   const real = await original<typeof import('node:child_process')>();
   H.start = (...args: any[]) => {
     H.most = Math.max(H.most, ++H.active);
-    const child = (real.spawn as any)(...args); child.on('close', () => { H.active--; });
+    const child = (real.spawn as any)(...args); child.on('close', (status: number | null, signal: string | null) => { H.active--; H.ended.push({ status, signal }); });
     return child;
   };
   H.spawn.mockImplementation(H.start);
@@ -31,6 +31,7 @@ vi.mock('@/server/services/lifecycle/engagement', () => ({ recordEngagement: asy
 vi.mock('./social/source', () => ({ readArticle: async () => { throw new Error('unused'); }, readUrl: async () => { throw new Error('unused'); } }));
 vi.mock('./social/stubs', () => ({}));
 import os from 'node:os';
+import zlib from 'node:zlib';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { IMG_SIZES } from '@/lib/constants';
 import { probeImage } from './untrustedImage';
@@ -104,6 +105,17 @@ function withOrientation(jpeg: Buffer, orientation: number): Buffer {
   return Buffer.concat([jpeg.subarray(0, 2), Buffer.from([0xff, 0xe1]), length, exif, jpeg.subarray(2)]);
 }
 const u32le = (n: number) => { const b = Buffer.alloc(4); b.writeUInt32LE(n >>> 0); return b; };
+const u32be = (n: number) => { const b = Buffer.alloc(4); b.writeUInt32BE(n >>> 0); return b; };
+/** The same PNG carrying `text` in a text chunk after its header: a good picture with a recognisable string in its bytes. */
+function withPngText(png: Buffer, text: string): Buffer {
+  const type = Buffer.from('tEXt', 'latin1'), data = Buffer.from('Comment\0' + text, 'latin1');
+  return Buffer.concat([png.subarray(0, 33), u32be(data.length), type, data, u32be(zlib.crc32(Buffer.concat([type, data]))), png.subarray(33)]);
+}
+/** The same JPEG carrying `text` in a comment segment after its start. */
+function withJpegComment(jpeg: Buffer, text: string): Buffer {
+  const data = Buffer.from(text, 'latin1'); const length = Buffer.alloc(2); length.writeUInt16BE(data.length + 2);
+  return Buffer.concat([jpeg.subarray(0, 2), Buffer.from([0xff, 0xfe]), length, data, jpeg.subarray(2)]);
+}
 /** A WebP file with one chunk of the given kind. Only the header is real. */
 function webpHeader(kind: 'VP8L' | 'VP8X', w: number, h: number, o: { animated?: boolean } = {}): Buffer {
   let payload: Buffer;
@@ -135,14 +147,21 @@ function notARadarError(e: any, RadarError: any) {
   expect(e.message).not.toContain(MARKER); expect(e.message.length).toBeLessThan(160);
 }
 const template = (images: any, r: Record<string, any>) => images.renderTemplatePng(r) as Buffer;
+/** A child that ignores the decoder and runs `program` instead, with `arg` as its one argument: what a decoder gone
+ *  wrong could do. It is started and watched like the real one. */
+const standIn = (program: string, arg: unknown = {}) => (command: string, _args: string[], options: any) => H.start!(command, ['-e', program, JSON.stringify(arg)], options);
+/** Real time, also while a test has replaced setTimeout. */
+const realSetTimeout = globalThis.setTimeout;
+const pause = (ms: number) => new Promise<void>(resolve => { realSetTimeout(resolve, ms); });
+const SECRET_VAR = 'SAFE_DECODE_TEST_SECRET';
 
 beforeEach(() => {
-  H.spawn.mockReset(); if (H.start) H.spawn.mockImplementation(H.start); H.active = 0; H.most = 0;
+  H.spawn.mockReset(); if (H.start) H.spawn.mockImplementation(H.start); H.active = 0; H.most = 0; H.ended.length = 0;
   H.rows.length = 0; H.packs.length = 0; H.stored.length = 0; H.reports.length = 0;
   vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 afterEach(() => {
-  vi.unstubAllGlobals(); vi.restoreAllMocks();
+  vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); delete process.env[SECRET_VAR];
   for (const v of VARS) if (saved[v] === undefined) delete process.env[v]; else process.env[v] = saved[v];
 });
 
@@ -265,6 +284,10 @@ describe('bytes that are not a complete PNG, JPEG or WebP of an allowed size nev
     ['nothing at all', () => Buffer.alloc(0)],
     ['a PNG cut short', cut('image/png', 0.3)], ['a JPEG cut short', cut('image/jpeg', 0.3)], ['a WebP cut short', cut('image/webp', 0.3)],
     ['a PNG missing its last byte', () => GOOD.subarray(0, GOOD.length - 1)],
+    // Whole pictures with something after their end: refused by the same check as a file that was cut short.
+    ['a PNG with one byte after its end', () => Buffer.concat([GOOD, Buffer.from([0])])],
+    ['a JPEG with 5,000 bytes after its end', () => Buffer.concat([scene(1536, 1024, 'image/jpeg'), Buffer.alloc(5000)])],
+    ['a WebP whose declared length is one byte more than the file', () => { const webp = Buffer.from(scene(1536, 1024, 'image/webp')); webp.writeUInt32LE(webp.readUInt32LE(4) + 1, 4); return webp; }],
     ['an animated WebP', () => webpHeader('VP8X', 1536, 1024, { animated: true })],
     ['a PNG declaring 10000×10000 (too many pixels)', () => declaring(10_000, 10_000)],
     ['a PNG declaring 10001×400 (one side too long)', () => declaring(10_001, 400)],
@@ -330,7 +353,7 @@ describe('a file that passes the check of its bytes and fails in the child is on
     /** A child that ignores the picture and answers with `data`: what a decoder gone wrong could send back. */
     const ANSWER = `const a = JSON.parse(process.argv[1]); const head = Buffer.from(JSON.stringify({ head: {} })); const n = Buffer.alloc(4); n.writeUInt32BE(head.length);
       process.stdin.resume(); process.stdin.on('end', () => process.stdout.write(Buffer.concat([n, head, Buffer.from(a.data, 'base64')]), () => process.exit(0)));`;
-    const answering = (data: Buffer) => (command: string, _args: string[], options: any) => H.start!(command, ['-e', ANSWER, JSON.stringify({ data: data.toString('base64') })], options);
+    const answering = (data: Buffer) => standIn(ANSWER, { data: data.toString('base64') });
     const small = scene(96, 64);
     it('the crop itself is accepted (so the wrong answers below are refused for what they are)', async () => {
       const { images } = await boot({});
@@ -353,6 +376,86 @@ describe('a file that passes the check of its bytes and fails in the child is on
       expect((await images.coverCrop(small, 64, 40)).equals(await reference(small, 64, 40))).toBe(true);
     });
   });
+
+});
+
+describe('one crop has the limits a cover has: 20 seconds and 32 MB of answer (D4)', () => {
+  const small = scene(96, 64);
+  /** A child that reads the picture and never answers. */
+  const SILENT = 'process.stdin.resume(); setInterval(() => {}, 1000);';
+  it('a child that never answers is left alone for 19.999 seconds and stopped at 20', async () => {
+    const { images, RadarError } = await boot({});
+    // Only the clock that the limit runs on is replaced; the child and its pipes are real.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    let settled: { png?: Buffer; error?: any } | null = null;
+    H.spawn.mockImplementationOnce(standIn(SILENT));
+    const crop = images.coverCrop(small, 64, 40).then(png => { settled = { png }; }, error => { settled = { error }; });
+    try {
+      for (let i = 0; i < 200 && !H.spawn.mock.calls.length; i++) await pause(10); // the limit starts when the child does
+      expect(H.spawn).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(19_999);
+      await pause(250);
+      expect(settled).toBeNull(); expect(H.active).toBe(1); expect(H.ended).toEqual([]);
+      vi.advanceTimersByTime(1);
+      await Promise.race([crop, pause(3000)]);
+      expect(settled).not.toBeNull();
+      notARadarError(settled!.error, RadarError);
+      expect(settled!.error.message).toMatch(/\(timed_out\)$/);
+      expect(H.ended).toEqual([{ status: null, signal: 'SIGKILL' }]); expect(H.active).toBe(0);
+    } finally {
+      vi.advanceTimersByTime(7 * 24 * 3600e3); await Promise.race([crop, pause(3000)]); // whatever the limit is, no child outlives this test
+      vi.useRealTimers();
+    }
+    expect((await images.coverCrop(small, 64, 40)).equals(await reference(small, 64, 40))).toBe(true); // and the next crop is not held up
+  }, 30_000);
+
+  /** A child that answers with the crop padded, in a chunk before its end, to exactly `total` bytes of output: a
+   *  whole PNG of the right size however large it is, so only the size of the answer can be what refuses it. */
+  const PADDED = `const a = JSON.parse(process.argv[1]); const png = Buffer.from(a.png, 'base64'); const head = Buffer.from(JSON.stringify({ head: {} })); const n = Buffer.alloc(4); n.writeUInt32BE(head.length);
+    const pad = a.total - 4 - head.length - png.length - 12; const chunk = Buffer.alloc(12 + pad); chunk.writeUInt32BE(pad, 0); chunk.write('zzZz', 4, 'latin1');
+    process.stdin.resume(); process.stdin.on('end', () => process.stdout.write(Buffer.concat([n, head, png.subarray(0, png.length - 12), chunk, png.subarray(png.length - 12)]), () => process.exit(0)));`;
+  const MB32 = 32 * 1024 * 1024;
+  it('an answer of exactly 32 MB is taken, and one byte more is refused', async () => {
+    const { images, RadarError } = await boot({});
+    const png = (await reference(small, 64, 40)).toString('base64');
+    H.spawn.mockImplementationOnce(standIn(PADDED, { png, total: MB32 }));
+    const most = await images.coverCrop(small, 64, 40);
+    expect(probeImage(most)).toEqual({ type: 'image/png', width: 64, height: 40, complete: true });
+    expect(most.length).toBe(MB32 - 4 - Buffer.byteLength(JSON.stringify({ head: {} }))); // the whole answer, less its envelope
+    H.spawn.mockImplementationOnce(standIn(PADDED, { png, total: MB32 + 1 }));
+    const e = await caught(images.coverCrop(small, 64, 40));
+    notARadarError(e, RadarError);
+    expect(e.message).toMatch(/\(too_much_output\)$/);
+    expect(H.spawn).toHaveBeenCalledTimes(2); expect(H.active).toBe(0);
+  }, 30_000);
+});
+
+describe('what the child is given', () => {
+  it('the picture on its input and nothing else: the same program whatever the picture and the size, the size as its one option, and two environment names', async () => {
+    const { images } = await boot(OPENROUTER); // a provider key is set in this process
+    process.env[SECRET_VAR] = `secret-${MARKER}`;
+    const png = withPngText(scene(900, 700), MARKER), jpeg = withJpegComment(scene(640, 400, 'image/jpeg'), MARKER);
+    expect(png.includes(MARKER) && jpeg.includes(MARKER)).toBe(true);
+    // Both are good pictures: the text in them changes nothing about the crop.
+    expect((await images.coverCrop(png, 1200, 628)).equals(await reference(png, 1200, 628))).toBe(true);
+    expect((await images.coverCrop(jpeg, 1200, 628)).equals(await reference(jpeg, 1200, 628))).toBe(true);
+    expect((await images.coverCrop(png, 400, 900)).equals(await reference(png, 400, 900))).toBe(true);
+    const calls = H.spawn.mock.calls;
+    expect(calls).toHaveLength(3);
+    for (const [i, [w, h]] of [[1200, 628], [1200, 628], [400, 900]].entries()) {
+      const [command, args, options] = calls[i];
+      expect(command).toBe(process.execPath);
+      expect(args).toHaveLength(3); expect(args[0]).toBe('-e'); expect(typeof args[1]).toBe('string');
+      expect(JSON.parse(args[2])).toStrictEqual({ w, h });
+      expect(Object.keys(options.env).sort()).toEqual(['NODE_ENV', 'PATH']);
+      for (const given of [...args, ...Object.values(options.env)]) {
+        expect(String(given)).not.toContain(MARKER); expect(String(given)).not.toContain(OPENROUTER.OPENROUTER_API_KEY);
+      }
+      expect(options.stdio).toEqual(['pipe', 'pipe', 'ignore']); expect(options.shell).toBeFalsy(); expect(options.detached).toBeFalsy();
+    }
+    expect(calls[1][1]).toEqual(calls[0][1]); // another picture of another format: the very same arguments
+    expect(calls[2][1][1]).toBe(calls[0][1][1]); // another size: the very same program
+  }, 30_000);
 });
 
 describe('a decoder that cannot run (AC6)', () => {

@@ -189,16 +189,18 @@ const refusedPicture = (why: string) => new Error(`The image model's picture was
 /** Cover-crop to exactly w×h (a centred crop, scaled to fill), as a PNG.
  *  `raw` is an image provider's answer and is never decoded in this process: the decoder ends the process on some
  *  malformed files, renders SVG, and accepts a file that was cut short.
- *  Checked from the bytes first, before any decode: a complete PNG, JPEG or WebP, not animated, with a positive size
- *  within the shared pixel limits. The decode and the draw then run in a child process, one picture at a time, and
- *  the answer must be a complete PNG of exactly w×h.
+ *  Checked from the bytes first, before any decode: a whole PNG, JPEG or WebP, not animated, with a positive size
+ *  within the shared pixel limits. Whole means the file ends where its format says it ends: one that was cut short
+ *  is refused, and so is one with bytes after its end (a PNG with anything after IEND, a JPEG with more than about
+ *  4 KB after its end marker). The decode and the draw then run in a child process, one picture at a time, and the
+ *  answer must be a whole PNG of exactly w×h.
  *  Rejects with a plain Error (never a RadarError) when the picture is refused at any of those steps, and when the
  *  decoder itself could not run. Nothing falls back to decoding here; the callers decide between the brand template
  *  and failing the request. */
 export async function coverCrop(raw: Buffer, w: number, h: number): Promise<Buffer> {
   const probe = probeImage(raw);
   if (!probe) throw refusedPicture('it is not a PNG, JPEG or WebP');
-  if (!probe.complete) throw refusedPicture('the file is cut short');
+  if (!probe.complete) throw refusedPicture('the file is not whole: it is cut short, or has bytes after its end');
   if (probe.animated) throw refusedPicture('it is animated');
   if (!(probe.width > 0 && probe.height > 0)) throw refusedPicture('it has no size');
   // Before any decode: the decoder allocates the whole bitmap on load, so a small file declaring a huge size is stopped here.
