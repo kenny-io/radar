@@ -7,6 +7,7 @@ vi.mock('@/server/env', () => ({ env: { devStubs: true, crawlerUserAgent: 'Radar
 vi.mock('../../db', () => ({ db: { select: () => ({ from: () => ({ where: async () => H.rows }) }) }, schema: { crawlPages: { businessId: 'businessId', url: 'url', title: 'title', h1: 'h1' } } }));
 vi.mock('../storage', () => ({ putObject: vi.fn(), objectKey: () => 'k' }));
 
+import * as devsite from './devsite';
 import { DEV_PLACES, devFetch, devProfileFor } from './devsite';
 import { crawlSite } from './crawl';
 import { probeImage } from '../realCover/picture';
@@ -35,8 +36,10 @@ describe('the stub site’s places', () => {
       expect(page).toMatchObject({ h1: place.name, entityNames: place.picture ? [place.name] : [] });
       expect(page).toMatchObject({ article: false, listing: false, offSite: [] });
       const picture = `https://${domain}/media/${place.slug}.png`;
-      // With a picture: tied to the place by structured data and by alt text. Without: only the site-wide share image.
-      expect(page.pictures).toEqual([...(place.picture ? [{ url: picture, alt: '', from: 'ld', of: place.name }, { url: picture, alt: `${place.name} · photo 1`, from: 'img' }] : []), { url: `https://${domain}/og.png`, alt: '', from: 'share' }]);
+      // With a picture: tied to the place by structured data and by alt text. Without: nothing. The site-wide share
+      // image (/og.png) is known as the page's share image and is never a candidate.
+      expect(page.pictures).toEqual(place.picture ? [{ url: picture, alt: '', from: 'ld', of: place.name }, { url: picture, alt: `${place.name} · photo 1`, from: 'img' }] : []);
+      expect(page.shareKeys).toEqual([`${domain}/og.png`]);
     }
     expect(devProfileFor(domain).pages.some(p => p.path.startsWith('/places/'))).toBe(false);
     expect(map.match(/<loc>/g)).toHaveLength(devProfileFor(domain).pages.length + 3);
@@ -107,6 +110,16 @@ describe('real covers against the stub site, offline', () => {
     expect(await auto('Harbour Lodge')).toEqual({ picture: null, searched: true });
     // A site that never answered was not looked at: nothing is remembered, and the next rewrite looks again.
     expect(await findSubjectPicture({ bid: 'biz', domain: 'unreachable-studio.test', subject: { name: 'Harbour House', kind: 'building' } })).toEqual({ picture: null, searched: false });
+  });
+  it('automatic: the stub site’s default share image is never asked for, and its home page is not needed', async () => {
+    const spy = vi.spyOn(devsite, 'devFetch');
+    try {
+      for (const name of ['Harbour House', 'Harbour House Annex', 'Mill Lane Studios']) await auto(name);
+      const asked = spy.mock.calls.map(c => new URL(c[0]).pathname);
+      expect(asked.length).toBeGreaterThan(6); // the spy sees the requests the search makes
+      expect(asked).not.toContain('/og.png'); expect(asked).not.toContain('/');
+      expect(asked.filter(p => p.startsWith('/media/'))).toEqual(['/media/harbour-house.png', '/media/harbour-house-annex.png']);
+    } finally { spy.mockRestore(); }
   });
   it('none of it touches the network', () => { expect(fetchMock).not.toHaveBeenCalled(); });
 });

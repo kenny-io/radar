@@ -1,7 +1,8 @@
 // Real covers: a picture from the business's own site as an article's cover. Two ways in. A person gives the address
 // of a page or a picture (pictureFromAddress). During a draft Radar looks for the page of the article's subject and a
 // picture that page ties to the subject (findSubjectPicture); on any doubt it finds nothing and the cover is generated.
-// The automatic path never takes a share image (og:image and the like); the owner's path may.
+// The automatic path never takes a picture because it is a share image (og:image and the like), and takes one that is
+// also a share image only after the home page shows it is not the site's default card; the owner's path may use one.
 // Nothing is fetched from another host, and every request goes through fetchOwn.
 import * as cheerio from 'cheerio';
 import robotsParser from 'robots-parser';
@@ -36,9 +37,9 @@ const pageRequest = (b: Budget): OwnFetch => ({ ...b, accept: ACCEPT.page, maxBy
 const pictureRequest = (b: Budget): OwnFetch => ({ ...b, accept: ACCEPT.picture, maxBytes: PICTURE_MAX_BYTES, over: 'reject' });
 const isHtml = (r: OwnResponse) => headerType(r.type).includes('html');
 
-/** Owner path only. The share images of the home page of the site `page` is on, as comparison keys (shareKey), read
- *  once and only when a share picture is the next candidate. null: the home page could not be read, so no share
- *  picture is used. */
+/** The share images of the home page of the site `page` is on, as comparison keys (shareKey), read once and only
+ *  when a picture that is, or may be, a share card is the next candidate. null: the home page could not be read, so
+ *  that picture is not used. */
 function homeShare(page: string, b: Budget) {
   let read: Promise<string[] | null> | undefined;
   return () => read ??= (async () => {
@@ -112,25 +113,26 @@ export async function findSubjectPicture(o: { bid: string; domain: string; subje
     const named = rows.filter(r => sameTokens(nameTokens(r.h1 || titleLead(r.title)), st)).map(r => r.url);
 
     // robots.txt applies here, as in the crawl: this search is Radar's own initiative. A file that cannot be read means no rules.
-    let robots: ReturnType<typeof robotsParser> | null = null; let answered = false;
-    try { const r = await fetchOwn(new URL('/robots.txt', origin), { ...b, accept: ACCEPT.text, maxBytes: ROBOTS_MAX_BYTES, over: 'truncate' }); answered = true; robots = robotsParser(origin + '/robots.txt', r.body.toString('utf8')); }
-    catch (error) { answered = answeredBy(error); /* no rules */ }
+    let robots: ReturnType<typeof robotsParser> | null = null;
+    try { const r = await fetchOwn(new URL('/robots.txt', origin), { ...b, accept: ACCEPT.text, maxBytes: ROBOTS_MAX_BYTES, over: 'truncate' }); robots = robotsParser(origin + '/robots.txt', r.body.toString('utf8')); } catch { /* no rules */ }
     const allowed = (u: string) => !robots || robots.isAllowed(u, uaToken()) !== false;
 
-    let listed: string[] = [];
+    // The sitemap is the list of the site's pages. `listRead` is false when it was asked for and never answered.
+    let listed: string[] = []; let listRead = true;
     if (!named.length) {
       const declared = (robots?.getSitemaps() || []).flatMap(s => { const own = ownSiteUrl(s, o.domain, origin + '/robots.txt'); return own.ok ? [own.url.href] : []; });
       const maps = await sitemapAddresses(declared.length ? declared : [origin + '/sitemap.xml'], b);
-      listed = maps.addresses; answered ||= maps.answered;
+      listed = maps.addresses; listRead = maps.answered;
     }
     // A page qualifies by its address when its last path segment starts with the subject's words; fewest extra words first.
     const bySlug = [...new Set([...rows.map(r => r.url), ...listed])].flatMap(url => { const extra = slugExtra(url, st); return extra === null ? [] : [{ url, extra }]; })
       .sort((x, y) => x.extra - y.extra || x.url.length - y.url.length).map(c => c.url);
     const candidates = [...new Set([...named, ...bySlug])].filter(u => { const path = new URL(u).pathname; return allowed(u) && !ARTICLE_PATH.test(path) && !listingPath(path); }).slice(0, MAX_CANDIDATES);
 
-    // Nowhere to look, and the site never answered (no connection, a timeout, a server error): Radar did not finish
-    // looking, so nothing is remembered. A site that answered "no such file" for its sitemap was looked at.
-    let searched = candidates.length > 0 || answered;
+    // Nowhere to look, and the list of pages was never read (no connection, a timeout, a server error), whatever
+    // robots.txt answered: Radar did not finish looking, so nothing is remembered. A site that answered "no such
+    // file" for its sitemap was looked at.
+    let searched = candidates.length > 0 || listRead;
     const unfinished = (error: unknown) => { if (!(error instanceof SitePictureError) || error.code === 'unreachable') searched = false; };
     for (const candidate of candidates) {
       let res: OwnResponse;
@@ -140,10 +142,19 @@ export async function findSubjectPicture(o: { bid: string; domain: string; subje
       if (page.article || page.listing) continue;
       // The page must be the subject's own: "Wasl 611 Tower B" is not the page for "Wasl 611".
       if (!namesSubject(page, o.subject.name)) continue;
+      const home = homeShare(res.url, b);
       let tried = 0;
       for (const p of subjectPictures(page, o.subject.name)) {
         if (tried >= MAX_PICTURES) break;
         if (!allowed(p.url)) continue;
+        // A tied picture the page also gives as its share image may be the site's default card (templates fill both
+        // from one value). It is taken only when the home page can be read and does not carry it.
+        if (page.shareKeys.includes(shareKey(p.url))) {
+          if (!allowed(new URL('/', res.url).href)) continue;
+          const shared = await home();
+          if (!shared) { searched = false; continue; }
+          if (shared.includes(shareKey(p.url))) continue;
+        }
         tried++;
         try { const file = await fetchOwn(new URL(p.url), pictureRequest(b)); return { picture: { ...(await readPicture(file)), page: res.url, src: file.url, alt: p.alt }, searched: true }; }
         catch (error) { unfinished(error); }

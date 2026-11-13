@@ -47,6 +47,9 @@ export interface PageFacts {
   pictures: PagePicture[];
   /** Hosts of pictures that were skipped because they are not on the business's site. */
   offSite: string[];
+  /** The page's own share images (og:image and the like), own-site, as comparison keys (shareKey). Every one of them,
+   *  whether or not it is also listed in `pictures`. */
+  shareKeys: string[];
 }
 
 // Their `name` is not a subject and their `image` is not a picture of one: the site itself, page furniture, people,
@@ -56,16 +59,21 @@ const GENERIC = new Set(['Organization', 'WebSite', 'WebPage', 'BreadcrumbList',
 const ARTICLE_TYPES = ['Article', 'BlogPosting', 'NewsArticle', 'TechArticle'];
 const LISTING_TYPES = ['CollectionPage', 'SearchResultsPage', 'Blog', 'ItemList'];
 // A path with one of these segments lists things filed under a name; it is not that name's own page.
-const LISTING_SEGMENTS = new Set(['tag', 'tags', 'category', 'categories', 'topic', 'topics', 'author', 'authors', 'search', 'archive', 'archives']);
+const LISTING_SEGMENTS = new Set(['tag', 'tags', 'tagged', 'label', 'labels', 'category', 'categories', 'topic', 'topics', 'author', 'authors', 'search', 'archive', 'archives']);
 /** The address is a listing by its path alone: the home page, a blog or news index, or a tag, category, topic, author, search or archive page. */
 export function listingPath(path: string): boolean {
   return path === '/' || path === '' || LISTING_PATH.test(path) || path.toLowerCase().split('/').some(segment => LISTING_SEGMENTS.has(segment));
 }
 /** Words an alt text may carry besides the subject's name and still be a picture of the subject, nothing more
- *  ("Wasl 611 · photo 1", "Exterior view of Wasl 611"). Any other word means the alt is about something else. */
-export const GENERIC_PICTURE_WORDS = new Set(['photo', 'photos', 'image', 'images', 'picture', 'pictures', 'pic', 'view', 'exterior', 'interior', 'front', 'building', 'main', 'cover', 'hero', 'gallery', 'of', 'the', 'a']);
+ *  ("Wasl 611 · photo 1", "Exterior of Wasl 611"). Only words that are not part of names: "view", "gallery", "main"
+ *  and "building" are not here, because "Harbour House View" and "Main Street Cafe" are other places. English only. */
+export const GENERIC_PICTURE_WORDS = new Set(['photo', 'photos', 'image', 'images', 'picture', 'pictures', 'pic', 'of', 'the', 'a', 'an', 'exterior', 'interior']);
+/** A numeral is a picture's number only straight after one of these ("photo 1"); anywhere else it may be part of a name ("1 Hyde Park", "Building 2"). */
+const COUNTED_WORDS = new Set(['photo', 'photos', 'image', 'images', 'picture', 'pictures', 'pic']);
 const SKIP_EXT = /\.(svg|gif|ico|avif)$/i;
 const SKIP_WORDS = new Set(['logo', 'favicon', 'icon', 'sprite', 'placeholder', 'avatar', 'default']);
+// A share card by its address, wherever in the path the word is: /og.png, /api/og, /places/x/opengraph-image, /social-card.png.
+const CARD_WORDS = new Set(['opengraph', 'og', 'twitter', 'social', 'share']);
 const SOURCE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 const MAX_IMGS = 40;
 
@@ -126,14 +134,15 @@ function shareAddresses($: cheerio.CheerioAPI): string[] {
   return out.filter(Boolean);
 }
 
-/** A file that is not a picture of anything (a format Radar refuses, or a logo, icon or stand-in by its file name). */
+/** A file that is not a picture of anything: a format Radar refuses, a logo, icon or stand-in by its file name, or a
+ *  share card by any part of its path. */
 function skippedByName(raw: string, pageUrl: string): boolean {
   let path: string;
   try { path = new URL(raw, pageUrl).pathname; } catch { return false; }
   if (SKIP_EXT.test(path)) return true;
-  const file = path.split('/').filter(Boolean).pop() || '';
-  let name = file; try { name = decodeURIComponent(file); } catch { /* keep as written */ }
-  return name.toLowerCase().split(/[-_.]+/).some(word => SKIP_WORDS.has(word));
+  const words = (segment: string) => { let name = segment; try { name = decodeURIComponent(segment); } catch { /* keep as written */ } return name.toLowerCase().split(/[-_.]+/); };
+  const segments = path.split('/').filter(Boolean);
+  return words(segments[segments.length - 1] || '').some(word => SKIP_WORDS.has(word)) || segments.some(segment => words(segment).some(word => CARD_WORDS.has(word)));
 }
 
 export function readPage(html: string, pageUrl: string, domain: string): PageFacts {
@@ -173,6 +182,7 @@ export function readPage(html: string, pageUrl: string, domain: string): PageFac
     article: meta('og:type').toLowerCase() === 'article' || ARTICLE_TYPES.some(t => types.has(t)) || ARTICLE_PATH.test(path),
     listing: listingPath(path) || LISTING_TYPES.some(t => types.has(t)),
     pictures, offSite,
+    shareKeys: [...new Set(shareAddresses($).flatMap(raw => { const own = ownSiteUrl(raw, domain, pageUrl); return own.ok ? [shareKey(own.url.href)] : []; }))],
   };
 }
 
@@ -198,26 +208,27 @@ export function namesSubject(page: Pick<PageFacts, 'h1' | 'entityNames'>, subjec
   return page.entityNames.some(name => sameTokens(nameTokens(name), st));
 }
 
-/** The alt text names the subject and nothing else: the subject's words as a run, and every other word a numeral or
- *  a generic picture word. "Harbour House Annex · photo 1" is not a picture of "Harbour House". A numeral directly
- *  after the name is read as part of a longer name ("Marina Gate 2", "iPhone 15"), so it does not tie either. An alt
- *  that begins "Illustration" is a cover Radar generated and the site published, not a picture of the subject. */
+/** The alt text names the subject and nothing else: the subject's words as a run, and every other word a generic
+ *  picture word, or a numeral straight after "photo", "image", "picture" or "pic". "Harbour House Annex · photo 1" is
+ *  not a picture of "Harbour House"; nor is "Harbour House Building 2", "Marina Gate 2" for "Marina Gate" or
+ *  "1 Hyde Park" for "Hyde Park". An alt that begins "Illustration" is a cover Radar generated and the site
+ *  published, not a picture of the subject. */
 export function altNamesSubject(alt: string, subject: string[]): boolean {
   const words = nameTokens(alt);
   if (!subject.length || words[0] === 'illustration') return false;
   const numeral = (w: string) => /^\p{N}+$/u.test(w);
+  const generic = (i: number) => GENERIC_PICTURE_WORDS.has(words[i]) || (numeral(words[i]) && i > 0 && COUNTED_WORDS.has(words[i - 1]));
   for (let at = 0; at + subject.length <= words.length; at++) {
     if (!startsWith(words.slice(at), subject)) continue;
-    const before = words.slice(0, at), after = words.slice(at + subject.length);
-    if (after.length && numeral(after[0])) continue;
-    if ([...before, ...after].every(w => numeral(w) || GENERIC_PICTURE_WORDS.has(w))) return true;
+    if (words.every((_, i) => (i >= at && i < at + subject.length) || generic(i))) return true;
   }
   return false;
 }
 
 /** Pictures the page ties to the subject, best first: structured data of that entity, then pictures whose alt text
  *  names it and nothing else. Never a share image: nothing ties one to the subject, and a card generated for each
- *  page from its title is common. */
+ *  page from its title is common. A tied picture that is also one of the page's share images (`shareKeys`) is listed;
+ *  the automatic search takes it only after the home page shows it is not the site's default card. */
 export function subjectPictures(page: PageFacts, subject: string): PagePicture[] {
   const st = nameTokens(subject);
   if (!st.length) return [];

@@ -104,28 +104,43 @@ describe('whose page it is (decision D14)', () => {
 
 describe('an alt text that names the subject and nothing else (decision D15)', () => {
   const ties = (alt: string, subject = 'Wasl 611') => altNamesSubject(alt, st(subject));
-  it.each(['Wasl 611', 'Wasl 611 · photo 1', 'Photo of Wasl 611', 'wasl-611', 'Exterior view of Wasl 611', 'The Wasl 611 building', 'Wasl 611 – image 12 of 30', 'Photo 3: Wasl 611', 'Main picture of the Wasl 611 building, front view'])('ties: %s', alt => { expect(ties(alt)).toBe(true); });
+  it.each(['Wasl 611', 'Wasl 611 · photo 1', 'Photo of Wasl 611', 'wasl-611', 'Exterior of Wasl 611', 'The Wasl 611', 'Photo 3: Wasl 611', 'Wasl 611 photo 2', 'An image of the Wasl 611 interior', 'Wasl 611 – picture 12', 'Pic 4 of Wasl 611'])('ties: %s', alt => { expect(ties(alt)).toBe(true); });
   it.each([
     'Wasl 611 Tower B', 'Wasl 611 Tower B · photo 1', 'Wasl 6110', '611 Wasl', 'Wasl', 'Property thumbnail 1', '', 'Photo 1',
     'The old mill, five minutes from Wasl 611', 'View from Wasl 611 of the old mill', 'Chart of Wasl 611 prices by month', 'Wasl 611 opening party', 'Marina Gate 1 — Wasl 611',
     'Illustration of Wasl 611', 'illustration: Wasl 611',
+    // Words that are part of names are not generic (decision D22): each of these could be another place.
+    'Wasl 611 View', 'Wasl 611 Gallery', 'Main Wasl 611', 'Wasl 611 Building 2', 'The Wasl 611 building', 'Exterior view of Wasl 611', 'Main picture of the Wasl 611 building, front view', 'Wasl 611 cover', 'Hero Wasl 611', 'Front of Wasl 611',
+    // A numeral counts only straight after photo, image, picture or pic.
+    '1 Wasl 611', 'Wasl 611 1', 'Wasl 611 – image 12 of 30', '2 of 9: Wasl 611', 'Wasl 611 exterior 3', 'Wasl 611 photo 1 2',
   ])('does not tie: %s', alt => { expect(ties(alt)).toBe(false); });
   it('a neighbour whose name starts with the subject’s is not the subject (QA Q1, Q21, Q23)', () => {
     for (const alt of ['Harbour House Annex', 'Harbour House Annex · photo 1', 'Harbour House Annex photo']) expect(ties(alt, 'Harbour House'), alt).toBe(false);
-    for (const alt of ['Harbour House', 'Harbour House · photo 1', 'Photo of Harbour House']) expect(ties(alt, 'Harbour House'), alt).toBe(true);
+    for (const alt of ['Harbour House', 'Harbour House · photo 1', 'Photo of Harbour House', 'Exterior of Harbour House']) expect(ties(alt, 'Harbour House'), alt).toBe(true);
     expect(ties('Harbour House Annex · photo 1', 'Harbour House Annex')).toBe(true);
   });
-  it('a numeral straight after the name is read as part of a longer name', () => {
+  it.each([
+    ['A13', 'Harbour House', 'Harbour House View'], ['A14', 'Harbour House', 'Harbour House Gallery'], ['A15', 'Street Cafe', 'Main Street Cafe'],
+    ['A16', 'Harbour House', 'Harbour House Building 2'], ['A17', 'Hyde Park', '1 Hyde Park'], ['A18', 'Park', 'Park View'], ['The View', 'The View', 'The View Gallery'],
+  ])('QA %s: on the page of "%s", a picture with alt "%s" is another place’s', (_q, subject, alt) => {
+    expect(ties(alt, subject)).toBe(false);
+    expect(ties(subject, subject)).toBe(true); expect(ties(`${subject} · photo 1`, subject)).toBe(true); // the subject's own picture still ties
+  });
+  it('a subject made of generic words ("The View") is tied only by its exact name', () => {
+    expect(ties('The View', 'The View')).toBe(true);
+    for (const alt of ['Front view of the building', 'The view from the gallery', 'A view of the pool', 'The View Gallery']) expect(ties(alt, 'The View'), alt).toBe(false);
+  });
+  it('a numeral is a picture’s number only straight after photo, image, picture or pic; anywhere else it may be part of a name', () => {
     expect(ties('Marina Gate 2', 'Marina Gate')).toBe(false);
     expect(ties('iPhone 15', 'iPhone')).toBe(false);
     expect(ties('Tower 10', 'Tower 1')).toBe(false);
+    expect(ties('1 Hyde Park', 'Hyde Park')).toBe(false);
     expect(ties('Marina Gate · photo 2', 'Marina Gate')).toBe(true);
-    expect(ties('2 of 9: Marina Gate', 'Marina Gate')).toBe(true);
     expect(ties('Marina Gate 2 photo 1', 'Marina Gate 2')).toBe(true);
+    expect(ties('Image 7 of Marina Gate', 'Marina Gate')).toBe(true);
   });
-  it('the list of generic picture words is short, and has no word a place or product is named with', () => {
-    expect(GENERIC_PICTURE_WORDS.size).toBeLessThanOrEqual(20);
-    for (const word of ['tower', 'house', 'annex', 'gate', 'review', 'lobby', 'pool', 'old', 'new', 'and', 'in', 'at', 'from', 'near']) expect(GENERIC_PICTURE_WORDS.has(word), word).toBe(false);
+  it('the generic picture words are exactly the decided thirteen', () => {
+    expect([...GENERIC_PICTURE_WORDS].sort()).toEqual(['a', 'an', 'exterior', 'image', 'images', 'interior', 'of', 'photo', 'photos', 'pic', 'picture', 'pictures', 'the']);
   });
 });
 
@@ -147,27 +162,56 @@ describe('article and listing pages', () => {
     for (const type of ['CollectionPage', 'SearchResultsPage', 'Blog', 'ItemList']) expect(read(subjectPage({ ld: { '@type': type } })).listing).toBe(true);
   });
   it('tag, category, topic, author, search and archive pages are listings by their path (decision D17, QA Q18)', () => {
-    for (const path of ['/tag/harbour-house', '/tags/harbour-house', '/category/places/harbour-house', '/categories/x', '/topic/wasl-611', '/topics/wasl-611', '/author/sam', '/authors/sam', '/search', '/Search/wasl-611', '/archive/2026/11', '/archives/wasl-611', '/en/tag/wasl-611/']) {
+    for (const path of ['/tagged/harbour-house', '/label/harbour-house', '/labels/harbour-house', '/tag/harbour-house', '/tags/harbour-house', '/category/places/harbour-house', '/categories/x', '/topic/wasl-611', '/topics/wasl-611', '/author/sam', '/authors/sam', '/search', '/Search/wasl-611', '/archive/2026/11', '/archives/wasl-611', '/en/tag/wasl-611/']) {
       expect(listingPath(path), path).toBe(true);
       expect(read(subjectPage({}), 'https://lived.ae' + path).listing, path).toBe(true);
     }
-    for (const path of ['/property/wasl-611', '/places/harbour-house', '/tagline', '/heritage/wasl-611', '/research/wasl-611', '/authority-house', '/p/12345']) expect(listingPath(path), path).toBe(false);
+    for (const path of ['/property/wasl-611', '/places/harbour-house', '/tagline', '/labelled/wasl-611', '/heritage/wasl-611', '/research/wasl-611', '/authority-house', '/p/12345']) expect(listingPath(path), path).toBe(false);
     expect(listingPath('/')).toBe(true); expect(listingPath('/blog/')).toBe(true);
   });
 });
 
 describe('the pictures of a page', () => {
   it('own-site pictures in order: structured data, then <img>, then share images', () => {
-    const page = read(PRINCESS, PRINCESS_URL);
+    const page = read(PRINCESS.replaceAll('lived-social-preview.png', 'lived-preview.png'), PRINCESS_URL);
     expect(page.pictures).toEqual([
       { url: PRINCESS_PICTURE, alt: '', from: 'ld', of: 'Princess Tower' },
       { url: 'https://lived.ae/_next/image?url=%2Fapi%2Fmedia%2F9zt4c0de1fg.jpg%3Fbucket%3Dproperties&w=1200&q=75', alt: 'Princess Tower · photo 1', from: 'img' },
-      { url: DEFAULT_CARD, alt: '', from: 'share' },
+      { url: 'https://lived.ae/lived-preview.png', alt: '', from: 'share' },
     ]);
     expect(page.offSite).toEqual([]);
+    expect(page.shareKeys).toEqual(['lived.ae/lived-preview.png']);
+  });
+  it('the site’s share card, named as one, is not a picture of anything; it is still known as the page’s share image', () => {
+    const page = read(PRINCESS, PRINCESS_URL);
+    expect(urls(page.pictures)).not.toContain(DEFAULT_CARD); // lived-social-preview.png
+    expect(page.pictures.map(p => p.from)).toEqual(['ld', 'img']);
+    expect(page.shareKeys).toEqual(['lived.ae/lived-social-preview.png']);
   });
   it('takes the smallest srcset candidate at least 1200 wide, through the site’s own optimiser', () => {
-    expect(read(WASL).pictures).toEqual([{ url: WASL_PICTURE, alt: 'Wasl 611 · photo 1', from: 'img' }, { url: DEFAULT_CARD, alt: '', from: 'share' }]);
+    expect(read(WASL).pictures).toEqual([{ url: WASL_PICTURE, alt: 'Wasl 611 · photo 1', from: 'img' }]);
+  });
+  it('an address that names a share card in any part of its path is never a picture, wherever it is listed (decision D21)', () => {
+    const cards = ['/og.png', '/og-image.jpg', '/assets/og/wasl-611.jpg', '/api/og?title=Wasl+611', '/property/wasl-611-al-warsan/opengraph-image?3f2a', '/opengraph-image.png', '/img/social-card.png', '/social/wasl-611.png',
+      '/img/wasl-611_share.jpg', '/share/wasl-611.jpg', '/twitter-card.png', '/img/twitter/wasl-611.png', '/OG.PNG', '/media/Wasl-611.OG.jpg'];
+    const kept = ['/media/wasl-611.jpg', '/media/dog.jpg', '/media/logs/wasl-611.jpg', '/media/shared-kitchen.jpg', '/media/timeshare.jpg', '/media/socialising.jpg', '/blog-images/wasl-611.jpg', '/media/yoga-studio.jpg'];
+    const page = read(subjectPage({ share: '', main: [...cards, ...kept].map(src => `<img src="${src}" alt="Wasl 611" width="1200" height="800">`).join(''),
+      ld: { '@type': 'Place', name: 'Wasl 611', image: ['https://lived.ae/og.png', '/media/wasl-611-front.jpg'] }, headMore: '<meta property="og:image" content="/og.png"><meta name="twitter:image" content="/twitter-card.png"><link rel="image_src" href="/media/wasl-611-wide.jpg">' }));
+    expect(urls(page.pictures).map(u => u.replace('https://lived.ae', ''))).toEqual(['/media/wasl-611-front.jpg', ...kept, '/media/wasl-611-wide.jpg']);
+    expect(urls(subjectPictures(page, 'Wasl 611')).map(u => u.replace('https://lived.ae', ''))).toEqual(['/media/wasl-611-front.jpg', ...kept]);
+    // The page's own share images are all known for the comparison, card-named or not.
+    expect(page.shareKeys).toEqual(['lived.ae/og.png', 'lived.ae/twitter-card.png', 'lived.ae/media/wasl-611-wide.jpg']);
+  });
+  it('QA S3, S4, S5: the share card as the subject’s structured-data image, or as an <img> named for the subject, is not a candidate', () => {
+    const s3 = read(subjectPage({ name: 'Harbour House', share: 'https://lived.ae/og.png', ld: { '@type': 'Place', name: 'Harbour House', image: 'https://lived.ae/og.png' } }));
+    const s4 = read(subjectPage({ name: 'Harbour House', share: 'https://lived.ae/places/harbour-house/opengraph-image?3f2a', ld: { '@type': 'Place', name: 'Harbour House', image: 'https://lived.ae/places/harbour-house/opengraph-image?3f2a' } }));
+    const s5 = read(subjectPage({ name: 'Harbour House', share: 'https://lived.ae/og.png', main: '<img src="/og.png" alt="Harbour House" width="1200" height="630">' }));
+    for (const page of [s3, s4, s5]) { expect(page.pictures).toEqual([]); expect(subjectPictures(page, 'Harbour House')).toEqual([]); expect(ownerPictures(page, 'Harbour House')).toEqual([]); }
+  });
+  it('QA S6: a real photo that is both the share image and the structured-data image stays a candidate, and is marked as a share image', () => {
+    const page = read(subjectPage({ name: 'Harbour House', share: 'https://lived.ae/media/hh.png', ld: { '@type': 'Place', name: 'Harbour House', image: 'https://www.lived.ae/media/hh.png?w=1200' } }));
+    expect(urls(subjectPictures(page, 'Harbour House'))).toEqual(['https://www.lived.ae/media/hh.png?w=1200']);
+    expect(page.shareKeys).toContain(shareKey('https://www.lived.ae/media/hh.png?w=1200')); // the same file, whatever the host form or query
   });
   const img = (attrs: string, wrap = (x: string) => x) => read(subjectPage({ share: '', main: wrap(`<img alt="a" ${attrs}>`) })).pictures.filter(p => p.from === 'img').map(p => p.url.replace('https://lived.ae', ''));
   it.each([
@@ -227,7 +271,7 @@ describe('which pictures the page ties to the subject', () => {
   const page = (o: Parameters<typeof subjectPage>[0]) => read(subjectPage(o));
   it('structured data of that entity first, then alt text that names it and nothing else; never a share image', () => {
     const p = page({ share: '/wasl-card.png', ld: [{ '@type': 'Place', name: 'Wasl 611', image: '/ld-wasl.jpg' }, { '@type': 'Place', name: 'Wasl 611 Tower B', image: '/ld-tower-b.jpg' }, { '@type': 'Product', image: '/ld-unnamed.jpg' }],
-      main: '<img src="/other.jpg" alt="Property thumbnail 1"><img src="/gate.jpg" alt="Front gate of WASL-611, Al Warsan"><img src="/alt-wasl.jpg" alt="Exterior view of WASL-611"><img src="/ld-wasl.jpg" alt="Wasl 611">' });
+      main: '<img src="/other.jpg" alt="Property thumbnail 1"><img src="/gate.jpg" alt="Front gate of WASL-611, Al Warsan"><img src="/alt-wasl.jpg" alt="Exterior of WASL-611"><img src="/ld-wasl.jpg" alt="Wasl 611">' });
     expect(subjectPictures(p, 'Wasl 611').map(x => [x.from, x.url.replace('https://lived.ae', '')])).toEqual([['ld', '/ld-wasl.jpg'], ['img', '/alt-wasl.jpg']]);
     // The owner action goes on to everything else on the page: the other structured-data pictures, the share image, the other <img>.
     expect(urls(ownerPictures(p, 'Wasl 611')).map(u => u.replace('https://lived.ae', ''))).toEqual(['/ld-wasl.jpg', '/alt-wasl.jpg', '/ld-tower-b.jpg', '/ld-unnamed.jpg', '/wasl-card.png', '/other.jpg', '/gate.jpg']);
@@ -327,9 +371,9 @@ describe('near misses the rules must reject (architecture §4.4)', () => {
   });
   it('the right page, a share image equal to the home page’s: never tied, though its alt text names the building', () => {
     const page = read(WASL);
-    expect(urls(page.pictures.filter(p => p.from === 'share'))).toEqual([DEFAULT_CARD]);
+    expect(page.shareKeys).toEqual([shareKey(DEFAULT_CARD)]);
     expect(shareImages(HOME, HOME_URL, SITE)).toContain(DEFAULT_CARD);
-    expect(subjectPictures(page, 'Wasl 611').some(p => p.from === 'share')).toBe(false);
+    expect(subjectPictures(page, 'Wasl 611').some(p => p.from === 'share' || p.url === DEFAULT_CARD)).toBe(false);
   });
   it('the right page, a picture on another host', () => {
     const page = read(subjectPage({ share: '', main: '<img src="https://cdn.other.com/wasl-611.jpg" alt="Wasl 611 · photo 1" width="1200" height="800">' }));
