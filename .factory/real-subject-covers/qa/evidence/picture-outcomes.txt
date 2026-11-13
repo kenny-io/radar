@@ -1,0 +1,63 @@
+png 1600x900                                                               ok 1600x900 crop → image/png 1200x628        children: 1  158 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg 1600x900                                                              ok 1600x900 crop → image/png 1200x628        children: 1  155 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+webp 1600x900 (lossy)                                                      ok 1600x900 crop → image/png 1200x628        children: 1  154 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+png under a jpeg header                                                    ok 1600x900 crop → image/png 1200x628        children: 1  152 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg header with parameters and upper case                                 ok 1600x900 crop → image/png 1200x628        children: 1  154 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+portrait 800x1200                                                          ok 800x1200 backdrop → image/png 1200x628    children: 1  180 ms  probe: {"type":"image/png","width":800,"height":1200,"complete":true}
+square 900x900                                                             ok 900x900 backdrop → image/png 1200x628     children: 1  182 ms  probe: {"type":"image/png","width":900,"height":900,"complete":true}
+panorama 4000x700                                                          ok 4000x700 backdrop → image/png 1200x628    children: 1  183 ms  probe: {"type":"image/png","width":4000,"height":700,"complete":true}
+exactly the minimum 600x314                                                ok 600x314 crop → image/png 1200x628         children: 1  151 ms  probe: {"type":"image/png","width":600,"height":314,"complete":true}
+transparent png                                                            ok 1600x900 crop → image/png 1200x628        children: 1  156 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+portrait dark picture (#102030): brightest channel value on the outer 2 px of the cover = 48 (source 16/32/48)
+good png under text/html                                                   not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png under application/octet-stream                                    not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png under image/svg+xml                                               not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png under image/gif                                                   not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png under image/avif                                                  not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png with no content type                                              not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png under "image/png, text/html"                                      not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+good png under image/*                                                     not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+svg under image/png                                                        not_a_picture                                children: 0  0 ms  probe: null
+svg with a png signature glued on                                          not_a_picture                                children: 0  0 ms  probe: null
+gif under image/png                                                        not_a_picture                                children: 0  0 ms  probe: null
+html under image/jpeg                                                      not_a_picture                                children: 0  0 ms  probe: null
+empty body                                                                 not_a_picture                                children: 0  0 ms  probe: null
+FF D8 FF D9                                                                not_a_picture                                children: 0  0 ms  probe: null
+bmp under image/png                                                        not_a_picture                                children: 0  0 ms  probe: null
+avif under image/webp                                                      not_a_picture                                children: 0  0 ms  probe: null
+png cut to 30%                                                             not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":false}
+png missing its last byte                                                  not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":false}
+jpeg cut to 20%                                                            not_a_picture                                children: 0  0 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":false}
+jpeg missing its end marker                                                not_a_picture                                children: 0  0 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":false}
+webp cut to 20%                                                            not_a_picture                                children: 0  0 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":false}
+webp missing its last byte                                                 not_a_picture                                children: 0  0 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":false}
+png header declaring 10000x10000 (97 KB of data)                           too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":10000,"height":10000,"complete":true}
+png header declaring 5001x5000 (just over 25 MP)                           too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":5001,"height":5000,"complete":true}
+png header declaring 10001x100 (one side over)                             too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":10001,"height":100,"complete":true}
+png header declaring 4294967295x4294967295                                 too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":4294967295,"height":4294967295,"complete":true}
+png header declaring 0x0                                                   not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":0,"height":0,"complete":true}
+webp VP8X declaring 16384x16384                                            too_large                                    children: 0  0 ms  probe: {"type":"image/webp","width":16384,"height":16384,"complete":true}
+webp with the animation flag                                               not_a_picture                                children: 0  0 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true,"animated":true}
+png: IHDR and IEND, no IDAT (the reported crash)                           not_a_picture                                children: 1  138 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: IDAT is not a zlib stream                                             ok 1600x900 crop → image/png 1200x628        children: 1  161 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: IDAT holds 10 rows of 900                                             ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: bad IHDR checksum                                                     not_a_picture                                children: 1  134 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: bit depth 3 (invalid)                                                 not_a_picture                                children: 1  138 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: 5000x5000 declared, valid, 25 MP of zeros (the largest allowed)       ok 5000x5000 backdrop → image/png 1200x628   children: 1  203 ms  probe: {"type":"image/png","width":5000,"height":5000,"complete":true}
+png: random bytes between a good header and IEND                           not_a_picture                                children: 1  134 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg: frame header then the end marker, no scan                            not_a_picture                                children: 1  131 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+jpeg: frame header, garbage, end marker                                    not_a_picture                                children: 1  141 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+jpeg: two frame headers (small first, 60000x60000 second)                  not_a_picture                                children: 1  136 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+jpeg: good file with its scan data zeroed                                  ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+webp: VP8X header and nothing else                                         not_a_picture                                children: 1  135 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: VP8L signature then garbage                                          ok 1600x900 crop → image/png 1200x628        children: 1  164 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: VP8 key frame header then garbage                                    not_a_picture                                children: 1  131 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: VP8X says 1600x900, the picture inside is 700x400                    not_a_picture                                children: 1  133 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: animation frames without the animation flag                          not_a_picture                                children: 1  140 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: riff length shorter than the file (bytes after the end)              ok 1600x900 crop → image/png 1200x628        children: 1  161 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: VP8X says 1000x700, picture inside is 6000x6000 (36 MP)              not_a_picture                                children: 1  145 ms  probe: {"type":"image/webp","width":1000,"height":700,"complete":true}
+jpeg 400x700 with EXIF orientation 6                                       ok 700x400 crop → image/png 1200x628         children: 1  162 ms  probe: {"type":"image/jpeg","width":400,"height":700,"complete":true}
+child options: env keys ["PATH","NODE_ENV"], stdio ["pipe","pipe","ignore"], cwd is the process cwd: true
+large noise picture: source 7653903 bytes 1700x1500; cover 1536764 bytes; 222 ms
+ten concurrent pictures: 1427 ms in all, most children alive at once: 1
+hung child: refused after 20041 ms, child process gone: true; the picture queued behind it waited 20235 ms in all

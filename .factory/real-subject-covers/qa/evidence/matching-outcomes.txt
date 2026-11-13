@@ -1,0 +1,46 @@
+control: exact page, structured-data picture                                                     picture: https://stays.test/media/hh.png                searched: true  requests: 4 
+control: exact page, alt-text picture                                                            picture: https://stays.test/media/hh.png                searched: true  requests: 4 
+§4.4: Wasl 61 against wasl-611-al-warsan                                                         picture: null                                           searched: true  requests: 2 
+§4.4: Wasl 611 against a page whose h1 is Wasl 611 Tower B                                       picture: null                                           searched: true  requests: 3 
+§4.4: Marina Tower against princess-tower-dubai-marina                                           picture: null                                           searched: true  requests: 2 
+§4.4: Princess Tower against /property/marina-tower                                              picture: null                                           searched: true  requests: 2 
+§4.4: a blog post: /blog/why-wasl-611-is-popular                                                 picture: null                                           searched: true  requests: 2 
+§4.4: a blog post: /blog/wasl-611-review                                                         picture: null                                           searched: true  requests: 2 
+§4.4: Dubai Marina against /blog/dubai-marina-vs-jbr                                             picture: null                                           searched: true  requests: 2 
+§4.4: right page, picture alt "Property thumbnail 1"                                             picture: null                                           searched: true  requests: 3 
+§4.4: right page, og:image equal to the home page’s                                              picture: null                                           searched: true  requests: 4 
+§4.4: right page, picture on cdn.other.com                                                       picture: null                                           searched: true  requests: 3 
+§4.4: a page with JSON-LD ItemList                                                               picture: null                                           searched: true  requests: 3 
+§4.4: a page with JSON-LD CollectionPage                                                         picture: null                                           searched: true  requests: 3 
+§4.4: picture alt "Illustration of Wasl 611"                                                     picture: null                                           searched: true  requests: 3 
+Q1 right page; its own photo has a generic alt; a "similar places" card below is alt "Harbour House Annex · photo 1" picture: https://stays.test/media/annex.png             searched: true  requests: 4   <-- QA expected null
+Q2 right page; its photo alt is "View from Harbour House of the old mill"                        picture: https://stays.test/media/mill.png              searched: true  requests: 4   <-- QA expected null
+Q3 only the Annex page exists; its <title> is "Harbour House - Annex | Stays", h1 "Harbour House Annex" picture: https://stays.test/media/annex.png             searched: true  requests: 4   <-- QA expected null
+Q4 only the Annex page exists; its <title> is "Harbour House, Annex wing"                        picture: https://stays.test/media/annex.png             searched: true  requests: 4   <-- QA expected null
+Q5 a blog post outside /blog/: /harbour-house-review, <title> "Harbour House: our honest review", no og:type picture: https://stays.test/media/chart.png             searched: true  requests: 4   <-- QA expected null
+Q6 right page; no picture of its own; its og:image is the site card /share.png, and the HOME page has a different card picture: https://stays.test/share.png                   searched: true  requests: 5   <-- QA expected null
+Q7 right page; og:image is the site card with a cache-buster the home page does not carry (/og.png?v=2 against /og.png) picture: https://stays.test/og.png?v=2                  searched: true  requests: 5   <-- QA expected null
+Q8 right page on www; og:image is the apex-host card, the www home page names the www card       picture: https://stays.test/og.png                      searched: true  requests: 5   <-- QA expected null
+Q9 an area page (no listing markup): h1 "Dubai Marina", cards alt "Marina Gate 1 — Dubai Marina" picture: https://stays.test/media/gate.png              searched: true  requests: 4   <-- QA expected null
+Q10 right page; structured data names the subject but is a Review of it with the reviewer’s photo picture: https://stays.test/media/reviewer.png          searched: true  requests: 4   <-- QA expected null
+Q11 right page; the tied picture redirects to a CDN                                              picture: null                                           searched: true  requests: 4 
+Q12 the subject is named in the middle of the slug: /places/the-harbour-house                    picture: null                                           searched: true  requests: 2 
+Q13 numbers: subject "Tower 1", page /towers/tower-10 titled "Tower 1 0"                         picture: null                                           searched: true  requests: 2 
+Q14 numbers: subject "Wasl 611", page /property/wasl-611-2 (a second listing) h1 "Wasl 611 (2)"  picture: null                                           searched: true  requests: 3 
+Q15 robots.txt disallows the page for RadarBot                                                   picture: null                                           searched: true  requests: 2 
+Q16 robots.txt disallows the picture folder                                                      picture: null                                           searched: true  requests: 3 
+Q17 the page is og:type article                                                                  picture: null                                           searched: true  requests: 3 
+Q18 a tag archive: /tag/harbour-house, h1 "Harbour House"                                        picture: https://stays.test/media/post.png              searched: true  requests: 4   <-- QA expected null
+Q19 control: the right page listed in the sitemap with a query string                            picture: https://stays.test/media/hh.png                searched: true  requests: 4 
+Q20 right page; photos on a CDN; og:image is a per-page generated title card (/places/harbour-house/opengraph-image?3f2a), home has its own (/opengraph-image?91bc) picture: https://stays.test/places/harbour-house/opengraph-image?3f2a searched: true  requests: 5   <-- QA expected null
+Q21 right page; a carousel card alt "Harbour House Annex" comes BEFORE the place’s own photo alt "Harbour House · photo 1" picture: https://stays.test/media/annex.png             searched: true  requests: 4   <-- QA expected https://stays.test/media/hh.png
+Q22 both pages exist; the right page’s only photo is on a CDN; the Annex page is titled "Harbour House - Annex | Stays" picture: https://stays.test/media/annex.png             searched: true  requests: 5   <-- QA expected null
+Q23 control: the stub site’s own near miss: Annex page titled "Harbour House Annex — Stays"      picture: null                                           searched: true  requests: 3 
+every request throws                                                                             picture: null                                           searched: true  requests: 2 
+garbage everywhere                                                                               picture: null                                           searched: true  requests: 2 
+slow site, 1.5 s budget (took 1504 ms)                                                           picture: null                                           searched: false requests: 3 
+sitemap index of 50 and redirect chains                                                          picture: null                                           searched: false requests: 10 
+sitemap of 60,000 addresses (3.8 MB), took 491 ms                                                picture: null                                           searched: false requests: 4 
+subject "W1"                                                                                     picture: null                                           searched: true  requests: 0 
+tied picture answers 502                                                                         picture: null                                           searched: false requests: 4 
+crawl_pages: id-style address /p/12345 found by its crawled h1; requests: /robots.txt, /p/12345, /media/hh.png

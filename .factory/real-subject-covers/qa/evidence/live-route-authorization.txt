@@ -1,0 +1,6 @@
+viewer, own business         403 
+viewer, switch back           403 
+outsider on this business    404 
+outsider, own biz, this entry 404 
+owner on the other business  404 
+no session                   401
