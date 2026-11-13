@@ -1,6 +1,7 @@
 // Article drafting (02-system.md §7): research first (web search + the user's own pages + Search Console), then stream
 // the article with the writing model, map every statistic to a source, never invent statistics, read the finished text
-// for what its pictures should show, then render the hero and the body images.
+// for what its pictures should show, look for a real picture of the article's subject on the business's own site, then
+// render the hero (when no real picture is the cover) and the body images.
 import { RadarError } from '@/server/errors';
 import { z } from 'zod';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -11,12 +12,13 @@ import { normKw, topQueries } from '../gsc/metrics';
 import { fmtN, slugify } from '@/lib/format';
 import { blockText, defaultArticle, extractClaims, normNum, parseBlocks, splitStream, statNumbers } from '@/features/article/blocks';
 import { tokens } from '../calendar/research';
-import { coverDirectionIsOwners, withCover } from '@/lib/articleImages';
+import { coverDirectionIsOwners, realCoverOf, withCover } from '@/lib/articleImages';
 import type { Article, ArticleBodyImage, Block, CalendarEntry, Profile, Source } from '@/lib/types';
 import type { JobCtx } from '../../jobs/queue';
 import './stubs';
 import { generateArticleBodyImages } from './bodyImages';
 import { resolveImageDirections } from './imageDirections';
+import { AUTO_KINDS, REAL_COVER_RETRY_MS, findSubjectPicture, realCoverKey, storeRealCover } from '../realCover';
 
 const MARKS = /\s*\[\d{1,2}\]/g;
 const ResearchOut = z.object({ sources: z.array(z.object({ title: z.string(), url: z.string(), use: z.string(), notes: z.array(z.string()) })) });
@@ -187,7 +189,36 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
   const next: Partial<Article['img']> = adopt ? { prompt: dir.cover.prompt, promptBy: 'radar', ...(a.img.altBy !== 'owner' && (a.generated || !a.img.alt) ? { alt: dir.cover.alt } : {}) } : {};
   const render = !hadCover || (adopt && modelStyle);
   const strict = !!img.modelRequired || hadCover; // an existing picture is never replaced by a template
-  if (render) {
+
+  // A real picture of the subject, from the business's own site, is the cover when Radar is sure of one. A real cover
+  // that is already there is kept, whoever chose it. Radar does not look when a person chose a generated cover (their
+  // own direction, a required model, or a switch back from a real picture), when the article has no building, place
+  // or product as its subject, or when the same search found nothing in the last week. The search never throws.
+  const kept = realCoverOf(a.img);
+  let real = !!kept;
+  let miss = a.realCoverMiss || null;
+  const subject = dir.source === 'ai' && dir.subject && AUTO_KINDS.includes(dir.subject.kind) ? dir.subject : null;
+  if (kept) {
+    // Nothing is rendered. Radar's direction is kept current for the generated cover a switch back would make.
+    img = { ...img, urlKey: key, ...(owners ? {} : { prompt: dir.cover.prompt, promptBy: 'radar' as const }) };
+    miss = null;
+  } else if (subject && profile.domain && !owners && !a.img.modelRequired && !a.img.noReal) {
+    const missKey = realCoverKey(subject.name, profile.domain);
+    const fresh = miss?.key === missKey && Date.now() - new Date(miss.at).getTime() < REAL_COVER_RETRY_MS;
+    if (!fresh) {
+      try {
+        const found = await findSubjectPicture({ bid, domain: profile.domain, subject });
+        if (found.picture) {
+          // The alt names the subject and makes no claim about what kind of picture it is; an alt a person wrote is kept.
+          img = await storeRealCover(bid, { ...img, prompt: dir.cover.prompt, promptBy: 'radar' }, found.picture, 'radar', { subject: subject.name, alt: fit(subject.name, 200) });
+          real = true; miss = null;
+        } else if (found.searched) miss = { key: missKey, at: new Date().toISOString() };
+      } catch (err: any) { console.error('[draft] real cover left out', err?.message); } // storage failed after a find: a generated cover instead
+    }
+  }
+
+  if (real) { /* the cover is a real picture: no image is generated */ }
+  else if (render) {
     try {
       img = withCover({ ...img, ...next }, await renderImageFile({ bid, style: img.style, brand: profile.brand, headline: e.title, name, seed: img.seed, prompt: next.prompt ?? img.prompt, literal: (next.promptBy ?? img.promptBy) === 'radar', modelRequired: strict, w: 1200, h: 628, kind: 'hero' }));
     } catch (err: any) {
@@ -209,9 +240,9 @@ export async function draftArticle(ctx: JobCtx<DraftPayload>, e: CalendarEntry, 
     issue = err?.code === 'image_unavailable' ? 'unavailable' : 'failed';
   }
   const now = new Date().toISOString();
-  const { bodyImagesIssue: _previous, ...kept } = a;
+  const { bodyImagesIssue: _previous, realCoverMiss: _searched, ...rest } = a;
   // bodyImagesGeneratedAt is set either way: it also keeps an older failed body-image job from showing as the current error.
-  return { ...kept, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: now, imageDirections: dir, ...(issue ? { bodyImagesIssue: { reason: issue, at: now } } : {}), sources, claims, draftedAt: now };
+  return { ...rest, generated: true, body, seo, img, bodyImages, bodyImagesGeneratedAt: now, imageDirections: dir, ...(issue ? { bodyImagesIssue: { reason: issue, at: now } } : {}), ...(miss ? { realCoverMiss: miss } : {}), sources, claims, draftedAt: now };
 }
 
 interface Bad { block: number; item: number | null; sentence: string }

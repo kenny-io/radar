@@ -12,6 +12,9 @@ vi.mock('../../db', () => {
 vi.mock('../../ai', () => ({ ai: { run: H.run }, profileContext: () => 'BUSINESS PROFILE' }));
 vi.mock('../images', () => ({ renderImageFile: H.file, renderImage: vi.fn(), defaultArticleImageStyle: () => H.defaultStyle, MODEL_STYLES: ['editorial', 'flat', 'render3d', 'handdrawn', 'photography', 'illustration'] }));
 vi.mock('./bodyImages', () => ({ generateArticleBodyImages: H.body }));
+// This file is about generated covers. Its scripted article has a building as its subject, so without this every draft
+// here would start a search of the business's site for a real picture (draft.realCover.test.ts covers that).
+vi.mock('../realCover', async original => ({ ...(await original<typeof import('../realCover')>()), findSubjectPicture: vi.fn(async () => ({ picture: null, searched: false })), storeRealCover: vi.fn() }));
 vi.mock('../gsc/metrics', () => ({ normKw: (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim(), topQueries: async () => [] }));
 vi.mock('../calendar/research', () => ({ tokens: (s: string) => s.toLowerCase().split(/\W+/).filter(word => word.length > 2) }));
 
