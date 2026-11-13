@@ -27,9 +27,14 @@ describe('an image edit sends only the field the person changed', () => {
   });
   it('clearing a field is an edit and is sent; fields only the server sets are never sent', () => {
     expect(edit({ ...stale, img: { ...stale.img, alt: 'Old' } }, { img: { alt: '' } }).patch).toEqual({ img: { alt: '' } });
-    const forged = edit(stale, { img: { alt: 'A', url: 'https://example.test/x.png', seed: 9, promptBy: 'radar', placeholder: null } as any });
+    const record = { by: 'owner', url: 'https://example.test/x.png', page: null, src: 'https://example.test/x.png', at: '2026-11-13T00:00:00.000Z', w: 1600, h: 900, fit: 'crop' };
+    const forged = edit(stale, { img: { alt: 'A', url: 'https://example.test/x.png', seed: 9, promptBy: 'radar', placeholder: null, real: record, noReal: true } as any });
     expect(forged.patch).toEqual({ img: { alt: 'A' } });
+    expect(forged.key).toBe('art:e1:img.alt');
     expect(edit(stale, { img: { seed: 9 } }).patch).toEqual({});
+    // The real-picture record and the mark that a person switched back are the server's: on their own they send nothing.
+    expect(edit(stale, { img: { real: record, noReal: true } as any }).patch).toEqual({});
+    expect(edit(stale, { img: { real: null } }).patch).toEqual({});
   });
   it('several image fields changed in one edit travel together under one key', () => {
     const { key, patch } = edit(stale, { img: { alt: 'A', style: 'photography', prompt: 'P' } });
@@ -83,8 +88,18 @@ describe('everything else is sent as before', () => {
 });
 
 describe('the hint under "Describe your image"', () => {
+  const picture = 'Not used while your cover is a picture from your site. It describes the generated cover you’d get instead, and your own wording also guides body images.';
   it('before the first draft says Radar will write it when it drafts; afterwards that Radar wrote it', () => {
     expect(coverDirectionHint(false)).toBe('Radar writes this from your article when it drafts it. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject.');
     expect(coverDirectionHint(true)).toBe('Radar writes this from your article. Edit it to describe the cover you want: your wording is used as written and also guides body images. Generated pictures are illustrations and may differ from the real subject.');
+  });
+  it('without a real cover the second argument changes nothing', () => {
+    expect(coverDirectionHint(true, false)).toBe(coverDirectionHint(true));
+    expect(coverDirectionHint(false, false)).toBe(coverDirectionHint(false));
+  });
+  it('with a picture from the site as the cover, says the direction is not used now and what it is still for', () => {
+    expect(coverDirectionHint(true, true)).toBe(picture);
+    // Drafted or not, the picture is what is on screen: the real cover decides the hint.
+    expect(coverDirectionHint(false, true)).toBe(picture);
   });
 });
