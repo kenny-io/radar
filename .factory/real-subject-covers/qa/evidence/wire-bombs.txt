@@ -6,3 +6,7 @@
 /br-bomb: too_large in 16 ms, resident memory grew 20 MB (compressed size on the wire: 57123 bytes)
 /gzip-bomb: too_large in 14 ms, resident memory grew 24 MB (compressed size on the wire: 305779 bytes)
 /br-bomb: too_large in 16 ms, resident memory grew 20 MB (compressed size on the wire: 57123 bytes)
+/gzip-bomb: too_large in 14 ms, resident memory grew 23 MB (compressed size on the wire: 305779 bytes)
+/br-bomb: too_large in 18 ms, resident memory grew 20 MB (compressed size on the wire: 57123 bytes)
+/gzip-bomb: too_large in 18 ms, resident memory grew 26 MB (compressed size on the wire: 305779 bytes)
+/br-bomb: too_large in 18 ms, resident memory grew 17 MB (compressed size on the wire: 57123 bytes)

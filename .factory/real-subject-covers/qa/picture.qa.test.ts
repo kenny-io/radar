@@ -108,19 +108,19 @@ describe('files that pass the header checks and reach the decoder: always an ans
   const sof = (w: number, h: number) => Buffer.concat([Buffer.from([0xff, 0xc0, 0x00, 0x11, 0x08]), Buffer.from([h >> 8, h & 255, w >> 8, w & 255]), Buffer.from([0x03, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1])]);
   const cases: [string, () => Buffer, string, RegExp][] = [
     ['png: IHDR and IEND, no IDAT (the reported crash)', () => Buffer.concat([SIG, ihdr(1600, 900), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^not_a_picture$/],
-    ['png: IDAT is not a zlib stream', () => Buffer.concat([SIG, ihdr(1600, 900), chunk('IDAT', Buffer.alloc(4000, 0x41)), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^not_a_picture$/],
-    ['png: IDAT holds 10 rows of 900', () => Buffer.concat([SIG, ihdr(1600, 900, 8, 0), chunk('IDAT', zlib.deflateSync(Buffer.alloc(1601 * 10))), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^(not_a_picture|ok .*)$/],
+    ['png: IDAT is not a zlib stream (decodes all white)', () => Buffer.concat([SIG, ihdr(1600, 900), chunk('IDAT', Buffer.alloc(4000, 0x41)), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^blank_picture$/], // round 3: blank has its own code (D23)
+    ['png: IDAT holds 10 rows of 900 (decodes all black)', () => Buffer.concat([SIG, ihdr(1600, 900, 8, 0), chunk('IDAT', zlib.deflateSync(Buffer.alloc(1601 * 10))), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^blank_picture$/], // round 3: was loose in round 1, now must be refused as blank
     ['png: bad IHDR checksum', () => { const b = png(1600, 900); const c = Buffer.from(b); c[29] ^= 0xff; return c; }, 'image/png', /^(not_a_picture|ok .*)$/],
     ['png: bit depth 3 (invalid)', () => Buffer.concat([SIG, ihdr(1600, 900, 3, 6), chunk('IDAT', zlib.deflateSync(Buffer.alloc(1000))), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^not_a_picture$/],
     ['png: 5000x5000 declared, valid, 25 MP grey ramp (the largest allowed)', () => rampPng(5000, 5000), 'image/png', /^ok 5000x5000 backdrop/],
-    ['png: 5000x5000 declared, valid, 25 MP of zeros (one flat colour: refused since D18)', () => flatPng(5000, 5000), 'image/png', /^not_a_picture$/],
+    ['png: 5000x5000 declared, valid, 25 MP of zeros (one flat colour: refused since D18)', () => flatPng(5000, 5000), 'image/png', /^blank_picture$/],
     ['png: random bytes between a good header and IEND', () => Buffer.concat([SIG, ihdr(1600, 900), Buffer.from(Array.from({ length: 5000 }, (_, i) => (i * 131 + 7) % 256)), chunk('IEND', Buffer.alloc(0))]), 'image/png', /^not_a_picture$/],
     ['jpeg: frame header then the end marker, no scan', () => Buffer.concat([Buffer.from([0xff, 0xd8]), sof(1600, 900), Buffer.from([0xff, 0xd9])]), 'image/jpeg', /^not_a_picture$/],
     ['jpeg: frame header, garbage, end marker', () => Buffer.concat([Buffer.from([0xff, 0xd8]), sof(1600, 900), Buffer.alloc(3000, 0x55), Buffer.from([0xff, 0xd9])]), 'image/jpeg', /^not_a_picture$/],
     ['jpeg: two frame headers (small first, 60000x60000 second)', () => { const b = jpeg(1600, 900); const at = b.indexOf(Buffer.from([0xff, 0xda])); return Buffer.concat([b.subarray(0, at), sof(60000, 60000), b.subarray(at)]); }, 'image/jpeg', /^(not_a_picture|ok 1600x900.*)$/],
-    ['jpeg: good file with its scan data zeroed', () => { const b = Buffer.from(jpeg(1600, 900)); const at = b.indexOf(Buffer.from([0xff, 0xda])); b.fill(0, at + 14, b.length - 2); return b; }, 'image/jpeg', /^(not_a_picture|ok .*)$/],
+    ['jpeg: good file with its scan data zeroed', () => { const b = Buffer.from(jpeg(1600, 900)); const at = b.indexOf(Buffer.from([0xff, 0xda])); b.fill(0, at + 14, b.length - 2); return b; }, 'image/jpeg', /^blank_picture$/], // decodes all grey; round 3: must be refused as blank
     ['webp: VP8X header and nothing else', () => riff(vp8x(1600, 900)), 'image/webp', /^not_a_picture$/],
-    ['webp: VP8L signature then garbage', () => { const d = Buffer.alloc(400, 0x5a); d[0] = 0x2f; d.writeUInt32LE((1599) | (899 << 14), 1); return riff(rchunk('VP8L', d)); }, 'image/webp', /^not_a_picture$/],
+    ['webp: VP8L signature then garbage', () => { const d = Buffer.alloc(400, 0x5a); d[0] = 0x2f; d.writeUInt32LE((1599) | (899 << 14), 1); return riff(rchunk('VP8L', d)); }, 'image/webp', /^blank_picture$/], // decodes fully transparent
     ['webp: VP8 key frame header then garbage', () => { const d = Buffer.alloc(400, 0x5a); d[0] = 0x10; d[3] = 0x9d; d[4] = 0x01; d[5] = 0x2a; d.writeUInt16LE(1600, 6); d.writeUInt16LE(900, 8); return riff(rchunk('VP8 ', d)); }, 'image/webp', /^not_a_picture$/],
     ['webp: VP8X says 1600x900, the picture inside is 700x400', () => riff(Buffer.concat([vp8x(1600, 900), inner(webp(700, 400))])), 'image/webp', /^(not_a_picture|too_small|ok 700x400.*)$/],
     ['webp: animation frames without the animation flag', () => riff(Buffer.concat([vp8x(1600, 900, 0), anim()])), 'image/webp', /^not_a_picture$/],
@@ -158,7 +158,7 @@ describe('round 2, D18: a picture that decodes blank is refused; a real picture 
     ['a grey lazy-load stand-in, 1600x900 (#eeeeee)', () => out(solid(1600, 900, '#eeeeee')), 'image/png'],
     ['two colours 7 apart (#808080 and #878787), halves', () => { const m = solid(1600, 900, '#808080'); m.g.fillStyle = '#878787'; m.g.fillRect(800, 0, 800, 900); return out(m); }, 'image/png'],
   ];
-  it.each(blank)('refused: %s', async (name, make, type) => { const r = await outcome('D18 blank: ' + name, make(), type); expect(r.out).toBe('not_a_picture'); });
+  it.each(blank)('refused: %s', async (name, make, type) => { const r = await outcome('D18 blank: ' + name, make(), type); expect(r.out).toBe('blank_picture'); }); // round 3: the decided code (D23)
 
   // Real pictures that are mostly one colour. Each is something a business would have on its site.
   const real: [string, () => Buffer][] = [
@@ -179,6 +179,36 @@ describe('round 2, D18: a picture that decodes blank is refused; a real picture 
     const r = await outcome('D18 real picture: ' + name, make());
     lines[lines.length - 1] += r.out.startsWith('ok') ? '' : '   <-- a real picture refused as blank';
     expect.soft(r.out, name).toMatch(/^ok /);
+  });
+});
+
+describe('round 3, D23: the blank check at 512 px', () => {
+  const white = (w: number, h: number, draw: (g: any) => void) => { const c = createCanvas(w, h); const g = c.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); g.fillStyle = '#1b1b1b'; draw(g); return c.toBuffer('image/png'); };
+  it.each([
+    ['horizontal bar 900x10', (g: any, k: number) => g.fillRect(350, 400 + k * 3, 900, 10)],
+    ['vertical bar 10x700', (g: any, k: number) => g.fillRect(700 + k * 5, 100, 10, 700)],
+    ['square 36x36', (g: any, k: number) => g.fillRect(700 + k * 5, 400 + k * 3, 36, 36)],
+    ['horizontal hairline 900x3', (g: any, k: number) => g.fillRect(350, 400 + k, 900, 3)],
+    ['square 12x12', (g: any, k: number) => g.fillRect(700 + k, 400 + k, 12, 12)],
+  ] as const)('one %s on white is accepted at all twelve positions', async (name, draw) => {
+    let refused = 0;
+    for (let k = 0; k < 12; k++) { try { await readPicture(res(white(1600, 900, g => draw(g, k)))); } catch { refused++; } }
+    lines.push(`D23 thin object: ${name}: refused in ${refused} of 12 positions`);
+    expect(refused).toBe(0);
+  });
+  it('recorded: the same thin objects in a 4800x2700 source (three times the size; the cover shows them a third as thick)', async () => {
+    for (const [name, draw] of [['bar 2700x30', (g: any, k: number) => g.fillRect(1050, 1200 + k * 9, 2700, 30)], ['bar 2700x9', (g: any, k: number) => g.fillRect(1050, 1200 + k * 3, 2700, 9)]] as const) {
+      let refused = 0;
+      for (let k = 0; k < 6; k++) { try { await readPicture(res(white(4800, 2700, g => draw(g, k)))); } catch { refused++; } }
+      lines.push(`D23 thin object in a 4800x2700 source: ${name}: refused in ${refused} of 6 positions (recorded only)`);
+    }
+  });
+  it('a picture refused for another reason keeps its own code', async () => {
+    expect((await outcome('round 3: truncated png', png(1600, 900).subarray(0, 2000))).out).toBe('not_a_picture');
+    expect((await outcome('round 3: flat but too small (300x200)', (() => { const c = createCanvas(300, 200); const g = c.getContext('2d'); g.fillStyle = '#336699'; g.fillRect(0, 0, 300, 200); return c.toBuffer('image/png'); })())).out).toBe('too_small');
+    expect((await outcome('round 3: flat and declared 10000x10000', flatPng(10000, 10000))).out).toBe('too_large');
+    expect((await outcome('round 3: flat png under text/html', (() => { const c = createCanvas(1600, 900); const g = c.getContext('2d'); g.fillStyle = '#336699'; g.fillRect(0, 0, 1600, 900); return c.toBuffer('image/png'); })(), 'text/html')).out).toBe('not_a_picture');
+    expect((await outcome('round 3: IHDR and IEND, no IDAT', Buffer.concat([SIG, ihdr(1600, 900), chunk('IEND', Buffer.alloc(0))]))).out).toBe('not_a_picture');
   });
 });
 

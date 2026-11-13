@@ -92,3 +92,21 @@ C5  owner action on an article with no subject (e_rcqa_one):
       Use a generated cover instead → toast "Cover image generated"; notice gone.
 C6  console: one expected 422. Web server log: no failure report. Worker log: 3 failure reports, not read before the log was removed
     (in round 1 the worker's reports were the existing "body images left out … unavailable" ones, one per stub draft; three drafts ran here).
+
+==== Round 3, revision 9e7683c6, 2026-11-13 ====
+Same setup (http://127.0.0.1:3231, stub mode, fresh radar_qa_app, built-in browser pane, 1280x900, synthetic Owner). No client file changed.
+
+E1  automatic, "Living at Harbour House: what to expect", Draft now: cover is the Harbour House stub picture; notice "Radar found this picture of
+    Harbour House on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house. …"; alt "Harbour House";
+    database real.by radar, src /media/harbour-house.png.
+E2  owner action on an article with no subject (e_rcqa_one):
+      …/places/harbour-house           → toast "Cover set to the picture from your site"; notice with the page as source; alt "Harbour House · photo 1"
+      /media/broken.png                → inline, no toast: "That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP."; cover unchanged
+      /media/harbour-house-annex.png   → toast; notice source harbour-stays-qa.test/media/harbour-house-annex.png; alt is the article title
+      Use a generated cover instead    → toast "Cover image generated"; notice gone; Generate from prompt and Regenerate back; database noReal true
+E3  the blank-picture message was NOT seen in the browser: the stub site serves no blank picture (its files are the three place pictures, portrait,
+    tiny, too-large, broken and page). It was checked through the real route instead, with QA's wrapper around the stub site answering a 1600x900
+    PNG of one flat colour for /media/qa-blank.png: 422 blank_picture "That picture looks blank, so Radar didn’t use it. Try another one."
+    (action-outcomes.txt). The panel shows the server's message for this field verbatim, as E2's second line shows for another code.
+E4  console: one expected 422. Web server log: no failure report. Worker log: one failure report, the existing image.generate
+    "Image generation is unavailable right now" for the draft's body images (stub mode has no image model).

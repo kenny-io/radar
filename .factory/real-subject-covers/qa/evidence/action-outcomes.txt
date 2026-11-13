@@ -1,4 +1,4 @@
-page address: 200; requests to the stub site: /places/harbour-house, /media/harbour-house.png; stored 7735 bytes; record {"h":900,"w":1600,"at":"2026-11-13T17:16:18.900Z","by":"owner","fit":"crop","src":"/media/harbour-house.png","url":"<stored>","page":"/places/harbour-house"}
+page address: 200; requests to the stub site: /places/harbour-house, /media/harbour-house.png; stored 7735 bytes; record {"h":900,"w":1600,"at":"2026-11-13T17:36:03.192Z","by":"owner","fit":"crop","src":"/media/harbour-house.png","url":"<stored>","page":"/places/harbour-house"}
 not your site                            400 not_your_site    That address isn’t on <domain>. Radar only uses pictures from your own site.
 look-alike host                          400 not_your_site    That address isn’t on <domain>. Radar only uses pictures from your own site.
 a port                                   400 invalid_address  Enter the address of a page or picture on <domain>.
@@ -12,6 +12,7 @@ svg logo                                 422 not_a_picture    That address isn�
 css file                                 422 not_a_picture    That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP.
 missing page                             422 unreachable      Radar couldn’t reach that address. Check it and try again.
 html behind a picture name               422 no_picture       Radar couldn’t find a picture it can use on that page. Try the address of the picture itself.
+round 3: a blank picture (served by the QA wrapper) 422 blank_picture    That picture looks blank, so Radar didn’t use it. Try another one.
 viewer 403; stranger 404; signed out 401; other owner with this entry id 404/404; other owner on this business 404
 locked: status scheduled, remote null → 409 article_locked
 locked: status scheduled, remote {"id":"remote-0"} → 409 article_locked

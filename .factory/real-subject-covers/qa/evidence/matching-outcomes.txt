@@ -40,7 +40,7 @@ every request throws                                                            
 garbage everywhere                                                                               picture: null                                           searched: true  requests: 2 
 slow site, 1.5 s budget (took 1504 ms)                                                           picture: null                                           searched: false requests: 3 
 sitemap index of 50 and redirect chains                                                          picture: null                                           searched: false requests: 10 
-sitemap of 60,000 addresses (3.8 MB), took 513 ms                                                picture: null                                           searched: false requests: 4 
+sitemap of 60,000 addresses (3.8 MB), took 463 ms                                                picture: null                                           searched: false requests: 4 
 subject "W1"                                                                                     picture: null                                           searched: true  requests: 0 
 tied picture answers 502                                                                         picture: null                                           searched: false requests: 4 
 crawl_pages: id-style address /p/12345 found by its crawled h1; requests: /robots.txt, /p/12345, /media/hh.png
@@ -65,30 +65,39 @@ alt A9 "Not Harbour House"                                                      
 alt A10 "Illustration of Harbour House"                                                          picture: null                                           searched: true  requests: 3 
 alt A11 "Map of Harbour House"                                                                   picture: null                                           searched: true  requests: 3 
 alt A12 "Harbour House logo"                                                                     picture: null                                           searched: true  requests: 3 
-alt A13 "Harbour House View" (another place)                                                     picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
-alt A14 "Harbour House Gallery" (another place)                                                  picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
-alt A15 "Main Street Cafe" for "Street Cafe"                                                     picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
-alt A16 "Harbour House Building 2" (another building)                                            picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
-alt A17 "1 Hyde Park" (a tower) on the page of "Hyde Park"                                       picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
-alt A18 "Park View" on the page of "Park" (4 letters)                                            picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
+alt A13 "Harbour House View" (another place)                                                     picture: null                                           searched: true  requests: 3 
+alt A14 "Harbour House Gallery" (another place)                                                  picture: null                                           searched: true  requests: 3 
+alt A15 "Main Street Cafe" for "Street Cafe"                                                     picture: null                                           searched: true  requests: 3 
+alt A16 "Harbour House Building 2" (another building)                                            picture: null                                           searched: true  requests: 3 
+alt A17 "1 Hyde Park" (a tower) on the page of "Hyde Park"                                       picture: null                                           searched: true  requests: 3 
+alt A18 "Park View" on the page of "Park" (4 letters)                                            picture: null                                           searched: true  requests: 3 
 alt A19 control "Harbour House"                                                                  picture: /media/other.png                               searched: true  requests: 4 
 alt A20 control "Harbour House · photo 3"                                                        picture: /media/other.png                               searched: true  requests: 4 
-alt A21 control "Exterior view of the Harbour House building"                                    picture: /media/other.png                               searched: true  requests: 4 
-alt A22 control "HARBOUR-HOUSE_main.jpg"-style alt "harbour house main image"                    picture: /media/other.png                               searched: true  requests: 4 
+alt A21 (a control in round 2; ties nothing since D22) "Exterior view of the Harbour House building" picture: null                                           searched: true  requests: 3 
+alt A22 (a control in round 2; ties nothing since D22) "harbour house main image"                picture: null                                           searched: true  requests: 3 
 alt A23 control numbers in the name: "Wasl 611 photo 2" for "Wasl 611"                           picture: /media/other.png                               searched: true  requests: 4 
 alt A24 other language "Foto de Harbour House"                                                   picture: null                                           searched: true  requests: 3 
 alt A25 other language "Vue extérieure de Harbour House"                                         picture: null                                           searched: true  requests: 3 
 alt A26 other language "صورة Harbour House"                                                      picture: null                                           searched: true  requests: 3 
 alt A27 engineer’s stated cost: "Wasl 611 1" (photo number straight after the name)              picture: null                                           searched: true  requests: 3 
+alt A28 engineer’s stated cost: "Wasl 611 – image 12 of 30"                                      picture: null                                           searched: true  requests: 3 
+alt A29 "Photo of 1 Hyde Park" for "Hyde Park"                                                   picture: null                                           searched: true  requests: 3 
+alt A30 "Harbour House front" / cover / hero / gallery words no longer generic: "Harbour House Front" picture: null                                           searched: true  requests: 3 
+alt A31 "Harbour House Cover"                                                                    picture: null                                           searched: true  requests: 3 
+alt A32 "Harbour House Interiors" (a firm; plural is not on the list)                            picture: null                                           searched: true  requests: 3 
+alt A33 control "Exterior of Harbour House"                                                      picture: /media/other.png                               searched: true  requests: 4 
+alt A34 control "An interior photo of the Harbour House"                                         picture: /media/other.png                               searched: true  requests: 4 
+alt A35 control "Harbour House – picture 4"                                                      picture: /media/other.png                               searched: true  requests: 4 
+alt A36 control "Photos: Harbour House"                                                          picture: /media/other.png                               searched: true  requests: 4 
 generic-word subject "The View", own picture                                                     picture: /media/hh.png                                  searched: true  requests: 4 
 generic-word subject "The View", alts "Front view of the building", "The view from the gallery"  picture: null                                           searched: true  requests: 3 
-generic-word subject "The View", neighbour card alt "The View Gallery"                           picture: /media/other.png                               searched: true  requests: 4   <-- QA expected null
+generic-word subject "The View", neighbour card alt "The View Gallery"                           picture: null                                           searched: true  requests: 3 
 S1 og:image, twitter:image and image_src all name a card that differs from the home page’s; no other picture picture: null                                           searched: true  requests: 3 
 S2 per-page generated title card as og:image, photos on a CDN (round-1 Q20)                      picture: null                                           searched: true  requests: 3 
-S3 structured data of the subject gives the SITE DEFAULT card as its image (the same address as the home page’s og:image) picture: /og.png                                        searched: true  requests: 4   <-- QA expected null
-S4 structured data of the subject gives the page’s own generated title card as its image (same address as the page’s og:image) picture: /places/harbour-house/opengraph-image?3f2a     searched: true  requests: 4   <-- QA expected null
-S5 the site default card is also an <img> on the page with alt "Harbour House"                   picture: /og.png                                        searched: true  requests: 4   <-- QA expected null
-S6 control: og:image and structured data both give the place’s real photo                        picture: /media/hh.png                                  searched: true  requests: 4 
+S3 structured data of the subject gives the SITE DEFAULT card as its image (the same address as the home page’s og:image) picture: null                                           searched: true  requests: 3 
+S4 structured data of the subject gives the page’s own generated title card as its image (same address as the page’s og:image) picture: null                                           searched: true  requests: 3 
+S5 the site default card is also an <img> on the page with alt "Harbour House"                   picture: null                                           searched: true  requests: 3 
+S6 control: og:image and structured data both give the place’s real photo                        picture: /media/hh.png                                  searched: true  requests: 5 
 listing path /tag/harbour-house                                                                  picture: null                                           searched: true  requests: 2 
 listing path /tags/harbour-house                                                                 picture: null                                           searched: true  requests: 2 
 listing path /category/harbour-house                                                             picture: null                                           searched: true  requests: 2 
@@ -101,8 +110,9 @@ listing path /archive/harbour-house                                             
 listing path /archives/2026/harbour-house                                                        picture: null                                           searched: true  requests: 2 
 listing path /Tag/harbour-house                                                                  picture: null                                           searched: true  requests: 2 
 listing path /en/category/harbour-house                                                          picture: null                                           searched: true  requests: 2 
-other listing-like path /tagged/harbour-house (recorded only)                                    picture: /media/hh.png                                  searched: true  requests: 4 
-other listing-like path /label/harbour-house (recorded only)                                     picture: /media/hh.png                                  searched: true  requests: 4 
+listing path /tagged/harbour-house                                                               picture: null                                           searched: true  requests: 2 
+listing path /label/harbour-house                                                                picture: null                                           searched: true  requests: 2 
+listing path /labels/harbour-house                                                               picture: null                                           searched: true  requests: 2 
 other listing-like path /collections/harbour-house (recorded only)                               picture: /media/hh.png                                  searched: true  requests: 4 
 other listing-like path /t/harbour-house (recorded only)                                         picture: /media/hh.png                                  searched: true  requests: 4 
 other listing-like path /places/harbour-house/page/2 (recorded only)                             picture: null                                           searched: true  requests: 2 
@@ -113,7 +123,49 @@ D20 robots no answer, sitemap 502                                               
 D20 robots 404, sitemap 404 (a small site with neither file)                                     picture: null                                           searched: true  requests: 2 
 D20 robots 403, sitemap 403 (the site refuses the crawler)                                       picture: null                                           searched: true  requests: 2 
 D20 robots 200 empty, sitemap 200 with other pages                                               picture: null                                           searched: true  requests: 2 
-D20 mixed: robots 200, the sitemap gives no answer (the only list of pages was never read) (recorded only) picture: null                                           searched: true  requests: 2 
-D20 mixed: robots 200, the sitemap answers 503 (recorded only)                                   picture: null                                           searched: true  requests: 2 
-D20 mixed: robots no answer, sitemap 404 (recorded only)                                         picture: null                                           searched: true  requests: 2 
-D20 mixed: robots 200 naming a sitemap on another host only (recorded only)                      picture: null                                           searched: true  requests: 2 
+D24 robots 200, the sitemap gives no answer                                                      picture: null                                           searched: false requests: 2 
+D24 robots 200, the sitemap answers 503                                                          picture: null                                           searched: false requests: 2 
+D24 robots no answer, sitemap 404                                                                picture: null                                           searched: true  requests: 2 
+D24 robots 200 naming a sitemap on another host only; the own-site sitemap gives no answer       picture: null                                           searched: false requests: 2 
+D24 robots 200 naming two own-site sitemaps: the first 503, the second lists other pages         picture: null                                           searched: true  requests: 3 
+D24 sitemap index answers, both child files 503 (recorded only)                                  picture: null                                           searched: true  requests: 4 
+D21 control: real photo is og:image and structured-data image; home page has /og.png             picture: /media/hh.png                                  searched: true  requests: 5 
+D21 home page answers 503                                                                        picture: null                                           searched: false requests: 4 
+D21 home page gives no answer                                                                    picture: null                                           searched: false requests: 4 
+D21 home page answers 404                                                                        picture: null                                           searched: false requests: 4 
+D21 home page is not HTML                                                                        picture: null                                           searched: false requests: 4 
+D21 robots.txt forbids the home page (recorded only)                                             picture: null                                           searched: true  requests: 3 
+card word in the address: /og.png                                                                picture: null                                           searched: true  requests: 3 
+card word in the address: /OG.PNG                                                                picture: null                                           searched: true  requests: 3 
+card word in the address: /og-image.jpg                                                          picture: null                                           searched: true  requests: 3 
+card word in the address: /images/og/harbour-house.png                                           picture: null                                           searched: true  requests: 3 
+card word in the address: /opengraph-image                                                       picture: null                                           searched: true  requests: 3 
+card word in the address: /places/harbour-house/opengraph-image?3f2a                             picture: null                                           searched: true  requests: 3 
+card word in the address: /api/og?title=Harbour%20House                                          picture: null                                           searched: true  requests: 3 
+card word in the address: /social/harbour-house.png                                              picture: null                                           searched: true  requests: 3 
+card word in the address: /uploads/share/hh.png                                                  picture: null                                           searched: true  requests: 3 
+card word in the address: /media/hh-twitter.png                                                  picture: null                                           searched: true  requests: 3 
+card word in the address: /twitter-image.png                                                     picture: null                                           searched: true  requests: 3 
+card word in the address: /static/social_card.png                                                picture: null                                           searched: true  requests: 3 
+card word in the address: /lived-social-preview.png                                              picture: null                                           searched: true  requests: 3 
+card word inside a longer word: /blog-media/hh.png                                               picture: /blog-media/hh.png                             searched: true  requests: 4 
+card word inside a longer word: /shared-house/dogs.png                                           picture: /shared-house/dogs.png                         searched: true  requests: 4 
+card word inside a longer word: /photos/together.png                                             picture: /photos/together.png                           searched: true  requests: 4 
+card word inside a longer word: /catalog/frogs.png                                               picture: /catalog/frogs.png                             searched: true  requests: 4 
+card word inside a longer word: /sharepoint/hh.png                                               picture: /sharepoint/hh.png                             searched: true  requests: 4 
+card word inside a longer word: /media/hh-socialite.png                                          picture: /media/hh-socialite.png                        searched: true  requests: 4 
+card word inside a longer word: /ogden/hh.png                                                    picture: /ogden/hh.png                                  searched: true  requests: 4 
+card word inside a longer word: /twitterati/hh.png                                               picture: /twitterati/hh.png                             searched: true  requests: 4 
+card word inside a longer word: /media/shares.png                                                picture: /media/shares.png                              searched: true  requests: 4 
+card word inside a longer word: /media/og2.png                                                   picture: /media/og2.png                                 searched: true  requests: 4 
+card with no card word, same as the home page’s: /assets/brand-banner.png                        picture: null                                           searched: true  requests: 4 
+card with no card word, same as the home page’s: /ogimage.png                                    picture: null                                           searched: true  requests: 4 
+card with no card word, same as the home page’s: /socialcard.png                                 picture: null                                           searched: true  requests: 4 
+card with no card word, same as the home page’s: /images/preview.png                             picture: null                                           searched: true  requests: 4 
+card with no card word, same as the home page’s: /sharing/hh.png                                 picture: null                                           searched: true  requests: 4 
+card with no card word, same as the home page’s: /seo/card.png                                   picture: null                                           searched: true  requests: 4 
+residual L1 the home page has a DIFFERENT card (/assets/home-hero.png); inner pages share /assets/brand-banner.png as og:image and structured-data image (recorded only) picture: /assets/brand-banner.png                       searched: true  requests: 5 
+residual L2 the home page has no share image at all; the page has the card as og:image and structured-data image (recorded only) picture: /assets/brand-banner.png                       searched: true  requests: 5 
+residual L3 the page has NO share tags; the card is only its structured-data image (the home page has it as og:image) (recorded only) picture: /assets/brand-banner.png                       searched: true  requests: 4 
+residual L4 the card is served through an image optimiser: /_next/image?url=%2Fog.png&w=1200 on the page (og:image and structured data), /og.png on the home page (recorded only) picture: /_next/image?url=%2Fog.png&w=1200              searched: true  requests: 5 
+residual L5 safe-side miss: pictures served as /api/media?id=…: the page’s og:image is ?id=card, its tied photo is ?id=photo, the home page has ?id=card (recorded only) picture: null                                           searched: true  requests: 4 

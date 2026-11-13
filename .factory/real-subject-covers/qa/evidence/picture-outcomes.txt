@@ -1,13 +1,13 @@
-png 1600x900                                                               ok 1600x900 crop → image/png 1200x628        children: 1  154 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-jpeg 1600x900                                                              ok 1600x900 crop → image/png 1200x628        children: 1  153 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-webp 1600x900 (lossy)                                                      ok 1600x900 crop → image/png 1200x628        children: 1  155 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
-png under a jpeg header                                                    ok 1600x900 crop → image/png 1200x628        children: 1  156 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-jpeg header with parameters and upper case                                 ok 1600x900 crop → image/png 1200x628        children: 1  154 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-portrait 800x1200                                                          ok 800x1200 backdrop → image/png 1200x628    children: 1  178 ms  probe: {"type":"image/png","width":800,"height":1200,"complete":true}
-square 900x900                                                             ok 900x900 backdrop → image/png 1200x628     children: 1  180 ms  probe: {"type":"image/png","width":900,"height":900,"complete":true}
-panorama 4000x700                                                          ok 4000x700 backdrop → image/png 1200x628    children: 1  182 ms  probe: {"type":"image/png","width":4000,"height":700,"complete":true}
-exactly the minimum 600x314                                                ok 600x314 crop → image/png 1200x628         children: 1  152 ms  probe: {"type":"image/png","width":600,"height":314,"complete":true}
-transparent png                                                            ok 1600x900 crop → image/png 1200x628        children: 1  153 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png 1600x900                                                               ok 1600x900 crop → image/png 1200x628        children: 1  166 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg 1600x900                                                              ok 1600x900 crop → image/png 1200x628        children: 1  164 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+webp 1600x900 (lossy)                                                      ok 1600x900 crop → image/png 1200x628        children: 1  163 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+png under a jpeg header                                                    ok 1600x900 crop → image/png 1200x628        children: 1  162 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg header with parameters and upper case                                 ok 1600x900 crop → image/png 1200x628        children: 1  167 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+portrait 800x1200                                                          ok 800x1200 backdrop → image/png 1200x628    children: 1  192 ms  probe: {"type":"image/png","width":800,"height":1200,"complete":true}
+square 900x900                                                             ok 900x900 backdrop → image/png 1200x628     children: 1  191 ms  probe: {"type":"image/png","width":900,"height":900,"complete":true}
+panorama 4000x700                                                          ok 4000x700 backdrop → image/png 1200x628    children: 1  187 ms  probe: {"type":"image/png","width":4000,"height":700,"complete":true}
+exactly the minimum 600x314                                                ok 600x314 crop → image/png 1200x628         children: 1  159 ms  probe: {"type":"image/png","width":600,"height":314,"complete":true}
+transparent png                                                            ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
 portrait dark picture (#102030 with a #182838 block): brightest channel value on the outer 2 px of the cover = 48 (source at most 24/40/56)
 good png under text/html                                                   not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
 good png under application/octet-stream                                    not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
@@ -28,9 +28,9 @@ avif under image/webp                                                      not_a
 png cut to 30%                                                             not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":false}
 png missing its last byte                                                  not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":false}
 jpeg cut to 20%                                                            not_a_picture                                children: 0  0 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":false}
-jpeg missing its end marker                                                not_a_picture                                children: 0  1 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":false}
+jpeg missing its end marker                                                not_a_picture                                children: 0  0 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":false}
 webp cut to 20%                                                            not_a_picture                                children: 0  0 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":false}
-webp missing its last byte                                                 not_a_picture                                children: 0  1 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":false}
+webp missing its last byte                                                 not_a_picture                                children: 0  0 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":false}
 png header declaring 10000x10000 (97 KB of data)                           too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":10000,"height":10000,"complete":true}
 png header declaring 5001x5000 (just over 25 MP)                           too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":5001,"height":5000,"complete":true}
 png header declaring 10001x100 (one side over)                             too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":10001,"height":100,"complete":true}
@@ -38,45 +38,57 @@ png header declaring 4294967295x4294967295                                 too_l
 png header declaring 0x0                                                   not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":0,"height":0,"complete":true}
 webp VP8X declaring 16384x16384                                            too_large                                    children: 0  0 ms  probe: {"type":"image/webp","width":16384,"height":16384,"complete":true}
 webp with the animation flag                                               not_a_picture                                children: 0  0 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true,"animated":true}
-png: IHDR and IEND, no IDAT (the reported crash)                           not_a_picture                                children: 1  148 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-png: IDAT is not a zlib stream                                             not_a_picture                                children: 1  143 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-png: IDAT holds 10 rows of 900                                             not_a_picture                                children: 1  138 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-png: bad IHDR checksum                                                     not_a_picture                                children: 1  134 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: IHDR and IEND, no IDAT (the reported crash)                           not_a_picture                                children: 1  128 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: IDAT is not a zlib stream (decodes all white)                         blank_picture                                children: 1  140 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: IDAT holds 10 rows of 900 (decodes all black)                         blank_picture                                children: 1  142 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+png: bad IHDR checksum                                                     not_a_picture                                children: 1  129 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
 png: bit depth 3 (invalid)                                                 not_a_picture                                children: 1  136 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-png: 5000x5000 declared, valid, 25 MP grey ramp (the largest allowed)      ok 5000x5000 backdrop → image/png 1200x628   children: 1  196 ms  probe: {"type":"image/png","width":5000,"height":5000,"complete":true}
-png: 5000x5000 declared, valid, 25 MP of zeros (one flat colour: refused since D18) not_a_picture                                children: 1  146 ms  probe: {"type":"image/png","width":5000,"height":5000,"complete":true}
-png: random bytes between a good header and IEND                           not_a_picture                                children: 1  133 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-jpeg: frame header then the end marker, no scan                            not_a_picture                                children: 1  134 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-jpeg: frame header, garbage, end marker                                    not_a_picture                                children: 1  137 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-jpeg: two frame headers (small first, 60000x60000 second)                  not_a_picture                                children: 1  136 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-jpeg: good file with its scan data zeroed                                  not_a_picture                                children: 1  140 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-webp: VP8X header and nothing else                                         not_a_picture                                children: 1  129 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
-webp: VP8L signature then garbage                                          not_a_picture                                children: 1  139 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+png: 5000x5000 declared, valid, 25 MP grey ramp (the largest allowed)      ok 5000x5000 backdrop → image/png 1200x628   children: 1  199 ms  probe: {"type":"image/png","width":5000,"height":5000,"complete":true}
+png: 5000x5000 declared, valid, 25 MP of zeros (one flat colour: refused since D18) blank_picture                                children: 1  145 ms  probe: {"type":"image/png","width":5000,"height":5000,"complete":true}
+png: random bytes between a good header and IEND                           not_a_picture                                children: 1  130 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg: frame header then the end marker, no scan                            not_a_picture                                children: 1  133 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+jpeg: frame header, garbage, end marker                                    not_a_picture                                children: 1  138 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+jpeg: two frame headers (small first, 60000x60000 second)                  not_a_picture                                children: 1  134 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+jpeg: good file with its scan data zeroed                                  blank_picture                                children: 1  144 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+webp: VP8X header and nothing else                                         not_a_picture                                children: 1  133 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: VP8L signature then garbage                                          blank_picture                                children: 1  145 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
 webp: VP8 key frame header then garbage                                    not_a_picture                                children: 1  132 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
-webp: VP8X says 1600x900, the picture inside is 700x400                    not_a_picture                                children: 1  135 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
-webp: animation frames without the animation flag                          not_a_picture                                children: 1  135 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
-webp: riff length shorter than the file (bytes after the end)              ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: VP8X says 1600x900, the picture inside is 700x400                    not_a_picture                                children: 1  136 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: animation frames without the animation flag                          not_a_picture                                children: 1  134 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+webp: riff length shorter than the file (bytes after the end)              ok 1600x900 crop → image/png 1200x628        children: 1  164 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
 webp: VP8X says 1000x700, picture inside is 6000x6000 (36 MP)              not_a_picture                                children: 1  128 ms  probe: {"type":"image/webp","width":1000,"height":700,"complete":true}
-jpeg 400x700 with EXIF orientation 6                                       ok 700x400 crop → image/png 1200x628         children: 1  157 ms  probe: {"type":"image/jpeg","width":400,"height":700,"complete":true}
-D18 blank: one flat colour, PNG (#336699)                                  not_a_picture                                children: 1  132 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 blank: one flat colour, JPEG (white)                                   not_a_picture                                children: 1  132 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
-D18 blank: one flat colour, WebP (black)                                   not_a_picture                                children: 1  140 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
-D18 blank: fully transparent PNG                                           not_a_picture                                children: 1  136 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 blank: a grey lazy-load stand-in, 1600x900 (#eeeeee)                   not_a_picture                                children: 1  132 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 blank: two colours 7 apart (#808080 and #878787), halves               not_a_picture                                children: 1  132 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: two colours 9 apart, halves (just over the threshold)    ok 1600x900 crop → image/png 1200x628        children: 1  158 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: a transparent cut-out: one product shape on a transparent background ok 1600x900 crop → image/png 1200x628        children: 1  156 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: a small product (120x120) in the middle of a white studio background ok 1600x900 crop → image/png 1200x628        children: 1  156 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: a very small product (36x36) on white                    not_a_picture                                children: 1  133 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}   <-- a real picture refused as blank
-D18 real picture: a pen: one dark 900x10 bar on white                      not_a_picture                                children: 1  133 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}   <-- a real picture refused as blank
-D18 real picture: a necklace: a thin 3 px dark circle outline on white     not_a_picture                                children: 1  134 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}   <-- a real picture refused as blank
-D18 real picture: a floor plan: 2 px black lines every 100 px on white     ok 1600x900 crop → image/png 1200x628        children: 1  152 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: a line sketch: twelve 2 px strokes on off-white          ok 1600x900 crop → image/png 1200x628        children: 1  160 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: a page of small text: 10 px dark text lines on white     ok 1600x900 crop → image/png 1200x628        children: 1  160 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: a paint swatch with a fine weave: alternate pixels 12 apart not_a_picture                                children: 1  134 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}   <-- a real picture refused as blank
-D18 real picture: fog: a smooth vertical gradient only 10 levels deep      ok 1600x900 crop → image/png 1200x628        children: 1  153 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
-D18 real picture: night sky: black with forty 2 px stars                   ok 1600x900 crop → image/png 1200x628        children: 1  153 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+jpeg 400x700 with EXIF orientation 6                                       ok 700x400 crop → image/png 1200x628         children: 1  165 ms  probe: {"type":"image/jpeg","width":400,"height":700,"complete":true}
+D18 blank: one flat colour, PNG (#336699)                                  blank_picture                                children: 1  138 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 blank: one flat colour, JPEG (white)                                   blank_picture                                children: 1  139 ms  probe: {"type":"image/jpeg","width":1600,"height":900,"complete":true}
+D18 blank: one flat colour, WebP (black)                                   blank_picture                                children: 1  139 ms  probe: {"type":"image/webp","width":1600,"height":900,"complete":true}
+D18 blank: fully transparent PNG                                           blank_picture                                children: 1  137 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 blank: a grey lazy-load stand-in, 1600x900 (#eeeeee)                   blank_picture                                children: 1  139 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 blank: two colours 7 apart (#808080 and #878787), halves               blank_picture                                children: 1  138 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: two colours 9 apart, halves (just over the threshold)    ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a transparent cut-out: one product shape on a transparent background ok 1600x900 crop → image/png 1200x628        children: 1  158 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a small product (120x120) in the middle of a white studio background ok 1600x900 crop → image/png 1200x628        children: 1  161 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a very small product (36x36) on white                    ok 1600x900 crop → image/png 1200x628        children: 1  167 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a pen: one dark 900x10 bar on white                      ok 1600x900 crop → image/png 1200x628        children: 1  166 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a necklace: a thin 3 px dark circle outline on white     ok 1600x900 crop → image/png 1200x628        children: 1  164 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a floor plan: 2 px black lines every 100 px on white     ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a line sketch: twelve 2 px strokes on off-white          ok 1600x900 crop → image/png 1200x628        children: 1  166 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a page of small text: 10 px dark text lines on white     ok 1600x900 crop → image/png 1200x628        children: 1  164 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: a paint swatch with a fine weave: alternate pixels 12 apart ok 1600x900 crop → image/png 1200x628        children: 1  162 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: fog: a smooth vertical gradient only 10 levels deep      ok 1600x900 crop → image/png 1200x628        children: 1  159 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D18 real picture: night sky: black with forty 2 px stars                   ok 1600x900 crop → image/png 1200x628        children: 1  164 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+D23 thin object: horizontal bar 900x10: refused in 0 of 12 positions
+D23 thin object: vertical bar 10x700: refused in 0 of 12 positions
+D23 thin object: square 36x36: refused in 0 of 12 positions
+D23 thin object: horizontal hairline 900x3: refused in 0 of 12 positions
+D23 thin object: square 12x12: refused in 0 of 12 positions
+D23 thin object in a 4800x2700 source: bar 2700x30: refused in 0 of 6 positions (recorded only)
+D23 thin object in a 4800x2700 source: bar 2700x9: refused in 0 of 6 positions (recorded only)
+round 3: truncated png                                                     not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":false}
+round 3: flat but too small (300x200)                                      too_small                                    children: 1  130 ms  probe: {"type":"image/png","width":300,"height":200,"complete":true}
+round 3: flat and declared 10000x10000                                     too_large                                    children: 0  0 ms  probe: {"type":"image/png","width":10000,"height":10000,"complete":true}
+round 3: flat png under text/html                                          not_a_picture                                children: 0  0 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
+round 3: IHDR and IEND, no IDAT                                            not_a_picture                                children: 1  127 ms  probe: {"type":"image/png","width":1600,"height":900,"complete":true}
 child options: env keys ["PATH","NODE_ENV"], stdio ["pipe","pipe","ignore"], cwd is the process cwd: true
-large noise picture: source 7653903 bytes 1700x1500; cover 1534045 bytes; 218 ms
-ten concurrent pictures: 1447 ms in all, most children alive at once: 1
-hung child: refused after 20055 ms, child process gone: true; the picture queued behind it waited 20228 ms in all
+large noise picture: source 7653903 bytes 1700x1500; cover 1538660 bytes; 232 ms
+ten concurrent pictures: 1527 ms in all, most children alive at once: 1
+hung child: refused after 20047 ms, child process gone: true; the picture queued behind it waited 20232 ms in all

@@ -10,7 +10,12 @@ const M = vi.hoisted(() => {
 });
 vi.mock('@/server/services/analysis/devsite', async original => {
   const real = await original<typeof import('@/server/services/analysis/devsite')>();
-  return { ...real, devFetch: async (url: string) => { M.fetched.push(url); if (M.during) { const run = M.during; M.during = null; await run(); } return real.devFetch(url); } };
+  return { ...real, devFetch: async (url: string) => {
+    M.fetched.push(url); if (M.during) { const run = M.during; M.during = null; await run(); }
+    // Round 3: the stub site has no blank picture. For this one QA-only path the wrapper answers a 1600x900 PNG of one flat colour; everything after the fetch is real.
+    if (new URL(url).pathname === '/media/qa-blank.png') { const { createCanvas } = await import('@napi-rs/canvas'); const c = createCanvas(1600, 900); const g = c.getContext('2d'); g.fillStyle = '#e9e9e9'; g.fillRect(0, 0, 1600, 900); return { status: 200, type: 'image/png', body: c.toBuffer('image/png'), url }; }
+    return real.devFetch(url);
+  } };
 });
 vi.mock('next/headers', async () => (await import('@/server/testing/jar')).headersMock(() => M.jar));
 
@@ -111,6 +116,7 @@ describe.skipIf(!process.env.DATABASE_URL)('article.useSitePicture through the r
       ['css file', d => `https://${d}/assets/site.css`, 422, 'not_a_picture', () => 'That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP.'],
       ['missing page', d => `https://${d}/nope`, 422, 'unreachable', () => 'Radar couldn’t reach that address. Check it and try again.'],
       ['html behind a picture name', d => `https://${d}/media/page.png`, 422, 'no_picture', () => 'Radar couldn’t find a picture it can use on that page. Try the address of the picture itself.'],
+      ['round 3: a blank picture (served by the QA wrapper)', d => `https://${d}/media/qa-blank.png`, 422, 'blank_picture', () => 'That picture looks blank, so Radar didn’t use it. Try another one.'],
     ];
     it.each(cases)('%s', async (name, address, status, code, message) => {
       const f = await fixture(); const before = await article(f.id);

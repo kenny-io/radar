@@ -2,6 +2,73 @@
 
 QA record, 2026-11-13. QA edited no source file. Probes and evidence are under `.factory/real-subject-covers/qa/`.
 
+# Round 3 (T4c), revision `9e7683c6`
+
+## Verdict, round 3
+**Ship.** N1, N2 and N3 are closed, every round-1 and round-2 case stays closed, all 494 QA probes pass, typecheck passes, and the whole suite has only the one known baseline failure. No defect is open. What remains are accepted limits, listed below, and the points the owner should know before the automatic path goes live.
+
+## Revision and environment, round 3
+- Same worktree and branch, `git rev-parse HEAD` = `9e7683c600ad35799d94c60afbaab8e51fae257b`. Source changed since round 2 only in `src/server/services/realCover/{fetch,index,page,picture}.ts`, one line in `src/server/actions/article.ts` (the `blank_picture` message), their tests, `docs/CONTRACTS.md`, `DIVERGENCES.md`. No client file changed.
+- Databases on 127.0.0.1:55442: `radar_qa3` (whole suite, fresh), `radar_qa_probe` (probes), `radar_qa_app` (browser, dropped and reseeded). All left in place, with `radar_qa` and `radar_qa2` from the earlier rounds.
+- Browser as before (built-in pane, `http://127.0.0.1:3231`, stub mode). Servers stopped, `tsconfig.json` restored, dist folder and scratch data removed, QA cookie cleared.
+- QA files changed in this round are **uncommitted** (the three probe files, evidence files, this file).
+
+## Commands and counts, round 3
+| Check | Result |
+| --- | --- |
+| `npx tsc --noEmit` | pass (exit 0), with the changed QA files |
+| `DATABASE_URL=…/radar_qa3 npx vitest run` | **3673 passed, 75 skipped, 1 failed**: the parity snapshot in `src/server/ai/openrouter.qa.test.ts` (the known baseline failure). No flaky file failed in this run |
+| Against the baseline (main: 3071 / 75 / 1) | 602 more passing tests, same 75 skipped, same 1 failure, no regression found |
+| QA probes, same command as before | 6 files, **494 tests, 494 passed** |
+
+## Round-2 findings
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| N1 share card through structured data or an `<img>` | **closed** | S3, S4, S5 find nothing. Thirteen addresses with a card word (`/og.png`, `/OG.PNG`, `/images/og/…`, `/opengraph-image`, `/api/og?…`, `/social/…`, `/uploads/share/…`, `…-twitter.png`, `/static/social_card.png`, `/lived-social-preview.png` and others) are never requested. Six cards with no card word in their name that the home page also carries (`/assets/brand-banner.png`, `/ogimage.png`, `/socialcard.png`, `/images/preview.png`, `/sharing/hh.png`, `/seo/card.png`): not taken, also when the home page names them under `www.` or with a cache-buster. Home page unreadable (no answer, 503, 404, not HTML): not taken and `searched: false`. Control S6 and the D21 control: a real photo that is both `og:image` and the structured-data image is still taken, after the home page is read; a picture that is not a share image costs no extra request |
+| N2 neighbours named "subject + picture word", number in front | **closed** | A13 to A18 and "The View Gallery" find nothing; so do "Harbour House Front", "Harbour House Cover", "Harbour House Interiors", "Photo of 1 Hyde Park". Controls that still tie: "Harbour House", "Harbour House · photo 3", "Wasl 611 photo 2", "Exterior of Harbour House", "An interior photo of the Harbour House", "Harbour House – picture 4", "Photos: Harbour House" |
+| N3 blank check refuses thin or small objects | **closed** | The pen, the necklace, the 36×36 product and the fine weave are accepted. Bars 900×10 and 10×700, a 900×3 hairline, 36×36 and 12×12 squares: accepted at all twelve positions each. The same shapes in a 4800×2700 source: accepted. Blank pictures (flat PNG, JPEG, WebP, fully transparent, grey stand-in, two colours 7 apart, and the four damaged files that decode blank) are refused as `blank_picture`; truncated, wrong-type, too-small, too-large and no-IDAT files keep their own codes |
+| D24 sitemap decides "finished" | as decided | robots 200 with the sitemap giving no answer or a 503: `searched: false`; robots unreachable with the sitemap 404: `true`; an off-site sitemap named in robots.txt with the own-site one down: `false`; two own-site sitemaps, one 503 and one read: `true` |
+| Listing segments `tagged`, `label`, `labels` | as decided | not requested |
+| `blank_picture` message | as decided | through the real route: 422 `blank_picture`, "That picture looks blank, so Radar didn’t use it. Try another one." (`action-outcomes.txt`) |
+
+## What QA changed in its own probes (round 3)
+- `picture.qa.test.ts`: the expected code is now `blank_picture` in the eleven cases whose picture decodes blank (six "D18 blank" cases, the 25 MP of zeros, IDAT not zlib, IDAT with 10 of 900 rows, zeroed JPEG scan, VP8L garbage). Two of those (10 rows, zeroed scan) had loose expectations since round 1 and are now exact. No case refused for another reason was changed. Added: thin objects at twelve positions, larger sources, and a check that other refusals keep their codes.
+- `matching.db.qa.test.ts`: **A21 and A22 are kept and turned into "ties nothing" cases** (they were controls in round 2; decision D22 accepts the loss). The mixed robots and sitemap cases and the `tagged`/`label` paths, recorded in round 2, are asserted now. Added: A28 to A36, the D21 section (control, unreadable home page, card words, card words inside longer words, cards with no card word), residual routes L1 to L5 (recorded), an owner-path case for card words.
+- `action.db.qa.test.ts`: one case for the blank message. The stub site serves no blank picture, so QA's existing wrapper around the stub site answers a flat 1600×900 PNG for `/media/qa-blank.png`; everything after the fetch is real.
+
+## The engineer's stated consequences
+| Consequence | QA's view |
+| --- | --- |
+| A page's `og:image` whose address has a card word is not offered when the owner gives a page address; the picture's own address still works | Confirmed both halves (`/uploads/social/harbour-house.png`: page address `no_picture`, picture address accepted). Acceptable: the message already tells the owner to try the picture's address |
+| "Wasl 611 – image 12 of 30" no longer ties | Confirmed (A28). Safe side |
+| A robots-forbidden home page leaves `searched` true | Confirmed: not taken, home page not requested, remembered for a week. Acceptable: robots.txt will not change by itself |
+| A sitemap index that answers counts as read when its child files do not | Confirmed (index 200, both children 503: `searched: true`). A narrow case of the round-1 D6; accepted limit |
+| Card words inside longer words are not skipped | Confirmed for `blog-media`, `shared-house`, `dogs`, `together`, `catalog`, `frogs`, `sharepoint`, `socialite`, `ogden`, `twitterati`, `shares`, `og2`: all taken as ordinary pictures |
+
+## Accepted limits (no wrong picture is plausible enough to hold the release)
+1. **The site's own structured data names a generic banner as the subject's image, and the name and the home page do not give it away** (recorded as L1 to L4, all taken): the banner has none of the five card words in its address **and** one of: the home page carries a different card (L1), the home page carries none (L2), the subject's page has no share tags at all (L3), or the page serves the card through an image optimiser so the card word is only in the query string (L4). Each needs the site to state, in its own data for that place, that the banner is its image; this is architecture §14 risk 4 ("the rule trusts the site about its own subject page"). The result would be the business's own banner, not another subject's photo.
+2. **Safe-side misses** (a generated cover where a real one existed): pictures all served from one path with the picture named in the query (`/api/media?id=…`) when the page's share image uses the same path (L5); alt text in another language; alts such as "Exterior view of the Harbour House building" (A21, A22, A28); a real photo kept in a folder called `share`, `social`, `og`, `twitter` or `opengraph`; a robots-forbidden or unreadable home page when the photo is also the share image; pages whose h1 is not exactly the subject.
+3. A file damaged part of the way through that still decodes to a partly blank picture (decision D18).
+4. `/collections/` and `/t/` paths rely on the picture rules; a sitemap index whose children fail counts as read.
+5. Round-1 observations 1 to 7 and round-2 observations, unchanged.
+
+## What the owner should know about the remaining ways a wrong picture could appear
+1. **Radar believes the site about its own page.** If the page whose main heading is exactly the subject's name shows a picture of something else under an alt text that is exactly that name, or its structured data for that subject points at another image (including a generic banner, limit 1 above), Radar uses it.
+2. **Same name, different thing.** Two places or products with exactly the same name on one site, or a page whose heading is only the subject's name while it is really about a part or variant of it, cannot be told apart.
+3. **A partly damaged photo** on the site can become a cover with a blank band.
+4. **Nobody looks first under Autopilot** (decision D10): in each case above the picture is published with the article. The Media panel always shows the source, and one click returns to a generated cover and keeps the picture from coming back.
+5. **Rights are not checked.** "On the domain given at sign-up" stands in for "theirs to publish"; the domain is not verified.
+6. Many sites will get no automatic picture at all (pictures on another host, other-language alt text, headings that differ from the subject's name). That is the safe direction, not a wrong picture.
+
+## Not tested, round 3
+- The blank-picture message **in the browser**: the stub site cannot serve a blank picture. It was checked through the real route with QA's wrapper serving one; the panel's inline display of a server message for this field was seen with another code.
+- As in rounds 1 and 2: a production build (`next build`, `next start`), Linux, any real website, a real image model, a real connector or publish, Autopilot end to end, mixed versions, screen readers, Safari and Firefox. Viewer, scheduled, 390 px and the rest of the round-1 browser list were not repeated (no client change since round 1).
+
+## Release recommendation, round 3
+Ship, with the owner told the six points above in the pull request. No further QA round is needed unless the matching or picture rules change again; if they do, rerun the probe command and the suite.
+
+---
+
 # Round 2 (T4b), revision `2b034f26`
 
 ## Verdict, round 2
