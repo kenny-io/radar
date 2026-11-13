@@ -53,11 +53,12 @@ New module `src/server/services/analysis/pageReader.ts`:
 - The reader's code is a plain JavaScript string run with `spawn(process.execPath, ['--max-old-space-size=…', '-e', CODE], { cwd: process.cwd(), env: { PATH, NODE_ENV }, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] })`, as `picture.ts` does (a string, so neither Next's bundler nor a TypeScript loader is involved). It `require`s cheerio, answers one message at a time, and exits on `disconnect`.
 - One child per process, started on first use, reused, `unref`'d together with its channel so it never keeps the caller alive, stopped after 30 s idle.
 - Requests are queued, one in flight. The time limit starts when a request is sent. On the limit: `SIGKILL`, the request fails, the next request starts a new child. A child that exits mid-request fails that request only.
+- The reader also watches itself: a second thread inside it ends the reader two seconds past a document's limit. The caller's timer normally fires first; this covers a caller that has gone away or is itself busy (measured without it: a reader inside a stalling page ran 33 s after its parent was killed).
 - Two failure kinds: `PageUnreadable` (reason `timed_out` | `crashed` | `failed`: the document's fault) and a plain `Error` when the reader cannot be started (ours; stays loud).
-- Exports: `readPage(html, url, origin)`, `readBrandPage(html, origin)`, `readSitemap(xml)`, each with an optional `{ timeoutMs }` for tests, and `PAGE_READ_MS = 5000`.
+- Exports: `readPage(html, url, origin)`, `readBrandPage(html, origin)`, `readSitemap(xml, base, host)`, each with an optional `{ timeoutMs }` for tests, and `PAGE_READ_MS = 5000`.
 - The reader's statements are the ones in `main`'s `extract`, `classifyPage`, `cssColors` (its three selections), `logoCandidates` and `inlineHeaderSvg`, in the same order. Regular expressions shared with the caller (`ARTICLE_PATH`, `LISTING_PATH`, the asset-extension pattern) are written once and placed into the string by their `.source` and `.flags`. No `Function.prototype.toString`. `normUrl` and `sameSite` are needed on both sides: the reader's copies sit beside the TypeScript ones, and a test holds them equal on a table of addresses.
 
-`crawl.ts`: no cheerio import. `extract` awaits `readPage`. `parseSitemaps` awaits `readSitemap` and does its own `normUrl`/`sameSite` on the returned texts, sitemap entries first, then URLs, as now. `classifyPage` is no longer exported (nothing else uses it). `ARTICLE_PATH`, `LISTING_PATH`, `uaToken`, `fetchUrl` stay exported from `crawl.ts`.
+`crawl.ts`: no cheerio import. `extract` awaits `readPage`. `parseSitemaps` awaits `readSitemap(xml, base, host)`, which returns the child sitemaps' addresses as written and the page addresses already normalized and filtered to the site, so the caller only queues them (35,000 addresses cost the caller 55 ms when it did that work itself). The home page is read before the sitemaps, so unreadable sitemaps cannot use up the crawl's count before the home page has had its turn; the order of requests to the site is unchanged. `classifyPage` is no longer exported (nothing else uses it). `ARTICLE_PATH`, `LISTING_PATH`, `uaToken`, `fetchUrl` stay exported from `crawl.ts`.
 
 `brand.ts`: no cheerio import. `detectBrand` awaits `readBrandPage` once and works from its data: `{ css, stylesheets, theme, candidates, svg, htmlLang }`. The logo reading that pull request 57 added (`readLogo`, `../untrustedImage`) is not touched.
 
@@ -77,9 +78,14 @@ Outcomes when a document is unreadable (`PageUnreadable`):
 - AC5. Recovery and queueing: after a failed read the next read succeeds; of several reads queued behind a stalling one, only the stalling one fails.
 - AC6. Outcomes as listed under "Outcomes", each covered by a test through `crawlSite` or `detectBrand`.
 - AC7. Same results: a fixture site and a set of home pages run through `crawlSite` and `detectBrand` give results identical to `main` `b3ad2d50`, compared against a stored record produced by running the same harness on `main`. The fixtures cover every signal the reader computes (see T1). The existing `devsite.test.ts` crawl passes unchanged.
-- AC8. Lifecycle: the reader does not keep its parent alive, exits when its parent goes away, and stops after 30 s idle.
+- AC8. Lifecycle: the reader does not keep its parent alive, exits when its parent goes away (at once when idle, within its document's limit plus 2 s when busy), and stops after 30 s idle.
 - AC9. `npm run typecheck` passes. Full suite: no failure that is not on `main` (`openrouter.qa.test.ts` parity snapshot is known; the shared-database files are flaky and are rerun alone).
 - AC10. `DIVERGENCES.md` O11 and the file headers say what now happens.
+
+## Decided during implementation
+- Heap cap 384 MB. Measured by the engineer: 2 MB pages of 85,000 links, 180,000 paragraphs or 150,000 table cells read ten times running in one reader; only a page of about 250,000 elements of eight bytes each does not fit (512 MB would read it for 130 MB more). The 173 KB font page ends the reader in about a second.
+- The 17 KB font page (900,000 elements) was readable on `main` in 8.4 s; it is now unreadable. Accepted: it is not a page anyone publishes.
+- A reader that cannot load cheerio reports that as the plain `Error`, so a wrong working directory does not make every site look unreachable.
 
 ## Out of scope (follow-ups)
 - `robots.txt` rules × links: `crawlSite` checks every discovered link against robots in the calling process. Measured: 10,000 rules (440 KB) cost 0.2 ms per link, so one page of 100,000 links costs 20 s there. Not HTML parsing; needs its own change.
