@@ -1,0 +1,59 @@
+{"page":"100,000 <style>","how":"readPage","ms":5002,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 <style>","how":"readBrandPage","ms":5001,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":3.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 <style>","how":"readSitemap","ms":229,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 <style>","how":"crawlSite, as the home page","ms":5008,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":3.4,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 <style>","how":"crawlSite, as a crawled page","ms":5127,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 <style>","how":"detectBrand","ms":5001,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.3,"timerNeverMoreThan100msLate":true}
+{"page":"60,000 <img> in a <header>","how":"readPage","ms":430,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"60,000 <img> in a <header>","how":"readBrandPage","ms":5002,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.9,"timerNeverMoreThan100msLate":true}
+{"page":"60,000 <img> in a <header>","how":"readSitemap","ms":3272,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"60,000 <img> in a <header>","how":"crawlSite, as the home page","ms":290,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"60,000 <img> in a <header>","how":"crawlSite, as a crawled page","ms":222,"withinLimitPlus1s":true,"outcome":"2 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"60,000 <img> in a <header>","how":"detectBrand","ms":5000,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"45,000 stylesheet links","how":"readPage","ms":363,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"45,000 stylesheet links","how":"readBrandPage","ms":4332,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"45,000 stylesheet links","how":"readSitemap","ms":3033,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"45,000 stylesheet links","how":"crawlSite, as the home page","ms":188,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"45,000 stylesheet links","how":"crawlSite, as a crawled page","ms":192,"withinLimitPlus1s":true,"outcome":"2 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"45,000 stylesheet links","how":"detectBrand","ms":4299,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":\"#2563EB\",\"secondary\":null,\"language\":\"French\",","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"header SVG nested 64,000 deep","how":"readPage","ms":5002,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"header SVG nested 64,000 deep","how":"readBrandPage","ms":5001,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.4,"timerNeverMoreThan100msLate":true}
+{"page":"header SVG nested 64,000 deep","how":"readSitemap","ms":3902,"withinLimitPlus1s":true,"outcome":"read","lateMs":4,"timerNeverMoreThan100msLate":true}
+{"page":"header SVG nested 64,000 deep","how":"crawlSite, as the home page","ms":5002,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":2.4,"timerNeverMoreThan100msLate":true}
+{"page":"header SVG nested 64,000 deep","how":"crawlSite, as a crawled page","ms":5127,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"header SVG nested 64,000 deep","how":"detectBrand","ms":5000,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"64,000 nested <div>","how":"readPage","ms":5002,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"64,000 nested <div>","how":"readBrandPage","ms":5000,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"64,000 nested <div>","how":"readSitemap","ms":3574,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.3,"timerNeverMoreThan100msLate":true}
+{"page":"64,000 nested <div>","how":"crawlSite, as the home page","ms":5002,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":2.3,"timerNeverMoreThan100msLate":true}
+{"page":"64,000 nested <div>","how":"crawlSite, as a crawled page","ms":5124,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.3,"timerNeverMoreThan100msLate":true}
+{"page":"64,000 nested <div>","how":"detectBrand","ms":5001,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"16,000 nested <div>, then 16,000 <img>","how":"readPage","ms":2043,"withinLimitPlus1s":true,"outcome":"PageUnreadable(failed): failed (Maximum call stack size exce","lateMs":2.9,"timerNeverMoreThan100msLate":true}
+{"page":"16,000 nested <div>, then 16,000 <img>","how":"readBrandPage","ms":5001,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"16,000 nested <div>, then 16,000 <img>","how":"readSitemap","ms":1468,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.4,"timerNeverMoreThan100msLate":true}
+{"page":"16,000 nested <div>, then 16,000 <img>","how":"crawlSite, as the home page","ms":3774,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"16,000 nested <div>, then 16,000 <img>","how":"crawlSite, as a crawled page","ms":2380,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"16,000 nested <div>, then 16,000 <img>","how":"detectBrand","ms":5003,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.8,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 nested <span> with text","how":"readPage","ms":5002,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 nested <span> with text","how":"readBrandPage","ms":5001,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.7,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 nested <span> with text","how":"readSitemap","ms":5001,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 nested <span> with text","how":"crawlSite, as the home page","ms":5001,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 nested <span> with text","how":"crawlSite, as a crawled page","ms":5126,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.5,"timerNeverMoreThan100msLate":true}
+{"page":"100,000 nested <span> with text","how":"detectBrand","ms":5001,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.5,"timerNeverMoreThan100msLate":true}
+{"page":"300 open <font>, then 3,000 <p>","how":"readPage","ms":895,"withinLimitPlus1s":true,"outcome":"PageUnreadable(crashed): crashed (SIGABRT)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"300 open <font>, then 3,000 <p>","how":"readBrandPage","ms":899,"withinLimitPlus1s":true,"outcome":"PageUnreadable(crashed): crashed (SIGABRT)","lateMs":2.6,"timerNeverMoreThan100msLate":true}
+{"page":"300 open <font>, then 3,000 <p>","how":"readSitemap","ms":176,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"300 open <font>, then 3,000 <p>","how":"crawlSite, as the home page","ms":540,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"300 open <font>, then 3,000 <p>","how":"crawlSite, as a crawled page","ms":636,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"300 open <font>, then 3,000 <p>","how":"detectBrand","ms":936,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"3,000 open <font>, then 30,000 <p> (173 KB)","how":"readPage","ms":1179,"withinLimitPlus1s":true,"outcome":"PageUnreadable(crashed): crashed (SIGABRT)","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"3,000 open <font>, then 30,000 <p> (173 KB)","how":"readBrandPage","ms":1306,"withinLimitPlus1s":true,"outcome":"PageUnreadable(crashed): crashed (SIGABRT)","lateMs":2.3,"timerNeverMoreThan100msLate":true}
+{"page":"3,000 open <font>, then 30,000 <p> (173 KB)","how":"readSitemap","ms":1498,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"3,000 open <font>, then 30,000 <p> (173 KB)","how":"crawlSite, as the home page","ms":1072,"withinLimitPlus1s":true,"outcome":"CrawlError(unreachable): unreachable","lateMs":2.3,"timerNeverMoreThan100msLate":true}
+{"page":"3,000 open <font>, then 30,000 <p> (173 KB)","how":"crawlSite, as a crawled page","ms":1156,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"page":"3,000 open <font>, then 30,000 <p> (173 KB)","how":"detectBrand","ms":1165,"withinLimitPlus1s":true,"outcome":"brand: {\"logo\":null,\"primary\":null,\"secondary\":null,\"language\":null,\"htmlLang","lateMs":2.4,"timerNeverMoreThan100msLate":true}
+{"page":"sitemap: one address under 200,000 nested elements","how":"readSitemap","ms":5001,"withinLimitPlus1s":true,"outcome":"PageUnreadable(timed_out): timed_out","lateMs":2.6,"timerNeverMoreThan100msLate":true}
+{"page":"sitemap: one address under 200,000 nested elements","how":"crawlSite, as the sitemap","ms":5128,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.2,"timerNeverMoreThan100msLate":true}
+{"page":"sitemap: a <loc> inside 64,000 nested <url>","how":"readSitemap","ms":3272,"withinLimitPlus1s":true,"outcome":"read","lateMs":2.4,"timerNeverMoreThan100msLate":true}
+{"page":"sitemap: a <loc> inside 64,000 nested <url>","how":"crawlSite, as the sitemap","ms":3362,"withinLimitPlus1s":true,"outcome":"1 page(s)","lateMs":2.1,"timerNeverMoreThan100msLate":true}
+{"done":true,"unhandledInCaller":0,"callerStillRunning":true,"readersStarted":38}

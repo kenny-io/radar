@@ -1,0 +1,18 @@
+branch {"depth":500,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+base   {"depth":500,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+branch {"depth":1000,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+base   {"depth":1000,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+branch {"depth":1500,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+base   {"depth":1500,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+branch {"depth":2000,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+base   {"depth":2000,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+branch {"depth":2500,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
+base   {"depth":2500,"asTheFirstDocument":"RangeError: Maximum call stack size exceeded","afterAnotherDocument":"RangeError: Maximum call stack size exceeded"}
+branch {"depth":3000,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
+base   {"depth":3000,"asTheFirstDocument":"RangeError: Maximum call stack size exceeded","afterAnotherDocument":"RangeError: Maximum call stack size exceeded"}
+branch {"depth":4000,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
+base   {"depth":4000,"asTheFirstDocument":"RangeError: Maximum call stack size exceeded","afterAnotherDocument":"RangeError: Maximum call stack size exceeded"}
+branch {"depth":6000,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
+base   {"depth":6000,"asTheFirstDocument":"RangeError: Maximum call stack size exceeded","afterAnotherDocument":"RangeError: Maximum call stack size exceeded"}
+branch {"depth":9000,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
+base   {"depth":9000,"asTheFirstDocument":"RangeError: Maximum call stack size exceeded","afterAnotherDocument":"RangeError: Maximum call stack size exceeded"}

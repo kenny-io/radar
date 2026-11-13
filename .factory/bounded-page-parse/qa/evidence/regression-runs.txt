@@ -1,0 +1,92 @@
+== typecheck-1
+typecheck exit 0
+== typecheck-2
+== vitest-analysis-1
+Test Files  10 passed (10)
+Tests  687 passed (687)
+exit 0
+== full-branch-db
+Test Files  5 failed | 198 passed | 12 skipped (215)
+Tests  6 failed | 3948 passed | 75 skipped (4029)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/idle.cadence.db.test.ts
+   1  FAIL  src/server/idle.db.test.ts
+   1  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts
+   2  FAIL  src/server/services/lifecycle/founderIdentity.test.ts
+== full-branch-db-2
+Test Files  6 failed | 197 passed | 12 skipped (215)
+Tests  7 failed | 3947 passed | 75 skipped (4029)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/idle.cadence.db.test.ts
+   1  FAIL  src/server/idle.db.test.ts
+   1  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts
+   1  FAIL  src/server/services/lifecycle/dispatch.test.ts
+   2  FAIL  src/server/services/lifecycle/education.test.ts
+== full-branch-db-fresh
+Test Files  6 failed | 197 passed | 12 skipped (215)
+Tests  16 failed | 3938 passed | 75 skipped (4029)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/idle.cadence.db.test.ts
+   1  FAIL  src/server/idle.db.test.ts
+   3  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts
+   5  FAIL  src/server/services/lifecycle/dispatch.test.ts
+   5  FAIL  src/server/services/lifecycle/education.test.ts
+== full-branch-nodb
+Test Files  2 failed | 160 passed | 53 skipped (215)
+Tests  1 failed | 3368 passed | 646 skipped (4029)
+exit 1
+   1  FAIL  src/server/actions/realCover.db.test.ts [ src/server/actions/realCover.db.test.ts ]
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+== full-base-db
+Test Files  2 failed | 198 passed | 12 skipped (212)
+Tests  2 failed | 3800 passed | 75 skipped (3877)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/services/lifecycle/dispatch.test.ts
+== full-base-db-2
+Test Files  4 failed | 196 passed | 12 skipped (212)
+Tests  4 failed | 3798 passed | 75 skipped (3877)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/idle.cadence.db.test.ts
+   1  FAIL  src/server/idle.db.test.ts
+   1  FAIL  src/server/services/lifecycle/founderIdentity.test.ts
+== full-base-db-3
+Test Files  3 failed | 197 passed | 12 skipped (212)
+Tests  3 failed | 3799 passed | 75 skipped (3877)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/idle.cadence.db.test.ts
+   1  FAIL  src/server/idle.db.test.ts
+== full-base-nodb
+Test Files  2 failed | 157 passed | 53 skipped (212)
+Tests  1 failed | 3216 passed | 646 skipped (3877)
+exit 1
+   1  FAIL  src/server/actions/realCover.db.test.ts [ src/server/actions/realCover.db.test.ts ]
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+== rerun-alone-branch
+== branch alone: src/server/idle.cadence.db.test.ts
+Test Files  1 passed (1)
+Tests  24 passed (24)
+== branch alone: src/server/idle.db.test.ts
+Test Files  1 passed (1)
+Tests  9 passed (9)
+== branch alone: src/server/services/lifecycle/autopilotIntro.test.ts
+Test Files  1 passed (1)
+Tests  17 passed (17)
+== branch alone: src/server/services/lifecycle/founderIdentity.test.ts
+Test Files  1 passed (1)
+Tests  16 passed (16)
+== branch alone: src/server/ai/openrouter.qa.test.ts
+Test Files  1 failed (1)
+Tests  1 failed | 73 passed (74)
+== flaky database files run together, base and branch alternately (failed tests per file)
+base   1:    3  FAIL  src/server/idle.cadence.db.test.ts;   1  FAIL  src/server/services/lifecycle/autopilotIntegration.test.ts;   4  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts;   1  FAIL  src/server/services/lifecycle/dispatch.test.ts;   5  FAIL  src/server/services/lifecycle/education.test.ts;   2  FAIL  src/server/services/lifecycle/founderIdentity.test.ts;   2  FAIL  src/server/services/lifecycle/guides.test.ts;
+branch 1:    1  FAIL  src/server/idle.cadence.db.test.ts;   1  FAIL  src/server/services/lifecycle/autopilotIntegration.test.ts;   3  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts;   1  FAIL  src/server/services/lifecycle/dispatch.test.ts;   4  FAIL  src/server/services/lifecycle/education.test.ts;   2  FAIL  src/server/services/lifecycle/founderIdentity.test.ts;   2  FAIL  src/server/services/lifecycle/guides.test.ts;
+base   2:    3  FAIL  src/server/idle.cadence.db.test.ts;   4  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts;   3  FAIL  src/server/services/lifecycle/dispatch.test.ts;   6  FAIL  src/server/services/lifecycle/education.test.ts;   1  FAIL  src/server/services/lifecycle/founderIdentity.test.ts;
+branch 2:    2  FAIL  src/server/idle.cadence.db.test.ts;   4  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts;   3  FAIL  src/server/services/lifecycle/dispatch.test.ts;   6  FAIL  src/server/services/lifecycle/education.test.ts;   1  FAIL  src/server/services/lifecycle/founderIdentity.test.ts;   1  FAIL  src/server/services/lifecycle/guides.test.ts;
+base   3:    4  FAIL  src/server/idle.cadence.db.test.ts;   1  FAIL  src/server/idle.db.test.ts;   1  FAIL  src/server/services/lifecycle/autopilotIntegration.test.ts;   4  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts;   3  FAIL  src/server/services/lifecycle/dispatch.test.ts;   3  FAIL  src/server/services/lifecycle/education.test.ts;   1  FAIL  src/server/services/lifecycle/founderIdentity.test.ts;   1  FAIL  src/server/services/lifecycle/guides.test.ts;
+branch 3:    3  FAIL  src/server/idle.cadence.db.test.ts;   2  FAIL  src/server/services/lifecycle/autopilotIntro.test.ts;   8  FAIL  src/server/services/lifecycle/education.test.ts;   1  FAIL  src/server/services/lifecycle/founderIdentity.test.ts;   2  FAIL  src/server/services/lifecycle/guides.test.ts;

@@ -1,0 +1,7 @@
+{"page":"200,000 <p>x</p> (1.5 MB)","crawl":"read: 4000 characters of text","crawlMs":1199,"brand":"primary #2563EB, lang en","brandMs":673}
+{"page":"250,000 <p>x</p> (1.9 MB)","crawl":"CrawlError(unreachable): unreachable","crawlMs":1089,"brand":"primary #2563EB, lang en","brandMs":911}
+{"page":"290,000 <b></b> (1.9 MB)","crawl":"CrawlError(unreachable): unreachable","crawlMs":1062,"brand":"primary #2563EB, lang en","brandMs":620}
+{"page":"480,000 <li> (1.8 MB)","crawl":"CrawlError(unreachable): unreachable","crawlMs":893,"brand":"primary #2563EB, lang en","brandMs":835}
+{"page":"200,000 <option> in a <select> (1.7 MB)","crawl":"CrawlError(unreachable): unreachable","crawlMs":1291,"brand":"primary #2563EB, lang en","brandMs":814}
+{"page":"55,000 <img class=\"logo\"> (1.9 MB)","crawl":"read: 0 characters of text","crawlMs":383,"brand":"primary null, lang null","brandMs":5001}
+{"page":"300 open <font>, then 3,000 <p> (17 KB)","crawl":"CrawlError(unreachable): unreachable","crawlMs":1474,"brand":"primary null, lang null","brandMs":1518}

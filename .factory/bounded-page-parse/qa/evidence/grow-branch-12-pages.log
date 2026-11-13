@@ -1,0 +1,8 @@
+{"pageKb":588,"links":50000,"addressCharacters":2000,"heapLimitMb":4144}
+{"pages":1,"s":0.1,"heapUsedMb":13,"rssMb":103,"lateMs":2}
+{"pages":5,"s":5.1,"heapUsedMb":1001,"rssMb":1151,"lateMs":317}
+{"pages":9,"s":10.1,"heapUsedMb":1203,"rssMb":1494,"lateMs":347}
+{"pages":13,"s":15.2,"heapUsedMb":2399,"rssMb":2488,"lateMs":347}
+{"finished":13,"linksKeptMb":1160}
+
+(QA: 149997 further progress lines with an unchanged page count left out)

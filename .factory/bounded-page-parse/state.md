@@ -6,11 +6,12 @@
 | --- | --- | --- | --- | --- |
 | T0 reproduce, measure, decide | PM | verified | brief | `probe/`, `brief.md` |
 | T1 reader, crawler, brand, tests | factory-engineer | review | AC1–AC10 | `09534dc8`…`f96d7aa0`; owns `src/server/services/analysis/{pageReader,crawl,brand}.ts` and their tests, `DIVERGENCES.md` O11 |
-| T2 independent QA | factory-qa | planned | all | writes only under `.factory/bounded-page-parse/qa*` |
+| T2 independent QA | factory-qa | active | all | Round 1 on `1e6ecd47`: not ready, D1–D5 (`qa.md`). Round 2 after T1c. |
+| T1c fixes for D1–D5 | factory-engineer | active | AC2–AC8 | decisions in `brief.md`, "Decided after QA round 1" |
 | T3 delivery | PM | planned | | pull request |
 
 ## Blockers
 None.
 
 ## Next action
-T2 (independent QA) on the revision after this commit.
+T1c, then QA round 2.

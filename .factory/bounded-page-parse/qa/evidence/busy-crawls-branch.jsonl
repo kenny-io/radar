@@ -1,0 +1,2 @@
+{"scenario":"two crawls at once in one process: A (10,000 robots rules, 100,000 links on its home page) and B (ordinary, 13 pages)","a":"1 page(s)","ms":17943,"B":"CrawlError(unreachable): unreachable","bMs":15946,"callerLongestBusyMs":15102,"warnings":["[crawl] https://b.example/ (the home page) could not be read (timed_out)"],"expectedForB":"13 page(s), however long A keeps the process"}
+{"done":true,"unhandled":0}
