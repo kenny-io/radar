@@ -1,0 +1,1086 @@
+{
+ "node": "v22.18.0",
+ "platform": "darwin arm64",
+ "callerPaths": {
+  "files": 108,
+  "tally": {
+   "template, marked failed | rejected, nothing stored | template, no mark": 104,
+   "the crop | the crop | the crop": 4
+  },
+  "perFile": [
+   {
+    "name": "brief-ffd8ffd9.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "brief-ffd8ffd9-padded-200.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "brief-png-no-idat.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "brief-png-no-idat-text.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "brief-png-ihdr-crc.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "brief-jpeg-no-scan.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cut-jpg-at-00006.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpg-at-00015.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpg-at-00024.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpg-at-00033.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpg-at-00048.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpg-at-00504.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpgprog-at-00009.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpgprog-at-00018.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpgprog-at-00027.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpgprog-at-00036.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-jpgprog-at-00060.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-png-at-00008.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-png-at-00017.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-png-at-00026.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-png-at-00035.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-png-at-00056.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-webp-at-00017.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-webp-at-00026.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-webp-at-00035.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-webp-at-00056.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-webpll-at-00012.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cut-webpll-at-00021.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpg-at-00017.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpg-at-00026.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpg-at-00035.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpg-at-00056.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpg-at-00840.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-jpgprog-at-00020.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpgprog-at-00029.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpgprog-at-00038.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-jpgprog-at-00068.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-png-at-00018.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-png-at-00027.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-png-at-00036.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-png-at-00060.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webp-at-00018.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-webp-at-00027.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-webp-at-00036.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webp-at-00060.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webp-at-00701.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webp-at-01754.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webp-at-02807.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webp-at-02916.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-00013.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-webpll-at-00022.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "cutclosed-webpll-at-00031.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-00040.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-00216.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-02166.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-04116.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-05403.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "cutclosed-webpll-at-05412.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "flip-jpgprog-header-27-at180.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "flip-png-header-08-at27.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "flip-png-header-21-at49.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "flip-png-header-33-at49.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "flip-webp-header-10-at15.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "flip-webpll-header-12-at15.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "jpeg-sof-marker-hierarchical-c5.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-crc-wrong-chunk0-IHDR.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth0-colour5.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth1-colour7.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth2-colour4.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth255-colour4.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth3-colour4.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth32-colour4.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth4-colour6.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth5-colour6.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-depth7-colour6.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-ihdr-long-17.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "short-riff-webp-only.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "webp-vp8l-version-7.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-1-byte-after-iend.png",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "jpeg-8kb-after-eoi.jpg",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "jpeg-no-eoi.jpg",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "gif-640x400.gif",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "tiff-640x400.tiff",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "tiff-sips-640x400.tiff",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "bmp-640x400.bmp",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "ico-64.ico",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "avif-640x400.avif",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "heic-640x400.heic",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "svg-plain.svg",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "webp-animated.webp",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "apng-2-frames.png",
+    "base": "cropped",
+    "a": "the crop",
+    "b": "the crop",
+    "c": "the crop",
+    "children": 3
+   },
+   {
+    "name": "real-5001x5000.png",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "png-declares-100000x100000-crc-ok.png",
+    "base": "SIGTRAP",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "jpeg-declares-65535x65535.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "webp-vp8x-canvas-8x8-inner-12000x9000.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "webp-animated-frames-flag-clear.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "png-declares-0x48-crc-ok.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "poly-png-header-then-svg-then-iend.png",
+    "base": "threw",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "poly-jpeg-header-then-html-then-eoi.jpg",
+    "base": "cropped",
+    "a": "the crop",
+    "b": "the crop",
+    "c": "the crop",
+    "children": 3
+   },
+   {
+    "name": "poly-html.html",
+    "base": "threw",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "poly-json-error.json",
+    "base": "threw",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "short-00-zero-bytes.bin",
+    "base": "threw",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "png-idat-zlib-bomb.png",
+    "base": "cropped",
+    "a": "the crop",
+    "b": "the crop",
+    "c": "the crop",
+    "children": 3
+   },
+   {
+    "name": "png-two-ihdr.png",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "jpeg-two-sof-second-60000.jpg",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 3
+   },
+   {
+    "name": "webp-vp8-zero-length.webp",
+    "base": "SIGSEGV",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   },
+   {
+    "name": "png-idat-empty.png",
+    "base": "cropped",
+    "a": "the crop",
+    "b": "the crop",
+    "c": "the crop",
+    "children": 3
+   },
+   {
+    "name": "jpeg-dqt-length-2.jpg",
+    "base": "cropped",
+    "a": "template, marked failed",
+    "b": "rejected, nothing stored",
+    "c": "template, no mark",
+    "children": 0
+   }
+  ]
+ },
+ "createPack": [
+  {
+   "name": "brief-png-no-idat.png",
+   "children": 5,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "brief-ffd8ffd9.jpg",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "brief-png-ihdr-crc.png",
+   "children": 5,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "brief-jpeg-no-scan.jpg",
+   "children": 5,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "png-1-byte-after-iend.png",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "tiff-640x400.tiff",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "gif-640x400.gif",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "svg-plain.svg",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "webp-animated.webp",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "real-5001x5000.png",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "cutclosed-webp-at-00024.webp",
+   "children": 0,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "webp-vp8x-canvas-8x8-inner-12000x9000.webp",
+   "children": 5,
+   "degradedReports": 5,
+   "photoFlags": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  }
+ ],
+ "together": {
+  "crops": 60,
+  "children": 48,
+  "mostAtOnce": 1,
+  "totalMs": 7900
+ },
+ "killedFromOutside": "The image model's picture was refused: the decoder could not read it (crashed)",
+ "timeout": {
+  "stuckMs": 20003,
+  "cropBehindItMs": 20222
+ },
+ "child": {
+  "programBytes": 1155,
+  "envKeys": [
+   "PATH",
+   "NODE_ENV"
+  ],
+  "stdio": [
+   "pipe",
+   "pipe",
+   "ignore"
+  ]
+ },
+ "timings": {
+  "canvas-1536x1024.png": {
+   "runs": 30,
+   "medianMs": 220,
+   "minMs": 208,
+   "maxMs": 234
+  },
+  "canvas-1536x1024.jpg": {
+   "runs": 30,
+   "medianMs": 217,
+   "minMs": 214,
+   "maxMs": 265
+  },
+  "canvas-1536x1024.webp": {
+   "runs": 30,
+   "medianMs": 194,
+   "minMs": 188,
+   "maxMs": 198
+  },
+  "canvas-2048x2048.png": {
+   "runs": 30,
+   "medianMs": 204,
+   "minMs": 195,
+   "maxMs": 230
+  },
+  "real-5000x5000.png": {
+   "runs": 8,
+   "medianMs": 184,
+   "minMs": 183,
+   "maxMs": 190
+  },
+  "refusedByItsBytes": {
+   "runs": 200,
+   "medianMs": 0.003
+  },
+  "crashingFile": {
+   "runs": 10,
+   "medianMs": 138
+  }
+ }
+}

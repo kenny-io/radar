@@ -1,0 +1,43 @@
+{
+ "malformedFilesThatGiveACrop": 563,
+ "tally": {
+  "entirely transparent": 93,
+  "one flat colour": 18,
+  "partly transparent (over 10%)": 48,
+  "a picture (possibly garbled)": 404
+ },
+ "examples": {
+  "a picture (possibly garbled)": [
+   "real-5000x5000.png",
+   "real-5000x5000.jpg",
+   "real-10000x2500.png",
+   "jpeg-declares-65x48.jpg",
+   "jpeg-declares-64x49.jpg",
+   "jpeg-declares-8x8.jpg"
+  ],
+  "entirely transparent": [
+   "png-declares-5000x5000-crc-ok.png",
+   "png-declares-10000x2500-crc-ok.png",
+   "png-declares-1x10000-crc-ok.png",
+   "png-declares-10000x1-crc-ok.png",
+   "webp-vp8l-declares-5000x5000-noise.webp",
+   "cutclosed-png-at-00072.png"
+  ],
+  "one flat colour": [
+   "jpeg-declares-5000x5000.jpg",
+   "jpeg-declares-10000x2500.jpg",
+   "cutclosed-png-at-00960.png",
+   "cutclosed-jpg-at-01008.jpg",
+   "cutclosed-jpg-at-01176.jpg",
+   "flip-jpg-header-16-at322.jpg"
+  ],
+  "partly transparent (over 10%)": [
+   "cutclosed-png-at-01201.png",
+   "cutclosed-png-at-01441.png",
+   "cutclosed-png-at-01681.png",
+   "cutclosed-png-at-01921.png",
+   "cutclosed-png-at-02162.png",
+   "cutclosed-png-at-02402.png"
+  ]
+ }
+}

@@ -1,0 +1,624 @@
+{
+ "good": {
+  "social.regenImage with a prompt (strict)": {
+   "resolved": {
+    "seed": 12,
+    "imageUrl": "<stored file>"
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "social",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "imageUrl": "a new file",
+    "seed": 12,
+    "style": "branded"
+   }
+  },
+  "social.style to illustration (not strict)": {
+   "resolved": {
+    "seed": 12,
+    "imageUrl": "<stored file>"
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "social",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "imageUrl": "a new file",
+    "seed": 12,
+    "style": "illustration",
+    "photo": true
+   }
+  },
+  "brief.visuals with a prompt (strict, job)": {
+   "resolved": {
+    "made": 2
+   },
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    },
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "status": "ready",
+    "error": null,
+    "urls": [
+     "a new file",
+     "a new file"
+    ]
+   }
+  },
+  "brief.visuals without a prompt (not strict, job)": {
+   "resolved": {
+    "made": 2
+   },
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    },
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "status": "ready",
+    "error": null,
+    "urls": [
+     "a new file",
+     "a new file"
+    ]
+   }
+  },
+  "article.regenerateImage with a typed prompt (strict)": {
+   "resolved": {
+    "url": "<stored file>",
+    "seed": 2
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "seed": 2,
+    "placeholder": null,
+    "prompt": "A lighthouse at dusk"
+   }
+  },
+  "article.regenerateImage, model style, no new prompt (strict)": {
+   "resolved": {
+    "url": "<stored file>",
+    "seed": 2
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "seed": 2,
+    "placeholder": null
+   }
+  },
+  "article.save with a new model style (not strict)": {
+   "resolved": "saved",
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "style": "illustration",
+    "placeholder": null
+   }
+  },
+  "article.save with a new style, cover requires the model (strict)": {
+   "resolved": "saved",
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "style": "photography",
+    "placeholder": null
+   }
+  },
+  "generateArticleBodyImages (strict)": {
+   "resolved": "2 images",
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "article-body",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    },
+    {
+     "kind": "article-body",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "bodyImages": 0
+   }
+  },
+  "reference": {
+   "coverTemplate": "80d299d0d5e4"
+  }
+ },
+ "html": {
+  "social.regenImage with a prompt (strict)": {
+   "rejected": {
+    "radarError": true,
+    "errorClass": "RadarError",
+    "userMessage": "Radar couldn’t generate this image. Your previous image is kept. Try again.",
+    "status": 502,
+    "code": "image_failed",
+    "message": "Radar couldn’t generate this image. Your previous image is kept. Try again."
+   },
+   "providerCalls": 1,
+   "stored": [],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": false
+    }
+   ],
+   "after": {
+    "imageUrl": "the previous image",
+    "seed": 1,
+    "style": "branded"
+   }
+  },
+  "social.style to illustration (not strict)": {
+   "resolved": {
+    "seed": 12,
+    "imageUrl": "<stored file>"
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "social",
+     "bytes": 31485,
+     "sha": "77621a44a674"
+    }
+   ],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": true
+    }
+   ],
+   "after": {
+    "imageUrl": "a new file",
+    "seed": 12,
+    "style": "illustration",
+    "photo": true
+   }
+  },
+  "brief.visuals with a prompt (strict, job)": {
+   "rejected": {
+    "radarError": true,
+    "errorClass": "RadarError",
+    "userMessage": "Radar couldn’t generate these images. Your previous images are kept. Try again.",
+    "status": 502,
+    "code": "image_failed",
+    "message": "Radar couldn’t generate these images. Your previous images are kept. Try again."
+   },
+   "providerCalls": 2,
+   "stored": [],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": false
+    },
+    {
+     "operation": "image.generate",
+     "degraded": false
+    }
+   ],
+   "after": {
+    "status": "failed",
+    "error": "Radar couldn’t generate the new images. Your previous images are kept. Try again.",
+    "urls": [
+     "the previous image"
+    ]
+   }
+  },
+  "brief.visuals without a prompt (not strict, job)": {
+   "resolved": {
+    "made": 2
+   },
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "brief",
+     "bytes": 1045761,
+     "sha": "2b4f4fd57b86"
+    },
+    {
+     "kind": "brief",
+     "bytes": 1058342,
+     "sha": "3082a75f32d1"
+    }
+   ],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": true
+    },
+    {
+     "operation": "image.generate",
+     "degraded": true
+    }
+   ],
+   "after": {
+    "status": "ready",
+    "error": null,
+    "urls": [
+     "a new file",
+     "a new file"
+    ]
+   }
+  },
+  "article.regenerateImage with a typed prompt (strict)": {
+   "rejected": {
+    "radarError": true,
+    "errorClass": "RadarError",
+    "userMessage": "Radar couldn’t generate this image. Your previous cover is kept. Try again.",
+    "status": 502,
+    "code": "image_failed",
+    "message": "Radar couldn’t generate this image. Your previous cover is kept. Try again."
+   },
+   "providerCalls": 1,
+   "stored": [],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": false
+    }
+   ],
+   "after": {
+    "url": "the previous cover",
+    "seed": 1,
+    "placeholder": null,
+    "prompt": "A desk with a notebook"
+   }
+  },
+  "article.regenerateImage, model style, no new prompt (strict)": {
+   "rejected": {
+    "radarError": true,
+    "errorClass": "RadarError",
+    "userMessage": "Radar couldn’t generate this image. Your previous cover is kept. Try again.",
+    "status": 502,
+    "code": "image_failed",
+    "message": "Radar couldn’t generate this image. Your previous cover is kept. Try again."
+   },
+   "providerCalls": 1,
+   "stored": [],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": false
+    }
+   ],
+   "after": {
+    "url": "the previous cover",
+    "seed": 1,
+    "placeholder": null
+   }
+  },
+  "article.save with a new model style (not strict)": {
+   "resolved": "saved",
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 25544,
+     "sha": "80d299d0d5e4"
+    }
+   ],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": true
+    }
+   ],
+   "after": {
+    "url": "a new file",
+    "style": "illustration",
+    "placeholder": "failed"
+   }
+  },
+  "article.save with a new style, cover requires the model (strict)": {
+   "rejected": {
+    "radarError": true,
+    "errorClass": "RadarError",
+    "userMessage": "Radar couldn’t generate this image. Your previous cover is kept. Try again.",
+    "status": 502,
+    "code": "image_failed",
+    "message": "Radar couldn’t generate this image. Your previous cover is kept. Try again."
+   },
+   "providerCalls": 1,
+   "stored": [],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": false
+    }
+   ],
+   "after": {
+    "url": "the previous cover",
+    "style": "branded",
+    "placeholder": null
+   }
+  },
+  "generateArticleBodyImages (strict)": {
+   "rejected": {
+    "radarError": false,
+    "errorClass": "Error",
+    "userMessage": null,
+    "status": null,
+    "code": "InvalidArg",
+    "message": "Unsupported image type"
+   },
+   "providerCalls": 1,
+   "stored": [],
+   "reports": [
+    {
+     "operation": "image.generate",
+     "degraded": false
+    }
+   ],
+   "after": {
+    "bodyImages": 0
+   }
+  },
+  "reference": {
+   "coverTemplate": "80d299d0d5e4"
+  }
+ },
+ "trailing": {
+  "social.regenImage with a prompt (strict)": {
+   "resolved": {
+    "seed": 12,
+    "imageUrl": "<stored file>"
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "social",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "imageUrl": "a new file",
+    "seed": 12,
+    "style": "branded"
+   }
+  },
+  "social.style to illustration (not strict)": {
+   "resolved": {
+    "seed": 12,
+    "imageUrl": "<stored file>"
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "social",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "imageUrl": "a new file",
+    "seed": 12,
+    "style": "illustration",
+    "photo": true
+   }
+  },
+  "brief.visuals with a prompt (strict, job)": {
+   "resolved": {
+    "made": 2
+   },
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    },
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "status": "ready",
+    "error": null,
+    "urls": [
+     "a new file",
+     "a new file"
+    ]
+   }
+  },
+  "brief.visuals without a prompt (not strict, job)": {
+   "resolved": {
+    "made": 2
+   },
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    },
+    {
+     "kind": "brief",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "status": "ready",
+    "error": null,
+    "urls": [
+     "a new file",
+     "a new file"
+    ]
+   }
+  },
+  "article.regenerateImage with a typed prompt (strict)": {
+   "resolved": {
+    "url": "<stored file>",
+    "seed": 2
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "seed": 2,
+    "placeholder": null,
+    "prompt": "A lighthouse at dusk"
+   }
+  },
+  "article.regenerateImage, model style, no new prompt (strict)": {
+   "resolved": {
+    "url": "<stored file>",
+    "seed": 2
+   },
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "seed": 2,
+    "placeholder": null
+   }
+  },
+  "article.save with a new model style (not strict)": {
+   "resolved": "saved",
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "style": "illustration",
+    "placeholder": null
+   }
+  },
+  "article.save with a new style, cover requires the model (strict)": {
+   "resolved": "saved",
+   "providerCalls": 1,
+   "stored": [
+    {
+     "kind": "hero",
+     "bytes": 85640,
+     "sha": "5c5453e3eb0e"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "url": "a new file",
+    "style": "photography",
+    "placeholder": null
+   }
+  },
+  "generateArticleBodyImages (strict)": {
+   "resolved": "2 images",
+   "providerCalls": 2,
+   "stored": [
+    {
+     "kind": "article-body",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    },
+    {
+     "kind": "article-body",
+     "bytes": 91814,
+     "sha": "9c342476f63a"
+    }
+   ],
+   "reports": [],
+   "after": {
+    "bodyImages": 0
+   }
+  },
+  "reference": {
+   "coverTemplate": "80d299d0d5e4"
+  }
+ }
+}
