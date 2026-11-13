@@ -388,7 +388,10 @@ describe('the page itself cannot make detection fail (D7)', () => {
   });
   it('a header SVG nested too deep to be written out: no logo, and the rest is still read', async () => {
     serve({});
-    const html = page([], { body: `<header><svg>${'<g>'.repeat(20_000)}<path fill="#16a34a"/>${'</g>'.repeat(20_000)}</svg></header>` });
+    // 8,000 deep. Where writing an SVG out starts to fail depends on how much the page reader has already run: between
+    // 1,654 and 5,289 levels over sixty searches in six readers. 8,000 is half as much again as the deepest ever written
+    // out, and takes the reader 0.1 s of its 5 s limit, where 20,000 took 1.3 s.
+    const html = page([], { body: `<header><svg>${'<g>'.repeat(8_000)}<path fill="#16a34a"/>${'</g>'.repeat(8_000)}</svg></header>` });
     expect(await detectBrand('biz', html, ORIGIN)).toEqual({ logo: null, primary: CSS_COLOUR, secondary: null, language: 'English (UK)', htmlLang: 'en-GB' });
   });
   it('a page with nothing in it', async () => {
