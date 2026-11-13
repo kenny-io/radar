@@ -1,8 +1,9 @@
 // Brand detection (02-system.md §3 "brand"): logo, primary/secondary colors and language.
 // Logo order: <link rel=icon> large sizes → apple-touch-icon → header img/svg → og:image. Stored via storage; null if none.
-// The site being analysed controls every byte read here, and nothing it sends may stop or stall this process: a raster
-// logo is checked from its bytes and decoded only in the child process of ../untrustedImage.ts, SVG is read as text and
-// never decoded, and the color patterns take time linear in the text.
+// The site being analysed controls every byte read here, and its logo and stylesheets must not stop or stall this
+// process: a raster logo is checked from its bytes and decoded only in the child process of ../untrustedImage.ts, SVG is
+// read as text and never decoded, and the color patterns take time linear in the text. Not solved here: a home page
+// with tens of thousands of elements, or nested thousands deep, still keeps cheerio busy for seconds (the crawler too).
 import * as cheerio from 'cheerio';
 import { fetchUrl } from './crawl';
 import { objectKey, putObject } from '../storage';
