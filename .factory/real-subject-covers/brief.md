@@ -74,3 +74,15 @@ Design: `architecture.md`. Accepted as written, with these consequences for the 
 4. The article in the original report still gets a generated cover today: the only photo on `lived.ae/property/wasl-611-al-warsan` answers 502 from lived.ae's own media endpoint (checked 2026-11-13). Princess Tower's page works.
 - D12 (after implementation). The picture is decoded and drawn in a short-lived child process, not in the web or worker process. `loadImage` in `@napi-rs/canvas` 0.1.100 ends the process with a segmentation fault on some malformed files that pass every header check (reproduced by the PM: the four bytes `FF D8 FF D9` exit with status 139). The child gets `PATH` and `NODE_ENV` only, a 20-second limit, and a crash is one refused picture. The same crash exists in `src/server/services/analysis/brand.ts` (logo bytes during onboarding); that is a separate fix.
 - D13. A non-https source in the notice is shown as plain text, not a link. A style change on a real cover moves `urlKey` locally so the picture does not flash away.
+
+## Decisions after QA round 1 (2026-11-13, PM)
+QA (`qa.md`, on `aa16969f`): do not ship the automatic path as it was. Two major defects put another subject's picture, or a share card, on an article. Fixes go to the server engineer; QA reruns its probes.
+
+- D14 (QA D1a). A page is the subject's page only when its h1 equals the subject. When the page has no h1 at all, a structured-data name of a non-generic entity equal to the subject is enough. The lead of `<title>` no longer confirms a page.
+- D15 (QA D1b). A picture's alt text ties it to the subject only when the alt names the subject and nothing else: the subject's words as a run, and every other word a numeral or a generic picture word (photo, image, picture, view, exterior and the like). "Harbour House Annex · photo 1" does not tie a picture to "Harbour House".
+- D16 (QA D2, replaces the share-image part of D3). The automatic path never takes a share image (`og:image`, `twitter:image`, `image_src`). Nothing ties a share image to the subject, and per-page generated title cards are common. The owner action may still use one, and compares it with the home page's ignoring `www.` and the query string.
+- D17 (QA D3). Tag, category, topic, author, search and archive paths are listings. Structured-data entities of type Review, Rating, AggregateRating, Comment, Offer and media objects are generic: their name is not a subject and their image is not a picture of one.
+- D18 (QA D4). A decoded picture that is blank (fully transparent, or one flat colour) is refused. A file damaged in the middle that still decodes to a partly blank picture is not detected; accepted limit.
+- D19 (QA D5). On the owner action, a picture listed in structured data keeps the alt text of the `<img>` with the same address.
+- D20 (QA D6). A search is "finished with nothing found" only when the site answered. When robots.txt and the sitemap could not be reached at all (no HTTP answer, or a 5xx), the miss is not remembered.
+- Accepted as they are: QA observations 1–7.
