@@ -14,7 +14,11 @@ vi.mock('node:child_process', async original => {
     return child;
   };
   H.spawn.mockImplementation(H.start);
-  return { ...real, default: { ...real, spawn: H.spawn }, spawn: H.spawn };
+  // The page reader (./pageReader.ts) is a child process too, and not one this file watches: it is started as it is
+  // anywhere else, from the repository, whatever a test has done to spawn or to the working directory.
+  const root = process.cwd();
+  const spawn = (command: string, args: string[], options: any) => (options?.stdio?.[3] === 'ipc' ? real.spawn(command, args, { ...options, cwd: root }) : H.spawn(command, args, options));
+  return { ...real, default: { ...real, spawn }, spawn };
 });
 vi.mock('./crawl', async original => ({ ...(await original<typeof import('./crawl')>()), fetchUrl: H.fetchUrl }));
 vi.mock('../storage', async original => ({ ...(await original<typeof import('../storage')>()), putObject: H.putObject, objectKey: (bid: string, kind: string, ext: string) => `${bid}/${kind}/stored.${ext}` }));
