@@ -4,9 +4,12 @@
 // Without an image model configured, Photography/Illustration fall back to the brand template (DIVERGENCES), and the
 // result says so (`placeholder`) so an article cover can be marked. A strict request (`modelRequired`: custom
 // directions, article body images, a cover a person asked to regenerate) never falls back: it throws.
+// A model's picture comes from the provider's server, so this process never decodes it. coverCrop first reads the
+// type, the pixel size and completeness from the bytes, then decodes and crops in a short-lived child process
+// (./untrustedImage.ts, shared with covers and logos). The templates are Radar's own drawing and are made here.
 import path from 'node:path';
 import fs from 'node:fs';
-import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import { drawVisual } from '@/lib/visual';
 import { env } from '../env';
 import { RadarError } from '../errors';
@@ -16,6 +19,7 @@ import { recordAiCall } from '../ai/record';
 import type { Usage } from '../ai/prices';
 import type { ImageIssueReason } from '@/lib/types';
 import { objectKey, putObject } from './storage';
+import { ImageRefused, decodeInChild, overPixelLimits, probeImage } from './untrustedImage';
 
 let fontsReady = false;
 function ensureFonts() {
@@ -168,13 +172,42 @@ export async function generatePhotoRaw(r: ImageReq): Promise<Buffer> {
   }
   return raw;
 }
-/** Cover-crop to exactly w×h (a centred crop, scaled to fill), as a PNG. */
+// What the child process does with the decoded picture (the process itself is ./untrustedImage.ts): the centred crop,
+// scaled to fill o.w×o.h, answered as a PNG. The size is read from the decoded image, which the decoder has already
+// turned upright when the file says the camera was held on its side.
+const CROP = `
+    const c = createCanvas(o.w, o.h); const ctx = c.getContext('2d');
+    const s = Math.max(o.w / img.width, o.h / img.height); const dw = img.width * s, dh = img.height * s;
+    ctx.drawImage(img, (o.w - dw) / 2, (o.h - dh) / 2, dw, dh);
+    reply({}, c.toBuffer('image/png'));
+`;
+/** How long one decode and crop may take before its process is stopped, and the most it may answer with (as covers). */
+const CROP_LIMITS = { timeoutMs: 20_000, maxOutput: 32 * 1024 * 1024 };
+/** The picture is why there is no crop. The message is one of the fixed texts below: nothing from the file is in it. */
+const refusedPicture = (why: string) => new Error(`The image model's picture was refused: ${why}`);
+
+/** Cover-crop to exactly w×h (a centred crop, scaled to fill), as a PNG.
+ *  `raw` is an image provider's answer and is never decoded in this process: the decoder ends the process on some
+ *  malformed files, renders SVG, and accepts a file that was cut short.
+ *  Checked from the bytes first, before any decode: a complete PNG, JPEG or WebP, not animated, with a positive size
+ *  within the shared pixel limits. The decode and the draw then run in a child process, one picture at a time, and
+ *  the answer must be a complete PNG of exactly w×h.
+ *  Rejects with a plain Error (never a RadarError) when the picture is refused at any of those steps, and when the
+ *  decoder itself could not run. Nothing falls back to decoding here; the callers decide between the brand template
+ *  and failing the request. */
 export async function coverCrop(raw: Buffer, w: number, h: number): Promise<Buffer> {
-  const img = await loadImage(raw);
-  const c = createCanvas(w, h); const ctx = c.getContext('2d');
-  const s = Math.max(w / img.width, h / img.height); const dw = img.width * s, dh = img.height * s;
-  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
-  return c.toBuffer('image/png');
+  const probe = probeImage(raw);
+  if (!probe) throw refusedPicture('it is not a PNG, JPEG or WebP');
+  if (!probe.complete) throw refusedPicture('the file is cut short');
+  if (probe.animated) throw refusedPicture('it is animated');
+  if (!(probe.width > 0 && probe.height > 0)) throw refusedPicture('it has no size');
+  // Before any decode: the decoder allocates the whole bitmap on load, so a small file declaring a huge size is stopped here.
+  if (overPixelLimits(probe)) throw refusedPicture('it is larger than the decoder is given');
+  const { data: png } = await decodeInChild(raw, CROP, { w, h }, CROP_LIMITS)
+    .catch(error => { throw error instanceof ImageRefused ? refusedPicture(`the decoder could not read it (${error.reason})`) : error; });
+  const made = probeImage(png);
+  if (!made || made.type !== 'image/png' || !made.complete || made.width !== w || made.height !== h) throw refusedPicture('the decoder did not answer with the crop');
+  return png;
 }
 export async function generatePhoto(r: ImageReq): Promise<Buffer> { return coverCrop(await generatePhotoRaw(r), r.w, r.h); }
 
