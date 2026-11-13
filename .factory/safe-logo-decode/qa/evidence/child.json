@@ -1,0 +1,140 @@
+{
+ "childSees": {
+  "envNames": [
+   "PATH",
+   "NODE_ENV",
+   "__CF_USER_TEXT_ENCODING"
+  ],
+  "argv": [
+   "{\"side\":48}"
+  ],
+  "execArgvKinds": [
+   "-e",
+   "\nconst o = J"
+  ],
+  "cwdIsWorktree": true
+ },
+ "nodeEnvUnset": {
+  "has": false,
+  "value": "undefined"
+ },
+ "args": {
+  "count": 3,
+  "first": "-e",
+  "scriptBytes": 1137,
+  "options": "{\"side\":48}"
+ },
+ "timeouts": [
+  {
+   "work": "one that waits for ever",
+   "ms": 818,
+   "ended": "SIGKILL",
+   "stillThere": false
+  },
+  {
+   "work": "one that spins without yielding",
+   "ms": 806,
+   "ended": "SIGKILL",
+   "stillThere": false
+  },
+  {
+   "work": "one that ignores polite signals and closes its output",
+   "ms": 815,
+   "ended": "SIGKILL",
+   "stillThere": false
+  }
+ ],
+ "stuckDecode": {
+  "ms": 10168,
+  "ticksOf100ms": 99,
+  "firstEndedBy": "SIGKILL",
+  "kept": "image/jpeg"
+ },
+ "badAnswers": {
+  "exits without answering": "no_answer",
+  "writes rubbish": "no_answer",
+  "a length longer than the answer": "no_answer",
+  "a head that is a string": "no_answer",
+  "a head that is null": "no_answer",
+  "exits with status 3": "crashed",
+  "ends itself with a signal": "crashed",
+  "throws": "work_failed",
+  "throws later, outside the work": "crashed"
+ },
+ "atTheLimit": [
+  {
+   "size": "5000x5000",
+   "fileBytes": 109859,
+   "ms": 164,
+   "kept": true,
+   "children": 1,
+   "primary": "#187878"
+  },
+  {
+   "size": "10000x2500",
+   "fileBytes": 101413,
+   "ms": 161,
+   "kept": true,
+   "children": 1,
+   "primary": "#187878"
+  },
+  {
+   "size": "5001x5000",
+   "fileBytes": 109859,
+   "ms": 1,
+   "kept": false,
+   "children": 0,
+   "primary": null
+  },
+  {
+   "size": "10001x100",
+   "fileBytes": 4138,
+   "ms": 0,
+   "kept": false,
+   "children": 0,
+   "primary": null
+  }
+ ],
+ "together": {
+  "children": 8,
+  "mostAtOnce": 1,
+  "order": [
+   "cover1",
+   "logo1",
+   "crash",
+   "cover2",
+   "logo2",
+   "smallcover",
+   "logo3",
+   "logo4"
+  ],
+  "endings": [
+   "exit 0",
+   "exit 0",
+   "SIGSEGV",
+   "exit 0",
+   "exit 0",
+   "exit 0",
+   "exit 0",
+   "exit 0"
+  ]
+ },
+ "unavailable": [
+  {
+   "how": "starting a child throws",
+   "warning": "[brand] logo kept without its colors: The picture decoder could not run: spawn EAGAIN"
+  },
+  {
+   "how": "the program to start does not exist",
+   "warning": "[brand] logo kept without its colors: The picture decoder could not run: spawn /nonexistent/qa/node ENOENT"
+  },
+  {
+   "how": "the child starts where the canvas library cannot be found",
+   "warning": "[brand] logo kept without its colors: The picture decoder could not run: the canvas library did not load"
+  }
+ ],
+ "decoderDownKeepsUndecodable": {
+  "logo": "/api/files/qa/logo/1794603140061-pajI32m9.png",
+  "stored": "image/png"
+ }
+}

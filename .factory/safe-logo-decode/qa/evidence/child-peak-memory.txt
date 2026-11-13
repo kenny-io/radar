@@ -1,0 +1,8 @@
+small-png-256x128.png | 918 B | decoded 256x128 | 0.15 s | peak 82 MB
+valid-png-5000x5000.png | 109859 B | decoded 5000x5000 | 0.16 s | peak 179 MB
+big-baseline.jpg | 147241 B | decoded 5000x5000 | 0.16 s | peak 179 MB
+big-progressive.jpg | 147623 B | decoded 5000x5000 | 0.20 s | peak 250 MB
+png-declares-10000x2500.png | 918 B | decoded 10000x2500 | 0.15 s | peak 178 MB
+jpg-declares-10000x2500.jpg | 3108 B | decoded 10000x2500 | 0.16 s | peak 178 MB
+progressive-jpg-declares-10000x2500.jpg | 4411 B | decoded 10000x2500 | 0.19 s | peak 322 MB
+webp-lossless-declares-10000x2500.webp | 210 B | decoded 10000x2500 | 0.13 s | peak 88 MB

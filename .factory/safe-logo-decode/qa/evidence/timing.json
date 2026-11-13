@@ -1,0 +1,329 @@
+{
+ "svg": [
+  {
+   "name": "fill=rgb(",
+   "bytes": 2097152,
+   "ms": 71,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill=rgb(",
+   "bytes": 3145728,
+   "ms": 93,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill, 64 spaces, =, 64 spaces",
+   "bytes": 2097152,
+   "ms": 9,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill, 64 spaces, =, 64 spaces",
+   "bytes": 3145728,
+   "ms": 14,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill, 65 spaces (one too many), =",
+   "bytes": 2097152,
+   "ms": 9,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill, 65 spaces (one too many), =",
+   "bytes": 3145728,
+   "ms": 13,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stroke:rgb( and 100 characters, never closed",
+   "bytes": 2097152,
+   "ms": 7,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stroke:rgb( and 100 characters, never closed",
+   "bytes": 3145728,
+   "ms": 11,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stroke:rgb( and 99 characters and a bracket (a match every time, no colour)",
+   "bytes": 2097152,
+   "ms": 8,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stroke:rgb( and 99 characters and a bracket (a match every time, no colour)",
+   "bytes": 3145728,
+   "ms": 11,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "the word color",
+   "bytes": 2097152,
+   "ms": 5,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "the word color",
+   "bytes": 3145728,
+   "ms": 6,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stop-color and new lines",
+   "bytes": 2097152,
+   "ms": 14,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stop-color and new lines",
+   "bytes": 3145728,
+   "ms": 21,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill=\"#",
+   "bytes": 2097152,
+   "ms": 6,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill=\"#",
+   "bytes": 3145728,
+   "ms": 6,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill:'",
+   "bytes": 2097152,
+   "ms": 4,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fill:'",
+   "bytes": 3145728,
+   "ms": 5,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a real declaration (one colour, many times)",
+   "bytes": 2097152,
+   "ms": 48,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a real declaration (one colour, many times)",
+   "bytes": 3145728,
+   "ms": 66,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "spaces only",
+   "bytes": 2097152,
+   "ms": 3,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "spaces only",
+   "bytes": 3145728,
+   "ms": 3,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fillfillfill",
+   "bytes": 2097152,
+   "ms": 5,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "fillfillfill",
+   "bytes": 3145728,
+   "ms": 6,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "rgb( only",
+   "bytes": 2097152,
+   "ms": 2,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "rgb( only",
+   "bytes": 3145728,
+   "ms": 4,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "= only",
+   "bytes": 2097152,
+   "ms": 3,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "= only",
+   "bytes": 3145728,
+   "ms": 3,
+   "kept": true,
+   "primary": "#2563EB"
+  },
+  {
+   "name": "150,000 different colours",
+   "bytes": 2850046,
+   "ms": 130,
+   "colours": 147518,
+   "primary": "#200061"
+  }
+ ],
+ "css": [
+  {
+   "name": "--a:rgb(",
+   "htmlBytes": 1992595,
+   "ms": 282,
+   "parseAloneMs": 94,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "dashes",
+   "htmlBytes": 1992595,
+   "ms": 131,
+   "parseAloneMs": 96,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "--a--a",
+   "htmlBytes": 1992595,
+   "ms": 129,
+   "parseAloneMs": 110,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "--a, 64 spaces, colon, 64 spaces",
+   "htmlBytes": 1992595,
+   "ms": 129,
+   "parseAloneMs": 95,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "one name of the whole length",
+   "htmlBytes": 1992597,
+   "ms": 141,
+   "parseAloneMs": 107,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "--a:#",
+   "htmlBytes": 1992595,
+   "ms": 169,
+   "parseAloneMs": 230,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": ";--a:rgb( and 100 characters, never closed",
+   "htmlBytes": 1992595,
+   "ms": 123,
+   "parseAloneMs": 109,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "the worst unit: 128-character name, 64 spaces, colon, 64 spaces, rgb( and 100 characters",
+   "htmlBytes": 1992595,
+   "ms": 135,
+   "parseAloneMs": 107,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "names of 129 characters",
+   "htmlBytes": 1992595,
+   "ms": 140,
+   "parseAloneMs": 123,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "a real declaration, many times",
+   "htmlBytes": 1992595,
+   "ms": 262,
+   "parseAloneMs": 113,
+   "primary": "#0F766E",
+   "secondary": "#2563EB"
+  },
+  {
+   "name": "underscore then --a:#fff (never a name start)",
+   "htmlBytes": 1992595,
+   "ms": 137,
+   "parseAloneMs": 106,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "space and two dashes",
+   "htmlBytes": 1992595,
+   "ms": 157,
+   "parseAloneMs": 185,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "new lines only",
+   "htmlBytes": 1992595,
+   "ms": 127,
+   "parseAloneMs": 108,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "--a then new lines",
+   "htmlBytes": 1992595,
+   "ms": 104,
+   "parseAloneMs": 145,
+   "primary": "#2563EB",
+   "secondary": null
+  },
+  {
+   "name": "--a:rgb(1,2,3 and 97 spaces (just inside the limit, closed)",
+   "htmlBytes": 1992595,
+   "ms": 130,
+   "parseAloneMs": 87,
+   "primary": "#2563EB",
+   "secondary": null
+  }
+ ]
+}

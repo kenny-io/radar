@@ -1,0 +1,115 @@
+[
+ {
+  "name": "whole webp (lossy), then SVG after the RIFF end",
+  "probe": "image/webp 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole webp (lossless), then SVG after the RIFF end",
+  "probe": "image/webp 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole webp (lossy), then newline and XML declaration and SVG",
+  "probe": "image/webp 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole JPEG, then SVG after the end marker",
+  "probe": "image/jpeg 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole JPEG with the SVG in a comment segment",
+  "probe": "image/jpeg 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole PNG with the SVG in a text chunk",
+  "probe": "image/png 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole PNG with the SVG in a text chunk after the picture data",
+  "probe": "image/png 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "PNG header, SVG, end chunk",
+  "probe": "image/png 128x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole PNG with the word <svg alone in a text chunk",
+  "probe": "image/png 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole JPEG with the word <svg alone in a comment segment",
+  "probe": "image/jpeg 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole webp with the word <svg after the RIFF end",
+  "probe": "image/webp 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "RIFF/WEBP/VP8L header of 256x128 with no picture, then SVG",
+  "probe": "image/webp 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "threw": "Invalid SVG image",
+  "renderedAsSvg": false
+ },
+ {
+  "name": "whole PNG with <SVG upper case in a text chunk",
+  "probe": "image/png 256x128 complete=true",
+  "reachesDecoder": true,
+  "signal": null,
+  "decoded": [
+   256,
+   128
+  ],
+  "centre": [
+   15,
+   118,
+   110,
+   255
+  ],
+  "renderedAsSvg": false
+ }
+]

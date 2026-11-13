@@ -1,0 +1,442 @@
+{
+ "checkout": "/Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/awesome-wescoff-efedda",
+ "limitSeconds": 20,
+ "rows": [
+  {
+   "name": "icon links with sizes",
+   "n": 5000,
+   "bytes": 254015,
+   "parseAloneMs": 19,
+   "detectMs": 96,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "icon links with sizes",
+   "n": 35000,
+   "bytes": 1809015,
+   "parseAloneMs": 70,
+   "detectMs": 2669,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "one icon link whose sizes attribute has n entries",
+   "n": 50000,
+   "bytes": 200165,
+   "parseAloneMs": 19,
+   "detectMs": 25,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "one icon link whose sizes attribute has n entries",
+   "n": 450000,
+   "bytes": 1800165,
+   "parseAloneMs": 107,
+   "detectMs": 202,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "apple-touch-icon links",
+   "n": 5000,
+   "bytes": 214015,
+   "parseAloneMs": 22,
+   "detectMs": 85,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "apple-touch-icon links",
+   "n": 40000,
+   "bytes": 1749015,
+   "parseAloneMs": 70,
+   "detectMs": 3423,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "apple-touch-icon links",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "images in a header",
+   "n": 5000,
+   "bytes": 124032,
+   "parseAloneMs": 24,
+   "detectMs": 89,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "images in a header",
+   "n": 60000,
+   "bytes": 1549032,
+   "parseAloneMs": 108,
+   "detectMs": 7647,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "images in a header",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "style elements",
+   "n": 5000,
+   "bytes": 90125,
+   "parseAloneMs": 21,
+   "detectMs": 90,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "style elements",
+   "n": 100000,
+   "bytes": 1800125,
+   "parseAloneMs": 106,
+   "detectMs": null,
+   "settled": "no answer in 20 s: stopped (the parse alone had finished)"
+  },
+  {
+   "name": "style elements",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "stylesheet links",
+   "n": 5000,
+   "bytes": 204015,
+   "parseAloneMs": 21,
+   "detectMs": 81,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stylesheet links",
+   "n": 45000,
+   "bytes": 1879015,
+   "parseAloneMs": 75,
+   "detectMs": 4254,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "stylesheet links",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "a lang attribute of n dashes",
+   "n": 100000,
+   "bytes": 100107,
+   "parseAloneMs": 10,
+   "detectMs": 18,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a lang attribute of n dashes",
+   "n": 1900000,
+   "bytes": 1900107,
+   "parseAloneMs": 113,
+   "detectMs": 170,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a theme-color of n characters",
+   "n": 100000,
+   "bytes": 100162,
+   "parseAloneMs": 10,
+   "detectMs": 17,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a theme-color of n characters",
+   "n": 1900000,
+   "bytes": 1900162,
+   "parseAloneMs": 113,
+   "detectMs": 122,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "an inline header SVG of n paths",
+   "n": 1000,
+   "bytes": 30171,
+   "parseAloneMs": 9,
+   "detectMs": 23,
+   "settled": "resolved",
+   "logo": "/api/files/qa-base/logo/1794601766952-kFEPKsYP.svg",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "an inline header SVG of n paths",
+   "n": 60000,
+   "bytes": 1800171,
+   "parseAloneMs": 84,
+   "detectMs": 158,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a header SVG nested n deep",
+   "n": 1000,
+   "bytes": 7175,
+   "parseAloneMs": 8,
+   "detectMs": 26,
+   "settled": "resolved",
+   "logo": "/api/files/qa-base/logo/1794601767726-93--VFca.svg",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a header SVG nested n deep",
+   "n": 4000,
+   "bytes": 28175,
+   "parseAloneMs": 15,
+   "detectMs": 59,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a header SVG nested n deep",
+   "n": 16000,
+   "bytes": 112175,
+   "parseAloneMs": 33,
+   "detectMs": 746,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a header SVG nested n deep",
+   "n": 64000,
+   "bytes": 448175,
+   "parseAloneMs": 68,
+   "detectMs": 11731,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "a header SVG nested n deep",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "n nested divs, then one logo image",
+   "n": 1000,
+   "bytes": 5157,
+   "parseAloneMs": 11,
+   "detectMs": 31,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then one logo image",
+   "n": 4000,
+   "bytes": 20157,
+   "parseAloneMs": 83,
+   "detectMs": 124,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then one logo image",
+   "n": 16000,
+   "bytes": 80157,
+   "parseAloneMs": 1140,
+   "detectMs": 1888,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then one logo image",
+   "n": 64000,
+   "bytes": 320157,
+   "parseAloneMs": 18921,
+   "detectMs": null,
+   "settled": "no answer in 20 s: stopped (the parse alone had finished)"
+  },
+  {
+   "name": "n nested divs, then one logo image",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "n nested headers, then one image",
+   "n": 1000,
+   "bytes": 8143,
+   "parseAloneMs": 10,
+   "detectMs": 25,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested headers, then one image",
+   "n": 4000,
+   "bytes": 32143,
+   "parseAloneMs": 63,
+   "detectMs": 99,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested headers, then one image",
+   "n": 16000,
+   "bytes": 128143,
+   "parseAloneMs": 797,
+   "detectMs": 1529,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested headers, then one image",
+   "n": 64000,
+   "bytes": 512143,
+   "parseAloneMs": 14739,
+   "detectMs": null,
+   "settled": "no answer in 20 s: stopped (the parse alone had finished)"
+  },
+  {
+   "name": "n nested headers, then one image",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "n nested divs, then n images (each image is checked against every ancestor)",
+   "n": 1000,
+   "bytes": 23125,
+   "parseAloneMs": 18,
+   "detectMs": 57,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then n images (each image is checked against every ancestor)",
+   "n": 2000,
+   "bytes": 46125,
+   "parseAloneMs": 36,
+   "detectMs": 164,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then n images (each image is checked against every ancestor)",
+   "n": 4000,
+   "bytes": 92125,
+   "parseAloneMs": 99,
+   "detectMs": 622,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then n images (each image is checked against every ancestor)",
+   "n": 8000,
+   "bytes": 184125,
+   "parseAloneMs": 320,
+   "detectMs": 2333,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then n images (each image is checked against every ancestor)",
+   "n": 16000,
+   "bytes": 368125,
+   "parseAloneMs": 1175,
+   "detectMs": 10258,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs, then n images (each image is checked against every ancestor)",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "n nested divs with a logo class, then n svg elements",
+   "n": 1000,
+   "bytes": 26125,
+   "parseAloneMs": 18,
+   "detectMs": 57,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs with a logo class, then n svg elements",
+   "n": 2000,
+   "bytes": 52125,
+   "parseAloneMs": 37,
+   "detectMs": 166,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs with a logo class, then n svg elements",
+   "n": 4000,
+   "bytes": 104125,
+   "parseAloneMs": 101,
+   "detectMs": 587,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs with a logo class, then n svg elements",
+   "n": 8000,
+   "bytes": 208125,
+   "parseAloneMs": 323,
+   "detectMs": 2502,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs with a logo class, then n svg elements",
+   "n": 16000,
+   "bytes": 416125,
+   "parseAloneMs": 1194,
+   "detectMs": 11101,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested divs with a logo class, then n svg elements",
+   "n": "larger",
+   "skipped": "not attempted after the step above"
+  },
+  {
+   "name": "n nested spans, then n links to stylesheets",
+   "n": 1000,
+   "bytes": 43125,
+   "parseAloneMs": 13,
+   "detectMs": 33,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested spans, then n links to stylesheets",
+   "n": 4000,
+   "bytes": 172125,
+   "parseAloneMs": 29,
+   "detectMs": 99,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested spans, then n links to stylesheets",
+   "n": 16000,
+   "bytes": 688125,
+   "parseAloneMs": 59,
+   "detectMs": 1302,
+   "settled": "resolved",
+   "primary": "#2563EB"
+  },
+  {
+   "name": "n nested spans, then n links to stylesheets",
+   "n": 60000,
+   "skipped": "over the 2 MB the fetch allows"
+  }
+ ]
+}

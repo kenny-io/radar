@@ -1,0 +1,152 @@
+[
+ {
+  "scenario": "control",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "ms": 5366,
+  "phase": "done",
+  "logoMissing": false,
+  "brandLine": "Logo, 2 colors, voice",
+  "logo": "/api/files/b138acd9-6c60-4897-a28a-0a20a2e80045/logo/1794603088373-jB9qaUUO.svg",
+  "storedType": "image/svg+xml",
+  "primary": "#2F5BD3",
+  "secondary": "#F4A261",
+  "defaults": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "language": "English (US)",
+  "businessName": "Qa Logo Mwfgc9ygblhtd",
+  "logoRequests": [
+   "/brand/logo.svg"
+  ]
+ },
+ {
+  "scenario": "all candidates crash the decoder",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "ms": 5365,
+  "phase": "done",
+  "logoMissing": true,
+  "brandLine": "Logo not found — you can upload one",
+  "logo": null,
+  "storedType": null,
+  "primary": "#2F5BD3",
+  "secondary": "#F4A261",
+  "defaults": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "language": "English (US)",
+  "businessName": "Qa Logo Mwfgchxs7etlw",
+  "logoRequests": [
+   "/brand/logo.svg",
+   "/apple-touch-icon.svg",
+   "/og.png"
+  ],
+  "controlColours": [
+   "#2F5BD3",
+   "#F4A261"
+  ]
+ },
+ {
+  "scenario": "crashing logo, no CSS colours",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "ms": 5391,
+  "phase": "done",
+  "logoMissing": true,
+  "brandLine": "Logo not found — you can upload one",
+  "logo": null,
+  "storedType": null,
+  "primary": "#17181C",
+  "secondary": "#EF6A2E",
+  "defaults": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "language": "English (US)",
+  "businessName": "Qa Logo Mwfgcm30vszys",
+  "logoRequests": [
+   "/brand/logo.svg",
+   "/apple-touch-icon.svg",
+   "/og.png"
+  ]
+ },
+ {
+  "scenario": "first crashes, second good",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "ms": 5416,
+  "phase": "done",
+  "logoMissing": false,
+  "brandLine": "Logo, 2 colors, voice",
+  "logo": "/api/files/c2696b96-8e42-495d-ad56-3a68fcf984ff/logo/1794603109560-DId8QKmi.png",
+  "storedType": "image/png",
+  "primary": "#2F5BD3",
+  "secondary": "#F4A261",
+  "defaults": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "language": "English (US)",
+  "businessName": "Qa Logo Mwfgcq8zirpjr",
+  "logoRequests": [
+   "/brand/logo.svg",
+   "/apple-touch-icon.svg"
+  ]
+ },
+ {
+  "scenario": "hostile text",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "ms": 5092,
+  "phase": "done",
+  "logoMissing": false,
+  "brandLine": "Logo, 2 colors, voice",
+  "logo": "/api/files/1247413d-db00-4a5e-9225-87a145205385/logo/1794603114672-YyB66Waz.svg",
+  "storedType": "image/svg+xml",
+  "primary": "#2F5BD3",
+  "secondary": "#F4A261",
+  "defaults": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "language": "English (US)",
+  "businessName": "Qa Logo Mwfgcufnr7g5m",
+  "logoRequests": [
+   "/brand/logo.svg"
+  ],
+  "controlMs": 5366
+ },
+ {
+  "scenario": "animated WebP, GIF, ICO",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "ms": 5062,
+  "phase": "done",
+  "logoMissing": true,
+  "brandLine": "Logo not found — you can upload one",
+  "logo": null,
+  "storedType": null,
+  "primary": "#2F5BD3",
+  "secondary": "#F4A261",
+  "defaults": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "language": "English (US)",
+  "businessName": "Qa Logo Mwfgcydapatiq",
+  "logoRequests": [
+   "/brand/logo.svg",
+   "/apple-touch-icon.svg",
+   "/og.png"
+  ]
+ }
+]

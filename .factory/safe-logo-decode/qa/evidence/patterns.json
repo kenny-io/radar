@@ -1,0 +1,1498 @@
+{
+ "base": "given",
+ "patterns": {
+  "css": {
+   "base": "/--([\\w-]+)\\s*:\\s*(#[0-9a-f]{3,8}\\b|rgba?\\([^)]*\\))/gi",
+   "now": "/(?<![\\w-])--([\\w-]{1,128})\\s{0,64}:\\s{0,64}(#[0-9a-f]{3,8}\\b|rgba?\\([^)]{0,100}\\))/gi"
+  },
+  "svg": {
+   "base": "/(?:fill|stop-color|stroke|color)\\s*[=:]\\s*[\"']?(#[0-9a-f]{3,8}|rgba?\\([^)]*\\))/gi",
+   "now": "/(?:fill|stop-color|stroke|color)\\s{0,64}[=:]\\s{0,64}[\"']?(#[0-9a-f]{3,8}|rgba?\\([^)]{0,100}\\))/gi"
+  }
+ },
+ "cssCorpus": [
+  {
+   "name": "plain :root block",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": [
+     "#111827",
+     "#FFFFFF"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": [
+     "#111827",
+     "#FFFFFF"
+    ]
+   }
+  },
+  {
+   "name": "minified",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": [
+     "#FFFFFF",
+     "#E5E7EB"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": [
+     "#FFFFFF",
+     "#E5E7EB"
+    ]
+   }
+  },
+  {
+   "name": "comments around and inside",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E",
+     "#FF0000"
+    ],
+    "secondary": [],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E",
+     "#FF0000"
+    ],
+    "secondary": [],
+    "any": []
+   }
+  },
+  {
+   "name": "rgb and rgba, commas",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#F59E0B"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#F59E0B"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "rgb, space separated and slash alpha",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#F59E0B"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#F59E0B"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "rgb percentages and decimals",
+   "same": true,
+   "base": {
+    "primary": [],
+    "secondary": [],
+    "any": []
+   },
+   "now": {
+    "primary": [],
+    "secondary": [],
+    "any": []
+   }
+  },
+  {
+   "name": "upper-case hex and upper-case function",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E",
+     "#010203"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#FA6400"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E",
+     "#010203"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#FA6400"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "short, 4, 5, 7 and 8 digit hex",
+   "same": true,
+   "base": {
+    "primary": [
+     "#00AA88"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": [
+     "#C026D3"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#00AA88"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": [
+     "#C026D3"
+    ]
+   }
+  },
+  {
+   "name": "spaces, tabs and new lines around the colon",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#F59E0B"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#F59E0B"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "bootstrap-like",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0D6EFD"
+    ],
+    "secondary": [
+     "#6C757D",
+     "#FFF3CD"
+    ],
+    "any": [
+     "#0D6EFD",
+     "#6610F2",
+     "#052C65",
+     "#CFE2FF",
+     "#9EC5FE",
+     "#212529",
+     "#FFFFFF",
+     "#0D6EFD",
+     "#DEE2E6"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#0D6EFD"
+    ],
+    "secondary": [
+     "#6C757D",
+     "#FFF3CD"
+    ],
+    "any": [
+     "#0D6EFD",
+     "#6610F2",
+     "#052C65",
+     "#CFE2FF",
+     "#9EC5FE",
+     "#212529",
+     "#FFFFFF",
+     "#0D6EFD",
+     "#DEE2E6"
+    ]
+   }
+  },
+  {
+   "name": "wordpress-like (double dashes in names)",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0073AA"
+    ],
+    "secondary": [
+     "#005177"
+    ],
+    "any": [
+     "#000000",
+     "#CF2E2E"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#0073AA"
+    ],
+    "secondary": [
+     "#005177"
+    ],
+    "any": [
+     "#000000",
+     "#CF2E2E"
+    ]
+   }
+  },
+  {
+   "name": "shopify-like (bare triplets)",
+   "same": true,
+   "base": {
+    "primary": [
+     "#9D174D"
+    ],
+    "secondary": [
+     "#121212"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#9D174D"
+    ],
+    "secondary": [
+     "#121212"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "tailwind and shadcn-like (hsl triplets)",
+   "same": true,
+   "base": {
+    "primary": [],
+    "secondary": [],
+    "any": [
+     "#3B82F6",
+     "#FFFFFF"
+    ]
+   },
+   "now": {
+    "primary": [],
+    "secondary": [],
+    "any": [
+     "#3B82F6",
+     "#FFFFFF"
+    ]
+   }
+  },
+  {
+   "name": "names with text, fg, bg, border in them",
+   "same": true,
+   "base": {
+    "primary": [
+     "#DC2626"
+    ],
+    "secondary": [
+     "#2563EB",
+     "#7C3AED"
+    ],
+    "any": [
+     "#111111",
+     "#0F766E",
+     "#C026D3",
+     "#F59E0B",
+     "#16A34A"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#DC2626"
+    ],
+    "secondary": [
+     "#2563EB",
+     "#7C3AED"
+    ],
+    "any": [
+     "#111111",
+     "#0F766E",
+     "#C026D3",
+     "#F59E0B",
+     "#16A34A"
+    ]
+   }
+  },
+  {
+   "name": "var references and fallbacks",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [],
+    "any": []
+   }
+  },
+  {
+   "name": "two blocks, dark mode override",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E",
+     "#5EEAD4",
+     "#99F6E4"
+    ],
+    "secondary": [],
+    "any": [
+     "#FFFFFF",
+     "#0C0A09"
+    ]
+   },
+   "now": {
+    "primary": [
+     "#0F766E",
+     "#5EEAD4",
+     "#99F6E4"
+    ],
+    "secondary": [],
+    "any": [
+     "#FFFFFF",
+     "#0C0A09"
+    ]
+   }
+  },
+  {
+   "name": "selectors that look like properties (BEM modifiers)",
+   "same": true,
+   "base": {
+    "primary": [],
+    "secondary": [],
+    "any": []
+   },
+   "now": {
+    "primary": [],
+    "secondary": [],
+    "any": []
+   }
+  },
+  {
+   "name": "three and four dashes, underscore and escape in names",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E",
+     "#DC2626"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E",
+     "#DC2626"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "unicode and escapes in names",
+   "same": true,
+   "base": {
+    "primary": [],
+    "secondary": [],
+    "any": [
+     "#0F766E"
+    ]
+   },
+   "now": {
+    "primary": [],
+    "secondary": [],
+    "any": [
+     "#0F766E"
+    ]
+   }
+  },
+  {
+   "name": "no semicolons, braces straight after",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#010203"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3",
+     "#010203"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "unclosed rgb( before a real one",
+   "same": true,
+   "base": {
+    "primary": [],
+    "secondary": [],
+    "any": [
+     "#010203"
+    ]
+   },
+   "now": {
+    "primary": [],
+    "secondary": [],
+    "any": [
+     "#010203"
+    ]
+   }
+  },
+  {
+   "name": "long but real values",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#C026D3"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "html inside a style element",
+   "same": true,
+   "base": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#F59E0B"
+    ],
+    "any": []
+   },
+   "now": {
+    "primary": [
+     "#0F766E"
+    ],
+    "secondary": [
+     "#F59E0B"
+    ],
+    "any": []
+   }
+  },
+  {
+   "name": "empty",
+   "same": true,
+   "base": {
+    "primary": [],
+    "secondary": [],
+    "any": []
+   },
+   "now": {
+    "primary": [],
+    "secondary": [],
+    "any": []
+   }
+  }
+ ],
+ "svgCorpus": [
+  {
+   "name": "attributes, double quotes",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3"
+   ]
+  },
+  {
+   "name": "attributes, single quotes and none",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B"
+   ]
+  },
+  {
+   "name": "style attributes",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B",
+    "#2563EB"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B",
+    "#2563EB"
+   ]
+  },
+  {
+   "name": "style element, minified",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B"
+   ]
+  },
+  {
+   "name": "gradients",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3"
+   ]
+  },
+  {
+   "name": "rgb forms",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B",
+    "#2563EB"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B",
+    "#2563EB"
+   ]
+  },
+  {
+   "name": "short and long hex, upper case",
+   "same": true,
+   "base": [
+    "#00AA88",
+    "#C026D3"
+   ],
+   "now": [
+    "#00AA88",
+    "#C026D3"
+   ]
+  },
+  {
+   "name": "named, none, currentColor, url",
+   "same": true,
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ]
+  },
+  {
+   "name": "neutrals only",
+   "same": true,
+   "base": [],
+   "now": []
+  },
+  {
+   "name": "flood-color, lighting-color, background-color",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3",
+    "#F59E0B"
+   ]
+  },
+  {
+   "name": "new lines inside attributes",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3"
+   ]
+  },
+  {
+   "name": "illustrator export",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3"
+   ]
+  },
+  {
+   "name": "inkscape export",
+   "same": true,
+   "base": [
+    "#0F766E",
+    "#C026D3"
+   ],
+   "now": [
+    "#0F766E",
+    "#C026D3"
+   ]
+  },
+  {
+   "name": "empty",
+   "same": true,
+   "base": [],
+   "now": []
+  }
+ ],
+ "generated": {
+  "css": {
+   "strings": 4000,
+   "withColours": 2220,
+   "different": 1035,
+   "kinds": {
+    "nameStart": 1026,
+    "farBracket": 0,
+    "both": 9,
+    "neither": 0
+   },
+   "examples": {
+    "nameStart": [
+     {
+      "css": "}--Highlight =\n  rgb(/*c*/\"---main:\t0 0% 100%;xprimary : var(--x);;\n--Highlight:0 0% 100%;;_--accent :rgb(245 158 11 / 50%)/*c*/---_p   RGB(1,2,3)))---main:   #0f766e)*/_p=   #0F766E!important}",
+      "base": {
+       "primary": [
+        "#0F766E"
+       ],
+       "secondary": [
+        "#F59E0B"
+       ],
+       "any": []
+      },
+      "now": {
+       "primary": [
+        "#0F766E"
+       ],
+       "secondary": [],
+       "any": []
+      }
+     },
+     {
+      "css": "\"---brand-color\t\t#12}}-Highlight:   rgb(245 158 11 / 50%);9--secondary-bg=\t#0f766e\n-primary\t:rgba(192, 38, 211, .5)/*c*/x---primary-   :#0f766e/*c*/",
+      "base": {
+       "primary": [
+        "#0F766E"
+       ],
+       "secondary": [],
+       "any": []
+      },
+      "now": {
+       "primary": [],
+       "secondary": [],
+       "any": []
+      }
+     },
+     {
+      "css": "{--=\trgb(245 158 11 / 50%) x---main :\tRGB(1,2,3);-_p: rgb();{x   :#0f766e;;9---Highlight\n  :\n  rgb(15,118,110)}",
+      "base": {
+       "primary": [
+        "#010203"
+       ],
+       "secondary": [
+        "#0F766E"
+       ],
+       "any": []
+      },
+      "now": {
+       "primary": [],
+       "secondary": [],
+       "any": []
+      }
+     },
+     {
+      "css": "{-main:0 0% 100%;9--x\t:#0F766E!important}-primary   :\t#c026d3cc/*c*/-secondary-bg:#abc",
+      "base": {
+       "primary": [],
+       "secondary": [],
+       "any": [
+        "#0F766E"
+       ]
+      },
+      "now": {
+       "primary": [],
+       "secondary": [],
+       "any": []
+      }
+     }
+    ],
+    "farBracket": []
+   }
+  },
+  "svg": {
+   "strings": 4000,
+   "withColours": 2745,
+   "different": 16,
+   "farBracket": 16,
+   "nowHasMore": 16,
+   "examples": [
+    {
+     "s": ";fill=rgb(;;stroke\t= #C026D3}-stop-color\t:none}-flood-color \n 'none}.a{fill=\"#0f766e  background-color\n 'RGB(1,2,3) <path d=\"M0 0\" stop-color #c026d3cc\"/>.a{fill\t:\n \"red'/>",
+     "base": [],
+     "now": [
+      "#C026D3",
+      "#0F766E"
+     ]
+    },
+    {
+     "s": "xcolor= '#C026D3;style=\"color\n :\"rgb(1,2\"<path d=\"M0 0\" background-color \t#c026d3cc\"<path d=\"M0 0\" stop-color'none\"/>fill=\n red\"<rect stroke:'#0f766e'/>-fill=\"rgb(15,118,110);;flood-color:#C026D3}",
+     "base": [
+      "#C026D3"
+     ],
+     "now": [
+      "#C026D3",
+      "#0F766E"
+     ]
+    },
+    {
+     "s": "<path d=\"M0 0\" color\n ='rgb(1,2\"/><path d=\"M0 0\" fill :'none\"/><path d=\"M0 0\" flood-color\n  'none\"/>xstop-color=\n #c026d3cc<rect background-color\n :#0f766e;fil='#c026d3cc}-fil\t:\n rgb(; stop-color  \"url(#g)'/>",
+     "base": [],
+     "now": [
+      "#C026D3",
+      "#0F766E"
+     ]
+    },
+    {
+     "s": " flood-color= 'rgb(\"/><path d=\"M0 0\" FILL\n \n rgb(\"stroke\t \tnone; FILL\t: \"#abc}<path d=\"M0 0\" stop-color\n ='#c026d3cc.a{background-color :\tred\"/>;FILL\n =\n \"RGB(1,2,3) ",
+     "base": [],
+     "now": [
+      "#AABBCC",
+      "#C026D3"
+     ]
+    }
+   ]
+  }
+ },
+ "raster": [
+  {
+   "name": "apple-180.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#A8D8C0",
+    "#309078",
+    "#F0A8F0"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#A8D8C0",
+    "#309078",
+    "#F0A8F0"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "jpg-444.jpg",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890F0",
+    "#007860",
+    "#007878",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890F0",
+    "#007860",
+    "#007878",
+    "#307878"
+   ],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "jpg-48x100-plain.jpg",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#D890F0",
+    "#007878",
+    "#007860",
+    "#D890D8"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#D890F0",
+    "#007878",
+    "#007860",
+    "#D890D8"
+   ],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "jpg-arithmetic.jpg",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890D8",
+    "#C030C0",
+    "#307878",
+    "#007878",
+    "#90C0A8",
+    "#C018D8",
+    "#A830C0",
+    "#489078",
+    "#487878",
+    "#C0F0F0",
+    "#007860"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890D8",
+    "#C030C0",
+    "#307878",
+    "#007878",
+    "#90C0A8",
+    "#C018D8",
+    "#A830C0",
+    "#489078",
+    "#487878",
+    "#C0F0F0",
+    "#007860"
+   ],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "jpg-baseline.jpg",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890D8",
+    "#C030C0",
+    "#307878",
+    "#007878",
+    "#90C0A8",
+    "#C018D8",
+    "#A830C0",
+    "#489078",
+    "#487878",
+    "#C0F0F0",
+    "#007860"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890D8",
+    "#C030C0",
+    "#307878",
+    "#007878",
+    "#90C0A8",
+    "#C018D8",
+    "#A830C0",
+    "#489078",
+    "#487878",
+    "#C0F0F0",
+    "#007860"
+   ],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "jpg-cmyk.jpg",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0C0",
+    "#309078",
+    "#D890F0",
+    "#307878",
+    "#78C0A8"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0C0",
+    "#309078",
+    "#D890F0",
+    "#307878",
+    "#78C0A8"
+   ],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "jpg-gray.jpg",
+   "base": [],
+   "now": [],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "jpg-progressive.jpg",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890F0",
+    "#007860",
+    "#007878",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#187860",
+    "#78C0A8",
+    "#309078",
+    "#D890F0",
+    "#007860",
+    "#007878",
+    "#307878"
+   ],
+   "kept": "image/jpeg"
+  },
+  {
+   "name": "og-1200x630.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309090"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309090"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-16bit.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-400x48.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309090"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309090"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-48x400.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#A8D8D8",
+    "#309090",
+    "#309078"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#A8D8D8",
+    "#309090",
+    "#309078"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-48x48.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309090"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309090"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-512.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#60A890"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#60A890"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-gray.png",
+   "base": [],
+   "now": [],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-interlaced.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-palette.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-rgb.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#78C0C0",
+    "#309078",
+    "#D890F0",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#78C0C0",
+    "#309078",
+    "#D890F0",
+    "#307878"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "png-rgba.png",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "kept": "image/png"
+  },
+  {
+   "name": "webp-lossless-alpha.webp",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#309078",
+    "#307878"
+   ],
+   "kept": "image/webp"
+  },
+  {
+   "name": "webp-lossless.webp",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#78C0C0",
+    "#309078",
+    "#D890F0",
+    "#307878"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#78C0C0",
+    "#309078",
+    "#D890F0",
+    "#307878"
+   ],
+   "kept": "image/webp"
+  },
+  {
+   "name": "webp-lossy-alpha.webp",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#489078",
+    "#307878",
+    "#187860",
+    "#C0F0F0"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#489078",
+    "#307878",
+    "#187860",
+    "#C0F0F0"
+   ],
+   "kept": "image/webp"
+  },
+  {
+   "name": "webp-lossy.webp",
+   "base": [
+    "#187878",
+    "#C030D8",
+    "#90C0C0",
+    "#309078",
+    "#D890D8",
+    "#C030C0",
+    "#C0F0F0",
+    "#307878",
+    "#187860",
+    "#D8FFFF",
+    "#A830C0",
+    "#007878",
+    "#90C0A8"
+   ],
+   "now": [
+    "#187878",
+    "#C030D8",
+    "#90C0C0",
+    "#309078",
+    "#D890D8",
+    "#C030C0",
+    "#C0F0F0",
+    "#307878",
+    "#187860",
+    "#D8FFFF",
+    "#A830C0",
+    "#007878",
+    "#90C0A8"
+   ],
+   "kept": "image/webp"
+  }
+ ],
+ "bounds": [
+  {
+   "name": "a name of 128 characters",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "a name of 129 characters",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "64 spaces before the colon",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "65 spaces before the colon",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "64 spaces after the colon",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "65 spaces after the colon",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "rgb( ) holding 100 characters",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "rgb( ) holding 101 characters",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "a name glued to a word (x--primary)",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "a name after a dash (---primary at the start of a block)",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "a name glued to a closing bracket",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "not a custom property: a colour straight after a BEM selector (.a--main:#123456)",
+   "base": [
+    "#123456"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "not a custom property: -webkit--primary:#123456",
+   "base": [
+    "#123456"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "SVG: 64 spaces after fill=",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  },
+  {
+   "name": "SVG: 65 spaces after fill=",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "SVG: 65 spaces before =",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "SVG: rgb( ) holding 101 characters",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [],
+   "same": false
+  },
+  {
+   "name": "SVG: rgb( ) holding 100 characters",
+   "base": [
+    "#0F766E"
+   ],
+   "now": [
+    "#0F766E"
+   ],
+   "same": true
+  }
+ ]
+}

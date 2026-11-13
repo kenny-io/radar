@@ -1,0 +1,1420 @@
+{
+ "site: icon links with sizes (32, 192, 512), apple-touch-icon, stylesheet": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/icon-512.png",
+   "bytes": 2465
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/icon-512.png",
+   "/assets/site.css"
+  ]
+ },
+ "site: favicon.ico (sizes=any) first, apple-touch-icon PNG second": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/apple-touch-icon.png",
+   "bytes": 865
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/favicon.ico",
+   "/apple-touch-icon.png"
+  ]
+ },
+ "site: favicon.ico (sizes=any, vnd.microsoft.icon) only": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/favicon.ico"
+  ]
+ },
+ "site: small favicon only (32 px link), header image logo (JPEG)": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/img/logo.jpg",
+   "bytes": 3108
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/img/logo.jpg"
+  ]
+ },
+ "site: no icons, share image only (WebP)": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/share.webp",
+   "bytes": 670
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/share.webp"
+  ]
+ },
+ "site: share image only (PNG 1200x630), no CSS colours": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/og.png",
+   "bytes": 4047
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/og.png"
+  ]
+ },
+ "site: SVG icon link (type attribute), PNG apple icon after it": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/favicon.svg",
+   "bytes": 280
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/favicon.svg"
+  ]
+ },
+ "site: SVG logo image in the header": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 280
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "site: inline SVG in the header, no other candidate": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "inline",
+   "bytes": 249
+  },
+  "puts": 1,
+  "primary": "#7C3AED",
+  "secondary": "#F59E0B",
+  "language": "English (UK)",
+  "asked": []
+ },
+ "site: inline SVG in the header, and an apple icon that is missing (404)": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "inline",
+   "bytes": 249
+  },
+  "puts": 1,
+  "primary": "#7C3AED",
+  "secondary": "#F59E0B",
+  "language": "English (UK)",
+  "asked": [
+   "/gone.png"
+  ]
+ },
+ "site: nothing at all": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": []
+ },
+ "site: GIF logo in the header, inline SVG as well": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "inline",
+   "bytes": 249
+  },
+  "puts": 1,
+  "primary": "#7C3AED",
+  "secondary": "#F59E0B",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.gif"
+  ]
+ },
+ "site: apple-touch-icon-precomposed and a logo class": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/pre.png",
+   "bytes": 953
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/pre.png"
+  ]
+ },
+ "site: first candidate under 48 px, second good": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/ok.png",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/tiny.png",
+   "/ok.png"
+  ]
+ },
+ "site: seven candidates, only the seventh is good": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/tiny1.png",
+   "/tiny2.png",
+   "/tiny3.png",
+   "/tiny4.png",
+   "/tiny5.png",
+   "/tiny6.png"
+  ]
+ },
+ "only candidate: apple-180.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 865
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: avif-still.avif as image/avif": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: bmp-24.bmp as image/bmp": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: gif-animated.gif as image/gif": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: gif-still.gif as image/gif": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: ico-multi.ico as image/x-icon": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-444.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 4057
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-47x100-plain.jpg as image/jpeg": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-48x100-plain.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 1347
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-arithmetic.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 2795
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-baseline.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 3108
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-cmyk.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 6112
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-gray.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 1995
+  },
+  "puts": 1,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: jpg-progressive.jpg as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 4411
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: og-1200x630.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 4047
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-16bit.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 1143
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-400x48.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 649
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-47x400.png as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-47x47.png as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-48x400.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 812
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-48x48.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 579
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-512.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 2465
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-gray.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 671
+  },
+  "puts": 1,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-interlaced.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 1540
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-palette.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 523
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-rgb.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 953
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: png-rgba.png as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: tiff-still.tiff as image/tiff": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: webp-animated.webp as image/webp": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: webp-lossless-alpha.webp as image/webp": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 184
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: webp-lossless.webp as image/webp": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 210
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: webp-lossy-alpha.webp as image/webp": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 696
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "only candidate: webp-lossy.webp as image/webp": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 670
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-jpeg (image/jpeg)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-webp (image/webp)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-x-icon (image/x-icon)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-gif (image/gif)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-made-up-image-type (image/x-qa-unknown)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-with-charset-parameter (image/png; charset=binary)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: jpeg-as-png (image/png)": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 3108
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: jpeg-as-jpg (image/jpg)": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 3108
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: jpeg-as-pjpeg (image/pjpeg)": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 4411
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: webp-as-png (image/png)": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 670
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: webp-as-jpeg (image/jpeg)": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 210
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-octet-stream (application/octet-stream)": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-as-text-html (text/html)": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "mislabelled: png-with-no-type (no type)": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-cut-50pct as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-cut-last-1 as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-trailing-bytes as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-cut-then-iend as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 562
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-whole-png-then-html as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: jpg-cut-50pct as image/jpeg": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: jpg-cut-no-end-marker as image/jpeg": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: webp-lossy-cut-50pct as image/webp": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: webp-animated as image/webp": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-apng-two-frames as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 1429
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-idat-noise as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 1038
+  },
+  "puts": 1,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-idat-empty as image/png": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/logo",
+   "bytes": 138
+  },
+  "puts": 1,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: webp-lossy-header-then-noise as image/webp": {
+  "logo": {
+   "ext": "webp",
+   "type": "image/webp",
+   "from": "/logo",
+   "bytes": 430
+  },
+  "puts": 1,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: jpg-exif-rotated-48x100 as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 1383
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: jpg-exif-rotated-47x100 as image/jpeg": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-svg-as-png as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-svg-as-jpeg as image/jpeg": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-whole-png-as-svg as image/svg+xml": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-jpeg-as-svg as image/svg+xml": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-html-as-svg as image/svg+xml": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-html-as-png as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: polyglot-whole-png-with-svg-in-text-chunk as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: png-declares-47x47-over-256x128-data as image/png": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "damaged or odd: jpg-declares-64x64-over-256x128-data as image/jpeg": {
+  "logo": {
+   "ext": "jpg",
+   "type": "image/jpeg",
+   "from": "/logo",
+   "bytes": 3108
+  },
+  "puts": 1,
+  "primary": "#187860",
+  "secondary": "#C0F0F0",
+  "language": "English (UK)",
+  "asked": [
+   "/logo"
+  ]
+ },
+ "SVG logo: plain": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 280
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: XML declaration and doctype": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 434
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: byte order mark and blank lines": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 287
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: generator comment of 300 bytes first": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 576
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: comment of 9 KB first": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: doctype with an internal subset of 9 KB first": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: upper-case element name": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 280
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: prefixed element name (svg:svg)": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: header in capitals (image/SVG+XML)": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 280
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: colours in a style element and style attributes": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 348
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: only neutral colours": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 179
+  },
+  "puts": 1,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: short hex, 8-digit hex, named colours": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 268
+  },
+  "puts": 1,
+  "primary": "#00AA88",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: UTF-16 text": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: gzip-compressed (svgz bytes, no content-encoding)": {
+  "logo": null,
+  "puts": 0,
+  "primary": null,
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: HTML page that contains an inline svg, under the SVG header": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 277
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "SVG logo: script and foreign content inside": {
+  "logo": {
+   "ext": "svg",
+   "type": "image/svg+xml",
+   "from": "/logo.svg",
+   "bytes": 292
+  },
+  "puts": 1,
+  "primary": "#0F766E",
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/logo.svg"
+  ]
+ },
+ "colours: stylesheet only, no logo": {
+  "logo": null,
+  "puts": 0,
+  "primary": "#0F766E",
+  "secondary": "#C026D3",
+  "language": "English (UK)",
+  "asked": [
+   "/assets/site.css"
+  ]
+ },
+ "colours: theme-color only": {
+  "logo": null,
+  "puts": 0,
+  "primary": "#C026D3",
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": []
+ },
+ "colours: logo pixels only (PNG)": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/l.png",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#187878",
+  "secondary": "#C030D8",
+  "language": "English (UK)",
+  "asked": [
+   "/l.png"
+  ]
+ },
+ "colours: primary from CSS, secondary from the logo": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/l.png",
+   "bytes": 918
+  },
+  "puts": 1,
+  "primary": "#DC2626",
+  "secondary": "#187878",
+  "language": "English (UK)",
+  "asked": [
+   "/l.png"
+  ]
+ },
+ "colours: grey logo, colours from CSS": {
+  "logo": {
+   "ext": "png",
+   "type": "image/png",
+   "from": "/l.png",
+   "bytes": 671
+  },
+  "puts": 1,
+  "primary": "#DC2626",
+  "secondary": "#16A34A",
+  "language": "English (UK)",
+  "asked": [
+   "/l.png"
+  ]
+ },
+ "colours: four stylesheets (only three are read), one on another origin": {
+  "logo": null,
+  "puts": 0,
+  "primary": "#16A34A",
+  "secondary": null,
+  "language": "English (UK)",
+  "asked": [
+   "/a.css",
+   "/b.css"
+  ]
+ }
+}
