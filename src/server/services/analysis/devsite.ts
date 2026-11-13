@@ -4,6 +4,8 @@
 //   *unreachable*            → every request fails (crawl-failure state)
 //   *nologo*                 → no icons, header logo or og:image (logo-not-found state)
 //   anything else            → a generic plausible small-business site (one of three verticals, chosen by domain)
+// Every stub site also has three "place" pages under /places/ and stub pictures under /media/, so real covers
+// (a picture from the business's own site as an article cover) can be tried offline. See DEV_PLACES.
 import type { Profile } from '@/lib/types';
 
 export interface DevProfile {
@@ -131,13 +133,50 @@ function logoSvg(p: DevProfile) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="17" fill="${p.brand.primary}"/><circle cx="46" cy="18" r="7" fill="${p.brand.secondary}"/><text x="32" y="44" font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="700" text-anchor="middle" fill="#FFFFFF">${letter}</text></svg>`;
 }
 
-function pageHtml(domain: string, p: DevProfile, pg: DevProfile['pages'][number], noLogo: boolean) {
+/** Places every stub site has a page for (/places/{slug}), listed in its sitemap but not in its navigation. A page with
+ *  `picture` shows a photo of the place, named in its alt text and in structured data; one without has only the
+ *  site-wide share image, which is never a picture of the place. */
+export const DEV_PLACES = [
+  { slug: 'harbour-house', name: 'Harbour House', picture: true },
+  { slug: 'harbour-house-annex', name: 'Harbour House Annex', picture: true },
+  { slug: 'mill-lane-studios', name: 'Mill Lane Studios', picture: false },
+] as const;
+
+/** A stub photograph: the business's two colours as a sky and a few blocks, no text. `seed` moves the blocks, so two places differ. */
+async function stubPicture(p: DevProfile, w: number, h: number, seed: string): Promise<Buffer> {
+  const { createCanvas } = await import('@napi-rs/canvas');
+  const canvas = createCanvas(w, h); const ctx = canvas.getContext('2d');
+  const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, p.brand.secondary); sky.addColorStop(1, p.brand.primary);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+  let n = [...seed].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 9973, 7);
+  const next = () => (n = (n * 137 + 187) % 9973) / 9973;
+  for (let i = 0; i < 5; i++) {
+    const bw = w * (0.1 + next() * 0.12), bh = h * (0.25 + next() * 0.45), x = w * (0.06 + i * 0.18);
+    ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.82)' : 'rgba(20,24,32,0.78)'; ctx.fillRect(x, h - bh, bw, bh);
+  }
+  ctx.fillStyle = 'rgba(20,24,32,0.9)'; ctx.fillRect(0, h * 0.94, w, h * 0.06);
+  return canvas.toBuffer('image/png');
+}
+/** The files under /media/: a picture for each place that has one, and one file for each way a picture can be refused. */
+async function stubMedia(p: DevProfile, file: string): Promise<{ type: string; body: Buffer } | null> {
+  const png = (body: Buffer) => ({ type: 'image/png', body });
+  const place = DEV_PLACES.find(x => x.picture && file === x.slug + '.png');
+  if (place) return png(await stubPicture(p, 1600, 900, place.slug));
+  if (file === 'portrait.png') return png(await stubPicture(p, 800, 1200, file)); // shown whole on a blurred copy of itself
+  if (file === 'tiny.png') return png(await stubPicture(p, 300, 200, file)); // too small for a cover
+  if (file === 'too-large.png') { const body = Buffer.alloc(9 * 1024 * 1024); Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(body); return png(body); } // over the size limit
+  if (file === 'broken.png') { const whole = await stubPicture(p, 1600, 900, file); return png(whole.subarray(0, Math.floor(whole.length / 3))); } // cut short
+  if (file === 'page.png') return { type: 'text/html; charset=utf-8', body: Buffer.from('<!doctype html><html><head><title>Not a picture</title></head><body><h1>Not a picture</h1></body></html>') }; // a page behind a picture's name
+  return null;
+}
+
+function pageHtml(domain: string, p: DevProfile, pg: DevProfile['pages'][number], noLogo: boolean, more = '') {
   const nav = p.pages.filter(x => !x.article && x.path.split('/').length <= 2).map(x => `<a href="${x.path}">${esc(x.h1.split(' ').slice(0, 3).join(' '))}</a>`).join(' ');
   const related = p.pages.filter(x => x.path !== pg.path).slice(0, 60).map(x => `<li><a href="https://${domain}${x.path}">${esc(x.title)}</a></li>`).join('');
   const head = noLogo ? '' : `<link rel="icon" href="/favicon.ico" sizes="32x32"><link rel="icon" type="image/svg+xml" href="/brand/logo.svg" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.svg" sizes="180x180"><meta property="og:image" content="https://${domain}/og.png">`;
   const headerLogo = noLogo ? `<span class="wordmark">${esc(p.business.name)}</span>` : `<a href="/" class="logo"><img src="/brand/logo.svg" alt="${esc(p.business.name)} logo"></a>`;
   return `<!doctype html><html lang="${p.htmlLang}"><head><meta charset="utf-8"><title>${esc(pg.title)}</title><meta name="description" content="${esc(pg.desc)}">${pg.article ? '<meta property="og:type" content="article">' : '<meta property="og:type" content="website">'}<meta name="theme-color" content="${p.brand.primary}">${head}<link rel="stylesheet" href="/assets/site.css"><style>:root{--brand-primary:${p.brand.primary};--brand-accent:${p.brand.secondary}}</style></head>
-<body><header>${headerLogo}<nav>${nav}</nav></header><main>${pg.article ? `<article><h1>${esc(pg.h1)}</h1><time datetime="2026-09-${String(10 + (pg.path.length % 18)).padStart(2, '0')}">Sep 2026</time><p>${esc(pg.body)}</p></article>` : `<h1>${esc(pg.h1)}</h1><p>${esc(pg.body)}</p>`}<ul>${related}</ul></main><footer>© 2026 ${esc(p.business.name)} · <a href="/legal/privacy">Privacy</a></footer></body></html>`;
+<body><header>${headerLogo}<nav>${nav}</nav></header><main>${pg.article ? `<article><h1>${esc(pg.h1)}</h1><time datetime="2026-09-${String(10 + (pg.path.length % 18)).padStart(2, '0')}">Sep 2026</time><p>${esc(pg.body)}</p></article>` : `<h1>${esc(pg.h1)}</h1><p>${esc(pg.body)}</p>`}${more}<ul>${related}</ul></main><footer>© 2026 ${esc(p.business.name)} · <a href="/legal/privacy">Privacy</a></footer></body></html>`;
 }
 
 export class DevFetchError extends Error { constructor(public code: string) { super(code); } }
@@ -151,10 +190,17 @@ export async function devFetch(url: string): Promise<{ status: number; type: str
   const txt = (s: string, type = 'text/html; charset=utf-8') => ({ status: 200, type, body: Buffer.from(s), url });
   const path = u.pathname.replace(/\/$/, '') || '/';
   if (path === '/robots.txt') return txt(`User-agent: *\nDisallow: /admin\nDisallow: /cart\n\nSitemap: https://${domain}/sitemap.xml\n`, 'text/plain');
-  if (path === '/sitemap.xml') return txt(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${p.pages.map(x => `<url><loc>https://${domain}${x.path === '/' ? '/' : x.path}</loc></url>`).join('')}</urlset>`, 'application/xml');
+  if (path === '/sitemap.xml') return txt(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...p.pages.map(x => x.path), ...DEV_PLACES.map(x => '/places/' + x.slug)].map(path => `<url><loc>https://${domain}${path}</loc></url>`).join('')}</urlset>`, 'application/xml');
   if (path === '/assets/site.css') return txt(`:root{--color-primary:${p.brand.primary};--color-secondary:${p.brand.secondary};--ink:#17181C}body{font-family:system-ui;color:var(--ink)}a{color:var(--color-primary)}`, 'text/css');
   if (!noLogo && (path === '/brand/logo.svg' || path === '/apple-touch-icon.svg')) return txt(logoSvg(p), 'image/svg+xml');
   if (path === '/admin') return txt('<html><body>admin</body></html>');
+  if (path.startsWith('/media/')) { const file = await stubMedia(p, path.slice('/media/'.length)); if (file) return { status: 200, type: file.type, body: file.body, url }; }
+  const place = DEV_PLACES.find(x => path === '/places/' + x.slug);
+  if (place) {
+    const n = p.business.name;
+    const photo = place.picture ? `<img src="/media/${place.slug}.png" alt="${esc(place.name)} · photo 1" width="1600" height="900"><script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Place', name: place.name, image: `https://${domain}/media/${place.slug}.png` })}</script>` : '';
+    return txt(pageHtml(domain, p, { path, title: `${place.name} — ${n}`, h1: place.name, desc: `${place.name}, a place ${n} works with.`, body: `${place.name} is one of the places ${n} works with.` }, noLogo, photo));
+  }
   const pg = p.pages.find(x => x.path === path);
   if (!pg) return { status: 404, type: 'text/html', body: Buffer.from('<html><body><h1>Not found</h1></body></html>'), url };
   return txt(pageHtml(domain, p, pg, noLogo));

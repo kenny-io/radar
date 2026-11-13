@@ -255,4 +255,24 @@ describe('the dev stub', () => {
     const clean = cleanImageDirections(stub()({}, { title, kw: 'fair wear and tear', plans: prosePlans }), { title, body: prose, plans: prosePlans });
     expect(clean.replaced).toEqual([]);
   });
+  it.each([
+    ['Living at Harbour House: what to expect', 'Harbour House'],
+    ['A weekend at the HARBOUR HOUSE ANNEX', 'Harbour House Annex'], // the longest name wins, in any letter case
+    ['Is Mill Lane Studios right for you?', 'Mill Lane Studios'],
+  ])('names a place of the stub site as the subject when the title contains it: %s', (title, name) => {
+    const placeBody: Block[] = [['p', `${name} is a short walk from the station.`], ['h2', 'Getting there'], ['p', 'Trains run every ten minutes.'], ['h2', 'What it costs'], ['p', 'Prices change with the season.']];
+    const placePlans = planArticleBodyImages(placeBody, 1400);
+    const answer = stub()({}, { title, kw: 'harbour house', plans: placePlans });
+    expect(DirectionsOut.safeParse(answer).success).toBe(true);
+    expect(answer).toMatchObject({ subject: name, subjectKind: 'building' });
+    // The validator keeps the subject (the article names it) and changes nothing else.
+    const clean = cleanImageDirections(answer, { title, body: placeBody, plans: placePlans });
+    expect(clean.replaced).toEqual([]);
+    expect(clean.subject).toEqual({ name, kind: 'building' });
+    expect(clean.cover.prompt.toLowerCase()).toContain(name.toLowerCase());
+    expect(clean.cover.alt.toLowerCase()).toContain(name.toLowerCase());
+  });
+  it('names no subject for any other title', () => {
+    for (const title of [e.title, 'How to choose a harbour-side house', 'Mill lane studio flats compared']) expect(stub()({}, { title, kw: 'x', plans })).toMatchObject({ subject: '', subjectKind: 'none' });
+  });
 });
