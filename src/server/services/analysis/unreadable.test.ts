@@ -25,7 +25,7 @@ vi.mock('./pageReader', async original => {
   return { ...real,
     readPage: (html: string, url: string, origin: string) => through('page', new URL(url).pathname, () => real.readPage(html, url, origin, { timeoutMs: H.patient(html) ? real.PAGE_READ_MS : H.limit, idleMs: H.idleMs })),
     readBrandPage: (html: string, origin: string) => through('brand', 'brand', () => real.readBrandPage(html, origin, { timeoutMs: H.patient(html) ? real.PAGE_READ_MS : H.limit, idleMs: H.idleMs })),
-    readSitemap: (xml: string) => through('sitemap', 'sitemap', () => real.readSitemap(xml, { timeoutMs: H.limit, idleMs: H.idleMs })) };
+    readSitemap: (xml: string, url: string, host: string) => through('sitemap', 'sitemap', () => real.readSitemap(xml, url, host, { timeoutMs: H.limit, idleMs: H.idleMs })) };
 });
 import fs from 'node:fs';
 import path from 'node:path';
@@ -48,12 +48,13 @@ const THROWS = `<!doctype html><html><head><title>x</title></head><body><main>${
 
 let asked: string[] = [];
 let site: Record<string, Served> = {};
-const fetchMock = vi.fn(async (href: string) => {
+const serve = async (href: string) => {
   const url = new URL(href); asked.push(url.pathname);
   const file = url.host === DOMAIN ? site[url.pathname] : undefined;
   if (url.host !== DOMAIN) throw new TypeError('fetch failed');
   return file ? new Response(file.body, { status: file.status ?? 200, headers: { 'content-type': file.type ?? 'text/html' } }) : new Response('<html><body>Not found</body></html>', { status: 404, headers: { 'content-type': 'text/html' } });
-});
+};
+const fetchMock = vi.fn(serve);
 let warn: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock); fetchMock.mockClear(); H.lookup.mockReset(); H.lookup.mockResolvedValue([{ address: '93.184.216.34' }]);
@@ -130,6 +131,26 @@ describe('a sitemap that cannot be read is ignored, as a failed fetch is', () =>
     const crawl = await crawlSite(DOMAIN);
     expect(crawl.pages).toHaveLength(100); expect(crawl.pages[99].path).toBe('/page-98'); expect(warn).not.toHaveBeenCalled();
   }, 30_000);
+  it('this process does none of the work on those 35,000 addresses: its 10 ms timer is never 100 ms late while the sitemap is dealt with', async () => {
+    // The site has no robots.txt, so the sitemap is the one at /sitemap.xml and no address is checked against robots
+    // rules: that check is still made here, address by address, and is not what this test is about.
+    site = { '/': linking('Home', []), '/sitemap.xml': xml(ordinary.wideSitemap(35_000, O)) };
+    for (let i = 0; i < 150; i++) site[`/page-${i}`] = linking(`Page ${i}`, []);
+    let late = 0, last = performance.now(), watching = false;
+    const tick = setInterval(() => { const now = performance.now(); if (watching) late = Math.max(late, now - last - 10); last = now; }, 10);
+    // From the request for the sitemap to the first request for a page: the fetch, the read, and the queueing of what it gave.
+    fetchMock.mockImplementation(async (href: string) => {
+      const url = new URL(href); asked.push(url.pathname);
+      if (url.pathname === '/sitemap.xml') watching = true; else if (watching && url.pathname.startsWith('/page-')) { await new Promise(r => setTimeout(r, 15)); watching = false; }
+      const file = site[url.pathname];
+      return file ? new Response(file.body, { status: 200, headers: { 'content-type': file.type ?? 'text/html' } }) : new Response('', { status: 404, headers: { 'content-type': 'text/html' } });
+    });
+    try {
+      const crawl = await crawlSite(DOMAIN);
+      expect(asked.slice(0, 4)).toEqual(['/', '/robots.txt', '/sitemap.xml', '/page-0']); expect(crawl.pages).toHaveLength(100);
+      expect(late).toBeLessThanOrEqual(100);
+    } finally { clearInterval(tick); fetchMock.mockImplementation(serve); }
+  }, 60_000);
 });
 
 describe('a crawl stops reading after three unreadable documents and returns what it has', () => {

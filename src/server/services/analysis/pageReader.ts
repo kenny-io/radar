@@ -7,14 +7,20 @@
 //  - it reads one document at a time and the others wait their turn;
 //  - a document gets PAGE_READ_MS of it. Past that the reader is killed, that document is unreadable, and the next
 //    document starts a new reader;
+//  - it never spends more than its limit plus two seconds on a document, whoever is watching: a second thread inside
+//    the reader ends it then, so a reader whose user was killed, or is itself too busy to stop it, does not work on;
 //  - its heap is capped at READER_HEAP_MB, so a page that builds millions of elements ends the reader, not this process;
-//  - it never keeps this process alive, it exits when this process goes away, and it is stopped after READER_IDLE_MS
-//    without work.
-// This process sends the text and gets plain data back; it runs no cheerio call on a site's document.
+//  - it never keeps this process alive, it exits when this process goes away (at once when it has no document, at
+//    the watchdog's time when it has one), and it is stopped after READER_IDLE_MS without work.
+// This process sends the text and gets plain data back; it runs no cheerio call on a site's document, and does no work
+// per link, per element or per sitemap address.
 import { spawn, type ChildProcess } from 'node:child_process';
 
 /** How long the reader may take over one document. Ordinary 1.5 MB pages take about 0.3 s. */
 export const PAGE_READ_MS = 5000;
+/** How long past a document's limit the reader's own watchdog waits before it ends the reader. The limit is kept by
+ *  this process; the watchdog is for when this process is gone or busy. */
+export const READER_GRACE_MS = 2000;
 /** How long the reader may sit without work before it is stopped. */
 export const READER_IDLE_MS = 30_000;
 /** The reader's heap cap (V8 old space), in megabytes. Measured: under it a 2 MB page of 85,000 links, of 180,000
@@ -45,7 +51,8 @@ export interface PageRead { title: string; h1: string; description: string; text
 /** What brand detection needs from the home page: the text of its <style> elements, its first three stylesheet
  *  addresses, its theme-color as written, its logo candidates in the designed order, its inline header SVG, its lang. */
 export interface BrandPageRead { css: string; stylesheets: string[]; theme: string; candidates: string[]; svg: string | null; htmlLang: string | null }
-/** The text of every <sitemap><loc> and every <url><loc>, trimmed, in document order. */
+/** `sitemaps`: the text of every <sitemap><loc>, trimmed, in document order. `urls`: every <url><loc> that is an
+ *  address to follow on the site (normUrl against the sitemap's own address, then sameSite), in document order. */
 export interface SitemapRead { sitemaps: string[]; urls: string[] }
 
 /** The document is why the read gave nothing: the reader ran past its time and was stopped, the reader ended while
@@ -58,11 +65,18 @@ const pattern = (r: RegExp) => `new RegExp(${JSON.stringify(r.source)}, ${JSON.s
 // The reader: plain JavaScript run with `node -e`, so it needs no file on disk and no build step. It answers one
 // message at a time over the channel to this process and exits when that channel closes. The three patterns above are
 // written once and placed here by their source and flags.
-// Its functions are the crawler's extract and classifyPage and brand detection's logoCandidates, inlineHeaderSvg and
-// three selections for colors, statement for statement as they ran in this process before.
+// Its functions are the crawler's extract, classifyPage and the two selections of parseSitemaps, and brand detection's
+// logoCandidates, inlineHeaderSvg and three selections for colors, statement for statement as they ran in this process
+// before.
+// The watchdog is a worker thread, because the reader's own thread cannot notice anything while cheerio keeps it busy.
+// It is told a time before each document and told 0 after the answer; if the time runs out first it kills the process.
 export const READER_CODE = String.raw`
-let cheerio = null, unavailable = '';
-try { cheerio = require('cheerio'); } catch (e) { unavailable = String((e && e.message) || e).split('\n')[0]; }
+let cheerio = null, watchdog = null, unavailable = '';
+try { cheerio = require('cheerio'); } catch (e) { unavailable = 'cheerio did not load: ' + String((e && e.message) || e).split('\n')[0]; }
+try {
+  watchdog = new (require('node:worker_threads').Worker)("let timer = null; require('node:worker_threads').parentPort.on('message', ms => { clearTimeout(timer); timer = ms > 0 ? setTimeout(() => process.kill(process.pid, 'SIGKILL'), ms) : null; });", { eval: true });
+  watchdog.unref();
+} catch (e) { unavailable = unavailable || 'its watchdog did not start: ' + String((e && e.message) || e).split('\n')[0]; }
 const ARTICLE_PATH = ${pattern(ARTICLE_PATH)};
 const LISTING_PATH = ${pattern(LISTING_PATH)};
 const ASSET_PATH = ${pattern(ASSET_PATH)};
@@ -107,12 +121,12 @@ function extract(html, url, origin) {
   return { title, h1, description, text, links: [...links], kind: cls.kind, kindSure: cls.sure };
 }
 
-function sitemap(xml) {
+function sitemap(xml, sm, host) {
   const $ = cheerio.load(xml, { xmlMode: true });
-  const sitemaps = [], urls = [];
+  const sitemaps = [], out = [];
   $('sitemap > loc').each((_, el) => { sitemaps.push($(el).text().trim()); });
-  $('url > loc').each((_, el) => { urls.push($(el).text().trim()); });
-  return { sitemaps, urls };
+  $('url > loc').each((_, el) => { const n = normUrl($(el).text().trim(), sm); if (n) { try { if (sameSite(new URL(n).hostname, host)) out.push(n); } catch { /* */ } } });
+  return { sitemaps, urls: out };
 }
 
 const maxSize = s => String(s || '').split(/\s+/).reduce((mx, x) => Math.max(mx, x === 'any' ? 512 : parseInt(x.split('x')[0]) || 0), 0);
@@ -148,12 +162,14 @@ function brand(html, origin) {
   return { css, stylesheets, theme, candidates, svg, htmlLang };
 }
 
-const read = { page: m => extract(m.text, m.url, m.origin), brand: m => brand(m.text, m.origin), sitemap: m => sitemap(m.text) };
+const read = { page: m => extract(m.text, m.url, m.origin), brand: m => brand(m.text, m.origin), sitemap: m => sitemap(m.text, m.url, m.host) };
 process.on('message', m => {
+  if (unavailable) { process.send({ id: m.id, unavailable }); return; }
+  watchdog.postMessage((m.limit > 0 ? m.limit : ${PAGE_READ_MS}) + ${READER_GRACE_MS});
   let answer;
-  if (!cheerio) answer = { id: m.id, unavailable };
-  else { try { answer = { id: m.id, data: read[m.kind](m) }; } catch (e) { answer = { id: m.id, error: String((e && e.message) || e).slice(0, 200) }; } }
+  try { answer = { id: m.id, data: read[m.kind](m) }; } catch (e) { answer = { id: m.id, error: String((e && e.message) || e).slice(0, 200) }; }
   process.send(answer);
+  watchdog.postMessage(0);
 });
 process.on('disconnect', () => process.exit(0));
 `;
@@ -167,7 +183,7 @@ const waiting: Request[] = [];
 let idle: ReturnType<typeof setTimeout> | null = null;
 let lastId = 0;
 
-/** Not the document's fault: the reader could not be started, could not be given the document, or could not load cheerio. */
+/** Not the document's fault: the reader could not be started, could not be given the document, or could not load cheerio or start its watchdog. */
 const cannotRun = (why: unknown) => new Error('The page reader could not run: ' + String((why as { message?: string } | null)?.message || why));
 
 /** A child gets its listeners once, when it starts, and each acts only while that child is the reader: nothing is
@@ -177,7 +193,7 @@ function start(): ChildProcess {
   const child = spawn(process.execPath, [`--max-old-space-size=${READER_HEAP_MB}`, '-e', READER_CODE], { cwd: process.cwd(), env: { PATH: process.env.PATH || '', NODE_ENV: process.env.NODE_ENV }, stdio: ['ignore', 'ignore', 'ignore', 'ipc'], windowsHide: true });
   child.on('message', (m: any) => {
     if (reader !== child || !current || !m || m.id !== current.id) return;
-    if (typeof m.unavailable === 'string') { stop(); settle(cannotRun('cheerio did not load: ' + m.unavailable)); }
+    if (typeof m.unavailable === 'string') { stop(); settle(cannotRun(m.unavailable)); }
     else if (typeof m.error === 'string') settle(new PageUnreadable('failed', m.error));
     else settle(null, m.data);
   });
@@ -214,7 +230,7 @@ function next() {
     if (!reader || !reader.connected) { stop(); reader = start(); }
     const child = reader;
     if (typeof child.send !== 'function' || !child.connected) throw new Error('it has no channel to this process');
-    child.send({ id: request.id, ...request.message }, error => { if (error && reader === child && current?.id === request.id) { stop(); settle(cannotRun(error)); } });
+    child.send({ id: request.id, limit: request.timeoutMs, ...request.message }, error => { if (error && reader === child && current?.id === request.id) { stop(); settle(cannotRun(error)); } });
   } catch (error) { stop(); settle(cannotRun(error)); }
 }
 
@@ -231,5 +247,5 @@ function read<T>(message: Record<string, unknown>, o: ReadOptions = {}): Promise
 export const readPage = (html: string, url: string, origin: string, o?: ReadOptions) => read<PageRead>({ kind: 'page', text: html, url, origin }, o);
 /** The home page, for brand detection. */
 export const readBrandPage = (html: string, origin: string, o?: ReadOptions) => read<BrandPageRead>({ kind: 'brand', text: html, origin }, o);
-/** A sitemap or a sitemap index. */
-export const readSitemap = (xml: string, o?: ReadOptions) => read<SitemapRead>({ kind: 'sitemap', text: xml }, o);
+/** A sitemap or a sitemap index, fetched from `url`, for the site on `host`. */
+export const readSitemap = (xml: string, url: string, host: string, o?: ReadOptions) => read<SitemapRead>({ kind: 'sitemap', text: xml, url, host }, o);

@@ -14,10 +14,12 @@ vi.mock('node:child_process', async original => {
 import { execFile, spawn as realSpawn } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
-import { PAGE_READ_MS, PageUnreadable, READER_CODE, READER_HEAP_MB, READER_IDLE_MS, normUrl, readBrandPage, readPage, readSitemap, sameSite } from './pageReader';
+import { PAGE_READ_MS, PageUnreadable, READER_CODE, READER_GRACE_MS, READER_HEAP_MB, READER_IDLE_MS, normUrl, readBrandPage, readPage, readSitemap as readSitemapOf, sameSite, type ReadOptions } from './pageReader';
 import { ordinary, stalling } from './stalling.fixtures';
 
-const URL_ = 'https://site.example/dir/page', ORIGIN = 'https://site.example';
+const URL_ = 'https://site.example/dir/page', ORIGIN = 'https://site.example', MAP = 'https://site.example/maps/sitemap.xml', HOST = 'site.example';
+/** A sitemap fetched from MAP, for the site on HOST. */
+const readSitemap = (xml: string, o?: ReadOptions) => readSitemapOf(xml, MAP, HOST, o);
 const realTimeout = setTimeout;
 /** A real wait, also while a test has replaced the clock. */
 const pause = (ms: number) => new Promise<void>(resolve => { realTimeout(resolve, ms); });
@@ -55,9 +57,12 @@ describe('an ordinary document is read as it was in this process', () => {
     });
     expect(await readBrandPage('', ORIGIN)).toEqual({ css: '', stylesheets: [], theme: '', candidates: [], svg: null, htmlLang: null });
   });
-  it('a sitemap: the text of each sitemap and each address, in order, for the caller to check', async () => {
-    expect(await readSitemap('<sitemapindex><sitemap><loc> https://site.example/a.xml </loc></sitemap><url><loc>/relative</loc></url><url><loc>https://elsewhere.example/x</loc></url><sitemap><loc>b.xml</loc></sitemap></sitemapindex>'))
-      .toEqual({ sitemaps: ['https://site.example/a.xml', 'b.xml'], urls: ['/relative', 'https://elsewhere.example/x'] });
+  it('a sitemap: the text of each sitemap it names, and the addresses to follow on the site, both in order', async () => {
+    const locs = [' https://site.example/a ', 'relative', '/b/?x=1#y', 'https://www.site.example/c', 'https://elsewhere.example/x', 'https://site.example/file.pdf', 'http://[bad', 'https://site.example/a'];
+    expect(await readSitemap(`<sitemapindex><sitemap><loc> https://site.example/a.xml </loc></sitemap>${locs.map(l => `<url><loc>${l}</loc></url>`).join('')}<sitemap><loc>b.xml</loc></sitemap></sitemapindex>`))
+      .toEqual({ sitemaps: ['https://site.example/a.xml', 'b.xml'], urls: ['https://site.example/a', 'https://site.example/maps/relative', 'https://site.example/b', 'https://www.site.example/c', 'https://site.example/a'] });
+    // The same sitemap fetched from, and for, the www. host: the same addresses count.
+    expect((await readSitemapOf(`<urlset><url><loc>/d</loc></url><url><loc>https://site.example/e</loc></url></urlset>`, 'https://www.site.example/sitemap.xml', 'www.site.example')).urls).toEqual(['https://www.site.example/d', 'https://site.example/e']);
   });
   it('the two large ordinary pages and a full sitemap are read well inside the limit, in the same reader', async () => {
     await readSitemap('<urlset/>'); const child = lastChild(); H.spawn.mockClear();
@@ -65,8 +70,8 @@ describe('an ordinary document is read as it was in this process', () => {
     expect(blog.value).toMatchObject({ h1: 'Blog', kind: 'page', kindSure: true }); expect(blog.value.links).toHaveLength(4003); expect(blog.value.text).toHaveLength(4000);
     const brand = await watched(() => readBrandPage(ordinary.blogIndex(), ORIGIN));
     expect(brand.value).toMatchObject({ candidates: ['https://site.example/favicon-512.png', 'https://site.example/logo.png'], stylesheets: ['/site.css'], htmlLang: 'fr' });
-    const map = await watched(() => readSitemap(ordinary.wideSitemap()));
-    expect(map.value.urls).toHaveLength(35_000);
+    const map = await watched(() => readSitemap(ordinary.wideSitemap(35_000, ORIGIN)));
+    expect(map.value.urls).toHaveLength(35_000); expect(map.value.urls[34_999]).toBe('https://site.example/page-34999');
     for (const read of [blog, brand, map]) { expect(read.ms).toBeLessThan(PAGE_READ_MS / 2); expect(read.late).toBeLessThanOrEqual(100); }
     expect(H.spawn).not.toHaveBeenCalled(); expect(running(child.pid!)).toBe(true);
   }, 30_000);
@@ -176,7 +181,7 @@ describe('recovery and waiting in turn (AC5)', () => {
     await readSitemap('<urlset/>'); const child = lastChild(); H.spawn.mockClear();
     const error = await readSitemap(`<urlset><url><loc>${'<a>'.repeat(12_000)}x</loc></url></urlset>`).catch(e => e);
     expect(error).toBeInstanceOf(PageUnreadable); expect(error).toMatchObject({ reason: 'failed' }); expect(error.message).toContain('Maximum call stack size exceeded');
-    expect(await readSitemap('<urlset><url><loc>after</loc></url></urlset>')).toEqual({ sitemaps: [], urls: ['after'] });
+    expect(await readSitemap('<urlset><url><loc>/after</loc></url></urlset>')).toEqual({ sitemaps: [], urls: ['https://site.example/after'] });
     expect(H.spawn).not.toHaveBeenCalled(); expect(running(child.pid!)).toBe(true);
   });
 });
@@ -235,7 +240,7 @@ describe('the reader process (AC8)', () => {
     await readSitemap('<urlset/>', { idleMs: 300 }); // work before the time is up: the time starts again
     await pause(200); expect(running(first.pid!)).toBe(true);
     expect(await gone(first.pid!, 2000)).toBe(true); expect(first.signalCode).toBe('SIGKILL');
-    expect(await readSitemap('<urlset><url><loc>x</loc></url></urlset>')).toEqual({ sitemaps: [], urls: ['x'] });
+    expect(await readSitemap('<urlset><url><loc>/x</loc></url></urlset>')).toEqual({ sitemaps: [], urls: ['https://site.example/x'] });
     expect(lastChild()).not.toBe(first);
   });
   it('the idle time is thirty seconds', async () => {
@@ -256,16 +261,34 @@ describe('the reader process (AC8)', () => {
     expect(slow.ms).toBeGreaterThanOrEqual(980);
   });
 
+  it('its watchdog is set for one document at a time: a reader that has answered is not ended by it, whatever the answer was', async () => {
+    await readSitemap('<urlset/>'); const child = lastChild(); H.spawn.mockClear();
+    // Three documents with a limit of 0.3 s, so a watchdog left running would end the reader 2.3 s after any of them.
+    expect(await readPage(ordinary.small(), URL_, ORIGIN, { timeoutMs: 300 })).toMatchObject({ title: 'Small' });
+    expect(await readSitemap(`<urlset><url><loc>${'<a>'.repeat(12_000)}x</loc></url></urlset>`, { timeoutMs: 300 }).catch(e => e.reason)).toBe('failed');
+    expect(await readBrandPage(ordinary.small(), ORIGIN, { timeoutMs: 300 })).toMatchObject({ htmlLang: 'en-GB' });
+    await pause(300 + READER_GRACE_MS + 500);
+    expect(running(child.pid!)).toBe(true);
+    expect(await readPage(ordinary.small(), URL_, ORIGIN)).toMatchObject({ title: 'Small' });
+    expect(H.spawn).not.toHaveBeenCalled();
+  }, 20_000);
+
   // A process of its own that uses pageReader.ts as the worker does, and says which reader it started.
+  // 'leave': it reads a sitemap and has nothing more to do. 'stay': the same, and it stays. 'stall': it asks for a
+  // page that takes 24 s to parse, with a limit of one second, and says which reader has it 0.4 s later.
   const USER = `
     const { execFileSync } = require('node:child_process');
+    const reader = () => execFileSync('pgrep', ['-P', String(process.pid), '-f', 'max-old-space-size']).toString().trim().split(/\\s+/).map(Number);
     import(process.argv[1]).then(async m => {
-      const read = await m.readSitemap('<urlset><url><loc>read</loc></url></urlset>');
-      const reader = execFileSync('pgrep', ['-P', String(process.pid), '-f', 'max-old-space-size']).toString().trim().split(/\\s+/).map(Number);
-      console.log(JSON.stringify({ read, reader }));
+      if (process.argv[2] === 'stall') {
+        m.readPage('<!doctype html><html><body>' + '<div>'.repeat(64000), 'https://site.example/x', 'https://site.example', { timeoutMs: 1000 }).catch(() => {});
+        setTimeout(() => { console.log(JSON.stringify({ reader: reader() })); }, 400); setInterval(() => {}, 1000); return;
+      }
+      const read = await m.readSitemap('<urlset><url><loc>/read</loc></url></urlset>', 'https://site.example/sitemap.xml', 'site.example');
+      console.log(JSON.stringify({ read, reader: reader() }));
       if (process.argv[2] === 'stay') setInterval(() => {}, 1000);
     });`;
-  const startUser = (mode: 'leave' | 'stay') => {
+  const startUser = (mode: 'leave' | 'stay' | 'stall') => {
     const user = realSpawn(process.execPath, ['--import', 'tsx', '-e', USER, path.join(__dirname, 'pageReader.ts'), mode], { cwd: process.cwd(), env: { PATH: process.env.PATH || '', NODE_ENV: process.env.NODE_ENV }, stdio: ['ignore', 'pipe', 'inherit'] });
     let out = ''; user.stdout!.on('data', chunk => { out += chunk; });
     const said = async () => { for (const end = Date.now() + 15_000; Date.now() < end && !out.includes('\n');) await pause(20); return JSON.parse(out) as { read: unknown; reader: number[] }; };
@@ -275,7 +298,7 @@ describe('the reader process (AC8)', () => {
   it('does not keep the process that uses it alive, and exits when that process has', async () => {
     const { said, exited } = startUser('leave');
     const { read, reader } = await said();
-    expect(read).toEqual({ sitemaps: [], urls: ['read'] }); expect(reader).toHaveLength(1);
+    expect(read).toEqual({ sitemaps: [], urls: ['https://site.example/read'] }); expect(reader).toHaveLength(1);
     // The user process has nothing left to do: it ends by itself, long before the reader's thirty idle seconds are up.
     expect(await Promise.race([exited, pause(5000).then(() => 'still running')])).toBe(0);
     expect(await gone(reader[0])).toBe(true);
@@ -287,15 +310,27 @@ describe('the reader process (AC8)', () => {
     user.kill('SIGKILL');
     expect(await gone(reader[0])).toBe(true);
   }, 30_000);
+  it('a reader inside a stalling document when its user is killed ends itself at the limit plus two seconds', async () => {
+    const { user, said } = startUser('stall');
+    const { reader } = await said(); // 0.4 s into a document that has a limit of 1 s and needs 24
+    expect(reader).toHaveLength(1);
+    user.kill('SIGKILL'); const killed = performance.now();
+    // Nobody is left to keep the limit: past it, the reader is still at work on the document...
+    await pause(1000); expect(running(reader[0])).toBe(true);
+    // ...until its own watchdog ends it, 3 s after it began (about 2.6 s after the kill). Without one it worked on for 33 s.
+    expect(await gone(reader[0], 3500)).toBe(true);
+    const outlived = performance.now() - killed;
+    expect(outlived).toBeGreaterThan(1000 + READER_GRACE_MS - 600); expect(outlived).toBeLessThan(1000 + READER_GRACE_MS + 1500);
+  }, 30_000);
   it('the reader’s code on its own: it answers over its channel and exits when the channel closes', async () => {
     const parent = `
       const { spawn } = require('node:child_process');
       const reader = spawn(process.execPath, ['--max-old-space-size=' + process.argv[2], '-e', process.argv[1]], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
       reader.on('message', answer => { console.log(JSON.stringify({ answer, reader: reader.pid })); process.exit(0); });
-      reader.send({ id: 7, kind: 'sitemap', text: '<urlset><url><loc>x</loc></url></urlset>' });`;
+      reader.send({ id: 7, kind: 'sitemap', text: '<urlset><url><loc>/x</loc></url></urlset>', url: 'https://site.example/sitemap.xml', host: 'site.example' });`;
     const stdout = await new Promise<string>((resolve, reject) => { execFile(process.execPath, ['-e', parent, READER_CODE, String(READER_HEAP_MB)], { cwd: process.cwd() }, (error, out) => (error ? reject(error) : resolve(out))); });
     const { answer, reader } = JSON.parse(stdout);
-    expect(answer).toEqual({ id: 7, data: { sitemaps: [], urls: ['x'] } });
+    expect(answer).toEqual({ id: 7, data: { sitemaps: [], urls: ['https://site.example/x'] } });
     expect(await gone(reader)).toBe(true);
   }, 30_000);
 });
@@ -324,6 +359,10 @@ describe('the reader’s copies of normUrl and sameSite are the ones in this pro
       expect([href, here(href, base, origin)]).toEqual([href, expected]);
       expect([href, there[i]]).toEqual([href, expected === null ? [] : [expected]]);
     });
+  });
+  it('and on the same addresses, each read as the one address of a sitemap', async () => {
+    const there = await Promise.all(TABLE.map(([href, base, origin]) => readSitemapOf(`<urlset><url><loc>${href.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</loc></url></urlset>`, base, new URL(origin).hostname).then(map => map.urls)));
+    TABLE.forEach(([href, , , expected], i) => { expect([href, there[i]]).toEqual([href, expected === null ? [] : [expected]]); });
   });
   it('sameSite ignores one leading www. on either side and nothing else', () => {
     expect([sameSite('www.a.example', 'a.example'), sameSite('a.example', 'www.a.example'), sameSite('www.a.example', 'www.a.example'), sameSite('a.example', 'a.example')]).toEqual([true, true, true, true]);

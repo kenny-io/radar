@@ -97,9 +97,9 @@ async function parseSitemaps(urls: string[], host: string, unreadable: Unreadabl
     const sm = queue.shift()!; if (seen.has(sm)) continue; seen.add(sm);
     let xml: string;
     try { const r = await fetchUrl(sm, 'application/xml,text/xml'); if (r.status >= 400) continue; xml = r.body.toString('utf8'); } catch { continue; }
-    const map = await readable(readSitemap(xml), unreadable, sm); if (!map) continue;
+    const map = await readable(readSitemap(xml, sm, host), unreadable, sm); if (!map) continue;
     for (const loc of map.sitemaps) queue.push(loc);
-    for (const loc of map.urls) { const n = normUrl(loc, sm); if (n) { try { if (sameSite(new URL(n).hostname, host)) out.push(n); } catch { /* */ } } }
+    for (const u of map.urls) out.push(u); // already the addresses to follow on this site
   }
   return out;
 }
