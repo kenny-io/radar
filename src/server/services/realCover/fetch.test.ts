@@ -82,9 +82,20 @@ describe('one request on the business’s own site', () => {
     expect((await get('https://lived.ae/a.png')).url).toBe('https://lived.ae/3');
   });
 
-  it.each([404, 500, 502, 304, 302 /* a redirect with no location */])('status %i is unreachable', async status => {
+  it.each([404, 500, 502, 304, 302 /* a redirect with no location */])('status %i is unreachable, and the error carries the status: the site did answer', async status => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status }));
-    expect(await code(get('https://lived.ae/a.png'))).toBe('unreachable');
+    expect(await get('https://lived.ae/a.png').catch(e => e)).toMatchObject({ code: 'unreachable', status });
+  });
+  it('one redirect too many carries the redirect’s status; no answer at all carries none', async () => {
+    fetchMock.mockImplementation(async () => redirect('/next', 307));
+    expect(await get('https://lived.ae/a.png').catch(e => e)).toMatchObject({ code: 'unreachable', status: 307 });
+    fetchMock.mockReset(); fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
+    const down = await get('https://lived.ae/a.png').catch(e => e);
+    expect(down.code).toBe('unreachable'); expect(down.status).toBeUndefined();
+    const stopped = new AbortController(); stopped.abort();
+    expect((await get('https://lived.ae/a.png', { signal: stopped.signal }).catch(e => e)).status).toBeUndefined();
+    expect((await get('https://lived.ae/a.png', { requests: { left: 0 } }).catch(e => e)).status).toBeUndefined();
+    expect((await get('https://10.0.0.5/a.png', { domain: '10.0.0.5' }).catch(e => e)).status).toBeUndefined(); // a blocked address is not described
   });
 
   it('a network failure, a blocked lookup and an abort are all unreachable, with nothing said about why', async () => {
@@ -160,8 +171,9 @@ describe('dev-stub mode', () => {
   });
   it('a missing page and an unreachable stub site are unreachable', async () => {
     H.dev.mockResolvedValueOnce({ status: 404, type: 'text/html', body: Buffer.from('nope'), url: 'x' });
-    expect(await code(get('https://lived.ae/missing'))).toBe('unreachable');
+    expect(await get('https://lived.ae/missing').catch(e => e)).toMatchObject({ code: 'unreachable', status: 404 });
     H.dev.mockRejectedValueOnce(new Error('ECONNREFUSED'));
-    expect(await code(get('https://lived.ae/a.png'))).toBe('unreachable');
+    const down = await get('https://lived.ae/a.png').catch(e => e);
+    expect(down.code).toBe('unreachable'); expect(down.status).toBeUndefined();
   });
 });

@@ -8,7 +8,9 @@ import { ownSiteUrl } from '@/lib/ownSite';
 
 export type SitePictureCode = 'invalid_address' | 'not_your_site' | 'left_site' | 'unreachable' | 'no_picture'
   | 'off_site_picture' | 'too_large' | 'too_small' | 'not_a_picture';
-export class SitePictureError extends Error { constructor(public code: SitePictureCode, public host?: string) { super(code); } }
+/** `status`: for 'unreachable', the HTTP status when the site did answer (a 404, a 502, one redirect too many).
+ *  Absent when there was no answer at all: DNS, a refused or blocked connection, a timeout, no requests left. */
+export class SitePictureError extends Error { constructor(public code: SitePictureCode, public host?: string, public status?: number) { super(code); } }
 
 export const ACCEPT = {
   any: 'text/html,application/xhtml+xml,image/webp,image/png,image/jpeg;q=0.9',
@@ -30,7 +32,7 @@ const cancel = async (r: Response) => { try { await r.body?.cancel(); } catch { 
 /** One GET on the business's own site. Every hop must pass ownSiteUrl and assertPublicUrl. Throws SitePictureError:
  *  'left_site' (a hop is off the domain; `host` names it), 'too_large' (over `maxBytes` with over: 'reject'),
  *  'unreachable' (everything else: DNS, blocked address, timeout, more than 3 redirects, a status outside 200–299,
- *  no requests left). */
+ *  no requests left; it carries the HTTP status when the site answered with one). */
 export async function fetchOwn(address: URL, o: OwnFetch): Promise<OwnResponse> {
   try { return await get(address, o); }
   catch (error) { if (error instanceof SitePictureError) throw error; throw new SitePictureError('unreachable'); }
@@ -47,7 +49,7 @@ async function get(address: URL, o: OwnFetch): Promise<OwnResponse> {
 
     if (env.devStubs) {
       const r = await devFetch(url.href); // throws for an unreachable stub domain
-      if (r.status >= 400) throw new SitePictureError('unreachable');
+      if (r.status >= 400) throw new SitePictureError('unreachable', undefined, r.status);
       if (r.body.length <= o.maxBytes) return { url: url.href, type: r.type, body: r.body };
       if (o.over === 'reject') throw new SitePictureError('too_large');
       return { url: url.href, type: r.type, body: r.body.subarray(0, o.maxBytes) };
@@ -62,11 +64,11 @@ async function get(address: URL, o: OwnFetch): Promise<OwnResponse> {
     const location = r.headers.get('location');
     if (REDIRECT.includes(r.status) && location) {
       await cancel(r);
-      if (redirects >= MAX_REDIRECTS) throw new SitePictureError('unreachable');
+      if (redirects >= MAX_REDIRECTS) throw new SitePictureError('unreachable', undefined, r.status);
       at = new URL(location, url);
       continue;
     }
-    if (r.status < 200 || r.status > 299) { await cancel(r); throw new SitePictureError('unreachable'); }
+    if (r.status < 200 || r.status > 299) { await cancel(r); throw new SitePictureError('unreachable', undefined, r.status); }
     const declared = Number(r.headers.get('content-length'));
     if (o.over === 'reject' && Number.isFinite(declared) && declared > o.maxBytes) { await cancel(r); throw new SitePictureError('too_large'); }
 
