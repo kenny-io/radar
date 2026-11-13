@@ -1,0 +1,5 @@
+# After one detectBrand with a good PNG logo: is the canvas library's native code in the detecting process?
+## revision under test (e38d0068)
+{"canvasModulesInRequireCache":0,"canvasNativeLibrariesMapped":[]}
+## base (8e3a4da3)
+{"canvasModulesInRequireCache":5,"canvasNativeLibrariesMapped":["<scratch>/base-main/node_modules/@napi-rs/canvas-darwin-arm64/skia.darwin-arm64.node"]}

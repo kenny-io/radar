@@ -1,0 +1,180 @@
+{
+ "checkout": "/private/tmp/claude-501/-Users-ekene-Downloads-design-handoff-radar-radar-push--claude-worktrees-awesome-wescoff-efedda/e2520675-b2d0-4084-9736-a561df3765aa/scratchpad/base-main",
+ "rows": [
+  {
+   "name": "control: good PNG logo",
+   "status": 0,
+   "signal": null,
+   "wallMs": 423,
+   "answer": {
+    "settled": "resolved",
+    "ms": 18,
+    "result": {
+     "logo": "/api/files/qa-base/logo/1794603156883-Wy93GU7U.png",
+     "primary": "#2563EB",
+     "secondary": "#187878",
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: PNG with header and end, no picture data",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 315,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: PNG whose header checksum is wrong",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 318,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: JPEG with no scan",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 321,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: JPEG start and end marker padded",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 316,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: WebP with its size field 0",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 316,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: WebP cut in half with its size corrected",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 317,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: an ordinary TIFF file",
+   "status": null,
+   "signal": "SIGSEGV",
+   "wallMs": 320,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "crash: PNG declaring 65536x65536",
+   "status": null,
+   "signal": "SIGTRAP",
+   "wallMs": 317,
+   "answer": null,
+   "stderr": "../../src/core/SkBitmap.cpp:252: fatal error: \"assertf(this->tryAllocPixels(info, rowBytes)): ColorType:4 AlphaType:2 [w:65536 h:65536] rb:0\""
+  },
+  {
+   "name": "slow: SVG logo, 100 KB of fill=rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 1893,
+   "answer": {
+    "settled": "resolved",
+    "ms": 1577,
+    "result": {
+     "logo": "/api/files/qa-base/logo/1794603159760-4poNUgeY.svg",
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: SVG logo, 300 KB of fill=rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 14395,
+   "answer": {
+    "settled": "resolved",
+    "ms": 14074,
+    "result": {
+     "logo": "/api/files/qa-base/logo/1794603161658-1MDzJ_x2.svg",
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: stylesheet, 100 KB of --a:rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 2098,
+   "answer": {
+    "settled": "resolved",
+    "ms": 1770,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: stylesheet, 300 KB of --a:rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 16168,
+   "answer": {
+    "settled": "resolved",
+    "ms": 15851,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: stylesheet, 300 KB of dashes",
+   "status": null,
+   "signal": null,
+   "stoppedByLimit": "still running after 40s, stopped by this script",
+   "wallMs": 40009,
+   "answer": null,
+   "stderr": ""
+  },
+  {
+   "name": "slow: inline style, 300 KB of --a:rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 16209,
+   "answer": {
+    "settled": "resolved",
+    "ms": 15887,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  }
+ ]
+}

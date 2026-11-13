@@ -1,0 +1,203 @@
+{
+ "scenarios": 108,
+ "same": 69,
+ "different": 39,
+ "diffs": [
+  {
+   "scenario": "site: favicon.ico (sizes=any) first, apple-touch-icon PNG second",
+   "base": "logo image/x-icon .ico from /favicon.ico; primary #0F766E; secondary #C030D8; language English (UK)",
+   "now": "logo image/png .png from /apple-touch-icon.png; primary #0F766E; secondary #C030D8; language English (UK)",
+   "fetchOrderChanged": true
+  },
+  {
+   "scenario": "site: favicon.ico (sizes=any, vnd.microsoft.icon) only",
+   "base": "logo image/vnd.microsoft.icon .ico from /favicon.ico; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "site: GIF logo in the header, inline SVG as well",
+   "base": "logo image/gif .gif from /logo.gif; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/svg+xml .svg from inline; primary #7C3AED; secondary #F59E0B; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: avif-still.avif as image/avif",
+   "base": "logo image/avif .avif from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: bmp-24.bmp as image/bmp",
+   "base": "logo image/bmp .bmp from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: gif-animated.gif as image/gif",
+   "base": "logo image/gif .gif from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: gif-still.gif as image/gif",
+   "base": "logo image/gif .gif from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: ico-multi.ico as image/x-icon",
+   "base": "logo image/x-icon .ico from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: tiff-still.tiff as image/tiff",
+   "base": "(not run on the base: its decoder ends the process on this input)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "only candidate: webp-animated.webp as image/webp",
+   "base": "logo image/webp .webp from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: png-as-jpeg (image/jpeg)",
+   "base": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: png-as-webp (image/webp)",
+   "base": "logo image/webp .webp from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: png-as-x-icon (image/x-icon)",
+   "base": "logo image/x-icon .ico from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: png-as-gif (image/gif)",
+   "base": "logo image/gif .gif from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: png-as-made-up-image-type (image/x-qa-unknown)",
+   "base": "logo image/x-qa-unknown .x-qa-unknown from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: jpeg-as-png (image/png)",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: jpeg-as-jpg (image/jpg)",
+   "base": "logo image/jpg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: jpeg-as-pjpeg (image/pjpeg)",
+   "base": "logo image/pjpeg .pjpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: webp-as-png (image/png)",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/webp .webp from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "mislabelled: webp-as-jpeg (image/jpeg)",
+   "base": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/webp .webp from /logo; primary #187878; secondary #C030D8; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: png-cut-50pct as image/png",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: png-cut-last-1 as image/png",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: png-trailing-bytes as image/png",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: polyglot-whole-png-then-html as image/png",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: jpg-cut-50pct as image/jpeg",
+   "base": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: jpg-cut-no-end-marker as image/jpeg",
+   "base": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: webp-lossy-cut-50pct as image/webp",
+   "base": "logo image/webp .webp from /logo; primary null; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: webp-animated as image/webp",
+   "base": "logo image/webp .webp from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: polyglot-svg-as-png as image/png",
+   "base": "logo image/png .png from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: polyglot-svg-as-jpeg as image/jpeg",
+   "base": "logo image/jpeg .jpg from /logo; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: polyglot-whole-png-as-svg as image/svg+xml",
+   "base": "logo image/svg+xml .svg from /logo; primary null; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: polyglot-jpeg-as-svg as image/svg+xml",
+   "base": "logo image/svg+xml .svg from /logo; primary null; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "damaged or odd: polyglot-html-as-svg as image/svg+xml",
+   "base": "logo image/svg+xml .svg from /logo; primary null; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "SVG logo: comment of 9 KB first",
+   "base": "logo image/svg+xml .svg from /logo.svg; primary #0F766E; secondary #C026D3; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "SVG logo: doctype with an internal subset of 9 KB first",
+   "base": "logo image/svg+xml .svg from /logo.svg; primary #0F766E; secondary #C026D3; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "SVG logo: prefixed element name (svg:svg)",
+   "base": "logo image/svg+xml .svg from /logo.svg; primary #0F766E; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "SVG logo: header in capitals (image/SVG+XML)",
+   "base": "logo image/SVG+XML .SVG+XML from /logo.svg; primary #187878; secondary #C030D8; language English (UK)",
+   "now": "logo image/svg+xml .svg from /logo.svg; primary #0F766E; secondary #C026D3; language English (UK)"
+  },
+  {
+   "scenario": "SVG logo: UTF-16 text",
+   "base": "logo image/svg+xml .svg from /logo.svg; primary null; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  },
+  {
+   "scenario": "SVG logo: gzip-compressed (svgz bytes, no content-encoding)",
+   "base": "logo image/svg+xml .svg from /logo.svg; primary null; secondary null; language English (UK)",
+   "now": "no logo; primary null; secondary null; language English (UK)"
+  }
+ ]
+}

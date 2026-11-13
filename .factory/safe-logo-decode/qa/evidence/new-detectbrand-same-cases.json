@@ -1,0 +1,260 @@
+{
+ "checkout": "/Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/awesome-wescoff-efedda",
+ "rows": [
+  {
+   "name": "control: good PNG logo",
+   "status": 0,
+   "signal": null,
+   "wallMs": 501,
+   "answer": {
+    "settled": "resolved",
+    "ms": 169,
+    "result": {
+     "logo": "/api/files/qa-base/logo/1794600804499-7CzFDITf.png",
+     "primary": "#2563EB",
+     "secondary": "#187878",
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: PNG with header and end, no picture data",
+   "status": 0,
+   "signal": null,
+   "wallMs": 222,
+   "answer": {
+    "settled": "resolved",
+    "ms": 14,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: PNG whose header checksum is wrong",
+   "status": 0,
+   "signal": null,
+   "wallMs": 353,
+   "answer": {
+    "settled": "resolved",
+    "ms": 144,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: JPEG with no scan",
+   "status": 0,
+   "signal": null,
+   "wallMs": 355,
+   "answer": {
+    "settled": "resolved",
+    "ms": 147,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: JPEG start and end marker padded",
+   "status": 0,
+   "signal": null,
+   "wallMs": 224,
+   "answer": {
+    "settled": "resolved",
+    "ms": 12,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: WebP with its size field 0",
+   "status": 0,
+   "signal": null,
+   "wallMs": 361,
+   "answer": {
+    "settled": "resolved",
+    "ms": 148,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: WebP cut in half with its size corrected",
+   "status": 0,
+   "signal": null,
+   "wallMs": 368,
+   "answer": {
+    "settled": "resolved",
+    "ms": 157,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: an ordinary TIFF file",
+   "status": 0,
+   "signal": null,
+   "wallMs": 229,
+   "answer": {
+    "settled": "resolved",
+    "ms": 13,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "crash: PNG declaring 65536x65536",
+   "status": 0,
+   "signal": null,
+   "wallMs": 223,
+   "answer": {
+    "settled": "resolved",
+    "ms": 13,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: SVG logo, 100 KB of fill=rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 225,
+   "answer": {
+    "settled": "resolved",
+    "ms": 12,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: SVG logo, 300 KB of fill=rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 220,
+   "answer": {
+    "settled": "resolved",
+    "ms": 12,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: stylesheet, 100 KB of --a:rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 224,
+   "answer": {
+    "settled": "resolved",
+    "ms": 16,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: stylesheet, 300 KB of --a:rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 229,
+   "answer": {
+    "settled": "resolved",
+    "ms": 22,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: stylesheet, 300 KB of dashes",
+   "status": 0,
+   "signal": null,
+   "wallMs": 227,
+   "answer": {
+    "settled": "resolved",
+    "ms": 13,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  },
+  {
+   "name": "slow: inline style, 300 KB of --a:rgb(",
+   "status": 0,
+   "signal": null,
+   "wallMs": 254,
+   "answer": {
+    "settled": "resolved",
+    "ms": 34,
+    "result": {
+     "logo": null,
+     "primary": "#2563EB",
+     "secondary": null,
+     "language": "French",
+     "htmlLang": "fr"
+    }
+   }
+  }
+ ]
+}

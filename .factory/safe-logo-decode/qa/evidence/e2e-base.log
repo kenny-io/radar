@@ -1,0 +1,3 @@
+base e2e, pid 70503, brand.ts imports canvas: true
+control: job done, logo stored
+crash scenario: starting the job; if no line follows, the process ended inside it
