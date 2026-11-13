@@ -26,12 +26,20 @@ export const PRICE: Record<string, Price> = {
   'gpt-6.1-sol': { in: 2, out: 10, long: { over: OPENAI_LONG, in: 4, out: 15 } },
   'gpt-6-sol': { in: 2, out: 10, long: { over: OPENAI_LONG, in: 4, out: 15 } },
   'gpt-6-luna': { in: 0.10, out: 0.50, long: { over: OPENAI_LONG, in: 0.20, out: 0.75 } },
+  // OpenAI GPT image models: developers.openai.com/api/docs/pricing (2026-11-13). `in` is the text input rate and `out`
+  // the image output rate: Radar's Images API call sends a text prompt only and gets image tokens back. A call that
+  // sent an image as input ($8) would be undercounted by this row. Cached input does not apply to the Images API.
+  'gpt-image-2.5-flare': { in: 5, out: 30 },
+  'gpt-image-2.5-sunburst': { in: 5, out: 30 },
+  'gpt-image-2.6-flare': { in: 5, out: 30 },
+  'gpt-image-2.6-sunburst': { in: 5, out: 30 },
   // xAI: docs.x.ai/docs/models (2026-11-10); OpenRouter's endpoint listings agree
   'grok-4.7': { in: 2, out: 6, long: { over: XAI_LONG, in: 4, out: 12 } },
   'grok-4.6': { in: 2, out: 6, long: { over: XAI_LONG, in: 4, out: 12 } },
 };
-/** USD per image, by model id. xAI: docs.x.ai/docs/models (2026-11-10). gpt-image-1 is not on OpenAI's pricing page, and
- *  the OpenRouter image model is billed in tokens that vary per image (its usage.cost is used), so neither has a row. */
+/** USD per image, by model id. xAI: docs.x.ai/docs/models (2026-11-10). OpenAI's GPT image models are billed in tokens
+ *  (PRICE above), and the OpenRouter image model in tokens that vary per image (its usage.cost is used), so neither has
+ *  a row here. */
 export const IMAGE_PRICE: Record<string, number> = { 'grok-imagine-image': 0.02 };
 /** USD per web-search tool call, by provider label: $10 per 1,000 on both pricing pages above (2026-11-10). xAI's search
  *  fee and Gemini's grounding fee are not published as a per-call figure, so searches there add nothing. */

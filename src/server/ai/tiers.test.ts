@@ -154,6 +154,11 @@ describe('costOf', () => {
     expect(costOf('grok-4.7', { inputTokens: 199_999, outputTokens: 0 })).toBeCloseTo(199_999 * 2 / M, 9);
     expect(costOf('grok-4.7', { inputTokens: 200_000, outputTokens: 0 })).toBeCloseTo(0.8, 9);
   });
+  it('prices the OpenAI image default by its tokens: text in at $5/M, image out at $30/M', () => {
+    expect(costOf('gpt-image-2.5-flare', { inputTokens: 40, outputTokens: 4160 })).toBeCloseTo(0.125, 12);
+    // A dated snapshot id is a different key with no row, so it logs null rather than borrowing the alias's rate.
+    expect(costOf('gpt-image-2.5-flare-2026-09-08', { inputTokens: 40, outputTokens: 4160 })).toBeNull();
+  });
   it('is null, never a guess, when the billed unit has no known rate', () => {
     expect(costOf('gpt-7-nova', { inputTokens: 100, outputTokens: 100 })).toBeNull();
     expect(costOf('gemini-flash-latest', { inputTokens: 100, outputTokens: 100 })).toBeNull();
