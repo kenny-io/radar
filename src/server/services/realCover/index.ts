@@ -50,7 +50,7 @@ function homeShare(page: string, b: Budget, allowed: (u: string) => boolean = ()
 }
 
 /** Owner path: the cover picture for an address a person gave, a page or a picture on the business's own site.
- *  Throws SitePictureError. */
+ *  Throws SitePictureError for everything the address or the picture can cause. */
 export async function pictureFromAddress(o: { domain: string; address: string; subject: string | null; budgetMs?: number }): Promise<FoundPicture> {
   const own = ownSiteUrl(o.address, o.domain);
   if (!own.ok) throw new SitePictureError(own.why === 'off_site' ? 'not_your_site' : 'invalid_address', own.host);
@@ -67,7 +67,7 @@ export async function pictureFromAddress(o: { domain: string; address: string; s
     if (errors.length >= MAX_PICTURES) break;
     if (candidate.from === 'share') { const shared = await home(); if (!shared || shared.includes(candidate.url)) continue; } // the site's default card
     try { const res = await fetchOwn(new URL(candidate.url), pictureRequest(b)); return { ...(await readPicture(res)), page: first.url, src: res.url, alt: candidate.alt }; }
-    catch (error) { errors.push(error instanceof SitePictureError ? error : new SitePictureError('unreachable')); }
+    catch (error) { if (!(error instanceof SitePictureError)) throw error; errors.push(error); } // anything else is a fault of Radar's, not of the picture
   }
   if (!errors.length && page.offSite.length) throw new SitePictureError('off_site_picture', page.offSite[0]);
   if (errors.length === 1) throw errors[0];

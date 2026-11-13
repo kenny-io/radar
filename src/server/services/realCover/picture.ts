@@ -66,7 +66,6 @@ export interface Cover { png: Buffer; w: number; h: number; fit: 'crop' | 'backd
 // blurred copy is drawn larger than the canvas: at exactly the canvas size the blur reads past the picture's edge and
 // leaves a pale band along two sides.
 const CHILD = `
-const { createCanvas, loadImage } = require('@napi-rs/canvas');
 const o = JSON.parse(process.argv[1]);
 const chunks = [];
 const reply = (head, png) => {
@@ -75,7 +74,8 @@ const reply = (head, png) => {
 };
 process.stdin.on('data', chunk => chunks.push(chunk));
 process.stdin.on('end', async () => {
-  let img;
+  let createCanvas, loadImage, img;
+  try { ({ createCanvas, loadImage } = require('@napi-rs/canvas')); } catch (e) { return reply({ code: 'unavailable' }); }
   try { img = await loadImage(Buffer.concat(chunks)); } catch (e) { return reply({ code: 'not_a_picture' }); }
   const w = img.width, h = img.height;
   if (!(w >= o.minW && h >= o.minH)) return reply({ code: 'too_small' });
@@ -99,19 +99,22 @@ process.stdin.on('end', async () => {
 const CHILD_OPTIONS = JSON.stringify({ W: COVER_W, H: COVER_H, minW: PICTURE_MIN_W, minH: PICTURE_MIN_H, keeps: CROP_KEEPS_AT_LEAST });
 const MAX_OUTPUT = 32 * 1024 * 1024;
 
-/** Decode and draw in a child process. Any way the child can fail (it crashed, it took too long, it could not be
- *  started, its answer makes no sense) is 'not_a_picture'. The child gets no secrets: its environment is PATH and NODE_ENV alone. */
+/** Decode and draw in a child process. Any way the picture can make the child fail (it crashed, it took too long, its
+ *  answer makes no sense) is 'not_a_picture'. A child that cannot be started, or cannot load the canvas library, is
+ *  not the picture's fault: that is a plain Error, so it is reported as a fault and never remembered as "no picture".
+ *  The child gets no secrets: its environment is PATH and NODE_ENV alone. */
 function decodeAndDraw(body: Buffer): Promise<Cover> {
   return new Promise((resolve, reject) => {
     const refuse = (code: SitePictureCode = 'not_a_picture') => reject(new SitePictureError(code));
+    const unavailable = (why: string) => reject(new Error('The picture decoder could not run: ' + why));
     let child: ReturnType<typeof spawn>;
     try { child = spawn(process.execPath, ['-e', CHILD, CHILD_OPTIONS], { cwd: process.cwd(), env: { PATH: process.env.PATH || '', NODE_ENV: process.env.NODE_ENV }, stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true }); }
-    catch { refuse(); return; }
+    catch (error: any) { unavailable(error?.message || 'spawn failed'); return; }
     const out: Buffer[] = []; let size = 0;
     const timer = setTimeout(() => child.kill('SIGKILL'), DECODE_TIMEOUT_MS);
     child.stdout!.on('data', (chunk: Buffer) => { size += chunk.length; if (size > MAX_OUTPUT) child.kill('SIGKILL'); else out.push(chunk); });
     child.stdin!.on('error', () => { /* the child ended before it read everything */ });
-    child.on('error', () => { clearTimeout(timer); refuse(); });
+    child.on('error', error => { clearTimeout(timer); unavailable(error?.message || 'spawn failed'); });
     child.on('close', (status, signal) => {
       clearTimeout(timer);
       if (status !== 0 || signal || size > MAX_OUTPUT) { refuse(); return; }
@@ -119,6 +122,7 @@ function decodeAndDraw(body: Buffer): Promise<Cover> {
         const all = Buffer.concat(out); const length = all.readUInt32BE(0);
         const head = JSON.parse(all.toString('utf8', 4, 4 + length)); const png = all.subarray(4 + length);
         if (head.code === 'too_small') { refuse('too_small'); return; }
+        if (head.code === 'unavailable') { unavailable('the canvas library did not load'); return; }
         const made = probeImage(png);
         if (head.code || !made || made.type !== 'image/png' || !made.complete || made.width !== COVER_W || made.height !== COVER_H || !(head.w > 0 && head.h > 0) || (head.fit !== 'crop' && head.fit !== 'backdrop')) { refuse(); return; }
         resolve({ png, w: head.w, h: head.h, fit: head.fit });
@@ -136,7 +140,8 @@ function oneAtATime<T>(work: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** The 1200×628 PNG for a fetched picture. Throws SitePictureError('not_a_picture' | 'too_large' | 'too_small'). */
+/** The 1200×628 PNG for a fetched picture. Throws SitePictureError('not_a_picture' | 'too_large' | 'too_small'); a
+ *  plain Error only when the decoder itself could not run. */
 export async function readPicture(res: OwnResponse): Promise<Cover> {
   // The header and the bytes need not name the same one of the three (servers mislabel); the bytes decide.
   if (!HEADER_TYPES.has(headerType(res.type))) throw new SitePictureError('not_a_picture');

@@ -244,6 +244,13 @@ describe.skipIf(!process.env.DATABASE_URL)('use a picture from your site (databa
       expect(M.put).not.toHaveBeenCalled();
       expect(await article(f.id)).toEqual(f.a);
     });
+    it('a fault of Radar’s own (the decoder could not run) is not dressed up as a bad picture: it surfaces as a fault, and the cover is unchanged', async () => {
+      const f = await fixture(); const fault = new Error('The picture decoder could not run: spawn ENOENT');
+      M.picture.mockRejectedValue(fault);
+      const error = await use(f, f.found.page!).catch(e => e);
+      expect(error).toBe(fault); expect(error.userMessage).toBeUndefined();
+      expect(await article(f.id)).toEqual(f.a);
+    });
     it('the picture could not be stored', async () => {
       const f = await fixture(); M.picture.mockResolvedValue(f.found);
       M.put.mockRejectedValueOnce(new Error('bucket unavailable: AccessDenied for key secret'));

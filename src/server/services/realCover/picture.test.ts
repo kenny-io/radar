@@ -12,6 +12,7 @@ vi.mock('node:child_process', async original => {
   });
   return { ...real, default: { ...real, spawn: H.spawn }, spawn: H.spawn };
 });
+import os from 'node:os';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { COVER_H, COVER_W, PICTURE_MAX_PIXELS, probeImage, readPicture } from './picture';
 import { SitePictureError } from './fetch';
@@ -137,6 +138,19 @@ describe('readPicture refuses', () => {
     expect(H.spawn).toHaveBeenCalledTimes(1);
     // The next picture is read normally.
     expect(await readPicture(response(drawn(1600, 900)))).toMatchObject({ w: 1600, h: 900, fit: 'crop' });
+  });
+  it('a decoder that cannot run is a fault, not a refused picture: no SitePictureError, so nobody is told their picture is bad', async () => {
+    H.spawn.mockImplementationOnce(() => { throw new Error('spawn ENOENT'); });
+    const notStarted = await readPicture(response(drawn(1600, 900))).catch(e => e);
+    expect(notStarted).toBeInstanceOf(Error); expect(notStarted).not.toBeInstanceOf(SitePictureError);
+    // Started where the canvas library cannot be found.
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(os.tmpdir());
+    try {
+      const noLibrary = await readPicture(response(drawn(1600, 900))).catch(e => e);
+      expect(noLibrary).toBeInstanceOf(Error); expect(noLibrary).not.toBeInstanceOf(SitePictureError);
+      expect(noLibrary.message).toContain('canvas library');
+    } finally { cwd.mockRestore(); }
+    expect(await readPicture(response(drawn(1600, 900)))).toMatchObject({ fit: 'crop' }); // and the next one is read normally
   });
   it('the decoding process is given the picture and nothing else: no arguments from the picture, and none of this process’s environment', async () => {
     await readPicture(response(drawn(1600, 900)));

@@ -273,6 +273,10 @@ describe('the automatic search', () => {
       withPages({ [PRINCESS_URL]: PRINCESS }); site.set(PRINCESS_URL, new SitePictureError('left_site', 'other.com'));
       expect(await find('Princess Tower')).toEqual({ picture: null, searched: true });
     });
+    it('a fault of Radar’s own while reading a tied picture: no picture, and nothing is remembered', async () => {
+      withPages({ [WASL_URL]: WASL }, { [WASL_PICTURE]: new TypeError('boom') });
+      expect(await find('Wasl 611')).toEqual({ picture: null, searched: false });
+    });
     it.each([
       ['the crawl table cannot be read', () => { H.rowsError = new Error('connection terminated'); }],
       ['the request layer throws something unexpected', () => { H.fetch.mockImplementation(async () => { throw new TypeError('boom'); }); }],
@@ -380,6 +384,12 @@ describe('the address a person gives', () => {
   it('end state: a page with no picture at all', async () => {
     site.set(HOME_URL, html(HOME)); site.set(WASL_URL, html(subjectPage({})));
     expect(await code(from(WASL_URL))).toBe('no_picture');
+  });
+  it('a fault of Radar’s own while reading a picture is not turned into a message about the picture', async () => {
+    site.set(WASL_URL, html(subjectPage({ share: '', main: '<img src="/api/media/w1.jpg" alt="Wasl 611" width="1200" height="800">' })));
+    site.set('https://lived.ae/api/media/w1.jpg', new TypeError('boom'));
+    const error = await from(WASL_URL).catch(e => e);
+    expect(error).toBeInstanceOf(TypeError); expect(error).not.toBeInstanceOf(SitePictureError);
   });
   it('robots.txt is not consulted for an address a person gave', async () => {
     site.set(ROBOTS, text('User-agent: *\nDisallow: /\n')); site.set(PRINCESS_URL, html(PRINCESS)); site.set(PRINCESS_PICTURE, picture(740, 1110));
