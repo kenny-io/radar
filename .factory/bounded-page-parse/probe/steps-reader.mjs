@@ -34,5 +34,5 @@ if (!only || only === 'pages') for (const [name, n] of cases) {
   await run(label, 'page', () => R.readPage(html, 'https://a.example/x', 'https://a.example', o));
   await run(label, 'brand', () => R.readBrandPage(html, 'https://a.example', o));
 }
-if (!only || only === 'maps') for (const [name, xml] of Object.entries(maps)) await run(`${name} (${Math.round(xml.length / 1024)} KB)`, 'sitemap', () => R.readSitemap(xml, o));
+if (!only || only === 'maps') for (const [name, xml] of Object.entries(maps)) await run(`${name} (${Math.round(xml.length / 1024)} KB)`, 'sitemap', () => R.readSitemap(xml, 'https://a.example/sitemap.xml', 'a.example', o));
 process.exit(0);
