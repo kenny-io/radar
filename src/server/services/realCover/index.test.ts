@@ -29,15 +29,19 @@ const sitemap = (...addresses: string[]): Answer => ({ type: 'application/xml', 
 const text = (s: string): Answer => ({ type: 'text/plain', body: Buffer.from(s) });
 const requested = () => H.fetch.mock.calls.map(c => (c[0] as URL).href);
 const ROBOTS = 'https://lived.ae/robots.txt', SITEMAP = 'https://lived.ae/sitemap.xml';
+/** No answer at all: a refused connection, a failed lookup, a timeout. */
+const DOWN = () => new SitePictureError('unreachable');
+const status = (code: number) => new SitePictureError('unreachable', undefined, code);
 
 beforeEach(() => {
   H.fetch.mockReset(); H.put.mockReset(); H.rows = []; H.rowsError = null; site = new Map();
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  // The scripted site honours the same request count and deadline as the real guard; an address it does not have is unreachable.
+  // The scripted site honours the same request count and deadline as the real guard. An address it does not have
+  // answers 404, as a real site does; DOWN is an address that gives no answer at all.
   H.fetch.mockImplementation(async (address: URL, o: any) => {
     if (o.requests.left-- <= 0 || o.signal.aborted) throw new SitePictureError('unreachable');
     const hit = site.get(address.href);
-    if (!hit) throw new SitePictureError('unreachable');
+    if (!hit) throw new SitePictureError('unreachable', undefined, 404);
     if (hit instanceof Error) throw hit;
     const answer = typeof hit === 'function' ? await hit() : hit;
     if (o.signal.aborted) throw new SitePictureError('unreachable');
@@ -73,17 +77,29 @@ describe('the automatic search', () => {
     const { picture: found } = await find('Wasl 611');
     expect(found).toMatchObject({ page: WASL_URL, src: WASL_PICTURE, w: 1200, h: 800, fit: 'crop', alt: 'Wasl 611 · photo 1' });
   });
-  it('a page the crawl already knows by its h1 or its title is used without reading the sitemap, whatever its address', async () => {
+  it('a page the crawl already knows by its h1 is used without reading the sitemap, whatever its address', async () => {
     H.rows = [
-      { url: 'http://lived.ae/p/12345', title: 'Princess Tower — Apartment in Dubai Marina | Lived', h1: 'Find your tower' },
-      { url: 'https://lived.ae/p/777', title: 'Somewhere', h1: 'Princess   Tower' },
+      { url: 'https://lived.ae/p/100', title: 'Princess Tower — Apartment in Dubai Marina | Lived', h1: 'Find your tower' }, // its title leads with the name, its h1 says otherwise: not a candidate
+      { url: 'http://lived.ae/p/12345', title: 'Somewhere', h1: 'Princess   Tower' },
       { url: 'https://evil.example/property/princess-tower', title: 'Princess Tower', h1: 'Princess Tower' }, // not this business's site: ignored
       { url: 'https://lived.ae/about', title: 'About', h1: 'About' },
     ];
-    site.set('https://lived.ae/p/12345', html(PRINCESS)); site.set(PRINCESS_PICTURE, picture(1600, 900));
+    site.set('https://lived.ae/p/12345', html(PRINCESS)); site.set('https://lived.ae/p/100', html(PRINCESS)); site.set(PRINCESS_PICTURE, picture(1600, 900));
     const { picture: found } = await find('Princess Tower');
     expect(found).toMatchObject({ page: 'https://lived.ae/p/12345', src: PRINCESS_PICTURE });
     expect(requested()).toEqual([ROBOTS, 'https://lived.ae/p/12345', PRINCESS_PICTURE]); // robots was asked for (and was missing); the sitemap never
+  });
+  it('a crawled page with no h1 is a candidate by the lead of its title, and is still confirmed only by what the page itself says', async () => {
+    H.rows = [{ url: 'https://lived.ae/p/1', title: 'Princess Tower - Annex | Lived', h1: '' }, { url: 'https://lived.ae/p/2', title: 'Princess Tower | Lived', h1: '' }];
+    const noH1 = (ld: unknown) => `<html><head><title>Princess Tower | Lived</title><script type="application/ld+json">${JSON.stringify(ld)}</script></head><body><img src="/media/pt.png" alt="Princess Tower" width="1200" height="800"></body></html>`;
+    site.set('https://lived.ae/p/1', html(noH1({ '@type': 'Place', name: 'Princess Tower Annex' }))); // candidate by its title lead; names something else
+    site.set('https://lived.ae/p/2', html(noH1({ '@type': 'Place', name: 'Princess Tower' })));
+    site.set('https://lived.ae/media/pt.png', picture(1200, 800));
+    expect((await find('Princess Tower')).picture).toMatchObject({ page: 'https://lived.ae/p/2', src: 'https://lived.ae/media/pt.png' });
+    expect(requested()).toEqual([ROBOTS, 'https://lived.ae/p/1', 'https://lived.ae/p/2', 'https://lived.ae/media/pt.png']);
+    // The same page with neither an h1 nor structured data: its title alone confirms nothing.
+    site.set('https://lived.ae/p/2', html('<html><head><title>Princess Tower | Lived</title></head><body><img src="/media/pt.png" alt="Princess Tower" width="1200" height="800"></body></html>'));
+    expect(await find('Princess Tower')).toEqual({ picture: null, searched: true });
   });
   it('asks the origin the crawl used most, and reads robots.txt and the sitemap there', async () => {
     H.rows = [{ url: 'https://www.lived.ae/', title: 'Lived', h1: 'Home' }, { url: 'https://www.lived.ae/about', title: 'About', h1: 'About' }, { url: 'https://lived.ae/old', title: 'Old', h1: 'Old' }];
@@ -130,7 +146,7 @@ describe('the automatic search', () => {
     it('the right page, whose only picture has an alt text that does not name the subject', async () => {
       withPages({ [WASL_URL]: subjectPage({ main: '<img src="/api/media/1thumb.jpg" alt="Property thumbnail 1" width="1200" height="800">' }) }, { 'https://lived.ae/api/media/1thumb.jpg': picture(1200, 800) });
       expect(await find('Wasl 611')).toEqual(none);
-      expect(requested()).toEqual([ROBOTS, SITEMAP, WASL_URL, HOME_URL]); // the home page is read to judge the share image; the thumbnail never
+      expect(requested()).toEqual([ROBOTS, SITEMAP, WASL_URL]); // neither the thumbnail nor the share image is asked for
     });
     it('the right page, whose share image is the home page’s: never taken, never requested', async () => {
       withPages({ [WASL_URL]: subjectPage({}) }, { [DEFAULT_CARD]: picture(1200, 630) });
@@ -155,24 +171,87 @@ describe('the automatic search', () => {
     });
   });
 
-  describe('the share image', () => {
-    it('is taken when the page has its own, different from the home page’s', async () => {
-      withPages({ [WASL_URL]: subjectPage({ share: 'https://lived.ae/api/og/wasl-611.jpg' }) }, { 'https://lived.ae/api/og/wasl-611.jpg': picture(1200, 630, 'image/jpeg') });
-      const { picture: found, searched } = await find('Wasl 611');
-      expect(found).toMatchObject({ page: WASL_URL, src: 'https://lived.ae/api/og/wasl-611.jpg', fit: 'crop' });
-      expect(searched).toBe(true);
-      expect(requested()).toEqual([ROBOTS, SITEMAP, WASL_URL, HOME_URL, 'https://lived.ae/api/og/wasl-611.jpg']);
+  describe('share images are never taken automatically (decision D16)', () => {
+    const none = { picture: null, searched: true };
+    const onlyShare = async (share: string, home = HOME, more: Record<string, Answer> = {}) => {
+      withPages({ [WASL_URL]: subjectPage({ share }) }, { [share]: picture(1200, 630), ...more });
+      site.set(HOME_URL, html(home));
+      const out = await find('Wasl 611');
+      expect(requested()).toEqual([ROBOTS, SITEMAP, WASL_URL]); // neither the share image nor the home page is asked for
+      return out;
+    };
+    it('a page’s own share image, different from the home page’s', async () => { expect(await onlyShare('https://lived.ae/api/og/wasl-611.jpg')).toEqual(none); });
+    it('the site card, when the home page carries a different one (QA Q6)', async () => {
+      expect(await onlyShare('https://lived.ae/share.png', HOME.replace(/lived-social-preview\.png/g, 'home-hero.png'))).toEqual(none);
     });
-    it('is not taken when the home page cannot be read, and the search is not remembered as finished', async () => {
-      withPages({ [WASL_URL]: subjectPage({ share: 'https://lived.ae/api/og/wasl-611.jpg' }) }, { 'https://lived.ae/api/og/wasl-611.jpg': picture(1200, 630) });
-      site.delete(HOME_URL);
-      expect(await find('Wasl 611')).toEqual({ picture: null, searched: false });
-      expect(requested()).not.toContain('https://lived.ae/api/og/wasl-611.jpg');
+    it('the site card with a cache-buster the home page does not carry (QA Q7)', async () => { expect(await onlyShare(DEFAULT_CARD + '?v=2')).toEqual(none); });
+    it('the apex-host card on a www page (QA Q8)', async () => { expect(await onlyShare('https://www.lived.ae/lived-social-preview.png')).toEqual(none); });
+    it('a title card generated for the page, when its photos are on another host (QA Q20)', async () => {
+      const card = 'https://lived.ae/property/wasl-611-al-warsan/opengraph-image?3f2a';
+      withPages({ [WASL_URL]: subjectPage({ share: card, main: '<img src="https://cdn.other.com/wasl.jpg" alt="Wasl 611" width="1200" height="800">' }) }, { [card]: picture(1200, 630) });
+      expect(await find('Wasl 611')).toEqual(none);
+      expect(requested()).toEqual([ROBOTS, SITEMAP, WASL_URL]);
     });
-    it('is not taken when the home page answers with something that is not a page', async () => {
-      withPages({ [WASL_URL]: subjectPage({ share: 'https://lived.ae/api/og/wasl-611.jpg' }) }, { 'https://lived.ae/api/og/wasl-611.jpg': picture(1200, 630) });
-      site.set(HOME_URL, { type: 'application/json', body: Buffer.from('{}') });
-      expect((await find('Wasl 611')).picture).toBeNull();
+    it('a picture tied by structured data or alt text is still taken on a page that also has a share image', async () => {
+      withPages({ [WASL_URL]: WASL }, { [WASL_PICTURE]: picture(1200, 800), [DEFAULT_CARD]: picture(1200, 630) });
+      expect((await find('Wasl 611')).picture).toMatchObject({ src: WASL_PICTURE });
+      expect(requested()).not.toContain(HOME_URL);
+    });
+  });
+
+  describe('another subject’s page or picture is never taken (QA D1, D3)', () => {
+    const none = { picture: null, searched: true };
+    const HH = 'https://lived.ae/places/harbour-house', ANNEX = 'https://lived.ae/places/harbour-house-annex';
+    const HH_PNG = 'https://lived.ae/media/hh.png', ANNEX_PNG = 'https://lived.ae/media/annex.png';
+    const place = (o: { title?: string; h1?: string; body?: string; head?: string }) => `<!doctype html><html><head><title>${o.title ?? 'Harbour House — Stays'}</title>${o.head ?? ''}</head><body><header><img src="/brand/logo.png" alt="Stays logo"></header><main><h1>${o.h1 ?? 'Harbour House'}</h1>${o.body ?? ''}</main></body></html>`;
+    const pictures = { [HH_PNG]: picture(1600, 900), [ANNEX_PNG]: picture(1600, 900) };
+    it('Q1: the right page, whose own photo has a generic alt, with a neighbour’s card below it', async () => {
+      withPages({ [HH]: place({ body: '<img src="/media/hh.png" alt="Photo 1" width="1600" height="900"><section><h2>Similar places</h2><a href="/places/harbour-house-annex"><img src="/media/annex.png" alt="Harbour House Annex · photo 1" width="800" height="600"></a></section>' }) }, pictures);
+      expect(await find('Harbour House')).toEqual(none);
+      expect(requested()).toEqual([ROBOTS, SITEMAP, HH]);
+    });
+    it.each([['Q3', 'Harbour House - Annex | Stays'], ['Q4', 'Harbour House, Annex wing']])('%s: only the Annex page exists, titled "%s", h1 "Harbour House Annex"', async (_q, title) => {
+      withPages({ [ANNEX]: place({ title, h1: 'Harbour House Annex', body: '<img src="/media/annex.png" alt="Harbour House Annex" width="1600" height="900">' }) }, pictures);
+      expect(await find('Harbour House')).toEqual(none);
+      expect(requested()).toEqual([ROBOTS, SITEMAP, ANNEX]); // read, not confirmed, nothing taken
+    });
+    it('Q5: a blog post outside the known blog paths, with no og:type', async () => {
+      const post = 'https://lived.ae/harbour-house-review';
+      withPages({ [post]: place({ title: 'Harbour House: our honest review', h1: 'Harbour House: our honest review', body: '<article><time datetime="2026-01-01">Jan 2026</time><img src="/media/chart.png" alt="Chart of Harbour House prices by month" width="1600" height="900"></article>' }) }, { 'https://lived.ae/media/chart.png': picture(1600, 900) });
+      expect(await find('Harbour House')).toEqual(none);
+      expect(requested()).not.toContain('https://lived.ae/media/chart.png');
+    });
+    it('Q9: an area page whose cards all end with the area’s name', async () => {
+      const area = 'https://lived.ae/areas/dubai-marina';
+      withPages({ [area]: place({ title: 'Dubai Marina — Stays', h1: 'Dubai Marina', body: '<ul><li><img src="/media/gate.png" alt="Marina Gate 1 — Dubai Marina" width="800" height="600"></li><li><img src="/media/jbr.png" alt="Sadaf 4 — Dubai Marina" width="800" height="600"></li></ul>' }) }, { 'https://lived.ae/media/gate.png': picture(800, 600), 'https://lived.ae/media/jbr.png': picture(800, 600) });
+      expect(await find('Dubai Marina', 'place')).toEqual(none);
+      expect(requested()).toEqual([ROBOTS, SITEMAP, area]);
+    });
+    it('Q10: structured data that is a Review of the subject, with the reviewer’s photo', async () => {
+      withPages({ [HH]: place({ body: `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Review', name: 'Harbour House', image: 'https://lived.ae/media/reviewer.png' })}</script>` }) }, { 'https://lived.ae/media/reviewer.png': picture(1600, 900) });
+      expect(await find('Harbour House')).toEqual(none);
+      expect(requested()).not.toContain('https://lived.ae/media/reviewer.png');
+    });
+    it('Q18: a tag archive named after the subject is not even requested', async () => {
+      const tag = 'https://lived.ae/tag/harbour-house';
+      withPages({ [tag]: place({ body: '<img src="/media/post.png" alt="Harbour House" width="1600" height="900">' }) }, { 'https://lived.ae/media/post.png': picture(1600, 900) });
+      expect(await find('Harbour House')).toEqual(none);
+      expect(requested()).toEqual([ROBOTS, SITEMAP]);
+    });
+    it('Q21: a neighbour’s card comes before the place’s own photo: the place’s own photo is the one taken', async () => {
+      withPages({ [HH]: place({ body: '<div class="featured"><img src="/media/annex.png" alt="Harbour House Annex" width="800" height="600"></div><img src="/media/hh.png" alt="Harbour House · photo 1" width="1600" height="900">' }) }, pictures);
+      expect((await find('Harbour House')).picture).toMatchObject({ page: HH, src: HH_PNG, alt: 'Harbour House · photo 1' });
+      expect(requested()).toEqual([ROBOTS, SITEMAP, HH, HH_PNG]);
+    });
+    it('Q22: the right page’s only photo is on another host; the search does not fall through to the Annex page’s picture', async () => {
+      withPages({ [HH]: place({ body: '<img src="https://cdn.other.com/hh.jpg" alt="Harbour House">' }), [ANNEX]: place({ title: 'Harbour House - Annex | Stays', h1: 'Harbour House Annex', body: '<img src="/media/annex.png" alt="Harbour House Annex" width="1600" height="900">' }) }, pictures);
+      expect(await find('Harbour House')).toEqual(none);
+      expect(requested()).toEqual([ROBOTS, SITEMAP, HH, ANNEX]);
+    });
+    it('and the Annex’s own article still gets the Annex’s picture', async () => {
+      withPages({ [HH]: place({ body: '<img src="/media/hh.png" alt="Harbour House · photo 1" width="1600" height="900">' }), [ANNEX]: place({ title: 'Harbour House - Annex | Stays', h1: 'Harbour House Annex', body: '<img src="/media/annex.png" alt="Harbour House Annex · photo 1" width="1600" height="900">' }) }, pictures);
+      expect((await find('Harbour House Annex')).picture).toMatchObject({ page: ANNEX, src: ANNEX_PNG });
+      expect((await find('Harbour House')).picture).toMatchObject({ page: HH, src: HH_PNG });
     });
   });
 
@@ -269,6 +348,35 @@ describe('the automatic search', () => {
       expect(await find('Wasl 611')).toEqual({ picture: null, searched: false });
       expect(requested()).toContain(WASL_PICTURE);
     });
+    describe('a site that did not answer is not remembered as "nothing found" (decision D20, QA D6)', () => {
+      it.each([
+        ['no answer at all for robots.txt or the sitemap', DOWN(), DOWN(), false],
+        ['a server error for both', status(503), status(502), false],
+        ['no answer for robots.txt and a server error for the sitemap', DOWN(), status(500), false],
+        ['"no such file" for both: the site answered, and has no sitemap', status(404), status(404), true],
+        ['no answer for robots.txt, "no such file" for the sitemap', DOWN(), status(404), true],
+        ['a server error for robots.txt, "forbidden" for the sitemap', status(500), status(403), true],
+        ['robots.txt answered, the sitemap did not', text('User-agent: *\nAllow: /\n'), DOWN(), true],
+        ['robots.txt redirects off the site (an answer), the sitemap did not answer', new SitePictureError('left_site', 'other.com'), DOWN(), true],
+      ] as [string, Answer, Answer, boolean][])('%s → searched: %s', async (_name, robots, map, searched) => {
+        site.set(ROBOTS, robots); site.set(SITEMAP, map);
+        expect(await find('Princess Tower')).toEqual({ picture: null, searched });
+        expect(requested()).toEqual([ROBOTS, SITEMAP]);
+      });
+      it('crawled pages that are not candidates do not make it a finished search', async () => {
+        H.rows = [{ url: 'https://lived.ae/about', title: 'About', h1: 'About' }, { url: 'https://lived.ae/property/marina-tower', title: 'Marina Tower', h1: 'Marina Tower' }];
+        site.set(ROBOTS, DOWN()); site.set(SITEMAP, DOWN());
+        expect(await find('Princess Tower')).toEqual({ picture: null, searched: false });
+      });
+      it('a sitemap that lists pages, none of them the subject’s, is a finished search even with no robots.txt', async () => {
+        site.set(ROBOTS, DOWN()); withPages({ 'https://lived.ae/property/marina-tower': subjectPage({ name: 'Marina Tower' }) });
+        expect(await find('Princess Tower')).toEqual({ picture: null, searched: true });
+      });
+      it('the error says whether the site answered', () => {
+        expect(DOWN().status).toBeUndefined();
+        expect(status(404)).toMatchObject({ code: 'unreachable', status: 404 });
+      });
+    });
     it('a page that redirects off the site is a finished search, not an unfinished one', async () => {
       withPages({ [PRINCESS_URL]: PRINCESS }); site.set(PRINCESS_URL, new SitePictureError('left_site', 'other.com'));
       expect(await find('Princess Tower')).toEqual({ picture: null, searched: true });
@@ -356,6 +464,23 @@ describe('the address a person gives', () => {
     site.delete(HOME_URL); H.fetch.mockClear();
     expect(await code(from(WASL_URL))).toBe('no_picture');
     expect(requested()).not.toContain('https://lived.ae/api/og/wasl-611.jpg');
+  });
+  it('the site’s default card is recognised under another host form or with a cache-buster, and is not used (decision D16)', async () => {
+    site.set(HOME_URL, html(HOME));
+    for (const share of [DEFAULT_CARD, DEFAULT_CARD + '?v=2', 'https://www.lived.ae/lived-social-preview.png', 'http://www.lived.ae/lived-social-preview.png?utm=x#y']) {
+      site.set(WASL_URL, html(subjectPage({ share }))); site.set(share, picture(1200, 630)); H.fetch.mockClear();
+      expect(await code(from(WASL_URL)), share).toBe('no_picture');
+      expect(requested()).toEqual([WASL_URL, HOME_URL]);
+    }
+    // A card at another path is the page's own, and a person may choose it.
+    site.set(WASL_URL, html(subjectPage({ share: 'https://lived.ae/property/wasl-611-al-warsan/opengraph-image?3f2a' }))); site.set('https://lived.ae/property/wasl-611-al-warsan/opengraph-image?3f2a', picture(1200, 630));
+    expect(await from(WASL_URL)).toMatchObject({ src: 'https://lived.ae/property/wasl-611-al-warsan/opengraph-image?3f2a' });
+  });
+  it('a picture listed in structured data keeps the alt text of the <img> with the same address (decision D19, QA D5)', async () => {
+    const page = `<html><head><title>Harbour House — Stays</title><meta property="og:image" content="https://lived.ae/og.png"><script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Place', name: 'Harbour House', image: 'https://lived.ae/media/harbour-house.png' })}</script></head>
+      <body><h1>Harbour House</h1><img src="/media/harbour-house.png" alt="Harbour House · photo 1" width="1600" height="900"></body></html>`;
+    site.set('https://lived.ae/places/harbour-house', html(page)); site.set('https://lived.ae/media/harbour-house.png', picture(1600, 900));
+    for (const subject of [null, 'Harbour House']) expect(await from('https://lived.ae/places/harbour-house', subject)).toMatchObject({ src: 'https://lived.ae/media/harbour-house.png', alt: 'Harbour House · photo 1' });
   });
   it('tries two pictures at most: the second when the first cannot be used, never a third', async () => {
     const main = [1, 2, 3].map(n => `<img src="/api/media/w${n}.jpg" alt="photo ${n}" width="1200" height="800">`).join('');

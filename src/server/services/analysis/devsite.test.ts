@@ -10,7 +10,7 @@ vi.mock('../storage', () => ({ putObject: vi.fn(), objectKey: () => 'k' }));
 import { DEV_PLACES, devFetch, devProfileFor } from './devsite';
 import { crawlSite } from './crawl';
 import { probeImage } from '../realCover/picture';
-import { readPage } from '../realCover/page';
+import { namesSubject, readPage, subjectPictures } from '../realCover/page';
 import { SitePictureError, findSubjectPicture, pictureFromAddress } from '../realCover';
 
 const fetchMock = vi.fn(async () => { throw new Error('the network must not be used in stub mode'); });
@@ -32,7 +32,7 @@ describe('the stub site’s places', () => {
       const r = await devFetch(`https://${domain}/places/${place.slug}`);
       expect(r).toMatchObject({ status: 200, type: 'text/html; charset=utf-8' });
       const page = readPage(r.body.toString(), `https://${domain}/places/${place.slug}`, domain);
-      expect(page.names).toEqual([place.name]);
+      expect(page).toMatchObject({ h1: place.name, entityNames: place.picture ? [place.name] : [] });
       expect(page).toMatchObject({ article: false, listing: false, offSite: [] });
       const picture = `https://${domain}/media/${place.slug}.png`;
       // With a picture: tied to the place by structured data and by alt text. Without: only the site-wide share image.
@@ -92,9 +92,21 @@ describe('real covers against the stub site, offline', () => {
   it('automatic: Mill Lane Studios has a page and no picture of its own, so nothing is found and the search is finished', async () => {
     expect(await auto('Mill Lane Studios')).toEqual({ picture: null, searched: true });
   });
+  it('owner action: the picture keeps its own alt text from the page, though structured data lists it first', async () => {
+    expect((await owner(at('/places/harbour-house'))).alt).toBe('Harbour House · photo 1');
+    expect((await owner(at('/places/harbour-house-annex'), 'Harbour House Annex')).alt).toBe('Harbour House Annex · photo 1');
+    expect((await owner(at('/media/harbour-house.png'))).alt).toBe(''); // a picture address has no page to take an alt from
+  });
+  it('automatic: on the Annex page nothing is tied to "Harbour House", by its name or by its photo’s alt text', async () => {
+    const annex = readPage((await devFetch(at('/places/harbour-house-annex'))).body.toString(), at('/places/harbour-house-annex'), DOMAIN);
+    expect(namesSubject(annex, 'Harbour House')).toBe(false);
+    expect(subjectPictures(annex, 'Harbour House')).toEqual([]);
+    expect(subjectPictures(annex, 'Harbour House Annex').map(p => p.url)).toEqual([at('/media/harbour-house-annex.png')]); // tied twice over, listed once
+  });
   it('automatic: a place the site has no page for, and a site that cannot be reached', async () => {
     expect(await auto('Harbour Lodge')).toEqual({ picture: null, searched: true });
-    expect(await findSubjectPicture({ bid: 'biz', domain: 'unreachable-studio.test', subject: { name: 'Harbour House', kind: 'building' } })).toMatchObject({ picture: null });
+    // A site that never answered was not looked at: nothing is remembered, and the next rewrite looks again.
+    expect(await findSubjectPicture({ bid: 'biz', domain: 'unreachable-studio.test', subject: { name: 'Harbour House', kind: 'building' } })).toEqual({ picture: null, searched: false });
   });
   it('none of it touches the network', () => { expect(fetchMock).not.toHaveBeenCalled(); });
 });

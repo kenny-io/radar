@@ -1,6 +1,6 @@
 // Reads one page of the business's own site for real covers: what the page calls its subject, and which pictures on
 // it are on the business's own site. No request is made here and nothing is site-specific: only signals any website
-// has (h1, title, share tags, image alt text, structured data).
+// has (h1, share tags, image alt text, structured data).
 import * as cheerio from 'cheerio';
 import { ownSiteUrl } from '@/lib/ownSite';
 import { ARTICLE_PATH, LISTING_PATH } from '../analysis/crawl';
@@ -12,10 +12,10 @@ export function nameTokens(s: string): string[] {
 }
 export const sameTokens = (a: string[], b: string[]) => a.length === b.length && a.every((t, i) => t === b[i]);
 const startsWith = (list: string[], head: string[]) => head.length > 0 && list.length >= head.length && head.every((t, i) => t === list[i]);
-const hasRun = (list: string[], run: string[]) => run.length > 0 && list.some((_, i) => startsWith(list.slice(i), run));
 
 const LEAD_ENDS = [' — ', ' – ', ' - ', ' | ', ' · ', ' • ', ': ', ', '];
-/** The lead of a title: the text before the first separator ("Wasl 611 — Apartments in Al Warsan" → "Wasl 611"). */
+/** The lead of a title: the text before the first separator ("Wasl 611 — Apartments in Al Warsan" → "Wasl 611").
+ *  A hint for where to look, never proof: "Harbour House - Annex" leads with another place's name. */
 export function titleLead(title: string): string {
   const t = String(title ?? '').replace(/\s+/g, ' ').trim();
   const cut = Math.min(...LEAD_ENDS.map(sep => { const i = t.indexOf(sep); return i < 0 ? Infinity : i; }));
@@ -38,8 +38,10 @@ export function slugExtra(address: string, subject: string[]): number | null {
 
 export interface PagePicture { url: string; alt: string; from: 'ld' | 'img' | 'share'; /** from 'ld': the entity's name */ of?: string }
 export interface PageFacts {
-  /** What the page calls its subject: the first h1, the lead of <title> and of og:title, and the name of each structured-data entity that is not generic. */
-  names: string[];
+  /** The page's first h1 that has text; '' when it has none. */
+  h1: string;
+  /** The names of the page's structured-data entities that are not generic. */
+  entityNames: string[];
   article: boolean; listing: boolean;
   /** Own-site pictures in document order: structured data, then <img>, then share images. */
   pictures: PagePicture[];
@@ -47,10 +49,21 @@ export interface PageFacts {
   offSite: string[];
 }
 
-// Their `name` is not a subject and their `image` is not a picture of one.
-const GENERIC = new Set(['Organization', 'WebSite', 'WebPage', 'BreadcrumbList', 'ListItem', 'ItemList', 'FAQPage', 'Question', 'Answer', 'Person', 'ImageObject', 'SearchAction']);
+// Their `name` is not a subject and their `image` is not a picture of one: the site itself, page furniture, people,
+// and things said about or attached to a subject (a review of it carries the reviewer's photo, an offer a price tag).
+const GENERIC = new Set(['Organization', 'WebSite', 'WebPage', 'BreadcrumbList', 'ListItem', 'ItemList', 'FAQPage', 'Question', 'Answer', 'Person', 'ImageObject', 'SearchAction',
+  'Review', 'Rating', 'AggregateRating', 'Comment', 'Offer', 'AggregateOffer', 'VideoObject', 'MediaObject', 'AudioObject']);
 const ARTICLE_TYPES = ['Article', 'BlogPosting', 'NewsArticle', 'TechArticle'];
 const LISTING_TYPES = ['CollectionPage', 'SearchResultsPage', 'Blog', 'ItemList'];
+// A path with one of these segments lists things filed under a name; it is not that name's own page.
+const LISTING_SEGMENTS = new Set(['tag', 'tags', 'category', 'categories', 'topic', 'topics', 'author', 'authors', 'search', 'archive', 'archives']);
+/** The address is a listing by its path alone: the home page, a blog or news index, or a tag, category, topic, author, search or archive page. */
+export function listingPath(path: string): boolean {
+  return path === '/' || path === '' || LISTING_PATH.test(path) || path.toLowerCase().split('/').some(segment => LISTING_SEGMENTS.has(segment));
+}
+/** Words an alt text may carry besides the subject's name and still be a picture of the subject, nothing more
+ *  ("Wasl 611 · photo 1", "Exterior view of Wasl 611"). Any other word means the alt is about something else. */
+export const GENERIC_PICTURE_WORDS = new Set(['photo', 'photos', 'image', 'images', 'picture', 'pictures', 'pic', 'view', 'exterior', 'interior', 'front', 'building', 'main', 'cover', 'hero', 'gallery', 'of', 'the', 'a']);
 const SKIP_EXT = /\.(svg|gif|ico|avif)$/i;
 const SKIP_WORDS = new Set(['logo', 'favicon', 'icon', 'sprite', 'placeholder', 'avatar', 'default']);
 const SOURCE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
@@ -131,14 +144,15 @@ export function readPage(html: string, pageUrl: string, domain: string): PageFac
   const meta = (key: string) => { let v = ''; $('meta').each((_, el) => { const m = $(el); if (!v && (m.attr('property') || m.attr('name') || '').trim().toLowerCase() === key) v = (m.attr('content') || '').trim(); }); return v; };
   const types = new Set(found.flatMap(e => e.types));
 
-  const names = [text($('h1').first().text()), titleLead($('title').first().text()), titleLead(meta('og:title')), ...specific.map(e => e.name)].filter(Boolean);
+  const h1 = $('h1').toArray().map(el => text($(el).text())).find(Boolean) || '';
   const pictures: PagePicture[] = []; const offSite: string[] = []; const seen = new Set<string>();
   const add = (raw: string, from: PagePicture['from'], alt: string, of?: string) => {
     if (!raw || skippedByName(raw, pageUrl)) return;
     const own = ownSiteUrl(raw, domain, pageUrl);
     if (!own.ok) { if (own.why === 'off_site' && own.host && !offSite.includes(own.host)) offSite.push(own.host); return; }
     const key = from + ' ' + own.url.href;
-    if (seen.has(key)) return;
+    // The same picture again: listed once, with the first alt text any mention of it has.
+    if (seen.has(key)) { const first = pictures.find(p => p.from === from && p.url === own.url.href); if (first && !first.alt && alt) first.alt = alt; return; }
     seen.add(key); pictures.push({ url: own.url.href, alt, from, ...(of ? { of } : {}) });
   };
 
@@ -155,42 +169,71 @@ export function readPage(html: string, pageUrl: string, domain: string): PageFac
   for (const raw of shareAddresses($)) add(raw, 'share', '');
 
   return {
-    names: [...new Set(names)],
+    h1, entityNames: [...new Set(specific.map(e => e.name).filter(Boolean))],
     article: meta('og:type').toLowerCase() === 'article' || ARTICLE_TYPES.some(t => types.has(t)) || ARTICLE_PATH.test(path),
-    listing: path === '/' || LISTING_PATH.test(path) || LISTING_TYPES.some(t => types.has(t)),
+    listing: listingPath(path) || LISTING_TYPES.some(t => types.has(t)),
     pictures, offSite,
   };
 }
 
-/** The own-site share images of a page, for the comparison with the home page's: a share image the home page also
- *  carries is the site's default card, not a picture of any subject. */
+/** The own-site share images of a page (owner action only): a share image the home page also carries is the site's
+ *  default card, not a picture of anything. */
 export function shareImages(html: string, pageUrl: string, domain: string): string[] {
   const $ = cheerio.load(html);
   return [...new Set(shareAddresses($).flatMap(raw => { const own = ownSiteUrl(raw, domain, pageUrl); return own.ok ? [own.url.href] : []; }))];
 }
+/** What two share images are compared by: the host without `www.` and the path. The query string is left out, so a
+ *  cache-buster (`/og.png?v=2`) does not make the site's default card look like a page's own. */
+export function shareKey(address: string): string {
+  try { const u = new URL(address); return u.hostname.replace(/^www\./, '') + u.pathname; } catch { return address; }
+}
 
-/** The page names the subject exactly: its h1, its title lead or a structured-data name has the subject's words and
- *  no others ("Wasl 611 Tower B" is not the page for "Wasl 611"). */
-export function namesSubject(page: Pick<PageFacts, 'names'>, subject: string): boolean {
+/** The page is the subject's own page: its h1 has the subject's words and no others ("Wasl 611 Tower B" is not the
+ *  page for "Wasl 611"). Only a page with no h1 at all may be confirmed by structured data instead, when an entity
+ *  that is not generic carries exactly the subject's name. The title never confirms a page. */
+export function namesSubject(page: Pick<PageFacts, 'h1' | 'entityNames'>, subject: string): boolean {
   const st = nameTokens(subject);
-  return st.length > 0 && page.names.some(name => sameTokens(nameTokens(name), st));
+  if (!st.length) return false;
+  if (page.h1) return sameTokens(nameTokens(page.h1), st);
+  return page.entityNames.some(name => sameTokens(nameTokens(name), st));
+}
+
+/** The alt text names the subject and nothing else: the subject's words as a run, and every other word a numeral or
+ *  a generic picture word. "Harbour House Annex · photo 1" is not a picture of "Harbour House". A numeral directly
+ *  after the name is read as part of a longer name ("Marina Gate 2", "iPhone 15"), so it does not tie either. An alt
+ *  that begins "Illustration" is a cover Radar generated and the site published, not a picture of the subject. */
+export function altNamesSubject(alt: string, subject: string[]): boolean {
+  const words = nameTokens(alt);
+  if (!subject.length || words[0] === 'illustration') return false;
+  const numeral = (w: string) => /^\p{N}+$/u.test(w);
+  for (let at = 0; at + subject.length <= words.length; at++) {
+    if (!startsWith(words.slice(at), subject)) continue;
+    const before = words.slice(0, at), after = words.slice(at + subject.length);
+    if (after.length && numeral(after[0])) continue;
+    if ([...before, ...after].every(w => numeral(w) || GENERIC_PICTURE_WORDS.has(w))) return true;
+  }
+  return false;
 }
 
 /** Pictures the page ties to the subject, best first: structured data of that entity, then pictures whose alt text
- *  names it, then share images (the caller compares those with the home page before using one). */
+ *  names it and nothing else. Never a share image: nothing ties one to the subject, and a card generated for each
+ *  page from its title is common. */
 export function subjectPictures(page: PageFacts, subject: string): PagePicture[] {
   const st = nameTokens(subject);
   if (!st.length) return [];
   const ld = page.pictures.filter(p => p.from === 'ld' && !!p.of && sameTokens(nameTokens(p.of), st));
-  // An alt that begins "Illustration" is a cover Radar generated and the site published, not a picture of the subject.
-  const img = page.pictures.filter(p => { if (p.from !== 'img') return false; const alt = nameTokens(p.alt); return alt[0] !== 'illustration' && hasRun(alt, st); });
-  return unique([...ld, ...img, ...page.pictures.filter(p => p.from === 'share')]);
+  const img = page.pictures.filter(p => p.from === 'img' && altNamesSubject(p.alt, st));
+  return unique([...ld, ...img]);
 }
 
-/** What the owner action tries on a page, best first. */
+/** What the owner action tries on a page, best first: the subject's pictures, then every structured-data picture,
+ *  then share images (the caller compares those with the home page's before using one), then every <img>. A picture
+ *  with no alt text of its own takes the alt of the <img> on the page with the same address. */
 export function ownerPictures(page: PageFacts, subject: string | null): PagePicture[] {
   const from = (kind: PagePicture['from']) => page.pictures.filter(p => p.from === kind);
-  return unique([...(subject ? subjectPictures(page, subject) : []), ...from('ld'), ...from('share'), ...from('img')]);
+  const alts = new Map<string, string>();
+  for (const p of from('img')) if (p.alt && !alts.has(p.url)) alts.set(p.url, p.alt);
+  return unique([...(subject ? subjectPictures(page, subject) : []), ...from('ld'), ...from('share'), ...from('img')]).map(p => (p.alt ? p : { ...p, alt: alts.get(p.url) || '' }));
 }
 
 /** No address twice; the first mention keeps its place. */
