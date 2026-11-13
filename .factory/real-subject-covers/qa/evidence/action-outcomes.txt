@@ -1,4 +1,4 @@
-page address: 200; requests to the stub site: /places/harbour-house, /media/harbour-house.png; stored 7735 bytes; record {"h":900,"w":1600,"at":"2026-11-13T16:42:22.722Z","by":"owner","fit":"crop","src":"/media/harbour-house.png","url":"<stored>","page":"/places/harbour-house"}
+page address: 200; requests to the stub site: /places/harbour-house, /media/harbour-house.png; stored 7735 bytes; record {"h":900,"w":1600,"at":"2026-11-13T17:16:18.900Z","by":"owner","fit":"crop","src":"/media/harbour-house.png","url":"<stored>","page":"/places/harbour-house"}
 not your site                            400 not_your_site    That address isn’t on <domain>. Radar only uses pictures from your own site.
 look-alike host                          400 not_your_site    That address isn’t on <domain>. Radar only uses pictures from your own site.
 a port                                   400 invalid_address  Enter the address of a page or picture on <domain>.
@@ -24,4 +24,4 @@ forged autosave: 200; img keys after: alt,altBy,prompt,promptBy,seed,style,url,u
 switch back, branded: 200; real null; noReal true; alt "Illustration for Living at Harbour House: what to expect"; placeholder null
 switch back, illustration, no model: 503 image_unavailable "Image generation is unavailable right now. Please contact support to enable it."
 payload shape (both): {"author":"string","blocks":"array","bodyImages":"array","canonical":"null","date":"string","entryId":"string","html":"string","image":{"alt":"string","bytes":"function","url":"string"},"keyword":"string","markdown":"string","meta":"string","mode":"string","refreshUrl":"null","seoTitle":"string","slug":"string","sources":"array","title":"string","videos":"array"}
-payload image, real cover: alt "Living at Harbour House: what to expect", bytes 7735 image/png named harbour-house.png
+payload image, real cover: alt "Harbour House · photo 1", bytes 7735 image/png named harbour-house.png

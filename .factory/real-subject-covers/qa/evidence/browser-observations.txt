@@ -71,3 +71,24 @@ B18 keyboard: Tab from the address field lands on "Use this picture" with a visi
 B19 an article saved before this change (e_rcqa_legacy, no url, no newer fields) opens, and the owner action works on it.
 B20 console: no script error. Only the expected 400/422/503 responses to the refused actions. Server log: no failure report for any refused site picture
     (the two failure reports are the existing image.generate "unavailable" ones from B7 and B17).
+
+==== Round 2, revision 2b034f26, 2026-11-13 ====
+Same setup as round 1 (http://127.0.0.1:3231, stub mode, fresh radar_qa_app, built-in browser pane, 1280x900, synthetic Owner).
+No client file changed between the rounds, so only the paths the server change touches were repeated.
+
+C1  automatic, "Living at Harbour House: what to expect", Draft now: cover is the Harbour House stub picture.
+    notice "Radar found this picture of Harbour House on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house. …"
+    alt "Harbour House". database: real.by radar, subject Harbour House, src /media/harbour-house.png.
+C2  automatic, "A Stay at Harbour House Annex: what to know", Draft now: cover is the ANNEX stub picture (a different arrangement of blocks).
+    notice "Radar found this picture of Harbour House Annex on your site and used it as the cover. Source: harbour-stays-qa.test/places/harbour-house-annex. …"
+    alt "Harbour House Annex". database: real.by radar, subject Harbour House Annex, page /places/harbour-house-annex, src /media/harbour-house-annex.png.
+C3  automatic, "A Weekend at Mill Lane Studios", Draft now: generated cover, no notice; database realCoverMiss key "mill lane studios@harbour-stays-qa.test".
+C4  switch back on C1 (Branded graphic): toast "Cover image generated", notice gone, Generate from prompt and Regenerate back.
+C5  owner action on an article with no subject (e_rcqa_one):
+      …/places/mill-lane-studios  → inline, no toast: "Radar couldn’t find a picture it can use on that page. Try the address of the picture itself."
+      …/places/harbour-house      → toast "Cover set to the picture from your site"; notice with the page as source;
+                                    Alt text field now reads "Harbour House · photo 1" (round 1: the article title; round-1 D5 closed)
+      /media/portrait.png         → toast; notice source harbour-stays-qa.test/media/portrait.png; alt is the article title (a picture address has no page alt)
+      Use a generated cover instead → toast "Cover image generated"; notice gone.
+C6  console: one expected 422. Web server log: no failure report. Worker log: 3 failure reports, not read before the log was removed
+    (in round 1 the worker's reports were the existing "body images left out … unavailable" ones, one per stub draft; three drafts ran here).

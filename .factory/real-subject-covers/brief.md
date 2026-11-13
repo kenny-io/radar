@@ -86,3 +86,12 @@ QA (`qa.md`, on `aa16969f`): do not ship the automatic path as it was. Two major
 - D19 (QA D5). On the owner action, a picture listed in structured data keeps the alt text of the `<img>` with the same address.
 - D20 (QA D6). A search is "finished with nothing found" only when the site answered. When robots.txt and the sitemap could not be reached at all (no HTTP answer, or a 5xx), the miss is not remembered.
 - Accepted as they are: QA observations 1–7.
+
+## Decisions after QA round 2 (2026-11-13, PM)
+QA round 2 (`qa.md`, on `2b034f26`): all six round-1 defects closed; three new findings.
+
+- D21 (QA N1). On the automatic path a picture whose address is also one of the page's own share images is taken only after the home page is read and its share images do not include it (compared without `www.` and the query string). If the home page cannot be read the picture is not taken and the search is unfinished. Addresses whose path names a share card (`opengraph`, `og`, `twitter`, `social`, `share` as a word in any path segment) are never candidates. A real photo that a page lists both as `og:image` and in structured data is still taken.
+- D22 (QA N2). The generic picture words are cut to words that are not part of names: photo, photos, image, images, picture, pictures, pic, of, the, a, an, exterior, interior. A numeral counts only directly after photo, image, picture or pic ("photo 1"). "Harbour House View", "Main Street Cafe", "1 Hyde Park" and "Harbour House Building 2" tie nothing.
+- D23 (QA N3). The blank check samples the picture at 512 pixels on its longer side, so a thin or small object on a plain background is not mistaken for a blank picture. A blank picture gets its own message: `That picture looks blank, so Radar didn’t use it. Try another one.`
+- D24. A search is finished only when the list of pages was read: with no crawled candidate and a sitemap that gave no answer or a 5xx, the miss is not remembered, whatever robots.txt answered. `tagged`, `label` and `labels` path segments are listings too.
+- Accepted: generic picture words are English only (fewer automatic pictures by alt text on other-language sites; structured data still works); `/collections/` and `/t/` paths rely on the picture rules.

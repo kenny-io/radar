@@ -15,7 +15,9 @@ const F = new Fixtures();
 afterAll(() => F.cleanup());
 
 const D = 'stays.test';
-const PNG = (() => { const c = createCanvas(1600, 900); const g = c.getContext('2d'); g.fillStyle = '#336699'; g.fillRect(0, 0, 1600, 900); return c.toBuffer('image/png'); })();
+// Round 2: a sky gradient with three blocks. It was one flat colour (#336699) in round 1; decision D18 now refuses a
+// flat-colour picture, so the stand-in for "a usable photograph" has to look like one. Nothing else about it matters.
+const PNG = (() => { const c = createCanvas(1600, 900); const g = c.getContext('2d'); const sky = g.createLinearGradient(0, 0, 0, 900); sky.addColorStop(0, '#87b7e0'); sky.addColorStop(1, '#f2d7b0'); g.fillStyle = sky; g.fillRect(0, 0, 1600, 900); g.fillStyle = '#3b3f4a'; g.fillRect(300, 300, 260, 600); g.fillStyle = '#c9a227'; g.fillRect(700, 420, 200, 480); g.fillStyle = '#336699'; g.fillRect(1050, 200, 300, 700); return c.toBuffer('image/png'); })();
 type Route = { status?: number; type?: string; body?: string | Buffer; location?: string; delay?: number; throws?: boolean };
 type Site = Record<string, Route | string | Buffer>;
 const fetchMock = vi.fn(); let asked: string[] = [];
@@ -47,7 +49,7 @@ const find = async (subject: string, site: Site, o: { bid?: string; kind?: strin
   const r = await findSubjectPicture({ bid: o.bid || '00000000-0000-4000-8000-000000000000', domain: D, subject: { name: subject, kind: o.kind || 'building' }, ...(o.budgetMs ? { budgetMs: o.budgetMs } : {}) });
   return { src: r.picture?.src ?? null, page: r.picture?.page ?? null, searched: r.searched, requests: asked.length, ms: Date.now() - t };
 };
-const note = (name: string, r: { src: string | null; searched: boolean; requests: number }, verdict = '') => lines.push(`${name.padEnd(96)} picture: ${String(r.src).padEnd(46)} searched: ${String(r.searched).padEnd(5)} requests: ${r.requests} ${verdict}`);
+const note = (name: string, r: { src: string | null; searched: boolean; requests: number }, verdict = '') => lines.push(`${name.padEnd(96)} picture: ${String(r.src).replace('https://' + D, '').padEnd(46)} searched: ${String(r.searched).padEnd(5)} requests: ${r.requests} ${verdict}`);
 
 describe.skipIf(!process.env.DATABASE_URL)('automatic matching', () => {
   it('control: the subject’s page with a picture tied to it by structured data', async () => {
@@ -192,6 +194,131 @@ describe.skipIf(!process.env.DATABASE_URL)('automatic matching', () => {
   });
 });
 
+// ---------------------------------------------------------------------------------------------------------------
+// Round 2 (revision 2b034f26, decisions D14 to D20): new adversarial cases against the new rules.
+describe.skipIf(!process.env.DATABASE_URL)('round 2: the tightened rules', () => {
+  const PLACE = (body: string, o: { title?: string; h1?: string; head?: string } = {}) => page({ title: o.title ?? 'Harbour House — Stays', h1: o.h1 ?? 'Harbour House', head: o.head, body });
+  const raw = (head: string, body: string) => `<!doctype html><html><head><title>Stays</title>${head}</head><body><main>${body}</main></body></html>`;
+  const HH = `https://${D}/media/hh.png`;
+  const one = (path: string, html: string, more: Site = {}) => base([path], { [path]: html, '/media/hh.png': PNG, '/media/annex.png': PNG, '/media/other.png': PNG, ...more });
+  const OWN = '<img src="/media/hh.png" alt="Photo 1" width="1600" height="900">'; // the place's own photo, generic alt: never tied
+
+  describe('D14: only the h1 confirms a page (structured data only when there is no h1; the title never)', () => {
+    const cases: [string, string, Site, string | null][] = [
+      ['R1 two h1: "Harbour House Annex" first, "Harbour House" second', 'Harbour House', one('/places/harbour-house-annex', raw('', '<h1>Harbour House Annex</h1><h1>Harbour House</h1><img src="/media/annex.png" alt="Harbour House">')), null],
+      ['R2 h1 "Harbour House <span>Annex</span>"', 'Harbour House', one('/places/harbour-house-annex', raw('', '<h1>Harbour House <span class="sub">Annex</span></h1><img src="/media/annex.png" alt="Harbour House">')), null],
+      ['R3 h1 holds only an image (alt "Harbour House Annex"); title "Harbour House | Stays"; no structured data', 'Harbour House', one('/places/harbour-house-annex', `<!doctype html><html><head><title>Harbour House | Stays</title><meta property="og:title" content="Harbour House"></head><body><main><h1><img src="/media/wordmark.png" alt="Harbour House Annex"></h1><img src="/media/annex.png" alt="Harbour House"></main></body></html>`), null],
+      ['R4 empty h1; structured data names only the Annex', 'Harbour House', one('/places/harbour-house-annex', raw(ld({ '@type': 'Place', name: 'Harbour House Annex', image: `https://${D}/media/annex.png` }), '<h1></h1><img src="/media/annex.png" alt="Harbour House">')), null],
+      ['R5 empty h1; breadcrumb, Review, Offer, AggregateRating, ImageObject all named "Harbour House" (generic); the Annex is the Place', 'Harbour House', one('/places/harbour-house-annex', raw(ld({ '@graph': [{ '@type': 'BreadcrumbList', name: 'Harbour House' }, { '@type': 'Review', name: 'Harbour House', image: `https://${D}/media/other.png` }, { '@type': 'Offer', name: 'Harbour House', image: `https://${D}/media/other.png` }, { '@type': 'AggregateRating', name: 'Harbour House' }, { '@type': 'ImageObject', name: 'Harbour House', contentUrl: `https://${D}/media/other.png` }, { '@type': 'Comment', name: 'Harbour House', image: `https://${D}/media/other.png` }, { '@type': 'VideoObject', name: 'Harbour House', image: `https://${D}/media/other.png` }, { '@type': 'Place', name: 'Harbour House Annex', image: `https://${D}/media/annex.png` }] }), '<h1> </h1>')), null],
+      ['R6 no h1; the entity named for the subject is nested (containedInPlace) inside the Annex entity', 'Harbour House', one('/places/harbour-house-annex', raw(ld({ '@type': 'Place', name: 'Harbour House Annex', image: `https://${D}/media/annex.png`, containedInPlace: { '@type': 'Place', name: 'Harbour House', image: `https://${D}/media/annex.png` } }), '<p>Annex</p>')), null],
+      ['R7 control: no h1 at all; a Place entity named exactly for the subject with its picture', 'Harbour House', one('/places/harbour-house', raw(ld({ '@type': 'Place', name: 'Harbour House', image: HH }), '<p>About the place.</p>')), HH],
+      ['R8 the site title is the first h1 on every page ("Harbour House" is also the business); the page is the Annex page (second h1)', 'Harbour House', one('/places/harbour-house-annex', raw('', '<header><h1>Harbour House</h1></header><h1>Harbour House Annex</h1><img src="/media/annex.png" alt="Harbour House Annex · photo 1" width="1600" height="900">' + ld({ '@type': 'Place', name: 'Harbour House Annex', image: `https://${D}/media/annex.png` }))), null],
+      ['R9 h1 equal but upper case, extra spaces, accents and "&" ("HARBOUR  HOUSE"; subject "Café & Bar" against h1 "Cafe and Bar")', 'Café & Bar', one('/places/cafe-and-bar', page({ title: 'x', h1: '  CAFE   and BAR ', body: '<img src="/media/hh.png" alt="Café & Bar">' })), HH],
+    ];
+    it.each(cases)('%s', async (name, subject, site, want) => { const r = await find(subject, site); note(name, r, r.src === want ? '' : `  <-- QA expected ${want}`); expect(r.src, name).toBe(want); });
+  });
+
+  describe('D15: an alt ties a picture only when it names the subject and nothing else', () => {
+    const alt = (text: string) => OWN + `<section><img src="/media/other.png" alt="${text}" width="800" height="600"></section>`;
+    const OTHER = `https://${D}/media/other.png`;
+    const cases: [string, string, string, string | null][] = [
+      // [case, subject, alt of the second picture on the subject's own page, expected]
+      ['A1 "Harbour House Annex · photo 1"', 'Harbour House', 'Harbour House Annex · photo 1', null],
+      ['A2 "Harbour House 2" (a second building)', 'Harbour House', 'Harbour House 2', null],
+      ['A3 "Marina Gate 2" for "Marina Gate"', 'Marina Gate', 'Marina Gate 2', null],
+      ['A4 "Marina Gate II"', 'Marina Gate', 'Marina Gate II', null],
+      ['A5 "Marina Gate Two"', 'Marina Gate', 'Marina Gate Two', null],
+      ['A6 "The old mill, five minutes from Harbour House"', 'Harbour House', 'The old mill, five minutes from Harbour House', null],
+      ['A7 "Harbour House floor plan"', 'Harbour House', 'Harbour House floor plan', null],
+      ['A8 "Harbour House owner Jane Smith"', 'Harbour House', 'Harbour House owner Jane Smith', null],
+      ['A9 "Not Harbour House"', 'Harbour House', 'Not Harbour House', null],
+      ['A10 "Illustration of Harbour House"', 'Harbour House', 'Illustration of Harbour House', null],
+      ['A11 "Map of Harbour House"', 'Harbour House', 'Map of Harbour House', null],
+      ['A12 "Harbour House logo"', 'Harbour House', 'Harbour House logo', null],
+      // A neighbour whose name is the subject's plus a word on the generic-picture-word list.
+      ['A13 "Harbour House View" (another place)', 'Harbour House', 'Harbour House View', null],
+      ['A14 "Harbour House Gallery" (another place)', 'Harbour House', 'Harbour House Gallery', null],
+      ['A15 "Main Street Cafe" for "Street Cafe"', 'Street Cafe', 'Main Street Cafe', null],
+      ['A16 "Harbour House Building 2" (another building)', 'Harbour House', 'Harbour House Building 2', null],
+      ['A17 "1 Hyde Park" (a tower) on the page of "Hyde Park"', 'Hyde Park', '1 Hyde Park', null],
+      ['A18 "Park View" on the page of "Park" (4 letters)', 'Park', 'Park View', null],
+      // Controls: these are pictures of the subject.
+      ['A19 control "Harbour House"', 'Harbour House', 'Harbour House', OTHER],
+      ['A20 control "Harbour House · photo 3"', 'Harbour House', 'Harbour House · photo 3', OTHER],
+      ['A21 control "Exterior view of the Harbour House building"', 'Harbour House', 'Exterior view of the Harbour House building', OTHER],
+      ['A22 control "HARBOUR-HOUSE_main.jpg"-style alt "harbour house main image"', 'Harbour House', 'harbour house main image', OTHER],
+      ['A23 control numbers in the name: "Wasl 611 photo 2" for "Wasl 611"', 'Wasl 611', 'Wasl 611 photo 2', OTHER],
+      // Coverage, recorded: the generic words are English only, so these correct pictures are not taken (the safe side).
+      ['A24 other language "Foto de Harbour House"', 'Harbour House', 'Foto de Harbour House', null],
+      ['A25 other language "Vue extérieure de Harbour House"', 'Harbour House', 'Vue extérieure de Harbour House', null],
+      ['A26 other language "صورة Harbour House"', 'Harbour House', 'صورة Harbour House', null],
+      ['A27 engineer’s stated cost: "Wasl 611 1" (photo number straight after the name)', 'Wasl 611', 'Wasl 611 1', null],
+    ];
+    it.each(cases)('%s', async (name, subject, text, want) => {
+      const slug = '/places/' + subject.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const r = await find(subject, one(slug, page({ title: subject + ' — Stays', h1: subject, body: alt(text) })));
+      note('alt ' + name, r, r.src === want ? '' : `  <-- QA expected ${want === null ? 'null' : want.replace('https://' + D, '')}`); expect(r.src, name).toBe(want);
+    });
+    it('a generic-word-only subject ("The View", a building): its own page and picture are found; a neighbour "The View Gallery" is not taken for it', async () => {
+      const ok = await find('The View', one('/places/the-view', page({ title: 'The View', h1: 'The View', body: '<img src="/media/hh.png" alt="The View" width="1600" height="900">' })));
+      note('generic-word subject "The View", own picture', ok); expect(ok.src).toBe(HH);
+      const stock = await find('The View', one('/places/the-view', page({ title: 'The View', h1: 'The View', body: '<img src="/media/other.png" alt="Front view of the building" width="1600" height="900"><img src="/media/other.png" alt="The view from the gallery">' })));
+      note('generic-word subject "The View", alts "Front view of the building", "The view from the gallery"', stock); expect(stock.src).toBeNull();
+      const neighbour = await find('The View', one('/places/the-view', page({ title: 'The View', h1: 'The View', body: OWN + '<img src="/media/other.png" alt="The View Gallery" width="800" height="600">' })));
+      note('generic-word subject "The View", neighbour card alt "The View Gallery"', neighbour, neighbour.src === null ? '' : '  <-- QA expected null'); expect(neighbour.src).toBeNull();
+    });
+  });
+
+  describe('D16: no share image reaches the automatic path, by any route', () => {
+    const CARD = `<meta property="og:image" content="https://${D}/og.png"><meta name="twitter:image" content="https://${D}/og.png"><link rel="image_src" href="https://${D}/og.png">`;
+    const cases: [string, Site, string | null][] = [
+      ['S1 og:image, twitter:image and image_src all name a card that differs from the home page’s; no other picture', base(['/places/harbour-house'], { '/': page({ title: 'Stays', h1: 'Stays', head: `<meta property="og:image" content="https://${D}/home.png">` }), '/places/harbour-house': PLACE('', { head: CARD.replaceAll('/og.png', '/share-hh.png') }), '/share-hh.png': PNG }), null],
+      ['S2 per-page generated title card as og:image, photos on a CDN (round-1 Q20)', base(['/places/harbour-house'], { '/places/harbour-house': PLACE('<img src="https://cdn.other.com/hh.jpg" alt="Harbour House">', { head: `<meta property="og:image" content="https://${D}/places/harbour-house/opengraph-image?3f2a">` }), '/places/harbour-house/opengraph-image?3f2a': PNG }), null],
+      ['S3 structured data of the subject gives the SITE DEFAULT card as its image (the same address as the home page’s og:image)', base(['/places/harbour-house'], { '/places/harbour-house': PLACE(ld({ '@type': 'Place', name: 'Harbour House', image: `https://${D}/og.png` }), { head: CARD }) }), null],
+      ['S4 structured data of the subject gives the page’s own generated title card as its image (same address as the page’s og:image)', base(['/places/harbour-house'], { '/places/harbour-house': PLACE(ld({ '@type': 'Place', name: 'Harbour House', image: `https://${D}/places/harbour-house/opengraph-image?3f2a` }), { head: `<meta property="og:image" content="https://${D}/places/harbour-house/opengraph-image?3f2a">` }), '/places/harbour-house/opengraph-image?3f2a': PNG }), null],
+      ['S5 the site default card is also an <img> on the page with alt "Harbour House"', base(['/places/harbour-house'], { '/places/harbour-house': PLACE('<img src="/og.png" alt="Harbour House" width="1200" height="630">', { head: CARD }) }), null],
+      ['S6 control: og:image and structured data both give the place’s real photo', base(['/places/harbour-house'], { '/places/harbour-house': PLACE(ld({ '@type': 'Place', name: 'Harbour House', image: HH }), { head: `<meta property="og:image" content="${HH}">` }), '/media/hh.png': PNG }), HH],
+    ];
+    it.each(cases)('%s', async (name, site, want) => {
+      const r = await find('Harbour House', site);
+      note(name, r, r.src === want ? '' : `  <-- QA expected ${want}`);
+      if (name.startsWith('S1') || name.startsWith('S2')) expect(asked.some(u => /share-hh|opengraph-image/.test(u)), 'the card must not even be requested').toBe(false);
+      expect(r.src, name).toBe(want);
+    });
+  });
+
+  describe('D17: listings by path, and entities that are about a subject, not the subject', () => {
+    const TIED = '<img src="/media/hh.png" alt="Harbour House" width="1600" height="900">';
+    it.each(['/tag/harbour-house', '/tags/harbour-house', '/category/harbour-house', '/categories/places/harbour-house', '/topic/harbour-house', '/topics/harbour-house', '/author/harbour-house', '/search/harbour-house', '/archive/harbour-house', '/archives/2026/harbour-house', '/Tag/harbour-house', '/en/category/harbour-house'])('%s is a listing: nothing is taken, the page is not even requested', async path => {
+      const r = await find('Harbour House', one(path, PLACE(TIED)));
+      note('listing path ' + path, r); expect(r.src).toBeNull(); expect(asked.map(u => new URL(u).pathname)).not.toContain(path);
+    });
+    it.each(['/tagged/harbour-house', '/label/harbour-house', '/collections/harbour-house', '/t/harbour-house', '/places/harbour-house/page/2', '/harbour-house/feed'])('recorded, not asserted: %s is not on the listing list', async path => {
+      const r = await find('Harbour House', one(path, PLACE(TIED)));
+      note('other listing-like path ' + path + ' (recorded only)', r);
+    });
+  });
+
+  describe('D20: an unreachable site is not remembered as a miss', () => {
+    const down: Route = { throws: true }, e503: Route = { status: 503, body: 'down' }, e404: Route = { status: 404, body: 'no' }, e403: Route = { status: 403, body: 'forbidden' };
+    const cases: [string, Site, boolean][] = [
+      ['robots no answer, sitemap no answer', { '/robots.txt': down, '/sitemap.xml': down }, false],
+      ['robots 503, sitemap 503', { '/robots.txt': e503, '/sitemap.xml': e503 }, false],
+      ['robots no answer, sitemap 502', { '/robots.txt': down, '/sitemap.xml': { status: 502, body: '' } }, false],
+      ['robots 404, sitemap 404 (a small site with neither file)', { '/robots.txt': e404, '/sitemap.xml': e404 }, true],
+      ['robots 403, sitemap 403 (the site refuses the crawler)', { '/robots.txt': e403, '/sitemap.xml': e403 }, true],
+      ['robots 200 empty, sitemap 200 with other pages', { '/robots.txt': '', '/sitemap.xml': sitemap('/about') }, true],
+    ];
+    it.each(cases)('%s', async (name, site, want) => { const r = await find('Harbour House', site); note('D20 ' + name, r); expect(r).toMatchObject({ src: null, searched: want }); });
+    it.each([
+      ['robots 200, the sitemap gives no answer (the only list of pages was never read)', { '/robots.txt': '', '/sitemap.xml': down } as Site],
+      ['robots 200, the sitemap answers 503', { '/robots.txt': '', '/sitemap.xml': e503 } as Site],
+      ['robots no answer, sitemap 404', { '/robots.txt': down, '/sitemap.xml': e404 } as Site],
+      ['robots 200 naming a sitemap on another host only', { '/robots.txt': 'Sitemap: https://cdn.other.com/sitemap.xml\n', '/sitemap.xml': down } as Site],
+    ])('recorded, not asserted: %s', async (name, site) => { const r = await find('Harbour House', site); note('D20 mixed: ' + name + ' (recorded only)', r); expect(r.src).toBeNull(); });
+  });
+});
+
 describe('owner path over the same made-up site (no database)', () => {
   const own = async (address: string, site: Site, subject: string | null = null) => {
     serve(site);
@@ -214,6 +341,20 @@ describe('owner path over the same made-up site (no database)', () => {
   it('the site default share image is not used by the owner path either; a page with only that says no_picture', async () => {
     const out = await own('/p', { '/': HOME, '/p': page({ title: 'P', h1: 'P', head: `<meta property="og:image" content="https://${D}/og.png">` }), '/og.png': PNG });
     expect(out).toBe('no_picture');
+  });
+  it('round 2, D16: the owner path treats /og.png?v=2 and the www form as the home page’s card, and still uses a share picture that is the page’s own', async () => {
+    const home = page({ title: 'Stays', h1: 'Stays', head: `<meta property="og:image" content="https://${D}/og.png">` });
+    expect(await own('/p', { '/': home, '/p': page({ title: 'P', h1: 'P', head: `<meta property="og:image" content="https://${D}/og.png?v=2">` }), '/og.png?v=2': PNG })).toBe('no_picture');
+    expect(await own('/p', { '/': home, '/p': page({ title: 'P', h1: 'P', head: `<meta property="og:image" content="https://www.${D}/og.png">` }), '/og.png': PNG })).toBe('no_picture');
+    expect(await own('/p', { '/': home, '/p': page({ title: 'P', h1: 'P', head: `<meta property="og:image" content="https://${D}/media/p.png">` }), '/media/p.png': PNG })).toBe(`ok src=https://${D}/media/p.png page=https://${D}/p fit=crop`);
+  });
+  it('round 2, D19: a structured-data picture takes the alt of the <img> with the same address (relative or http form included); not when the addresses differ by a query', async () => {
+    const alt = async (site: Site) => { serve(site); return (await pictureFromAddress({ domain: D, address: '/p', subject: null })).alt; };
+    const LD = (image: string) => ld({ '@type': 'Place', name: 'Harbour House', image });
+    expect(await alt({ '/p': page({ title: 'P', h1: 'P', body: LD(`https://${D}/media/hh.png`) + '<img src="/media/hh.png" alt="Harbour House · photo 1">' }), '/media/hh.png': PNG })).toBe('Harbour House · photo 1');
+    expect(await alt({ '/p': page({ title: 'P', h1: 'P', body: LD(`http://${D}/media/hh.png`) + '<img src="media/hh.png" alt="Seen from the quay">' }), '/media/hh.png': PNG })).toBe('Seen from the quay');
+    expect(await alt({ '/p': page({ title: 'P', h1: 'P', body: LD(`https://${D}/media/hh.png`) + '<img src="/media/hh.png?w=1200" alt="Sized copy">' }), '/media/hh.png': PNG, '/media/hh.png?w=1200': PNG })).toBe('');
+    expect(await alt({ '/p': page({ title: 'P', h1: 'P', body: LD(`https://${D}/media/hh.png`) + '<img src="/media/other.png" alt="Another picture">' }), '/media/hh.png': PNG, '/media/other.png': PNG })).toBe('');
   });
   it('at most two pictures are tried on a page, and the logo in the header is never one of them', async () => {
     const out = await own('/p', { '/p': page({ title: 'P', h1: 'P', body: '<img src="/1.png" alt="a"><img src="/2.png" alt="b"><img src="/3.png" alt="c">' }), '/1.png': { status: 404 }, '/2.png': { status: 404 }, '/3.png': PNG });

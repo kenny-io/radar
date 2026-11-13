@@ -2,6 +2,110 @@
 
 QA record, 2026-11-13. QA edited no source file. Probes and evidence are under `.factory/real-subject-covers/qa/`.
 
+# Round 2 (T4b), revision `2b034f26`
+
+## Verdict, round 2
+**Every round-1 defect (D1 to D6) is closed.** Typecheck passes and the suite shows no regression. **Not yet a clean ship for the automatic path: three new findings (N1 to N3), none as broad as round 1.** N1 is the one that matters: the site's share card still reaches the automatic path when the page's structured data names it as the subject's image. N1 and N2 are gaps in the decisions (D16, D15) as much as in the code, so they need the PM's ruling: fix (both are small rule changes) or accept in writing. The owner action, guard, record, switch back and panel pass as before.
+
+## Revision and environment, round 2
+- Same worktree and branch, `git rev-parse HEAD` = `2b034f2605399e4de345bb45be7d3600361ae1e6`. Source changed since round 1 only in `src/server/services/realCover/{fetch,index,page,picture}.ts`, their tests, `devsite.test.ts`, `docs/CONTRACTS.md`, `DIVERGENCES.md`. No client file changed.
+- Databases on 127.0.0.1:55442: `radar_qa2` (whole suite, fresh), `radar_qa_probe` (probes), `radar_qa_app` (browser, dropped and reseeded). All left in place.
+- Browser as in round 1 (built-in pane, `http://127.0.0.1:3231`, stub mode). Servers stopped, `tsconfig.json` restored, dist folder and scratch data removed, QA cookie cleared.
+- QA files changed in this round are **uncommitted** (`git status`: the two probe files, `browser-setup.mjs`, evidence files, this file).
+
+## Commands and counts, round 2
+| Check | Result |
+| --- | --- |
+| `npx tsc --noEmit` | pass (exit 0), also with the changed QA files |
+| `DATABASE_URL=…/radar_qa2 npx vitest run` | **3600 passed, 75 skipped, 5 failed** in 3 files: `openrouter.qa.test.ts` parity snapshot (1, known), `lifecycle/guides.test.ts` (1), `visibility/digest.integration.test.ts` (3) |
+| The two flaky files alone, same database | both pass (15/15, 40/40); the change touches neither |
+| Against the baseline (main: 3071 / 75 / 1) | 529 more passing tests, same 75 skipped, same 1 parity failure, no regression found |
+| QA probes, same command as round 1 | 6 files, 434 tests: **420 passed, 14 failed**. All 14 are new round-2 cases (N1: 3, N2: 7, N3: 4). Every round-1 case passes |
+
+## Round-1 defects
+| Defect | Status | Evidence |
+| --- | --- | --- |
+| D1a title lead confirms a page | **closed** | Q3, Q4, Q22 find nothing; new R1 to R8 (two h1 either way round, h1 with a nested "Annex", image-only h1, empty h1, generic entities named for the subject, nested entity, site title as first h1): nothing taken. Controls R7, R9 still find the picture |
+| D1b alt contains the subject's words | **closed** for the round-1 cases | Q1 finds nothing; Q21 now takes the place's own photo; A1 to A12 (Annex, "2", "II", "Two", floor plan, owner, map, logo, "five minutes from", "Not", "Illustration of"): nothing taken. Residue: N2 |
+| D2 share card taken | **closed** for share tags | Q6, Q7, Q8, Q20, S1, S2 find nothing and the card is never requested. Residue: N1 |
+| D3 not the subject's page | **closed** | Q5, Q9, Q10, Q18 find nothing; twelve tag, category, topic, author, search and archive paths are not requested at all (case-insensitive, any depth) |
+| D4 damaged file becomes a blank cover | **closed** as decided | IDAT not zlib, 10 of 900 rows, zeroed JPEG scan, VP8L garbage: `not_a_picture`. Flat colour in PNG, JPEG and WebP, fully transparent, two colours 7 apart: refused. Partly damaged files are the accepted limit (D18) |
+| D5 page alt lost | **closed** | `action.db.qa.test.ts` passes; browser C5 shows "Harbour House · photo 1"; relative and `http` forms of the same address match; a different query string does not (stated departure) |
+| D6 unreachable site remembered | **closed** as decided | no answer or 5xx for both files: `searched: false`; 404 or 403 for both: `true` |
+
+## New findings
+
+### N1 (medium; major if D16 is meant without exception): the share card reaches the automatic path through structured data or an `<img>`
+Revision `2b034f26`, `matching.db.qa.test.ts`, subject "Harbour House", the right page (h1 "Harbour House").
+- **S3.** The page's `og:image`, `twitter:image` and `image_src` are the site default card `/og.png` (the home page's too), and its JSON-LD is `{"@type":"Place","name":"Harbour House","image":"https://stays.test/og.png"}`. Expected: no picture (D16; AC5 "a site-wide default share image is never taken"). Actual: `/og.png` is the cover.
+- **S4.** The JSON-LD `image` is the page's own generated title card, the same address as its `og:image` (`/places/harbour-house/opengraph-image?3f2a`). Actual: the title card is the cover.
+- **S5.** The card is also an `<img alt="Harbour House">` on the page. Actual: taken. Least likely of the three.
+- Control S6: `og:image` and JSON-LD both name the place's real photo: taken, correctly. So "never take an address that is also a share image" would be the wrong fix.
+
+Templates that fill `og:image` and schema `image` from one value, with the site card as the fallback when a page has no photo, produce S3 exactly. The outcome is the one round-1 D2 described: the business's card, labelled "Radar found this picture of Harbour House", published unseen under Autopilot.
+
+### N2 (minor to medium, a gap in D15 as worded): a neighbour whose name is the subject's plus a "generic picture word", or a number in front
+D15 lets an alt carry numerals and generic picture words. Several of those words are common in names. On the subject's own page, with the subject's own photo not tied (generic alt) or later in the page, a second picture with these alts is taken:
+
+| Subject | Alt of the other picture | Result |
+| --- | --- | --- |
+| Harbour House | "Harbour House View" (A13) | taken |
+| Harbour House | "Harbour House Gallery" (A14) | taken |
+| Street Cafe | "Main Street Cafe" (A15) | taken |
+| Harbour House | "Harbour House Building 2" (A16) | taken |
+| Hyde Park | "1 Hyde Park" (A17) | taken |
+| Park | "Park View" (A18) | taken |
+| The View | "The View Gallery" | taken |
+
+Expected in each: nothing. The words that cause it are `view`, `gallery`, `main`, `building`, `front`, `cover`, `hero` in `GENERIC_PICTURE_WORDS`, and a numeral before the name. The implementation follows D15 as written; the decision's list is what lets these through. Needs a specific page shape, so narrower than round-1 D1b.
+
+### N3 (minor): the blank check refuses real pictures of one thin or small object on a plain background
+D18 itself is sound and I do not ask for it to change: a flat-colour picture is not a cover. The implementation looks at the picture drawn 32 by 32 without averaging, so it sees about one point in every 50 by 28 pixels, and a thin object falls between the points.
+- Steps: `readPicture` with a 1600×900 white PNG carrying one dark object (`picture.qa.test.ts`, "D18 real picture"; rates in `qa/evidence/blank-check-false-refusals.txt`, twelve positions each).
+
+| Picture | Refused as blank |
+| --- | --- |
+| horizontal bar 900×10 (a pen, a cable) | 6 of 12 positions |
+| horizontal bar 900×20 | 3 of 12 |
+| vertical bar 10×700 (a lamp post) | 9 of 12 |
+| square 36×36 (a small product) | 2 of 12 |
+| square 60×60 | 0 of 12 |
+| a 3 px circle outline (a necklace) | refused |
+| a swatch with a fine weave (alternate pixels 12 levels apart) | refused |
+
+- Expected: accepted. Actual: `not_a_picture`, and the owner is told "That address isn’t a picture Radar can use. Radar accepts JPEG, PNG and WebP." about a valid PNG.
+- Not affected: a 120×120 product on white, a transparent cut-out, a floor plan, a twelve-stroke sketch, a page of small text, fog ten levels deep, a night sky. The automatic path fails safe (a generated cover); the owner action is where it shows.
+
+## The engineer's stated departures
+| Departure | QA's view |
+| --- | --- |
+| A numeral directly after the name does not tie ("Marina Gate 2"; costs "Wasl 611 1") | Agree. A3 and A27 behave as stated; the cost is the safe side. Note the numeral rule does not cover a numeral before the name (A17) or after a generic word (A16): N2 |
+| An h1 with no text counts as no h1 | Acceptable. R3 to R6 show the structured-data fallback does not let the Annex page through |
+| D20 applies only to robots.txt and the sitemap | As decided, with one case to know: robots.txt answers 200 and the sitemap gives no answer or a 503 (the only list of pages was never read): `searched: true`, remembered for a week. Recorded, not asserted. Also a robots.txt naming only an off-site sitemap with the own-site one down |
+| D19 only on an exact address match | Acceptable. The same file under a sizing query string loses the alt (falls back to the title) |
+| Partly damaged files still accepted | The accepted limit in D18. Rechecked on this revision with QA's own files (`qa/evidence/blank-check-false-refusals.txt`, last lines): a PNG with its middle third overwritten and a JPEG with its second half zeroed are accepted; QA's WebP with its second half zeroed was refused this time |
+
+## Observations, round 2
+1. The generic picture words are English only. On a page in another language a correct picture with alt "Foto de Harbour House", "Vue extérieure de Harbour House" or "صورة Harbour House" is not taken (A24 to A26). Safe, but automatic pictures by alt text will be rarer on non-English sites; structured data still works.
+2. `/tagged/…`, `/label/…`, `/collections/…` and `/t/…` are not on the listing list; a page there whose h1 is the subject and whose picture's alt is exactly the subject is taken (recorded only; the alt rule is what protects these).
+3. A site that puts its title in the first h1 of every page confirms every page whose address starts with the subject when the subject is the business's own name (R8). Nothing wrong was taken, because the picture rules still apply.
+4. Browser, round 2 (`qa/evidence/browser-observations.txt`, C1 to C6): "Harbour House" gets its picture; a "Harbour House Annex" title gets the Annex page and the Annex picture, not the other; "Mill Lane Studios" is a remembered miss; the owner action with the page address now gives the alt "Harbour House · photo 1"; the picture address, one inline error and the switch back behave as in round 1.
+
+## What QA changed in its own probes (round 2)
+- `matching.db.qa.test.ts`: the stand-in "good picture" was one flat colour (`#336699`); it is now a sky gradient with three blocks. That one constant fixes both controls, Q19, Q21 and the `crawl_pages` test. No assertion changed. Added: R1 to R9 (D14), A1 to A27 and the "The View" case (D15), S1 to S6 (D16), listing paths (D17), D20 combinations, and owner-path checks for D16 and D19.
+- `picture.qa.test.ts`: "5000×5000 … 25 MP of zeros" now uses a grey ramp of the same size and still asserts it is accepted at 25 MP; the all-zero file is kept as a case that must be refused. The dark portrait in the edge test has a slightly lighter block (`#182838`) in the middle; the assertion (no edge pixel brighter than 60) is unchanged. Added the D18 section (six blank files that must be refused, twelve real pictures that should be accepted).
+- `browser-setup.mjs`: one more entry, "A Stay at Harbour House Annex: what to know".
+
+## Not tested, round 2
+Everything in the round-1 list still applies (production build, Linux, real sites, a real image model, a real connector, Autopilot end to end). In addition: the full round-1 browser list was not repeated (no client change); Viewer, scheduled and 390 px were not rerun; the three failure reports in the worker log of the round-2 browser run were not read before the log was removed.
+
+## Release recommendation, round 2
+The round-1 blockers are gone. Before shipping the automatic path, rule on N1 and N2: fix them, or record them as accepted limits (they would sit beside architecture §14 risk 4). N3 can ship if accepted; it is worth a fix because the message blames the owner's file. After any fix rerun `matching.db.qa.test.ts` (S3, S4, S5, A13 to A18 and "The View Gallery" must find nothing; S6, A19 to A23 and every round-1 row must stay as they are) and `picture.qa.test.ts` (the "D18 real picture" cases).
+
+---
+
+# Round 1, revision `aa16969f` (superseded where round 2 says so)
+
 ## Verdict
 **Do not ship the automatic path as it is: two major defects in automatic matching (D1, D2).** Each puts a picture that is not the subject's on an article with the label "Radar found this picture of {subject}", and under Autopilot it is published unseen (decision D10). Everything else that was run passes: the fetch guard, the domain rule, the decoder in its child process, the owner action, the record, precedence, the switch back, publishing payloads and the Media panel. Four minor defects (D3 to D6) can ship if the PM accepts them.
 

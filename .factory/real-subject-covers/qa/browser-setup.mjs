@@ -49,7 +49,7 @@ const cover = async (bid, name, colour) => { const c = createCanvas(1200, 628); 
 const entry = (id, title, kw, status, bid = business.id) => db.query("INSERT INTO calendar_entries(id,business_id,title,kw,type,date,status,relevance) VALUES($1,$2,$3,$4,'Guide',current_date + 7,$5,'Synthetic QA entry')", [id, bid, title, kw, status]);
 const body = [['p', 'This synthetic article exists for a QA check of cover images.'], ['h2', 'Getting there'], ['p', 'Trains run every ten minutes from the station.'], ['h2', 'What it costs'], ['p', 'Prices change with the season.'], ['h2', 'What to check before you book'], ['p', 'Read the terms and ask about the deposit.']];
 const article = (id, slug, img, extra = {}) => ({ entryId: id, generated: true, body, brief: { angle: 'QA fixture', outline: ['Getting there', 'What it costs', 'What to check before you book'], words: 1400 }, seo: { title: 'Synthetic article', meta: 'Synthetic meta', slug }, img, videos: [], videoMeta: [], sources: [], claims: [], draftedAt: '2026-11-01T00:00:00.000Z', ...extra });
-const entries = { one: 'e_rcqa_one', two: 'e_rcqa_two', placeholder: 'e_rcqa_placeholder', legacy: 'e_rcqa_legacy', harbour: 'e_rcqa_harbour', mill: 'e_rcqa_mill', typed: 'e_rcqa_typed', other: 'e_rcqa_other' };
+const entries = { one: 'e_rcqa_one', two: 'e_rcqa_two', placeholder: 'e_rcqa_placeholder', legacy: 'e_rcqa_legacy', harbour: 'e_rcqa_harbour', mill: 'e_rcqa_mill', typed: 'e_rcqa_typed', annex: 'e_rcqa_annex', other: 'e_rcqa_other' };
 // Drafted, in review, a stored generated (template) cover in Branded graphic: the owner action, errors, switch back.
 await entry(entries.one, 'A Guide to Booking a Short Let by the Water', 'short let by the water', 'review');
 await db.query('INSERT INTO articles(entry_id,business_id,data) VALUES($1,$2,$3)', [entries.one, business.id, article(entries.one, 'short-let-guide', { style: 'branded', seed: 1, prompt: 'A quiet quay at dawn with moored boats.', promptBy: 'radar', alt: 'Illustration of a quiet quay at dawn', url: await cover(business.id, 'one.png', '#1f4d3a'), urlKey: 'branded:1' })]);
@@ -66,6 +66,8 @@ await db.query('INSERT INTO articles(entry_id,business_id,data) VALUES($1,$2,$3)
 await entry(entries.harbour, 'Living at Harbour House: what to expect', 'harbour house', 'approved');
 await entry(entries.mill, 'A Weekend at Mill Lane Studios', 'mill lane studios', 'approved');
 await entry(entries.typed, 'Harbour House in Winter: what changes', 'harbour house winter', 'approved');
+// Round 2: the longer of two place names that share a start. The cover must be the Annex's picture, not Harbour House's.
+await entry(entries.annex, 'A Stay at Harbour House Annex: what to know', 'harbour house annex', 'approved');
 // Another business's article, for the tenant boundary.
 await entry(entries.other, 'Elsewhere Tower Reviews', 'elsewhere tower reviews', 'review', otherBusiness.id);
 await db.query('INSERT INTO articles(entry_id,business_id,data) VALUES($1,$2,$3)', [entries.other, otherBusiness.id, article(entries.other, 'elsewhere', { style: 'branded', seed: 1, prompt: 'OTHER-TENANT-DIRECTION', promptBy: 'radar', alt: 'Other tenant alt', url: null, urlKey: null })]);
