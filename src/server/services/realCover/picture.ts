@@ -10,6 +10,9 @@ import { SitePictureError, type OwnResponse, type SitePictureCode } from './fetc
 
 export const PICTURE_MAX_PIXELS = 25_000_000, PICTURE_MAX_SIDE = 10_000, PICTURE_MIN_W = 600, PICTURE_MIN_H = 314;
 export const COVER_W = 1200, COVER_H = 628, CROP_KEEPS_AT_LEAST = 0.6;
+/** A decoded picture is blank when, drawn `sample` pixels square, nothing in it is visible (alpha under `alpha`
+ *  everywhere), or everything visible is one colour (no channel varies by `flat` or more). */
+export const BLANK = { sample: 32, alpha: 16, flat: 8 };
 /** How long one decode and draw may take before its process is stopped. */
 export const DECODE_TIMEOUT_MS = 20_000;
 
@@ -61,6 +64,10 @@ export interface Cover { png: Buffer; w: number; h: number; fit: 'crop' | 'backd
 // picture from stdin, decodes it, and answers on stdout with a 4-byte length, a JSON head and, on success, the PNG.
 // The size is read from the decoded image: the decoder applies EXIF rotation, so a camera file stored on its side is
 // judged and drawn upright.
+// A blank result is refused: a file whose picture data is damaged can decode, without an error, to nothing at all
+// (fully transparent) or to one flat colour. The decoded picture is looked at on a small transparent canvas first.
+// Transparent areas alone are fine (a product cut-out). A file damaged part of the way through, which decodes to a
+// picture that is partly blank, is not detected.
 // The draw rule: white first (a transparent source must not leave transparent or black areas), then a centre crop
 // when the crop keeps most of the picture; otherwise the whole picture on a blurred, darkened copy of itself. The
 // blurred copy is drawn larger than the canvas: at exactly the canvas size the blur reads past the picture's edge and
@@ -80,6 +87,15 @@ process.stdin.on('end', async () => {
   const w = img.width, h = img.height;
   if (!(w >= o.minW && h >= o.minH)) return reply({ code: 'too_small' });
   try {
+    const small = createCanvas(o.sample, o.sample); const look = small.getContext('2d');
+    look.drawImage(img, 0, 0, o.sample, o.sample);
+    const px = look.getImageData(0, 0, o.sample, o.sample).data; const lo = [255, 255, 255], hi = [0, 0, 0]; let visible = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] < o.alpha) continue;
+      visible++;
+      for (let c = 0; c < 3; c++) { if (px[i + c] < lo[c]) lo[c] = px[i + c]; if (px[i + c] > hi[c]) hi[c] = px[i + c]; }
+    }
+    if (!visible || Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) < o.flat) return reply({ code: 'not_a_picture' });
     const canvas = createCanvas(o.W, o.H); const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, o.W, o.H);
     const rs = w / h, rt = o.W / o.H;
@@ -96,7 +112,7 @@ process.stdin.on('end', async () => {
   } catch (e) { reply({ code: 'not_a_picture' }); }
 });
 `;
-const CHILD_OPTIONS = JSON.stringify({ W: COVER_W, H: COVER_H, minW: PICTURE_MIN_W, minH: PICTURE_MIN_H, keeps: CROP_KEEPS_AT_LEAST });
+const CHILD_OPTIONS = JSON.stringify({ W: COVER_W, H: COVER_H, minW: PICTURE_MIN_W, minH: PICTURE_MIN_H, keeps: CROP_KEEPS_AT_LEAST, ...BLANK });
 const MAX_OUTPUT = 32 * 1024 * 1024;
 
 /** Decode and draw in a child process. Any way the picture can make the child fail (it crashed, it took too long, its
