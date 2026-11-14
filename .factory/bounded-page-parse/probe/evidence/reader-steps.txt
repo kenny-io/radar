@@ -1,36 +1,36 @@
-style elements, n = 100000 (1758 KB) | page | 5001 ms | timed_out | longest timer delay here 2 ms
-style elements, n = 100000 (1758 KB) | brand | 5002 ms | timed_out | longest timer delay here 3 ms
-images in a header, n = 60000 (1513 KB) | page | 425 ms | read (89 characters of data) | longest timer delay here 2 ms
-images in a header, n = 60000 (1513 KB) | brand | 5001 ms | timed_out | longest timer delay here 3 ms
-stylesheet links, n = 45000 (1835 KB) | page | 355 ms | read (89 characters of data) | longest timer delay here 2 ms
-stylesheet links, n = 45000 (1835 KB) | brand | 4415 ms | read (140 characters of data) | longest timer delay here 2 ms
-header svg nested deep, n = 64000 (438 KB) | page | 5000 ms | timed_out | longest timer delay here 2 ms
-header svg nested deep, n = 64000 (438 KB) | brand | 5001 ms | timed_out | longest timer delay here 2 ms
-nested divs, n = 64000 (313 KB) | page | 5001 ms | timed_out | longest timer delay here 2 ms
-nested divs, n = 64000 (313 KB) | brand | 5002 ms | timed_out | longest timer delay here 2 ms
-nested divs then images, n = 16000 (359 KB) | page | 2098 ms | failed: Maximum call stack size exceeded) | longest timer delay here 2 ms
-nested divs then images, n = 16000 (359 KB) | brand | 5001 ms | timed_out | longest timer delay here 2 ms
-nested spans with text between, n = 100000 (879 KB) | page | 5001 ms | timed_out | longest timer delay here 2 ms
-nested spans with text between, n = 100000 (879 KB) | brand | 5001 ms | timed_out | longest timer delay here 2 ms
-k open font elements, then n paragraphs , n = 3000 (17 KB) | page | 1001 ms | crashed | longest timer delay here 2 ms
-k open font elements, then n paragraphs , n = 3000 (17 KB) | brand | 915 ms | crashed | longest timer delay here 2 ms
-k open font elements, then n paragraphs , n = 30000 (169 KB) | page | 1225 ms | crashed | longest timer delay here 2 ms
-k open font elements, then n paragraphs , n = 30000 (169 KB) | brand | 1231 ms | crashed | longest timer delay here 3 ms
-links, n = 85000 (1898 KB) | page | 934 ms | read (2287978 characters of data) | longest timer delay here 2 ms
-links, n = 85000 (1898 KB) | brand | 276 ms | read (111 characters of data) | longest timer delay here 2 ms
-a long class on an ancestor of n images, n = 150000 (1709 KB) | page | 618 ms | read (89 characters of data) | longest timer delay here 2 ms
-a long class on an ancestor of n images, n = 150000 (1709 KB) | brand | 400 ms | read (111 characters of data) | longest timer delay here 2 ms
-nested divs then time elements, n = 16000 (375 KB) | page | 4325 ms | failed: Maximum call stack size exceeded) | longest timer delay here 2 ms
-nested divs then time elements, n = 16000 (375 KB) | brand | 4170 ms | read (111 characters of data) | longest timer delay here 2 ms
-ordinary: blog index of n cards, n = 4000 (1422 KB) | page | 268 ms | read (143075 characters of data) | longest timer delay here 2 ms
-ordinary: blog index of n cards, n = 4000 (1422 KB) | brand | 122 ms | read (186 characters of data) | longest timer delay here 2 ms
-ordinary: shop home page of n products, n = 2500 (1422 KB) | page | 310 ms | read (122399 characters of data) | longest timer delay here 2 ms
-ordinary: shop home page of n products, n = 2500 (1422 KB) | brand | 144 ms | read (290 characters of data) | longest timer delay here 2 ms
-sitemap: a loc inside 64,000 nested url elements (313 KB) | sitemap | 3159 ms | read (46 characters of data) | longest timer delay here 2 ms
-sitemap: one address under 200,000 nested elements (586 KB) | sitemap | 5001 ms | timed_out | longest timer delay here 2 ms
-sitemap: one address under 12,000 nested elements (35 KB) | sitemap | 248 ms | failed: Maximum call stack size exceeded) | longest timer delay here 2 ms
-sitemap: 30,000 nested sitemap elements, then 60,000 loc (967 KB) | sitemap | 5001 ms | timed_out | longest timer delay here 2 ms
-sitemap: ordinary, 35,000 addresses (1698 KB) | sitemap | 285 ms | read (1073914 characters of data) | longest timer delay here 2 ms
-sitemap: 150,000 empty url elements (879 KB) | sitemap | 53 ms | read (46 characters of data) | longest timer delay here 2 ms
-sitemap: the 64,000 nested divs page (313 KB) | sitemap | 5002 ms | timed_out | longest timer delay here 2 ms
-sitemap: the 173 KB font page (169 KB) | sitemap | 1525 ms | read (25 characters of data) | longest timer delay here 2 ms
+style elements, n = 100000 (1758 KB) | page | 5162 ms | timed_out | longest timer delay here 3 ms
+style elements, n = 100000 (1758 KB) | brand | 5163 ms | timed_out | longest timer delay here 3 ms
+images in a header, n = 60000 (1513 KB) | page | 414 ms | read (89 characters of data) | longest timer delay here 14 ms
+images in a header, n = 60000 (1513 KB) | brand | 5016 ms | timed_out | longest timer delay here 3 ms
+stylesheet links, n = 45000 (1835 KB) | page | 348 ms | read (89 characters of data) | longest timer delay here 19 ms
+stylesheet links, n = 45000 (1835 KB) | brand | 4307 ms | read (140 characters of data) | longest timer delay here 5 ms
+header svg nested deep, n = 64000 (438 KB) | page | 5011 ms | timed_out | longest timer delay here 3 ms
+header svg nested deep, n = 64000 (438 KB) | brand | 5160 ms | timed_out | longest timer delay here 3 ms
+nested divs, n = 64000 (313 KB) | page | 5160 ms | timed_out | longest timer delay here 2 ms
+nested divs, n = 64000 (313 KB) | brand | 5152 ms | timed_out | longest timer delay here 3 ms
+nested divs then images, n = 16000 (359 KB) | page | 2053 ms | failed: Maximum call stack size exceeded) | longest timer delay here 2 ms
+nested divs then images, n = 16000 (359 KB) | brand | 5009 ms | timed_out | longest timer delay here 3 ms
+nested spans with text between, n = 100000 (879 KB) | page | 5156 ms | timed_out | longest timer delay here 9 ms
+nested spans with text between, n = 100000 (879 KB) | brand | 5156 ms | timed_out | longest timer delay here 2 ms
+k open font elements, then n paragraphs , n = 3000 (17 KB) | page | 2014 ms | crashed | longest timer delay here 37 ms
+k open font elements, then n paragraphs , n = 3000 (17 KB) | brand | 1928 ms | crashed | longest timer delay here 15 ms
+k open font elements, then n paragraphs , n = 30000 (169 KB) | page | 2428 ms | crashed | longest timer delay here 3 ms
+k open font elements, then n paragraphs , n = 30000 (169 KB) | brand | 2548 ms | crashed | longest timer delay here 2 ms
+links, n = 85000 (1898 KB) | page | 799 ms | read (567970 characters of data) | longest timer delay here 3 ms
+links, n = 85000 (1898 KB) | brand | 278 ms | read (111 characters of data) | longest timer delay here 2 ms
+a long class on an ancestor of n images, n = 150000 (1709 KB) | page | 586 ms | read (89 characters of data) | longest timer delay here 3 ms
+a long class on an ancestor of n images, n = 150000 (1709 KB) | brand | 368 ms | read (111 characters of data) | longest timer delay here 2 ms
+nested divs then time elements, n = 16000 (375 KB) | page | 4650 ms | failed: Maximum call stack size exceeded) | longest timer delay here 2 ms
+nested divs then time elements, n = 16000 (375 KB) | brand | 4124 ms | read (111 characters of data) | longest timer delay here 3 ms
+ordinary: blog index of n cards, n = 4000 (1422 KB) | page | 278 ms | read (143075 characters of data) | longest timer delay here 2 ms
+ordinary: blog index of n cards, n = 4000 (1422 KB) | brand | 121 ms | read (186 characters of data) | longest timer delay here 2 ms
+ordinary: shop home page of n products, n = 2500 (1422 KB) | page | 301 ms | read (122399 characters of data) | longest timer delay here 3 ms
+ordinary: shop home page of n products, n = 2500 (1422 KB) | brand | 171 ms | read (290 characters of data) | longest timer delay here 2 ms
+sitemap: a loc inside 64,000 nested url elements (313 KB) | sitemap | 3751 ms | read (46 characters of data) | longest timer delay here 3 ms
+sitemap: one address under 200,000 nested elements (586 KB) | sitemap | 5014 ms | timed_out | longest timer delay here 2 ms
+sitemap: one address under 12,000 nested elements (35 KB) | sitemap | 243 ms | failed: Maximum call stack size exceeded) | longest timer delay here 2 ms
+sitemap: 30,000 nested sitemap elements, then 60,000 loc (967 KB) | sitemap | 5010 ms | timed_out | longest timer delay here 3 ms
+sitemap: ordinary, 35,000 addresses (1698 KB) | sitemap | 269 ms | read (1073914 characters of data) | longest timer delay here 2 ms
+sitemap: 150,000 empty url elements (879 KB) | sitemap | 49 ms | read (46 characters of data) | longest timer delay here 2 ms
+sitemap: the 64,000 nested divs page (313 KB) | sitemap | 5014 ms | timed_out | longest timer delay here 2 ms
+sitemap: the 173 KB font page (169 KB) | sitemap | 1519 ms | read (25 characters of data) | longest timer delay here 2 ms
