@@ -47,6 +47,21 @@ Environment: macOS arm64, Node 22.18.0, cheerio 1.2.0. Database checks use a thr
 | `npm run build` | passes |
 | `pgrep -f max-old-space-size=384` after the suite | nothing left |
 
+## Final (PM), on `7d1e5f38`
+| Check | Result |
+| --- | --- |
+| `npx tsx .factory/bounded-page-parse/qa/busy2.mjs choppy` (QA's probe for N1) | 30 of 30 read with the same answer as when idle (23 of 30 on `283e71d0`) |
+| `npx tsx .factory/bounded-page-parse/qa/busy.mjs unit` and `… crawls` | 4 of 4 read; the ordinary site gets 13 of 13 pages beside the hostile one |
+| Engineer: `npx vitest run src/server/services/analysis src/server/services/realCover` | 11 files, 717 tests pass |
+| `npm run typecheck`, in a separate checkout | passes |
+| `DATABASE_URL=… npx vitest run`, in a separate checkout | 3,971 passed, 75 skipped, 13 failed: `openrouter.qa.test.ts` (known) and 12 in four shared-database files (`observability/qa.test.ts`, `lifecycle/autopilotIntegration.test.ts`, `lifecycle/education.test.ts`, `visibility/digest.integration.test.ts`) |
+| Those four files, each alone on a fresh database | 8, 7, 27 and 40 passed |
+| `npm run build` | passes |
+| `pgrep -f max-old-space-size=384` after the suite | nothing left |
+| Before and after per page | `probe/evidence/main-steps.json`, `probe/evidence/reader-steps.txt` |
+
+The shared-database files fail in a different set on every full run, on `main` as well (`lifecycle/dispatch.test.ts` there); none is in the analysis code.
+
 ## Not run
 Linux or the production container (Docker is not running on this machine): the watchdog's signal and the pipe size differ there. A real network. Alerts turned on.
 

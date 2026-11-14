@@ -98,9 +98,19 @@ Outcomes when a document is unreadable (`PageUnreadable`):
 - Not run on Linux: the watchdog's signal (SIGALRM) and the pipe's size differ there. If the signal did not end the reader, the caller's kill at the limit plus two seconds would, and the read would still be `timed_out`.
 - Correction to "Outcomes": "a hostile site costs at most 3 × 5 s" holds for unreadable documents only. With D3 the bound for one crawl is 60 s of reader time plus one document's limit, plus 5 s for brand detection.
 
+## Decided after QA round 2 (`qa.md`, "ship" on `283e71d0`, low items N1–N4)
+- N1, fixed: a caller busy in pieces (250 ms or more of work in every turn of its event loop for seven seconds) could still lose an answer of megabytes, because the kill-only timer counted those turns. A turn now counts only when the caller spent less than half of it working (`performance.eventLoopUtilization`). QA's probe `busy2.mjs choppy`: 23 of 30 read before, 30 of 30 after.
+- N2, accepted: a reader frozen from outside for longer than the limit, or sent the watchdog's own signal from outside, counts as the document's fault.
+- N3, fixed: two of the three tests that survived mutation now catch it; the third guarded a `ref()` nothing could observe, which is removed.
+- N4, accepted and stated: the crawl's 60 s is the reader's clock time, so on a crowded machine a very heavy ordinary site can stop short (100 pages of 1.5 MB stopped at 84 with the reader on a third of a core). It returns the pages it has.
+- The timer checks inside the test suite allow 500 ms, not 100: one failed at 168 ms with the machine at load 32. The 100 ms criterion is held by QA's probes (33 ms at worst across the hostile corpus).
+- Still true: the caller's longest block that is not the robots check is its own colour scan in `brand.ts`, 202 to 225 ms on 1.95 MB of the shortest custom properties plus three stylesheets (236 ms on `main`). It is linear and was not in this work.
+
 ## Out of scope (follow-ups)
 - `robots.txt` rules × links: `crawlSite` checks every discovered link against robots in the calling process. Measured: 10,000 rules (440 KB) cost 0.2 ms per link, so one page of 100,000 links costs 20 s there. Not HTML parsing; needs its own change.
 - Other in-process cheerio users: `realCover/page.ts`, `realCover/index.ts` (sitemaps), `social/source.ts`, `backlinks/linkcheck.ts`.
+- A crawl has no limit on failed fetches: a home page of 160,000 dead links makes 160,003 requests (QA, on `main` too).
+- `fetchUrl` returns an empty body, not a truncated one, when a single chunk is over 2 MB (engineer, on `main` too).
 
 ## Delivery
 Branch `kenny-dev/bounded-page-parse` from `main` `b3ad2d50`. Pull request to `main`. No merge, no deploy (`main` auto-deploys to Railway).
