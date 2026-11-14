@@ -7,10 +7,15 @@
 //  - it reads one document at a time and the others wait their turn;
 //  - a document gets PAGE_READ_MS of it, by the reader's own clock: a second thread inside the reader (its watchdog)
 //    ends the reader at the limit, with a signal nothing else sends. That document is unreadable and the next one
-//    starts a new reader. This process keeps no limit of its own. It may be busy for longer than the limit with other
-//    work, and a document is not unreadable because its answer was read late: an answer counts whenever it arrives;
+//    starts a new reader. This process decides nothing by its own clock: it may be busy for longer than the limit
+//    with other work, in one stretch or in pieces, and a document is not unreadable because its answer was read
+//    late. An answer counts whenever it arrives. The one timer here is a backstop that kills a reader still there two
+//    seconds past the limit (one frozen from outside, its watchdog with it), and it counts only time in which this
+//    process was mostly idle and so able to read what the reader wrote;
 //  - its heap is capped at READER_HEAP_MB, so a page that builds millions of elements ends the reader, not this process;
-//  - its answer is bounded (the MAX_ constants below), so a document cannot make this process hold more than it sent;
+//  - its answer is bounded (the MAX_ constants below): at most 8 MB as JSON whatever the document (1.3 MB of control
+//    characters in a <style> answers 7.4 MB), and of a page's links at most 500,000 characters, so the hundred pages
+//    of a crawl keep at most 50 MB of links between them (47 MB measured on pages made for it);
 //  - a reader that ends for any other reason (killed from outside, out of memory) is not taken for the document's
 //    fault the first time: the document is given once more to a new reader, and is unreadable if that one ends too;
 //  - it never keeps this process alive while it has no document, it exits when this process goes away (at once when
@@ -20,15 +25,18 @@
 //  - it writes the document out as JSON (4 ms for 2 MB of ordinary text, 38 ms for 2 MB of control characters);
 //  - for each address in an answer the crawler does a set lookup and a robots.txt check (crawl.ts). A page gives at
 //    most MAX_LINKS_CHARS of addresses (some 21,000 of the shortest) and a sitemap MAX_SITEMAP_URLS_CHARS. Measured
-//    with no robots.txt: this process's 10 ms timer was 2 ms late for 20,888 links and 6 ms for 72,000 sitemap
-//    addresses. With a robots.txt the check costs more per address and per rule; that is not bounded here.
+//    with no robots.txt: this process's 10 ms timer was 2 to 5 ms late for a page's 20,888 links, and between 6 and
+//    37 ms over a dozen crawls of a sitemap of 75,000 addresses. With a robots.txt the check costs more per address
+//    and per rule; that is not bounded here.
 import { spawn, type ChildProcess } from 'node:child_process';
+import { performance } from 'node:perf_hooks';
 
 /** How long the reader may take over one document. Ordinary 1.5 MB pages take about 0.3 s. */
 export const PAGE_READ_MS = 5000;
 /** How long past a document's limit this process waits before it kills a reader that is still there. The reader's
- *  watchdog keeps the limit; this is for a reader whose watchdog did not (it was frozen from outside). It counts
- *  only time in which this process was free to read the reader's answer. */
+ *  watchdog keeps the limit; this is for a reader whose watchdog did not (it was frozen from outside). It is counted
+ *  in quarter-seconds, and a quarter-second counts only if this process spent less than half of it working (by
+ *  performance.eventLoopUtilization), so that it had the time to read what the reader wrote. */
 export const READER_GRACE_MS = 2000;
 /** How long the reader may sit without work before it is stopped. */
 export const READER_IDLE_MS = 30_000;
@@ -258,7 +266,7 @@ function start(): Reader {
   child.on('disconnect', () => { r.closed = true; over(r); });
   child.on('exit', (status, signal) => { r.ended = { status, signal }; over(r); });
   child.on('error', error => { if (reader === r) reader = null; kill(r); if (current?.reader === r) settle(cannotRun(error)); });
-  // Neither the child nor its channel keeps this process alive while it has no document (see give).
+  // Neither the child nor its channel keeps this process alive. While a document is with the reader its backstop does.
   child.unref(); child.channel?.unref();
   return r;
 }
@@ -279,10 +287,12 @@ function over(r: Reader) {
 }
 
 const BACKSTOP_TICK_MS = 250;
-/** The document in flight goes to the reader, a new one if need be. While it is there the reader keeps this process
- *  alive, and a backstop runs: a reader still there READER_GRACE_MS past the document's limit (frozen, its watchdog
- *  with it) is killed. The backstop decides nothing, and it counts ticks, not time: while this process is busy with
- *  something else no tick passes, so an answer already written is read before a reader is ever killed for it. */
+/** The document in flight goes to the reader, a new one if need be. While it is there a backstop runs, which also
+ *  keeps this process alive until the document is settled: a reader still there READER_GRACE_MS past the document's
+ *  limit (frozen, its watchdog with it) is killed. The backstop decides nothing. It counts ticks, and only those
+ *  since the last of which this process was mostly idle: while this process is busy with something else, in one
+ *  stretch or a piece in every turn of its event loop, no tick counts, so what the reader has written is read
+ *  before a reader is ever killed for it. */
 function give(flight: Flight) {
   if (flight.backstop) clearInterval(flight.backstop);
   flight.backstop = null; flight.reader = null;
@@ -290,9 +300,12 @@ function give(flight: Flight) {
     if (!reader || !reader.child.connected) { stop(); reader = start(); }
     const r = flight.reader = reader;
     if (typeof r.child.send !== 'function' || !r.child.connected) throw new Error('it has no channel to this process');
-    r.child.ref(); r.child.channel?.ref();
-    let ticks = Math.ceil((flight.request.timeoutMs + READER_GRACE_MS) / BACKSTOP_TICK_MS);
-    flight.backstop = setInterval(() => { if (--ticks > 0) return; clearInterval(flight.backstop!); flight.backstop = null; r.late = true; if (reader === r) reader = null; kill(r); }, BACKSTOP_TICK_MS);
+    let ticks = Math.ceil((flight.request.timeoutMs + READER_GRACE_MS) / BACKSTOP_TICK_MS), before = performance.eventLoopUtilization();
+    flight.backstop = setInterval(() => {
+      const now = performance.eventLoopUtilization(), busy = performance.eventLoopUtilization(now, before).utilization; before = now;
+      if (ticks <= 0 || busy >= 0.5 || --ticks > 0) return;
+      r.late = true; if (reader === r) reader = null; kill(r);
+    }, BACKSTOP_TICK_MS);
     // A document that cannot be written to the reader means the reader is ending: over() hears of it.
     r.child.send({ id: flight.request.id, limit: flight.request.timeoutMs, ...flight.request.message }, error => { if (error) kill(r); });
   } catch (error) { stop(); settle(cannotRun(error)); }
@@ -303,7 +316,6 @@ function settle(error: Error | null, data?: unknown, ms?: number) {
   const done = current; if (!done) return;
   current = null;
   if (done.backstop) clearInterval(done.backstop);
-  if (done.reader) { done.reader.child.unref(); done.reader.child.channel?.unref(); }
   if (typeof ms === 'number' && done.request.spent) { try { done.request.spent(ms); } catch { /* the caller's own */ } }
   if (error) done.request.reject(error); else done.request.resolve(data);
   if (waiting.length) { queueMicrotask(next); return; }

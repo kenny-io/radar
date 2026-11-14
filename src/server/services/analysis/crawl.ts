@@ -4,7 +4,9 @@
 // the child process of ./pageReader.ts, which has a time limit per document, a memory cap and a bound on what it
 // answers. A document it cannot read is passed over as a failed fetch is, the home page excepted (no home page, no
 // site). A crawl stops reading and returns what it has after MAX_UNREADABLE such documents, or when its documents have
-// had CRAWL_READ_MS of the reader between them: so one crawl costs the reader at most that plus one document's limit.
+// had CRAWL_READ_MS of the reader between them: so one crawl costs the reader at most that plus one document's limit,
+// and the second try of a document that ended its first reader, which is not counted (a document that ends two is
+// counted as one limit; three of those end the crawl, so at most 15 s more).
 // Every analysis in this process uses the same reader, one document at a time, so one may wait for another's share.
 import dns from 'node:dns/promises';
 import net from 'node:net';

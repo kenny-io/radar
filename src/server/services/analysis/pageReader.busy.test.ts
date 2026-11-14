@@ -33,6 +33,8 @@ function busyFor(ms: number, pid?: number): number | null {
   for (let now = began, checked = began; now - began < ms; now = Date.now()) { if (pid && endedAt === null && now - checked >= 50) { checked = now; if (ended(pid)) endedAt = Date.now() - began; } }
   return endedAt;
 }
+/** Busy in pieces: `piece` ms of work in every turn of this process's event loop, for `total` ms. Between two pieces the loop turns once (timers, one read of each channel). */
+const choppy = (total: number, piece: number) => new Promise<void>(done => { const until = Date.now() + total; const turn = () => { busyFor(piece); if (Date.now() < until) setImmediate(turn); else done(); }; setImmediate(turn); });
 type Outcome = { value: any; error: any; ms: number };
 async function watched(read: () => Promise<unknown>): Promise<Outcome> {
   const began = performance.now(); let value: any = null, error: any = null;
@@ -77,6 +79,18 @@ describe('the limit is the reader’s, kept by its own clock; this process only 
     const outcome = await read;
     expect(reason(outcome)).toBe('read'); expect(outcome.value.links).toHaveLength(4003); expect(H.spawn).not.toHaveBeenCalled();
   }, 20_000);
+  it('busy in pieces, 300 ms of work in every turn of its event loop for longer than the limit and the backstop, with megabytes still to pass each way: the page is read', async () => {
+    const LIMIT = 500;
+    // 0.6 MB of control characters in a <style>: 3.6 MB to hand over as JSON and 3.6 MB of answer, and each turn of a busy process moves one channel-buffer of it.
+    const html = `<!doctype html><html lang="en"><head><style>${'\u0001'.repeat(600_000)}</style></head></html>`;
+    await readSitemap('<urlset/>'); H.spawn.mockClear();
+    const read = watched(() => readBrandPage(html, ORIGIN, { timeoutMs: LIMIT }));
+    const began = performance.now();
+    await choppy(LIMIT + READER_GRACE_MS + 1500, 300); // some fourteen turns, four more than the backstop would count if busy turns counted
+    const outcome = await read;
+    expect(reason(outcome)).toBe('read'); expect(outcome.value.css).toHaveLength(600_000); expect(outcome.value.htmlLang).toBe('en');
+    expect(H.spawn).not.toHaveBeenCalled(); expect(performance.now() - began).toBeGreaterThan(LIMIT + READER_GRACE_MS + 1500);
+  }, 30_000);
   it('a stalling page read while this process is busy is timed_out, and the reader was gone at its limit, not when this process looked', async () => {
     const LIMIT = 600;
     await readSitemap('<urlset/>'); const child = lastChild(); let endedAt: number | null = null;
@@ -102,6 +116,32 @@ describe('the limit is the reader’s, kept by its own clock; this process only 
     expect(H.spawn).not.toHaveBeenCalled(); // not a second try: the first answer
     expect(await readPage(small, URL_, ORIGIN)).toMatchObject({ title: 'Ordinary' }); expect(H.spawn).toHaveBeenCalledTimes(1);
     killer.unref();
+  }, 20_000);
+  it('a failure is decided when a reader’s channel has closed, not when it has exited: an answer handed on after its exit is used', async () => {
+    await stopReader(); H.spawn.mockClear();
+    // This reader's events are handed on in an order that is allowed and that this machine does not produce by itself:
+    // its exit first, then the answer it wrote before it ended, then the end of its channel.
+    const held: any[][] = []; let closing: any[] | null = null, exited = false, child: ChildProcess | null = null;
+    H.spawn.mockImplementationOnce((...args: any[]) => {
+      const started: ChildProcess = H.start(...args); child = started; const emit = started.emit.bind(started);
+      started.emit = ((event: string, ...rest: any[]) => {
+        if (exited) return emit(event, ...rest);
+        if (event === 'message') { held.push(rest); return true; }
+        if (event === 'disconnect') { closing = rest; return true; }
+        if (event !== 'exit') return emit(event, ...rest);
+        exited = true; const handled = emit(event, ...rest);
+        for (const answer of held) emit('message', ...answer);
+        if (closing) emit('disconnect', ...closing);
+        return handled;
+      }) as typeof started.emit;
+      return started;
+    });
+    const read = readPage(small, URL_, ORIGIN);
+    for (const end = Date.now() + 5000; Date.now() < end && !held.length;) await pause(10);
+    expect(held).toHaveLength(1); // the answer has arrived and is being kept back
+    process.kill(child!.pid!, 'SIGKILL');
+    expect(await read).toMatchObject({ title: 'Ordinary' });
+    expect(exited).toBe(true); expect(H.spawn).toHaveBeenCalledTimes(1); // the first reader's answer, not a second try
   }, 20_000);
   it('a reader frozen from outside cannot end itself: this process kills it two seconds past the limit, and the document is timed_out', async () => {
     const LIMIT = 300;
