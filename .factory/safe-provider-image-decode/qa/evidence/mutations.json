@@ -1,0 +1,257 @@
+[
+ {
+  "mutation": "M01 decode in this process again (the base body of coverCrop)",
+  "noticed": true,
+  "exit": 1,
+  "summary": null,
+  "failedTests": 0,
+  "firstFailed": [],
+  "processErrors": [
+   "Channel closed",
+   "ERR_IPC_CHANNEL_CLOSED"
+  ],
+  "seconds": 5
+ },
+ {
+  "mutation": "M02 no completeness check (a cut-short file reaches the child)",
+  "noticed": true,
+  "exit": 1,
+  "summary": "4 failed | 48 passed (52)",
+  "failedTests": 4,
+  "firstFailed": [
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG cut short: coverCrop rejects, the cover gets th",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a JPEG cut short: coverCrop rejects, the cover gets t",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a WebP cut short: coverCrop rejects, the cover gets t",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG missing its last byte: coverCrop rejects, the c"
+  ],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M03 no animated check",
+  "noticed": true,
+  "exit": 1,
+  "summary": "1 failed | 51 passed (52)",
+  "failedTests": 1,
+  "firstFailed": [
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > an animated WebP: coverCrop rejects, the cover gets t"
+  ],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M04 no pixel-limit check",
+  "noticed": true,
+  "exit": 1,
+  "summary": "4 failed | 48 passed (52)",
+  "failedTests": 4,
+  "firstFailed": [
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG declaring 10000\u00d710000 (too many pixels): coverC",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG declaring 10001\u00d7400 (one side too long): coverC",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG declaring 5001\u00d75000 (just over the pixel limit)",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a WebP declaring 16000\u00d716000: coverCrop rejects, the "
+  ],
+  "processErrors": [],
+  "seconds": 27
+ },
+ {
+  "mutation": "M05 no zero-size check",
+  "noticed": true,
+  "exit": 1,
+  "summary": "1 failed | 51 passed (52)",
+  "failedTests": 1,
+  "firstFailed": [
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG declaring no width: coverCrop rejects, the cove"
+  ],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M06 the child answer is not checked",
+  "noticed": true,
+  "exit": 1,
+  "summary": "6 failed | 46 passed (52)",
+  "failedTests": 6,
+  "firstFailed": [
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG"
+  ],
+  "processErrors": [],
+  "seconds": 24
+ },
+ {
+  "mutation": "M07 the answer is checked for type only, not size or completeness",
+  "noticed": true,
+  "exit": 1,
+  "summary": "3 failed | 49 passed (52)",
+  "failedTests": 3,
+  "firstFailed": [
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > the child\u2019s answer is checked too: only a complete PNG"
+  ],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M08 decoder unavailable: fall back to decoding in this process",
+  "noticed": true,
+  "exit": 1,
+  "summary": "2 failed | 50 passed (52)",
+  "failedTests": 2,
+  "firstFailed": [
+   "a decoder that cannot run (AC6) > the child cannot be started: a plain Error, the cover gets the template and never an in-process crop, a strict reque",
+   "a decoder that cannot run (AC6) > the child starts where the canvas library cannot be found: a plain Error, and the next call works 114ms"
+  ],
+  "processErrors": [],
+  "seconds": 24
+ },
+ {
+  "mutation": "M09 child refused the picture: try once more in this process",
+  "noticed": true,
+  "exit": 1,
+  "summary": null,
+  "failedTests": 0,
+  "firstFailed": [],
+  "processErrors": [
+   "Channel closed",
+   "ERR_IPC_CHANNEL_CLOSED"
+  ],
+  "seconds": 9
+ },
+ {
+  "mutation": "M10 refusals are RadarErrors",
+  "noticed": true,
+  "exit": 1,
+  "summary": "35 failed | 17 passed (52)",
+  "failedTests": 35,
+  "firstFailed": [
+   "a crashing file as the provider\u2019s image: one refused picture, never a dead process (AC3) > FF D8 FF D9 (a JPEG start and end with nothing between): th",
+   "a crashing file as the provider\u2019s image: one refused picture, never a dead process (AC3) > a PNG with IHDR and IEND and no IDAT: the cover gets the br",
+   "a crashing file as the provider\u2019s image: one refused picture, never a dead process (AC3) > a PNG whose IHDR checksum is wrong: the cover gets the bran",
+   "a crashing file as the provider\u2019s image: one refused picture, never a dead process (AC3) > a JPEG with a frame header and no scan: the cover gets the "
+  ],
+  "processErrors": [],
+  "seconds": 18
+ },
+ {
+  "mutation": "M11 the crop is drawn from the top left, not centred",
+  "noticed": true,
+  "exit": 1,
+  "summary": "31 failed | 21 passed (52)",
+  "failedTests": 31,
+  "firstFailed": [
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > a PNG: exactly w\u00d7h, and byte for byte what decoding in this process ga",
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > a JPEG: exactly w\u00d7h, and byte for byte what decoding in this process g",
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > a WebP: exactly w\u00d7h, and byte for byte what decoding in this process g",
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > the crop is centred and fills the size: the edges that do not fit are "
+  ],
+  "processErrors": [],
+  "seconds": 20
+ },
+ {
+  "mutation": "M12 the crop is scaled to fit inside, not to fill",
+  "noticed": true,
+  "exit": 1,
+  "summary": "27 failed | 25 passed (52)",
+  "failedTests": 27,
+  "firstFailed": [
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > a PNG: exactly w\u00d7h, and byte for byte what decoding in this process ga",
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > a JPEG: exactly w\u00d7h, and byte for byte what decoding in this process g",
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > a WebP: exactly w\u00d7h, and byte for byte what decoding in this process g",
+   "a good picture is cropped to the same PNG as before, in a child process (AC2) > the crop is centred and fills the size: the edges that do not fit are "
+  ],
+  "processErrors": [],
+  "seconds": 20
+ },
+ {
+  "mutation": "M13 an unknown type is refused by accident (a TypeError from the next line) instead of by the check",
+  "noticed": false,
+  "exit": 0,
+  "summary": "52 passed (52)",
+  "failedTests": 0,
+  "firstFailed": [],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M14 the refusal message quotes the file",
+  "noticed": true,
+  "exit": 1,
+  "summary": "4 failed | 48 passed (52)",
+  "failedTests": 4,
+  "firstFailed": [
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > SVG: coverCrop rejects, the cover gets the template m",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > AVIF: coverCrop rejects, the cover gets the template ",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > an HTML page: coverCrop rejects, the cover gets the t",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a JSON error body: coverCrop rejects, the cover gets "
+  ],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M15 decoder unavailable is reported as a refused picture",
+  "noticed": true,
+  "exit": 1,
+  "summary": "9 failed | 43 passed (52)",
+  "failedTests": 9,
+  "firstFailed": [
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > a PNG with IHDR and IEND and no IDAT: one child, a rej",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > a PNG whose IHDR checksum is wrong: one child, a rejec",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > a JPEG with a frame header and no scan: one child, a r",
+   "a file that passes the check of its bytes and fails in the child is one refused picture (AC5) > a PNG with an impossible bit depth: one child, a rejec"
+  ],
+  "processErrors": [],
+  "seconds": 22
+ },
+ {
+  "mutation": "M16 the time limit is 10 minutes and the output limit 2 GB",
+  "noticed": false,
+  "exit": 0,
+  "summary": "52 passed (52)",
+  "failedTests": 0,
+  "firstFailed": [],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M17 the provider picture is put in the child arguments",
+  "noticed": false,
+  "exit": 0,
+  "summary": "52 passed (52)",
+  "failedTests": 0,
+  "firstFailed": [],
+  "processErrors": [],
+  "seconds": 24
+ },
+ {
+  "mutation": "M18 the pixel limit applies to the long side only",
+  "noticed": true,
+  "exit": 1,
+  "summary": "2 failed | 50 passed (52)",
+  "failedTests": 2,
+  "firstFailed": [
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG declaring 10000\u00d710000 (too many pixels): coverC",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > a PNG declaring 5001\u00d75000 (just over the pixel limit)"
+  ],
+  "processErrors": [],
+  "seconds": 25
+ },
+ {
+  "mutation": "M19 bytes of an unknown type are not refused: SVG, GIF, AVIF and HTML go to the child",
+  "noticed": true,
+  "exit": 1,
+  "summary": "10 failed | 42 passed (52)",
+  "failedTests": 10,
+  "firstFailed": [
+   "a crashing file as the provider\u2019s image: one refused picture, never a dead process (AC3) > FF D8 FF D9 (a JPEG start and end with nothing between): th",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > SVG: coverCrop rejects, the cover gets the template m",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > GIF: coverCrop rejects, the cover gets the template m",
+   "bytes that are not a complete PNG, JPEG or WebP of an allowed size never reach a decoder (AC4) > BMP: coverCrop rejects, the cover gets the template m"
+  ],
+  "processErrors": [],
+  "seconds": 28
+ }
+]

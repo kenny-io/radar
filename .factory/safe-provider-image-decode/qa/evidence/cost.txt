@@ -1,0 +1,20 @@
+== before: the base's coverCrop inside one warm process, 30 crops of each file (ms: median)
+  canvas-1536x1024.png         74 ms  process peak 173 MB so far
+  canvas-1536x1024.jpg         80 ms  process peak 174 MB so far
+  canvas-1536x1024.webp        50 ms  process peak 174 MB so far
+  canvas-2048x2048.png         58 ms  process peak 270 MB so far
+  real-5000x5000.png           37 ms  process peak 557 MB so far
+== now: one child per crop (the captured program), wall time and peak resident memory of that child
+  good/canvas-1536x1024.png                            0.21s  peak 91 MB
+  good/canvas-1536x1024.jpg                            0.21s  peak 91 MB
+  good/canvas-1536x1024.webp                           0.18s  peak 91 MB
+  good/canvas-2048x2048.png                            0.19s  peak 102 MB
+  limits/real-5000x5000.png                            0.17s  peak 182 MB
+  limits/real-5000x5000.jpg                            0.18s  peak 181 MB
+  limits/real-10000x2500.png                           0.17s  peak 182 MB
+  limits/jpeg-declares-5000x5000.jpg                   0.17s  peak 181 MB
+  limits/png-declares-10000x2500-crc-ok.png            0.16s  peak 181 MB
+  limits/webp-vp8l-declares-5000x5000-noise.webp       0.16s  peak 120 MB
+  bad/png-idat-zlib-bomb.png                           0.15s  peak 85 MB
+  limits/webp-vp8x-canvas-8x8-inner-12000x9000.webp    0.12s  peak 81 MB
+  bad/brief-png-no-idat.png                            0.13s  peak 81 MB

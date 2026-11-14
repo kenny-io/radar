@@ -1,0 +1,1 @@
+{"processes":2,"cropsAskedAtOncePerProcess":12,"picture":"5000x5000 PNG (on the pixel limit)","samples":44,"mostChildrenOfOneProcessAtOnce":1,"mostChildrenAtOnceOverall":2,"mostChildMemoryAtOnceMb":185}
