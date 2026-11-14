@@ -33,6 +33,11 @@ const lastChild = () => H.children[H.children.length - 1] as ChildProcess;
 /** Stops the reader, as thirty idle seconds would, so the next read has to start one. */
 async function stopReader() { await readSitemap('<urlset/>', { idleMs: 1 }); expect(await gone(lastChild().pid!)).toBe(true); }
 
+/** How late this process's 10 ms timer may be while the reader works before a test here fails. It was 2 to 33 ms late in
+ *  every measurement of the reader, and the stalls this replaces were 4 to 30 s on `main`: the margin is for a crowded
+ *  machine (one run at load average 32 saw 168 ms). The 100 ms of the acceptance criteria is held by the probes under
+ *  .factory/bounded-page-parse, which run alone. */
+const LATE_MS = 500;
 type Outcome = { value: any; error: any; ms: number; late: number };
 /** Runs one read. `ms`: how long it took to settle. `late`: the longest a 10 ms timer in this process was kept waiting meanwhile. */
 async function watched(read: () => Promise<unknown>): Promise<Outcome> {
@@ -76,7 +81,7 @@ describe('an ordinary document is read as it was in this process', () => {
     expect(brand.value).toMatchObject({ candidates: ['https://site.example/favicon-512.png', 'https://site.example/logo.png'], stylesheets: ['/site.css'], htmlLang: 'fr' });
     const map = await watched(() => readSitemap(ordinary.wideSitemap(35_000, ORIGIN)));
     expect(map.value.urls).toHaveLength(35_000); expect(map.value.urls[34_999]).toBe('https://site.example/page-34999');
-    for (const read of [blog, brand, map]) { expect(read.ms).toBeLessThan(PAGE_READ_MS / 2); expect(read.late).toBeLessThanOrEqual(100); }
+    for (const read of [blog, brand, map]) { expect(read.ms).toBeLessThan(PAGE_READ_MS / 2); expect(read.late).toBeLessThan(LATE_MS); }
     expect(H.spawn).not.toHaveBeenCalled(); expect(running(child.pid!)).toBe(true);
   }, 30_000);
 });
@@ -105,7 +110,7 @@ describe('a stalling document settles within its limit plus a second, and this p
     const map = await watched(() => readSitemap(html, { timeoutMs: LIMIT }));
     const tries = (asPage ?? '').includes('crashed') ? 2 : 1;
     for (const read of [page, brand, map]) {
-      expect(read.ms).toBeLessThan(tries * LIMIT + 1000); expect(read.late).toBeLessThanOrEqual(100);
+      expect(read.ms).toBeLessThan(tries * LIMIT + 1000); expect(read.late).toBeLessThan(LATE_MS);
       expect(['read', 'timed_out', 'failed', 'crashed']).toContain(reason(read)); // never an error of ours
     }
     for (const [read, expected] of [[page, asPage], [brand, asBrand]] as const) {
@@ -116,7 +121,7 @@ describe('a stalling document settles within its limit plus a second, and this p
   }, 20_000);
   it.each([['one address under 200,000 nested elements', stalling.deepSitemap], ['a loc inside 64,000 nested url elements', stalling.nestedSitemap]] as const)('a sitemap: %s', async (_name, make) => {
     const read = await watched(() => readSitemap(make(), { timeoutMs: LIMIT }));
-    expect(reason(read)).toBe('timed_out'); expect(read.ms).toBeGreaterThanOrEqual(LIMIT - 20); expect(read.ms).toBeLessThan(LIMIT + 1000); expect(read.late).toBeLessThanOrEqual(100);
+    expect(reason(read)).toBe('timed_out'); expect(read.ms).toBeGreaterThanOrEqual(LIMIT - 20); expect(read.ms).toBeLessThan(LIMIT + 1000); expect(read.late).toBeLessThan(LATE_MS);
   }, 20_000);
   it('with the limit every document gets (five seconds): 100,000 style elements as a page, 64,000 nested divs as a home page', async () => {
     expect(PAGE_READ_MS).toBe(5000);
@@ -124,7 +129,7 @@ describe('a stalling document settles within its limit plus a second, and this p
     const brand = await watched(() => readBrandPage(stalling.nestedDivs(), ORIGIN));
     for (const read of [page, brand]) {
       expect(reason(read)).toBe('timed_out');
-      expect(read.ms).toBeGreaterThanOrEqual(PAGE_READ_MS - 20); expect(read.ms).toBeLessThan(PAGE_READ_MS + 1000); expect(read.late).toBeLessThanOrEqual(100);
+      expect(read.ms).toBeGreaterThanOrEqual(PAGE_READ_MS - 20); expect(read.ms).toBeLessThan(PAGE_READ_MS + 1000); expect(read.late).toBeLessThan(LATE_MS);
     }
   }, 30_000);
   it('the reader that ran out of time has ended itself, and the next document gets a new one', async () => {
@@ -142,12 +147,12 @@ describe('memory (AC4)', () => {
     await readSitemap('<urlset/>'); const before = lastChild(); H.spawn.mockClear();
     const page = await watched(() => readPage(html, URL_, ORIGIN));
     // Two readers, about a second each: well inside one limit when nothing else is going on, never past two.
-    expect(reason(page)).toBe('crashed'); expect(page.ms).toBeLessThan(2 * PAGE_READ_MS); expect(page.late).toBeLessThanOrEqual(100);
+    expect(reason(page)).toBe('crashed'); expect(page.ms).toBeLessThan(2 * PAGE_READ_MS); expect(page.late).toBeLessThan(LATE_MS);
     expect(H.spawn).toHaveBeenCalledTimes(1); const second = lastChild();
     expect(await gone(before.pid!)).toBe(true); expect(await gone(second.pid!)).toBe(true);
     expect([before.signalCode, second.signalCode]).toEqual(['SIGABRT', 'SIGABRT']); // out of memory both times, not stopped by anyone
     const brand = await watched(() => readBrandPage(html, ORIGIN));
-    expect(reason(brand)).toBe('crashed'); expect(brand.ms).toBeLessThan(2 * PAGE_READ_MS); expect(brand.late).toBeLessThanOrEqual(100);
+    expect(reason(brand)).toBe('crashed'); expect(brand.ms).toBeLessThan(2 * PAGE_READ_MS); expect(brand.late).toBeLessThan(LATE_MS);
     expect(await readPage(ordinary.small(), URL_, ORIGIN)).toMatchObject({ title: 'Small' });
   }, 40_000);
   it('the heap cap is fixed, and under it a dense 1.9 MB page of 85,000 links is read ten times in a row by the same reader', async () => {
@@ -355,7 +360,7 @@ describe('the answer is bounded, in the reader (D2)', () => {
     const html = `<!doctype html><html><body>${Array.from({ length: 50_000 }, (_, i) => `<a href=${b36(i)}>`).join('')}</body></html>`;
     const at = `${ORIGIN}/${'A'.repeat(2_000)}/x`;
     const read = await watched(() => readPage(html, at, ORIGIN));
-    expect(reason(read)).toBe('read'); expect(read.late).toBeLessThan(100);
+    expect(reason(read)).toBe('read'); expect(read.late).toBeLessThan(LATE_MS);
     expect(chars(read.value.links)).toBeLessThanOrEqual(MAX_LINKS_CHARS); expect(chars(read.value.links)).toBeGreaterThan(MAX_LINKS_CHARS - 2_100);
     expect(read.value.links[0]).toBe(`${ORIGIN}/${'A'.repeat(2_000)}/0`); expect(read.value.links.length).toBeLessThan(260);
     expect(JSON.stringify(read.value).length).toBeLessThan(MAX_LINKS_CHARS + 10_000);
@@ -365,7 +370,7 @@ describe('the answer is bounded, in the reader (D2)', () => {
     for (const xml of [index, pages]) {
       expect(Buffer.byteLength(xml)).toBeLessThanOrEqual(2 * 1024 * 1024);
       const read = await watched(() => readSitemap(xml));
-      expect(reason(read)).toBe('read'); expect(read.late).toBeLessThan(100);
+      expect(reason(read)).toBe('read'); expect(read.late).toBeLessThan(LATE_MS);
       expect(read.value).toEqual({ sitemaps: [], urls: [] }); // every one of them is a megabyte of text, not an address
     }
   }, 30_000);
@@ -383,6 +388,9 @@ describe('the answer is bounded, in the reader (D2)', () => {
     // Repeats do not count twice, and one address short of the bound leaves the rest in.
     const repeated = (await readPage(page([...Array.from({ length: 499 }, (_, i) => long(i)), ...Array.from({ length: 499 }, (_, i) => long(i)), '/short-and-late']), URL_, ORIGIN)).links;
     expect(repeated).toHaveLength(500); expect(repeated[499]).toBe(ORIGIN + '/short-and-late');
+    // The list ends at the first link that does not fit: a later one that would have fitted is not taken in its place.
+    const ended = (await readPage(page([...Array.from({ length: 499 }, (_, i) => long(i)), '/' + 'x'.repeat(1_500), '/short-and-late']), URL_, ORIGIN)).links;
+    expect(ended).toHaveLength(499); expect(ended[498]).toBe(ORIGIN + long(498)); expect(chars(ended)).toBe(499_000);
   });
   it('a sitemap’s page addresses stop where they would pass 2,000,000 characters, and it names at most 100 other sitemaps, each once', async () => {
     const long = (i: number) => `${ORIGIN}/${b36(i).padStart(4, '0')}${'s'.repeat(1_995 - ORIGIN.length)}`; // 2,000 characters each
@@ -405,7 +413,7 @@ describe('the answer is bounded, in the reader (D2)', () => {
     const html = `<!doctype html><html lang="en"><head><style>${'\u0001'.repeat(1_900_000)}</style></head></html>`; expect(Buffer.byteLength(html)).toBeLessThanOrEqual(2 * 1024 * 1024);
     const read = await watched(() => readBrandPage(html, ORIGIN));
     expect(read.error).toBeInstanceOf(PageUnreadable); expect(read.error).toMatchObject({ reason: 'failed' }); expect(read.error.message).toContain('answer too large');
-    expect(read.late).toBeLessThan(100); expect(MAX_ANSWER_BYTES).toBe(8 * 1024 * 1024);
+    expect(read.late).toBeLessThan(LATE_MS); expect(MAX_ANSWER_BYTES).toBe(8 * 1024 * 1024);
     expect((await readBrandPage(`<!doctype html><html><head><style>${':root{--brand:#2563eb}'.repeat(300_000)}</style></head></html>`, ORIGIN)).css).toHaveLength(6_600_000); // 6.6 MB of ordinary CSS, more than a page can hold, is sent
     expect(H.spawn).not.toHaveBeenCalled(); expect(running(child.pid!)).toBe(true);
   }, 20_000);
