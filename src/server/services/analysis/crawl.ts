@@ -1,9 +1,11 @@
 // Website crawler (02-system.md §3 "site"): robots.txt + sitemap, then up to ~100 same-domain HTML pages.
 // Respects robots.txt for Radar's user agent. In dev-stub mode the fetcher is the synthesized dev site (no network).
 // The site controls every page and sitemap fetched here, and none of them is parsed in this process: each is read in
-// the child process of ./pageReader.ts, which has a time limit per document and a memory cap. A document it cannot read
-// is passed over as a failed fetch is, the home page excepted (no home page, no site); after MAX_UNREADABLE of them the
-// crawl stops and returns what it has.
+// the child process of ./pageReader.ts, which has a time limit per document, a memory cap and a bound on what it
+// answers. A document it cannot read is passed over as a failed fetch is, the home page excepted (no home page, no
+// site). A crawl stops reading and returns what it has after MAX_UNREADABLE such documents, or when its documents have
+// had CRAWL_READ_MS of the reader between them: so one crawl costs the reader at most that plus one document's limit.
+// Every analysis in this process uses the same reader, one document at a time, so one may wait for another's share.
 import dns from 'node:dns/promises';
 import net from 'node:net';
 import robotsParser from 'robots-parser';
@@ -24,6 +26,9 @@ const MAX_PAGES = 100;
 const MAX_BYTES = 2 * 1024 * 1024;
 /** How many documents (pages and sitemaps together) a crawl may find unreadable before it stops reading. */
 const MAX_UNREADABLE = 3;
+/** How much of the page reader's time one crawl's documents may take in all, by the reader's own clock. The heaviest
+ *  ordinary site measured (a hundred 1.5 MB pages at 0.25 s each) takes 25 s. */
+export const CRAWL_READ_MS = 60_000;
 export const uaToken = () => (env.crawlerUserAgent.split('/')[0] || 'RadarBot').trim();
 
 function isPrivateIp(ip: string) {
@@ -73,39 +78,41 @@ export async function fetchUrl(url: string, accept = 'text/html,application/xhtm
   return { status: r.status, type: r.headers.get('content-type') || '', body: Buffer.concat(chunks), url: at.toString() };
 }
 
-/** What a crawl has found unreadable so far. */
-interface Unreadable { count: number }
-const gaveUp = (unreadable: Unreadable) => unreadable.count >= MAX_UNREADABLE;
+/** What a crawl's reading has come to so far: documents found unreadable, and reader time used of what it may use. */
+interface Reading { unreadable: number; ms: number; mayUse: number }
+const gaveUp = (reading: Reading) => reading.unreadable >= MAX_UNREADABLE || reading.ms >= reading.mayUse;
+/** The reader says how long each document took (an unreadable one counts as its whole limit). */
+const timed = (reading: Reading) => ({ spent: (ms: number) => { reading.ms += ms; } });
 /** A read whose document turned out unreadable counts against the crawl and gives null. Any other failure is not the
  *  site's doing (the reader could not run) and is thrown on. */
-async function readable<T>(read: Promise<T>, unreadable: Unreadable, what: string): Promise<T | null> {
+async function readable<T>(read: Promise<T>, reading: Reading, what: string): Promise<T | null> {
   try { return await read; }
   catch (e) {
     if (!(e instanceof PageUnreadable)) throw e;
-    unreadable.count++;
+    reading.unreadable++;
     console.warn(`[crawl] ${what.replace(/[\u0000-\u001f\u007f]+/g, ' ').slice(0, 300)} could not be read (${e.reason})`); // the address is the site's own text
     return null;
   }
 }
 
 /** Title, text, same-site links and article-or-page for one page, read in the page reader. */
-const extract = (html: string, url: string, origin: string): Promise<PageRead> => readPage(html, url, origin);
+const extract = (html: string, url: string, origin: string, reading: Reading): Promise<PageRead> => readPage(html, url, origin, timed(reading));
 
-async function parseSitemaps(urls: string[], host: string, unreadable: Unreadable, budget = 400): Promise<string[]> {
+async function parseSitemaps(urls: string[], host: string, reading: Reading, budget = 400): Promise<string[]> {
   const out: string[] = []; const seen = new Set<string>(); const queue = [...urls];
-  while (queue.length && out.length < budget && seen.size < 12 && !gaveUp(unreadable)) {
+  while (queue.length && out.length < budget && seen.size < 12 && !gaveUp(reading)) {
     const sm = queue.shift()!; if (seen.has(sm)) continue; seen.add(sm);
     let xml: string;
     try { const r = await fetchUrl(sm, 'application/xml,text/xml'); if (r.status >= 400) continue; xml = r.body.toString('utf8'); } catch { continue; }
-    const map = await readable(readSitemap(xml, sm, host), unreadable, sm); if (!map) continue;
+    const map = await readable(readSitemap(xml, sm, host, timed(reading)), reading, sm); if (!map) continue;
     for (const loc of map.sitemaps) queue.push(loc);
     for (const u of map.urls) out.push(u); // already the addresses to follow on this site
   }
   return out;
 }
 
-/** Crawl a domain. Throws CrawlError('unreachable'|'blocked'). */
-export async function crawlSite(domain: string, onPage?: (n: number) => void): Promise<CrawlResult> {
+/** Crawl a domain. Throws CrawlError('unreachable'|'blocked'). `readMs` is for tests: reader time in place of CRAWL_READ_MS. */
+export async function crawlSite(domain: string, onPage?: (n: number) => void, o: { readMs?: number } = {}): Promise<CrawlResult> {
   // Resolve the canonical origin (https first, then www., then http).
   let home: FetchResult | null = null; let origin = '';
   for (const cand of [`https://${domain}/`, `https://www.${domain}/`, `http://${domain}/`]) {
@@ -125,11 +132,11 @@ export async function crawlSite(domain: string, onPage?: (n: number) => void): P
   if (!sitemapUrls.length) sitemapUrls = [origin + '/sitemap.xml'];
   // The home page is read before anything else is: a home page that cannot be read is a site that cannot be analysed.
   const homeHtml = home.body.toString('utf8');
+  const reading: Reading = { unreadable: 0, ms: 0, mayUse: o.readMs ?? CRAWL_READ_MS };
   let first: PageRead;
-  try { first = await extract(homeHtml, home.url, origin); }
+  try { first = await extract(homeHtml, home.url, origin, reading); }
   catch (e) { if (!(e instanceof PageUnreadable)) throw e; console.warn(`[crawl] ${home.url} (the home page) could not be read (${e.reason})`); throw new CrawlError('unreachable'); }
-  const unreadable: Unreadable = { count: 0 };
-  const fromSitemap = await parseSitemaps(sitemapUrls, host, unreadable);
+  const fromSitemap = await parseSitemaps(sitemapUrls, host, reading);
 
   const pages: CrawledPage[] = []; const seen = new Set<string>();
   const homeUrl = normUrl(home.url, origin) || origin + '/';
@@ -140,21 +147,22 @@ export async function crawlSite(domain: string, onPage?: (n: number) => void): P
   first.links.forEach(push); fromSitemap.forEach(push);
   onPage?.(pages.length);
   const delay = robots?.getCrawlDelay(uaToken()) || 0;
-  while (queue.length && pages.length < MAX_PAGES && !gaveUp(unreadable)) {
+  while (queue.length && pages.length < MAX_PAGES && !gaveUp(reading)) {
     const batch = queue.splice(0, delay ? 1 : 4);
     const res = await Promise.all(batch.map(async u => { try { return { u, r: await fetchUrl(u) }; } catch { return { u, r: null }; } }));
     for (const { u, r } of res) {
-      if (!r || r.status >= 400 || !/html/i.test(r.type) || pages.length >= MAX_PAGES || gaveUp(unreadable)) continue;
+      if (!r || r.status >= 400 || !/html/i.test(r.type) || pages.length >= MAX_PAGES || gaveUp(reading)) continue;
       const finalUrl = normUrl(r.url, origin) || u;
       try { if (!sameSite(new URL(finalUrl).hostname, host)) continue; } catch { continue; }
       if (pages.some(p => p.url === finalUrl)) continue;
       const html = r.body.toString('utf8');
-      const e = await readable(extract(html, r.url, origin), unreadable, r.url); if (!e) continue;
+      const e = await readable(extract(html, r.url, origin, reading), reading, r.url); if (!e) continue;
       pages.push({ url: finalUrl, path: new URL(finalUrl).pathname || '/', ...e });
       e.links.forEach(push);
     }
     onPage?.(pages.length);
-    if (delay && !gaveUp(unreadable)) await new Promise(r => setTimeout(r, Math.min(delay, 5) * 1000));
+    if (delay && !gaveUp(reading)) await new Promise(r => setTimeout(r, Math.min(delay, 5) * 1000));
   }
+  if (reading.ms >= reading.mayUse) console.warn(`[crawl] ${origin} has had its ${Math.round(reading.mayUse / 1000)} s of the page reader: stopped with ${pages.length} page(s) read`);
   return { origin, host, pages, homeHtml, robotsBlocked: false };
 }
