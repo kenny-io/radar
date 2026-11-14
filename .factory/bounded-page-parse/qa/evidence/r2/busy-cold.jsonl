@@ -1,0 +1,3 @@
+{"what":"a 100-byte page; no reader running, the caller busy 8 s from the turn it asks in","outcome":"read (0 links)","expected":"read","ms":8002,"readersStarted":1}
+{"what":"the 1.5 MB blog index; no reader running, the caller busy 8 s from the turn it asks in","outcome":"read (4003 links)","expected":"read","ms":8526,"readersStarted":1}
+{"what":"a stalling page; no reader running, the caller busy 8 s from the turn it asks in","outcome":"PageUnreadable(timed_out): timed_out","expected":"timed_out","ms":13016,"readersStarted":1}

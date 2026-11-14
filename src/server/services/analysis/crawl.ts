@@ -1,12 +1,22 @@
 // Website crawler (02-system.md §3 "site"): robots.txt + sitemap, then up to ~100 same-domain HTML pages.
 // Respects robots.txt for Radar's user agent. In dev-stub mode the fetcher is the synthesized dev site (no network).
+// The site controls every page and sitemap fetched here, and none of them is parsed in this process: each is read in
+// the child process of ./pageReader.ts, which has a time limit per document, a memory cap and a bound on what it
+// answers. A document it cannot read is passed over as a failed fetch is, the home page excepted (no home page, no
+// site). A crawl stops reading and returns what it has after MAX_UNREADABLE such documents, or when its documents have
+// had CRAWL_READ_MS of the reader between them: so one crawl costs the reader at most that plus one document's limit,
+// and the second try of a document that ended its first reader, which is not counted (a document that ends two is
+// counted as one limit; three of those end the crawl, so at most 15 s more).
+// Every analysis in this process uses the same reader, one document at a time, so one may wait for another's share.
 import dns from 'node:dns/promises';
 import net from 'node:net';
-import * as cheerio from 'cheerio';
 import robotsParser from 'robots-parser';
 import { env } from '../../env';
 import { devFetch } from './devsite';
 import { assertPublicUrl, publicDispatcher } from '../../http/publicNetwork';
+import { PageUnreadable, normUrl, readPage, readSitemap, sameSite, type PageRead } from './pageReader';
+
+export { ARTICLE_PATH, LISTING_PATH } from './pageReader';
 
 export interface FetchResult { status: number; type: string; body: Buffer; url: string }
 export interface CrawledPage { url: string; path: string; title: string; h1: string; description: string; text: string; links: string[]; kind: 'article' | 'page'; kindSure: boolean; html?: string }
@@ -16,6 +26,11 @@ export class CrawlError extends Error { constructor(public reason: 'unreachable'
 
 const MAX_PAGES = 100;
 const MAX_BYTES = 2 * 1024 * 1024;
+/** How many documents (pages and sitemaps together) a crawl may find unreadable before it stops reading. */
+const MAX_UNREADABLE = 3;
+/** How much of the page reader's time one crawl's documents may take in all, by the reader's own clock. The heaviest
+ *  ordinary site measured (a hundred 1.5 MB pages at 0.25 s each) takes 25 s. */
+export const CRAWL_READ_MS = 60_000;
 export const uaToken = () => (env.crawlerUserAgent.split('/')[0] || 'RadarBot').trim();
 
 function isPrivateIp(ip: string) {
@@ -65,64 +80,41 @@ export async function fetchUrl(url: string, accept = 'text/html,application/xhtm
   return { status: r.status, type: r.headers.get('content-type') || '', body: Buffer.concat(chunks), url: at.toString() };
 }
 
-const sameSite = (host: string, base: string) => host.replace(/^www\./, '') === base.replace(/^www\./, '');
-function normUrl(href: string, base: string): string | null {
-  try {
-    const u = new URL(href, base);
-    if (!/^https?:$/.test(u.protocol)) return null;
-    u.hash = ''; u.search = '';
-    if (/\.(png|jpe?g|gif|svg|webp|ico|pdf|zip|mp4|mp3|css|js|xml|json|txt|woff2?)$/i.test(u.pathname)) return null;
-    let s = u.toString(); if (s.endsWith('/') && u.pathname !== '/') s = s.slice(0, -1);
-    return s;
-  } catch { return null; }
+/** What a crawl's reading has come to so far: documents found unreadable, and reader time used of what it may use. */
+interface Reading { unreadable: number; ms: number; mayUse: number }
+const gaveUp = (reading: Reading) => reading.unreadable >= MAX_UNREADABLE || reading.ms >= reading.mayUse;
+/** The reader says how long each document took (an unreadable one counts as its whole limit). */
+const timed = (reading: Reading) => ({ spent: (ms: number) => { reading.ms += ms; } });
+/** A read whose document turned out unreadable counts against the crawl and gives null. Any other failure is not the
+ *  site's doing (the reader could not run) and is thrown on. */
+async function readable<T>(read: Promise<T>, reading: Reading, what: string): Promise<T | null> {
+  try { return await read; }
+  catch (e) {
+    if (!(e instanceof PageUnreadable)) throw e;
+    reading.unreadable++;
+    console.warn(`[crawl] ${what.replace(/[\u0000-\u001f\u007f]+/g, ' ').slice(0, 300)} could not be read (${e.reason})`); // the address is the site's own text
+    return null;
+  }
 }
 
-export const ARTICLE_PATH = /\/(blog|articles?|posts?|news|guides?|resources|insights|learn|journal|stories|notes)\/(?!(page|tag|tags|category|categories|author)\/)[^/]+\/?$/i;
-export const LISTING_PATH = /\/(blog|articles?|posts?|news|guides?|resources|insights|journal)\/?$/i;
-/** Article vs page from URL + structure. `sure` = the signal is strong; unsure pages may be refined by the LLM. */
-export function classifyPage($: cheerio.CheerioAPI, path: string): { kind: 'article' | 'page'; sure: boolean } {
-  const og = ($('meta[property="og:type"]').attr('content') || '').toLowerCase();
-  let ld = false;
-  $('script[type="application/ld+json"]').each((_, el) => { const t = $(el).text(); if (/"@type"\s*:\s*"(BlogPosting|Article|NewsArticle|TechArticle)"/.test(t)) ld = true; });
-  if (LISTING_PATH.test(path) || path === '/') return { kind: 'page', sure: true };
-  if (og === 'article' || ld) return { kind: 'article', sure: true };
-  if (ARTICLE_PATH.test(path)) return { kind: 'article', sure: true };
-  const hasArticle = $('article').length > 0 && $('article time[datetime], time[datetime]').length > 0;
-  if (hasArticle) return { kind: 'article', sure: false };
-  const words = $('main, body').first().text().split(/\s+/).length;
-  return { kind: 'page', sure: words < 600 };
-}
+/** Title, text, same-site links and article-or-page for one page, read in the page reader. */
+const extract = (html: string, url: string, origin: string, reading: Reading): Promise<PageRead> => readPage(html, url, origin, timed(reading));
 
-function extract(html: string, url: string, origin: string) {
-  const $ = cheerio.load(html);
-  const title = $('title').first().text().trim().slice(0, 300);
-  const h1 = $('h1').first().text().replace(/\s+/g, ' ').trim().slice(0, 300);
-  const description = ($('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '').trim().slice(0, 500);
-  const links = new Set<string>();
-  $('a[href]').each((_, el) => { const n = normUrl($(el).attr('href') || '', url); if (n) { try { if (sameSite(new URL(n).hostname, new URL(origin).hostname)) links.add(n); } catch { /* */ } } });
-  const path = new URL(url).pathname || '/';
-  const cls = classifyPage($, path);
-  const $t = cheerio.load(html); $t('script,style,noscript,svg,iframe,nav,footer,header form').remove();
-  const text = ($t('main').text() || $t('body').text()).replace(/\s+/g, ' ').trim().slice(0, 4000);
-  return { title, h1, description, text, links: [...links], kind: cls.kind, kindSure: cls.sure };
-}
-
-async function parseSitemaps(urls: string[], host: string, budget = 400): Promise<string[]> {
+async function parseSitemaps(urls: string[], host: string, reading: Reading, budget = 400): Promise<string[]> {
   const out: string[] = []; const seen = new Set<string>(); const queue = [...urls];
-  while (queue.length && out.length < budget && seen.size < 12) {
+  while (queue.length && out.length < budget && seen.size < 12 && !gaveUp(reading)) {
     const sm = queue.shift()!; if (seen.has(sm)) continue; seen.add(sm);
-    try {
-      const r = await fetchUrl(sm, 'application/xml,text/xml'); if (r.status >= 400) continue;
-      const $ = cheerio.load(r.body.toString('utf8'), { xmlMode: true });
-      $('sitemap > loc').each((_, el) => { queue.push($(el).text().trim()); });
-      $('url > loc').each((_, el) => { const n = normUrl($(el).text().trim(), sm); if (n) { try { if (sameSite(new URL(n).hostname, host)) out.push(n); } catch { /* */ } } });
-    } catch { /* ignore */ }
+    let xml: string;
+    try { const r = await fetchUrl(sm, 'application/xml,text/xml'); if (r.status >= 400) continue; xml = r.body.toString('utf8'); } catch { continue; }
+    const map = await readable(readSitemap(xml, sm, host, timed(reading)), reading, sm); if (!map) continue;
+    for (const loc of map.sitemaps) queue.push(loc);
+    for (const u of map.urls) out.push(u); // already the addresses to follow on this site
   }
   return out;
 }
 
-/** Crawl a domain. Throws CrawlError('unreachable'|'blocked'). */
-export async function crawlSite(domain: string, onPage?: (n: number) => void): Promise<CrawlResult> {
+/** Crawl a domain. Throws CrawlError('unreachable'|'blocked'). `readMs` is for tests: reader time in place of CRAWL_READ_MS. */
+export async function crawlSite(domain: string, onPage?: (n: number) => void, o: { readMs?: number } = {}): Promise<CrawlResult> {
   // Resolve the canonical origin (https first, then www., then http).
   let home: FetchResult | null = null; let origin = '';
   for (const cand of [`https://${domain}/`, `https://www.${domain}/`, `http://${domain}/`]) {
@@ -140,34 +132,39 @@ export async function crawlSite(domain: string, onPage?: (n: number) => void): P
   if (!allowed(origin + '/')) throw new CrawlError('blocked');
   if (home.status === 401 || home.status === 403) throw new CrawlError('blocked');
   if (!sitemapUrls.length) sitemapUrls = [origin + '/sitemap.xml'];
-  const fromSitemap = await parseSitemaps(sitemapUrls, host);
+  // The home page is read before anything else is: a home page that cannot be read is a site that cannot be analysed.
+  const homeHtml = home.body.toString('utf8');
+  const reading: Reading = { unreadable: 0, ms: 0, mayUse: o.readMs ?? CRAWL_READ_MS };
+  let first: PageRead;
+  try { first = await extract(homeHtml, home.url, origin, reading); }
+  catch (e) { if (!(e instanceof PageUnreadable)) throw e; console.warn(`[crawl] ${home.url} (the home page) could not be read (${e.reason})`); throw new CrawlError('unreachable'); }
+  const fromSitemap = await parseSitemaps(sitemapUrls, host, reading);
 
   const pages: CrawledPage[] = []; const seen = new Set<string>();
   const homeUrl = normUrl(home.url, origin) || origin + '/';
   const queue: string[] = [homeUrl]; seen.add(homeUrl);
   const push = (u: string) => { if (!seen.has(u) && allowed(u)) { seen.add(u); queue.push(u); } };
-  const homeHtml = home.body.toString('utf8');
-  const first = extract(homeHtml, home.url, origin);
   pages.push({ url: homeUrl, path: new URL(homeUrl).pathname || '/', ...first, html: homeHtml }); queue.shift();
   // Nav links from the homepage first (most important pages), then the sitemap, then discovered links.
   first.links.forEach(push); fromSitemap.forEach(push);
   onPage?.(pages.length);
   const delay = robots?.getCrawlDelay(uaToken()) || 0;
-  while (queue.length && pages.length < MAX_PAGES) {
+  while (queue.length && pages.length < MAX_PAGES && !gaveUp(reading)) {
     const batch = queue.splice(0, delay ? 1 : 4);
     const res = await Promise.all(batch.map(async u => { try { return { u, r: await fetchUrl(u) }; } catch { return { u, r: null }; } }));
     for (const { u, r } of res) {
-      if (!r || r.status >= 400 || !/html/i.test(r.type) || pages.length >= MAX_PAGES) continue;
+      if (!r || r.status >= 400 || !/html/i.test(r.type) || pages.length >= MAX_PAGES || gaveUp(reading)) continue;
       const finalUrl = normUrl(r.url, origin) || u;
       try { if (!sameSite(new URL(finalUrl).hostname, host)) continue; } catch { continue; }
       if (pages.some(p => p.url === finalUrl)) continue;
       const html = r.body.toString('utf8');
-      const e = extract(html, r.url, origin);
+      const e = await readable(extract(html, r.url, origin, reading), reading, r.url); if (!e) continue;
       pages.push({ url: finalUrl, path: new URL(finalUrl).pathname || '/', ...e });
       e.links.forEach(push);
     }
     onPage?.(pages.length);
-    if (delay) await new Promise(r => setTimeout(r, Math.min(delay, 5) * 1000));
+    if (delay && !gaveUp(reading)) await new Promise(r => setTimeout(r, Math.min(delay, 5) * 1000));
   }
+  if (reading.ms >= reading.mayUse) console.warn(`[crawl] ${origin} has had its ${Math.round(reading.mayUse / 1000)} s of the page reader: stopped with ${pages.length} page(s) read`);
   return { origin, host, pages, homeHtml, robotsBlocked: false };
 }

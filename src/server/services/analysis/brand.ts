@@ -2,10 +2,11 @@
 // Logo order: <link rel=icon> large sizes → apple-touch-icon → header img/svg → og:image. Stored via storage; null if none.
 // The site being analysed controls every byte read here, and its logo and stylesheets must not stop or stall this
 // process: a raster logo is checked from its bytes and decoded only in the child process of ../untrustedImage.ts, SVG is
-// read as text and never decoded, and the color patterns take time linear in the text. Not solved here: a home page
-// with tens of thousands of elements, or nested thousands deep, still keeps cheerio busy for seconds (the crawler too).
-import * as cheerio from 'cheerio';
+// read as text and never decoded, and the color patterns take time linear in the text. The home page is not parsed
+// here either: ./pageReader.ts reads it in its child process, once, and a home page it cannot read gives no logo, no
+// colors and no language.
 import { fetchUrl } from './crawl';
+import { PageUnreadable, readBrandPage, type BrandPageRead } from './pageReader';
 import { objectKey, putObject } from '../storage';
 import { ImageRefused, decodeInChild, overPixelLimits, probeImage } from '../untrustedImage';
 import { langs } from '@/lib/constants';
@@ -27,9 +28,9 @@ const neutral = (hex: string) => sat(hex) < 0.12 || lum(hex) > 0.96 || lum(hex) 
 function dist(a: string, b: string) { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); }
 
 /** Colors from CSS custom properties (inline <style> + up to 3 same-site stylesheets) and theme-color. */
-async function cssColors($: cheerio.CheerioAPI, origin: string): Promise<{ primary: string[]; secondary: string[]; any: string[] }> {
-  let css = $('style').map((_, el) => $(el).text()).get().join('\n');
-  const hrefs = $('link[rel="stylesheet"]').map((_, el) => $(el).attr('href')).get().filter(Boolean).slice(0, 3);
+async function cssColors(page: BrandPageRead, origin: string): Promise<{ primary: string[]; secondary: string[]; any: string[] }> {
+  let css = page.css;
+  const hrefs = page.stylesheets;
   for (const h of hrefs) { try { const u = new URL(h!, origin); if (u.origin !== origin) continue; const r = await fetchUrl(u.toString(), 'text/css'); if (r.status < 400) css += '\n' + r.body.toString('utf8').slice(0, 300000); } catch { /* */ } }
   const out = { primary: [] as string[], secondary: [] as string[], any: [] as string[] };
   // Every repeat is bounded and a name is read only from where it starts, so a long run of anything costs no more than its length.
@@ -40,7 +41,7 @@ async function cssColors($: cheerio.CheerioAPI, origin: string): Promise<{ prima
     else if (/secondary|accent|highlight/.test(name) && !/text|fg|foreground|border/.test(name)) out.secondary.push(c);
     else out.any.push(c);
   }
-  const theme = normColor($('meta[name="theme-color"]').attr('content') || '');
+  const theme = normColor(page.theme);
   if (theme) out.primary.push(theme);
   return out;
 }
@@ -85,28 +86,6 @@ export async function readLogo(body: Buffer, header: string): Promise<LogoRead |
   } catch (e: any) { return e instanceof ImageRefused ? null : { ...as, colors: [], fault: String(e?.message || e) }; }
 }
 
-const maxSize = (s?: string) => String(s || '').split(/\s+/).reduce((mx, x) => Math.max(mx, x === 'any' ? 512 : parseInt(x.split('x')[0]) || 0), 0);
-
-/** Candidate logo URLs in the designed order. */
-function logoCandidates($: cheerio.CheerioAPI, base: string): string[] {
-  const abs = (h?: string) => { try { return h ? new URL(h, base).toString() : null; } catch { return null; } };
-  const icons = $('link[rel~="icon"]').map((_, el) => ({ href: abs($(el).attr('href')), size: maxSize($(el).attr('sizes')), svg: /svg/.test($(el).attr('type') || '') || /\.svg(\?|$)/.test($(el).attr('href') || '') })).get()
-    .filter(i => i.href && (i.size >= 96 || i.svg)).sort((a, b) => b.size - a.size).map(i => i.href!);
-  const apple = $('link[rel~="apple-touch-icon"], link[rel="apple-touch-icon-precomposed"]').map((_, el) => abs($(el).attr('href'))).get().filter(Boolean) as string[];
-  const headerImgs = $('header img, [class*="logo"] img, img[class*="logo"], img[alt*="logo" i], img[src*="logo" i]').map((_, el) => abs($(el).attr('src'))).get().filter(Boolean) as string[];
-  const og = abs($('meta[property="og:image"]').attr('content'));
-  return [...new Set([...icons, ...apple, ...headerImgs, ...(og ? [og] : [])])];
-}
-
-/** Inline header SVG (serialized) when no URL candidate works. */
-function inlineHeaderSvg($: cheerio.CheerioAPI): string | null {
-  const el = $('header svg, [class*="logo"] svg').first();
-  if (!el.length) return null;
-  let html: string; try { html = $.html(el); } catch { return null; } // an element nested too deep to write out
-  if (html.length > 200000) return null;
-  return html.includes('xmlns') ? html : html.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-}
-
 /** "en-US" → "English (US)" etc., matched against the Language select options. Null if unknown. */
 export function langFromHtml(tag: string | null | undefined): string | null {
   if (!tag) return null;
@@ -119,9 +98,16 @@ export function langFromHtml(tag: string | null | undefined): string | null {
 }
 
 export async function detectBrand(bid: string, homeHtml: string, origin: string): Promise<BrandDetect> {
-  const $ = cheerio.load(homeHtml);
+  // Logo candidates in the designed order, the inline header SVG for when none of them works, the page's own CSS and its language.
+  let page: BrandPageRead;
+  try { page = await readBrandPage(homeHtml, origin); }
+  catch (e) {
+    if (!(e instanceof PageUnreadable)) throw e;
+    console.warn(`[brand] the home page could not be read (${e.reason}): no logo, colors or language from it`);
+    return { logo: null, primary: null, secondary: null, language: null, htmlLang: null };
+  }
   let logo: string | null = null; let logoCols: string[] = []; let warned = false;
-  for (const u of logoCandidates($, origin).slice(0, 6)) {
+  for (const u of page.candidates.slice(0, 6)) {
     try {
       const r = await fetchUrl(u, 'image/*');
       if (r.status >= 400 || !/^image\//.test(r.type) || r.body.length < 80 || r.body.length > 3 * 1024 * 1024) continue;
@@ -133,13 +119,13 @@ export async function detectBrand(bid: string, homeHtml: string, origin: string)
     } catch { /* next */ }
   }
   if (!logo) {
-    const svg = inlineHeaderSvg($);
+    const svg = page.svg;
     if (svg) { const b = Buffer.from(svg); logo = await putObject(objectKey(bid, 'logo', 'svg'), b, 'image/svg+xml'); logoCols = svgColors(svg); }
   }
-  const css = await cssColors($, origin);
+  const css = await cssColors(page, origin);
   const cand = [...css.primary, ...logoCols, ...css.secondary, ...css.any].filter(c => !neutral(c));
   const primary = css.primary.find(c => !neutral(c)) || logoCols[0] || cand[0] || null;
   const secondary = [...css.secondary, ...logoCols, ...cand].find(c => !neutral(c) && (!primary || dist(c, primary) > 60)) || null;
-  const htmlLang = $('html').attr('lang') || null;
+  const htmlLang = page.htmlLang;
   return { logo, primary, secondary, language: langFromHtml(htmlLang), htmlLang };
 }

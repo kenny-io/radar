@@ -1,0 +1,17 @@
+{"scenario":"the reader is killed before its first message","first":"read","firstMs":131,"next":"read","nextTitle":"After"}
+{"scenario":"the reader is killed (SIGKILL) 300 ms into a stalling document","first":"PageUnreadable(timed_out): The document could not be read: timed_out","firstMs":5475,"next":"read","newReader":true}
+{"scenario":"the reader is ended (SIGTERM) 300 ms into a stalling document","first":"PageUnreadable(timed_out): The document could not be read: timed_out","firstMs":5483,"next":"read"}
+{"scenario":"the reader is frozen (SIGSTOP) inside an ordinary document","first":"PageUnreadable(timed_out): The document could not be read: timed_out","firstMs":7058,"frozenReaderGone":true,"next":"read"}
+{"scenario":"the reader is killed between two reads, and the next read is asked for at once","first":"read","firstMs":126,"next":"read","note":"the first document here is ordinary and was never read"}
+{"scenario":"the reader is killed between two reads, and the next read is asked for 100 ms later","first":"read","firstMs":125}
+{"scenario":"the reader ends itself between two reads (its channel is closed from here)","first":"read","next":"read","oldReaderGone":true}
+{"scenario":"the reader is killed while six reads wait behind a stalling one","outcomes":["PageUnreadable(timed_out): The document could not be read: timed_out","read","read","read","read","read","read"],"ms":[5462,5579,5582,5583,5583,5584,5585],"titles":[null,"P1","P2","P3",null,null,"P6"]}
+{"scenario":"three stalling documents and three ordinary ones asked for at once","outcomes":["PageUnreadable(timed_out): The document could not be read: timed_out","read","PageUnreadable(timed_out): The document could not be read: timed_out","read","PageUnreadable(timed_out): The document could not be read: timed_out","read"],"ms":[5024,5142,10172,10290,15320,15439],"totalMs":15439,"note":"each ordinary page waits behind every stalling one before it"}
+{"scenario":"300 reads of all three kinds asked for at once","right":300,"of":300,"ms":79,"listeners":"message:1 exit:1 error:1 disconnect:1 close:0","timers":0}
+{"scenario":"the caller is busy for 6 s while an ordinary document is read (the answer arrives in milliseconds)","first":"read","firstMs":0,"readerWasKilled":false,"next":"read","expected":"read: the document is ordinary and its answer was waiting"}
+{"scenario":"the caller is busy for 4 s while an ordinary document is read","first":"read","firstMs":0}
+{"scenario":"the caller is busy for 8 s while a stalling document is read (the reader must end itself at 7 s)","first":"PageUnreadable(timed_out): The document could not be read: timed_out","firstMs":8002,"readerGoneAtMs":"still running at 8 s"}
+{"scenario":"a slow honest document (about 3 s) is read, not cut short, and the next waits its turn","outcomes":["read","read"],"ms":[3260,3261]}
+{"scenario":"reads asked for just as the idle time runs out (50 tries, idle 20 ms)","ok":50,"of":50,"errors":[]}
+{"scenario":"no reader is left when this process has nothing to do (checked by the driver)","reader":11705,"readersStarted":46,"zombies":1}
+{"done":true,"unhandledInCaller":0,"readersStarted":46,"stillRunning":[]}

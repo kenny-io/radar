@@ -1,0 +1,5 @@
+{"scenario":"an ordinary page is read by a warm reader (it answers in a few ms); the caller is busy 6 s in a setImmediate callback","outcome":"read","settledAfterMs":6000,"readerKilled":false}
+{"scenario":"an ordinary page is read by a warm reader (it answers in a few ms); the caller is busy 4 s in a setImmediate callback","outcome":"read","settledAfterMs":4000,"readerKilled":false}
+{"scenario":"an ordinary page is read by a warm reader (it answers in a few ms); the caller is busy 6 s in an I/O callback (a file read)","outcome":"read","settledAfterMs":6001,"readerKilled":false}
+{"scenario":"an ordinary page is read by a warm reader (it answers in a few ms); the caller is busy 6 s straight after asking, in the same turn","outcome":"read","settledAfterMs":6000,"readerKilled":false}
+{"done":true,"unhandled":0}

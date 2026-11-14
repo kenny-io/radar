@@ -1,0 +1,10 @@
+{"group":"spent","what":"a 100-byte page","outcome":"read","countedMs":[3],"wallMs":4}
+{"group":"spent","what":"the 1.5 MB blog index","outcome":"read","countedMs":[290],"wallMs":298}
+{"group":"spent","what":"a page that takes about 3 s","outcome":"read","countedMs":[3186],"wallMs":3190}
+{"group":"spent","what":"a page cheerio throws on","outcome":"failed","countedMs":[213],"wallMs":214}
+{"group":"spent","what":"a page whose answer is too large","outcome":"failed","countedMs":[173],"wallMs":240}
+{"group":"spent","what":"a stalling page","outcome":"timed_out","countedMs":[5000],"wallMs":5031}
+{"group":"spent","what":"the out-of-memory page (two readers end)","outcome":"crashed","countedMs":[5000],"wallMs":2548}
+{"group":"spent","what":"a 3 s page whose reader is killed from outside 1.5 s in (read by a second reader)","outcome":"read","countedMs":[3201],"wallMs":4828}
+{"group":"spent","what":"five 100-byte pages asked for behind a 3 s page: the fifth","outcome":"read","countedMs":[0],"wallMs":3169}
+{"done":true,"unhandled":0,"readersStarted":5}

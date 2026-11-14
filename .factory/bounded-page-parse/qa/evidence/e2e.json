@@ -1,0 +1,181 @@
+[
+ {
+  "scenario": "control",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 5053,
+  "phase": "done",
+  "failed": null,
+  "site": "19 pages on qa-logo-mwflrwizyoip1.test",
+  "brandLine": "Logo, 2 colors, voice",
+  "logo": "/api/files/72bba46c-f27c-4b10-baf4-856074cab366/logo/1794612215290-Hu2-25sL.svg",
+  "colours": [
+   "#2F5BD3",
+   "#F4A261"
+  ],
+  "result": {
+   "edits": 0,
+   "pages": 19,
+   "ranking": null,
+   "articles": 6
+  },
+  "fetched": 24,
+  "warnings": []
+ },
+ {
+  "scenario": "home page stalls",
+  "jobStatus": "failed",
+  "jobError": "Radar couldn’t reach qa-logo-mwfls0fu5ko6j.test. The site may be down or blocking crawlers.",
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 5011,
+  "phase": "site",
+  "failed": "Radar couldn’t reach qa-logo-mwfls0fu5ko6j.test. The site may be down or blocking crawlers.",
+  "site": null,
+  "brandLine": null,
+  "logo": null,
+  "colours": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "result": {
+   "detail": "Radar couldn’t reach qa-logo-mwfls0fu5ko6j.test. The site may be down or blocking crawlers."
+  },
+  "fetched": 2,
+  "warnings": [
+   "[crawl] https://qa-logo-mwfls0fu5ko6j.test/ (the home page) could not be read (timed_out)"
+  ]
+ },
+ {
+  "scenario": "home page runs the reader out of memory",
+  "jobStatus": "failed",
+  "jobError": "Radar couldn’t reach qa-logo-mwfls4b66clk7.test. The site may be down or blocking crawlers.",
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 1229,
+  "phase": "site",
+  "failed": "Radar couldn’t reach qa-logo-mwfls4b66clk7.test. The site may be down or blocking crawlers.",
+  "site": null,
+  "brandLine": null,
+  "logo": null,
+  "colours": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "result": {
+   "detail": "Radar couldn’t reach qa-logo-mwfls4b66clk7.test. The site may be down or blocking crawlers."
+  },
+  "fetched": 2,
+  "warnings": [
+   "[crawl] https://qa-logo-mwfls4b66clk7.test/ (the home page) could not be read (crashed)"
+  ]
+ },
+ {
+  "scenario": "home page makes cheerio throw",
+  "jobStatus": "failed",
+  "jobError": "Radar couldn’t reach qa-logo-mwfls59g4l8ul.test. The site may be down or blocking crawlers.",
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 446,
+  "phase": "site",
+  "failed": "Radar couldn’t reach qa-logo-mwfls59g4l8ul.test. The site may be down or blocking crawlers.",
+  "site": null,
+  "brandLine": null,
+  "logo": null,
+  "colours": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "result": {
+   "detail": "Radar couldn’t reach qa-logo-mwfls59g4l8ul.test. The site may be down or blocking crawlers."
+  },
+  "fetched": 2,
+  "warnings": [
+   "[crawl] https://qa-logo-mwfls59g4l8ul.test/ (the home page) could not be read (failed)"
+  ]
+ },
+ {
+  "scenario": "a page other than the home page stalls",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 15131,
+  "phase": "done",
+  "failed": null,
+  "site": "17 pages on qa-logo-mwfls9gdsfiaj.test",
+  "brandLine": "Logo, 2 colors, voice",
+  "logo": "/api/files/a951368a-7efa-4ff5-ae49-5237c4bbadf3/logo/1794612241905-BOlAnG06.svg",
+  "colours": [
+   "#2F5BD3",
+   "#F4A261"
+  ],
+  "result": {
+   "edits": 0,
+   "pages": 17,
+   "ranking": null,
+   "articles": 6
+  },
+  "fetched": 48,
+  "warnings": [
+   "[crawl] https://qa-logo-mwfls9gdsfiaj.test/about could not be read (timed_out)",
+   "[crawl] https://qa-logo-mwfls9gdsfiaj.test/pricing could not be read (timed_out)"
+  ],
+  "controlPages": 19,
+  "replaced": [
+   "/about",
+   "/pricing",
+   "/about",
+   "/pricing"
+  ]
+ },
+ {
+  "scenario": "home page readable as a page, not for brand",
+  "jobStatus": "done",
+  "jobError": null,
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 10571,
+  "phase": "done",
+  "failed": null,
+  "site": "19 pages on qa-logo-mwflsl4sii4al.test",
+  "brandLine": "Logo not found — you can upload one",
+  "logo": null,
+  "colours": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "result": {
+   "edits": 0,
+   "pages": 19,
+   "ranking": null,
+   "articles": 6
+  },
+  "fetched": 22,
+  "warnings": [
+   "[brand] the home page could not be read (timed_out): no logo, colors or language from it"
+  ]
+ },
+ {
+  "scenario": "the reader cannot run",
+  "jobStatus": "queued",
+  "jobError": "Radar couldn’t finish this. Try again.",
+  "attempts": 0,
+  "maxAttempts": 2,
+  "ms": 42,
+  "phase": "site",
+  "failed": null,
+  "site": null,
+  "brandLine": null,
+  "logo": null,
+  "colours": [
+   "#17181C",
+   "#EF6A2E"
+  ],
+  "result": null,
+  "fetched": 2,
+  "warnings": []
+ }
+]

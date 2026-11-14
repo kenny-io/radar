@@ -1,0 +1,18 @@
+{"pageKb":588,"links":50000,"addressCharacters":2000,"heapLimitMb":1584}
+{"pages":1,"s":0.2,"heapUsedMb":21,"rssMb":106,"lateMs":2}
+{"pages":5,"s":4.9,"heapUsedMb":606,"rssMb":790,"lateMs":276}
+{"pages":9,"s":9.6,"heapUsedMb":1202,"rssMb":1372,"lateMs":301}
+{"pages":13,"s":14.5,"heapUsedMb":1414,"rssMb":1570,"lateMs":301}
+
+<--- Last few GCs --->
+
+[70231:0x853400000]    17158 ms: Mark-Compact 1511.7 (1590.7) -> 1508.2 (1577.2) MB, pooled: 26 MB, 44.33 / 0.00 ms  (average mu = 0.929, current mu = 0.661) allocation failure; scavenge might not succeed
+[70231:0x853400000]    17206 ms: Mark-Compact 1524.0 (1577.2) -> 1523.9 (1592.9) MB, pooled: 10 MB, 41.00 / 0.00 ms  (average mu = 0.849, current mu = 0.141) allocation failure; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+caller exit status: 134

@@ -1,0 +1,6 @@
+{"what":"an ordinary page","outcome":"read","ms":138}
+{"what":"a stalling page, the caller idle","outcome":"PageUnreadable(timed_out): timed_out","ms":7056,"readerEndedWith":"SIGKILL","readersStarted":1}
+{"what":"the next ordinary page","outcome":"read","ms":130}
+{"what":"a stalling page, the caller busy for 12 s from 0.1 s in (nobody ends the reader meanwhile)","outcome":"PageUnreadable(timed_out): timed_out","ms":18930,"readerEndedWith":"SIGKILL"}
+{"what":"three stalling pages asked for at once","outcomes":["PageUnreadable(timed_out): timed_out","PageUnreadable(timed_out): timed_out","PageUnreadable(timed_out): timed_out"],"ms":[7063,14124,21182]}
+{"done":true,"stillRunning":0}

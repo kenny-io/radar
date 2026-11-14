@@ -1,0 +1,13 @@
+{"scenario":"a warm reader killed (SIGKILL) at 0 to 400 ms into the 1.5 MB blog index, every 10 ms","outcomes":{"read":41},"wrongAnswers":0,"secondReadersStarted":33}
+{"scenario":"a new reader killed at 0 to 200 ms after it is started for a 100-byte page, every 5 ms","outcomes":{"read":41},"wrongAnswers":0}
+{"scenario":"a reader killed while its 3.8 MB answer is on its way, at 150 to 400 ms, every 10 ms","outcomes":{"read":26},"wrongAnswers":0}
+{"scenario":"each other signal from outside, 100 ms into the blog index","threw":"Error: kill ESRCH"}
+{"scenario":"two readers in a row killed with the same ordinary page; the next page after it","first":"PageUnreadable(crashed): crashed (SIGKILL)","next":"read","nextTitle":"After","readersStarted":3}
+{"scenario":"three readers in a row killed, six pages asked for at once","outcomes":["PageUnreadable(crashed): crashed (SIGKILL)","read","read","read","read","read"],"titles":[null,"P2","P3","P4","P5","P6"],"settledInOrder":"123456","readersStarted":4}
+{"scenario":"the reader killed while six reads wait behind a 3 s page","outcomes":["read","read","read","read","read","read","read"],"titles":["Slow","P1","P2","P3","P4","P5","P6"],"settledInOrder":"0123456","ms":[4350,4350,4351,4352,4353,4358,4358]}
+{"scenario":"the out-of-memory page: how many readers end, and how long it takes","outcome":"PageUnreadable(crashed): crashed (SIGABRT)","ms":2170,"readersEnded":2,"readersStartedForIt":1,"countedMs":[5000],"next":"read"}
+{"scenario":"the out-of-memory page five times running, then ordinary pages","outcomes":["PageUnreadable(crashed): crash"],"ms":[2261,2369,2393,2376,2404],"after":["read","read","read"]}
+{"scenario":"a page that takes 4 s and then runs the reader out of memory would take two limits: a 4.5 s page killed from outside at 4 s, twice","outcome":"PageUnreadable(crashed): crashed (SIGKILL)","ms":8043,"kills":2,"note":"the longest a document can hold the reader: twice its limit"}
+{"scenario":"killed between two reads, the next asked for at once (round 1, D4)","outcome":"read","title":"Straight after"}
+{"scenario":"killed before its first message (round 1, D4)","outcome":"read","title":"First","readersStarted":2}
+{"done":true,"unhandledInCaller":0,"readersStarted":141,"stillRunning":1}

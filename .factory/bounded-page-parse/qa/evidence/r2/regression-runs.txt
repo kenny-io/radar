@@ -1,0 +1,37 @@
+== r2-typecheck
+typecheck exit 0
+== r2-analysis
+Test Files  11 passed (11)
+Tests  715 passed (715)
+exit 0
+== r2-full-nodb
+Test Files  3 failed | 160 passed | 53 skipped (216)
+Tests  2 failed | 3395 passed | 646 skipped (4057)
+exit 1
+   1  FAIL  src/server/actions/realCover.db.test.ts [ src/server/actions/realCover.db.test.ts ]
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/services/analysis/pageReader.test.ts
+== r2-full-nodb-2
+Test Files  2 failed | 161 passed | 53 skipped (216)
+Tests  1 failed | 3396 passed | 646 skipped (4057)
+exit 1
+   1  FAIL  src/server/actions/realCover.db.test.ts [ src/server/actions/realCover.db.test.ts ]
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+== r2-full-db-1
+Test Files  5 failed | 199 passed | 12 skipped (216)
+Tests  6 failed | 3976 passed | 75 skipped (4057)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+   1  FAIL  src/server/idle.cadence.db.test.ts
+   1  FAIL  src/server/idle.db.test.ts
+   3  FAIL  src/server/services/lifecycle/dispatch.test.ts
+   1  FAIL  src/server/services/lifecycle/guides.test.ts
+== r2-full-db-2
+Test Files  1 failed | 203 passed | 12 skipped (216)
+Tests  1 failed | 3981 passed | 75 skipped (4057)
+exit 1
+   1  FAIL  src/server/ai/openrouter.qa.test.ts
+== the one failure under analysis, in r2-full-nodb (load average 32 at the time)
+ FAIL  src/server/services/analysis/pageReader.test.ts > a stalling document settles within its limit plus a second, and this process stays responsive (AC2, AC3) > with the limit every document gets (five seconds): 100,000 style elements as a page, 64,000 nested divs as a home page
+AssertionError: expected 167.97000000000116 to be less than or equal to 100
+== pageReader.test.ts and pageReader.busy.test.ts alone, three times: 58 passed each time

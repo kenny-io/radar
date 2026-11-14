@@ -1,0 +1,4732 @@
+{
+ "from": "b3ad2d50ab7084d6dcb203e884ccea925d24fb0e",
+ "crawls": {
+  "words.example": {
+   "result": {
+    "origin": "https://words.example",
+    "host": "words.example",
+    "pages": [
+     {
+      "url": "https://words.example/",
+      "path": "/",
+      "title": "Words — home",
+      "h1": "Words",
+      "description": "The home page of the words site.",
+      "text": "Home.",
+      "links": [
+       "https://words.example/t/plain",
+       "https://words.example/t/two-of-each",
+       "https://words.example/t/none",
+       "https://words.example/t/svg-title",
+       "https://words.example/t/og-description",
+       "https://words.example/t/both-descriptions",
+       "https://words.example/t/empty-description",
+       "https://words.example/t/blank-description",
+       "https://words.example/t/description-no-content",
+       "https://words.example/t/description-wrong-attribute",
+       "https://words.example/t/long",
+       "https://words.example/t/entities",
+       "https://words.example/t/heading-with-markup",
+       "https://words.example/t/title-in-body",
+       "https://words.example/l/links",
+       "https://words.example/l/relative/deep/page",
+       "https://words.example/l/moved",
+       "https://words.example/l/landed",
+       "https://words.example/l/away",
+       "https://words.example/l/base",
+       "https://words.example/l/order",
+       "https://words.example/x/data",
+       "https://words.example/x/gone",
+       "https://words.example/x/error",
+       "https://words.example/x/xhtml",
+       "https://words.example/x/removed",
+       "https://words.example/x/main",
+       "https://words.example/x/two-mains",
+       "https://words.example/x/empty-main",
+       "https://words.example/x/blank-main",
+       "https://words.example/x/main-of-script",
+       "https://words.example/x/main-in-footer",
+       "https://words.example/x/whitespace",
+       "https://words.example/x/long",
+       "https://words.example/x/empty",
+       "https://words.example/x/text-only",
+       "https://words.example/x/malformed",
+       "https://words.example/x/fragment"
+      ],
+      "kind": "page",
+      "kindSure": true,
+      "html": {
+       "characters": 1827,
+       "sha256": "8d0125c9adb340a509fdfbd6fce32a7c53f0ca059683ae193cc72c9c6165d4f9"
+      }
+     },
+     {
+      "url": "https://words.example/t/plain",
+      "path": "/t/plain",
+      "title": "Plain title",
+      "h1": "One two three",
+      "description": "A description, with spaces around it.",
+      "text": "One two three Body.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/two-of-each",
+      "path": "/t/two-of-each",
+      "title": "First title",
+      "h1": "First heading",
+      "description": "First description",
+      "text": "First headingSecond heading",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/none",
+      "path": "/t/none",
+      "title": "",
+      "h1": "",
+      "description": "",
+      "text": "No title, no heading, no description.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/svg-title",
+      "path": "/t/svg-title",
+      "title": "Icon title",
+      "h1": "",
+      "description": "",
+      "text": "Not an h1",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/og-description",
+      "path": "/t/og-description",
+      "title": "Og",
+      "h1": "Og",
+      "description": "From og:description.",
+      "text": "Og",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/both-descriptions",
+      "path": "/t/both-descriptions",
+      "title": "Both",
+      "h1": "Both",
+      "description": "From name",
+      "text": "Both",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/empty-description",
+      "path": "/t/empty-description",
+      "title": "Empty",
+      "h1": "Empty",
+      "description": "From og, because the other is empty",
+      "text": "Empty",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/blank-description",
+      "path": "/t/blank-description",
+      "title": "Blank",
+      "h1": "Blank",
+      "description": "",
+      "text": "Blank",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/description-no-content",
+      "path": "/t/description-no-content",
+      "title": "No content",
+      "h1": "No content",
+      "description": "From og, because the other has no content",
+      "text": "No content",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/description-wrong-attribute",
+      "path": "/t/description-wrong-attribute",
+      "title": "Wrong",
+      "h1": "Wrong",
+      "description": "",
+      "text": "Wrong",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/long",
+      "path": "/t/long",
+      "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "h1": "w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 w11 w12 w13 w14 w15 w16 w17 w18 w19 w20 w21 w22 w23 w24 w25 w26 w27 w28 w29 w30 w31 w32 w33 w34 w35 w36 w37 w38 w39 w40 w41 w42 w43 w44 w45 w46 w47 w48 w49 w50 w51 w52 w53 w54 w55 w56 w57 w58 w59 w60 w61 w62 w63 w64 w65 w66 w67 w68 w69 w70 w71 w72 w73 w74 w75 w76 w7",
+      "description": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "text": "w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 w11 w12 w13 w14 w15 w16 w17 w18 w19 w20 w21 w22 w23 w24 w25 w26 w27 w28 w29 w30 w31 w32 w33 w34 w35 w36 w37 w38 w39 w40 w41 w42 w43 w44 w45 w46 w47 w48 w49 w50 w51 w52 w53 w54 w55 w56 w57 w58 w59 w60 w61 w62 w63 w64 w65 w66 w67 w68 w69 w70 w71 w72 w73 w74 w75 w76 w77 w78 w79 w80 w81 w82 w83 w84 w85 w86 w87 w88 w89 w90 w91 w92 w93 w94 w95 w96 w97 w98 w99 w100 w101 w102 w103 w104 w105 w106 w107 w108 w109 w110 w111 w112 w113 w114 w115 w116 w117 w118 w119",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/entities",
+      "path": "/t/entities",
+      "title": "Café & Bar — 日本語 🍵 <b>",
+      "h1": "A B C & D",
+      "description": "Tom & Jerry's \"place\"",
+      "text": "A B C & D",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/heading-with-markup",
+      "path": "/t/heading-with-markup",
+      "title": "Markup",
+      "h1": "Headvar a = 1; linetwob{}",
+      "description": "",
+      "text": "Head linetwo",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/t/title-in-body",
+      "path": "/t/title-in-body",
+      "title": "A title in the body",
+      "h1": "Late",
+      "description": "",
+      "text": "LateA title in the body",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/l/links",
+      "path": "/l/links",
+      "title": "Links",
+      "h1": "Links",
+      "description": "",
+      "text": "Linksx x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x x xno hrefbare hrefnamedupperm",
+      "links": [
+       "https://words.example/a",
+       "https://words.example/l/about",
+       "https://words.example/l/rel",
+       "https://words.example/up",
+       "https://words.example/norm",
+       "https://words.example/dir/dot",
+       "https://words.example/proto",
+       "https://www.words.example/www",
+       "http://words.example/http",
+       "https://words.example:8443/port",
+       "https://words.example/Caps",
+       "https://words.example/l/links",
+       "https://words.example/spaced",
+       "https://words.example/tabin",
+       "https://words.example/nlin",
+       "https://words.example/file.png",
+       "https://words.example/file.jpgx",
+       "https://words.example/x.html",
+       "https://words.example/x.php",
+       "https://words.example/x.htm",
+       "https://words.example/png",
+       "https://words.example/a.b/c",
+       "https://words.example/dup",
+       "https://words.example/%C3%BC%C3%B1%C3%AD",
+       "https://words.example/sp%20ace",
+       "https://words.example/%7Etilde",
+       "https://words.example/a%20b",
+       "https://words.example/trailing/",
+       "https://words.example/",
+       "https://user:pw@words.example/auth",
+       "https://www.words.example/caps-www",
+       "https://words.example/q",
+       "https://words.example/amp&ersand",
+       "https://words.example/quote%22d",
+       "https://words.example/after-all",
+       "https://words.example/upper-tag",
+       "https://words.example/in-map",
+       "https://words.example/in-svg",
+       "https://words.example/xlink"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/l/relative/deep/page",
+      "path": "/l/relative/deep/page",
+      "title": "Relative",
+      "h1": "Relative",
+      "description": "",
+      "text": "Relativescuqfdotdots",
+      "links": [
+       "https://words.example/l/relative/deep/sibling",
+       "https://words.example/l/relative/cousin",
+       "https://words.example/l/uncle",
+       "https://words.example/l/relative/deep/page",
+       "https://words.example/l/relative/deep",
+       "https://words.example/l/relative"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/l/landed",
+      "path": "/l/landed",
+      "title": "Landed",
+      "h1": "Landed",
+      "description": "",
+      "text": "Landednext, from a page whose address ends in a slashitself",
+      "links": [
+       "https://words.example/l/landed/next",
+       "https://words.example/l/landed"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/l/base",
+      "path": "/l/base",
+      "title": "Base",
+      "h1": "Base",
+      "description": "",
+      "text": "Baseb",
+      "links": [
+       "https://words.example/l/from-base"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/l/order",
+      "path": "/l/order",
+      "title": "Order",
+      "h1": "Order",
+      "description": "",
+      "text": "magain",
+      "links": [
+       "https://words.example/o/footer-first",
+       "https://words.example/o/nav",
+       "https://words.example/o/main",
+       "https://words.example/o/in-header-form"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/xhtml",
+      "path": "/x/xhtml",
+      "title": "XHTML",
+      "h1": "XHTML",
+      "description": "",
+      "text": "XHTMLServed as application/xhtml+xml.",
+      "links": [
+       "https://words.example/from-xhtml"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/removed",
+      "path": "/x/removed",
+      "title": "Removed",
+      "h1": "",
+      "description": "",
+      "text": "header text stays one twoa form outside a header staysthreetextarea staystemplate four",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/main",
+      "path": "/x/main",
+      "title": "Main",
+      "h1": "Main",
+      "description": "",
+      "text": "Maininside main",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/two-mains",
+      "path": "/x/two-mains",
+      "title": "Two mains",
+      "h1": "",
+      "description": "",
+      "text": "first mainsecond main",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/empty-main",
+      "path": "/x/empty-main",
+      "title": "Empty main",
+      "h1": "",
+      "description": "",
+      "text": "body text, because main has none",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/blank-main",
+      "path": "/x/blank-main",
+      "title": "Blank main",
+      "h1": "",
+      "description": "",
+      "text": "",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/main-of-script",
+      "path": "/x/main-of-script",
+      "title": "Main of script",
+      "h1": "",
+      "description": "",
+      "text": "body text, because main has only a script",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/main-in-footer",
+      "path": "/x/main-in-footer",
+      "title": "Main in footer",
+      "h1": "",
+      "description": "",
+      "text": "body text",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/whitespace",
+      "path": "/x/whitespace",
+      "title": "Whitespace",
+      "h1": "",
+      "description": "",
+      "text": "a b c d pre formatted lines efghij k l",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/long",
+      "path": "/x/long",
+      "title": "Long",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": false
+     },
+     {
+      "url": "https://words.example/x/empty",
+      "path": "/x/empty",
+      "title": "",
+      "h1": "",
+      "description": "",
+      "text": "",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/text-only",
+      "path": "/x/text-only",
+      "title": "",
+      "h1": "",
+      "description": "",
+      "text": "Just text, with no markup at all, and a bare link: https://words.example/not-a-link",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/malformed",
+      "path": "/x/malformed",
+      "title": "Malformed",
+      "h1": "Unclosed bold italic tailparastray textcellnextlinkblock in a linkend",
+      "description": "",
+      "text": "Unclosed bold italic tailparastray textcellnextlinkblock in a linkend",
+      "links": [
+       "https://words.example/from-malformed"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://words.example/x/fragment",
+      "path": "/x/fragment",
+      "title": "",
+      "h1": "No html, head or body element",
+      "description": "",
+      "text": "No html, head or body elementOnly a fragment.x",
+      "links": [
+       "https://words.example/from-fragment"
+      ],
+      "kind": "page",
+      "kindSure": true
+     }
+    ],
+    "homeHtml": {
+     "characters": 1827,
+     "sha256": "8d0125c9adb340a509fdfbd6fce32a7c53f0ca059683ae193cc72c9c6165d4f9"
+    },
+    "robotsBlocked": false
+   },
+   "asked": [
+    "https://words.example/",
+    "https://words.example/robots.txt",
+    "https://words.example/sitemap.xml",
+    "https://words.example/t/plain",
+    "https://words.example/t/two-of-each",
+    "https://words.example/t/none",
+    "https://words.example/t/svg-title",
+    "https://words.example/t/og-description",
+    "https://words.example/t/both-descriptions",
+    "https://words.example/t/empty-description",
+    "https://words.example/t/blank-description",
+    "https://words.example/t/description-no-content",
+    "https://words.example/t/description-wrong-attribute",
+    "https://words.example/t/long",
+    "https://words.example/t/entities",
+    "https://words.example/t/heading-with-markup",
+    "https://words.example/t/title-in-body",
+    "https://words.example/l/links",
+    "https://words.example/l/relative/deep/page",
+    "https://words.example/l/moved",
+    "https://words.example/l/landed",
+    "https://words.example/l/away",
+    "https://words.example/l/base",
+    "https://words.example/l/landed/",
+    "https://words.example/l/landed/",
+    "https://other.example/elsewhere",
+    "https://words.example/l/order",
+    "https://words.example/x/data",
+    "https://words.example/x/gone",
+    "https://words.example/x/error",
+    "https://words.example/x/xhtml",
+    "https://words.example/x/removed",
+    "https://words.example/x/main",
+    "https://words.example/x/two-mains",
+    "https://words.example/x/empty-main",
+    "https://words.example/x/blank-main",
+    "https://words.example/x/main-of-script",
+    "https://words.example/x/main-in-footer",
+    "https://words.example/x/whitespace",
+    "https://words.example/x/long",
+    "https://words.example/x/empty",
+    "https://words.example/x/text-only",
+    "https://words.example/x/malformed",
+    "https://words.example/x/fragment",
+    "https://words.example/a",
+    "https://words.example/l/about",
+    "https://words.example/l/rel",
+    "https://words.example/up",
+    "https://words.example/norm",
+    "https://words.example/dir/dot",
+    "https://words.example/proto",
+    "https://www.words.example/www",
+    "http://words.example/http",
+    "https://words.example:8443/port",
+    "https://words.example/Caps",
+    "https://words.example/spaced",
+    "https://words.example/tabin",
+    "https://words.example/nlin",
+    "https://words.example/file.png",
+    "https://words.example/file.jpgx",
+    "https://words.example/x.html",
+    "https://words.example/x.php",
+    "https://words.example/x.htm",
+    "https://words.example/png",
+    "https://words.example/a.b/c",
+    "https://words.example/dup",
+    "https://words.example/%C3%BC%C3%B1%C3%AD",
+    "https://words.example/sp%20ace",
+    "https://words.example/%7Etilde",
+    "https://words.example/a%20b",
+    "https://words.example/trailing/",
+    "https://www.words.example/caps-www",
+    "https://words.example/q",
+    "https://words.example/amp&ersand",
+    "https://words.example/quote%22d",
+    "https://words.example/after-all",
+    "https://words.example/upper-tag",
+    "https://words.example/in-map",
+    "https://words.example/in-svg",
+    "https://words.example/xlink",
+    "https://words.example/l/relative/deep/sibling",
+    "https://words.example/l/relative/cousin",
+    "https://words.example/l/uncle",
+    "https://words.example/l/relative/deep",
+    "https://words.example/l/relative",
+    "https://words.example/l/landed/next",
+    "https://words.example/l/from-base",
+    "https://words.example/o/footer-first",
+    "https://words.example/o/nav",
+    "https://words.example/o/main",
+    "https://words.example/o/in-header-form",
+    "https://words.example/from-xhtml",
+    "https://words.example/from-malformed",
+    "https://words.example/from-fragment"
+   ],
+   "progress": [
+    1,
+    5,
+    9,
+    13,
+    17,
+    19,
+    20,
+    24,
+    28,
+    32,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34,
+    34
+   ]
+  },
+  "kinds.example": {
+   "result": {
+    "origin": "https://kinds.example",
+    "host": "kinds.example",
+    "pages": [
+     {
+      "url": "https://kinds.example/",
+      "path": "/",
+      "title": "Kinds — home",
+      "h1": "Kinds",
+      "description": "",
+      "text": "KindsPost1 MarchText.",
+      "links": [
+       "https://kinds.example/ld/article",
+       "https://kinds.example/blog",
+       "https://kinds.example/news",
+       "https://kinds.example/resources",
+       "https://kinds.example/insights",
+       "https://kinds.example/journal",
+       "https://kinds.example/guides",
+       "https://kinds.example/articles",
+       "https://kinds.example/post",
+       "https://kinds.example/learn",
+       "https://kinds.example/stories",
+       "https://kinds.example/notes",
+       "https://kinds.example/shop/blog",
+       "https://kinds.example/blogs",
+       "https://kinds.example/about-og",
+       "https://kinds.example/about-og-caps",
+       "https://kinds.example/about-og-website",
+       "https://kinds.example/about-og-name",
+       "https://kinds.example/about-og-second",
+       "https://kinds.example/about-og-padded",
+       "https://kinds.example/ld/blogposting",
+       "https://kinds.example/ld/plain-article",
+       "https://kinds.example/ld/news-article",
+       "https://kinds.example/ld/tech-article",
+       "https://kinds.example/ld/webpage",
+       "https://kinds.example/ld/product",
+       "https://kinds.example/ld/spaced",
+       "https://kinds.example/ld/array",
+       "https://kinds.example/ld/graph",
+       "https://kinds.example/ld/second-script",
+       "https://kinds.example/ld/in-body",
+       "https://kinds.example/ld/json-type",
+       "https://kinds.example/ld/type-caps",
+       "https://kinds.example/ld/type-charset",
+       "https://kinds.example/ld/longer-name",
+       "https://kinds.example/ld/single-quotes",
+       "https://kinds.example/ld/lower",
+       "https://kinds.example/ld/broken-json",
+       "https://kinds.example/blog/first-post",
+       "https://kinds.example/docs/blog/nested-post",
+       "https://kinds.example/BLOG/Upper-Post",
+       "https://kinds.example/guides/setup",
+       "https://kinds.example/article/a",
+       "https://kinds.example/articles/a",
+       "https://kinds.example/post/a",
+       "https://kinds.example/posts/a",
+       "https://kinds.example/news/a",
+       "https://kinds.example/guide/a",
+       "https://kinds.example/resources/a",
+       "https://kinds.example/insights/a",
+       "https://kinds.example/learn/a",
+       "https://kinds.example/journal/a",
+       "https://kinds.example/stories/a",
+       "https://kinds.example/notes/a",
+       "https://kinds.example/blog/tag/x",
+       "https://kinds.example/blog/tags/x",
+       "https://kinds.example/blog/page/2",
+       "https://kinds.example/blog/category/a",
+       "https://kinds.example/blog/categories/a",
+       "https://kinds.example/blog/author/jo",
+       "https://kinds.example/blog/tagged",
+       "https://kinds.example/blog/2026/dated-post",
+       "https://kinds.example/blog/post.html",
+       "https://kinds.example/weblog/a",
+       "https://kinds.example/blogs/a",
+       "https://kinds.example/s/article-time",
+       "https://kinds.example/s/article-no-time",
+       "https://kinds.example/s/time-no-article",
+       "https://kinds.example/s/time-no-datetime",
+       "https://kinds.example/s/time-outside",
+       "https://kinds.example/s/empty-datetime",
+       "https://kinds.example/w/597",
+       "https://kinds.example/w/598",
+       "https://kinds.example/w/599",
+       "https://kinds.example/w/600",
+       "https://kinds.example/w/601",
+       "https://kinds.example/w/900",
+       "https://kinds.example/w/main-short",
+       "https://kinds.example/w/spaced-out",
+       "https://kinds.example/w/in-script"
+      ],
+      "kind": "page",
+      "kindSure": true,
+      "html": {
+       "characters": 3515,
+       "sha256": "7b7d2f35191a48f35eeda26df2875cb8314ae3eb1930fbd01d63b26a859b9af5"
+      }
+     },
+     {
+      "url": "https://kinds.example/ld/article",
+      "path": "/ld/article",
+      "title": "Ends like a listing",
+      "h1": "Ends like a listing",
+      "description": "",
+      "text": "Ends like a listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog",
+      "path": "/blog",
+      "title": "Blog listing",
+      "h1": "Blog listing",
+      "description": "",
+      "text": "Blog listingPost1 MarchText.A few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/news",
+      "path": "/news",
+      "title": "News listing, address ending in a slash",
+      "h1": "News listing, address ending in a slash",
+      "description": "",
+      "text": "News listing, address ending in a slashPost1 MarchText.A few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/resources",
+      "path": "/resources",
+      "title": "Resources listing",
+      "h1": "Resources listing",
+      "description": "",
+      "text": "Resources listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/insights",
+      "path": "/insights",
+      "title": "Insights listing",
+      "h1": "Insights listing",
+      "description": "",
+      "text": "Insights listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/journal",
+      "path": "/journal",
+      "title": "Journal listing",
+      "h1": "Journal listing",
+      "description": "",
+      "text": "Journal listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/guides",
+      "path": "/guides",
+      "title": "Guides listing",
+      "h1": "Guides listing",
+      "description": "",
+      "text": "Guides listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/articles",
+      "path": "/articles",
+      "title": "Articles listing",
+      "h1": "Articles listing",
+      "description": "",
+      "text": "Articles listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/post",
+      "path": "/post",
+      "title": "Post listing",
+      "h1": "Post listing",
+      "description": "",
+      "text": "Post listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/learn",
+      "path": "/learn",
+      "title": "Learn is not a listing",
+      "h1": "Learn is not a listing",
+      "description": "",
+      "text": "Learn is not a listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/stories",
+      "path": "/stories",
+      "title": "Stories is not a listing",
+      "h1": "Stories is not a listing",
+      "description": "",
+      "text": "Stories is not a listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/notes",
+      "path": "/notes",
+      "title": "Notes is not a listing",
+      "h1": "Notes is not a listing",
+      "description": "",
+      "text": "Notes is not a listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/shop/blog",
+      "path": "/shop/blog",
+      "title": "A listing under another path",
+      "h1": "A listing under another path",
+      "description": "",
+      "text": "A listing under another pathA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blogs",
+      "path": "/blogs",
+      "title": "Blogs is not a listing",
+      "h1": "Blogs is not a listing",
+      "description": "",
+      "text": "Blogs is not a listingA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/about-og",
+      "path": "/about-og",
+      "title": "og:type article",
+      "h1": "og:type article",
+      "description": "",
+      "text": "og:type articleA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/about-og-caps",
+      "path": "/about-og-caps",
+      "title": "og:type ARTICLE",
+      "h1": "og:type ARTICLE",
+      "description": "",
+      "text": "og:type ARTICLEA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/about-og-website",
+      "path": "/about-og-website",
+      "title": "og:type website, with an article and a date",
+      "h1": "og:type website, with an article and a date",
+      "description": "",
+      "text": "og:type website, with an article and a datePost1 MarchText.A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/about-og-name",
+      "path": "/about-og-name",
+      "title": "og:type under name, not property",
+      "h1": "og:type under name, not property",
+      "description": "",
+      "text": "og:type under name, not propertyA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/about-og-second",
+      "path": "/about-og-second",
+      "title": "og:type twice",
+      "h1": "og:type twice",
+      "description": "",
+      "text": "og:type twiceA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/about-og-padded",
+      "path": "/about-og-padded",
+      "title": "og:type with spaces",
+      "h1": "og:type with spaces",
+      "description": "",
+      "text": "og:type with spacesA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/blogposting",
+      "path": "/ld/blogposting",
+      "title": "BlogPosting",
+      "h1": "BlogPosting",
+      "description": "",
+      "text": "BlogPostingA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/plain-article",
+      "path": "/ld/plain-article",
+      "title": "Article",
+      "h1": "Article",
+      "description": "",
+      "text": "ArticleA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/news-article",
+      "path": "/ld/news-article",
+      "title": "NewsArticle",
+      "h1": "NewsArticle",
+      "description": "",
+      "text": "NewsArticleA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/tech-article",
+      "path": "/ld/tech-article",
+      "title": "TechArticle",
+      "h1": "TechArticle",
+      "description": "",
+      "text": "TechArticleA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/webpage",
+      "path": "/ld/webpage",
+      "title": "WebPage",
+      "h1": "WebPage",
+      "description": "",
+      "text": "WebPageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/product",
+      "path": "/ld/product",
+      "title": "Product",
+      "h1": "Product",
+      "description": "",
+      "text": "ProductA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/spaced",
+      "path": "/ld/spaced",
+      "title": "Spaced",
+      "h1": "Spaced",
+      "description": "",
+      "text": "SpacedA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/array",
+      "path": "/ld/array",
+      "title": "Array of types",
+      "h1": "Array of types",
+      "description": "",
+      "text": "Array of typesA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/graph",
+      "path": "/ld/graph",
+      "title": "Graph",
+      "h1": "Graph",
+      "description": "",
+      "text": "GraphA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/second-script",
+      "path": "/ld/second-script",
+      "title": "Second script",
+      "h1": "Second script",
+      "description": "",
+      "text": "Second scriptA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/in-body",
+      "path": "/ld/in-body",
+      "title": "In the body",
+      "h1": "In the body",
+      "description": "",
+      "text": "In the bodyA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/json-type",
+      "path": "/ld/json-type",
+      "title": "Plain JSON script",
+      "h1": "Plain JSON script",
+      "description": "",
+      "text": "Plain JSON scriptA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/type-caps",
+      "path": "/ld/type-caps",
+      "title": "Type in capitals",
+      "h1": "Type in capitals",
+      "description": "",
+      "text": "Type in capitalsA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/type-charset",
+      "path": "/ld/type-charset",
+      "title": "Type with a parameter",
+      "h1": "Type with a parameter",
+      "description": "",
+      "text": "Type with a parameterA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/longer-name",
+      "path": "/ld/longer-name",
+      "title": "A longer type name",
+      "h1": "A longer type name",
+      "description": "",
+      "text": "A longer type nameA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/single-quotes",
+      "path": "/ld/single-quotes",
+      "title": "Single quotes",
+      "h1": "Single quotes",
+      "description": "",
+      "text": "Single quotesA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/lower",
+      "path": "/ld/lower",
+      "title": "Lower case",
+      "h1": "Lower case",
+      "description": "",
+      "text": "Lower caseA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/ld/broken-json",
+      "path": "/ld/broken-json",
+      "title": "Broken JSON",
+      "h1": "Broken JSON",
+      "description": "",
+      "text": "Broken JSONA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/first-post",
+      "path": "/blog/first-post",
+      "title": "A post",
+      "h1": "A post",
+      "description": "",
+      "text": "A postA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/docs/blog/nested-post",
+      "path": "/docs/blog/nested-post",
+      "title": "A post under another path",
+      "h1": "A post under another path",
+      "description": "",
+      "text": "A post under another pathA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/BLOG/Upper-Post",
+      "path": "/BLOG/Upper-Post",
+      "title": "A post in capitals",
+      "h1": "A post in capitals",
+      "description": "",
+      "text": "A post in capitalsA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/guides/setup",
+      "path": "/guides/setup",
+      "title": "A guide, address ending in a slash",
+      "h1": "A guide, address ending in a slash",
+      "description": "",
+      "text": "A guide, address ending in a slashA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/article/a",
+      "path": "/article/a",
+      "title": "article/",
+      "h1": "article/",
+      "description": "",
+      "text": "article/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/articles/a",
+      "path": "/articles/a",
+      "title": "articles/",
+      "h1": "articles/",
+      "description": "",
+      "text": "articles/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/post/a",
+      "path": "/post/a",
+      "title": "post/",
+      "h1": "post/",
+      "description": "",
+      "text": "post/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/posts/a",
+      "path": "/posts/a",
+      "title": "posts/",
+      "h1": "posts/",
+      "description": "",
+      "text": "posts/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/news/a",
+      "path": "/news/a",
+      "title": "news/",
+      "h1": "news/",
+      "description": "",
+      "text": "news/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/guide/a",
+      "path": "/guide/a",
+      "title": "guide/",
+      "h1": "guide/",
+      "description": "",
+      "text": "guide/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/resources/a",
+      "path": "/resources/a",
+      "title": "resources/",
+      "h1": "resources/",
+      "description": "",
+      "text": "resources/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/insights/a",
+      "path": "/insights/a",
+      "title": "insights/",
+      "h1": "insights/",
+      "description": "",
+      "text": "insights/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/learn/a",
+      "path": "/learn/a",
+      "title": "learn/",
+      "h1": "learn/",
+      "description": "",
+      "text": "learn/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/journal/a",
+      "path": "/journal/a",
+      "title": "journal/",
+      "h1": "journal/",
+      "description": "",
+      "text": "journal/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/stories/a",
+      "path": "/stories/a",
+      "title": "stories/",
+      "h1": "stories/",
+      "description": "",
+      "text": "stories/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/notes/a",
+      "path": "/notes/a",
+      "title": "notes/",
+      "h1": "notes/",
+      "description": "",
+      "text": "notes/A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/tag/x",
+      "path": "/blog/tag/x",
+      "title": "A tag page",
+      "h1": "A tag page",
+      "description": "",
+      "text": "A tag pageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/tags/x",
+      "path": "/blog/tags/x",
+      "title": "A tags page",
+      "h1": "A tags page",
+      "description": "",
+      "text": "A tags pageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/page/2",
+      "path": "/blog/page/2",
+      "title": "A numbered listing page",
+      "h1": "A numbered listing page",
+      "description": "",
+      "text": "A numbered listing pageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/category/a",
+      "path": "/blog/category/a",
+      "title": "A category page",
+      "h1": "A category page",
+      "description": "",
+      "text": "A category pageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/categories/a",
+      "path": "/blog/categories/a",
+      "title": "A categories page",
+      "h1": "A categories page",
+      "description": "",
+      "text": "A categories pageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/author/jo",
+      "path": "/blog/author/jo",
+      "title": "An author page",
+      "h1": "An author page",
+      "description": "",
+      "text": "An author pageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/tagged",
+      "path": "/blog/tagged",
+      "title": "A post whose name starts like tag",
+      "h1": "A post whose name starts like tag",
+      "description": "",
+      "text": "A post whose name starts like tagA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/2026/dated-post",
+      "path": "/blog/2026/dated-post",
+      "title": "A dated post, two levels down",
+      "h1": "A dated post, two levels down",
+      "description": "",
+      "text": "A dated post, two levels downA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blog/post.html",
+      "path": "/blog/post.html",
+      "title": "A post with an extension",
+      "h1": "A post with an extension",
+      "description": "",
+      "text": "A post with an extensionA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/weblog/a",
+      "path": "/weblog/a",
+      "title": "Not the blog",
+      "h1": "Not the blog",
+      "description": "",
+      "text": "Not the blogA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/blogs/a",
+      "path": "/blogs/a",
+      "title": "Not the blog either",
+      "h1": "Not the blog either",
+      "description": "",
+      "text": "Not the blog eitherA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/s/article-time",
+      "path": "/s/article-time",
+      "title": "Article and a date",
+      "h1": "Article and a date",
+      "description": "",
+      "text": "Article and a datePost1 MarchText.A few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/s/article-no-time",
+      "path": "/s/article-no-time",
+      "title": "Article, no date",
+      "h1": "Article, no date",
+      "description": "",
+      "text": "Article, no dateText.A few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/s/time-no-article",
+      "path": "/s/time-no-article",
+      "title": "A date, no article",
+      "h1": "A date, no article",
+      "description": "",
+      "text": "A date, no article1 MarchA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/s/time-no-datetime",
+      "path": "/s/time-no-datetime",
+      "title": "Article and a time without datetime",
+      "h1": "Article and a time without datetime",
+      "description": "",
+      "text": "Article and a time without datetime1 MarchA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/s/time-outside",
+      "path": "/s/time-outside",
+      "title": "Article, and a date outside it",
+      "h1": "Article, and a date outside it",
+      "description": "",
+      "text": "Article, and a date outside itText.1 MarchA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/s/empty-datetime",
+      "path": "/s/empty-datetime",
+      "title": "Article and an empty datetime",
+      "h1": "Article and an empty datetime",
+      "description": "",
+      "text": "Article and an empty datetime1 MarchA few words.",
+      "links": [],
+      "kind": "article",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/w/597",
+      "path": "/w/597",
+      "title": "597",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/w/598",
+      "path": "/w/598",
+      "title": "598",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/w/599",
+      "path": "/w/599",
+      "title": "599",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/w/600",
+      "path": "/w/600",
+      "title": "600",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/w/601",
+      "path": "/w/601",
+      "title": "601",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/w/900",
+      "path": "/w/900",
+      "title": "900",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/w/main-short",
+      "path": "/w/main-short",
+      "title": "Short main, long body",
+      "h1": "",
+      "description": "",
+      "text": "word0 word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17 word18 word19",
+      "links": [],
+      "kind": "page",
+      "kindSure": false
+     },
+     {
+      "url": "https://kinds.example/w/spaced-out",
+      "path": "/w/spaced-out",
+      "title": "Padded",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "31bd3c218c50f708aa53e130c5efd6f27007169015c780a46d3e3e33d6afbf7a"
+      },
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://kinds.example/w/in-script",
+      "path": "/w/in-script",
+      "title": "Long script",
+      "h1": "",
+      "description": "",
+      "text": "word0 word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17 word18 word19 word20 word21 word22 word23 word24 word25 word26 word27 word28 word29 word30 word31 word32 word33 word34 word35 word36 word37 word38 word39 word40 word41 word42 word43 word44 word45 word46 word47 word48 word49 word50 word51 word52 word53 word54 word55 word56 word57 word58 word59 word60 word61 word62 word63 word64 word65 word66 word67 word68 word69 word70 word71 word72 word73 word74 word75 word76 word77 word78 word79 word80 word81 word82 word83 word84 word85 word86 word87 word88 word89 word90 word91 word92 word93 word94 word95 word96 word97 word98 word99",
+      "links": [],
+      "kind": "page",
+      "kindSure": false
+     }
+    ],
+    "homeHtml": {
+     "characters": 3515,
+     "sha256": "7b7d2f35191a48f35eeda26df2875cb8314ae3eb1930fbd01d63b26a859b9af5"
+    },
+    "robotsBlocked": false
+   },
+   "asked": [
+    "https://kinds.example/",
+    "https://kinds.example/robots.txt",
+    "https://kinds.example/sitemap.xml",
+    "https://kinds.example/ld/article",
+    "https://kinds.example/blog",
+    "https://kinds.example/news",
+    "https://kinds.example/resources",
+    "https://kinds.example/news/",
+    "https://kinds.example/insights",
+    "https://kinds.example/journal",
+    "https://kinds.example/guides",
+    "https://kinds.example/articles",
+    "https://kinds.example/post",
+    "https://kinds.example/learn",
+    "https://kinds.example/stories",
+    "https://kinds.example/notes",
+    "https://kinds.example/shop/blog",
+    "https://kinds.example/blogs",
+    "https://kinds.example/about-og",
+    "https://kinds.example/about-og-caps",
+    "https://kinds.example/about-og-website",
+    "https://kinds.example/about-og-name",
+    "https://kinds.example/about-og-second",
+    "https://kinds.example/about-og-padded",
+    "https://kinds.example/ld/blogposting",
+    "https://kinds.example/ld/plain-article",
+    "https://kinds.example/ld/news-article",
+    "https://kinds.example/ld/tech-article",
+    "https://kinds.example/ld/webpage",
+    "https://kinds.example/ld/product",
+    "https://kinds.example/ld/spaced",
+    "https://kinds.example/ld/array",
+    "https://kinds.example/ld/graph",
+    "https://kinds.example/ld/second-script",
+    "https://kinds.example/ld/in-body",
+    "https://kinds.example/ld/json-type",
+    "https://kinds.example/ld/type-caps",
+    "https://kinds.example/ld/type-charset",
+    "https://kinds.example/ld/longer-name",
+    "https://kinds.example/ld/single-quotes",
+    "https://kinds.example/ld/lower",
+    "https://kinds.example/ld/broken-json",
+    "https://kinds.example/blog/first-post",
+    "https://kinds.example/docs/blog/nested-post",
+    "https://kinds.example/BLOG/Upper-Post",
+    "https://kinds.example/guides/setup",
+    "https://kinds.example/article/a",
+    "https://kinds.example/articles/a",
+    "https://kinds.example/guides/setup/",
+    "https://kinds.example/post/a",
+    "https://kinds.example/posts/a",
+    "https://kinds.example/news/a",
+    "https://kinds.example/guide/a",
+    "https://kinds.example/resources/a",
+    "https://kinds.example/insights/a",
+    "https://kinds.example/learn/a",
+    "https://kinds.example/journal/a",
+    "https://kinds.example/stories/a",
+    "https://kinds.example/notes/a",
+    "https://kinds.example/blog/tag/x",
+    "https://kinds.example/blog/tags/x",
+    "https://kinds.example/blog/page/2",
+    "https://kinds.example/blog/category/a",
+    "https://kinds.example/blog/categories/a",
+    "https://kinds.example/blog/author/jo",
+    "https://kinds.example/blog/tagged",
+    "https://kinds.example/blog/2026/dated-post",
+    "https://kinds.example/blog/post.html",
+    "https://kinds.example/weblog/a",
+    "https://kinds.example/blogs/a",
+    "https://kinds.example/s/article-time",
+    "https://kinds.example/s/article-no-time",
+    "https://kinds.example/s/time-no-article",
+    "https://kinds.example/s/time-no-datetime",
+    "https://kinds.example/s/time-outside",
+    "https://kinds.example/s/empty-datetime",
+    "https://kinds.example/w/597",
+    "https://kinds.example/w/598",
+    "https://kinds.example/w/599",
+    "https://kinds.example/w/600",
+    "https://kinds.example/w/601",
+    "https://kinds.example/w/900",
+    "https://kinds.example/w/main-short",
+    "https://kinds.example/w/spaced-out",
+    "https://kinds.example/w/in-script"
+   ],
+   "progress": [
+    1,
+    5,
+    9,
+    13,
+    17,
+    21,
+    25,
+    29,
+    33,
+    37,
+    41,
+    45,
+    49,
+    53,
+    57,
+    61,
+    65,
+    69,
+    73,
+    77,
+    81
+   ]
+  },
+  "maps.example": {
+   "result": {
+    "origin": "https://www.maps.example",
+    "host": "www.maps.example",
+    "pages": [
+     {
+      "url": "https://www.maps.example/",
+      "path": "/",
+      "title": "Maps — home",
+      "h1": "Maps",
+      "description": "",
+      "text": "Mapshbpblocked by robots",
+      "links": [
+       "https://www.maps.example/s/from-home",
+       "https://maps.example/s/bare-host",
+       "https://www.maps.example/private/area",
+       "https://www.maps.example/s/blocked"
+      ],
+      "kind": "page",
+      "kindSure": true,
+      "html": "<!doctype html><html><head><title>Maps — home</title></head><body><h1>Maps</h1><a href=\"/s/from-home\">h</a><a href=\"https://maps.example/s/bare-host\">b</a><a href=\"/private/area\">p</a><a href=\"/s/blocked\">blocked by robots</a></body></html>"
+     },
+     {
+      "url": "https://www.maps.example/s/from-home",
+      "path": "/s/from-home",
+      "title": "Page from-home",
+      "h1": "Page from-home",
+      "description": "",
+      "text": "Page from-homeA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://maps.example/s/bare-host",
+      "path": "/s/bare-host",
+      "title": "Page on the bare host",
+      "h1": "Page on the bare host",
+      "description": "",
+      "text": "Page on the bare hostA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/url-inside-an-index",
+      "path": "/s/url-inside-an-index",
+      "title": "Page url-inside-an-index",
+      "h1": "Page url-inside-an-index",
+      "description": "",
+      "text": "Page url-inside-an-indexA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/unclosed-file",
+      "path": "/s/unclosed-file",
+      "title": "Page unclosed-file",
+      "h1": "Page unclosed-file",
+      "description": "",
+      "text": "Page unclosed-fileA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/one",
+      "path": "/s/one",
+      "title": "Page one",
+      "h1": "Page one",
+      "description": "",
+      "text": "Page oneA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/two",
+      "path": "/s/two",
+      "title": "Page two",
+      "h1": "Page two",
+      "description": "",
+      "text": "Page twoA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "http://www.maps.example/s/three",
+      "path": "/s/three",
+      "title": "Page three",
+      "h1": "Page three",
+      "description": "",
+      "text": "Page threeA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/relative",
+      "path": "/s/relative",
+      "title": "Page relative",
+      "h1": "Page relative",
+      "description": "",
+      "text": "Page relativeA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/four",
+      "path": "/s/four",
+      "title": "Page four",
+      "h1": "Page four",
+      "description": "",
+      "text": "Page fourA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/five",
+      "path": "/s/five",
+      "title": "Page five",
+      "h1": "Page five",
+      "description": "",
+      "text": "Page fiveA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/six",
+      "path": "/s/six",
+      "title": "Page six",
+      "h1": "Page six",
+      "description": "",
+      "text": "Page sixA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/seven",
+      "path": "/s/seven",
+      "title": "Page seven",
+      "h1": "Page seven",
+      "description": "",
+      "text": "Page sevenA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/eight",
+      "path": "/s/eight",
+      "title": "Page eight",
+      "h1": "Page eight",
+      "description": "",
+      "text": "Page eightA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/with-image",
+      "path": "/s/with-image",
+      "title": "Page with-image",
+      "h1": "Page with-image",
+      "description": "",
+      "text": "Page with-imageA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/two-locs-a",
+      "path": "/s/two-locs-a",
+      "title": "Page two-locs-a",
+      "h1": "Page two-locs-a",
+      "description": "",
+      "text": "Page two-locs-aA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/two-locs-b",
+      "path": "/s/two-locs-b",
+      "title": "Page two-locs-b",
+      "h1": "Page two-locs-b",
+      "description": "",
+      "text": "Page two-locs-bA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/from-another-host",
+      "path": "/s/from-another-host",
+      "title": "Page from-another-host",
+      "h1": "Page from-another-host",
+      "description": "",
+      "text": "Page from-another-hostA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/from-a-cdata-address",
+      "path": "/s/from-a-cdata-address",
+      "title": "Page from-a-cdata-address",
+      "h1": "Page from-a-cdata-address",
+      "description": "",
+      "text": "Page from-a-cdata-addressA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/from-a-sitemap-named-in-a-urlset",
+      "path": "/s/from-a-sitemap-named-in-a-urlset",
+      "title": "Page from-a-sitemap-named-in-a-urlset",
+      "h1": "Page from-a-sitemap-named-in-a-urlset",
+      "description": "",
+      "text": "Page from-a-sitemap-named-in-a-urlsetA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/from-a-nested-index",
+      "path": "/s/from-a-nested-index",
+      "title": "Page from-a-nested-index",
+      "h1": "Page from-a-nested-index",
+      "description": "",
+      "text": "Page from-a-nested-indexA few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://www.maps.example/s/from-late-0",
+      "path": "/s/from-late-0",
+      "title": "Page from-late-0",
+      "h1": "Page from-late-0",
+      "description": "",
+      "text": "Page from-late-0A few words.",
+      "links": [],
+      "kind": "page",
+      "kindSure": true
+     }
+    ],
+    "homeHtml": "<!doctype html><html><head><title>Maps — home</title></head><body><h1>Maps</h1><a href=\"/s/from-home\">h</a><a href=\"https://maps.example/s/bare-host\">b</a><a href=\"/private/area\">p</a><a href=\"/s/blocked\">blocked by robots</a></body></html>",
+    "robotsBlocked": false
+   },
+   "asked": [
+    "https://maps.example/",
+    "https://www.maps.example/",
+    "https://www.maps.example/robots.txt",
+    "https://www.maps.example/sitemap_index.xml",
+    "https://www.maps.example/extra.xml",
+    "https://www.maps.example/sm-pages.xml",
+    "https://www.maps.example/sm-nested-index.xml",
+    "https://www.maps.example/sm-missing.xml",
+    "https://other.example/sm.xml",
+    "https://www.maps.example/sm-cdata.xml",
+    "https://www.maps.example/sm-a-page.xml",
+    "https://www.maps.example/sm-from-a-urlset.xml",
+    "https://www.maps.example/sm-more.xml",
+    "https://www.maps.example/sm-late-0.xml",
+    "https://www.maps.example/s/from-home",
+    "https://maps.example/s/bare-host",
+    "https://www.maps.example/s/url-inside-an-index",
+    "https://www.maps.example/s/unclosed-file",
+    "https://www.maps.example/s/cut-off",
+    "https://www.maps.example/s/one",
+    "https://maps.example/s/two",
+    "http://www.maps.example/s/three",
+    "https://www.maps.example/s/two",
+    "https://www.maps.example/s/relative",
+    "https://www.maps.example/s/relative-no-slash",
+    "https://www.maps.example/s/four",
+    "https://www.maps.example/s/five",
+    "https://www.maps.example/s/six",
+    "https://www.maps.example/s/seven",
+    "https://www.maps.example/s/eight",
+    "https://www.maps.example/S/One",
+    "https://www.maps.example/s/nine%20ten",
+    "https://www.maps.example/s/%C3%A9",
+    "https://www.maps.example/s/with-image",
+    "https://www.maps.example/s/two-locs-a",
+    "https://www.maps.example/s/two-locs-b",
+    "https://www.maps.example/s/from-another-host",
+    "https://www.maps.example/s/from-a-cdata-address",
+    "https://www.maps.example/s/from-a-page-behind-a-sitemap-name",
+    "https://www.maps.example/s/from-a-sitemap-named-in-a-urlset",
+    "https://www.maps.example/s/from-a-nested-index",
+    "https://www.maps.example/s/from-late-0"
+   ],
+   "progress": [
+    1,
+    5,
+    8,
+    11,
+    14,
+    16,
+    19,
+    22
+   ]
+  },
+  "bulk.example": {
+   "result": {
+    "origin": "https://bulk.example",
+    "host": "bulk.example",
+    "pages": [
+     {
+      "url": "https://bulk.example/",
+      "path": "/",
+      "title": "Bulk — home",
+      "h1": "Bulk",
+      "description": "",
+      "text": "Bulk",
+      "links": [],
+      "kind": "page",
+      "kindSure": true,
+      "html": "<!doctype html><html><head><title>Bulk — home</title></head><body><h1>Bulk</h1></body></html>"
+     },
+     {
+      "url": "https://bulk.example/p/0",
+      "path": "/p/0",
+      "title": "Bulk 0",
+      "h1": "Bulk 0",
+      "description": "",
+      "text": "Bulk 0c",
+      "links": [
+       "https://bulk.example/p/0/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/1",
+      "path": "/p/1",
+      "title": "Bulk 1",
+      "h1": "Bulk 1",
+      "description": "",
+      "text": "Bulk 1c",
+      "links": [
+       "https://bulk.example/p/1/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/2",
+      "path": "/p/2",
+      "title": "Bulk 2",
+      "h1": "Bulk 2",
+      "description": "",
+      "text": "Bulk 2c",
+      "links": [
+       "https://bulk.example/p/2/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/4",
+      "path": "/p/4",
+      "title": "Bulk 4",
+      "h1": "Bulk 4",
+      "description": "",
+      "text": "Bulk 4c",
+      "links": [
+       "https://bulk.example/p/4/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/5",
+      "path": "/p/5",
+      "title": "Bulk 5",
+      "h1": "Bulk 5",
+      "description": "",
+      "text": "Bulk 5c",
+      "links": [
+       "https://bulk.example/p/5/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/6",
+      "path": "/p/6",
+      "title": "Bulk 6",
+      "h1": "Bulk 6",
+      "description": "",
+      "text": "Bulk 6c",
+      "links": [
+       "https://bulk.example/p/6/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/7",
+      "path": "/p/7",
+      "title": "Bulk 7",
+      "h1": "Bulk 7",
+      "description": "",
+      "text": "Bulk 7c",
+      "links": [
+       "https://bulk.example/p/7/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/8",
+      "path": "/p/8",
+      "title": "Bulk 8",
+      "h1": "Bulk 8",
+      "description": "",
+      "text": "Bulk 8c",
+      "links": [
+       "https://bulk.example/p/8/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/9",
+      "path": "/p/9",
+      "title": "Bulk 9",
+      "h1": "Bulk 9",
+      "description": "",
+      "text": "Bulk 9c",
+      "links": [
+       "https://bulk.example/p/9/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/11",
+      "path": "/p/11",
+      "title": "Bulk 11",
+      "h1": "Bulk 11",
+      "description": "",
+      "text": "Bulk 11c",
+      "links": [
+       "https://bulk.example/p/11/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/12",
+      "path": "/p/12",
+      "title": "Bulk 12",
+      "h1": "Bulk 12",
+      "description": "",
+      "text": "Bulk 12c",
+      "links": [
+       "https://bulk.example/p/12/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/13",
+      "path": "/p/13",
+      "title": "Bulk 13",
+      "h1": "Bulk 13",
+      "description": "",
+      "text": "Bulk 13c",
+      "links": [
+       "https://bulk.example/p/13/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/14",
+      "path": "/p/14",
+      "title": "Bulk 14",
+      "h1": "Bulk 14",
+      "description": "",
+      "text": "Bulk 14c",
+      "links": [
+       "https://bulk.example/p/14/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/15",
+      "path": "/p/15",
+      "title": "Bulk 15",
+      "h1": "Bulk 15",
+      "description": "",
+      "text": "Bulk 15c",
+      "links": [
+       "https://bulk.example/p/15/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/16",
+      "path": "/p/16",
+      "title": "Bulk 16",
+      "h1": "Bulk 16",
+      "description": "",
+      "text": "Bulk 16c",
+      "links": [
+       "https://bulk.example/p/16/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/18",
+      "path": "/p/18",
+      "title": "Bulk 18",
+      "h1": "Bulk 18",
+      "description": "",
+      "text": "Bulk 18c",
+      "links": [
+       "https://bulk.example/p/18/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/19",
+      "path": "/p/19",
+      "title": "Bulk 19",
+      "h1": "Bulk 19",
+      "description": "",
+      "text": "Bulk 19c",
+      "links": [
+       "https://bulk.example/p/19/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/20",
+      "path": "/p/20",
+      "title": "Bulk 20",
+      "h1": "Bulk 20",
+      "description": "",
+      "text": "Bulk 20c",
+      "links": [
+       "https://bulk.example/p/20/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/21",
+      "path": "/p/21",
+      "title": "Bulk 21",
+      "h1": "Bulk 21",
+      "description": "",
+      "text": "Bulk 21c",
+      "links": [
+       "https://bulk.example/p/21/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/22",
+      "path": "/p/22",
+      "title": "Bulk 22",
+      "h1": "Bulk 22",
+      "description": "",
+      "text": "Bulk 22c",
+      "links": [
+       "https://bulk.example/p/22/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/23",
+      "path": "/p/23",
+      "title": "Bulk 23",
+      "h1": "Bulk 23",
+      "description": "",
+      "text": "Bulk 23c",
+      "links": [
+       "https://bulk.example/p/23/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/25",
+      "path": "/p/25",
+      "title": "Bulk 25",
+      "h1": "Bulk 25",
+      "description": "",
+      "text": "Bulk 25c",
+      "links": [
+       "https://bulk.example/p/25/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/26",
+      "path": "/p/26",
+      "title": "Bulk 26",
+      "h1": "Bulk 26",
+      "description": "",
+      "text": "Bulk 26c",
+      "links": [
+       "https://bulk.example/p/26/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/27",
+      "path": "/p/27",
+      "title": "Bulk 27",
+      "h1": "Bulk 27",
+      "description": "",
+      "text": "Bulk 27c",
+      "links": [
+       "https://bulk.example/p/27/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/28",
+      "path": "/p/28",
+      "title": "Bulk 28",
+      "h1": "Bulk 28",
+      "description": "",
+      "text": "Bulk 28c",
+      "links": [
+       "https://bulk.example/p/28/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/29",
+      "path": "/p/29",
+      "title": "Bulk 29",
+      "h1": "Bulk 29",
+      "description": "",
+      "text": "Bulk 29c",
+      "links": [
+       "https://bulk.example/p/29/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/30",
+      "path": "/p/30",
+      "title": "Bulk 30",
+      "h1": "Bulk 30",
+      "description": "",
+      "text": "Bulk 30c",
+      "links": [
+       "https://bulk.example/p/30/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/32",
+      "path": "/p/32",
+      "title": "Bulk 32",
+      "h1": "Bulk 32",
+      "description": "",
+      "text": "Bulk 32c",
+      "links": [
+       "https://bulk.example/p/32/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/33",
+      "path": "/p/33",
+      "title": "Bulk 33",
+      "h1": "Bulk 33",
+      "description": "",
+      "text": "Bulk 33c",
+      "links": [
+       "https://bulk.example/p/33/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/34",
+      "path": "/p/34",
+      "title": "Bulk 34",
+      "h1": "Bulk 34",
+      "description": "",
+      "text": "Bulk 34c",
+      "links": [
+       "https://bulk.example/p/34/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/35",
+      "path": "/p/35",
+      "title": "Bulk 35",
+      "h1": "Bulk 35",
+      "description": "",
+      "text": "Bulk 35c",
+      "links": [
+       "https://bulk.example/p/35/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/36",
+      "path": "/p/36",
+      "title": "Bulk 36",
+      "h1": "Bulk 36",
+      "description": "",
+      "text": "Bulk 36c",
+      "links": [
+       "https://bulk.example/p/36/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/37",
+      "path": "/p/37",
+      "title": "Bulk 37",
+      "h1": "Bulk 37",
+      "description": "",
+      "text": "Bulk 37c",
+      "links": [
+       "https://bulk.example/p/37/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/39",
+      "path": "/p/39",
+      "title": "Bulk 39",
+      "h1": "Bulk 39",
+      "description": "",
+      "text": "Bulk 39c",
+      "links": [
+       "https://bulk.example/p/39/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/40",
+      "path": "/p/40",
+      "title": "Bulk 40",
+      "h1": "Bulk 40",
+      "description": "",
+      "text": "Bulk 40c",
+      "links": [
+       "https://bulk.example/p/40/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/41",
+      "path": "/p/41",
+      "title": "Bulk 41",
+      "h1": "Bulk 41",
+      "description": "",
+      "text": "Bulk 41c",
+      "links": [
+       "https://bulk.example/p/41/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/42",
+      "path": "/p/42",
+      "title": "Bulk 42",
+      "h1": "Bulk 42",
+      "description": "",
+      "text": "Bulk 42c",
+      "links": [
+       "https://bulk.example/p/42/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/43",
+      "path": "/p/43",
+      "title": "Bulk 43",
+      "h1": "Bulk 43",
+      "description": "",
+      "text": "Bulk 43c",
+      "links": [
+       "https://bulk.example/p/43/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/44",
+      "path": "/p/44",
+      "title": "Bulk 44",
+      "h1": "Bulk 44",
+      "description": "",
+      "text": "Bulk 44c",
+      "links": [
+       "https://bulk.example/p/44/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/46",
+      "path": "/p/46",
+      "title": "Bulk 46",
+      "h1": "Bulk 46",
+      "description": "",
+      "text": "Bulk 46c",
+      "links": [
+       "https://bulk.example/p/46/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/47",
+      "path": "/p/47",
+      "title": "Bulk 47",
+      "h1": "Bulk 47",
+      "description": "",
+      "text": "Bulk 47c",
+      "links": [
+       "https://bulk.example/p/47/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/48",
+      "path": "/p/48",
+      "title": "Bulk 48",
+      "h1": "Bulk 48",
+      "description": "",
+      "text": "Bulk 48c",
+      "links": [
+       "https://bulk.example/p/48/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/49",
+      "path": "/p/49",
+      "title": "Bulk 49",
+      "h1": "Bulk 49",
+      "description": "",
+      "text": "Bulk 49c",
+      "links": [
+       "https://bulk.example/p/49/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/50",
+      "path": "/p/50",
+      "title": "Bulk 50",
+      "h1": "Bulk 50",
+      "description": "",
+      "text": "Bulk 50c",
+      "links": [
+       "https://bulk.example/p/50/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/51",
+      "path": "/p/51",
+      "title": "Bulk 51",
+      "h1": "Bulk 51",
+      "description": "",
+      "text": "Bulk 51c",
+      "links": [
+       "https://bulk.example/p/51/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/53",
+      "path": "/p/53",
+      "title": "Bulk 53",
+      "h1": "Bulk 53",
+      "description": "",
+      "text": "Bulk 53c",
+      "links": [
+       "https://bulk.example/p/53/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/54",
+      "path": "/p/54",
+      "title": "Bulk 54",
+      "h1": "Bulk 54",
+      "description": "",
+      "text": "Bulk 54c",
+      "links": [
+       "https://bulk.example/p/54/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/55",
+      "path": "/p/55",
+      "title": "Bulk 55",
+      "h1": "Bulk 55",
+      "description": "",
+      "text": "Bulk 55c",
+      "links": [
+       "https://bulk.example/p/55/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/56",
+      "path": "/p/56",
+      "title": "Bulk 56",
+      "h1": "Bulk 56",
+      "description": "",
+      "text": "Bulk 56c",
+      "links": [
+       "https://bulk.example/p/56/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/57",
+      "path": "/p/57",
+      "title": "Bulk 57",
+      "h1": "Bulk 57",
+      "description": "",
+      "text": "Bulk 57c",
+      "links": [
+       "https://bulk.example/p/57/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/58",
+      "path": "/p/58",
+      "title": "Bulk 58",
+      "h1": "Bulk 58",
+      "description": "",
+      "text": "Bulk 58c",
+      "links": [
+       "https://bulk.example/p/58/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/60",
+      "path": "/p/60",
+      "title": "Bulk 60",
+      "h1": "Bulk 60",
+      "description": "",
+      "text": "Bulk 60c",
+      "links": [
+       "https://bulk.example/p/60/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/61",
+      "path": "/p/61",
+      "title": "Bulk 61",
+      "h1": "Bulk 61",
+      "description": "",
+      "text": "Bulk 61c",
+      "links": [
+       "https://bulk.example/p/61/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/62",
+      "path": "/p/62",
+      "title": "Bulk 62",
+      "h1": "Bulk 62",
+      "description": "",
+      "text": "Bulk 62c",
+      "links": [
+       "https://bulk.example/p/62/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/63",
+      "path": "/p/63",
+      "title": "Bulk 63",
+      "h1": "Bulk 63",
+      "description": "",
+      "text": "Bulk 63c",
+      "links": [
+       "https://bulk.example/p/63/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/64",
+      "path": "/p/64",
+      "title": "Bulk 64",
+      "h1": "Bulk 64",
+      "description": "",
+      "text": "Bulk 64c",
+      "links": [
+       "https://bulk.example/p/64/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/65",
+      "path": "/p/65",
+      "title": "Bulk 65",
+      "h1": "Bulk 65",
+      "description": "",
+      "text": "Bulk 65c",
+      "links": [
+       "https://bulk.example/p/65/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/67",
+      "path": "/p/67",
+      "title": "Bulk 67",
+      "h1": "Bulk 67",
+      "description": "",
+      "text": "Bulk 67c",
+      "links": [
+       "https://bulk.example/p/67/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/68",
+      "path": "/p/68",
+      "title": "Bulk 68",
+      "h1": "Bulk 68",
+      "description": "",
+      "text": "Bulk 68c",
+      "links": [
+       "https://bulk.example/p/68/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/69",
+      "path": "/p/69",
+      "title": "Bulk 69",
+      "h1": "Bulk 69",
+      "description": "",
+      "text": "Bulk 69c",
+      "links": [
+       "https://bulk.example/p/69/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/70",
+      "path": "/p/70",
+      "title": "Bulk 70",
+      "h1": "Bulk 70",
+      "description": "",
+      "text": "Bulk 70c",
+      "links": [
+       "https://bulk.example/p/70/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/71",
+      "path": "/p/71",
+      "title": "Bulk 71",
+      "h1": "Bulk 71",
+      "description": "",
+      "text": "Bulk 71c",
+      "links": [
+       "https://bulk.example/p/71/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/72",
+      "path": "/p/72",
+      "title": "Bulk 72",
+      "h1": "Bulk 72",
+      "description": "",
+      "text": "Bulk 72c",
+      "links": [
+       "https://bulk.example/p/72/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/74",
+      "path": "/p/74",
+      "title": "Bulk 74",
+      "h1": "Bulk 74",
+      "description": "",
+      "text": "Bulk 74c",
+      "links": [
+       "https://bulk.example/p/74/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/75",
+      "path": "/p/75",
+      "title": "Bulk 75",
+      "h1": "Bulk 75",
+      "description": "",
+      "text": "Bulk 75c",
+      "links": [
+       "https://bulk.example/p/75/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/76",
+      "path": "/p/76",
+      "title": "Bulk 76",
+      "h1": "Bulk 76",
+      "description": "",
+      "text": "Bulk 76c",
+      "links": [
+       "https://bulk.example/p/76/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/77",
+      "path": "/p/77",
+      "title": "Bulk 77",
+      "h1": "Bulk 77",
+      "description": "",
+      "text": "Bulk 77c",
+      "links": [
+       "https://bulk.example/p/77/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/78",
+      "path": "/p/78",
+      "title": "Bulk 78",
+      "h1": "Bulk 78",
+      "description": "",
+      "text": "Bulk 78c",
+      "links": [
+       "https://bulk.example/p/78/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/79",
+      "path": "/p/79",
+      "title": "Bulk 79",
+      "h1": "Bulk 79",
+      "description": "",
+      "text": "Bulk 79c",
+      "links": [
+       "https://bulk.example/p/79/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/81",
+      "path": "/p/81",
+      "title": "Bulk 81",
+      "h1": "Bulk 81",
+      "description": "",
+      "text": "Bulk 81c",
+      "links": [
+       "https://bulk.example/p/81/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/82",
+      "path": "/p/82",
+      "title": "Bulk 82",
+      "h1": "Bulk 82",
+      "description": "",
+      "text": "Bulk 82c",
+      "links": [
+       "https://bulk.example/p/82/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/83",
+      "path": "/p/83",
+      "title": "Bulk 83",
+      "h1": "Bulk 83",
+      "description": "",
+      "text": "Bulk 83c",
+      "links": [
+       "https://bulk.example/p/83/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/84",
+      "path": "/p/84",
+      "title": "Bulk 84",
+      "h1": "Bulk 84",
+      "description": "",
+      "text": "Bulk 84c",
+      "links": [
+       "https://bulk.example/p/84/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/85",
+      "path": "/p/85",
+      "title": "Bulk 85",
+      "h1": "Bulk 85",
+      "description": "",
+      "text": "Bulk 85c",
+      "links": [
+       "https://bulk.example/p/85/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/86",
+      "path": "/p/86",
+      "title": "Bulk 86",
+      "h1": "Bulk 86",
+      "description": "",
+      "text": "Bulk 86c",
+      "links": [
+       "https://bulk.example/p/86/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/88",
+      "path": "/p/88",
+      "title": "Bulk 88",
+      "h1": "Bulk 88",
+      "description": "",
+      "text": "Bulk 88c",
+      "links": [
+       "https://bulk.example/p/88/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/89",
+      "path": "/p/89",
+      "title": "Bulk 89",
+      "h1": "Bulk 89",
+      "description": "",
+      "text": "Bulk 89c",
+      "links": [
+       "https://bulk.example/p/89/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/90",
+      "path": "/p/90",
+      "title": "Bulk 90",
+      "h1": "Bulk 90",
+      "description": "",
+      "text": "Bulk 90c",
+      "links": [
+       "https://bulk.example/p/90/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/91",
+      "path": "/p/91",
+      "title": "Bulk 91",
+      "h1": "Bulk 91",
+      "description": "",
+      "text": "Bulk 91c",
+      "links": [
+       "https://bulk.example/p/91/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/92",
+      "path": "/p/92",
+      "title": "Bulk 92",
+      "h1": "Bulk 92",
+      "description": "",
+      "text": "Bulk 92c",
+      "links": [
+       "https://bulk.example/p/92/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/93",
+      "path": "/p/93",
+      "title": "Bulk 93",
+      "h1": "Bulk 93",
+      "description": "",
+      "text": "Bulk 93c",
+      "links": [
+       "https://bulk.example/p/93/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/95",
+      "path": "/p/95",
+      "title": "Bulk 95",
+      "h1": "Bulk 95",
+      "description": "",
+      "text": "Bulk 95c",
+      "links": [
+       "https://bulk.example/p/95/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/96",
+      "path": "/p/96",
+      "title": "Bulk 96",
+      "h1": "Bulk 96",
+      "description": "",
+      "text": "Bulk 96c",
+      "links": [
+       "https://bulk.example/p/96/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/97",
+      "path": "/p/97",
+      "title": "Bulk 97",
+      "h1": "Bulk 97",
+      "description": "",
+      "text": "Bulk 97c",
+      "links": [
+       "https://bulk.example/p/97/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/98",
+      "path": "/p/98",
+      "title": "Bulk 98",
+      "h1": "Bulk 98",
+      "description": "",
+      "text": "Bulk 98c",
+      "links": [
+       "https://bulk.example/p/98/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/99",
+      "path": "/p/99",
+      "title": "Bulk 99",
+      "h1": "Bulk 99",
+      "description": "",
+      "text": "Bulk 99c",
+      "links": [
+       "https://bulk.example/p/99/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/100",
+      "path": "/p/100",
+      "title": "Bulk 100",
+      "h1": "Bulk 100",
+      "description": "",
+      "text": "Bulk 100c",
+      "links": [
+       "https://bulk.example/p/100/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/102",
+      "path": "/p/102",
+      "title": "Bulk 102",
+      "h1": "Bulk 102",
+      "description": "",
+      "text": "Bulk 102c",
+      "links": [
+       "https://bulk.example/p/102/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/103",
+      "path": "/p/103",
+      "title": "Bulk 103",
+      "h1": "Bulk 103",
+      "description": "",
+      "text": "Bulk 103c",
+      "links": [
+       "https://bulk.example/p/103/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/104",
+      "path": "/p/104",
+      "title": "Bulk 104",
+      "h1": "Bulk 104",
+      "description": "",
+      "text": "Bulk 104c",
+      "links": [
+       "https://bulk.example/p/104/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/105",
+      "path": "/p/105",
+      "title": "Bulk 105",
+      "h1": "Bulk 105",
+      "description": "",
+      "text": "Bulk 105c",
+      "links": [
+       "https://bulk.example/p/105/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/106",
+      "path": "/p/106",
+      "title": "Bulk 106",
+      "h1": "Bulk 106",
+      "description": "",
+      "text": "Bulk 106c",
+      "links": [
+       "https://bulk.example/p/106/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/107",
+      "path": "/p/107",
+      "title": "Bulk 107",
+      "h1": "Bulk 107",
+      "description": "",
+      "text": "Bulk 107c",
+      "links": [
+       "https://bulk.example/p/107/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/109",
+      "path": "/p/109",
+      "title": "Bulk 109",
+      "h1": "Bulk 109",
+      "description": "",
+      "text": "Bulk 109c",
+      "links": [
+       "https://bulk.example/p/109/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/110",
+      "path": "/p/110",
+      "title": "Bulk 110",
+      "h1": "Bulk 110",
+      "description": "",
+      "text": "Bulk 110c",
+      "links": [
+       "https://bulk.example/p/110/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/111",
+      "path": "/p/111",
+      "title": "Bulk 111",
+      "h1": "Bulk 111",
+      "description": "",
+      "text": "Bulk 111c",
+      "links": [
+       "https://bulk.example/p/111/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/112",
+      "path": "/p/112",
+      "title": "Bulk 112",
+      "h1": "Bulk 112",
+      "description": "",
+      "text": "Bulk 112c",
+      "links": [
+       "https://bulk.example/p/112/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/113",
+      "path": "/p/113",
+      "title": "Bulk 113",
+      "h1": "Bulk 113",
+      "description": "",
+      "text": "Bulk 113c",
+      "links": [
+       "https://bulk.example/p/113/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     },
+     {
+      "url": "https://bulk.example/p/114",
+      "path": "/p/114",
+      "title": "Bulk 114",
+      "h1": "Bulk 114",
+      "description": "",
+      "text": "Bulk 114c",
+      "links": [
+       "https://bulk.example/p/114/child"
+      ],
+      "kind": "page",
+      "kindSure": true
+     }
+    ],
+    "homeHtml": "<!doctype html><html><head><title>Bulk — home</title></head><body><h1>Bulk</h1></body></html>",
+    "robotsBlocked": false
+   },
+   "asked": [
+    "https://bulk.example/",
+    "https://bulk.example/robots.txt",
+    "https://bulk.example/sitemap-a.xml",
+    "https://bulk.example/p/0",
+    "https://bulk.example/p/1",
+    "https://bulk.example/p/2",
+    "https://bulk.example/p/3",
+    "https://bulk.example/p/4",
+    "https://bulk.example/p/5",
+    "https://bulk.example/p/6",
+    "https://bulk.example/p/7",
+    "https://bulk.example/p/8",
+    "https://bulk.example/p/9",
+    "https://bulk.example/p/10",
+    "https://bulk.example/p/11",
+    "https://bulk.example/p/12",
+    "https://bulk.example/p/13",
+    "https://bulk.example/p/14",
+    "https://bulk.example/p/15",
+    "https://bulk.example/p/16",
+    "https://bulk.example/p/17",
+    "https://bulk.example/p/18",
+    "https://bulk.example/p/19",
+    "https://bulk.example/p/20",
+    "https://bulk.example/p/21",
+    "https://bulk.example/p/22",
+    "https://bulk.example/p/23",
+    "https://bulk.example/p/24",
+    "https://bulk.example/p/25",
+    "https://bulk.example/p/26",
+    "https://bulk.example/p/27",
+    "https://bulk.example/p/28",
+    "https://bulk.example/p/29",
+    "https://bulk.example/p/30",
+    "https://bulk.example/p/31",
+    "https://bulk.example/p/32",
+    "https://bulk.example/p/33",
+    "https://bulk.example/p/34",
+    "https://bulk.example/p/35",
+    "https://bulk.example/p/36",
+    "https://bulk.example/p/37",
+    "https://bulk.example/p/38",
+    "https://bulk.example/p/39",
+    "https://bulk.example/p/40",
+    "https://bulk.example/p/41",
+    "https://bulk.example/p/42",
+    "https://bulk.example/p/43",
+    "https://bulk.example/p/44",
+    "https://bulk.example/p/45",
+    "https://bulk.example/p/46",
+    "https://bulk.example/p/47",
+    "https://bulk.example/p/48",
+    "https://bulk.example/p/49",
+    "https://bulk.example/p/50",
+    "https://bulk.example/p/51",
+    "https://bulk.example/p/52",
+    "https://bulk.example/p/53",
+    "https://bulk.example/p/54",
+    "https://bulk.example/p/55",
+    "https://bulk.example/p/56",
+    "https://bulk.example/p/57",
+    "https://bulk.example/p/58",
+    "https://bulk.example/p/59",
+    "https://bulk.example/p/60",
+    "https://bulk.example/p/61",
+    "https://bulk.example/p/62",
+    "https://bulk.example/p/63",
+    "https://bulk.example/p/64",
+    "https://bulk.example/p/65",
+    "https://bulk.example/p/66",
+    "https://bulk.example/p/67",
+    "https://bulk.example/p/68",
+    "https://bulk.example/p/69",
+    "https://bulk.example/p/70",
+    "https://bulk.example/p/71",
+    "https://bulk.example/p/72",
+    "https://bulk.example/p/73",
+    "https://bulk.example/p/74",
+    "https://bulk.example/p/75",
+    "https://bulk.example/p/76",
+    "https://bulk.example/p/77",
+    "https://bulk.example/p/78",
+    "https://bulk.example/p/79",
+    "https://bulk.example/p/80",
+    "https://bulk.example/p/81",
+    "https://bulk.example/p/82",
+    "https://bulk.example/p/83",
+    "https://bulk.example/p/84",
+    "https://bulk.example/p/85",
+    "https://bulk.example/p/86",
+    "https://bulk.example/p/87",
+    "https://bulk.example/p/88",
+    "https://bulk.example/p/89",
+    "https://bulk.example/p/90",
+    "https://bulk.example/p/91",
+    "https://bulk.example/p/92",
+    "https://bulk.example/p/93",
+    "https://bulk.example/p/94",
+    "https://bulk.example/p/95",
+    "https://bulk.example/p/96",
+    "https://bulk.example/p/97",
+    "https://bulk.example/p/98",
+    "https://bulk.example/p/99",
+    "https://bulk.example/p/100",
+    "https://bulk.example/p/101",
+    "https://bulk.example/p/102",
+    "https://bulk.example/p/103",
+    "https://bulk.example/p/104",
+    "https://bulk.example/p/105",
+    "https://bulk.example/p/106",
+    "https://bulk.example/p/107",
+    "https://bulk.example/p/108",
+    "https://bulk.example/p/109",
+    "https://bulk.example/p/110",
+    "https://bulk.example/p/111",
+    "https://bulk.example/p/112",
+    "https://bulk.example/p/113",
+    "https://bulk.example/p/114",
+    "https://bulk.example/p/115"
+   ],
+   "progress": [
+    1,
+    4,
+    8,
+    11,
+    15,
+    18,
+    22,
+    25,
+    28,
+    32,
+    35,
+    39,
+    42,
+    46,
+    49,
+    52,
+    56,
+    59,
+    63,
+    66,
+    70,
+    73,
+    76,
+    80,
+    83,
+    87,
+    90,
+    94,
+    97,
+    100
+   ]
+  },
+  "large.example": {
+   "result": {
+    "origin": "https://large.example",
+    "host": "large.example",
+    "pages": [
+     {
+      "url": "https://large.example/",
+      "path": "/",
+      "title": "x",
+      "h1": "",
+      "description": "",
+      "text": {
+       "characters": 4000,
+       "sha256": "13299977fddd8b9b286e0f3f666acc13bc88d0c22db23d0315f789efaebb794d"
+      },
+      "links": {
+       "entries": 3320,
+       "sha256": "f77a1b96c32ccad16c3039cb2d5b2732090ca60ca77438ce7d64a0f69487055a"
+      },
+      "kind": "page",
+      "kindSure": true,
+      "html": {
+       "characters": 1456580,
+       "sha256": "0250e6fbb4b4b4810f3c57bb7305bdea5314ae845dc2c4f7c2ebccaa44bdeec9"
+      }
+     },
+     {
+      "url": "https://large.example/blog",
+      "path": "/blog",
+      "title": "x",
+      "h1": "Blog",
+      "description": "A long blog index",
+      "text": {
+       "characters": 4000,
+       "sha256": "44993a076ba0cb3f49cecdd21690d0b0d5264c295c5fe3ebca88b9ef022fba38"
+      },
+      "links": {
+       "entries": 4003,
+       "sha256": "b652d1e28162352e48e3bca348347b8ecdb983a14af68a80b05d72728571c009"
+      },
+      "kind": "page",
+      "kindSure": true
+     }
+    ],
+    "homeHtml": {
+     "characters": 1456580,
+     "sha256": "0250e6fbb4b4b4810f3c57bb7305bdea5314ae845dc2c4f7c2ebccaa44bdeec9"
+    },
+    "robotsBlocked": false
+   },
+   "asked": [
+    "https://large.example/",
+    "https://large.example/robots.txt",
+    "https://large.example/sitemap.xml",
+    "https://large.example/blog"
+   ],
+   "progress": [
+    1,
+    2
+   ]
+  },
+  "down.example": {
+   "result": {
+    "crawlError": "unreachable"
+   },
+   "asked": [
+    "https://down.example/",
+    "https://www.down.example/",
+    "http://down.example/"
+   ],
+   "progress": []
+  },
+  "blocked.example": {
+   "result": {
+    "crawlError": "blocked"
+   },
+   "asked": [
+    "https://blocked.example/",
+    "https://blocked.example/robots.txt"
+   ],
+   "progress": []
+  },
+  "forbidden.example": {
+   "result": {
+    "crawlError": "blocked"
+   },
+   "asked": [
+    "https://forbidden.example/",
+    "https://www.forbidden.example/",
+    "http://forbidden.example/",
+    "http://forbidden.example/robots.txt"
+   ],
+   "progress": []
+  }
+ },
+ "brands": {
+  "icons: largest first, under 96 dropped unless SVG": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/any.png",
+    "https://brand.example/i512.png",
+    "https://brand.example/multi.png",
+    "https://brand.example/i180.png",
+    "https://brand.example/i96.png"
+   ],
+   "stored": []
+  },
+  "icons: SVG by type and by extension": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/svg-sized.svg",
+    "https://brand.example/by-type",
+    "https://brand.example/by-ext.svg",
+    "https://brand.example/by-ext-query.svg?v=2",
+    "https://brand.example/typed-xml"
+   ],
+   "stored": []
+  },
+  "icons: rel written oddly, and links with no address": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/caps-rel.svg",
+    "https://brand.example/alternate.svg"
+   ],
+   "stored": []
+  },
+  "icons: sizes written oddly (1)": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/caps-size.png",
+    "https://brand.example/padded.png"
+   ],
+   "stored": []
+  },
+  "icons: sizes written oddly (2)": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/tabs.png",
+    "https://brand.example/one-number.png",
+    "https://brand.example/decimal.png",
+    "https://brand.example/wide.png"
+   ],
+   "stored": []
+  },
+  "icons: equal sizes keep their order; a link in the body counts": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/c.png",
+    "https://brand.example/b.png",
+    "https://brand.example/a.png",
+    "https://brand.example/in-body.png"
+   ],
+   "stored": []
+  },
+  "apple-touch-icon and the precomposed form": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/apple.png",
+    "https://brand.example/precomposed.png",
+    "https://brand.example/apple-with-more.png",
+    "https://brand.example/apple-180.png"
+   ],
+   "stored": []
+  },
+  "header images, and logo by class": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/header-1.png",
+    "https://brand.example/header-2.png",
+    "https://brand.example/class-on-ancestor.png",
+    "https://brand.example/class-on-image.png"
+   ],
+   "stored": []
+  },
+  "logo by alt and by src, in any letter case": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/alt-capitals.png",
+    "https://brand.example/alt-inside-a-word.png",
+    "https://brand.example/img/LoGo-file.png",
+    "https://brand.example/img/brand.png?name=logo"
+   ],
+   "stored": []
+  },
+  "og:image comes last; one address is listed once": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/same.svg",
+    "https://brand.example/header.png",
+    "https://brand.example/og.png"
+   ],
+   "stored": []
+  },
+  "addresses: relative, protocol-relative, another host, invalid, data": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/img/relative.png",
+    "https://cdn.example/protocol-relative.png",
+    "https://cdn.example/absolute.png",
+    "https://brand.example/padded.png",
+    "https://cdn.example/og.png"
+   ],
+   "stored": []
+  },
+  "og:image alone, and one that is not valid": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "more than six candidates: the seventh is never asked for, though it is the only good one": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/h0.svg",
+    "https://brand.example/h1.svg",
+    "https://brand.example/h2.svg",
+    "https://brand.example/h3.svg",
+    "https://brand.example/h4.svg",
+    "https://brand.example/h5.svg"
+   ],
+   "stored": []
+  },
+  "the first usable candidate is kept": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#1D4ED8",
+    "secondary": "#F97316",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/missing.png",
+    "https://brand.example/a-page.png",
+    "https://brand.example/tiny.svg",
+    "https://brand.example/good.svg"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><rect width=\"64\" height=\"64\" rx=\"12\" fill=\"#1d4ed8\"/><circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"#1d4ed8\"/><path d=\"M0 0h8\" stroke=\"#f97316\"/></svg>"
+    }
+   ]
+  },
+  "a good logo and the page's own colors together": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#7C3AED",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/logo.svg"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><rect width=\"64\" height=\"64\" rx=\"12\" fill=\"#0f766e\"/><circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"#0f766e\"/></svg>"
+    }
+   ]
+  },
+  "header SVG without xmlns": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#0F766E",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"#0f766e\" d=\"M0 0h24v24H0z\"></path><circle cx=\"12\" cy=\"12\" r=\"4\" fill=\"#f59e0b\"></circle></svg>"
+    }
+   ]
+  },
+  "header SVG with xmlns": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#BE123C",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><g fill=\"#be123c\"><rect width=\"24\" height=\"24\"></rect></g></svg>"
+    }
+   ]
+  },
+  "header SVG with only xmlns:xlink": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#1D4ED8",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 24 24\"><use xlink:href=\"#mark\" fill=\"#1d4ed8\"></use></svg>"
+    }
+   ]
+  },
+  "header SVG over 200,000 characters": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "header SVG just under 200,000 characters": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#0F766E",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": {
+      "characters": 198966,
+      "sha256": "e8557a8c753a946f1981e50763a9ad867e015c1ec9581452710f1879d9dd1362"
+     }
+    }
+   ]
+  },
+  "SVG under a logo class comes before a later header SVG": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#9333EA",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\" fill=\"#9333ea\"></rect></svg>"
+    }
+   ]
+  },
+  "SVG markup as it is written out: case, self-closing, entities, nested SVG, text": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#0EA5E9",
+    "secondary": "#E11D48",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 8 8\" preserveAspectRatio=\"xMidYMid\"><defs><linearGradient id=\"g\"><stop offset=\"0\" stop-color=\"#0ea5e9\"></stop></linearGradient></defs><rect width=\"8\" height=\"8\" fill=\"url(#g)\"></rect><text x=\"1\" y=\"5\">A &amp; B &lt; C</text><svg x=\"1\"><circle r=\"1\" fill=\"#e11d48\"></circle></svg><foreignObject><div class=\"x\">html</div></foreignObject></svg>"
+    }
+   ]
+  },
+  "an SVG elsewhere is not used": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "a header image that works is used before the header SVG": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#EA580C",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/mark.svg"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><rect width=\"64\" height=\"64\" rx=\"12\" fill=\"#ea580c\"/><circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"#ea580c\"/></svg>"
+    }
+   ]
+  },
+  "style elements in several places": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "custom property names and values": {
+   "result": {
+    "logo": null,
+    "primary": "#111827",
+    "secondary": "#7C3AED",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in the head": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in the body": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in a noscript in the head": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in a noscript in the body": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in a template": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in an SVG": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, with a media attribute": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in a comment": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in a style attribute": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, in a script": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, inside a CDATA comment in a style element": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "one color, after an unclosed style element": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "a declaration cut in two by the end of a style element": {
+   "result": {
+    "logo": null,
+    "primary": "#F59E0B",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "the last declaration of one style element and the first of the next": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "no colors anywhere": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "only neutral colors": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "two colors too close to be primary and secondary": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": "#16A34A",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "more than three stylesheet links, one on another origin": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/a.css",
+    "https://brand.example/c.css"
+   ],
+   "stored": []
+  },
+  "stylesheet links that are not exactly rel=stylesheet, relative addresses, a missing file": {
+   "result": {
+    "logo": null,
+    "primary": "#BE123C",
+    "secondary": "#0891B2",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/capitals.css",
+    "https://brand.example/css/relative.css?v=3",
+    "https://brand.example/missing.css"
+   ],
+   "stored": []
+  },
+  "a stylesheet is read to 300,000 characters": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/big.css"
+   ],
+   "stored": []
+  },
+  "inline CSS and stylesheets together: the page's own come first": {
+   "result": {
+    "logo": null,
+    "primary": "#2563EB",
+    "secondary": "#16A34A",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [
+    "https://brand.example/site.css"
+   ],
+   "stored": []
+  },
+  "theme-color: hex": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: rgb": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: a color name": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: three digits": {
+   "result": {
+    "logo": null,
+    "primary": "#00AA88",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: eight digits": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: capitals and spaces": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: empty": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: two of them, and one for dark mode": {
+   "result": {
+    "logo": null,
+    "primary": "#0C4A6E",
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color: no content, under property, in capitals": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "theme-color after CSS primaries": {
+   "result": {
+    "logo": null,
+    "primary": "#0F766E",
+    "secondary": "#F59E0B",
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"en-US\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en-US"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"en_GB\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (UK)",
+    "htmlLang": "en_GB"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"EN-au\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (Australia)",
+    "htmlLang": "EN-au"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"en\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (US)",
+    "htmlLang": "en"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"fr\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "French",
+    "htmlLang": "fr"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"fr-CA\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "French",
+    "htmlLang": "fr-CA"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"pt-PT\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "Portuguese (PT)",
+    "htmlLang": "pt-PT"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"pt\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "Portuguese (BR)",
+    "htmlLang": "pt"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"zh-TW\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": "zh-TW"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"zh-Hant-HK\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": "zh-Hant-HK"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"zh\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": "zh"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"es-MX\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "Spanish (Mexico)",
+    "htmlLang": "es-MX"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"es\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "Spanish",
+    "htmlLang": "es"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"de-AT\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "German",
+    "htmlLang": "de-AT"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"ja\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "Japanese",
+    "htmlLang": "ja"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"xx\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": "xx"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \" en-GB \"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (UK)",
+    "htmlLang": " en-GB "
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"en-GB-oxendict\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "English (UK)",
+    "htmlLang": "en-GB-oxendict"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: \"-\"": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": "-"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: none": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": null
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: empty": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": null
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: xml:lang only, and lang on body": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": null
+   },
+   "asked": [],
+   "stored": []
+  },
+  "lang: LANG in capitals": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": "Italian",
+    "htmlLang": "it"
+   },
+   "asked": [],
+   "stored": []
+  },
+  "an empty document": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": null
+   },
+   "asked": [],
+   "stored": []
+  },
+  "text with no markup": {
+   "result": {
+    "logo": null,
+    "primary": null,
+    "secondary": null,
+    "language": null,
+    "htmlLang": null
+   },
+   "asked": [],
+   "stored": []
+  },
+  "a fragment with no html element": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#0F766E",
+    "secondary": "#F59E0B",
+    "language": null,
+    "htmlLang": null
+   },
+   "asked": [
+    "https://brand.example/fragment.svg"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1 1\"><path fill=\"#f59e0b\"></path></svg>"
+    }
+   ]
+  },
+  "everything at once, on a www origin": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#1F4D3A",
+    "secondary": "#F2B544",
+    "language": "English (UK)",
+    "htmlLang": "en-GB"
+   },
+   "asked": [
+    "https://www.brand.example/brand/logo.svg",
+    "https://www.brand.example/assets/site.css"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><rect width=\"64\" height=\"64\" rx=\"12\" fill=\"#1F4D3A\"/><circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"#1F4D3A\"/><circle cx=\"46\" cy=\"18\" r=\"7\" fill=\"#F2B544\"/></svg>"
+    }
+   ]
+  },
+  "ordinary large page: blog index of 4,000 cards": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#2563EB",
+    "secondary": "#F59E0B",
+    "language": "French",
+    "htmlLang": "fr"
+   },
+   "asked": [
+    "https://brand.example/favicon-512.png",
+    "https://brand.example/logo.png",
+    "https://brand.example/site.css"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\"><rect width=\"64\" height=\"64\" rx=\"12\" fill=\"#2563eb\"/><circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"#2563eb\"/></svg>"
+    }
+   ]
+  },
+  "ordinary large page: shop home page of 2,500 products": {
+   "result": {
+    "logo": "/api/files/biz/logo.svg",
+    "primary": "#2563EB",
+    "secondary": "#0F766E",
+    "language": "French",
+    "htmlLang": "fr"
+   },
+   "asked": [
+    "https://brand.example/apple.png",
+    "https://brand.example/og.png"
+   ],
+   "stored": [
+    {
+     "key": "biz/logo.svg",
+     "type": "image/svg+xml",
+     "body": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><path fill=\"#0f766e\" d=\"M0 0h10v10z\"></path></svg>"
+    }
+   ]
+  }
+ }
+}

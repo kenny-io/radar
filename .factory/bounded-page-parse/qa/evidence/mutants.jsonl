@@ -1,0 +1,51 @@
+{"mutant":"title cut at 299","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"last title instead of first","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"h1 whitespace not collapsed","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"last h1 instead of first","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"og:description before description","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"description cut at 501","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"links to other sites kept","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"area elements count as links","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"home page not always a page","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"JSON-LD ignored","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"NewsArticle not an article","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"og:type case-sensitive","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"time must be inside article","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"word limit off by one","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"words counted from body only","file":"pageReader.ts","sameAsMain":"NOT NOTICED","otherAnalysisTests":"NOT NOTICED"}
+{"mutant":"nav text kept","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"every form removed","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"text from body only","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"text cut at 4001","file":"pageReader.ts","sameAsMain":"noticed","failed":"3"}
+{"mutant":"child sitemap address not trimmed","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"any loc under sitemap","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"page address not trimmed (harmless: URL trims)","file":"pageReader.ts","sameAsMain":"NOT NOTICED","otherAnalysisTests":"NOT NOTICED"}
+{"mutant":"sitemap addresses of other sites kept","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"sitemap parsed as HTML","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"\"any\" is 64","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"icon of exactly 96 dropped","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"smallest icon first","file":"pageReader.ts","sameAsMain":"noticed","failed":"5"}
+{"mutant":"SVG icon by type only","file":"pageReader.ts","sameAsMain":"noticed","failed":"3"}
+{"mutant":"precomposed icon ignored","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"alt match case-sensitive","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"image under a logo class ignored","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"og:image before header images","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"candidates not de-duplicated","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"SVG under a logo class ignored","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"SVG limit 150,000","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"xmlns not added","file":"pageReader.ts","sameAsMain":"noticed","failed":"6"}
+{"mutant":"style texts joined without a newline","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"only styles in head","file":"pageReader.ts","sameAsMain":"noticed","failed":"3"}
+{"mutant":"two stylesheets","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"rel contains stylesheet","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"last theme-color","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"lang from any element","file":"pageReader.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"reader keeps the query of a link","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"reader keeps a trailing slash","file":"pageReader.ts","sameAsMain":"noticed","failed":"3"}
+{"mutant":"reader: www. is another site","file":"pageReader.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"sitemap addresses queued before home links","file":"crawl.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"child sitemaps read first","file":"crawl.ts","sameAsMain":"noticed","failed":"1"}
+{"mutant":"five candidates tried","file":"brand.ts","sameAsMain":"noticed","failed":"2"}
+{"mutant":"page CSS trimmed","file":"brand.ts","sameAsMain":"NOT NOTICED","otherAnalysisTests":"NOT NOTICED"}
+{"mutants":49,"noticedBySameAsMain":46,"noticedOnlyByOtherTests":0,"notNoticed":["words counted from body only","page address not trimmed (harmless: URL trims)","page CSS trimmed"],"couldNotApply":[]}
+scratch checkout clean
