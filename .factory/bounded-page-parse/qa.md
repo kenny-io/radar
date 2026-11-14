@@ -175,3 +175,158 @@ One mistake of my own, corrected before any number here was taken: my first `fet
 - The mutation check changed files only in that scratch copy; `git status --short` in the worktree shows only `.factory/bounded-page-parse/qa.md`, `.factory/bounded-page-parse/qa/` and the `verification.md` that is not mine. Nothing under `src/` was changed, nothing committed, pushed or stashed.
 - `.data/` in the worktree (git-ignored; created by my end-to-end test and my full-suite runs at 03:23) is removed.
 - Logs of the suite runs stay in the scratch directory `…/scratchpad/qa/`; their summary lines are in `qa/evidence/regression-runs.txt`.
+
+---
+
+# Round 2: the fixes for D1 to D5, on `283e71d0`
+
+Revision under test: `283e71d0` (same branch, same worktree; round 1 above is as it was written, on `1e6ecd47`). Base: a fresh checkout of mine of `b3ad2d50`, removed at the end; the base's full-suite numbers are round 1's (the base has not changed). Same machine, Node and cheerio; throwaway Postgres 16 on `127.0.0.1:55473`, stopped at the end. No network, no browser (no UI is affected). Date: 2026-11-14.
+
+Round 2 evidence is in `qa/evidence/r2/`; round 1's files are untouched. New probes: `busy2.mjs`, `busy3.mjs`, `kills.mjs`, `budget.mjs`, `caps.mjs` + `caps-compare.mjs`, `brandcost.mjs`, `mutate2.mjs`. Every round 1 probe was run again; `life.mjs`/`life-child.mjs` gained a frozen-reader case, `e2e.db.qa.test.ts` a slow-site case.
+
+## Recommendation for `283e71d0`
+
+**Ship.** D1 to D5 are fixed as decided, nothing that passed in round 1 has regressed, and results on ordinary input are still identical to the base. Two new low-severity findings are for follow-ups, not for this pull request. N1 is a narrower leftover of D1: it needs a calling process that is busy in pieces of a quarter of a second or more for 28 turns of its event loop in a row with no idle moment between them, which no job in the worker is known to do. N4: the 60 s a crawl gets is time by the clock, so on a machine where the reader gets a third of a core an ordinary site of a hundred 1.5 MB pages is cut at 84 pages; the PM should check that against the size of the production container. The two small test gaps (N3) and the wording points under D5 change nothing a user gets.
+
+## Verdict per defect
+
+| Defect | Verdict | Evidence |
+| --- | --- | --- |
+| D1 a busy caller made a document unreadable | fixed for every case of round 1 and for a caller busy in one stretch; one narrower case remains (N1) | `r2/busy-unit.jsonl`, `r2/busy-crawls-branch.jsonl`, `r2/busy-midcrawl-branch.jsonl`, `r2/busy2.jsonl`, `r2/busy3.jsonl` |
+| D2 unbounded answer | fixed | `r2/answers.jsonl`, `r2/grow-branch-1536.log`, `r2/caps-compare.txt`, `r2/same-corpus.txt`, `r2/same-stubs.txt` |
+| D3 slow readable pages, one reader | fixed as decided (60 s of the reader per crawl); analyses still share one reader, as accepted | `r2/budget.jsonl`, `r2/budget-spent.jsonl`, `r2/budget-sitemaps.jsonl`, `r2/queue.jsonl`, `r2/e2e.json` |
+| D4 a reader ended from outside | fixed | `r2/kills.jsonl`, `r2/kills-signals.jsonl`, `r2/abuse.jsonl` |
+| D5 wording | fixed, with four small points left | below |
+
+### D1
+My round 1 reproductions:
+- `busy.mjs unit`: an ordinary page, caller busy 6 s in a callback of its own, in an I/O callback, and in the same turn: **read** each time (round 1: `timed_out`).
+- `busy.mjs crawls` and `midcrawl`: B gets 13 of 13 and 41 of 41 pages. With links now bounded, A keeps the process only 3.3 s there, so I added `busy3.mjs`: A's stretch comes from a sitemap of 75,000 addresses against 10,000 robots rules (11.6 to 12.5 s of unbroken caller work, longer than the limit and the backstop). B (13 small pages and the 1.5 MB blog index), started 0, 150, 400 and 700 ms after A: **14 of 14 pages each time, the blog index with its 4,003 links**, no warning.
+
+The fix attacked (`busy2.mjs`; every answer is compared with the same document read while idle):
+- Caller busy 8 s in one stretch, starting in the same turn (before the document is handed over), 0.1 s later (reader at work), 0.5 s later (answer in the channel), and in an I/O callback; seven documents whose answers are 0.2 KB, 0.15, 0.54, 1.16, 1.89, 3.62 and 7.44 MB: **28 of 28 read, the same answer as when idle**, no second reader.
+- During a retry (reader killed from outside 50 ms in, caller busy 8 s from then): read, by the second reader. Five reads queued, then busy 8 s: all five read.
+- A stalling page while the caller is busy 9 s: `timed_out`, and the reader had ended itself 5.1 s after it got the page, by `SIGALRM`. A stalling page with an idle caller settles in 5,019 to 5,031 ms. Nothing outlives its limit by the grace when the caller is free; the only document that takes longer than one limit is one that ends two readers (the accepted two tries: 2.2 to 2.7 s for the out-of-memory page, 8.0 s for a page I had killed at 4 s twice).
+- The calling process itself frozen for 9 s (SIGSTOP, then SIGCONT): the blog index is read; a stalling page is `timed_out`.
+- The reader frozen and left frozen: killed by the backstop, `timed_out` after 7,050 ms. Frozen before it gets the page and thawed 6 s later: read.
+- A reader whose watchdog is broken (in a scratch copy I made the watchdog do nothing): a stalling page is `timed_out` after 7,056 ms by the backstop, the next page is read, three stalling pages in a row take 7.06 s each; with the caller busy 12 s as well the reader worked on for 18.9 s, since the backstop only counts while the caller is free (`r2/broken-watchdog.jsonl`).
+- Kept alive for ever? No. A caller with nothing else to do and a frozen reader ends 7.5 s after it started; with a stalling page, at 5.5 s (`r2/life.jsonl`).
+- Clock jumps: not simulated by changing the clock. `pageReader.ts` reads no wall clock (no `Date`); the limit is a timer in the reader, the backstop counts turns. Freezing either process is the nearest I could get, above and in N2.
+
+### D2
+- `answers.mjs` again: the page that answered 97 MB now answers 0.48 MB; the sitemaps that answered 181 and 362 MB answer nothing (each "address" is megabytes of text); reader peak 84 to 262 MB (was up to 1,991), the caller holds 0 to 2 MB of it (was up to 361).
+- `grow.mjs` again, caller heap limited to 1.5 GB as in round 1: **all 100 pages read, 47 MB of links kept, heap 68 MB, resident 180 MB, timer at most 19 ms late, exit 0** (round 1: dead after 13 pages).
+- Largest answer I could produce: 7.44 MB (a home page with 1.3 MB of control characters in a `<style>`; 1.4 MB of them is over 8 MB as JSON and is a failed read, as accepted). The largest page answer in my corpus is 0.54 MB and the largest sitemap answer 2.05 MB.
+- Peak memory over the whole hostile corpus (126 pages, 27 sitemaps, every way in): reader 547 MB, caller 264 MB (`r2/reads-*.jsonl`, `r2/crawl-*.jsonl`).
+- Ordinary results unchanged: my corpus and the dev stub site against the base again, **0 differences in 22,305 values**.
+- Each bound from both sides, branch against base (`caps.mjs`, 24 cases): 15 identical. The 9 that differ are the bounds doing what they say:
+  - a page of 10,001 or 30,000 links of 50 characters: the page's list ends at 10,000; the pages crawled, what each gives and the 200 links the job stores are identical;
+  - an address of 2,049 characters or more is not a link, a sitemap entry or a child sitemap (2,048 is): that page is not crawled;
+  - 1.4 MB of control characters in a `<style>`: no colours or language.
+  - The one case where a bound changes which pages are crawled without anything being over-long: a page of 12,000 links where only numbers 11,000 to 11,049 lead anywhere: base 51 pages, branch 1. An ordinary site does not look like that; I list it so it is known.
+- Nothing is cut that an ordinary large site would notice: a full sitemap of 35,000 addresses, 17,000 Japanese addresses that are 3.9 million characters once encoded (cut to 8,810, of which the crawl uses 100), an index of 150 sitemaps (the crawl follows 12), seven logo candidates (six were ever tried), a 0.5 MB `data:` logo: all identical to the base.
+- What still grows in the caller with something the site controls: the robots × addresses check (known, out of scope; now at most about 21,000 addresses a page and 83,000 a sitemap: 3.3 s and 11.6 to 12.5 s with 10,000 rules), and brand detection's own colour scan (see "Worst caller delay").
+
+### D3
+- What is counted (`budget.mjs spent`): the reader's own time for a read (3 ms, 290 ms, 3,186 ms), not the time a read waited in the queue (0 ms counted, 3.2 s waited); a failed read its real time; a timed-out one 5,000; the out-of-memory page 5,000 (it took 2.5 s in two readers); a page whose first reader was killed from outside, the second reader's time only.
+- 40 pages of about 3 s each: **20 pages read, the crawl ends after 60.6 s**, one warning `has had its 60 s of the page reader: stopped with 20 page(s) read`. With two stalling pages among them: 17 pages, 61.8 s. Twelve sitemaps of 3.3 s each and then such pages: 7 pages, 60.9 s (a sitemap's time counts).
+- Through the job (`r2/e2e.json`): a stub site with 30 such pages added: job `done` after 67 s, "20 pages on …".
+- `queue.mjs` again: unchanged where the other crawls need less than 60 s (B, 31 pages: 0.18 s alone, 26 s beside one crawl of eight 3 s pages, 78 s beside three, 20 s beside stalling ones; identical results). Where they need more: two 40-page crawls at once each stop at 20 pages after 119 and 122 s, and B beside them finishes at 122 s. So the wait is now bounded by the other crawls' 60 s each, as the brief says, where it was minutes each.
+- An ordinary heavy site, 100 pages of 1.5 MB: all 100 read, crawl 21.9 and 24.7 s in two runs, 21 to 22 s of the reader's time (0.20 to 0.27 s a page), so a margin of about 2.8 times on this machine. The allowance is time by the clock, though, and the margin goes with the machine's speed: see N4.
+
+### D4
+- A warm reader killed at 41 moments from 0 to 400 ms into the 1.5 MB blog index, a new reader killed at 41 moments from 0 to 200 ms after it is started, a reader killed at 26 moments while its 3.8 MB answer is on its way: **108 of 108 read, 0 wrong answers**.
+- SIGTERM, SIGINT, SIGHUP, SIGQUIT, SIGSEGV, SIGABRT, SIGUSR2 from outside, 100 ms in: read by a second reader each time.
+- Twice in a row: `crashed`, the next page read, three readers started. Three kills with six pages asked for at once: the first `crashed`, the other five read, settled in the order asked. A kill while six reads wait behind a 3 s page: all seven read, in order.
+- Not retried for ever: the out-of-memory page ends exactly two readers (2.2 to 2.4 s, five times running), then ordinary pages are read. A timed-out document is not tried again.
+- Both of round 1's reproductions now read the page.
+
+### D5
+The header of `pageReader.ts`, the comments on its constants, `crawl.ts` and `DIVERGENCES.md` O11 now say what the code does, and the numbers in them agree with mine (document written out as JSON: 22 to 38 ms for 2 MB of control characters; 20,888 shortest links a page; reader 364 to 477 MB on dense pages; 100 heavy pages about 22 to 25 s; the brief's "no failure alert" is withdrawn). Four small points:
+- `READER_GRACE_MS`: "It counts only time in which this process was free to read the reader's answer", and the header's "This process keeps no limit of its own … a document is not unreadable because its answer was read late". True for a caller busy in one stretch; not for one busy in pieces (N1).
+- Header: the answer is bounded "so a document cannot make this process hold more than it sent". A 1.3 MB page can answer 7.4 MB. Bounded, at 8 MB.
+- Header: "6 ms for 72,000 sitemap addresses" with no robots.txt. I measured 32 and 37 ms for 75,000 (2 ms for 35,000; 3 to 5 ms for a page's 20,888 links, as it says). Well under 100 ms either way.
+- `crawl.ts`: "one crawl costs the reader at most that plus one document's limit". A document that ends two readers has two tries and is counted as one limit, so up to three such documents add their second try: at most 15 s more.
+
+## New findings
+
+### N1. A caller busy in pieces, not in one stretch, can still make an ordinary large document `timed_out` (Low; a narrower leftover of D1)
+The backstop counts turns of the caller's event loop that are at least 250 ms apart, 28 of them. A caller that does 250 ms or more of work in every turn, with no idle turn between, moves only one channel-buffer of the document or the answer per turn (about 64 KB here), so a document and answer of more than about 1.8 MB together are not through after 28 turns, and the reader is killed with the answer on its way.
+- `npx tsx .factory/bounded-page-parse/qa/busy2.mjs choppy` (`r2/busy2.jsonl`): the caller does 20, 60, 120, 260, 500 or 1,000 ms of work in every turn for 15 s.
+  - a 100-byte page, and the 1.5 MB blog index: read in all 12 cases (the blog index needs 24 to 25 turns: 3 short of the backstop);
+  - a 1.97 MB sitemap of 45,000 addresses: `timed_out` at 260 and 500 ms a turn;
+  - a home page whose answer is 3.6 MB: `timed_out` at 260 and 500 ms; one whose answer is 7.4 MB: at 120, 260 and 500 ms.
+  - 7 of 30 lost. Expected: read, as with a caller busy 8 s in one stretch.
+- Why Low: between two pieces of real work a job normally waits for something (a fetch, a query), and in any idle moment the transfer finishes at once; the known robots × addresses stretch is one stretch per page with a fetch after it, and it does not trigger this (`busy3.mjs`). It needs something that yields with `setImmediate` or already-settled promises between pieces for 7 s or more. Linux's channel buffer is larger than macOS's, so it should take a larger document there; not measured.
+- For the engineer, through the PM: count a turn only when the turn before it was idle, or start the count again whenever the channel has moved.
+
+### N2. Two ways a reader's end is still read as the document's fault (Low; by design, listed so they are known)
+- A reader frozen from outside for longer than the limit in the middle of a document and then thawed is ended by its watchdog at once: `timed_out` for a page that needs half a second (`busy2.mjs frozen`: frozen 0.15 s in, thawed 6 s later). Thawed after 2 s: read. Frozen before it gets the page: read. The reader's clock runs while it is frozen.
+- `SIGALRM` sent to the reader from outside is `timed_out` with no second try (`r2/kills-signals.jsonl`); every other signal gets the second try. The code says nothing else sends it.
+
+### N3. Two parts of the fixes that no test holds (Low; tests only)
+`mutate2.mjs` undoes one part of a fix at a time in a scratch copy and runs `pageReader.busy.test.ts`, `pageReader.test.ts` and `unreadable.test.ts`. **24 of 27 are noticed** (`r2/mutants.jsonl`): every bound of D2, every rule of D3, the watchdog's signal, its time and its being told a document is done, the backstop's existence and its counting turns instead of time, the second try and there being only one. So the new tests do fail without the fixes. Not noticed:
+- a failure decided on the reader's exit alone, before its channel has closed. The test written for exactly this ("an answer the reader wrote before it was killed is used") passes either way here, because on this machine the answer is delivered before the exit is; nothing holds the rule.
+- links past a page's total being skipped instead of ending the list: in the test, the late short link does not fit either way.
+- the reader not keeping the caller alive while it has a document: the backstop's own timer keeps the caller alive, so the `ref()` changes nothing that can be observed. Not a gap.
+
+### N4. The crawl's 60 s is time by the clock in the reader, so a slow or crowded machine shortens an ordinary heavy crawl (Low; for the PM to weigh against production's size)
+- `npx tsx .factory/bounded-page-parse/qa/budget.mjs heavy`: 100 ordinary pages of 1.5 MB: 100 read, 21 to 22 s of the reader.
+- `npx tsx .factory/bounded-page-parse/qa/budget.mjs heavy-loaded`: the same site while 20 other processes each keep a core busy on this 10-core machine: the reader takes 0.62 to 0.84 s a page, and the crawl stops with **84 of the 100 pages** and the 60 s warning (`r2/budget-heavy-loaded.jsonl`). The job goes on with 84 pages.
+- It takes both an unusually heavy site (a hundred pages of 1.5 MB of markup; a hundred pages of 150 KB need about 3 s) and a reader that gets a third of a core. I do not know the production container's size, so I cannot say how near that is.
+
+## Regressions from round 1's passes
+
+| AC | Round 2 | Evidence |
+| --- | --- | --- |
+| AC1 | pass | no cheerio import in `crawl.ts`, `brand.ts` or their imports; unchanged |
+| AC2 | pass, with the accepted change | The brief's table at 5 s, 58 rows: a timed-out read settles after 5,010 to 5,178 ms (the mutation run was going on beside it; 5,019 to 5,031 ms alone), longest crawl 5,209 ms, nothing at 6 s (`r2/brief-shapes.jsonl`). Hostile corpus: longest read 5,228 ms with seven other processes of mine running. A document that ends two readers takes two tries: 1.5 to 3.7 s for the 17 that do, never over two limits. |
+| AC3 | pass | Brief's shapes: at most 12 ms late (other runs of mine going on beside it). Hostile corpus through the reader functions: at most 33 ms. Through `crawlSite` with a two-line robots.txt: at most 35 ms for pages (round 1: 228 ms; links are bounded), 161 ms for a sitemap of 75,000 addresses (robots × addresses, known). |
+| AC4 | pass | Out-of-memory page: `crashed` after two readers, caller alive, next read works. Dense pages ten times in one reader, 364 to 477 MB. |
+| AC5 | pass | `r2/abuse.jsonl`, `r2/kills.jsonl`: 300 reads at once right and in order, listeners `message:1 exit:1 error:1 disconnect:1`, 0 unhandled rejections or exceptions in any probe. |
+| AC6 | pass | `r2/strikes.jsonl`, `r2/crawl-*.jsonl`, and the job: 8 tests (`r2/e2e.json`): unreadable home page → `failed` at once with the designed copy (out-of-memory home page now after 2.6 s); other page stalls → `done` without it; brand cannot read the home page → no logo, default colours; slow site → `done` with 20 pages; reader cannot run → `queued`. |
+| AC7 | pass | 0 differences in 22,305 values against the base; the engineer's record is unchanged and still passes. |
+| AC8 | pass | 17 ways for the caller to end: idle reader gone 25 to 27 ms after it; a reader inside a document gone 5.04 to 5.06 s after the document began (round 1: 7.05 s); none left. Idle stop at 30.02 s. From another directory: the plain "could not run" Error. |
+| AC9 | pass | `npm run typecheck`: 0 errors. `npx vitest run src/server/services/analysis src/server/services/realCover`: 11 files, 715 passed. Full suite, 216 files, 4,057 tests (28 more than round 1, all in the three analysis test files). No database, two runs: the two failures of the base (`realCover.db.test.ts` in `afterAll`, `openrouter.qa.test.ts`), 3,395 and 3,396 passed. With a database, two runs: `openrouter.qa.test.ts` both times; in the first also five tests in the shared-database files `idle.cadence.db`, `idle.db`, `lifecycle/dispatch`, `lifecycle/guides` (the class the base shows, round 1), in the second nothing else (3,981 passed). One thing to know: in the first no-database run one test of `pageReader.test.ts` failed once, its own timing check ("with the limit every document gets": this process's timer 168 ms late where it allows 100), with the machine at load average 32 from the PM's runs and mine together. It passed in the other three full runs and in three runs of the file alone, and my own measurements of the same thing are 4 to 12 ms. I take it for the machine, not the code, but that check can fail on a crowded machine. `r2/regression-runs.txt` |
+| AC10 | pass, with the four points under D5 | |
+
+Outcome changes in the hostile corpus since round 1, all of them explained: a `<style>` of 2 MB of control characters is now a failed read (accepted); a sitemap index of 1,000 nested sitemaps is read (it ran the reader out of memory); a home page of 50,000 apple-touch-icon links, which brand detection read in 4.7 s in round 1, was `timed_out` this time at 5.0 s (it sits at the limit; the machine was busier).
+
+## Worst caller delay (the PM's question 3)
+The engineer's figure is for the right place but is low for the worst content. With no robots.txt, the longest the caller's 10 ms timer was late:
+
+| What | Late |
+| --- | --- |
+| `brand.ts` colour scan, 1.95 MB of CSS in the page and three stylesheets of 300,000 characters, all `--a:#f00;` | **202 to 225 ms** (four runs); 236 ms on the base, which has the same code (one run, read off the screen, not kept as a file) |
+| the same, colours close to one another | 151 to 165 ms |
+| 1.9 MB of CSS in the page alone, `--a:#f00;` | 132 ms |
+| a sitemap of 75,000 addresses queued | 32 to 37 ms |
+| writing a 2 MB document of control characters to the reader | 22 to 38 ms |
+| a page of any number of links (20,888 kept) | 3 ms |
+| a lang of 1.9 MB; a stylesheet address of 1.9 MB | 18 ms; 31 ms |
+
+So about 200 to 225 ms, not 150, in the place the engineer names; I found nothing worse without a robots.txt. It is caller code the base has too (`r2/brandcost-branch.jsonl`, `r2/brandcost-max.jsonl`).
+
+## Worst numbers, round 2
+
+| What | Value |
+| --- | --- |
+| Longest settle of one read that is not a second try | 5,228 ms (other runs beside it); 5,019 to 5,031 ms alone |
+| Longest a document held the reader | 8.0 s (a 4.5 s page whose reader I killed at 4 s, twice) |
+| Longest caller event-loop delay, reader functions | 33 ms |
+| Longest caller event-loop delay, `crawlSite`/`detectBrand`, no robots.txt | 202 to 225 ms (brand colour scan) |
+| Largest answer | 7.44 MB |
+| Reader peak resident memory | 547 MB |
+| Caller peak resident memory | 264 MB; 180 MB over a 100-page crawl of the round 1 memory shape |
+| Reader lifetime after its caller is gone | 27 ms idle; 5.06 s from the start of its document |
+
+## What I could not run
+- Linux and the production container: the watchdog's signal, the channel's buffer (N1 depends on it) and memory figures are macOS's.
+- A changed system clock (see D1).
+- Alerts turned on; any real website; `next build` (the PM's).
+
+## Cleanup
+- No page reader, Postgres or helper process of mine is running. My Postgres (port 55473) is stopped and its data directory removed.
+- My base checkout and my two scratch copies for the mutation checks are removed with `git worktree remove`; the PM's `pm-main` was not touched. The mutation checks changed files only in those scratch copies.
+- In the worktree, `git status --short` shows only files under `.factory/bounded-page-parse/qa.md` and `.factory/bounded-page-parse/qa/` as mine (three probes changed, nine added, `evidence/r2/` added), and `.factory/bounded-page-parse/verification.md` modified by someone else. Nothing under `src/` was changed; nothing committed, pushed or stashed.
+- `.data/` in the worktree (git-ignored; made by my job-level test and suite runs) is removed. Logs of the suite runs stay in the scratch directory; their summary lines are in `qa/evidence/r2/regression-runs.txt`.

@@ -1,0 +1,29 @@
+{"defect":"D1","mutant":"the backstop goes by the clock again, not by turns of the event loop","verdict":"noticed","failedTests":{"pageReader.busy":"3","pageReader":"0","unreadable":"0"}}
+{"defect":"D1","mutant":"a failure is decided on exit alone, before the channel has closed","verdict":"NOT NOTICED","failedTests":{"pageReader.busy":"0","pageReader":"0","unreadable":"0"}}
+{"defect":"D1","mutant":"the watchdog ends the reader with SIGKILL, like anyone else","verdict":"noticed","failedTests":{"pageReader.busy":"3","pageReader":"14","unreadable":"7"}}
+{"defect":"D1","mutant":"the watchdog never ends the reader (only the backstop does)","verdict":"noticed","failedTests":{"pageReader.busy":"1","pageReader":"13","unreadable":"5"}}
+{"defect":"D1","mutant":"no backstop: a frozen reader is never killed","verdict":"noticed","failedTests":{"pageReader.busy":"7","pageReader":"0","unreadable":"0"}}
+{"defect":"D1","mutant":"the watchdog gives two seconds more than the limit","verdict":"noticed","failedTests":{"pageReader.busy":"1","pageReader":"13","unreadable":"6"}}
+{"defect":"D1","mutant":"the watchdog is not told the document is done","verdict":"noticed","failedTests":{"pageReader.busy":"3","pageReader":"1","unreadable":"1"}}
+{"defect":"D4","mutant":"no second try","verdict":"noticed","failedTests":{"pageReader.busy":"5","pageReader":"1","unreadable":"0"}}
+{"defect":"D4","mutant":"fifty tries","verdict":"noticed","failedTests":{"pageReader.busy":"1","pageReader":"5","unreadable":"21"}}
+{"defect":"D4","mutant":"a reader its watchdog ended is tried again","verdict":"noticed","failedTests":{"pageReader.busy":"3","pageReader":"14","unreadable":"7"}}
+{"defect":"D2","mutant":"a link of any length","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"D2","mutant":"links past the total are skipped, not the end of the list","verdict":"NOT NOTICED","failedTests":{"pageReader.busy":"0","pageReader":"0","unreadable":"0"}}
+{"defect":"D2","mutant":"no total for a page's links","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"3","unreadable":"1"}}
+{"defect":"D2","mutant":"a child sitemap address of any length","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"2","unreadable":"0"},"timedOut":"spawnSync npx ENOBUFS"}
+{"defect":"D2","mutant":"any number of child sitemaps","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"D2","mutant":"a sitemap entry of any length","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"2","unreadable":"0"},"timedOut":"spawnSync npx ENOBUFS"}
+{"defect":"D2","mutant":"no total for a sitemap's addresses","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"D2","mutant":"every logo candidate is sent","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"D2","mutant":"an answer of any size is sent","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"D2","mutant":"answers up to 16 MB","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"D3","mutant":"the crawl has no time allowance","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"0","unreadable":"4"}}
+{"defect":"D3","mutant":"ten minutes instead of sixty seconds","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"0","unreadable":"1"}}
+{"defect":"D3","mutant":"a timed-out document counts for nothing","verdict":"noticed","failedTests":{"pageReader.busy":"1","pageReader":"0","unreadable":"1"}}
+{"defect":"D3","mutant":"a document that is read counts for nothing","verdict":"noticed","failedTests":{"pageReader.busy":"1","pageReader":"0","unreadable":"1"}}
+{"defect":"D3","mutant":"pages are not counted, only sitemaps","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"0","unreadable":"4"}}
+{"defect":"life","mutant":"the reader keeps this process alive after its document","verdict":"noticed","failedTests":{"pageReader.busy":"0","pageReader":"1","unreadable":"0"}}
+{"defect":"life","mutant":"the reader does not keep this process alive while it has a document","verdict":"NOT NOTICED","failedTests":{"pageReader.busy":"0","pageReader":"0","unreadable":"0"}}
+{"mutants":27,"noticed":24,"notNoticed":["a failure is decided on exit alone, before the channel has closed","links past the total are skipped, not the end of the list","the reader does not keep this process alive while it has a document"],"couldNotApply":[]}
+scratch checkout clean

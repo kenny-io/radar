@@ -1,0 +1,2 @@
+{"group":"sitemaps","oneSuchSitemapMs":3271,"outcome":"read: 1 addresses"}
+{"scenario":"twelve slow sitemaps, then 40 pages of about 3 s","outcome":"7 page(s) read","crawlMs":60944,"lateMs":6.6,"loopMaxMs":16.5,"fetches":22,"readersStarted":0,"warnings":["[crawl] https://site.example has had its 60 s of the page reader: stopped with 7 page(s) read"]}

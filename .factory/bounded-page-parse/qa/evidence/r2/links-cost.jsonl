@@ -1,0 +1,18 @@
+{"what":"home page links","n":4000,"robots":"no robots.txt","crawlMs":278,"lateMs":2.4,"loopMaxMs":12.4,"fetches":4003,"pages":1}
+{"what":"home page links","n":4000,"robots":"a two-line robots.txt","crawlMs":90,"lateMs":10.4,"loopMaxMs":20.4,"fetches":4003,"pages":1}
+{"what":"home page links","n":4000,"robots":"a robots.txt of 20 rules","crawlMs":77,"lateMs":2.7,"loopMaxMs":12.7,"fetches":4003,"pages":1}
+{"what":"home page links","n":35000,"robots":"no robots.txt","crawlMs":463,"lateMs":2.9,"loopMaxMs":12.9,"fetches":20891,"pages":1}
+{"what":"home page links","n":35000,"robots":"a two-line robots.txt","crawlMs":482,"lateMs":18.7,"loopMaxMs":28.7,"fetches":20891,"pages":1}
+{"what":"home page links","n":35000,"robots":"a robots.txt of 20 rules","crawlMs":475,"lateMs":24.3,"loopMaxMs":34.3,"fetches":20891,"pages":1}
+{"what":"home page links","n":85000,"robots":"no robots.txt","crawlMs":669,"lateMs":2.7,"loopMaxMs":12.7,"fetches":20891,"pages":1}
+{"what":"home page links","n":85000,"robots":"a two-line robots.txt","crawlMs":698,"lateMs":25.5,"loopMaxMs":35.6,"fetches":20891,"pages":1}
+{"what":"home page links","n":85000,"robots":"a robots.txt of 20 rules","crawlMs":680,"lateMs":26.1,"loopMaxMs":36.1,"fetches":20891,"pages":1}
+{"what":"home page links","n":160000,"robots":"no robots.txt","crawlMs":999,"lateMs":4.6,"loopMaxMs":14.6,"fetches":20891,"pages":1}
+{"what":"home page links","n":160000,"robots":"a two-line robots.txt","crawlMs":1031,"lateMs":30.2,"loopMaxMs":40.2,"fetches":20891,"pages":1}
+{"what":"home page links","n":160000,"robots":"a robots.txt of 20 rules","crawlMs":1010,"lateMs":33.3,"loopMaxMs":43.4,"fetches":20891,"pages":1}
+{"what":"sitemap addresses","n":35000,"robots":"no robots.txt","crawlMs":623,"lateMs":2.1,"loopMaxMs":12.1,"fetches":35003,"pages":1}
+{"what":"sitemap addresses","n":35000,"robots":"a two-line robots.txt","crawlMs":657,"lateMs":44.7,"loopMaxMs":54.7,"fetches":35003,"pages":1}
+{"what":"sitemap addresses","n":35000,"robots":"a robots.txt of 20 rules","crawlMs":632,"lateMs":53.7,"loopMaxMs":63.7,"fetches":35003,"pages":1}
+{"what":"sitemap addresses","n":75000,"robots":"no robots.txt","crawlMs":1615,"lateMs":32.4,"loopMaxMs":42.4,"fetches":75003,"pages":1}
+{"what":"sitemap addresses","n":75000,"robots":"a two-line robots.txt","crawlMs":1673,"lateMs":111.8,"loopMaxMs":121.8,"fetches":75003,"pages":1}
+{"what":"sitemap addresses","n":75000,"robots":"a robots.txt of 20 rules","crawlMs":1683,"lateMs":120,"loopMaxMs":130,"fetches":75003,"pages":1}

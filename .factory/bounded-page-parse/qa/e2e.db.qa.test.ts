@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { analyse, F, type StubAnswer } from '../../safe-logo-decode/qa/e2e-shared';
 import { crawlFailCopy } from '@/server/services/analysis/jobs';
+import { readSitemap } from '@/server/services/analysis/pageReader';
 
 const HAS_DB = !!process.env.DATABASE_URL;
 const evidence: Record<string, unknown>[] = [];
@@ -26,7 +27,7 @@ const OUT_OF_MEMORY = `<!doctype html><html><body><p>${Array.from({ length: 3000
 const THROWS = `<!doctype html><html><head><title>x</title></head><body><main>${'<span>'.repeat(12_000)}text</main></body></html>`;
 let warn: ReturnType<typeof vi.spyOn>;
 beforeEach(() => { M.fetched.length = 0; vi.spyOn(console, 'info').mockImplementation(() => {}); warn = vi.spyOn(console, 'warn').mockImplementation(() => {}); return () => { warn.mockRestore(); }; });
-afterAll(async () => { await F.cleanup(); fs.writeFileSync(path.join(__dirname, 'evidence/e2e.json'), JSON.stringify(evidence, null, 1)); fs.rmSync(path.resolve('.data/bounded-page-parse-qa'), { recursive: true, force: true }); });
+afterAll(async () => { await F.cleanup(); fs.writeFileSync(path.join(__dirname, process.env.QA_E2E_EVIDENCE || 'evidence/e2e.json'), JSON.stringify(evidence, null, 1)); fs.rmSync(path.resolve('.data/bounded-page-parse-qa'), { recursive: true, force: true }); });
 const note = (scenario: string, r: Awaited<ReturnType<typeof analyse>>, extra: Record<string, unknown> = {}) => evidence.push({ scenario, jobStatus: r.job.status, jobError: r.job.error ?? null, attempts: r.job.attempts, maxAttempts: r.job.maxAttempts, ms: r.ms, phase: r.progress?.phase, failed: r.progress?.failed ?? null, site: r.progress?.results?.site ?? null, brandLine: r.progress?.results?.brand ?? null, logo: r.profile.brand.logo, colours: [r.profile.brand.primary, r.profile.brand.secondary], result: r.job.result, fetched: M.fetched.length, warnings: warn.mock.calls.map(c => c.join(' ')), ...extra });
 
 describe.skipIf(!HAS_DB)('analysis.site with documents the page reader cannot read (real queue, real database, stub site and stub AI)', () => {
@@ -67,7 +68,24 @@ describe.skipIf(!HAS_DB)('analysis.site with documents the page reader cannot re
     expect([r.profile.brand.primary, r.profile.brand.secondary]).toEqual([r.defaults.primary, r.defaults.secondary]);
     expect(warn.mock.calls.map(c => c.join(' '))).toEqual(['[brand] the home page could not be read (timed_out): no logo, colors or language from it']);
   });
+  // Round 2 (D3): a site whose pages each take the reader about 3 s, 30 of them linked from the home page.
+  it('a site of slow, readable pages: the crawl stops when it has had its 60 s of the reader, and the job finishes with the pages read by then', async () => {
+    const slow = `<!doctype html><html><head><title>Slow</title></head><body><h1>Slow</h1>${'<a><table>'.repeat(80_000)}</body></html>`;
+    const r = await analyse(M.rewrite, async (p, real, url) => {
+      if (p.startsWith('/slow-')) return page(slow, url);
+      if (p !== '/') return undefined;
+      return page((await real()).body.toString('utf8').replace('<body>', `<body>${Array.from({ length: 30 }, (_, i) => `<a href="/slow-${i}">s</a>`).join('')}`), url);
+    });
+    note('30 slow pages (round 2, D3)', r);
+    expect(r.job.status).toBe('done'); expect(r.progress.phase).toBe('done');
+    const got = Number(/^(\d+) pages/.exec(r.progress.results.site)![1]);
+    expect(got).toBeGreaterThan(5); expect(got).toBeLessThan(31); // not all 30 slow pages and the stub site's own
+    expect(warn.mock.calls.map(c => c.join(' ')).filter(w => /has had its 60 s of the page reader/.test(w))).toHaveLength(1);
+    expect(r.ms).toBeLessThan(60_000 + 5_000 + 30_000); // the allowance, one more document, and the rest of the job
+  });
   it('the reader cannot run (started where cheerio is not found): the job is put back for its second attempt, not failed as an unreachable site', async () => {
+    // No reader may be left from the test before: one that is already running was started where cheerio is found.
+    await readSitemap('<urlset/>', 'https://site.example/sitemap.xml', 'site.example', { idleMs: 1 }); await new Promise(resolve => setTimeout(resolve, 500));
     const cwd = vi.spyOn(process, 'cwd').mockReturnValue(os.tmpdir());
     let r: Awaited<ReturnType<typeof analyse>>;
     try { r = await analyse(M.rewrite, null); } finally { cwd.mockRestore(); }

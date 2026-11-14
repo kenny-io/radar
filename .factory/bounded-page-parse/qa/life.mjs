@@ -20,6 +20,7 @@ const SCENARIOS = [
   ['wait-idle', 'SIGKILL', 500], ['wait-busy', 'SIGKILL', 7000 + 500],
   ['wait-idle', 'SIGINT', 500], ['wait-busy', 'SIGHUP', 7000 + 500],
   ['cold-kill', 'SIGKILL', 7000 + 500], ['cold-exit', null, 7000 + 500],
+  ['return-frozen', null, 500], // round 2: a frozen reader must not keep the caller alive past the backstop (limit + 2 s)
 ];
 
 for (const [scenario, signal, allowed] of SCENARIOS) {
@@ -37,7 +38,7 @@ for (const [scenario, signal, allowed] of SCENARIOS) {
       if (row.reader) reader = row.reader;
       if (row.self) self = row.self;
       if (row.busy) busyAt = row.t;
-      const ready = scenario.includes('busy') || scenario.startsWith('cold') ? row.busy : row.waiting;
+      const ready = scenario.includes('busy') || scenario.includes('frozen') || scenario.startsWith('cold') ? row.busy : row.waiting;
       if (signal && ready && !signalled) { signalled = true; setTimeout(() => { try { process.kill(self, signal); } catch { /* gone */ } }, scenario.startsWith('cold') ? 30 : 100); }
     }
   });

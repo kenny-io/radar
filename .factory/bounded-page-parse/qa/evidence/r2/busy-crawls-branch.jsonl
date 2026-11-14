@@ -1,0 +1,2 @@
+{"scenario":"two crawls at once in one process: A (10,000 robots rules, 100,000 links on its home page) and B (ordinary, 13 pages)","a":"1 page(s)","ms":4319,"B":"13 page(s) of 13: / /page-0 /page-1 /page-2 /page-3 /page-4 /page-5 /page-6 /page-7 /page-8 /page-9 /page-10 /page-11","bMs":4021,"callerLongestBusyMs":3330,"warnings":[],"expectedForB":"13 page(s), however long A keeps the process"}
+{"done":true,"unhandled":0}

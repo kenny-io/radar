@@ -23,6 +23,12 @@ if (scenario.startsWith('cold-')) {
   say({ reader: pid(), pages: first.pages.length });
   const busy = scenario.includes('busy');
   let crawl = null;
+  if (scenario.includes('frozen')) {
+    // Round 2: the reader is frozen from outside, then given an ordinary home page; this process has nothing else to do.
+    process.kill(pid(), 'SIGSTOP');
+    crawl = crawlSite(DOMAIN).then(() => say({ settled: 'read' }), e => say({ settled: e.reason || e.message }));
+    await sleep(100); say({ busy: true, reader: pid() });
+  }
   if (busy) {
     serve(site(html(STALLS)));
     crawl = crawlSite(DOMAIN).then(() => say({ settled: 'read' }), e => say({ settled: e.reason || e.message }));

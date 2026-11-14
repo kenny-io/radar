@@ -1,0 +1,1 @@
+{"scenario":"an ordinary heavy site: 100 pages of 1.5 MB","outcome":"100 page(s) read","crawlMs":21934,"lateMs":16.9,"loopMaxMs":26.9,"fetches":4103,"readersStarted":0,"warnings":[],"onePageMs":387,"countedPerPageMs":[212,211,200,203,202,221,207,200,219,206],"estimatedReaderTimeFor100PagesS":20.8}

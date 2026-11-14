@@ -1,0 +1,3 @@
+{"depth":2000,"asTheFirstDocument":"read (text at the bottomn)","afterAnotherDocument":"2 page(s)"}
+{"depth":2500,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
+{"depth":6000,"asTheFirstDocument":"CrawlError(unreachable): unreachable","afterAnotherDocument":"1 page(s)"}
