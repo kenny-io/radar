@@ -41,7 +41,7 @@ export default function PrivacyPage() {
     </ul>
 
     <h2>Security and retention</h2>
-    <p>Data is encrypted in transit. Access tokens and blog credentials are additionally encrypted at rest. We keep your data while your account is active. When you delete a business or your account, or ask us to, we delete the associated data, including Search Console data and connected-service tokens, within 30 days, except where we must keep records by law. You can disconnect Search Console at any time in Settings, or revoke Radar&rsquo;s access from your <a href="https://myaccount.google.com/permissions">Google Account permissions</a>.</p>
+    <p>Data is encrypted in transit. Access tokens and blog credentials are additionally encrypted at rest. We keep your data while your account is active. When you delete a business or your account, or ask us to, we delete the associated data, including Search Console data and connected-service tokens, within 30 days, except where we must keep records by law. Images inside articles Radar already published stay available so those articles keep working. You can disconnect Search Console at any time in Settings, or revoke Radar&rsquo;s access from your <a href="https://myaccount.google.com/permissions">Google Account permissions</a>.</p>
     <p>Financial, security and backup records may be retained where needed for legal obligations, security or recovery. Disconnecting Radar does not erase posts already published or records held by Stripe or another connected service; use that service&rsquo;s controls or contact us for assistance. Essential cookies can be blocked in your browser, but sign-in and other features may then stop working.</p>
 
     <h2>Your choices</h2>
