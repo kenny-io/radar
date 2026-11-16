@@ -255,8 +255,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .restore-line{flex:none;margin:0;padding:12px clamp(22px,4vw,48px);border-top:1px solid var(--line2);font-size:13px;line-height:1.5;color:var(--ink2);text-align:center}
 .restore-line a{font-weight:500;text-decoration-color:var(--faint);border-radius:4px;white-space:nowrap}
 .restore-line a:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
-/* Short facts on one line with a middle dot between them ("fieldnote.app · Wiped on Mon, Nov 23 at 4:05 PM"). A fact that
-   wraps starts its line without a dot: every fact carries its dot in its own left padding, and the line's left edge is cut. */
+/* Short facts on one line with a middle dot between them ("fieldnote.app · Will be wiped on Mon, Nov 23 at 4:05 PM"). A
+   fact that wraps starts its line without a dot: every fact carries its dot in its own left padding, and the line's left
+   edge is cut. Only that edge is cut: a fact longer than its line must wrap inside itself, so never give one nowrap. */
 .dot-sep{display:block;overflow:hidden}
 .dot-sep>span{display:flex;flex-wrap:wrap;margin-left:-14px}
 .dot-sep>span>span{position:relative;padding-left:14px}

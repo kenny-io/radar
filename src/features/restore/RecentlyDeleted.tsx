@@ -49,8 +49,10 @@ export function RecentlyDeleted({ items, onGone }: { items: DeletedBusiness[]; o
       <LogoTile brand={b.brand} s={30} />
       <span className="col grow" style={{ gap: 2 }}>
         <span className="small" style={{ fontWeight: 500, overflowWrap: 'anywhere' }}>{b.name}</span>
-        {/* The domain and the date, with a dot between them; on a narrow screen the date moves to its own line and the dot goes (.dot-sep). */}
-        <span className="xs sub dot-sep"><span><span style={{ overflowWrap: 'anywhere' }}>{b.domain}</span>{local && <span style={{ whiteSpace: 'nowrap' }}>{wipedOn(b.purgeAt)}</span>}</span></span>
+        {/* The domain and the date, with a dot between them; on a narrow screen the date moves to its own line and the dot
+            goes (.dot-sep). The date is never cut: where even its own line is too short it wraps, and only "at 4:05 PM"
+            is kept together. A long domain breaks where it must. */}
+        <span className="xs sub dot-sep"><span><span style={{ overflowWrap: 'anywhere' }}>{b.domain}</span>{local && <span>{wipedOn(b.purgeAt).replace(/ at (\S+) (AM|PM)$/, ' at\u00a0$1\u00a0$2')}</span>}</span></span>
       </span>
       <Btn size="sm" loading={busy === b.id} disabled={!!busy} aria-label={`Restore ${b.name}`} onClick={() => restore(b)}>Restore</Btn>
     </li>)}
