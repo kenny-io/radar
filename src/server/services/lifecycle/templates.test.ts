@@ -3,7 +3,7 @@ import { educationProgress } from './educationContent';
 import { describe, expect, it, vi } from 'vitest';
 import { LIFECYCLE_TYPES, renderLifecycle, type LifecycleData, type WorkUpdateSection } from './templates';
 const ctx = { appUrl: 'https://radar.thally.io', unsubscribeUrl: 'https://radar.thally.io/email-preferences?token=fake' };
-const data: LifecycleData = { guide: { version: 1, id: 'article_workflow', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, education: { version: 1, lesson: 'ai_visibility', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
+const data: LifecycleData = { deletedBusiness: { id: '00000000-0000-4000-8000-000000000009', name: 'Fieldnote', domain: 'fieldnote.app', deletedAt: '2026-11-16T10:00:00.000Z', purgeAt: '2026-11-23T10:00:00.000Z' }, guide: { version: 1, id: 'article_workflow', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, education: { version: 1, lesson: 'ai_visibility', context: { businessName: 'Fieldnote', gscConnected: false, access: 'workspace' } }, name: 'Alex', businessName: 'Fieldnote', trialEnd: '2026-11-07T12:00:00Z', periodEnd: '2026-12-07T12:00:00Z', amountCents: 4900, currency: 'usd', invoiceNumber: 'ABC-123', workSections: [{ eventId: '00000000-0000-4000-8000-000000000001', kind: 'brief_reply', businessId: '00000000-0000-4000-8000-000000000002', businessName: 'Fieldnote', ref: '2026-11-04', count: 3 }], resetUrl: 'https://radar.thally.io/reset-password#token=not-real' };
 describe('lifecycle templates', () => {
   it.each(LIFECYCLE_TYPES.filter(type => type !== 'ai_weekly_report'))('%s has accessible HTML, useful plain text and explicit reply contact', type => {
     const x = renderLifecycle(type, data, ctx);
@@ -19,6 +19,23 @@ describe('lifecycle templates', () => {
     expect(x.text).toContain('Email preferences:');
     expect(x.html).toContain('src="https://radar.thally.io/brand/radar-mark-email.png"');
     expect(x.html).not.toContain('◉');
+  });
+  it('the delete confirmation names the business, the wipe time and the restore page, with no token, id or unsubscribe link', () => {
+    const d: LifecycleData = { name: 'Ada', deletedBusiness: { id: '00000000-0000-4000-8000-000000000009', name: 'Lived <b>& Co</b>', domain: 'lived.example', deletedAt: '2026-11-16T10:00:00.000Z', purgeAt: '2026-11-23T10:00:00.000Z' } };
+    const x = renderLifecycle('business_deleted', d, ctx);
+    expect(x.subject).toBe('Lived <b>& Co</b> was deleted from Radar');
+    expect(x.text).toContain('You deleted Lived <b>& Co</b> (lived.example) from Radar.');
+    expect(x.text).toContain('Radar keeps it until November 23, 2026 at 10:00 AM UTC, then wipes it for good.');
+    expect(x.text).toContain('Your Radar subscription is not affected. Posts already published stay where they are.');
+    expect(x.text).toContain('Restore Lived <b>& Co</b>: https://radar.thally.io/restore\n');
+    expect(x.html).toContain('href="https://radar.thally.io/restore"');
+    expect(x.html).toContain('Lived &lt;b&gt;&amp; Co&lt;/b&gt;'); expect(x.html).not.toContain('<b>&');
+    // Transactional: the restore link is the bare signed-in page, and the footer is the plain preferences page.
+    for (const body of [x.text, x.html]) { expect(body).not.toContain('token='); expect(body).not.toContain('00000000-0000-4000-8000-000000000009'); expect(body).not.toMatch(/unsubscribe/i); }
+    expect(x.text).toMatch(/\nEmail preferences: https:\/\/radar\.thally\.io\/email-preferences$/);
+    const bad = (patch: Record<string, unknown>) => () => renderLifecycle('business_deleted', { deletedBusiness: { ...d.deletedBusiness!, ...patch } as never }, ctx);
+    for (const patch of [{ name: ' ' }, { name: 'x'.repeat(201) }, { domain: '' }, { id: 'not-an-id' }, { purgeAt: 'soon' }, { purgeAt: '2026-11-16T10:00:00.000Z' }, { deletedAt: undefined }]) expect(bad(patch)).toThrow();
+    expect(() => renderLifecycle('business_deleted', {}, ctx)).toThrow('Invalid deleted business');
   });
   it('renders exactly two education actions, escaped context and access-safe fixed CTA', () => {
     const d: LifecycleData = { education: { version: 1, lesson: 'daily_brief', context: { businessName: '<img src=x onerror=bad()>', gscConnected: false, access: 'workspace' } } };

@@ -5,7 +5,7 @@ import { EDUCATION_LESSONS, renderEducationLesson, educationProgress, type Educa
 import { FEE_CENTS, PRICE_CENTS, TRIAL_DAYS } from '@/lib/billing';
 import { FOUNDER_REPLY_TO } from '../mailIdentity';
 
-export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work_update', 'weekly_education', 'lifecycle_guide', 'ai_weekly_report'] as const;
+export const LIFECYCLE_TYPES = ['welcome', 'founder_note', 'password_reset', 'trial_started', 'invoice_paid', 'payment_failed', 'cancellation_scheduled', 'subscription_ended', 'work_update', 'weekly_education', 'lifecycle_guide', 'ai_weekly_report', 'business_deleted'] as const;
 export type LifecycleType = typeof LIFECYCLE_TYPES[number] | 'trial_ending'; // Retired type retained for historical payloads.
 export interface WorkUpdateSection {
   eventId: string;
@@ -25,6 +25,8 @@ export interface LifecycleData {
   education?: { version: 1; lesson: EducationLessonId; context: EducationContext; businessId?: string };
   trialEnd?: string; periodEnd?: string; amountCents?: number; currency?: string; invoiceNumber?: string;
   subscriptionId?: string; invoiceId?: string; attemptCount?: number; status?: string;
+  /** `business_deleted`: the one confirmation of a delete. The times are the database's, as ISO strings. */
+  deletedBusiness?: { id: string; name: string; domain: string; deletedAt: string; purgeAt: string };
 }
 export interface RenderContext { appUrl: string; unsubscribeUrl?: string }
 export interface RenderedLifecycle { preheader?: string; subject: string; text: string; html: string; replyTo: string }
@@ -154,6 +156,20 @@ export function renderLifecycle(type: LifecycleType, d: LifecycleData, ctx: Rend
       preheader = 'Your subscription invoice is paid. Here’s where to find the receipt.';
       paragraphs = [d.amountCents == null ? 'Your Radar subscription invoice is paid.' : `Your Radar subscription invoice is paid: ${money(d.amountCents, d.currency)}.`, ...(d.invoiceNumber ? [`Invoice: ${d.invoiceNumber}.`] : []), 'You can view or download the invoice in Settings → Billing, then Manage billing.'];
       cta = 'Open Billing'; href = billing; break;
+    case 'business_deleted': {
+      // Transactional: it confirms what the owner just did and is their way back in when no business is left. The
+      // link is the signed-in restore page and carries no token and no id.
+      const b = d.deletedBusiness;
+      if (!b || typeof b.name !== 'string' || !b.name.trim() || b.name.length > 200 || typeof b.domain !== 'string' || !b.domain.trim() || b.domain.length > 255
+        || !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(String(b.id)) || !(new Date(b.purgeAt).getTime() > new Date(b.deletedAt).getTime())) throw new Error('Invalid deleted business');
+      const name = b.name.trim(), until = date(b.purgeAt);
+      subject = `${name} was deleted from Radar`; heading = `${name} was deleted`;
+      preheader = `Radar keeps it until ${until}. You can restore it until then.`;
+      paragraphs = [`You deleted ${name} (${b.domain.trim()}) from Radar. It is gone from the app for everyone on the team, and Radar has stopped working on it.`,
+        `Radar keeps it until ${until}, then wipes it for good. Until then you can restore it exactly as it was.`,
+        'Your Radar subscription is not affected. Posts already published stay where they are.'];
+      cta = `Restore ${name}`; href = app('/restore'); break;
+    }
     case 'payment_failed':
       subject = 'Your Radar subscription needs attention'; heading = 'Let’s get your subscription sorted.';
       preheader = 'The latest subscription charge didn’t go through. You can check it in Billing.';

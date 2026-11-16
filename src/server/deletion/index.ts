@@ -34,10 +34,16 @@ const cancelQueuedJobs = (tx: Tx, bid: string) =>
   tx.update(schema.jobs).set({ status: 'done', result: SKIPPED_DELETED, finishedAt: sql`now()`, lockedAt: null })
     .where(and(eq(schema.jobs.businessId, bid), eq(schema.jobs.status, 'queued')));
 
-/** DEL-7 (architecture §6): the one confirmation email to the owner. This is the only call site and it does nothing
- *  yet: the next task queues it through the lifecycle queue (type `business_deleted`). Do not add another mail path. */
-async function queueDeletedEmail(_deleted: { ownerId: string; id: string; name: string; domain: string; deletedAt: string; purgeAt: string }): Promise<void> {
-  /* filled by the lifecycle task */
+/** DEL-7 (architecture §6): the one confirmation email to the owner, through the lifecycle queue. The row carries the
+ *  business id, so the wipe removes it; the dispatcher checks at send time that this delete still stands; the event
+ *  key makes a repeat a no-op. It stops being worth sending at the wipe, or after three days. */
+async function queueDeletedEmail(d: { ownerId: string; id: string; name: string; domain: string; deletedAt: string; purgeAt: string }): Promise<void> {
+  const { queueLifecycle } = await import('../services/lifecycle/queue');   // loaded on a delete only, not with every getMe
+  await queueLifecycle(db, {
+    type: 'business_deleted', userId: d.ownerId, businessId: d.id, eventKey: `business-deleted:${d.id}:${d.deletedAt}`,
+    expiresAt: new Date(Math.min(new Date(d.purgeAt).getTime(), Date.now() + 3 * 864e5)),
+    data: { deletedBusiness: { id: d.id, name: d.name.slice(0, 200), domain: d.domain, deletedAt: d.deletedAt, purgeAt: d.purgeAt } },
+  });
 }
 
 /** The business the app should open next: the first one getMe would call usable (active, a member, and not locked). */

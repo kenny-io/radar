@@ -35,6 +35,15 @@ export async function lifecycleEligible(row: Mail, payload: LifecyclePayload, no
     return row.firstAttemptAt ? current.length > 0 && current.length === d.workSections?.length : current.length > 0;
   }
   if (row.type === 'founder_note') return onboardingAllowed(u.id);
+  if (row.type === 'business_deleted') {
+    // Still the same delete, still inside its window, and the recipient is still the owner. Restored, deleted again
+    // (another delete has its own mail) or wiped meanwhile: not sent.
+    const x = d.deletedBusiness;
+    if (!x || !row.businessId || row.businessId !== x.id) return false;
+    const [b] = await db.select({ status: schema.businesses.status, ownerId: schema.businesses.ownerId, deletedAt: schema.businesses.deletedAt, purgeAt: schema.businesses.purgeAt })
+      .from(schema.businesses).where(eq(schema.businesses.id, row.businessId)).limit(1);
+    return !!b && b.status === 'deleted' && b.ownerId === u.id && !!b.deletedAt && b.deletedAt.toISOString() === x.deletedAt && !!b.purgeAt && b.purgeAt > now;
+  }
   if (row.type === 'password_reset') {
     if (!u.passwordHash) return false;
     let raw: string | null = null;
