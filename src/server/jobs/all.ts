@@ -14,6 +14,7 @@ import '../services/backlinks/jobs';
 import '../services/team/jobs';
 import './maintenance';
 import './guestCleanup';
+import './purge';
 import '../services/lifecycle/engagementJobs';
 
 import '../services/autopilot/jobs';

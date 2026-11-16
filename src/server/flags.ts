@@ -33,6 +33,10 @@ export function billingFlag(email?: string | null): boolean {
 }
 /** True when the flag names emails, so callers need the account email to decide. */
 export const billingFlagNeedsEmail = () => billingList().some(x => x.includes('@'));
+/** RADAR_PURGE: `off` stops the wipe of deleted businesses without a deploy: the hourly cron enqueues nothing and the
+ *  job does nothing (delete-business architecture §4.2). Unset or anything else leaves the wipe on. Read at call time. */
+export const purgeEnabled = () => (process.env.RADAR_PURGE || '').trim().toLowerCase() !== 'off';
+
 /** RADAR_BILLING_GRANDFATHER_BEFORE: optional ISO cutoff for the lazy grandfather in ownAccess (§21.2). Unset/invalid → null. */
 export function grandfatherCutoff(): Date | null {
   const v = (process.env.RADAR_BILLING_GRANDFATHER_BEFORE || '').trim();
