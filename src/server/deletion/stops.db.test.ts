@@ -45,6 +45,26 @@ afterEach(() => { vi.restoreAllMocks(); delete process.env.RADAR_BILLING; H.jar.
 describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
   afterAll(async () => { if (F.users.length) await db.delete(M).where(inArray(M.userId, F.users)); await F.cleanup(); });
 
+  // Everything a cron could pick up: connected Search Console with synced data, a social account due for its daily
+  // refresh, an auto-publishing blog with due entries, a daily brief, automatic social posts, the link network.
+  const seed = async (owner: TUser, status: 'active' | 'deleted') => {
+    const biz = await F.biz(owner, { status, deletedAt: new Date(Date.now() - 864e5) });
+    await db.update(B).set({ timezone: 'UTC', blog: { time: '00:00', mode: 'autopilot', autopilotAckAt: new Date().toISOString() }, briefSetup: true, briefSettings: { time: '00:00' },
+      socialAuto: { on: true, time: '00:00', platforms: ['x'] }, backlinks: { joined: true, joinedAt: new Date(Date.now() - 30 * 864e5).toISOString() }, lastActiveAt: new Date() }).where(eq(B.id, biz.id));
+    await db.insert(schema.gscConnections).values({ businessId: biz.id, status: 'connected', property: `sc-domain:${biz.domain}`, tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', stub: true }), lastSyncedThrough: addDays(todayIn('UTC'), -3) });
+    const [acct] = await db.insert(schema.socialAccounts).values({ businessId: biz.id, ch: 'x', remoteId: `x-${uniq()}`, name: 'Fieldnote', handle: 'fieldnote',
+      tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', expires_at: Date.now() + 3600e3, scope: '', stub: true }), expiresAt: new Date(Date.now() + 3600e3) }).returning();
+    await db.insert(schema.connections).values({ businessId: biz.id, type: 'wordpress', url: 'https://site.test', fields: {} });
+    const today = todayIn('UTC');
+    await db.insert(E).values([{ id: `e-${uniq()}`, businessId: biz.id, title: 'S', kw: 'k', type: 'Guide', date: today, status: 'scheduled' }, { id: `e-${uniq()}`, businessId: biz.id, title: 'A', kw: 'k', type: 'Guide', date: today, status: 'approved' },
+      { id: `e-${uniq()}`, businessId: biz.id, title: 'P', kw: 'k', type: 'Guide', date: addDays(today, 1), status: 'proposed' }]);
+    await db.insert(schema.socialPubs).values({ businessId: biz.id, sid: `s:p:x`, src: 'pack', platform: 'x', ch: 'x', acctId: acct.id, acctLabel: '@fieldnote', status: 'scheduled', date: today, time: '00:00', dueAt: new Date(Date.now() - 60e3) });
+    return { biz, acct };
+  };
+  const touched = async (x: Awaited<ReturnType<typeof seed>>) => ({
+    jobs: (await db.select({ kind: J.kind }).from(J).where(eq(J.businessId, x.biz.id))).map(j => j.kind).sort(),
+    marks: (await db.select({ key: schema.cronMarks.key }).from(schema.cronMarks).where(sql`position(${x.biz.id} in ${schema.cronMarks.key}) > 0 OR position(${x.acct.id} in ${schema.cronMarks.key}) > 0`)).map(m => m.key) });
+
   it('an open event stream ends after a delete (DEL-4)', async () => {
     const owner = await F.user(); const member = await F.user(); const biz = await F.biz(owner); await F.member(biz.id, member, 'Viewer');
     await as(member);
@@ -172,31 +192,12 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
 
   it('no cron enqueues, marks or refreshes anything for a deleted business (DEL-5)', async () => {
     const owner = await F.user(); await F.account(owner.id, { status: 'active' });
-    // Everything a cron could pick up: connected Search Console with synced data, a social account due for its daily
-    // refresh, an auto-publishing blog with due entries, a daily brief, automatic social posts, the link network.
-    const seed = async (status: 'active' | 'deleted') => {
-      const biz = await F.biz(owner, { status, deletedAt: new Date(Date.now() - 864e5) });
-      await db.update(B).set({ timezone: 'UTC', blog: { time: '00:00', mode: 'autopilot', autopilotAckAt: new Date().toISOString() }, briefSetup: true, briefSettings: { time: '00:00' },
-        socialAuto: { on: true, time: '00:00', platforms: ['x'] }, backlinks: { joined: true, joinedAt: new Date(Date.now() - 30 * 864e5).toISOString() }, lastActiveAt: new Date() }).where(eq(B.id, biz.id));
-      await db.insert(schema.gscConnections).values({ businessId: biz.id, status: 'connected', property: `sc-domain:${biz.domain}`, tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', stub: true }), lastSyncedThrough: addDays(todayIn('UTC'), -3) });
-      const [acct] = await db.insert(schema.socialAccounts).values({ businessId: biz.id, ch: 'x', remoteId: `x-${uniq()}`, name: 'Fieldnote', handle: 'fieldnote',
-        tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', expires_at: Date.now() + 3600e3, scope: '', stub: true }), expiresAt: new Date(Date.now() + 3600e3) }).returning();
-      await db.insert(schema.connections).values({ businessId: biz.id, type: 'wordpress', url: 'https://site.test', fields: {} });
-      const today = todayIn('UTC');
-      await db.insert(E).values([{ id: `e-${uniq()}`, businessId: biz.id, title: 'S', kw: 'k', type: 'Guide', date: today, status: 'scheduled' }, { id: `e-${uniq()}`, businessId: biz.id, title: 'A', kw: 'k', type: 'Guide', date: today, status: 'approved' },
-        { id: `e-${uniq()}`, businessId: biz.id, title: 'P', kw: 'k', type: 'Guide', date: addDays(today, 1), status: 'proposed' }]);
-      await db.insert(schema.socialPubs).values({ businessId: biz.id, sid: `s:p:x`, src: 'pack', platform: 'x', ch: 'x', acctId: acct.id, acctLabel: '@fieldnote', status: 'scheduled', date: today, time: '00:00', dueAt: new Date(Date.now() - 60e3) });
-      return { biz, acct };
-    };
-    const dead = await seed('deleted'); const live = await seed('active');
+    const dead = await seed(owner, 'deleted'); const live = await seed(owner, 'active');
     const snapshot = async (x: typeof dead) => JSON.stringify({
       biz: await row(x.biz.id), acct: (await db.select().from(schema.socialAccounts).where(eq(schema.socialAccounts.id, x.acct.id)))[0],
       gsc: (await db.select().from(schema.gscConnections).where(eq(schema.gscConnections.businessId, x.biz.id)))[0],
       entries: await db.select().from(E).where(eq(E.businessId, x.biz.id)).orderBy(E.id), pubs: await db.select().from(schema.socialPubs).where(eq(schema.socialPubs.businessId, x.biz.id)),
       notes: (await db.select().from(schema.notifications).where(eq(schema.notifications.businessId, x.biz.id))).length });
-    const touched = async (x: typeof dead) => ({
-      jobs: (await db.select({ kind: J.kind }).from(J).where(eq(J.businessId, x.biz.id))).map(j => j.kind).sort(),
-      marks: (await db.select({ key: schema.cronMarks.key }).from(schema.cronMarks).where(sql`position(${x.biz.id} in ${schema.cronMarks.key}) > 0 OR position(${x.acct.id} in ${schema.cronMarks.key}) > 0`)).map(m => m.key) });
     const before = await snapshot(dead);
     vi.spyOn(console, 'info').mockImplementation(() => {}); vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
     const hooks = cronDefs();
@@ -215,6 +216,25 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
     expect(t.marks.some(k => k.startsWith('social.tokens:'))).toBe(true);
     expect(t.marks.some(k => k.startsWith('kw-sugg:'))).toBe(true);
     await db.delete(schema.cronMarks).where(like(schema.cronMarks.key, `%${live.biz.id}%`)); await db.delete(schema.cronMarks).where(like(schema.cronMarks.key, `%${live.acct.id}%`));
+  }, 120_000);
+
+  it('the ticks after a restore enqueue no more jobs than for a business that was never deleted, and nothing that came due is published or sent (RES-2)', async () => {
+    const owner = await F.user(); await F.account(owner.id, { status: 'active' });
+    const never = await seed(owner, 'active'); const restored = await seed(owner, 'active');
+    await deleteBusiness(owner.id, restored.biz.id, { domain: restored.biz.domain });
+    // While it was deleted a stray job was queued for it; a restore closes it rather than letting it run late.
+    await db.insert(J).values({ kind: 'publish.entry', businessId: restored.biz.id, status: 'queued', payload: { entryId: 'x' } });
+    await restoreBusiness(owner.id, restored.biz.id);
+    vi.spyOn(console, 'info').mockImplementation(() => {}); vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
+    const queuedFor = async (x: typeof never) => (await db.select({ kind: J.kind }).from(J).where(and(eq(J.businessId, x.biz.id), inArray(J.status, ['queued', 'running'])))).map(j => j.kind).sort();
+    expect(await queuedFor(restored)).toEqual([]);              // no backlog waiting for the first tick
+    for (let i = 0; i < 2; i++) for (const h of cronDefs()) await h.run(new Date()).catch(() => {});
+    const a = await queuedFor(never), b = await queuedFor(restored);
+    expect(a).toEqual(expect.arrayContaining(['publish.entry', 'social.send']));   // the never-deleted twin did have work due
+    for (const kind of new Set(b)) expect([kind, b.filter(k => k === kind).length <= a.filter(k => k === kind).length]).toEqual([kind, true]);
+    expect(b).not.toContain('publish.entry'); expect(b).not.toContain('social.send');
+    expect((await db.select({ status: schema.socialPubs.status, errCode: schema.socialPubs.errCode }).from(schema.socialPubs).where(eq(schema.socialPubs.businessId, restored.biz.id)))).toEqual([{ status: 'failed', errCode: 'stale' }]);
+    for (const x of [never, restored]) { await db.delete(schema.cronMarks).where(like(schema.cronMarks.key, `%${x.biz.id}%`)); await db.delete(schema.cronMarks).where(like(schema.cronMarks.key, `%${x.acct.id}%`)); }
   }, 120_000);
 
   it('a deleted business is not matched, its undecided proposals are hidden from the partner, and no partner mail goes to its owner (DEL-6)', async () => {
