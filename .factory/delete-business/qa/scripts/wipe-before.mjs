@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import { chromium, session, call, db, A, Bz, BASE } from './lib.mjs';
+import { files, mentions, world } from './wipe-lib.mjs';
+const SOLO = '36b937ef-0f06-4768-bcc6-83645883932e', P = 'e109d5fa-e0b2-4bfb-9dc6-c98a933e2037';
+const pool = db();
+await pool.query("insert into lifecycle_guide_states (user_id, guide_id, due_at, source_business_id, status) select id, 'article_workflow', now() + interval '30 days', $1, 'pending' from users where email='dev@radar.local' on conflict do nothing", [A]).catch(e => console.log('guide state:', e.message));
+const b = await chromium.launch(); const { page } = await session(b, 'dev@radar.local'); await page.goto(BASE + '/settings', { waitUntil: 'domcontentloaded' });
+const d = await call(page, 'POST', `/api/b/${A}/delete`, { domain: 'fieldnote.app' }); console.log('delete through the app:', d.status, JSON.stringify(d.body?.data));
+await b.close();
+const before = { at: new Date().toISOString(), files: files(), mentions: await mentions(pool, A), world: await world(pool, { B: Bz, Solo: SOLO, P }) };
+fs.writeFileSync(new URL('./wipe-before.json', import.meta.url).pathname, JSON.stringify(before, null, 1));
+console.log('tables that mention the id before the wipe:', JSON.stringify(before.mentions));
+console.log('files:', Object.keys(before.files).length, '| of the victim:', Object.keys(before.files).filter(k => k.startsWith(A + '/')).length);
+console.log(Object.keys(before.files).filter(k => k.startsWith(A) && !k.endsWith('.type')).join('\n'));
+await pool.end();

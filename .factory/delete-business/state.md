@@ -7,15 +7,24 @@
 | Task | Owner | Status | Covers | Notes |
 | --- | --- | --- | --- | --- |
 | T0 brief | PM | verified | brief | `brief.md` |
-| T1 architecture | factory-architect | review | all | `architecture.md`; amendment for decision A (keep published images) in progress |
-| F0 shared contract: migration, schema, types, delete/restore, routes, gates | factory-engineer | active | DEL-1..3, DEL-8, RES-2..4 | frozen after it lands |
-| T2 server: queue, AI, publish/post checks, crons, backlinks, invites, email, stream, wipe, docs | factory-engineer | planned | DEL-4..7, PUR, E-2, E-3 | after F0; wipe last, after the architecture amendment |
-| T3 UI: Settings section, dialog, `/restore`, onboarding line, leave-on-delete | factory-engineer | planned | DEL-1..4, RES-1, E-1 | after F0; files disjoint from T2 (architecture §11.1) |
-| T4 independent QA | factory-qa | planned | all | browser pass on the integrated revision |
-| T5 delivery | PM | planned | | pull request |
+| T1 architecture | factory-architect | verified | all | `architecture.md`, amended for decision A; J and K decided by the PM |
+| F0 shared contract | factory-engineer | verified | DEL-1..3, DEL-8, RES-2..4 | `8343ce2e`…`019fba7f` |
+| T2 server and the wipe | factory-engineer | verified | DEL-4..7, RES-2, PUR, E-2 | `c04d3d6c`…`b732b39a` |
+| T3 UI | factory-engineer | verified | DEL-1..4, RES-1, RES-4, E-1, E-3 | `9a99bec8`…`29c37d6b`, `9e7bd839` (PM, wording), `f315d3db` (D1, D2) |
+| T4 independent QA | factory-qa | verified | all | first pass on `b732b39a`: D1, D2; retest on `f315d3db`: no open defect. `qa-report.md` |
+| T5 delivery | PM | active | | pull request; merge waits for the owner |
 
 ## Blockers
-None.
+The owner's go-ahead to merge (`main` auto-deploys).
 
 ## Next action
-F0 report → PM confirms the contract → dispatch T2 and T3 in parallel.
+Last integrated source revision: `f315d3db`. Release-ready; not merged, not deployed.
+Before the first real wipe on production (`docs/LAUNCH.md` §7d): web and worker both on the new build before
+anyone deletes a business; `npx tsx scripts/check-storage-delete.ts` prints `OK` with the worker's environment
+(the bucket credentials have only ever needed put); confirm whether the bucket is versioned. `RADAR_PURGE=off`
+on the worker stops the wipe without a deploy.
+
+## Leftovers
+- No test for weekly AI report and work-update suppression for a deleted business, or for `backlinks/verify.ts`.
+- Kept images have no record or cleanup; sent mail that names a business and carries no business id is kept.
+- No revoke at blog platforms; Google's grant-wide revoke in the three older callers; `cron_marks` never pruned.

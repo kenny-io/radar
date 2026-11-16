@@ -1,0 +1,35 @@
+import fs from 'node:fs';
+import { chromium, session, act, ws, db, sleep, A, BASE } from './lib.mjs';
+import { snapshot } from './snap.mjs';
+const mins = Number(process.argv[2] || 8);
+const planFile = new URL('./plan.json', import.meta.url).pathname; const plan = JSON.parse(fs.readFileSync(planFile, 'utf8'));
+const pool = db(); const b = await chromium.launch();
+const { page } = await session(b, 'dev@radar.local');
+await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+let w = await ws(page, A);
+const due = new Date(Date.now() + mins * 60e3);
+const hm = d => new Intl.DateTimeFormat('en-GB', { timeZone: w.tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+const dueHM = hm(due);
+let r = await act(page, A, 'blog.schedule', { time: dueHM }); console.log('blog.schedule', dueHM, r.status, r.body?.error || '');
+const e2 = w.calendar.entries.find(e => e.id === plan.E.E2);
+if (e2.date !== w.today) {
+  r = await act(page, A, 'article.unschedule', { entryId: plan.E.E2 }); console.log('unschedule E2', r.status, r.body?.error || '');
+  r = await act(page, A, 'calendar.move', { entryId: plan.E.E2, date: w.today }); console.log('move E2', r.status, r.body?.error || '');
+  r = await act(page, A, 'article.approve', { entryId: plan.E.E2 }); console.log('approve E2', r.status, r.body?.error || JSON.stringify(r.body?.data));
+}
+const acct = ch => w.social.accounts.find(a => a.ch === ch).id;
+const sched = async (sid, time, a) => { const x = await act(page, A, 'social.schedule', { sid, date: w.today, time, acctId: a }); console.log('reschedule', sid, time, x.status, x.body?.error || x.body?.data?.pub?.status); };
+await sched(`s:${plan.packs.auto}:x`, dueHM, acct('x'));
+await sched(`s:${plan.packs.np}:linkedin`, dueHM, acct('li_profile'));
+await sched(`s:${plan.packs.p3}:x`, hm(new Date(due.getTime() + 60e3)), acct('x'));
+await pool.query("update jobs set run_at = now() + ($2 || ' minutes')::interval where business_id=$1 and ref='qa-future-queued' and status='queued'", [A, String(mins - 3)]);
+w = await ws(page, A);
+console.log('entries', w.calendar.entries.slice(0, 7).map(e => [e.id, e.date, e.status].join('|')).join(' ; '), '| blog.time', w.blog.time);
+console.log('pubs', (await pool.query("select sid,status,due_at from social_pubs where business_id=$1 order by due_at", [A])).rows.map(r => `${r.sid.slice(-14)}|${r.status}|${r.due_at.toISOString()}`).join(' ; '));
+Object.assign(plan, { dueHM, dueAt: due.toISOString() });
+plan.before = await snapshot(pool, A);
+plan.beforeBilling = (await pool.query("select md5(coalesce(string_agg(t::text, '|' order by t::text), '')) h from billing_accounts t")).rows[0].h;
+plan.beforeOther = await snapshot(pool, '93b29349-f2ab-43be-bf44-3f9904312286');
+fs.writeFileSync(planFile, JSON.stringify(plan, null, 1));
+console.log('PLAN due', dueHM, due.toISOString(), 'now', new Date().toISOString());
+await b.close(); await pool.end();
