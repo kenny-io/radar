@@ -25,6 +25,10 @@ import { loadWorkspace } from '../workspace';
 import { publishEntry } from '../services/publishing/publisher';
 import { hostBusiness, runDecisionNotice } from '../services/backlinks/decisions';
 import { networkBusinesses } from '../services/backlinks/network';
+import { collectWorkUpdates } from '../services/lifecycle/engagement';
+import { collectEducation } from '../services/lifecycle/education';
+import { collectGuides } from '../services/lifecycle/guides';
+import { collectAiReports } from '../services/visibility/digest';
 import { acceptInvite, newInviteToken } from '../services/team/invites';
 import { digestPreferencesToken, disableDigestEmail, managedDigestPreferences, updateDigestPreference } from '../services/visibility/digestPreferences';
 import { deleteBusiness, restoreBusiness } from './index';
@@ -40,6 +44,25 @@ const as = async (u: TUser) => { H.jar.clear(); await F.signIn(u, H.jar); };
 const row = async (bid: string) => (await db.select().from(B).where(eq(B.id, bid)))[0];
 const gone = (bid: string) => db.execute(sql`UPDATE businesses SET status = 'deleted', deleted_at = now(), purge_at = now() + interval '168 hours', rev = rev + 1 WHERE id = ${bid}`);
 const back = (bid: string) => db.execute(sql`UPDATE businesses SET status = 'active', deleted_at = NULL, purge_at = NULL WHERE id = ${bid}`);
+/** A time zone where it is between 06:00 and 22:00 right now, so hooks that wait for an hour of the business's day act
+ *  whenever the suite runs. (UTC-11, UTC and UTC+14: one of them always is.) */
+const dayZone = () => ['UTC', 'Pacific/Pago_Pago', 'Pacific/Kiritimati'].find(tz => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(new Date())); return h >= 6 && h < 22; })!;
+/** Every registered cron hook, run once at the real current time. The four account-wide mail collectors are run for
+ *  `users` only, the way their own tests narrow them: this database is shared with other test files, and an unscoped
+ *  collector would queue mail for their users. Every other hook, and any hook added later, runs exactly as the scheduler
+ *  runs it. Never pass a time in the future here: housekeeping hooks would act on other files' rows. */
+const ACCOUNT_WIDE: Record<string, (now: Date, users: string[]) => Promise<unknown>> = {
+  'lifecycle.work-updates': collectWorkUpdates, 'lifecycle.weekly-education': collectEducation, 'lifecycle.guides': collectGuides, 'visibility.weeklyDigest': collectAiReports,
+};
+async function runEveryHook(users: string[], after?: (name: string) => Promise<void>) {
+  const hooks = cronDefs(); const now = new Date();
+  for (const name of Object.keys(ACCOUNT_WIDE)) expect(hooks.map(h => h.name)).toContain(name);
+  for (const h of hooks) {
+    await (ACCOUNT_WIDE[h.name] ? ACCOUNT_WIDE[h.name](now, users) : h.run(now)).catch(() => {});   // a hook failing on a thin seed still must not have touched it
+    await after?.(h.name);
+  }
+  return hooks.length;
+}
 afterEach(() => { vi.restoreAllMocks(); delete process.env.RADAR_BILLING; H.jar.clear(); env.devStubs = prior.stub; env.resendKey = prior.key; });
 
 describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
@@ -49,13 +72,14 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
   // refresh, an auto-publishing blog with due entries, a daily brief, automatic social posts, the link network.
   const seed = async (owner: TUser, status: 'active' | 'deleted') => {
     const biz = await F.biz(owner, { status, deletedAt: new Date(Date.now() - 864e5) });
-    await db.update(B).set({ timezone: 'UTC', blog: { time: '00:00', mode: 'autopilot', autopilotAckAt: new Date().toISOString() }, briefSetup: true, briefSettings: { time: '00:00' },
+    const tz = dayZone();
+    await db.update(B).set({ timezone: tz, blog: { time: '00:00', mode: 'autopilot', autopilotAckAt: new Date().toISOString() }, briefSetup: true, briefSettings: { time: '00:00' },
       socialAuto: { on: true, time: '00:00', platforms: ['x'] }, backlinks: { joined: true, joinedAt: new Date(Date.now() - 30 * 864e5).toISOString() }, lastActiveAt: new Date() }).where(eq(B.id, biz.id));
-    await db.insert(schema.gscConnections).values({ businessId: biz.id, status: 'connected', property: `sc-domain:${biz.domain}`, tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', stub: true }), lastSyncedThrough: addDays(todayIn('UTC'), -3) });
+    await db.insert(schema.gscConnections).values({ businessId: biz.id, status: 'connected', property: `sc-domain:${biz.domain}`, tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', stub: true }), lastSyncedThrough: addDays(todayIn(tz), -3) });
     const [acct] = await db.insert(schema.socialAccounts).values({ businessId: biz.id, ch: 'x', remoteId: `x-${uniq()}`, name: 'Fieldnote', handle: 'fieldnote',
       tokensEnc: encrypt({ access_token: 'a', refresh_token: 'r', expires_at: Date.now() + 3600e3, scope: '', stub: true }), expiresAt: new Date(Date.now() + 3600e3) }).returning();
     await db.insert(schema.connections).values({ businessId: biz.id, type: 'wordpress', url: 'https://site.test', fields: {} });
-    const today = todayIn('UTC');
+    const today = todayIn(tz);
     await db.insert(E).values([{ id: `e-${uniq()}`, businessId: biz.id, title: 'S', kw: 'k', type: 'Guide', date: today, status: 'scheduled' }, { id: `e-${uniq()}`, businessId: biz.id, title: 'A', kw: 'k', type: 'Guide', date: today, status: 'approved' },
       { id: `e-${uniq()}`, businessId: biz.id, title: 'P', kw: 'k', type: 'Guide', date: addDays(today, 1), status: 'proposed' }]);
     await db.insert(schema.socialPubs).values({ businessId: biz.id, sid: `s:p:x`, src: 'pack', platform: 'x', ch: 'x', acctId: acct.id, acctLabel: '@fieldnote', status: 'scheduled', date: today, time: '00:00', dueAt: new Date(Date.now() - 60e3) });
@@ -200,16 +224,12 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
       notes: (await db.select().from(schema.notifications).where(eq(schema.notifications.businessId, x.biz.id))).length });
     const before = await snapshot(dead);
     vi.spyOn(console, 'info').mockImplementation(() => {}); vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
-    const hooks = cronDefs();
-    expect(hooks.length).toBeGreaterThan(15);                  // every hook registered through jobs/all.ts, new ones included
-    // Two moments, so hourly and daily hooks all get their turn: now, and the next Monday at 09:23 UTC.
-    const monday = new Date(); monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7 || 7)); monday.setUTCHours(9, 23, 0, 0);
-    for (const now of [new Date(), monday]) for (const h of hooks) {
-      await h.run(now).catch(() => {});   // a hook failing on this thin seed still must not have touched it
+    const ran = await runEveryHook([owner.id], async name => {
       const t = await touched(dead);
-      expect([h.name, t.jobs, t.marks]).toEqual([h.name, [], []]);
-      expect([h.name, await snapshot(dead)]).toEqual([h.name, before]);
-    }
+      expect([name, t.jobs, t.marks]).toEqual([name, [], []]);
+      expect([name, await snapshot(dead)]).toEqual([name, before]);
+    });
+    expect(ran).toBeGreaterThan(15);                            // every hook registered through jobs/all.ts, new ones included
     // The same seed on an active business is picked up, so the silence above is the deleted state and not an empty seed.
     const t = await touched(live);
     expect(t.jobs).toEqual(expect.arrayContaining(['gsc.incremental', 'publish.entry', 'social.send']));
@@ -228,7 +248,7 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
     vi.spyOn(console, 'info').mockImplementation(() => {}); vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
     const queuedFor = async (x: typeof never) => (await db.select({ kind: J.kind }).from(J).where(and(eq(J.businessId, x.biz.id), inArray(J.status, ['queued', 'running'])))).map(j => j.kind).sort();
     expect(await queuedFor(restored)).toEqual([]);              // no backlog waiting for the first tick
-    for (let i = 0; i < 2; i++) for (const h of cronDefs()) await h.run(new Date()).catch(() => {});
+    for (let i = 0; i < 2; i++) await runEveryHook([owner.id]);
     const a = await queuedFor(never), b = await queuedFor(restored);
     expect(a).toEqual(expect.arrayContaining(['publish.entry', 'social.send']));   // the never-deleted twin did have work due
     for (const kind of new Set(b)) expect([kind, b.filter(k => k === kind).length <= a.filter(k => k === kind).length]).toEqual([kind, true]);
