@@ -321,6 +321,40 @@ A successful configuration check verifies shapes and settings, not an actual del
 - [ ] **Verify `X-Forwarded-For` on Railway** at the first deploy. The first proxied request in production logs `[abuse] x-forwarded-for has N entries; using 1 from the right` (counts only, never addresses). Behind Railway's edge alone `RADAR_TRUSTED_PROXY_HOPS=1` is right; with a CDN such as Cloudflare in front, the CDN adds an entry: set `2`. Too few hops makes every visitor share one limit; too many lets clients choose their own IP.
 - [ ] **Guest cleanup** runs in the worker hourly (minute 17): guests older than 24 h with no live session are deleted with their drafts (Search Console tokens revoked), rate-limit windows older than two days and processed webhook events older than 30 days are pruned. Known gap: a deleted draft's uploaded logo stays in storage.
 
+## 7d. Deleting a business and the 7-day wipe
+
+Design: `.factory/delete-business/architecture.md`. Migration `0019_delete_business` is additive (two nullable columns, a check,
+a small index); the worker waits for `businesses.purge_at` before it claims jobs.
+
+- [ ] **Do not delete a business until web and worker both run the new build.** During the overlap of a deploy an old instance
+  treats a deleted business as active.
+- [ ] **After the deploy, check the migration**: columns `deleted_at` and `purge_at`, constraint `businesses_deleted_check`, index
+  `businesses_purge_idx`.
+- [ ] **Before the first real wipe, prove that storage can list and delete.** The bucket credentials have only ever needed
+  `PutObject`. With the worker's environment run `npx tsx scripts/check-storage-delete.ts`; it writes two objects under a random
+  id that belongs to no business, deletes one while keeping the other, and cleans up. It must print `OK`. Without list and delete
+  permission every wipe fails closed and alerts each hour. Also confirm by hand whether the bucket keeps old versions (a delete
+  would then leave them) and what the CDN in front of it caches.
+- [ ] **Delete and restore a throwaway business end to end**, with a second member's tab open on it: the tab leaves within a few
+  seconds, the owner gets one email, Restore brings everything back.
+- [ ] **The first real wipe** can happen no sooner than 7 days after the first real delete. On that day check the worker's line
+  `[purge] due N, wiped N, failed 0, files deleted N, kept N`, that no row holds the business id, that the storage prefix holds
+  only as many files as the line counts as kept, and that one published article of that business still shows its images.
+- **Stop the wipe without a deploy**: `RADAR_PURGE=off` on the worker. Deleted businesses stay hidden and stay restorable only
+  until their own `purgeAt`; they are simply not wiped until the flag is removed.
+- **What a wipe keeps** (the full list is §4.7 of the design): the image files inside articles Radar already wrote to the
+  business's site, with no database record (an operator can only find them from an image address on that site); the owner's
+  account and billing; anonymous event counters and model-call costs; another account's decided link proposals and live links.
+  Blog platform credentials are deleted but nothing is revoked at the platform; Google is revoked only when the owner has no
+  other business connected to Search Console, because Google's revoke removes the grant for all of them.
+- **Alerts**: a business that cannot be wiped (storage refused, or a published article Radar cannot read) alerts every hour
+  with `operation: business.purge` and that business's id, and nothing of it is removed until a person looks. More than 50
+  businesses due in one run wipes none (`code: too_many_due`): check the database clock and the `purge_at` values before
+  anything else.
+- **Rollback** = redeploy the previous build and leave the migration. Deleted businesses stay out of every `status = 'active'`
+  reader and nothing wipes them, but under old code a member can open one by direct URL and the daily Search Console sync runs
+  for it. If the rollback will last: `UPDATE businesses SET status = 'active', deleted_at = NULL, purge_at = NULL WHERE status = 'deleted'`.
+
 ## 8. Email
 
 - [ ] **Resend** account, verify your sending domain (SPF/DKIM) → `RESEND_API_KEY`, `MAIL_FROM`
