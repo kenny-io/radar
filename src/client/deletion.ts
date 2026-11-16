@@ -27,7 +27,7 @@ export const deletedFlash = (name: string, purgeAt: string, timeZone?: string) =
 /** The toast after a restore. */
 export const restoredFlash = (name: string) => `${name} restored.`;
 /** One row of "Recently deleted". */
-export const wipedOn = (purgeAt: string, timeZone?: string) => { const when = fmtWipe(purgeAt, timeZone); return when ? `Wiped on ${when}` : ''; };
+export const wipedOn = (purgeAt: string, timeZone?: string) => { const when = fmtWipe(purgeAt, timeZone); return when ? `Will be wiped on ${when}` : ''; };
 
 /** The one line on the no-business screen, or null when there is nothing to restore. */
 export function restoreLine(deleted: Pick<DeletedBusiness, 'name' | 'purgeAt'>[], timeZone?: string): { text: string; link: string } | null {

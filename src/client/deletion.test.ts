@@ -40,7 +40,7 @@ describe('copy', () => {
   });
 
   it('a row of Recently deleted says when it is wiped', () => {
-    expect(wipedOn(PURGE, LA)).toBe('Wiped on Mon, Nov 23 at 3:42 PM');
+    expect(wipedOn(PURGE, LA)).toBe('Will be wiped on Mon, Nov 23 at 3:42 PM');
     expect(wipedOn('nope')).toBe('');
   });
 
