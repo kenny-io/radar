@@ -1,6 +1,6 @@
 // Partner notices for the backlinks network: approvals (the partner's editor places the link), decline notes,
 // removal requests (7-day window) and lost links (both sides). Decision notices are delayed so the toast's Undo can cancel them.
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { enqueue } from '../../jobs/queue';
 import { sendMail } from '../mail';
@@ -30,7 +30,7 @@ export async function runDecisionNotice({ proposalId, decision, key }: { proposa
   if (!row || row.data?.noticeKey !== key) return { skipped: true };
   const d = row.data || {};
   const me = await biz(row.businessId); const partner = await biz(row.partnerBusinessId);
-  if (!partner) return { skipped: true };
+  if (!partner || partner.status === 'deleted') return { skipped: true };   // no mail about a deleted business; not re-sent after a restore
   const to = await editorEmail(partner.id);
   if (!to) return { skipped: true };
   const sentence = `${d.before || ''}[${d.anchor}](${absUrl(d.target)})${d.after || ''}`;
@@ -53,7 +53,8 @@ export async function runDecisionNotice({ proposalId, decision, key }: { proposa
 /** The business that hosts a page (by domain), if it is a Radar business. */
 export async function hostBusiness(fromUrl: string) {
   const host = hostOf(fromUrl);
-  const rows = await db.select().from(schema.businesses).where(eq(schema.businesses.domain, host)).limit(5);
+  // Never a deleted business: the same domain may have been added again, and no partner mail goes to a deleted one.
+  const rows = await db.select().from(schema.businesses).where(and(eq(schema.businesses.domain, host), ne(schema.businesses.status, 'deleted'))).limit(5);
   return rows.find(r => r.status === 'active') || rows[0] || null;
 }
 

@@ -2,7 +2,7 @@
 //   keywords.estimate (payload {}, businessId) — fills vol/kd (and intent for new keywords) on profile keywords that are null.
 //   keywords.suggest  (ref = businessId)       — recomputes B.kwSuggestions.
 //   cron 'keywords.afterGscSync'               — refreshes suggestions whenever a Search Console sync lands new data.
-import { and, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, ne } from 'drizzle-orm';
 import { db, schema } from '../../db';
 import { defineJob, once } from '../../jobs/queue';
 import { defineCron } from '../../jobs/cron';
@@ -54,6 +54,7 @@ defineJob({
 
 defineCron('keywords.afterGscSync', async () => {
   const rows = await db.select({ bid: schema.gscConnections.businessId, through: schema.gscConnections.lastSyncedThrough })
-    .from(schema.gscConnections).where(and(inArray(schema.gscConnections.status, ['connected']), isNotNull(schema.gscConnections.lastSyncedThrough)));
+    .from(schema.gscConnections).innerJoin(schema.businesses, eq(schema.businesses.id, schema.gscConnections.businessId))
+    .where(and(inArray(schema.gscConnections.status, ['connected']), isNotNull(schema.gscConnections.lastSyncedThrough), ne(schema.businesses.status, 'deleted')));
   for (const r of rows) if (await once(`kw-sugg:${r.bid}:${r.through}`)) await refreshKeywordSuggestions(r.bid);
 });

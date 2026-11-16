@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 
@@ -39,17 +39,19 @@ export async function disableDigestEmail(token: string): Promise<boolean> {
   });
 }
 
-/** Account-level access: these choices remain available without an active subscription. */
+/** Account-level access: these choices remain available without an active subscription. A deleted business is not
+ *  listed and cannot be changed here; the one-click unsubscribe above still works for it, because it must never fail. */
 export async function managedDigestPreferences(userId: string) {
   const B = schema.businesses, M = schema.members, P = schema.visibilityPreferences;
   const rows = await db.select({ id: B.id, domain: B.domain, weeklyEmail: P.weeklyEmail, role: M.role }).from(B)
-    .innerJoin(M, and(eq(M.businessId, B.id), eq(M.userId, userId), eq(M.status, 'active'))).leftJoin(P, eq(P.businessId, B.id));
+    .innerJoin(M, and(eq(M.businessId, B.id), eq(M.userId, userId), eq(M.status, 'active'))).leftJoin(P, eq(P.businessId, B.id))
+    .where(ne(B.status, 'deleted'));
   return rows.filter(r => r.role === 'Owner' || r.role === 'Admin').map(({ role: _role, ...r }) => ({ ...r, weeklyEmail: r.weeklyEmail !== false }));
 }
 export async function updateDigestPreference(userId: string, bid: string, weeklyEmail: boolean) {
   return db.transaction(async tx => {
-    const [business] = await tx.select({ id: schema.businesses.id }).from(schema.businesses).where(eq(schema.businesses.id, bid)).for('update');
-    if (!business) return false;
+    const [business] = await tx.select({ id: schema.businesses.id, status: schema.businesses.status }).from(schema.businesses).where(eq(schema.businesses.id, bid)).for('update');
+    if (!business || business.status === 'deleted') return false;
     const [member] = await tx.select({ role: schema.members.role }).from(schema.members).where(and(eq(schema.members.businessId, bid), eq(schema.members.userId, userId), eq(schema.members.status, 'active'))).limit(1);
     if (!member || !['Owner','Admin'].includes(member.role)) return false;
     await tx.insert(schema.visibilityPreferences).values({ businessId: bid, weeklyEmail }).onConflictDoUpdate({ target: schema.visibilityPreferences.businessId, set: { weeklyEmail, updatedAt: new Date() } });
