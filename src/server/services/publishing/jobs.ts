@@ -9,10 +9,12 @@ import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { defineJob, enqueue } from '@/server/jobs/queue';
 import { defineCron } from '@/server/jobs/cron';
-import { addDays, nowHMIn, todayIn } from '@/lib/format';
+import { addDays, todayIn } from '@/lib/format';
 import { publishEntry } from './publisher';
+import { entryDue } from './due';
 import { SANDBOX_BUDGET } from './sandbox/types';
 
+export { entryDue, lastDueDate } from './due';
 export const PUBLISH_MAX_ATTEMPTS = 4; // first try + 3 retries
 const BACKOFF = env.devStubs ? [3e3, 6e3, 12e3] : [30e3, 120e3, 480e3];
 
@@ -44,10 +46,7 @@ export async function runScheduler(now: Date) {
     const blog = r.blog || {};
     if (r.activation && !(await canRun(r.bid, r.activation))) continue;
     if (blog.paused || !withConn.has(r.bid)) continue; // held; the UI shows "Paused · …"
-    const tz = r.tz || 'America/New_York';
-    const today = todayIn(tz, now); const date = String(r.date);
-    const due = date < today || (date === today && nowHMIn(tz, now) >= (blog.time || '09:00'));
-    if (!due) continue;
+    if (!entryDue(String(r.date), { tz: r.tz, time: blog.time }, now)) continue;
     await enqueuePublish(r.bid, r.id); n++;
   }
   return n;
