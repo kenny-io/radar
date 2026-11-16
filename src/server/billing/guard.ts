@@ -8,6 +8,7 @@ import { accessSummary, ownAccess } from './access';
 import { commitDraft, draftOf, toDraftSummary } from './draft';
 import { billingState } from './state';
 import { restartDueCents } from './provider';
+import { listDeleted } from '../deletion';
 
 export type Entry = { redirect: string } | { render: true; committed?: string };
 
@@ -58,16 +59,17 @@ export async function startGuard(domain?: string | null): Promise<{ redirect: st
   if (await currentUser()) return { redirect: withDomain('/onboarding', autoDomain) };
   const g = await currentGuest();
   const d = g ? await draftOf(g.id) : null;
-  return { props: { actor: g ? 'guest' : 'none', user: null, draft: d ? toDraftSummary(d) : null, saveCommits: false, autoDomain } };
+  return { props: { actor: g ? 'guest' : 'none', user: null, draft: d ? toDraftSummary(d) : null, saveCommits: false, autoDomain, deleted: [] } };
 }
 
-/** /onboarding (signed in): no user → /start (guest cookie) or /signup; else the user's draft. */
+/** /onboarding (signed in): no user → /start (guest cookie) or /signup; else the user's draft. This is also the
+ *  no-business screen, so it carries the owner's deleted businesses that can still be restored. */
 export async function onboardingGuard(domain?: string | null): Promise<{ redirect: string } | { props: OnboardingStageProps }> {
   const autoDomain = cleanAutoDomain(domain);
   const u = await currentUser();
   if (!u) return { redirect: (await currentGuest()) ? withDomain('/start', autoDomain) : '/signup' };
-  const d = await draftOf(u.id);
-  return { props: { actor: 'user', user: { name: u.name, email: u.email }, draft: d ? toDraftSummary(d) : null, saveCommits: await ownAccess(u), autoDomain } };
+  const [d, deleted] = await Promise.all([draftOf(u.id), listDeleted(u.id)]);
+  return { props: { actor: 'user', user: { name: u.name, email: u.email }, draft: d ? toDraftSummary(d) : null, saveCommits: await ownAccess(u), autoDomain, deleted } };
 }
 
 /** /signup and /signin: the pending variant when this browser's guest has a saved draft (AC-S2). */
@@ -109,7 +111,8 @@ export function safeBusinessHop(next?: string | null): string | null {
  *  auth route makes current (setCurrentBusiness) so the dashboard opens the profile just saved. */
 export async function entryAfterAuth(u: SessionUser, next?: string | null): Promise<{ next: string; committed: string | null }> {
   const n = safeNext(next);
-  if (n === '/email-preferences') return { next: n, committed: null };
+  // Account pages that work with no business: email settings, and the restore page (the way back when none is left).
+  if (n === '/email-preferences' || n === '/restore') return { next: n, committed: null };
   if (n && isEducationLanding(n)) return { next: n, committed: null };
   if (n?.startsWith('/api/invites/')) return { next: n, committed: null };
   const e = await resolveEntry(u);

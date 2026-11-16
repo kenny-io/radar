@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { db, schema } from '../db';
 import { sha256 } from '../crypto';
 import { accessSummary } from '../billing/access';
+import { listDeleted } from '../deletion';
 import type { BusinessSummary, Me } from '@/lib/types';
 
 export const BIZ_COOKIE = 'radar_biz';
@@ -18,7 +19,7 @@ export async function attachInvites(userId: string, email: string) {
   await db.update(schema.members).set({ userId }).where(and(eq(schema.members.email, email.toLowerCase()), eq(schema.members.status, 'invited')));
 }
 
-/** A deleted business is in nobody's list: not the switcher's, not `me.businesses` */
+/** A deleted business is in nobody's list: not the switcher's, not `me.businesses` (its owner finds it in `me.deleted`). */
 export async function listBusinesses(userId: string): Promise<BusinessSummary[]> {
   const rows = await db.select({ b: schema.businesses, role: schema.members.role }).from(schema.members)
     .innerJoin(schema.businesses, eq(schema.businesses.id, schema.members.businessId))
@@ -28,15 +29,15 @@ export async function listBusinesses(userId: string): Promise<BusinessSummary[]>
 
 /** `access` is set on every business (false = the owner has no trialing/active subscription; the switcher hides it).
  *  currentId is chosen only among active businesses the user can open (architecture §19.6), so a cookie that still
- *  points at a deleted business falls back to the first usable one. */
+ *  points at a deleted business falls back to the first usable one. `deleted` is the user's own restorable businesses. */
 export async function getMe(user: { id: string; name: string; email: string; appearance?: 'system' | 'light' | 'dark' }): Promise<Me> {
-  const [list, s] = await Promise.all([listBusinesses(user.id), accessSummary(user.id)]);
+  const [list, s, deleted] = await Promise.all([listBusinesses(user.id), accessSummary(user.id), listDeleted(user.id)]);
   const open = new Set(s.accessible);
   const businesses = list.map(b => ({ ...b, access: b.status === 'active' ? open.has(b.id) : s.own }));
   const jar = await cookies();
   const want = jar.get(BIZ_COOKIE)?.value;
   const usable = businesses.filter(b => b.status === 'active' && b.access);
   const cur = usable.find(b => b.id === want) || usable[0] || null;
-  return { user, businesses, currentId: cur?.id || null };
+  return { user, businesses, currentId: cur?.id || null, deleted };
 }
 export { sha256 };

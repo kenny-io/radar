@@ -14,7 +14,7 @@ import type { Me, OnboardingStageProps } from '@/lib/types';
 
 export function OnboardingStage(props: OnboardingStageProps) {
   const name = props.user?.name || '';
-  const me = useMemo<Me>(() => ({ user: { id: '', name, email: '' }, businesses: [], currentId: null }), [name]);
+  const me = useMemo<Me>(() => ({ user: { id: '', name, email: '' }, businesses: [], currentId: null, deleted: [] }), [name]);
   return <AppProvider me={me}>
     <div className="app" inert aria-hidden="true">
       <Side open={false} onClose={() => {}} />
