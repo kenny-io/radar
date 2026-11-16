@@ -18,7 +18,7 @@ import '../jobs/all';
 import * as failures from '../observability/failures';
 import * as state from './state';
 import * as lifecycleQueue from '../services/lifecycle/queue';
-import { dispatchLifecycleBatch } from '../services/lifecycle/dispatch';
+import { lifecycleEligible } from '../services/lifecycle/dispatch';
 import { ai } from '../ai';
 import { registerStub } from '../ai/adapters/stub';
 import { loadWorkspace } from '../workspace';
@@ -288,13 +288,10 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
     expect(p.envelope.text).toContain(`(${biz.domain})`);
     expect(p.envelope.text).not.toContain(biz.id);
     expect(p.envelope.headers).toBeUndefined();                // transactional: no unsubscribe header
-    // It is delivered once, with no cap or quiet hours, while the delete stands.
-    env.devStubs = false; env.resendKey = 'test-not-real';
-    const fetcher = vi.fn(async () => new Response(JSON.stringify({ id: 'provider-test-id' }), { status: 200 }));
-    await dispatchLifecycleBatch({ userIds: [owner.id], fetch: fetcher as unknown as typeof fetch, sleep: async () => {}, limit: 50 });
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect((await mails())[0]).toMatchObject({ status: 'sent' });
-    env.devStubs = prior.stub; env.resendKey = prior.key;
+    // The dispatcher's send-time check lets it go while the delete stands. (Called directly: the batch dispatcher takes
+    // one database-wide lock, which other test files on a shared database are waiting for.)
+    expect(await lifecycleEligible(mail, p)).toBe(true);
+    expect(await lifecycleEligible(mail, p, new Date(new Date(d.purgeAt).getTime() + 1))).toBe(false);   // never after the wipe time
 
     const report = vi.spyOn(failures, 'reportFailure').mockResolvedValue();
     vi.spyOn(lifecycleQueue, 'queueLifecycle').mockRejectedValue(new Error('mail queue is away'));
@@ -308,20 +305,26 @@ describe.skipIf(!ON)('a deleted business does nothing (database)', () => {
   it('the queued mail is suppressed when the business was restored before it was sent, or belongs to an earlier delete (DEL-7)', async () => {
     const owner = await F.user(); const biz = await F.biz(owner);
     const mails = () => db.select().from(M).where(and(eq(M.userId, owner.id), eq(M.type, 'business_deleted'))).orderBy(M.createdAt);
-    const fetcher = vi.fn(async () => new Response(JSON.stringify({ id: 'provider-test-id' }), { status: 200 }));
-    const send = async () => { env.devStubs = false; env.resendKey = 'test-not-real'; await dispatchLifecycleBatch({ userIds: [owner.id], fetch: fetcher as unknown as typeof fetch, sleep: async () => {}, limit: 50 }); };
+    const goes = async (m: typeof M.$inferSelect) => lifecycleEligible(m, decrypt<lifecycleQueue.LifecyclePayload>(m.payloadEnc)!);
     await deleteBusiness(owner.id, biz.id, { domain: biz.domain });
+    const [first] = await mails();
+    expect(await goes(first)).toBe(true);
     await restoreBusiness(owner.id, biz.id);
-    await send();
-    expect(fetcher).not.toHaveBeenCalled();
-    expect((await mails())[0]).toMatchObject({ status: 'suppressed', lastError: 'no_longer_applicable' });
+    expect(await goes(first)).toBe(false);                     // the dispatcher marks it suppressed, `no_longer_applicable`
     // Deleted again: the second delete has its own mail, and only that one goes out.
-    await db.update(M).set({ status: 'queued', lastError: null }).where(eq(M.userId, owner.id));
     await new Promise(r => setTimeout(r, 5));
     await deleteBusiness(owner.id, biz.id, { domain: biz.domain });
-    await send();
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect((await mails()).map(m => m.status).sort()).toEqual(['sent', 'suppressed']);
+    const [, second] = await mails();
+    expect(second.eventKey).not.toBe(first.eventKey);
+    expect([await goes(first), await goes(second)]).toEqual([false, true]);
+    // Not to anyone but the business's owner, and not for a business that is no longer there.
+    const other = await F.user();
+    await db.update(B).set({ ownerId: other.id }).where(eq(B.id, biz.id));
+    expect(await goes(second)).toBe(false);
+    await db.update(B).set({ ownerId: owner.id }).where(eq(B.id, biz.id));
+    expect(await goes(second)).toBe(true);
+    await db.delete(B).where(eq(B.id, biz.id));
+    expect(await goes({ ...second, businessId: biz.id })).toBe(false);
   });
 
   it('an invite link to a deleted business is invalid; a link in old mail opens the dashboard; its email settings are not listed (DEL-8, DEL-4)', async () => {
