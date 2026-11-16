@@ -1,4 +1,4 @@
-import type { ActResponse } from '@/lib/types';
+import type { ActResponse, DeleteBusinessResult, RestoreBusinessResult } from '@/lib/types';
 
 export class ApiError extends Error { constructor(message: string, public status: number, public code?: string, public errors?: Record<string, string>) { super(message); } }
 
@@ -16,6 +16,12 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 export const isSubscriptionRequired = (e: unknown) => e instanceof ApiError && e.status === 402 && (!e.code || e.code === 'subscription_required');
 /** `reply: 'rev'` asks a write to answer with the new revision only, no workspace (debounced autosaves). */
 export const actCall = <T = any>(bid: string, action: string, input?: any, reply?: 'rev') => api<ActResponse<T>>(`/api/b/${bid}/act`, { body: { action, input, ...(reply ? { reply } : {}) } });
+
+/** Delete the open business. Owner only; `domain` is what the owner typed (the server compares it again). Not an action:
+ *  there is no workspace to answer with (.factory/delete-business/architecture.md §9.2). */
+export const deleteBusinessCall = (bid: string, domain: string) => api<{ ok: true; data: DeleteBusinessResult }>(`/api/b/${bid}/delete`, { body: { domain } }).then(r => r.data);
+/** Restore one of the signed-in owner's deleted businesses. Needs no open business, so it also works on /restore. */
+export const restoreBusinessCall = (id: string) => api<{ ok: true; data: RestoreBusinessResult }>('/api/b/restore', { body: { id } }).then(r => r.data);
 
 /** Open an OAuth popup and resolve with the callback's message. */
 export function openOAuth(provider: string, bid: string, params: Record<string, string> = {}): Promise<{ ok: boolean; result?: any; error?: string }> {
