@@ -4,6 +4,7 @@ import { db, schema } from '../db';
 import { randomToken, sha256 } from '../crypto';
 import { GUEST_COOKIE, SESSION_COOKIE } from '../auth/session';
 import type { SubStatus } from '@/lib/types';
+import { DELETE_RETENTION_HOURS } from '@/lib/deletion';
 
 export const uniq = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 export type TUser = { id: string; name: string; email: string; guest: boolean };
@@ -25,10 +26,14 @@ export class Fixtures {
     jar.set(cookie, t);
     return t;
   }
-  async biz(owner: TUser, o: { status?: 'onboarding' | 'active'; domain?: string; createdAt?: Date; onboarding?: any; profile?: any; edited?: any; site?: any } = {}) {
+  /** `status: 'deleted'` needs both timestamps (businesses_deleted_check): by default deleted now and wiped 168 hours
+   *  later. Pass `deletedAt` (and `purgeAt`) to place the row anywhere in or past its restore window. */
+  async biz(owner: TUser, o: { status?: 'onboarding' | 'active' | 'deleted'; domain?: string; createdAt?: Date; onboarding?: any; profile?: any; edited?: any; site?: any; deletedAt?: Date; purgeAt?: Date } = {}) {
     const domain = o.domain || `b-${uniq()}.test`;
+    const deletedAt = o.status === 'deleted' ? o.deletedAt || new Date() : null;
+    const gone = deletedAt ? { deletedAt, purgeAt: o.purgeAt || new Date(deletedAt.getTime() + DELETE_RETENTION_HOURS * 3600e3) } : {};
     const [b] = await db.insert(schema.businesses).values({ ownerId: owner.id, domain, status: o.status || 'active', profile: o.profile || { domain, business: { name: 'Fieldnote' }, brand: { primary: '#1F4D3A', secondary: '#F2B544' } },
-      edited: o.edited || {}, site: o.site || {}, onboarding: o.onboarding || {}, ...(o.createdAt ? { createdAt: o.createdAt } : {}) }).returning();
+      edited: o.edited || {}, site: o.site || {}, onboarding: o.onboarding || {}, ...(o.createdAt ? { createdAt: o.createdAt } : {}), ...gone }).returning();
     await db.insert(schema.members).values({ businessId: b.id, userId: owner.id, email: owner.email.toLowerCase(), role: 'Owner', status: 'active' });
     return b;
   }

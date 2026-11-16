@@ -4,6 +4,7 @@ import { autopilotPublic } from './services/autopilot/policy';
 import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { notFound } from './errors';
+import { businessDeleted } from './deletion/state';
 import { BRIEF_DEFAULT } from '@/lib/constants';
 import { imageSettingsOf } from '@/lib/imageOptions';
 import { addDays, todayIn } from '@/lib/format';
@@ -107,6 +108,7 @@ export function jobProgress(j: { kind: string; status: string; progress: unknown
 }
 export async function loadWorkspace(bid: string, userId: string, role: Role, opts: { articles?: ArticlesMode } = {}): Promise<Workspace> {
   const b = await getBiz(bid);
+  if (b.status === 'deleted') throw businessDeleted();   // the gates refuse it first; a workspace is never built for it
   const today = bizToday(b);
   const [entries, articles, conns, packs, days, gscRow, props, live, team, jobRows, suggs, firstRun, billing, unread, failed] = await Promise.all([
     db.select().from(schema.calendarEntries).where(eq(schema.calendarEntries.businessId, bid)).orderBy(schema.calendarEntries.date, schema.calendarEntries.createdAt),

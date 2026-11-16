@@ -14,6 +14,8 @@ describe('worker rollout readiness', () => {
       if (ready) await expect(result).resolves.toBeUndefined();
       else await expect(result).rejects.toThrow('schema is not ready');
       expect(probe).toHaveBeenCalledTimes(3);
+      // A worker must not claim jobs before the delete-business migration: the queue reads the deleted state.
+      expect(probe.mock.calls[0][0]).toMatchObject({ text: expect.stringMatching(/\bb\.purge_at\b[\s\S]*CROSS JOIN businesses b\b/) });
       expect(probe.mock.calls[2][0]).toMatchObject({ text: expect.stringContaining("conname = 'lifecycle_guide_id_check'") });
       expect(probe.mock.calls[2][0]).toMatchObject({ text: expect.stringContaining("conrelid = 'lifecycle_guide_states'::regclass") });
     } finally { probe.mockRestore(); }

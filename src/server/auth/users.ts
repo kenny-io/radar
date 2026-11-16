@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ne } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { db, schema } from '../db';
 import { sha256 } from '../crypto';
@@ -18,15 +18,17 @@ export async function attachInvites(userId: string, email: string) {
   await db.update(schema.members).set({ userId }).where(and(eq(schema.members.email, email.toLowerCase()), eq(schema.members.status, 'invited')));
 }
 
+/** A deleted business is in nobody's list: not the switcher's, not `me.businesses` */
 export async function listBusinesses(userId: string): Promise<BusinessSummary[]> {
   const rows = await db.select({ b: schema.businesses, role: schema.members.role }).from(schema.members)
     .innerJoin(schema.businesses, eq(schema.businesses.id, schema.members.businessId))
-    .where(and(eq(schema.members.userId, userId), eq(schema.members.status, 'active'))).orderBy(schema.businesses.createdAt);
-  return rows.map(({ b, role }) => ({ id: b.id, name: (b.profile as any)?.business?.name || b.domain, domain: b.domain, brand: { logo: b.profile?.brand?.logo ?? null, primary: b.profile?.brand?.primary || '#17181C', secondary: b.profile?.brand?.secondary || '#EF6A2E' }, status: b.status, role: role as any }));
+    .where(and(eq(schema.members.userId, userId), eq(schema.members.status, 'active'), ne(schema.businesses.status, 'deleted'))).orderBy(schema.businesses.createdAt);
+  return rows.flatMap(({ b, role }) => b.status === 'deleted' ? [] : [{ id: b.id, name: (b.profile as any)?.business?.name || b.domain, domain: b.domain, brand: { logo: b.profile?.brand?.logo ?? null, primary: b.profile?.brand?.primary || '#17181C', secondary: b.profile?.brand?.secondary || '#EF6A2E' }, status: b.status, role: role as any }]);
 }
 
 /** `access` is set on every business (false = the owner has no trialing/active subscription; the switcher hides it).
- *  currentId is chosen only among active businesses the user can open (architecture §19.6). */
+ *  currentId is chosen only among active businesses the user can open (architecture §19.6), so a cookie that still
+ *  points at a deleted business falls back to the first usable one. */
 export async function getMe(user: { id: string; name: string; email: string; appearance?: 'system' | 'light' | 'dark' }): Promise<Me> {
   const [list, s] = await Promise.all([listBusinesses(user.id), accessSummary(user.id)]);
   const open = new Set(s.accessible);
