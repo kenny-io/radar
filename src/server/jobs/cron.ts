@@ -7,6 +7,8 @@ type CronHook = { name: string; run: (now: Date) => Promise<void> };
 const g = globalThis as unknown as { __radarCron?: CronHook[] };
 const hooks = (g.__radarCron ??= []);
 export function defineCron(name: string, run: (now: Date) => Promise<void>) { if (!hooks.find(h => h.name === name)) hooks.push({ name, run }); }
+/** Every registered hook, in the order the scheduler runs them (as jobDefs() is for jobs). */
+export const cronDefs = (): readonly CronHook[] => hooks;
 
 export async function tick(now = new Date()) {
   const c = await pool.connect();

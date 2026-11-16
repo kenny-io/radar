@@ -286,6 +286,33 @@ describe.skipIf(!ON)('social channels (database)', () => {
     await clearPubs();
   });
 
+  it('a send already claimed does not create the post once the business is deleted (DEL-5)', async () => {
+    const sx = packSid(PACK, 'x'); await setText('x', 'Claimed, then the business was deleted.');
+    await act('social.schedule', { sid: sx, ...tomorrow9() });
+    await makeDue(sx);
+    const c = (await claimScheduled((await pub(sx)).id))!;
+    let creates = 0; const real = stubAdapter('x');
+    setAdapterForTests('x', { ...real, create: async (a, input) => { creates++; return real.create(a, input); } });
+    const before = stubState.creates;
+    try {
+      // The delete commits after the claim; everything up to the last write before the post still runs.
+      await db.execute(sql`UPDATE businesses SET status = 'deleted', deleted_at = now(), purge_at = now() + interval '168 hours' WHERE id = ${bid}`);
+      expect(await runSend(c, { manual: false })).toBeNull();
+      expect(creates).toBe(0);
+      expect(stubState.creates).toBe(before);
+      // Still claimed and never at stage `create`: a restore fails it as stale, and nothing resends it.
+      const row = await pub(sx);
+      expect(row.status).toBe('sending'); expect(row.stage).not.toBe('create'); expect(row.remoteId).toBeNull();
+      // The same claimed row does go out while the business is active.
+      await db.execute(sql`UPDATE businesses SET status = 'active', deleted_at = NULL, purge_at = NULL WHERE id = ${bid}`);
+      expect(await runSend(c, { manual: false })).toMatchObject({ status: 'posted' });
+      expect(creates).toBe(1);
+    } finally {
+      await db.execute(sql`UPDATE businesses SET status = 'active', deleted_at = NULL, purge_at = NULL WHERE id = ${bid}`);
+      await clearPubs();
+    }
+  });
+
   it('token refresh: one refresh under the row lock, the rotated pair is saved; transient vs definitive', async () => {
     const a = (await accts()).find(x => x.ch === 'x')!;
     let n = 0; const seen: string[] = [];

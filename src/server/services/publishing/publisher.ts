@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { and, eq, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
+import { isBusinessDeleted } from '@/server/deletion/state';
 import { env } from '@/server/env';
 import { notify } from '@/server/notify';
 import { bump, blogOf, connPublic, entryFromRow, getBiz, laterV, type BizRow } from '@/server/workspace';
@@ -154,11 +155,21 @@ export async function publishEntry(entryId: string, o: { attempt: number; maxAtt
       await db.update(schema.calendarEntries).set({ status: 'review' }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.status, 'publishing')));
       await bump(b.id); return true;
     };
+    // Deleted since this publish was admitted: nothing is written to the site (DEL-5). The entry goes back to
+    // `scheduled` exactly as it was, and a restore decides what happens to it. Checked before the program, which
+    // would read a deleted business as "Autopilot off" and move the entry to review.
+    const holdDeleted = async () => {
+      if (!(await isBusinessDeleted(b.id))) return false;
+      await db.update(schema.calendarEntries).set({ status: 'scheduled' }).where(and(eq(schema.calendarEntries.id, entryId), eq(schema.calendarEntries.status, 'publishing')));
+      return true;
+    };
     if (!draft) {
+      if (await holdDeleted()) return { status: 'skipped', reason: 'deleted' };
       if (await holdProgram()) return { status: 'skipped', reason: 'autopilot_off' };
       draft = { ...(await connector.createDraft(c, payload)), connId: conn.id };
       await db.update(schema.calendarEntries).set({ publishRemote: draft }).where(eq(schema.calendarEntries.id, entryId));
     }
+    if (await holdDeleted()) return { status: 'skipped', reason: 'deleted' };
     if (await holdProgram()) return { status: 'skipped', reason: 'autopilot_off' };
     const { url } = await connector.publish(c, payload, draft);
     await setEntry({ status: 'published', publishedUrl: url, publishError: null, publishRemote: null, publishAttempts: o.attempt });
