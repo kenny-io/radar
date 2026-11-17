@@ -40,12 +40,12 @@ export async function sendInviteEmail(opts: { to: string; token: string; inviter
 
 export type AcceptResult = { ok: true; businessId: string } | { ok: false; reason: 'invalid' | 'expired' };
 
-/** Find a pending invite by its token. */
+/** Find a pending invite by its token. An invite to a deleted business is no invite (DEL-8): the link is invalid. */
 export async function findInvite(token: string) {
   if (!verifyTokenShape(token)) return null;
   const r = await db.select({ m: schema.members, status: schema.businesses.status }).from(schema.members)
     .innerJoin(schema.businesses, eq(schema.businesses.id, schema.members.businessId))
-    .where(and(eq(schema.members.tokenHash, sha256(token)), eq(schema.members.status, 'invited'))).limit(1);
+    .where(and(eq(schema.members.tokenHash, sha256(token)), eq(schema.members.status, 'invited'), ne(schema.businesses.status, 'deleted'))).limit(1);
   return r[0] || null;
 }
 

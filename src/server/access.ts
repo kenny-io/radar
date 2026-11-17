@@ -3,6 +3,7 @@ import { db, schema } from './db';
 import { currentActor, currentUser, type Actor } from './auth/session';
 import { forbidden, notFound, subscriptionRequired, unauthorized } from './errors';
 import { bizAccess, ownAccess } from './billing/access';
+import { businessDeleted } from './deletion/state';
 import type { Role } from '@/lib/types';
 
 export const ROLE_RANK: Record<Role, number> = { Viewer: 0, Editor: 1, Admin: 2, Owner: 3 };
@@ -22,17 +23,17 @@ export async function requireActor(): Promise<Actor> {
   return a;
 }
 
-export async function memberRole(businessId: string, userId: string): Promise<Role | null> {
-  const r = await db.select({ role: schema.members.role }).from(schema.members)
-    .where(and(eq(schema.members.businessId, businessId), eq(schema.members.userId, userId), eq(schema.members.status, 'active'))).limit(1);
-  return (r[0]?.role as Role) || null;
-}
-
-/** Throws unless the user is an active member of the business with at least `min` role. */
+/** Throws unless the user is an active member of the business with at least `min` role. A member of a deleted business
+ *  gets 404 `business_deleted` whatever their role (every route under /api/b/[bid] goes through here); anyone else gets
+ *  the ordinary 404, so the code never tells a stranger that the business existed. */
 export async function requireRole(businessId: string, userId: string, min: Role = 'Viewer'): Promise<Role> {
   if (!/^[0-9a-f-]{36}$/i.test(businessId)) throw notFound('Business');
-  const role = await memberRole(businessId, userId);
-  if (!role) throw notFound('Business');
+  const m = (await db.select({ role: schema.members.role, status: schema.businesses.status }).from(schema.members)
+    .innerJoin(schema.businesses, eq(schema.businesses.id, schema.members.businessId))
+    .where(and(eq(schema.members.businessId, businessId), eq(schema.members.userId, userId), eq(schema.members.status, 'active'))).limit(1))[0];
+  if (!m) throw notFound('Business');
+  if (m.status === 'deleted') throw businessDeleted();
+  const role = m.role as Role;
   if (ROLE_RANK[role] < ROLE_RANK[min]) throw forbidden();
   return role;
 }
@@ -42,12 +43,14 @@ export const DRAFT_ACTIONS = new Set(['onboarding.analyze', 'onboarding.step', '
   'profile.update', 'job.get', 'gsc.properties', 'gsc.connect']);   // profile.update covers the logo data-URL upload
 
 /** The business gate (architecture §4.4), after requireRole:
+ *  - a deleted business is refused for everyone (404 `business_deleted`), also for a caller that skipped requireRole;
  *  - a draft belongs to its owner only (404 otherwise); a non-allowlisted action on it needs own access (402);
  *  - an active business: a guest gets 404, a user without access (the owner's subscription) gets 402.
  *  `own` is the actor's ownAccess when the caller already has it. Returns the business row. */
 export async function gateBusiness(actor: Actor, bid: string, o: { action?: string; own?: boolean } = {}) {
   const biz = (await db.select().from(schema.businesses).where(eq(schema.businesses.id, bid)).limit(1))[0];
   if (!biz) throw notFound('Business');
+  if (biz.status === 'deleted') throw businessDeleted();
   if (biz.status === 'onboarding') {
     if (biz.ownerId !== actor.id) throw notFound('Business');
     if (o.action && !DRAFT_ACTIONS.has(o.action) && !(o.own ?? await ownAccess(actor))) throw subscriptionRequired();

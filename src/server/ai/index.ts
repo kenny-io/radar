@@ -6,6 +6,7 @@ import { db, schema } from '../db';
 import { env } from '../env';
 import { reportFailure, type FailureContext } from '../observability/failures';
 import { RadarError, GENERIC_AI_ERROR } from '../errors';
+import { businessDeleted } from '../deletion/state';
 import { aiFind } from '@/lib/constants';
 import { anthropicRun } from './adapters/anthropic';
 import { openaiRun } from './adapters/openai';
@@ -60,10 +61,13 @@ export function providerOf(modelId: string): 'Anthropic' | 'OpenAI' | 'SpaceX' {
 }
 function hasKey(p: string) { return p === 'Anthropic' ? !!env.anthropicKey : p === 'OpenAI' ? !!env.openaiKey : !!env.xaiKey; }
 
-/** The business's `ai` settings (model choices and saved writing instructions) in one lookup; {} without a business. */
+/** The business's `ai` settings (model choices and saved writing instructions) in one lookup; {} without a business.
+ *  This is the first read of every ai.run, so it is also where a deleted business is refused, before any provider is
+ *  called (delete-business architecture §2.2): no model call is ever made for a deleted business. */
 async function aiSettingsFor(businessId?: string | null): Promise<Record<string, any>> {
   if (!businessId) return {};
-  const r = await db.select({ ai: schema.businesses.ai }).from(schema.businesses).where(eq(schema.businesses.id, businessId)).limit(1);
+  const r = await db.select({ ai: schema.businesses.ai, status: schema.businesses.status }).from(schema.businesses).where(eq(schema.businesses.id, businessId)).limit(1);
+  if (r[0]?.status === 'deleted') throw businessDeleted();
   return r[0]?.ai || {};
 }
 

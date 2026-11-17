@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { api, actCall, ApiError, isSubscriptionRequired } from './api';
+import { leaveIfDeleted } from './leave';
 import { LaterQueue } from './laterQueue';
 import { Pending, RevSync } from './articleSync';
 import { useSeenPing } from './seen';
@@ -110,7 +111,8 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
         revs.current.reset(w.rev); setBState(w); return;
       }
     }
-    catch (e) { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); }
+    // A 404 `business_deleted` means the owner deleted this business: leave for the next one (leave.ts). Any other 404 is ignored as before.
+    catch (e) { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); else leaveIfDeleted(e); }
   }, []);
   const refreshMe = useCallback(async () => { const m = await api<Me>('/api/me'); setMe(m); return m; }, []);
   useEffect(() => { setBState(null); setJobs({}); revs.current = new RevSync<Workspace>(); refresh(); }, [bid, refresh]);
@@ -136,8 +138,9 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
       es.onerror = () => {
         es?.close(); if (stopped) return;
         // EventSource can't read the status, so a business that lost access (402) or a lost session (401) would retry
-        // forever: ask the workspace once (leave on 401/402, ignore anything else; state is not touched), then reconnect.
-        api(`/api/b/${bid}/workspace`).catch(e => { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); });
+        // forever: ask the workspace once (leave on 401/402 and when the business was deleted, ignore anything else; state
+        // is not touched), then reconnect.
+        api(`/api/b/${bid}/workspace`).catch(e => { if (e instanceof ApiError && e.status === 401) window.location.href = '/signup'; else if (isSubscriptionRequired(e)) window.location.assign('/start-trial'); else leaveIfDeleted(e); });
         retry = setTimeout(open, 3000);
       };
     };
@@ -176,6 +179,8 @@ export function AppProvider({ me: initialMe, children }: { me: Me; children: Rea
     } catch (e: any) {
       // The business is locked (no trialing/active subscription): the trial page is the only way forward.
       if (isSubscriptionRequired(e)) { window.location.assign('/start-trial'); throw e; }
+      // The business was deleted while this tab was open: the tab is leaving, so no error toast and no refresh.
+      if (leaveIfDeleted(e)) throw e;
       if (opts.optimistic) refresh();
       if (!opts.silent) toast(e?.message || 'Radar couldn’t finish this. Try again.', { tone: 'bad' });
       throw e;

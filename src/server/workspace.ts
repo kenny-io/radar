@@ -4,6 +4,7 @@ import { autopilotPublic } from './services/autopilot/policy';
 import { and, desc, eq, gte, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { notFound } from './errors';
+import { businessDeleted } from './deletion/state';
 import { BRIEF_DEFAULT } from '@/lib/constants';
 import { imageSettingsOf } from '@/lib/imageOptions';
 import { addDays, todayIn } from '@/lib/format';
@@ -107,6 +108,7 @@ export function jobProgress(j: { kind: string; status: string; progress: unknown
 }
 export async function loadWorkspace(bid: string, userId: string, role: Role, opts: { articles?: ArticlesMode } = {}): Promise<Workspace> {
   const b = await getBiz(bid);
+  if (b.status === 'deleted') throw businessDeleted();   // the gates refuse it first; a workspace is never built for it
   const today = bizToday(b);
   const [entries, articles, conns, packs, days, gscRow, props, live, team, jobRows, suggs, firstRun, billing, unread, failed] = await Promise.all([
     db.select().from(schema.calendarEntries).where(eq(schema.calendarEntries.businessId, bid)).orderBy(schema.calendarEntries.date, schema.calendarEntries.createdAt),
@@ -150,7 +152,10 @@ export async function loadWorkspace(bid: string, userId: string, role: Role, opt
     });
   }
   const brief: BriefState = { setup: b.briefSetup, settings: briefSettingsOf(b) as any, days: briefDaysMap };
-  const proposals = props.map(proposalFromRow);
+  // A proposal still waiting for a decision that names a deleted business is not shown (it comes back with a restore).
+  const waitingOn = [...new Set(props.filter(p => !p.decision && p.partnerBusinessId).map(p => p.partnerBusinessId!))];
+  const deletedPartners = new Set(waitingOn.length ? (await db.select({ id: schema.businesses.id }).from(schema.businesses).where(and(inArray(schema.businesses.id, waitingOn), eq(schema.businesses.status, 'deleted')))).map(r => r.id) : []);
+  const proposals = props.filter(p => p.decision || !p.partnerBusinessId || !deletedPartners.has(p.partnerBusinessId)).map(proposalFromRow);
   const backlinks: BacklinksState = { joined: !!(b.backlinks || {}).joined, prefs: (b.backlinks || {}).prefs || {}, inbound: proposals.filter(p => p.direction === 'in'), outbound: proposals.filter(p => p.direction === 'out'), live: live.map(liveFromRow) };
   const socialPacks = packs.map(p => ({ ...(p.data as SocialPack), id: p.id }));
   const auto = socialAutoOf(b);

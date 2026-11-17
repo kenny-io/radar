@@ -6,6 +6,7 @@ import { currentUser } from '@/server/auth/session';
 import { safeNext, openBusinessUrl } from '@/server/billing/guard';
 import { env } from '@/server/env';
 import { handle, json, requestJson } from '@/server/http/handle';
+import { RadarError } from '@/server/errors';
 
 /** Make a business current for this browser: a member's business that isn't locked (402), else 404/403 as everywhere. */
 async function makeCurrent(u: Awaited<ReturnType<typeof requireUser>>, id: string) {
@@ -30,6 +31,8 @@ export const GET = handle(async (req: Request) => {
   const to = n && !n.startsWith('/api/') && !/[\u0000-\u001f\u007f]/.test(n) ? n : '/dashboard';
   const u = await currentUser();
   if (!u) return NextResponse.redirect(`${env.appUrl}/signin?next=${encodeURIComponent(openBusinessUrl(q.get('id') || '', to))}`, 303);
-  await makeCurrent(u, q.get('id') || '');
+  // A link in mail sent before the business was deleted: no error page, the dashboard opens whatever the member has left.
+  try { await makeCurrent(u, q.get('id') || ''); }
+  catch (e) { if (e instanceof RadarError && e.code === 'business_deleted') return NextResponse.redirect(`${env.appUrl}/dashboard`, 303); throw e; }
   return NextResponse.redirect(`${env.appUrl}${to}`, 303);
 });

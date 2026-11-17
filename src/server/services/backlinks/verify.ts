@@ -15,7 +15,9 @@ import type { Profile } from '@/lib/types';
 type LiveRow = typeof schema.liveLinks.$inferSelect;
 type PropRow = typeof schema.proposals.$inferSelect;
 
-async function bizRow(id: string) { return (await db.select().from(schema.businesses).where(eq(schema.businesses.id, id)).limit(1))[0] || null; }
+/** Null for a deleted business too: a partner's check never writes a live link into it. Its own check records the
+ *  link after a restore. */
+async function bizRow(id: string) { const b = (await db.select().from(schema.businesses).where(eq(schema.businesses.id, id)).limit(1))[0]; return b && b.status !== 'deleted' ? b : null; }
 
 async function setLinkStatus(from: string, to: string, patch: Partial<LiveRow>) {
   await db.update(schema.liveLinks).set(patch).where(and(eq(schema.liveLinks.fromUrl, from), eq(schema.liveLinks.toUrl, to)));
@@ -84,7 +86,7 @@ export async function verifyBusiness(bid: string) {
 /** Links to this business found on network partners' crawled pages that weren't placed through a proposal → "Editorial". */
 async function discoverEditorial(bid: string) {
   const a = await bizRow(bid); if (!a || !metaOf(a).joined) return;
-  const partners = (await db.select().from(schema.businesses)).filter(b => b.id !== bid && metaOf(b).joined);
+  const partners = (await db.select().from(schema.businesses).where(eq(schema.businesses.status, 'active'))).filter(b => b.id !== bid && metaOf(b).joined);
   if (!partners.length) return;
   const pages = await db.select({ url: schema.crawlPages.url, links: schema.crawlPages.links }).from(schema.crawlPages).where(inArray(schema.crawlPages.businessId, partners.map(p => p.id)));
   const known = new Set((await db.select({ f: schema.liveLinks.fromUrl, t: schema.liveLinks.toUrl }).from(schema.liveLinks).where(eq(schema.liveLinks.businessId, bid))).map(r => r.f + '→' + r.t));

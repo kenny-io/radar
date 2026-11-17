@@ -42,7 +42,11 @@ export const businesses = pgTable('businesses', {
   id: id(),
   ownerId: uuid('owner_id').notNull().references(() => users.id),
   domain: text('domain').notNull(),
-  status: text('status').$type<'onboarding' | 'active'>().notNull().default('onboarding'),
+  /** 'deleted' = the owner deleted it: hidden from everyone, restorable until `purgeAt`, then wiped (delete-business architecture §1). */
+  status: text('status').$type<'onboarding' | 'active' | 'deleted'>().notNull().default('onboarding'),
+  /** Both are set by Postgres at the delete and are NULL unless the status is 'deleted' (businesses_deleted_check). */
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  purgeAt: timestamp('purge_at', { withTimezone: true }),
   timezone: text('timezone').notNull().default('America/New_York'),
   rev: integer('rev').notNull().default(1),
   profile: jsonb('profile').$type<any>().notNull(),
@@ -65,7 +69,15 @@ export const businesses = pgTable('businesses', {
   lastActiveAt: timestamp('last_active_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: created(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, t => [
+  // A row is marked deleted only with both timestamps, keeps no wipe time while it is not, and can never be given a
+  // wipe time less than 168 hours after its delete (the wipe fails closed on this, PUR-4).
+  check('businesses_deleted_check', sql`
+  ("status" = 'deleted') = ("deleted_at" IS NOT NULL)
+  AND ("deleted_at" IS NULL) = ("purge_at" IS NULL)
+  AND ("purge_at" IS NULL OR "purge_at" >= "deleted_at" + interval '168 hours')`),
+  index('businesses_purge_idx').on(t.purgeAt).where(sql`status = 'deleted'`),
+]);
 
 export const members = pgTable('members', {
   id: id(),

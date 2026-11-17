@@ -9,6 +9,7 @@ import { RadarError } from '../errors';
 import { bump } from '../workspace';
 import { bizAccess } from '../billing/access';
 import { billingFlag, billingFlagNeedsEmail } from '../flags';
+import { SKIPPED_DELETED, businessDeleted, isBusinessDeleted } from '../deletion/state';
 
 export type JobRow = typeof schema.jobs.$inferSelect;
 export interface JobCtx<P = any> {
@@ -76,22 +77,60 @@ async function lapsed(job: JobRow): Promise<boolean> {
   return !!b && b.status === 'active' && !(await bizAccess(b));
 }
 
+/** A job that reports progress re-reads its business's deleted state at most this often (delete-business §2.2). */
+export const DELETED_RECHECK_MS = 5000;
+/** A deleted business does no background work: the job is closed as skipped, never failed, and nobody is alerted. */
+async function skipDeleted(job: JobRow, workerId: string) {
+  await db.update(schema.jobs).set({ status: 'done', result: SKIPPED_DELETED, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
+  console.info(`[job ${job.kind} ${job.id}] skipped: the business was deleted`);
+}
+/** How a failed attempt ends: back in the queue with a delay while attempts remain, else `failed`. */
+async function endFailedAttempt(job: JobRow, def: JobDef, workerId: string, e: any, started: number) {
+  const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
+  const msg = e instanceof RadarError ? e.userMessage : 'Radar couldn’t finish this. Try again.';
+  if (job.kind !== 'observability.alert') await reportFailure(e, { source: 'job', operation: job.kind, retrying: !permanent && job.attempts < job.maxAttempts });
+  else console.error('[radar.alert.retry_failed]', sanitizeDiagnostic(e?.message || 'Alert delivery failed'));
+  if (!permanent && job.attempts < job.maxAttempts) {
+    const delay = def.backoffMs ? def.backoffMs(job.attempts) : Math.min(15 * 60e3, 5000 * Math.pow(3, job.attempts - 1));
+    await db.update(schema.jobs).set({ status: 'queued', runAt: new Date(Date.now() + delay), lockedAt: null, error: msg }).where(owned(job.id, workerId));
+  } else {
+    await db.update(schema.jobs).set({ status: 'failed', error: msg, finishedAt: new Date(), lockedAt: null, result: { detail: String(e?.message || e).slice(0, 500) } }).where(owned(job.id, workerId));
+    trackSoon(`job.${job.kind}`, { bid: job.businessId, ref: job.ref, props: { status: 'failed', attempt: job.attempts, ms: Date.now() - started, error: String(e?.message || e).slice(0, 200) } });
+  }
+}
+
 async function execute(job: JobRow, workerId: string) {
   return withFailureContext({ source: 'job', operation: job.kind, jobId: job.id, businessId: job.businessId, ref: job.ref, attempt: job.attempts, maxAttempts: job.maxAttempts }, () => executeInContext(job, workerId));
 }
 async function executeInContext(job: JobRow, workerId: string) {
   const def = registry.get(job.kind);
   if (!def) { if (job.kind !== 'observability.alert') await reportFailure(new Error(`Unknown job kind ${job.kind}`), { source: 'job', operation: job.kind }); await db.update(schema.jobs).set({ status: 'failed', error: `Unknown job kind ${job.kind}`, finishedAt: new Date() }).where(eq(schema.jobs.id, job.id)); return; }
+  // Before anything else, for every kind and with billing on or off (`lapsed` below skips social.send and reads nothing
+  // when billing is off). A check that cannot be made fails the attempt: the job is retried and never runs unchecked.
+  if (job.businessId) {
+    let deleted: boolean;
+    try { deleted = await isBusinessDeleted(job.businessId); }
+    catch (e) { await endFailedAttempt(job, def, workerId, e, Date.now()); return; }
+    if (deleted) { await skipDeleted(job, workerId); return; }
+  }
   if (await lapsed(job).catch(async (e: any) => { await reportFailure(e, { source: 'job', operation: `${job.kind}.accessCheck`, degraded: true }); return false; })) {
     await db.update(schema.jobs).set({ status: 'done', result: { skipped: 'no_access' }, finishedAt: new Date(), lockedAt: null }).where(owned(job.id, workerId));
     console.info(`[job ${job.kind} ${job.id}] skipped: the owner has no active subscription`);
     return;
   }
   let last = 0; let pending: any = undefined; let timer: NodeJS.Timeout | null = null; const started = Date.now();
+  let checkedAt = started; let stopped = false;
+  // A running job stops at its next progress report once its business is deleted (DEL-5): nothing it does after that
+  // report is started. A read that fails throws too, so the job cannot go on unchecked.
+  const stillThere = async () => {
+    if (!job.businessId || Date.now() - checkedAt < DELETED_RECHECK_MS) return;
+    checkedAt = Date.now();
+    if (await isBusinessDeleted(job.businessId)) throw businessDeleted();
+  };
   const flush = async () => { if (pending === undefined) return; const p = pending; pending = undefined; last = Date.now(); await db.update(schema.jobs).set({ progress: p }).where(eq(schema.jobs.id, job.id)); };
   const ctx: JobCtx = {
     job, payload: job.payload, businessId: job.businessId, attempt: job.attempts,
-    progress: async (p) => { pending = p; if (Date.now() - last > 250) await flush(); else if (!timer) timer = setTimeout(() => { timer = null; flush().catch(() => {}); }, 260); },
+    progress: async (p) => { await stillThere(); pending = p; if (Date.now() - last > 250) await flush(); else if (!timer) timer = setTimeout(() => { timer = null; flush().catch(() => {}); }, 260); },
     touch: async () => { if (job.businessId) await bump(job.businessId); },
   };
   // While attempts remain, whether a failure inside this one matters to an operator depends on how the attempt ends.
@@ -105,20 +144,15 @@ async function executeInContext(job: JobRow, workerId: string) {
     if (jobProducedOutcome(job.kind, result)) trackSoon(JOB_OUTCOME[job.kind], { bid: job.businessId, ref: job.ref, props: { ...(result && typeof result === 'object' ? result : {}), auto: job.kind === 'social.autoRun' || undefined } });
   } catch (e: any) {
     if (timer) clearTimeout(timer); await flush().catch(() => {});
+    // Whatever a job of a deleted business ran into is not an incident: it is closed as skipped, the alerts it held
+    // are dropped unsent, and nothing is reported. If the state cannot be read, the failure is handled as any other.
+    stopped = !!job.businessId && await isBusinessDeleted(job.businessId).catch(() => false);
+    if (stopped) { await skipDeleted(job, workerId); return; }   // `settle` is never called: what it held is never sent
     const permanent = e instanceof PermanentJobError || e?.code === 'permanent';
-    const msg = e instanceof RadarError ? e.userMessage : 'Radar couldn’t finish this. Try again.';
     await settle?.(permanent, e); // ended for good: email what was held; retried: drop only the alerts for the failure being retried
-    if (job.kind !== 'observability.alert') await reportFailure(e, { source: 'job', operation: job.kind, retrying: !permanent && job.attempts < job.maxAttempts });
-    else console.error('[radar.alert.retry_failed]', sanitizeDiagnostic(e?.message || 'Alert delivery failed'));
-    if (!permanent && job.attempts < job.maxAttempts) {
-      const delay = def.backoffMs ? def.backoffMs(job.attempts) : Math.min(15 * 60e3, 5000 * Math.pow(3, job.attempts - 1));
-      await db.update(schema.jobs).set({ status: 'queued', runAt: new Date(Date.now() + delay), lockedAt: null, error: msg }).where(owned(job.id, workerId));
-    } else {
-      await db.update(schema.jobs).set({ status: 'failed', error: msg, finishedAt: new Date(), lockedAt: null, result: { detail: String(e?.message || e).slice(0, 500) } }).where(owned(job.id, workerId));
-      trackSoon(`job.${job.kind}`, { bid: job.businessId, ref: job.ref, props: { status: 'failed', attempt: job.attempts, ms: Date.now() - started, error: String(e?.message || e).slice(0, 200) } });
-    }
+    await endFailedAttempt(job, def, workerId, e, started);
   } finally {
-    if (job.businessId) await bump(job.businessId).catch(() => {});
+    if (job.businessId && !stopped) await bump(job.businessId).catch(() => {});
   }
 }
 

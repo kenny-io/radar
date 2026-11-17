@@ -1,0 +1,12 @@
+import { chromium, session, db, text, shot, A, BASE } from './lib.mjs';
+const pool = db(); const b = await chromium.launch();
+const inv = (await pool.query("select substring(text from 'http[^ \\n]+') l from outbox_emails where \"to\"='pending.qa@radar.local'")).rows[0].l;
+const anon = await b.newContext(); const ip = await anon.newPage();
+await ip.goto(inv, { waitUntil: 'networkidle' }); console.log('signed out, deleted-business invite →', ip.url().replace(BASE, ''));
+await ip.goto(BASE + '/api/invites/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBBBB', { waitUntil: 'networkidle' }); console.log('signed out, made-up token →', ip.url().replace(BASE, ''));
+const { page } = await session(b, 'stranger.qa@radar.local');
+await page.goto(inv, { waitUntil: 'networkidle' }); await page.waitForTimeout(1500);
+console.log('signed in (stranger), deleted-business invite →', page.url().replace(BASE, ''), '|', (await text(page)).slice(0, 120).replace(/\n/g, ' '));
+console.log('member row:', JSON.stringify((await pool.query("select email, role, status, user_id from members where email='pending.qa@radar.local'")).rows));
+console.log('stranger memberships:', (await pool.query("select count(*) from members m join users u on u.id=m.user_id where u.email='stranger.qa@radar.local'")).rows[0].count);
+await b.close(); await pool.end();

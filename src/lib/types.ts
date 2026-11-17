@@ -344,7 +344,11 @@ export interface Workspace {
 /** `access: false` = the owner has no trialing/active subscription (billing on): hidden from the switcher, never current. Absent = true. */
 export interface BusinessSummary { id: string; name: string; domain: string; brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>; status: 'onboarding' | 'active'; role: Role; access?: boolean }
 
-export interface Me { user: User; businesses: BusinessSummary[]; currentId: string | null }
+/** A business the signed-in user owns, deleted and still inside its restore window. Owner only. */
+export interface DeletedBusiness { id: string; name: string; domain: string; brand: Pick<Brand, 'logo' | 'primary' | 'secondary'>; deletedAt: string; purgeAt: string }
+export interface Me { user: User; businesses: BusinessSummary[]; currentId: string | null; deleted: DeletedBusiness[] }
+export interface DeleteBusinessResult { id: string; name: string; domain: string; deletedAt: string; purgeAt: string; nextId: string | null }
+export interface RestoreBusinessResult { id: string; name: string; /** false: restored but locked (no subscription) */ open: boolean }
 
 /** RPC */
 export interface ActResponse<T = any> { ok: boolean; data?: T; rev?: number; workspace?: Workspace; error?: string; code?: string }
@@ -414,5 +418,7 @@ export interface OnboardingStageProps {
   saveCommits: boolean;
   /** cleaned and validated ?domain= */
   autoDomain: string | null;
+  /** The owner's deleted businesses still inside their restore window; [] for a guest and for /start. */
+  deleted: DeletedBusiness[];
 }
 export type AuthResult = { ok: true; next: string; verificationRequired?: never } | { ok: true; verificationRequired: true; next?: never };

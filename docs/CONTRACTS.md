@@ -224,6 +224,35 @@ Types live in `src/lib/types.ts` (`SubStatus`, `DraftStep`, `OnboardingState`, `
 - Instructions never reach `Profile`, `profileContext`, number allow-lists, job payloads, `ai_calls` or `events`. Deterministic cleaners (`social/rules.ts`, `brief/rules.ts`, article number checks) run unchanged after generation.
 - Dev stubs: `stubRun` prints `[ai:stub] <purpose> received workspace writing instructions` followed by the block (development only).
 
+## Delete a business (2026-11, `.factory/delete-business/architecture.md` §9)
+
+Shared, isomorphic: `src/lib/deletion.ts` (`DELETE_RETENTION_DAYS = 7`, `DELETE_RETENTION_HOURS = 168`, `domainMatches(typed, domain)`,
+`FLASH_KEY`) and, in `src/lib/types.ts`, `DeletedBusiness`, `DeleteBusinessResult`, `RestoreBusinessResult`, `Me.deleted`,
+`OnboardingStageProps.deleted`. `BusinessSummary.status` and `Workspace.status` never carry `'deleted'`.
+
+- **`POST /api/b/:bid/delete { domain }`** → `{ ok, data: DeleteBusinessResult }` (`{ id, name, domain, deletedAt, purgeAt, nextId }`),
+  and `radar_biz` is set to `nextId` when there is one. Owner only, same-origin, never a guest. Errors: 400 `domain_mismatch`,
+  400 `invalid`, 401, 402 `subscription_required` (a locked business), 403 `forbidden`, 404 `not_found`, 404 `business_deleted`
+  (already deleted: treat as done), 409 `not_active` (a draft).
+- **`POST /api/b/restore { id }`** → `{ ok, data: RestoreBusinessResult }` (`{ id, name, open }`), and `radar_biz` is set to the id when
+  `open`. `open: false` = restored but locked for no subscription. Owner only; a repeat answers 200. Errors: 400 `invalid`, 401, 403
+  (cross-site), 404 `restore_not_found` (unknown, not the owner, a draft, already wiped), 410 `restore_expired` (its `purgeAt` has passed,
+  whether or not the wipe has run).
+- **`GET /api/me`** → `Me` with `deleted: DeletedBusiness[]`: the caller's own deleted businesses whose `purgeAt` is still ahead, newest
+  delete first. `businesses` never contains a deleted business, for anyone.
+- **Every `/api/b/:bid/…` route** answers 404 `{ code: 'business_deleted', error: 'Business wasn’t found.' }` to a member of a deleted
+  business, and the ordinary 404 `not_found` to anyone else. The event stream sends the delete's `rev` and then ends.
+  `GET /api/b/current` redirects to `/dashboard` instead.
+- **Server only**: `deleteBusiness`, `restoreBusiness`, `listDeleted(userId)` from `@/server/deletion`; `businessDeleted()`,
+  `isBusinessDeleted(bid)` from `@/server/deletion/state` (imports only the database and the error type).
+- **Jobs and cron**: a job of a deleted business ends `done` with `result: { skipped: 'deleted' }`. Cron `business.purge` (hourly, from
+  minute 23) enqueues job `business.purge` (no business id, singleton, one attempt), whose result is
+  `{ due, wiped, failed, filesDeleted, filesKept }`, or `{ skipped: 'off' }`, or `{ blocked: 'too_many_due', due }`.
+- **Storage**: `deletePrefix(bid, keep): Promise<{ deleted, kept }>` and `keptKey(bid, url)` in `src/server/services/storage.ts`;
+  `publishedImageKeys(bid, rows)` in `src/server/deletion/keep.ts`.
+- **Email**: lifecycle type `business_deleted`, data `{ deletedBusiness: { id, name, domain, deletedAt, purgeAt } }`, event key
+  `business-deleted:<bid>:<deletedAt>`.
+
 ## First five optimizations (2026-11)
 
 Design and reasons: `.factory/first-five-optimizations/architecture.md`.

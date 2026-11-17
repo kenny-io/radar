@@ -61,6 +61,30 @@ Writing calls also pass `instructions: { surface, platforms? }`; `ai.run` then a
 instructions (Settings → Writing instructions, `src/server/ai/instructions.ts`) to the end of `system`, or nothing when none apply.
 Structured output is validated with zod. Model names appear only in Settings → AI models.
 
+## Deleting a business
+Design and decisions: `.factory/delete-business/architecture.md`. `businesses.status` is `'onboarding' | 'active' | 'deleted'`.
+The Owner deletes a business from Settings (`POST /api/b/[bid]/delete`), Radar keeps it for 168 hours, and until then the
+Owner can restore it (`POST /api/b/restore`). Both live in `src/server/deletion/` and are routes, not actions. The database
+clock decides every time, and `businesses_deleted_check` refuses a wipe time earlier than 168 hours after the delete.
+
+A deleted business does nothing, and new code must keep it that way:
+- **Web**: `requireRole` and `gateBusiness` answer 404 `business_deleted` for it. Go through them; never read a role or a
+  business for a request another way.
+- **Jobs**: the queue closes a job with a `businessId` as `{ skipped: 'deleted' }` before it runs, and a running job stops
+  at its next `ctx.progress()`. A long job that calls a paid API or sends anything must report progress before it does.
+- **AI**: `ai.run` refuses it. Pass `businessId` on every call made for a business.
+- **Crons**: select with `businesses.status = 'active'` (or at least not `'deleted'`). A test runs every registered hook
+  against a fully seeded deleted business and fails if a hook enqueues, marks or writes anything for it.
+- **Outside calls**: the publisher and the social sender re-check the business immediately before they write to a site or
+  create a post. A new path that publishes, posts or mails for a business needs the same last check.
+
+The wipe is `src/server/jobs/purge.ts` (hourly cron → one `business.purge` job). It removes every row of a business whose
+window has ended and every stored file under `<business id>/`, except the image files inside articles Radar already wrote
+to the business's site (`src/server/deletion/keep.ts`), which must keep loading there. It fails closed: when anything is
+in doubt it removes nothing and tries again the next hour. `RADAR_PURGE=off` stops it without a deploy. A new table that
+carries a business id needs an `ON DELETE CASCADE` foreign key or a line in `purgeOne`, and a row in
+`Fixtures.seedEverything`; the wipe test fails until it has both.
+
 ## Integrations and dev stubs
 Each external integration reads its credentials from `src/server/env.ts`. When `RADAR_DEV_STUBS=1`, integrations
 use deterministic local stubs so every flow runs without keys (AI: `registerStub(purpose, fn)`). Stubs are for

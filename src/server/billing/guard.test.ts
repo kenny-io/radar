@@ -98,13 +98,13 @@ describe.skipIf(!ON)('resolveEntry and guards (database)', () => {
   });
 
   it('startGuard, onboardingGuard and signupContext', async () => {
-    expect(await startGuard('WWW.Fieldnote.app/x')).toEqual({ props: { actor: 'none', user: null, draft: null, saveCommits: false, autoDomain: 'fieldnote.app' } });
+    expect(await startGuard('WWW.Fieldnote.app/x')).toEqual({ props: { actor: 'none', user: null, draft: null, saveCommits: false, autoDomain: 'fieldnote.app', deleted: [] } });
     expect(await onboardingGuard('fieldnote.app')).toEqual({ redirect: '/signup' });
     expect(await signupContext()).toEqual({ pending: null });
     const g = await F.user({ guest: true }); await F.signIn(g, H.jar);
     const d = await F.biz(g, { status: 'onboarding', domain: 'fieldnote.app', onboarding: { step: 'gsc' } });
     const s = await startGuard('fieldnote.app');
-    expect(s).toMatchObject({ props: { actor: 'guest', saveCommits: false, autoDomain: 'fieldnote.app', draft: { id: d.id, step: 'gsc', savedAt: null } } });
+    expect(s).toMatchObject({ props: { actor: 'guest', saveCommits: false, autoDomain: 'fieldnote.app', draft: { id: d.id, step: 'gsc', savedAt: null }, deleted: [] } });
     expect(await onboardingGuard('fieldnote.app')).toEqual({ redirect: '/start?domain=fieldnote.app' });
     expect(await signupContext()).toEqual({ pending: null });                          // not saved yet → default variant
     await db.update(schema.businesses).set({ onboarding: SAVED }).where(eq(schema.businesses.id, d.id));
@@ -114,9 +114,46 @@ describe.skipIf(!ON)('resolveEntry and guards (database)', () => {
     expect(await startGuard('fieldnote.app')).toEqual({ redirect: '/onboarding?domain=fieldnote.app' });
     expect(await startGuard()).toEqual({ redirect: '/onboarding' });
     // The signed-in stage is told who is signed in, for its "Signed in as … · Sign out" footer (first-five BE-4); a guest's props carry no user.
-    expect(await onboardingGuard(null)).toEqual({ props: { actor: 'user', user: { name: 'Ada', email: u.email }, draft: null, saveCommits: true, autoDomain: null } });
+    expect(await onboardingGuard(null)).toEqual({ props: { actor: 'user', user: { name: 'Ada', email: u.email }, draft: null, saveCommits: true, autoDomain: null, deleted: [] } });
     process.env.RADAR_BILLING = 'on';
     expect(await onboardingGuard(null)).toMatchObject({ props: { saveCommits: false } });
+  });
+
+  it('an owner whose only business is deleted lands on /onboarding, which carries what they can still restore (E-1, RES-1)', async () => {
+    const DAY = 864e5;
+    const u = await F.user({ name: 'Ada' }); await F.signIn(u, H.jar);
+    const older = await F.biz(u, { status: 'deleted', deletedAt: new Date(Date.now() - 2 * DAY), profile: { business: { name: 'Thally' }, brand: { logo: null, primary: '#101010', secondary: '#202020' } } });
+    const newer = await F.biz(u, { status: 'deleted', deletedAt: new Date(Date.now() - 1 * DAY) });
+    await F.biz(u, { status: 'deleted', deletedAt: new Date(Date.now() - 8 * DAY) });   // past its window: not offered
+    const other = await F.user(); await F.biz(other, { status: 'deleted' });             // someone else's: never offered
+    for (const billing of ['on', undefined]) {
+      if (billing) process.env.RADAR_BILLING = billing; else delete process.env.RADAR_BILLING;
+      // A deleted business is not "a business you own": the owner is never sent to /start-trial, which has no way back.
+      expect(await resolveEntry(u)).toEqual({ redirect: '/onboarding' });
+      expect(await destinationAfterAuth(u, '/dashboard')).toBe('/onboarding');
+      const g = await onboardingGuard(null);
+      expect('props' in g && g.props.deleted.map(d => d.id)).toEqual([newer.id, older.id]);   // newest delete first
+      expect('props' in g && g.props.deleted[1]).toEqual({ id: older.id, name: 'Thally', domain: older.domain, brand: { logo: null, primary: '#101010', secondary: '#202020' }, deletedAt: older.deletedAt!.toISOString(), purgeAt: older.purgeAt!.toISOString() });
+      const me = await getMe(u);
+      expect(me).toMatchObject({ businesses: [], currentId: null });
+      expect(me.deleted.map(d => d.id)).toEqual([newer.id, older.id]);
+    }
+    // A member of somebody's deleted business sees none of it.
+    await F.member(older.id, other, 'Admin');
+    expect((await getMe(other)).businesses).toEqual([]);
+  });
+
+  it('sign-in keeps /restore as the destination, with or without a business, and nothing that only looks like it', async () => {
+    const none = await F.user();
+    expect(await destinationAfterAuth(none, '/restore')).toBe('/restore');
+    const gone = await F.user(); await F.biz(gone, { status: 'deleted' });
+    expect(await destinationAfterAuth(gone, '/restore')).toBe('/restore');
+    const has = await F.user(); await F.biz(has);
+    expect(await destinationAfterAuth(has, '/restore')).toBe('/restore');
+    for (const n of ['/restore/', '/restore?id=1', '/restore#x', '/restored', '//restore', '/Restore']) {
+      expect(await destinationAfterAuth(none, n)).toBe('/onboarding');
+      expect(await destinationAfterAuth(has, n)).toBe('/dashboard');
+    }
   });
 
   it('trialGuard: /signup without a user; /dashboard with access (committing a saved draft); else the page props', async () => {

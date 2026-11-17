@@ -135,7 +135,9 @@ export async function ensureToken(acctId: string, o: { force?: boolean; stale?: 
  *  profiles after 60 days, pages after 365) become expired — no refresh call. Once per account per day, accounts that can
  *  refresh do (keeps X refresh tokens alive and finds revoked apps before send time). Unflagged businesses are skipped. */
 export async function tokensTick(now: Date) {
-  const rows = await db.select({ a: A, ownerId: schema.businesses.ownerId }).from(A).innerJoin(schema.businesses, eq(schema.businesses.id, A.businessId)).where(eq(A.expired, false));
+  // Active businesses only: a deleted one gets no refresh and no "access ends" notice. Its refresh tokens outlive the
+  // 7 days, and ensureToken refreshes on demand after a restore.
+  const rows = await db.select({ a: A, ownerId: schema.businesses.ownerId }).from(A).innerJoin(schema.businesses, eq(schema.businesses.id, A.businessId)).where(and(eq(A.expired, false), eq(schema.businesses.status, 'active')));
   const flag = new Map<string, boolean>();
   const day = now.toISOString().slice(0, 10);
   for (const { a, ownerId } of rows) {

@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ job: null as any, updates: [] as any[], deliver: vi.fn(async (..._args: any[]) => {}) }));
 vi.mock('../db', () => ({
-  schema: { jobs: { id: 'id', lockedBy: 'lockedBy', status: 'status' } }, pool: {},
+  // `businesses` is read by the queue's deleted check before a job runs; the row this mock returns has no `status`, so it is not deleted.
+  schema: { jobs: { id: 'id', lockedBy: 'lockedBy', status: 'status' }, businesses: { id: 'id', status: 'status' } }, pool: {},
   db: {
     select: () => ({ from: () => ({ where: () => ({ limit: async () => state.job ? [state.job] : [] }) }) }),
     update: () => ({ set: (values: any) => ({ where: async () => { state.updates.push(values); return []; } }) }),

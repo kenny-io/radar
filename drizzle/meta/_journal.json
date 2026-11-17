@@ -134,6 +134,13 @@
       "when": 1794272129974,
       "tag": "0018_first_five",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794837306109,
+      "tag": "0019_delete_business",
+      "breakpoints": true
     }
   ]
 }

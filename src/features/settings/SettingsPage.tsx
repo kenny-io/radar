@@ -14,6 +14,7 @@ import { BillingSettings } from '@/features/billing/BillingSettings';
 import { EmailSettings } from './EmailSettings';
 import { AutopilotSettings } from './AutopilotSettings';
 import { WritingInstructionsSettings } from './WritingInstructions';
+import { DeleteBusiness, DeletedBusinesses } from './DeleteBusiness';
 
 import { AI_DEFAULT, AI_MODELS, AI_TASKS, aiFind, cadenceLabel, langs, MARKETS, modelName, timezones } from '@/lib/constants';
 import { EMAIL_RE } from '@/lib/format';
@@ -56,11 +57,11 @@ export function AISettings() {
 }
 
 const SET_KEY = 'radar.settings.tab';
-type SetKey = 'gsc' | 'publishing' | 'social' | 'autopilot' | 'writing' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'feedback';
+type SetKey = 'gsc' | 'publishing' | 'social' | 'autopilot' | 'writing' | 'ai' | 'calendar' | 'team' | 'account' | 'billing' | 'emails' | 'delete' | 'feedback';
 const SET_NAV: [string, [SetKey, string][]][] = [
   ['Connections', [['gsc', 'Search Console'], ['publishing', 'Publishing'], ['social', 'Social accounts']]],
   ['Content', [['autopilot', 'Autopilot'], ['writing', 'Writing instructions'], ['ai', 'AI models'], ['calendar', 'Calendar']]],
-  ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing'], ['emails', 'Emails']]],
+  ['Workspace', [['team', 'Team'], ['account', 'Account'], ['billing', 'Billing'], ['emails', 'Emails'], ['delete', 'Delete business']]],
 
   ['Support', [['feedback', 'Request a feature']]],
 ];
@@ -71,13 +72,17 @@ export function SettingsPage() {
   const [langList] = useState(() => langs());
   // One section at a time. ?section=<key> (and the older ?gsc=1 / ?publishing=1 / ?social=1 links) opens a section;
   // otherwise the last one opened (localStorage), else Search Console.
-  const nav = SET_NAV.map(([g, items]) => [g, items.filter(([k]) => k !== 'social' || !!B?.social.publishing)] as const);
+  // "Delete business" is for the Owner of the open business, and for anyone who has a deleted business of their own to
+  // restore (an owner who is only an Admin here must still find theirs; delete-business architecture §9.4).
+  const owner = B?.role === 'Owner'; const deleted = app.me.deleted.length > 0;
+  const nav = SET_NAV.map(([g, items]) => [g, items.filter(([k]) => k === 'social' ? !!B?.social.publishing : k === 'delete' ? owner || deleted : true)] as const);
   const keys = nav.flatMap(([, items]) => items.map(([k]) => k));
   const p = route.params || {};
   const deep: string | null = p.section || (p.gsc ? 'gsc' : p.publishing ? 'publishing' : p.social ? 'social' : null);
   const stored = () => { try { return localStorage.getItem(SET_KEY); } catch { return null; } };
   const [sel, setSel] = useState<string>(() => deep || stored() || 'gsc');
-  const setTab = (k: string) => { setSel(k); try { localStorage.setItem(SET_KEY, k); } catch {} };
+  // "Delete business" is never the remembered section: Settings should not reopen on it by itself.
+  const setTab = (k: string) => { setSel(k); if (k === 'delete') return; try { localStorage.setItem(SET_KEY, k); } catch {} };
   // A link opens its section once: it is saved as the last section, then dropped from the URL, so a reload keeps whatever
   // the user picks next and a later link to the same section still applies.
   useEffect(() => {
@@ -125,6 +130,10 @@ export function SettingsPage() {
     </Section>,
     emails: <Section title="Emails" sub="Useful reminders, only when there’s a next step." style={{ marginTop: 0 }}><EmailSettings /></Section>,
     billing: <Section title="Billing" sub="Manage your Radar account and subscription." style={{ marginTop: 0 }}><BillingSettings /></Section>,
+    delete: <>
+      {owner && <Section title="Delete business" style={{ marginTop: 0 }}><Row t={`Delete ${B.profile.business.name || B.profile.domain}`} d={B.profile.domain}><DeleteBusiness key={B.id} /></Row></Section>}
+      {deleted && <Section title="Recently deleted" sub="Restore a business before Radar wipes it." style={owner ? undefined : { marginTop: 0 }}><DeletedBusinesses /></Section>}
+    </>,
     feedback: <Section title="Request a feature" style={{ marginTop: 0 }}><FeatureRequest /></Section>,
   };
   return <div className="page" style={{ maxWidth: 1080 }}>

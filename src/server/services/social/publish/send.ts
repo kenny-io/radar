@@ -212,7 +212,10 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
       ids.push(await authed(() => ad.upload(a, f)));
     }
     if (ad.awaitMedia && ids.length) await ad.awaitMedia(a, ids);
-    const go = await db.update(P).set({ stage: 'create', updatedAt: new Date() }).where(mine(r)).returning({ id: P.id });
+    // The last write before the post is created. It only lands while the business is active, so a business deleted
+    // since the claim gets no post (DEL-5): the row stays `sending` at stage `media`, and a restore fails it as stale.
+    const go = await db.update(P).set({ stage: 'create', updatedAt: new Date() })
+      .where(and(mine(r), sql`EXISTS (SELECT 1 FROM ${schema.businesses} b WHERE b.id = ${P.businessId} AND b.status = 'active')`)).returning({ id: P.id });
     if (!go.length) return null;
     if (r.autopilotActivationId && (!(await canRun(r.businessId, r.autopilotActivationId)) || !(await socialOn(biz)))) return finishFailed(r, 'rejected', 'Autopilot is off. Schedule this draft manually to publish it.', manual, userId, 'Autopilot is off. Schedule this draft manually to publish it.');
     try { created = await authed(() => ad.create(a, { text: t!.text, mediaIds: ids, aiMedia: !!t!.aiMedia })); }

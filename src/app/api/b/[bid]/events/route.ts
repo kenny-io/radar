@@ -35,6 +35,9 @@ export const GET = handle(async (req: Request, { params }: { params: Promise<{ b
             const snapshot = await workspaceEvents(bid);
             if (snapshot.rev === undefined) break;
             if (snapshot.rev !== rev) { if (rev !== -1) send('rev', { rev: snapshot.rev }); rev = snapshot.rev; }
+            // The delete bumped the revision, so the tab has just been told to refresh; its next request answers
+            // 404 business_deleted and the client leaves. Nothing more is streamed for a deleted business.
+            if (snapshot.deleted) break;
             const present = new Set(snapshot.jobs.map(j => j.id));
             for (const id of jobSeen.keys()) if (!present.has(id)) jobSeen.delete(id);
             for (const j of snapshot.jobs) {
