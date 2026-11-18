@@ -6,7 +6,7 @@ import { db, schema } from '../../db';
 import { env } from '../../env';
 import { defineJob, PermanentJobError } from '../../jobs/queue';
 import { bump, defaultProfile } from '../../workspace';
-import { crawlSite, CrawlError, type CrawledPage } from './crawl';
+import { crawlSite, crawlFailCopy, CrawlError, type CrawledPage } from './crawl';
 import { detectBrand } from './brand';
 import { extractBusiness, extractAudience, extractVoice, seedKeywords, classifyAmbiguous, siteDigest } from './extract';
 import { mergeAnalysis } from './merge';
@@ -16,7 +16,6 @@ import { topPages, topQueries, hasData } from '../gsc/metrics';
 import { HEX_RE } from '@/lib/format';
 import type { Keyword, Profile } from '@/lib/types';
 
-export const crawlFailCopy = (domain: string) => `Radar couldn’t reach ${domain}. The site may be down or blocking crawlers.`;
 /** Dev-stub pacing so the streamed phases are visible (real runs take as long as they take). */
 const pace = () => (env.devStubs ? new Promise(r => setTimeout(r, 650 + Math.random() * 450)) : Promise.resolve());
 
@@ -36,7 +35,7 @@ defineJob<{ keepEdits?: boolean }>({
     let crawl;
     try { crawl = await crawlSite(domain); }
     catch (e: any) {
-      if (e instanceof CrawlError) { await emit({ phase: 'site', failed: crawlFailCopy(domain) }); throw new PermanentJobError(crawlFailCopy(domain)); }
+      if (e instanceof CrawlError) { const copy = crawlFailCopy(domain, e.reason); await emit({ phase: 'site', failed: copy }); throw new PermanentJobError(copy); }
       throw e;
     }
     const pages = crawl.pages;
