@@ -6,9 +6,9 @@ import { Btn } from '@/components/ui';
 import type { EngagementPreferences } from '@/server/services/lifecycle/preferences';
 
 const fields: { key: keyof EngagementPreferences; title: string; description: string }[] = [
-  { key: 'dailyBrief', title: 'Daily Brief follow-through', description: 'A reminder if a brief has been ready for an hour and you haven’t copied or posted a reply.' },
-  { key: 'calendarReminders', title: 'Calendar reminders', description: 'A reminder after 24 hours if you haven’t approved or scheduled anything from a new content plan.' },
-  { key: 'articleSocial', title: 'Social follow-through', description: 'A reminder to turn a new article into social posts after two hours, or to schedule or post a social pack after 24 hours.' },
+  { key: 'dailyBrief', title: 'Daily Brief follow-through', description: 'Today’s Daily Brief, when it has been ready for an hour and you haven’t copied or posted a reply.' },
+  { key: 'calendarReminders', title: 'Calendar reminders', description: 'A new content plan you haven’t approved or scheduled anything from after 24 hours.' },
+  { key: 'articleSocial', title: 'Social follow-through', description: 'A new article not yet turned into social posts after two hours, or a social pack not scheduled or posted after 24 hours.' },
 ];
 const endpoint = '/api/me/email-preferences';
 
@@ -60,8 +60,8 @@ export function EmailSettings() {
   if (!value) return <><AiReportPreferences /><EducationPreference /><div className="col" style={{ gap: 12, alignItems: 'flex-start' }}><p className="small" role="alert">{error}</p><Btn size="sm" onClick={() => setRetry(n => n + 1)}>Try again</Btn></div></>;
   return <div aria-busy={loading || saving}>
     <AiReportPreferences /><EducationPreference />
-    <p className="small sub" style={{ marginTop: 0 }}>Manage your work reminders. Radar checks that the next step is still unfinished before emailing you.</p>
-    <p className="xs sub">Optional emails share a limit of one new message every 24 hours across your businesses, sent during the day. These choices don’t affect billing or security.</p>
+    <p className="small sub" style={{ marginTop: 0 }}>Choose what your work reminder includes. Radar checks that each step is still unfinished before emailing you.</p>
+    <p className="xs sub">Work reminders come as one email, at most once a week across your businesses, sent during the day. These choices don’t affect billing or security.</p>
     {fields.map(field => <label key={field.key} className="row" style={{ alignItems: 'flex-start', gap: 14, padding: '18px 0', borderTop: '1px solid var(--line2)', cursor: loading || saving ? 'wait' : 'pointer' }}>
       <input type="checkbox" checked={value[field.key]} onChange={event => void change(field.key, event.target.checked)} disabled={loading || saving} style={{ width: 18, height: 18, margin: '2px 0 0', flex: 'none', accentColor: 'var(--ink)' }} />
       <span className="col" style={{ gap: 4 }}><span className="small" style={{ fontWeight: 500 }}>{field.title}</span><span className="xs sub">{field.description}</span></span>

@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.hoisted(() => { process.env.RADAR_DEV_STUBS = '1'; });
 import { and, eq, inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { decrypt } from '@/server/crypto';
@@ -11,7 +12,7 @@ import { withDay } from '@/server/services/brief/store';
 import { enqueueScan } from '@/server/services/brief/jobs';
 import { getJob, runJobNow } from '@/server/jobs/queue';
 import { updatePack } from '@/server/services/social/generate';
-import { collectWorkUpdates, currentWorkSections, engagementSection, optionalDeliveryAfter, recordEngagement, type EngagementEvent } from './engagement';
+import { collectWorkUpdates, currentWorkSections, engagementSection, optionalDeliveryAfter, recordEngagement, workUpdateAfter, type EngagementEvent } from './engagement';
 import { getEngagementPreferences, stopWorkUpdates, updateEngagementPreferences } from './preferences';
 import { dispatchLifecycleBatch } from './dispatch';
 import { queueLifecycle, type LifecyclePayload } from './queue';
@@ -254,5 +255,150 @@ describe.skipIf(!process.env.DATABASE_URL)('conditional work updates (database; 
     } finally { if (oldFlag === undefined) delete process.env.RADAR_BILLING; else process.env.RADAR_BILLING = oldFlag; env.stripeSecretKey = oldSecret; }
     await stopWorkUpdates(u.id); expect(await engagementSection(e, now)).toBeNull();
     const fetcher = ack(); await dispatch(u.id, fetcher); expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  // Work reminders are weekly per account. `at` moves the clock too: the provider acknowledgment is stamped with it.
+  describe('at most one work reminder per rolling 7 days', () => {
+    const DAY = 864e5;
+    const at = (t: Date | number | string) => { const d = new Date(t); vi.setSystemTime(d); return d; };
+    /** An earlier work reminder, written as the dispatcher leaves it. */
+    const earlier = (uid: string, set: Partial<typeof M.$inferInsert>, type = 'work_update') => db.insert(M).values({ id: randomUUID(), userId: uid, type, eventKey: `earlier:${randomUUID()}`, payloadEnc: '', nextAttemptAt: ago(240), expiresAt: ago(168), ...set });
+    const sent = (uid: string, when: Date, type?: string) => earlier(uid, { status: 'sent', firstAttemptAt: when, sentAt: when, attempts: 1 }, type);
+    async function articleAt(uid: string, bid: string, id: string, when: Date) {
+      await db.insert(schema.calendarEntries).values({ id, businessId: bid, title: 'Article ' + id, kw: 'useful work', type: 'guide', date: day, status: 'review' });
+      await db.insert(schema.articles).values({ entryId: id, businessId: bid, data: { generated: true, body: [['p', 'A real article body']] } });
+      await recordEngagement(db, { businessId: bid, kind: 'article_social', ref: id, now: when });
+    }
+    const work = async (uid: string) => (await mails(uid)).filter(m => m.type === 'work_update').sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.eventKey.localeCompare(b.eventKey));
+
+    it('new unfinished work every day for a week gives two emails in eight days, and expired work is dropped, not saved up (W1)', async () => {
+      const { u, b } = await owner(), fetcher = ack(), first = at('2026-11-02T10:00:00Z'), next = new Date(first.getTime() + 7 * DAY);
+      await articleAt(u.id, b.id, `w1-0-${u.id}`, new Date(first.getTime() - 3 * 3600e3));
+      expect((await collectWorkUpdates(first, [u.id])).queued).toBe(1); await dispatch(u.id, fetcher, first);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      for (let d = 1; d <= 6; d++) {
+        const noon = at(first.getTime() + d * DAY + 2 * 3600e3), date = noon.toISOString().slice(0, 10);
+        await articleAt(u.id, b.id, `w1-${d}-${u.id}`, new Date(noon.getTime() - 3 * 3600e3));
+        await db.insert(schema.briefDays).values({ businessId: b.id, date, scannedAt: '09:00', items: [{ id: 'reply-' + d, kind: 'reply', st: 'open', url: 'https://example.com/discussion', title: 'A useful discussion', drafts: { help: 'Useful reply' }, edits: {}, tag: 'Advice', why: '', mention: false }] });
+        await recordEngagement(db, { businessId: b.id, kind: 'brief_reply', ref: date, now: new Date(noon.getTime() - 2 * 3600e3) });
+        expect((await collectWorkUpdates(noon, [u.id])).queued).toBe(0); await dispatch(u.id, fetcher, noon);
+        const open = (await events(u.id)).filter(e => !e.resolvedAt);
+        expect(open).toHaveLength(2 * d); expect(new Set(open.map(e => e.eligibleAt.toISOString()))).toEqual(new Set([next.toISOString()]));
+      }
+      expect(await work(u.id)).toHaveLength(1); expect(fetcher).toHaveBeenCalledTimes(1);
+      at(next); expect((await collectWorkUpdates(next, [u.id])).queued).toBe(1); await dispatch(u.id, fetcher, next);
+      const rows = await work(u.id); expect(rows.map(r => r.status)).toEqual(['sent', 'sent']); expect(fetcher).toHaveBeenCalledTimes(2);
+      const sections = unpack(rows[1]).data.workSections!;
+      expect(sections.map(s => s.kind)).toEqual(['article_social']);
+      const briefs = (await events(u.id)).filter(e => e.kind === 'brief_reply');
+      expect(briefs).toHaveLength(6); expect(briefs.every(e => e.resolvedReason === 'no_longer_actionable')).toBe(true);
+      // The other articles are not saved up into a burst: they wait for the week after, by which time they have expired.
+      const waiting = (await events(u.id)).filter(e => !e.resolvedAt);
+      expect(waiting).toHaveLength(5); expect(waiting.every(e => e.kind === 'article_social')).toBe(true);
+      const later = at(next.getTime() + 2 * 3600e3);
+      expect((await collectWorkUpdates(later, [u.id])).queued).toBe(0);
+      expect((await events(u.id)).filter(e => !e.resolvedAt).every(e => e.eligibleAt.getTime() === next.getTime() + 7 * DAY)).toBe(true);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    }, 30_000);
+
+    it('counts an attempt or a logged send as the week\'s reminder, but not a suppressed one or other optional mail (W2)', async () => {
+      const cases: [string, (uid: string) => Promise<unknown>, boolean][] = [
+        ['failed after a first attempt', uid => earlier(uid, { status: 'failed', firstAttemptAt: ago(72), attempts: 3 }), true],
+        ['logged', uid => earlier(uid, { status: 'logged', createdAt: ago(72) }), true],
+        ['suppressed, never attempted', uid => earlier(uid, { status: 'suppressed', createdAt: ago(72) }), false],
+        ['a lesson', uid => sent(uid, ago(72), 'weekly_education'), false],
+      ];
+      for (const [name, seed, blocks] of cases) {
+        const { u, b } = await owner(); await article(u.id, b.id); await seed(u.id);
+        expect((await workUpdateAfter(u.id, now))?.toISOString() ?? null, name).toBe(blocks ? new Date(ago(72).getTime() + 7 * DAY).toISOString() : null);
+        expect((await collectWorkUpdates(now, [u.id])).queued, name).toBe(blocks ? 0 : 1);
+      }
+    });
+
+    it('allows the next reminder exactly 7 days after the last one, and not a millisecond earlier (W3)', async () => {
+      const { u, b } = await owner(); await article(u.id, b.id); await sent(u.id, new Date(now.getTime() - 7 * DAY + 1));
+      expect((await workUpdateAfter(u.id, now))?.getTime()).toBe(now.getTime() + 1);
+      expect((await collectWorkUpdates(now, [u.id])).queued).toBe(0);
+      const exact = await owner(); await article(exact.u.id, exact.b.id); await sent(exact.u.id, new Date(now.getTime() - 7 * DAY));
+      expect(await workUpdateAfter(exact.u.id, now)).toBeNull();
+      expect((await collectWorkUpdates(now, [exact.u.id])).queued).toBe(1);
+    });
+
+    it('is one limit for the account across its businesses (W4)', async () => {
+      const { u, b } = await owner(), b2 = await F.biz(u);
+      await sent(u.id, ago(48)); await article(u.id, b.id); await pack(u.id, b2.id);
+      expect((await collectWorkUpdates(now, [u.id])).queued).toBe(0);
+      expect(await work(u.id)).toHaveLength(1);
+    });
+
+    it('a reminder held a day by other optional mail keeps its sources, goes out the next day, and the week counts from then (W5)', async () => {
+      const { u, b } = await owner(), fetcher = ack(); await article(u.id, b.id); await collectWorkUpdates(now, [u.id]);
+      await queueLifecycle(db, { type: 'founder_note', userId: u.id, eventKey: `founder-week:${u.id}`, data: {}, sendAt: now });
+      await dispatch(u.id, fetcher);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      const [held] = await work(u.id);
+      expect(held).toMatchObject({ status: 'queued', attempts: 0, lastError: 'optional_frequency_or_quiet_hours' });
+      expect((await events(u.id))[0]).toMatchObject({ lifecycleEmailId: held.id, resolvedReason: 'queued' });
+      const tomorrow = at(now.getTime() + DAY); await dispatch(u.id, fetcher, tomorrow);
+      expect(fetcher).toHaveBeenCalledTimes(2); expect((await work(u.id))[0].status).toBe('sent');
+      expect((await workUpdateAfter(u.id, new Date(tomorrow.getTime() + 3600e3)))?.toISOString()).toBe(new Date(tomorrow.getTime() + 7 * DAY).toISOString());
+    });
+
+    it('rollout: a queued reminder inside the week is not sent, and its sources come back for the end of the week (W6)', async () => {
+      const { u, b } = await owner(), fetcher = ack(); await article(u.id, b.id); await collectWorkUpdates(now, [u.id]);
+      await sent(u.id, ago(48)); const free = new Date(ago(48).getTime() + 7 * DAY);
+      await dispatch(u.id, fetcher);
+      expect(fetcher).not.toHaveBeenCalled();
+      const queued = (await work(u.id)).find(m => m.eventKey.startsWith('work-update:'))!;
+      expect(queued).toMatchObject({ status: 'suppressed', lastError: 'work_weekly_limit', attempts: 0, firstAttemptAt: null });
+      const [e] = await events(u.id);
+      expect(e).toMatchObject({ resolvedAt: null, resolvedReason: null, lifecycleEmailId: null }); expect(e.eligibleAt.toISOString()).toBe(free.toISOString());
+      expect((await collectWorkUpdates(new Date(free.getTime() - 1), [u.id])).queued).toBe(0);
+      at(free); expect((await collectWorkUpdates(free, [u.id])).queued).toBe(1); await dispatch(u.id, fetcher, free);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(JSON.parse((fetcher.mock.calls[0] as unknown as [string, { body: string }])[1].body).text).toContain('A real article');
+    });
+
+    it('rollout: a reminder already attempted keeps retrying the identical email under the same key (W7)', async () => {
+      const { u, b } = await owner(); await article(u.id, b.id); await collectWorkUpdates(now, [u.id]);
+      const fetcher = vi.fn().mockResolvedValueOnce(new Response('', { status: 429, headers: { 'retry-after': '1' } })).mockResolvedValueOnce(new Response('{"id":"retry-ack"}'));
+      await dispatch(u.id, fetcher); await sent(u.id, ago(48));
+      await dispatch(u.id, fetcher, at(now.getTime() + 31e3));
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(fetcher.mock.calls[0][1].body).toBe(fetcher.mock.calls[1][1].body);
+      expect(fetcher.mock.calls.map(c => c[1].headers['Idempotency-Key'])).toEqual(Array(2).fill(`radar-lifecycle/${(await work(u.id)).find(m => m.eventKey.startsWith('work-update:'))!.id}`));
+      expect((await work(u.id)).map(m => m.status)).toEqual(['sent', 'sent']);
+    });
+
+    it('an owner inside the week does not hold up an owner who is free (W8)', async () => {
+      const inside = await owner(), free = await owner();
+      await article(inside.u.id, inside.b.id); await article(free.u.id, free.b.id); await sent(inside.u.id, ago(48));
+      expect((await collectWorkUpdates(now, [inside.u.id, free.u.id])).queued).toBe(1);
+      expect((await events(inside.u.id))[0].eligibleAt.toISOString()).toBe(new Date(ago(48).getTime() + 7 * DAY).toISOString());
+      expect((await work(free.u.id)).map(m => m.status)).toEqual(['queued']);
+      expect(await work(inside.u.id)).toHaveLength(1);
+    });
+
+    it('a week that ends at night still waits for the morning (W9)', async () => {
+      const { u, b } = await owner(), fetcher = ack(), end = new Date('2026-11-05T03:00:00Z'), morning = new Date('2026-11-05T09:00:00Z');
+      await article(u.id, b.id); await sent(u.id, new Date(end.getTime() - 7 * DAY));
+      expect((await collectWorkUpdates(now, [u.id])).queued).toBe(0);
+      expect((await events(u.id))[0].eligibleAt.toISOString()).toBe(end.toISOString());
+      at(end); expect((await collectWorkUpdates(end, [u.id])).queued).toBe(0);
+      expect((await events(u.id))[0].eligibleAt.toISOString()).toBe(morning.toISOString());
+      at(morning); expect((await collectWorkUpdates(morning, [u.id])).queued).toBe(1); await dispatch(u.id, fetcher, morning);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    it('work the owner finished during the week is not in the next reminder (W10)', async () => {
+      const { u, b } = await owner(); await sent(u.id, ago(48)); const free = new Date(ago(48).getTime() + 7 * DAY);
+      await article(u.id, b.id); const p = await pack(u.id, b.id);
+      expect((await collectWorkUpdates(now, [u.id])).queued).toBe(0);
+      await updatePack(b.id, p.sourceRef.ref, x => ({ ...x, posts: { ...x.posts, x: { ...x.posts.x!, copiedAt: Date.now() } } }));
+      expect((await events(u.id)).find(e => e.id === p.id)!.resolvedReason).toBe('action_taken');
+      at(free); expect((await collectWorkUpdates(free, [u.id])).queued).toBe(1);
+      const digest = (await work(u.id)).find(m => m.eventKey.startsWith('work-update:'))!;
+      expect(unpack(digest).data.workSections!.map(s => s.kind)).toEqual(['article_social']);
+    });
   });
 });
