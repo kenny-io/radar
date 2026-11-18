@@ -7,6 +7,9 @@ export const X_MAX = 280;
 export const PLATFORM_RULES: Record<Platform, string> = {
   linkedin: 'LinkedIn: professional. A few short paragraphs (2–5), each one to three sentences. You may end with one genuine question to the reader. At most 2 hashtags, on the last line. No emoji walls, no "I’m thrilled to announce".',
   x: `X: short and direct. The whole post must be ${X_MAX} characters or fewer, including line breaks. No hashtags unless essential (max 1). No threads.`,
+  instagram: 'Instagram: a compelling visual caption, up to 2200 characters. Lead with the useful takeaway, then a short story or practical tip. Use at most 5 relevant hashtags. Do not claim the post is live.',
+  tiktok: 'TikTok: a short, natural caption for a photo post or video, up to 2200 characters. Make the topic clear immediately. Avoid invented trends, music claims and unsupported outcomes.',
+  youtube: 'YouTube: write an accurate video description, up to 5000 characters. Explain the topic and what viewers can learn. Do not invent footage, timestamps, or claim that a video has been generated.',
   facebook: 'Facebook: friendly and conversational, like talking to customers who already follow the page. Two short paragraphs at most. No hashtags.',
   reddit: 'Reddit: community-first. Start with a line "Title: …" then the body. Share something genuinely useful or ask a real question; never a hard sell, no marketing language, no calls to action. NEVER include any link or URL. ALWAYS end with a disclosure line in parentheses that starts "Disclosure: I work on {name}" (adapt the rest of the sentence).',
   quora: 'Quora: written as a helpful answer. Start with "Q: " followed by the question, then a blank line, then "Short answer: " with a one- or two-sentence answer, then a longer explanation. Be genuinely helpful first. If you mention {name} at all, add a disclosure such as "I work on {name}" or "Disclosure: I work at {name}."',
@@ -106,5 +109,7 @@ export function enforce(k: Platform, text: string, p: Profile, opts: { allowedLi
     if (mentionsName(t.replace(/^\s*Q:.*$/m, ''), name) && !hasDisclosure(t, name)) t = `${t}\n\nDisclosure: I work on ${name}.`;
   }
   if (k === 'x') t = fitTo(t, X_MAX);
+  if (k === 'instagram' || k === 'tiktok') t = fitTo(t, 2200);
+  if (k === 'youtube') t = fitTo(t, 5000);
   return t;
 }

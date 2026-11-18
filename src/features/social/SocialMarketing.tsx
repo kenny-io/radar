@@ -34,7 +34,7 @@ export function SocialMarketing() {
     </PageHead>
     <div className="row small" style={{ gap: 14, margin: '-14px 0 30px', flexWrap: 'wrap' }}>
       {a.on || program ? <><Status tone="ok" style={{ whiteSpace: 'normal' }}>{program ? 'Autopilot · ' : 'Drafts '}{a.freq === 'daily' ? 'daily' : a.days.join(', ')} from {fmtTime(a.time)} {tzShort(B.tz)}</Status><span className="sub"><span style={{ display: 'inline-flex', gap: 12, verticalAlign: 'middle', marginRight: 6, flexWrap: 'wrap' }}>{a.platforms.map(k => <PlatName key={k} k={k} l={plat(k).l} s={14} gap={6} />)}</span>{program ? '· autonomous publishing enabled' : autoSchedules(B) ? '· auto-scheduling enabled' : '· saved for your review'}</span></> : <span className="sub">Automatic drafts are paused. You can still generate a pack whenever you want.</span>}
-      {canEdit && <Btn kind="link" className="small" onClick={() => setAuto(true)}>Draft settings</Btn>}{pubOn && canEdit && !accountsOf(B).length && <Btn kind="link" className="small" onClick={() => go('settings', { social: true })}>Connect X or LinkedIn</Btn>}
+      {canEdit && <Btn kind="link" className="small" onClick={() => setAuto(true)}>Draft settings</Btn>}{pubOn && canEdit && !accountsOf(B).length && <Btn kind="link" className="small" onClick={() => go('settings', { social: true })}>Connect social accounts</Btn>}
     </div>
     {(preparing || failed) && <div role="status" className="col" style={{ gap: 8, marginBottom: 24 }}>
       <Status tone={failed ? 'warn' : 'ink'} pulse={preparing} style={{ whiteSpace: 'normal' }}>{failed ? 'Radar couldn’t prepare your latest social pack.' : 'Radar is preparing your next social pack.'}</Status>

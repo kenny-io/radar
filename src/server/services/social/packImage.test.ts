@@ -15,7 +15,7 @@ vi.mock('@/server/db', () => {
 vi.mock('@/server/ai', () => ({ ai: { run: async (_task: string, input: any) => ({ json: { text: `Docs drift when nobody owns them. Give each page an owner. (${input.stubContext.platform})` } }) }, profileContext: () => 'BUSINESS PROFILE\nName: Fieldnote' }));
 vi.mock('@/server/workspace', () => ({ getBiz: async () => ({ domain: 'fieldnote.test', profile: PROFILE }), bizToday: () => '2026-11-10' }));
 vi.mock('@/server/observability/failures', () => ({ reportFailure: async (_e: unknown, context: any) => { H.reports.push(context); } }));
-vi.mock('@/server/services/storage', () => ({ objectKey: (bid: string, kind: string, ext: string) => `${bid}/${kind}/${H.stored.length}.${ext}`, putObject: async (key: string, body: Buffer) => { H.put?.(key); H.stored.push({ key, body }); return `mem://${key}`; } }));
+vi.mock('@/server/services/storage', () => ({ objectKey: (bid: string, kind: string, ext: string) => `${bid}/${kind}/${H.stored.length}.${ext}`, putObject: async (key: string, body: Buffer) => { H.put?.(key); H.stored.push({ key, body }); return `mem://${key}`; }, readStored: async (bid: string, url: string) => { if (!url.startsWith(`mem://${bid}/`)) return null; const f = H.stored.find(f => `mem://${f.key}` === url); return f ? { body: f.body, type: 'image/png' } : null; } }));
 vi.mock('@/server/services/lifecycle/engagement', () => ({ recordEngagement: async () => {}, resolveEngagement: async () => {} }));
 vi.mock('./source', () => ({ readArticle: async () => { throw new Error('unused'); }, readUrl: async () => { throw new Error('unused'); } }));
 vi.mock('./stubs', () => ({}));
@@ -107,6 +107,20 @@ describe('a new pack whose style goes to the image model', () => {
     expect(H.rows).toMatchObject([{ businessId: 'biz-1', task: 'image', purpose: 'image.social', model: 'google/gemini-nano-banana-2.1', provider: 'openrouter', costUsd: 0.039, ok: true }]);
     expect(H.reports).toEqual([]);
   });
+  it('keeps one shared image generation for Instagram, TikTok and YouTube previews, with publishable Instagram JPEG', async () => {
+    const { gen } = await boot(); mockFetch(answers);
+    const platforms = ['instagram', 'tiktok', 'youtube'] as const;
+    await gen.createPack('biz-1', input([...platforms]));
+    expect(generations()).toHaveLength(1); expect(generations()[0].body.aspect_ratio).toBe('1:1');
+    const posts = lastPack().posts;
+    const files = await Promise.all(platforms.map(k => decoded(H.stored.findIndex(f => `mem://${f.key}` === posts[k].imageUrl))));
+    expect(files.map(f => f.size)).toEqual(platforms.map(k => IMG_SIZES[k]));
+    expect(files[0].png).toBe(false); expect(posts.instagram.imageMeta.type).toBe('image/jpeg');
+    expect(preflight('instagram', packPreflightInput(posts.instagram, 'instagram'))).toEqual([]);
+    expect(preflight('tiktok', packPreflightInput(posts.tiktok, 'tiktok')).map(x => x.code)).toContain('publish_options');
+    expect(preflight('youtube', packPreflightInput(posts.youtube, 'youtube')).map(x => x.code)).toContain('media_required');
+    expect(H.rows).toHaveLength(1); expect(H.reports).toEqual([]);
+  });
   it('asks for 3:2 with Reddit in the pack and 16:9 without it', async () => {
     const { gen } = await boot(); mockFetch(answers);
     await gen.createPack('biz-1', input(['linkedin', 'x', 'facebook', 'reddit', 'quora']));
@@ -114,7 +128,7 @@ describe('a new pack whose style goes to the image model', () => {
     await gen.createPack('biz-1', input(['linkedin', 'x', 'facebook', 'quora']));
     expect(generations().map(c => c.body.aspect_ratio)).toEqual(['3:2', '3:2', '16:9']);
     expect((await Promise.all(H.stored.map((_f, i) => decoded(i)))).map(f => f.size)).toEqual([...['linkedin', 'x', 'facebook', 'reddit', 'quora'], ...['x', 'reddit'], ...['linkedin', 'x', 'facebook', 'quora']].map(k => IMG_SIZES[k]));
-  });
+  }, 30_000); // Twelve real canvas renders must finish before another fixture starts, including under release CPU load.
   it('platforms that share one size need no crop margin: one generation at that size, with today\'s prompt', async () => {
     const { gen } = await boot(); mockFetch(answers);
     await gen.createPack('biz-1', input(['linkedin', 'facebook', 'quora']));

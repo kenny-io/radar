@@ -58,6 +58,14 @@ are preserved, including an existing opt-in to automatic scheduling. New default
 social account alone never enables automatic publishing. The worker catches up later the same day after downtime;
 daily packs are deduplicated across retries. No schema migration is needed for daily drafts.
 
+### Direct social publishing
+
+Connect X, LinkedIn, Instagram professional accounts, TikTok and YouTube in Settings → Social accounts.
+Review a content pack, attach a video where needed, choose the platform’s publishing settings, then post or schedule.
+Instagram supports images/Reels, TikTok supports photo/video posts with explicit per-post approval, and YouTube requires
+an uploaded video. Developer app credentials, callbacks and public media hosting are documented in
+[Social publishing setup](docs/SOCIAL_PUBLISHING.md).
+
 ### Marketing Autopilot
 
 Settings → Autopilot lets a workspace owner delegate Radar's supported marketing work. It is off by default.

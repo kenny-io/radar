@@ -17,7 +17,7 @@ import { assertEditable } from '../services/social/publish/guards';
 import { randomToken } from '../crypto';
 import { accountRows } from '../services/social/publish/accounts';
 
-const PlatformZ = z.enum(['linkedin', 'x', 'facebook', 'reddit', 'quora']);
+const PlatformZ = z.enum(['linkedin', 'x', 'facebook', 'reddit', 'quora', 'instagram', 'tiktok', 'youtube']);
 const ImageStyleZ = z.enum(['branded', 'illustration', 'photography', 'infographic']);
 const PackStyleZ = z.enum(['branded', 'illustration', 'photography', 'infographic', 'custom']);
 const URL_RE = /^https?:\/\/\S+\.\S+/;
@@ -28,7 +28,7 @@ const postOr404 = (p: StoredPack, k: Platform) => { const q = p.posts[k]; if (!q
 /** Social channels: a post that sends within 5 minutes can't be changed (COPY.lockedEdit, 409). No-op with the flag off. */
 const editable = (ctx: { biz: any }, packId: string, k: Platform) => (canPost(k) ? assertEditable(ctx.biz, packSid(packId, k)) : Promise.resolve());
 const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any>) =>
-  updatePack(bid, id, p => ({ ...p, posts: { ...p.posts, [k]: { ...postOr404(p, k), ...patch } } })).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
+  updatePack(bid, id, p => ({ ...p, posts: { ...p.posts, [k]: { ...postOr404(p, k), ...patch, ...(k === 'tiktok' && ('text' in patch || 'imageUrl' in patch) && postOr404(p, k).publishOptions?.tiktok ? { publishOptions: { ...postOr404(p, k).publishOptions, tiktok: { ...postOr404(p, k).publishOptions!.tiktok, consent: false } } } : {}) } } })).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
 
 /** Reserve a request before rendering; update only its image fields after storage succeeds. */
 async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform; prompt?: string; style?: ImageStyle }) {
@@ -48,7 +48,7 @@ async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform;
     await editable(ctx, i.packId, i.platform);
     const cur = postOr404(p, i.platform);
     if (cur.imageRequest !== request || cur.seed !== q.seed || cur.style !== q.style || cur.imageUrl !== q.imageUrl || cur.imagePrompt !== q.imagePrompt) throw new RadarError('The image changed while Radar was generating it. Try again.', 409, 'image_changed');
-    return { ...p, posts: { ...p.posts, [i.platform]: { ...cur, seed, style, imageUrl: result.url, photo: result.photo, imageMeta: result.meta, compressed: false } } };
+    return { ...p, posts: { ...p.posts, [i.platform]: { ...cur, seed, style, imageUrl: result.url, photo: result.photo, imageMeta: result.meta, compressed: false, ...(i.platform === 'tiktok' && cur.publishOptions?.tiktok ? { publishOptions: { ...cur.publishOptions, tiktok: { ...cur.publishOptions.tiktok, consent: false } } } : {}) } } };
   }).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
   return { seed, imageUrl: result.url };
 }
@@ -59,7 +59,7 @@ export const actions: ActionMap = {
     input: z.object({
       token: z.string().min(6).max(64),
       source: z.object({ kind: z.enum(['idea', 'url', 'article', 'suggest']), label: z.string().max(2000), ref: z.string().max(200).nullish() }),
-      platforms: z.array(PlatformZ).max(5), style: PackStyleZ, custom: z.string().max(600).optional(), voice: z.string().max(600).optional(),
+      platforms: z.array(PlatformZ).max(8), style: PackStyleZ, custom: z.string().max(600).optional(), voice: z.string().max(600).optional(),
       idea: z.object({ metric: z.string().max(400).optional(), why: z.string().max(400).optional(), tie: z.string().max(400).nullish(), page: z.string().max(400).nullish(), q: z.string().max(400).optional() }).nullish(),
     }),
     run: async (ctx, i) => {
@@ -132,7 +132,7 @@ export const actions: ActionMap = {
   /** Automatic generation settings (AutoModal). */
   'social.auto': action({
     role: 'Editor',
-    input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(5), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), post: z.enum(['library', 'schedule']).optional() }) }),
+    input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(8), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), post: z.enum(['library', 'schedule']).optional() }) }),
     run: async (ctx, { auto }) => {
       if (auto.on && !auto.platforms.length) throw new RadarError('Pick at least one platform.');
       if (auto.on && auto.freq === 'custom' && !auto.days.length) throw new RadarError('Pick at least one day.');
@@ -140,7 +140,7 @@ export const actions: ActionMap = {
       const publishing = await socialOn(ctx.biz);
       const post = !publishing ? (auto.post ? 'library' as const : undefined) : auto.post;
       if (publishing && auto.on && post === 'schedule' && !(await accountRows(ctx.bid)).some(r => !r.expired)) throw new RadarError(COPY.noAccountForAuto, 400, 'no_account');
-      const a = { ...auto, ...(post ? { post } : {}), days: DAYS.filter(d => auto.days.includes(d)), platforms: (['linkedin', 'x', 'facebook', 'reddit', 'quora'] as Platform[]).filter(k => auto.platforms.includes(k)) };
+      const a = { ...auto, ...(post ? { post } : {}), days: DAYS.filter(d => auto.days.includes(d)), platforms: (['linkedin', 'x', 'facebook', 'reddit', 'quora', 'instagram', 'tiktok', 'youtube'] as Platform[]).filter(k => auto.platforms.includes(k)) };
       await db.update(schema.businesses).set({ socialAuto: a }).where(eq(schema.businesses.id, ctx.bid));
       return a;
     },

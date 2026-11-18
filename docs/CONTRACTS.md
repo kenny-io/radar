@@ -78,9 +78,11 @@ See `src/lib/types.ts` → `Workspace`. Notably `B.today`, `B.tz`, `B.counts`, `
 - `social.autoRun` — payload `{ date: string }` (business-local day), result `{ packId: string | null }`; cron atomically marks/enqueues once per business/day and catches up after the due time until midnight. Library drafts are the default; legacy explicit scheduling remains opt-in.
 - `visibility.collect` (ref = resultId)
 
-## Social channels (connected X / LinkedIn accounts: post now, schedule, calendar)
+## Social channels (post now, schedule, calendar)
 
-The design is in `.factory/social-channels/architecture.md`, and the types are in `src/lib/types.ts` (`SocialAccount`, `Pub`, …).
+Instagram/TikTok/YouTube extensions: `.factory/multiplatform-publishing/architecture.md`; deployment setup: [SOCIAL_PUBLISHING.md](SOCIAL_PUBLISHING.md).
+
+The original design is in `.factory/social-channels/architecture.md`, and the types are in `src/lib/types.ts` (`SocialAccount`, `Pub`, …).
 
 The shared rules live in `src/lib/socialPublish.ts`: ids, preflight, locking, time zones, routing and copy. The client and the server both call these functions, and neither re-implements them. That file, `types.ts` and this section belong to the architect, through the PM.
 
@@ -101,10 +103,11 @@ Everything in this section is behind the business-level flag `RADAR_SOCIAL_PUBLI
 
 ### Actions (all role Editor; inputs are zod-validated; rules and error copy are in architecture.md §6)
 - `social.pages` (read) `{ oauthRef }` → `{ pages: SocialPage[], error? }`
-- `social.connect` `{ ch, oauthRef, pageId? }` → `{ account: SocialAccount, reconnected: boolean, released: number }`
-  - A reconnect keeps the account id and refuses a different remote account.
+- `social.instagramAccounts` (Editor read) `{ oauthRef }` → `{ accounts, error? }`; lists only the accounts in this user's encrypted Unified Login authorization.
+- `social.connect` `{ ch, oauthRef, pageId?, accountId? }` → `{ account: SocialAccount, reconnected: boolean, released: number }`
+  - A reconnect keeps the account id and refuses a different remote account. A new Unified Instagram connection requires an explicit `accountId` from its pending account list; `/me` is never treated as the Instagram account.
 - `social.disconnect` `{ acctId }` → `{ ch, unscheduled: number }`
-- `social.postNow` `{ sid, acctId? }` → `{ pub: Pub }` (`posted` or `failed`)
+- `social.postNow` `{ sid, acctId? }` → `{ pub: Pub }` (`posted`, `sending` while processing, or `failed`)
   - Use it for pack posts, Brief posts, **Try again**. Never for replies: the server refuses `social.postNow` on a reply with `COPY.replyNotAllowed`.
   - X **Reply now** always uses X's own reply box: `replyMode === 'intent'` whenever the thread URL has a status id, connected or not. The client opens `xReplyIntentUrl(id, text)` in a new tab from the click and calls `brief.item { st: 'copied' }`. No pub is created.
 - `social.schedule` `{ sid, date, time, acctId? }` → `{ pub }`
@@ -112,7 +115,11 @@ Everything in this section is behind the business-level flag `RADAR_SOCIAL_PUBLI
 - `social.move` `{ sid, date }` → `{ pub }`
   - Drag only. It keeps the stored time, and its refusals are the `moveCheck` copy.
 - `social.unschedule` `{ sid }` → `{ ok: true }`
-- `social.scheduleAll` `{ packId, date, rows: { platform: 'x'|'linkedin', time, acctId }[] }` → `{ scheduled: number }` (all or nothing)
+- `social.scheduleAll` `{ packId, date, rows: { platform: 'x'|'linkedin'|'instagram'|'tiktok'|'youtube', time, acctId }[] }` → `{ scheduled: number }` (all or nothing)
+- `social.publishOptions` `{ packId, platform, options }` → `{ options }`; title/visibility/kids-audience for YouTube, audience/interactions/disclosures/consent for TikTok.
+- `social.videoRemove` `{ packId, platform }` → `{ removed: true }`.
+- `social.tiktokCreatorInfo` (Editor read) `{ acctId }` → `{ creator }` with current creator audience choices and restrictions.
+- `POST /api/b/{bid}/social-video`: multipart `{ packId, platform, file }` → `{ ok: true, video }`; Editor + business billing gate + publishing flag, real owned MP4/WebM up to 100 MB, edit lock. Stored `post.video` replaces still media for publication.
 - `social.compress` `{ sid }` → `{ compressed: number }`
 - `social.devSimulate` `{ acctId, what: 'expire' | 'lapse' }` → `{ ok: true }` (`RADAR_DEV_STUBS=1` only)
 - Changed existing actions:
@@ -121,10 +128,11 @@ Everything in this section is behind the business-level flag `RADAR_SOCIAL_PUBLI
   - `brief.item` refuses `st` or `pl` changes while scheduled (`COPY.unscheduleFirst`).
 
 ### Job kinds and cron
+- Accepted Instagram/TikTok/YouTube operations persist a private `payload.providerRef` and remain `sending`. Worker recovery resumes the existing operation; ambiguous creates are never automatically reinitialized. The public projection contains no token/reference payload.
 - `social.send` (ref = sid, payload `{ pubId }`, `maxAttempts: 1`): sends one claimed pub, or verifies a stuck one. No UI progress, because the UI reads `pub` from the workspace.
 - Cron `social.publisher` (every minute): enqueues due rows, fails rows more than 24 h late as `stale`, and re-checks stuck `sending` rows.
 - Cron `social.tokens` (once per account per day): token refresh.
-- `social.autoRun` (existing) also schedules X and LinkedIn when `auto.post === 'schedule'`.
+- `social.autoRun` (existing) also schedules eligible X, LinkedIn and Instagram posts when `auto.post === 'schedule'`.
 
 ### Components (frontend, `src/features/social/channels/*`; all read `useApp()`)
 - `SocialAccounts()` is the Settings section body.

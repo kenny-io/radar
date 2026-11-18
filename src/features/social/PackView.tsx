@@ -8,6 +8,7 @@ import { AutoText, Btn, Field, LogoTile, PageHead, Tabs, copyText, downloadBlob,
 import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
 import { packKeys } from './PackThumb';
 import { PublishBox } from './channels/PublishBox';
+import { VideoAttachment } from './channels/VideoAttachment';
 import { ScheduleAll } from './channels/ScheduleAll';
 import { useNowMs } from './channels/useSocial';
 import { charCount, isLocked } from '@/lib/socialPublish';
@@ -21,6 +22,7 @@ export function PackView({ pack }: { pack: SocialPack }) {
   const rp = pubOn ? (app.route.params?.plat as Platform | undefined) : undefined;
   const keys = packKeys(pack); const [cur, setCur] = useState<Platform>(rp && keys.includes(rp) ? rp : keys[0]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [directions, setDirections] = useState<Partial<Record<Platform, string>>>({});
   const [imageErrors, setImageErrors] = useState<Partial<Record<Platform, string>>>({});
   useEffect(() => { setDirections({}); setImageErrors({}); }, [pack.id]);
@@ -28,7 +30,12 @@ export function PackView({ pack }: { pack: SocialPack }) {
   const [, tick] = useState(0); useEffect(() => { const iv = setInterval(() => tick(x => x + 1), 30000); return () => clearInterval(iv); }, []);
   const p = pack.posts && pack.posts[cur];
   const headline = (pack as any).headline || pack.source.label;
-  const patchPost = (k: Platform, patch: Partial<SocialPost>) => (b: Workspace): Workspace => ({ ...b, social: { ...b.social, packs: b.social.packs.map(x => x.id === pack.id ? { ...x, posts: { ...x.posts, [k]: { ...x.posts[k]!, ...patch } } } : x) } });
+  const patchPost = (k: Platform, patch: Partial<SocialPost>) => (b: Workspace): Workspace => ({ ...b, social: { ...b.social, packs: b.social.packs.map(x => {
+    if (x.id !== pack.id) return x;
+    const old = x.posts[k]!; const changedCaption = k === 'tiktok' && patch.text !== undefined && patch.text !== old.text;
+    const publishOptions = changedCaption && old.publishOptions?.tiktok ? { ...old.publishOptions, tiktok: { ...old.publishOptions.tiktok, consent: false } } : old.publishOptions;
+    return { ...x, posts: { ...x.posts, [k]: { ...old, ...patch, publishOptions } } };
+  }) } });
   const regen = async (what: 'text' | 'image', prompt?: string) => {
     setBusy(b => ({ ...b, [what]: true }));
     try { await app.act(what === 'text' ? 'social.regenText' : 'social.regenImage', { packId: pack.id, platform: cur, ...(prompt !== undefined ? { prompt: prompt.trim() } : {}) }); if (what === 'image') { setImageErrors(x => ({ ...x, [cur]: '' })); toast('Image generated'); } } catch (error: any) { if (what === 'image') setImageErrors(x => ({ ...x, [cur]: error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous image is kept. Try again.' })); }
@@ -54,18 +61,19 @@ export function PackView({ pack }: { pack: SocialPack }) {
     <PageHead title={pack.name} sub={<span>From {pack.source.kind === 'suggest' ? 'a Radar suggestion' : pack.source.kind === 'idea' ? 'an idea' : pack.source.kind === 'url' ? 'an article URL' : 'a Radar article'} · {fmtD(pack.created)}{pack.auto ? ' · Prepared by Radar' : ''}</span>}>
       {pubOn && <ScheduleAll pack={pack} />}<Btn icon="download" onClick={dlAll}>Download all</Btn>
     </PageHead>
-    <Tabs value={cur} onChange={setCur} items={keys.map(k => ({ v: k, l: <PlatName k={k} l={plat(k).l} /> }))} style={{ marginBottom: 30 }} />
+    <Tabs value={cur} onChange={k => { if (!mediaBusy) setCur(k); }} items={keys.map(k => ({ v: k, l: <PlatName k={k} l={plat(k).l} /> }))} style={{ marginBottom: 30 }} />
     {p && <div className="pack-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(240px,1fr)', gap: 40, alignItems: 'start' }}>
       <style>{`@media(max-width:1100px){.pack-grid{grid-template-columns:1fr!important}}`}</style>
       <div className="card" style={{ padding: 18, borderRadius: 20, display: 'grid' }}>
-        {keys.map(k => { const q = pack.posts[k]!; const on = k === cur; return <div key={k} aria-hidden={!on} style={{ gridArea: '1/1', visibility: on ? 'visible' : 'hidden', opacity: on ? 1 : 0, transition: on ? 'opacity .25s var(--ease)' : 'opacity .12s, visibility 0s .12s', pointerEvents: on ? 'auto' : 'none' }}>
+        {keys.filter(k => k === cur).map(k => { const q = pack.posts[k]!; const on = k === cur; return <div key={k} style={{ gridArea: '1/1' }}>
           <div className="row" style={{ marginBottom: 12, gap: 10 }}><LogoTile brand={brand} s={36} /><span className="col grow"><span className="small" style={{ fontWeight: 600 }}>{B.profile.business.name}</span><span className="xs sub row" style={{ gap: 6 }}><PlatLogo k={k} s={12} />{plat(k).l} preview</span></span></div>
           <AutoText className="input-bare" tabIndex={on ? 0 : -1} value={q.text} readOnly={B.role === 'Viewer' || (pubOn && isLocked(q.pub, now))} onChange={e => { const text = e.target.value; app.actLater(`social.text:${pack.id}:${k}`, 'social.text', { packId: pack.id, platform: k, text }, { optimistic: patchPost(k, { text }) }); }} style={{ display: 'block', lineHeight: 1.55, fontSize: 15, opacity: on && busy.text ? .4 : 1, transition: 'opacity .3s' }} aria-label={plat(k).l + ' post text'} />
-          <div style={{ marginTop: 12 }}><Visual style={q.style === 'custom' ? 'illustration' : q.style} brand={brand} headline={headline} seed={q.seed} ratio={plat(k).ratio} name={B.profile.business.name} radius={12} busy={on && busy.image} url={q.imageUrl} /></div>
+          <div style={{ marginTop: 12 }}>{q.video ? <video controls={on} preload="metadata" src={q.video.url} style={{ width: '100%', maxHeight: 600, borderRadius: 12, background: '#111' }} aria-label={plat(k).l + ' attached video'} /> : <Visual style={q.style === 'custom' ? 'illustration' : q.style} brand={brand} headline={headline} seed={q.seed} ratio={plat(k).ratio} name={B.profile.business.name} radius={12} busy={on && busy.image} url={q.imageUrl} />}</div>
         </div>; })}
       </div>
       <div className={'col' + (pubOn ? ' pack-side' : '')} style={{ gap: 26, position: 'sticky', top: 24 }}>
-        {pubOn ? <PublishBox key={cur} pack={pack} k={cur} post={p} nImg={1} onCopy={() => { copyText(p.text); app.act('social.copied', { packId: pack.id, platform: cur }, { optimistic: patchPost(cur, { copiedAt: Date.now() }) }).catch(() => {}); toast(`Copied. Paste it into ${plat(cur).l} to publish.`); }} onDownload={() => dlOne(cur)} />
+        {pubOn && <VideoAttachment key={`video:${cur}`} packId={pack.id} platform={cur} post={p} disabled={locked || p.pub?.status === 'posted'} onBusy={setMediaBusy} />}
+        {pubOn ? <PublishBox key={cur} pack={pack} k={cur} post={p} nImg={p.video ? 0 : 1} mediaBusy={mediaBusy} onCopy={() => { copyText(p.text); app.act('social.copied', { packId: pack.id, platform: cur }, { optimistic: patchPost(cur, { copiedAt: Date.now() }) }).catch(() => {}); toast(`Copied. Paste it into ${plat(cur).l} to publish.`); }} onDownload={() => dlOne(cur)} />
         : <div className="col" style={{ gap: 10 }}>
           <Btn kind="primary" size="lg" className="btn-block" icon="copy" onClick={() => { copyText(p.text); app.act('social.copied', { packId: pack.id, platform: cur }, { optimistic: patchPost(cur, { copiedAt: Date.now() }) }).catch(() => {}); toast(`Copied. Paste it into ${plat(cur).l} to publish.`); }}>Copy text</Btn>
           <Btn size="lg" className="btn-block" icon="download" onClick={() => dlOne(cur)}>Download visual</Btn>

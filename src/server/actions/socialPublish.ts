@@ -24,12 +24,15 @@ import { claimManual, runSend } from '../services/social/publish/send';
 import { accountGate, briefGate, preflightGate, refuse, resolve, scheduleChecks, slotGate, writeScheduled, type Resolved } from '../services/social/publish/schedule';
 import { compressIfNeeded } from '../services/social/publish/media';
 import { STALE_MS } from '@/lib/socialPublish';
+import { getPack } from '../services/social/generate';
+import { assertVideoEditable, VIDEO_PLATFORMS } from '../services/social/publish/video';
+import { tiktokCreatorInfo } from '../services/social/publish/tiktok';
 
 const Sid = z.string().min(3).max(SID_MAX);
 const AcctId = z.string().uuid();
 const Day = z.string().regex(DATE_RE);
 const HM = z.string().regex(HM_RE);
-const Ch = z.enum(['x', 'li_profile', 'li_page']);
+const Ch = z.enum(['x', 'li_profile', 'li_page', 'instagram', 'tiktok', 'youtube']);
 const SIGN_IN_EXPIRED = 'The sign-in expired. Try again.';
 const LI_DOWN = 'LinkedIn didn’t respond. Nothing changed — try again.';
 
@@ -61,7 +64,61 @@ async function scheduleOne(ctx: ActCtx, r: Resolved, date: string, time: string)
   return row;
 }
 
+const PublishOptions = z.object({
+  title: z.string().max(100).optional(), privacy: z.enum(['public', 'private', 'unlisted']).optional(), madeForKids: z.boolean().optional(),
+  tiktok: z.object({
+    privacyLevel: z.enum(['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY']).optional(),
+    allowComment: z.boolean().optional(), allowDuet: z.boolean().optional(), allowStitch: z.boolean().optional(),
+    commercialContent: z.boolean().optional(), brandOrganic: z.boolean().optional(), brandedContent: z.boolean().optional(), consent: z.boolean().optional(),
+  }).optional(),
+});
 const base: ActionMap = {
+  'social.publishOptions': action({
+    input: z.object({ packId: z.string().min(1).max(64), platform: z.enum(VIDEO_PLATFORMS), options: PublishOptions }),
+    run: async (ctx, i) => {
+      await requireSocial(ctx);
+      await assertVideoEditable(ctx.biz, i.packId, i.platform);
+      const pack = await getPack(ctx.bid, i.packId); if (!pack?.posts[i.platform]) throw notFound('Post');
+      await updatePack(ctx.bid, i.packId, async p => {
+        await assertVideoEditable(ctx.biz, i.packId, i.platform);
+        const post = p.posts[i.platform]; if (!post) throw notFound('Post');
+        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, publishOptions: i.options } } };
+      });
+      return { options: i.options };
+    },
+  }),
+  'social.videoRemove': action({
+    input: z.object({ packId: z.string().min(1).max(64), platform: z.enum(VIDEO_PLATFORMS) }),
+    run: async (ctx, i) => {
+      await requireSocial(ctx);
+      const pack = await getPack(ctx.bid, i.packId); if (!pack?.posts[i.platform]) throw notFound('Post');
+      await updatePack(ctx.bid, i.packId, async p => {
+        await assertVideoEditable(ctx.biz, i.packId, i.platform);
+        const post = p.posts[i.platform]; if (!post) throw notFound('Post');
+        const options = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
+        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, video: null, publishOptions: options } } };
+      });
+      return { removed: true };
+    },
+  }),
+  'social.tiktokCreatorInfo': action({
+    role: 'Editor', read: true, input: z.object({ acctId: AcctId }),
+    run: async (ctx, i) => {
+      await requireSocial(ctx);
+      const account = await accountRow(ctx.bid, i.acctId); if (!account || account.ch !== 'tiktok') throw notFound('Account');
+      const { t } = await ensureToken(account.id);
+      return { creator: await tiktokCreatorInfo(t.access_token) };
+    },
+  }),
+  'social.instagramAccounts': action({
+    role: 'Editor', read: true, input: z.object({ oauthRef: z.string().min(1).max(100) }),
+    run: async (ctx, i) => {
+      await requireSocial(ctx);
+      const pending = await readPendingSocial(ctx.bid, ctx.user.id, i.oauthRef, 'instagram');
+      if (!pending || pending.tokens.instagram?.mode !== 'unified' || !pending.identities) return { accounts: [], error: SIGN_IN_EXPIRED };
+      return { accounts: pending.identities.map(a => ({ id: a.remoteId, name: a.handle || a.name, followers: null })) };
+    },
+  }),
   /** LinkedIn page picker, after the linkedin_page popup. An empty list means the member manages no pages. */
   'social.pages': action({
     read: true, role: 'Editor', input: z.object({ oauthRef: z.string().min(1).max(100) }),
@@ -77,7 +134,7 @@ const base: ActionMap = {
   /** Finish a connect (or reconnect) from a pending authorization. A reconnect keeps the account id, so held posts go out
    *  as scheduled; signing in as a different remote account is refused (disconnect first to switch). */
   'social.connect': action({
-    input: z.object({ ch: Ch, oauthRef: z.string().min(1).max(100), pageId: z.string().min(1).max(40).optional() }),
+    input: z.object({ ch: Ch, oauthRef: z.string().min(1).max(100), pageId: z.string().min(1).max(40).optional(), accountId: z.string().min(1).max(100).optional() }),
     run: async (ctx, i) => {
       await requireSocial(ctx);
       const ch = i.ch as SocialChannel;
@@ -85,7 +142,7 @@ const base: ActionMap = {
       if (!pend) throw refuse(SIGN_IN_EXPIRED, 'auth_expired');
       const A = schema.socialAccounts;
       const old = (await db.select().from(A).where(and(eq(A.businessId, ctx.bid), eq(A.ch, ch))).limit(1))[0] || null;
-      let remoteId = pend.id.remoteId; let name = pend.id.name; const handle = ch === 'x' ? pend.id.handle || null : null;
+      let remoteId = pend.id.remoteId; let name = pend.id.name; let handle = pend.id.handle || null;
       if (ch === 'li_page') {
         const pageId = old ? old.remoteId : i.pageId;
         if (!pageId) throw refuse('Pick a page to connect.', 'invalid');
@@ -98,6 +155,14 @@ const base: ActionMap = {
         }
         if (!pg) throw old ? refuse(`Your LinkedIn account doesn’t manage ${old.name} anymore. Sign in with one that does, or disconnect the page.`, 'not_admin', 409) : notFound('That page');
         remoteId = pg.id; name = pg.name;
+      }
+      if (ch === 'instagram' && pend.tokens.instagram?.mode === 'unified') {
+        const selectedId = old ? old.remoteId : i.accountId;
+        if (!selectedId) throw refuse('Choose the Instagram account Radar should post to.', 'invalid');
+        if (old && i.accountId && i.accountId !== old.remoteId) throw refuse('Choose the connected Instagram account to keep its scheduled posts, or disconnect it first.', 'other_account', 409);
+        const selected = pend.identities?.find(a => a.remoteId === selectedId);
+        if (!selected) throw old ? refuse('The connected Instagram account was not shared with Radar. Share it again, or disconnect it first.', 'not_admin', 409) : notFound('Instagram account');
+        remoteId = selected.remoteId; name = selected.name; handle = selected.handle || null;
       }
       if (old && old.remoteId !== remoteId) {
         throw refuse(`You signed in as ${acctLabel({ id: '', ch, name, handle })}. Sign in as ${acctLabel(acctPublic(old))} to keep its scheduled posts, or disconnect it first.`, 'other_account', 409);
@@ -204,7 +269,7 @@ const base: ActionMap = {
 
   /** Schedule all: every row or none, in one transaction. A refusal names its platform. */
   'social.scheduleAll': action({
-    input: z.object({ packId: z.string().min(1).max(64), date: Day, rows: z.array(z.object({ platform: z.enum(['x', 'linkedin']), time: HM, acctId: AcctId })).min(1).max(2) }),
+    input: z.object({ packId: z.string().min(1).max(64), date: Day, rows: z.array(z.object({ platform: z.enum(['x', 'linkedin', 'instagram', 'tiktok', 'youtube']), time: HM, acctId: AcctId })).min(1).max(5) }),
     run: async (ctx, i) => {
       await requireSocial(ctx);
       if (new Set(i.rows.map(x => x.platform)).size !== i.rows.length) throw new RadarError('Some fields aren’t valid.', 400, 'invalid');
@@ -242,7 +307,7 @@ const base: ActionMap = {
       if (r.t.src === 'pack') {
         const img = r.t.images[0]; if (!img) return { compressed: 0 };
         const c = await compressIfNeeded(ctx.bid, k, img.url);
-        if (c) { n = 1; await updatePack(ctx.bid, r.t.packId!, x => { const cur = x.posts[k]; return cur && cur.imageUrl === img.url ? { ...x, posts: { ...x.posts, [k]: { ...cur, imageUrl: c.url, imageMeta: c.meta, compressed: true } } } : x; }); }
+        if (c) { n = 1; await updatePack(ctx.bid, r.t.packId!, x => { const cur = x.posts[k]; return cur && cur.imageUrl === img.url ? { ...x, posts: { ...x.posts, [k]: { ...cur, imageUrl: c.url, imageMeta: c.meta, compressed: true, ...(k === 'tiktok' && cur.publishOptions?.tiktok ? { publishOptions: { ...cur.publishOptions, tiktok: { ...cur.publishOptions.tiktok, consent: false } } } : {}) } } } : x; }); }
       } else {
         const done: { i: number; url: string; was: string; meta: any }[] = [];
         for (const img of r.t.images) { const c = await compressIfNeeded(ctx.bid, k, img.url); if (c) done.push({ i: img.i!, url: c.url, was: img.url, meta: c.meta }); }

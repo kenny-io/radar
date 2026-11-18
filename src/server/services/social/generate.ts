@@ -15,6 +15,8 @@ import { check, enforce, rulesFor } from './rules';
 import { readArticle, readUrl, type Grounding } from './source';
 import './stubs';
 import { recordEngagement, resolveEngagement } from '../lifecycle/engagement';
+import { compressBytes } from './publish/media';
+import { objectKey, putObject, readStored } from '../storage';
 
 export type SourceKind = SocialPack['source']['kind'];
 export interface IdeaContext { metric?: string; why?: string; tie?: string | null; page?: string | null; q?: string }
@@ -102,6 +104,13 @@ export async function renderPostImage(bid: string, p: Profile, k: Platform, post
   const [w, h] = IMG_SIZES[k];
   const style = renderStyle(post.style);
   const { url, bytes, type } = await renderImageFile({ bid, kind: 'social', style, brand: p.brand, headline, name: p.business.name, seed: post.seed, prompt: postImagePrompt(post, headline, custom), modelRequired: !!post.imagePrompt, w, h }, from);
+  if (k === 'instagram' && type !== 'image/jpeg') {
+    const file = await readStored(bid, url);
+    if (!file) throw new Error('Generated image could not be read');
+    const jpeg = await compressBytes(file.body);
+    const jpegUrl = await putObject(objectKey(bid, 'social', 'jpg'), jpeg, 'image/jpeg');
+    return { url: jpegUrl, photo: (!!post.imagePrompt || style === 'photography' || style === 'illustration') && imageModelConfigured(), meta: { bytes: jpeg.length, type: 'image/jpeg' } };
+  }
   return { url, photo: (!!post.imagePrompt || style === 'photography' || style === 'illustration') && imageModelConfigured(), meta: { bytes, type } };
 }
 

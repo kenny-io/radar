@@ -71,6 +71,14 @@ export const env = {
   linkedinClientId: e.LINKEDIN_CLIENT_ID || e.LINKEDINAPP_CLIENT_ID || '', linkedinClientSecret: e.LINKEDIN_CLIENT_SECRET || e.LINKEDINAPP_CLIENT_SECRET || '',
   linkedinPageClientId: e.LINKEDIN_PAGE_CLIENT_ID || '', linkedinPageClientSecret: e.LINKEDIN_PAGE_CLIENT_SECRET || '',
   linkedinApiVersion: e.LINKEDIN_API_VERSION || '202610',
+  instagramClientId: e.INSTAGRAM_CLIENT_ID || '', instagramClientSecret: e.INSTAGRAM_CLIENT_SECRET || '',
+  instagramApiVersion: e.INSTAGRAM_API_VERSION || 'v24.0',
+  /** New Instagram apps use a Facebook Login for Business Unified Login configuration. */
+  metaAppId: e.META_APP_ID || '', metaAppSecret: e.META_APP_SECRET || '',
+  instagramConfigId: e.INSTAGRAM_CONFIG_ID || '',
+  metaGraphApiVersion: e.META_GRAPH_API_VERSION || 'v27.0',
+  tiktokClientKey: e.TIKTOK_CLIENT_KEY || '', tiktokClientSecret: e.TIKTOK_CLIENT_SECRET || '',
+  youtubeClientId: e.YOUTUBE_CLIENT_ID || '', youtubeClientSecret: e.YOUTUBE_CLIENT_SECRET || '',
   /** Allow blog connectors to reach private/internal hosts (self-hosted setups). Off by default (SSRF guard). */
   allowPrivateHosts: e.RADAR_ALLOW_PRIVATE_HOSTS === '1',
   // Email

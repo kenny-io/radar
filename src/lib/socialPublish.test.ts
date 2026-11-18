@@ -308,3 +308,56 @@ describe('socialItems', () => {
     expect(scheduledCount(B.social.packs[0].posts as any)).toBe(2);
   });
 });
+
+describe('Instagram, TikTok and YouTube publishing rules', () => {
+  const video = { url: '/api/files/b/video.mp4', meta: { type: 'video/mp4', bytes: 1024 } };
+  it('round-trips all direct platform IDs and routes only matching accounts', () => {
+    for (const k of ['instagram', 'tiktok', 'youtube'] as const) {
+      expect(parseSid(packSid('pack1', k))).toEqual({ src: 'pack', packId: 'pack1', platform: k });
+      const account: SocialAccount = { id: k, ch: k, name: k };
+      expect(pickAccount([X, account], k)).toEqual(account);
+      expect(pickAccount([X], k)).toBeNull();
+    }
+  });
+  it('requires actual YouTube video, explicit audience and privacy, and a valid title', () => {
+    expect(preflight('youtube', { text: 'Description', images: [] }).map(p => p.code)).toEqual(['media_required', 'publish_options', 'publish_options', 'publish_options']);
+    const base = { text: 'Description', images: [], video, options: { title: 'My video', privacy: 'unlisted' as const, madeForKids: false } };
+    expect(preflight('youtube', base)).toEqual([]);
+    expect(preflight('youtube', { ...base, options: { ...base.options, title: 'Bad <title>' } })[0].code).toBe('publish_options');
+    expect(preflight('youtube', { ...base, video: { ...video, meta: { ...video.meta, bytes: 101 * 1024 * 1024 } } })[0].code).toBe('video_too_big');
+  });
+  it('enforces YouTube’s UTF-8 byte limit and disallows angle brackets in descriptions', () => {
+    const base = { images: [], video, options: { title: 'My video', privacy: 'unlisted' as const, madeForKids: false } };
+    expect(preflight('youtube', { ...base, text: 'a'.repeat(5000) })).toEqual([]);
+    expect(preflight('youtube', { ...base, text: '界'.repeat(1666) })).toEqual([]);
+    expect(preflight('youtube', { ...base, text: '界'.repeat(1667) })).toEqual([{ code: 'too_long', msg: 'Shorten the YouTube description to 5,000 UTF-8 bytes. It’s 5,001 bytes now.' }]);
+    expect(preflight('youtube', { ...base, text: 'a'.repeat(5001) }).map(p => p.code)).toEqual(['too_long']);
+    expect(preflight('youtube', { ...base, text: 'A <useful> description' })).toEqual([{ code: 'publish_options', msg: 'Remove angle brackets (< and >) from the YouTube description.' }]);
+    // Other platforms retain their own character accounting.
+    expect(charCount('youtube', '界')).toBe(1);
+    expect(preflight('instagram', { text: '界'.repeat(2200), images: [{ type: 'image/jpeg', bytes: 1 }] })).toEqual([]);
+  });
+  it('requires media and explicit TikTok privacy/terms and rejects private sponsored content', () => {
+    const base = { text: 'Caption', images: [{ bytes: 100, type: 'image/jpeg' }] };
+    expect(preflight('tiktok', base).map(x => x.code)).toEqual(['publish_options', 'publish_options']);
+    const opts = { privacyLevel: 'SELF_ONLY' as const, consent: true };
+    expect(preflight('tiktok', { ...base, options: { tiktok: opts } })).toEqual([]);
+    expect(preflight('tiktok', { ...base, options: { tiktok: { ...opts, commercialContent: true } } })[0].msg).toContain('promotes your brand');
+    expect(preflight('tiktok', { ...base, options: { tiktok: { ...opts, commercialContent: true, brandedContent: true } } })[0].msg).toContain('cannot be private');
+  });
+  it('counts TikTok UTF-16 limits separately for video captions, photo descriptions and photo titles', () => {
+    const options = { tiktok: { privacyLevel: 'SELF_ONLY' as const, consent: true } };
+    expect(charCount('tiktok', '👍')).toBe(2);
+    expect(preflight('tiktok', { text: '👍'.repeat(1100), video, images: [], options })).toEqual([]);
+    expect(preflight('tiktok', { text: '👍'.repeat(1101), video, images: [], options })[0].code).toBe('too_long');
+    expect(preflight('tiktok', { text: '👍'.repeat(2000), images: [{ type: 'image/jpeg', bytes: 1 }], options })).toEqual([]);
+    expect(preflight('tiktok', { text: '👍'.repeat(2001), images: [{ type: 'image/jpeg', bytes: 1 }], options })[0].code).toBe('too_long');
+    expect(preflight('tiktok', { text: 'Description', images: [{ type: 'image/jpeg', bytes: 1 }], options: { ...options, title: 'a'.repeat(91) } })[0].msg).toContain('90 characters');
+  });
+  it('requires JPEG for Instagram images and MP4 for reels, with a compression fix', () => {
+    expect(preflight('instagram', { text: 'Caption', images: [] })[0].code).toBe('media_required');
+    expect(preflight('instagram', { text: 'Caption', images: [{ type: 'image/png', bytes: 10 }] })[0].fix?.action).toBe('compress');
+    expect(preflight('instagram', { text: 'Caption', images: [], video })).toEqual([]);
+    expect(preflight('instagram', { text: 'Caption', images: [], video: { ...video, meta: { bytes: 10, type: 'video/webm' } } })[0].code).toBe('video_format');
+  });
+});

@@ -32,10 +32,10 @@ export async function resolve(bid: string, sid: string, acctId?: string | null):
   if (t.src === 'pack') {
     if (acctId) { a = accountsFor(accts, t.platform).find(x => x.id === acctId) || null; if (!a) throw notFound('Account'); }
     else a = pickAccount(accts, t.platform, { pubAcct: existing?.status === 'scheduled' ? existing.acctId : null });
-    ch = a?.ch || (t.platform === 'x' ? 'x' : 'li_profile');
+    ch = a?.ch || (t.platform === 'linkedin' ? 'li_profile' : t.platform);
   } else {
     a = briefAccount(accts, t.platform, !!t.company);
-    ch = t.platform === 'x' ? 'x' : t.company ? 'li_page' : 'li_profile';
+    ch = t.platform === 'linkedin' ? (t.company ? 'li_page' : 'li_profile') : t.platform;
   }
   return { t, acct: a ? rows.find(r => r.id === a!.id) || null : null, ch, existing, pub: existing ? pubOf(existing, accts) : null, accts, rows };
 }
@@ -107,7 +107,7 @@ export async function autoSchedule(bid: string, packId: string): Promise<number>
   const biz = await getBiz(bid);
   if (!(await socialOn(biz)) || socialAutoOf(biz).post !== 'schedule') return 0;
   const date = addDays(bizToday(biz), 1); const time = socialAutoOf(biz).time || '08:00'; let n = 0;
-  for (const k of ['x', 'linkedin'] as PostPlatform[]) {
+  for (const k of ['x', 'linkedin', 'instagram'] as PostPlatform[]) {
     try {
       const r = await resolve(bid, packSid(packId, k));
       await scheduleChecks(biz, r, date, time, Date.now());

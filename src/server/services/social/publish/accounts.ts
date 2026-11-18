@@ -16,6 +16,9 @@ import { type Adapter, type Identity, type Tokens, SendError, TokenError } from 
 import { xAdapter } from './x';
 import { liAdapter } from './linkedin';
 import { stubAdapter } from './stubs';
+import { instagramAdapterFor, instagramUnifiedConfigured } from './instagram';
+import { tiktokAdapter } from './tiktok';
+import { youtubeAdapter } from './youtube';
 
 export type AcctRow = typeof schema.socialAccounts.$inferSelect;
 const A = schema.socialAccounts;
@@ -26,23 +29,34 @@ const WARN_MS = 7 * 24 * 3600e3;
 const overrides = new Map<SocialChannel, Adapter>();
 /** Tests only: replace a channel's adapter (null restores the default). */
 export function setAdapterForTests(ch: SocialChannel, a: Adapter | null) { if (a) overrides.set(ch, a); else overrides.delete(ch); }
-export function adapterFor(ch: SocialChannel, t: Pick<Tokens, 'stub'> | null): Adapter {
+export function adapterFor(ch: SocialChannel, t: Pick<Tokens, 'stub' | 'instagram'> | null): Adapter {
   const o = overrides.get(ch); if (o) return o;
   if (t?.stub) {
     // Stub tokens only work with dev stubs on; anywhere else the account must be reconnected.
     if (!env.devStubs) throw new TokenError(true, 'stub tokens outside RADAR_DEV_STUBS');
     return stubAdapter(ch);
   }
-  return ch === 'x' ? xAdapter : liAdapter(ch === 'li_page' ? 'page' : 'profile');
+  switch (ch) {
+    case 'x': return xAdapter;
+    case 'li_profile': return liAdapter('profile');
+    case 'li_page': return liAdapter('page');
+    case 'instagram': return instagramAdapterFor(t);
+    case 'tiktok': return tiktokAdapter;
+    case 'youtube': return youtubeAdapter;
+    default: throw new TokenError(true, 'unsupported social channel');
+  }
 }
 
 /** Channels this deployment can connect (its OAuth app is configured; all three with dev stubs). No fallback between LinkedIn apps. */
 export function channelsAvailable(): SocialChannel[] {
-  if (env.devStubs) return ['x', 'li_profile', 'li_page'];
+  if (env.devStubs) return ['x', 'li_profile', 'li_page', 'instagram', 'tiktok', 'youtube'];
   const out: SocialChannel[] = [];
   if (env.xClientId && env.xClientSecret) out.push('x');
   if (env.linkedinClientId && env.linkedinClientSecret) out.push('li_profile');
   if (env.linkedinPageClientId && env.linkedinPageClientSecret) out.push('li_page');
+  if (instagramUnifiedConfigured() || (env.instagramClientId && env.instagramClientSecret)) out.push('instagram');
+  if (env.tiktokClientKey && env.tiktokClientSecret) out.push('tiktok');
+  if (env.youtubeClientId && env.youtubeClientSecret) out.push('youtube');
   return out;
 }
 
@@ -64,7 +78,7 @@ export async function accountRow(bid: string, id: string): Promise<AcctRow | nul
 export const tokenFields = (t: Tokens) => ({ tokensEnc: encrypt(t), expiresAt: t.expires_at ? new Date(t.expires_at) : null });
 
 /* ── Pending authorizations (OAuth callback → social.connect), 1 hour, pruned by maintenance ── */
-export interface Pending { tokens: Tokens; id: Identity }
+export interface Pending { tokens: Tokens; id: Identity; /** Unified grants may share multiple accounts; selection stays server-validated. */ identities?: Identity[] }
 const PENDING = 'social-pending:';
 const PENDING_TTL_MS = 3600e3;
 export async function savePendingSocial(bid: string, userId: string | null, ch: SocialChannel, p: Pending): Promise<string> {
@@ -152,6 +166,7 @@ export async function tokensTick(now: Date) {
     }
     try {
       if (!canRefresh(t, now.getTime())) { if (!t || (a.expiresAt && a.expiresAt <= now)) await ensureToken(a.id); continue; }
+      if (a.ch === 'instagram' && a.expiresAt && a.expiresAt.getTime() - now.getTime() > 30 * 24 * 3600e3) continue;
       if (await once(`social.tokens:${a.id}:${day}`)) await ensureToken(a.id, { force: true });
     } catch (e: any) {
       if (!(e instanceof AccountExpired)) console.warn(`[social.tokens] ${a.id}: ${String(e?.message || e).slice(0, 200)}`);

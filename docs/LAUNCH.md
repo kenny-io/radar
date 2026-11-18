@@ -243,9 +243,11 @@ The docs don't say, so this hasn't been verified:
 - **Wix:** a reconnect to a site that already has the app returns to Radar.
 - **Shopify:** a token is refreshed after an hour idle.
 
-## 7b. Social channels — post to X and LinkedIn (optional, behind a flag)
+## 7b. Social channels (optional, behind a flag)
 
-Full owner walkthrough: `.factory/social-channels/developer-apps-guide.md`. Design: `.factory/social-channels/architecture.md`.
+Instagram, TikTok and YouTube setup, callback URLs, media hosting and review requirements: [SOCIAL_PUBLISHING.md](SOCIAL_PUBLISHING.md). These additions need no migration. Verify the web/worker credentials and worker processing recovery before enabling accounts.
+
+Original X/LinkedIn owner walkthrough: `.factory/social-channels/developer-apps-guide.md`. Design: `.factory/social-channels/architecture.md`.
 
 - [ ] **Flag.** `RADAR_SOCIAL_PUBLISHING` — empty/`off` (default): nothing changes anywhere. `all`: on for every business. Otherwise a comma-separated list of business ids and/or owner emails (the opt-in group). Set the same value on **web and worker**. Turning it off stops all sends at once (scheduled posts stay in the database and resume when it is turned back on; anything more than 24 h late fails as "couldn’t go out on time").
 - [ ] **Same `APP_URL` and `RADAR_SECRET_KEY` on web and worker** — the worker decrypts the stored tokens.

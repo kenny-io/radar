@@ -22,6 +22,9 @@ const next = () => `${Date.now()}${String(++stubState.seq % 1000).padStart(3, '0
 export function stubTokens(ch: SocialChannel, now = Date.now()): Tokens {
   const n = next();
   if (ch === 'x') return { stub: true, access_token: `stub-x-at-${n}`, refresh_token: `stub-x-rt-${n}`, expires_at: now + 2 * H, scope: 'tweet.read tweet.write users.read media.write offline.access' };
+  if (ch === 'instagram') return { stub: true, access_token: `stub-ig-at-${n}`, refresh_token: `stub-ig-at-${n}`, expires_at: now + 60 * D, scope: 'instagram_business_basic,instagram_business_content_publish' };
+  if (ch === 'tiktok') return { stub: true, access_token: `stub-tt-at-${n}`, refresh_token: `stub-tt-rt-${n}`, expires_at: now + 2 * H, refresh_expires_at: now + 180 * D, scope: 'user.info.basic,video.publish' };
+  if (ch === 'youtube') return { stub: true, access_token: `stub-yt-at-${n}`, refresh_token: `stub-yt-rt-${n}`, expires_at: now + H, scope: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly' };
   if (ch === 'li_profile') return { stub: true, access_token: `stub-li-at-${n}`, refresh_token: null, expires_at: now + 60 * D, scope: 'openid profile w_member_social' };
   return { stub: true, access_token: `stub-lp-at-${n}`, refresh_token: `stub-lp-rt-${n}`, expires_at: now + 60 * D, refresh_expires_at: now + 365 * D, scope: 'w_organization_social rw_organization_admin r_basicprofile' };
 }
@@ -32,6 +35,7 @@ export function stubIdentity(ch: SocialChannel, o: { businessName: string; userN
     const s = other ? 'other' : slugify(o.businessName || 'radar').replace(/-/g, '').slice(0, 11) || 'radar';
     return { remoteId: `stub-x-${s}`, name: other ? 'Other Account' : o.businessName || 'Radar', handle: `@${s}app` };
   }
+  if (ch === 'instagram' || ch === 'tiktok' || ch === 'youtube') return { remoteId: `stub-${ch}-${other ? 'other' : o.userId.slice(0, 8)}`, name: other ? 'Other Account' : o.businessName || o.userName, handle: '@' + (other ? 'other' : slugify(o.businessName || 'radar').replace(/-/g, '')) };
   if (ch === 'li_profile') return { remoteId: other ? 'stub-li-other' : `stub-li-${o.userId.slice(0, 8)}`, name: other ? 'Alex Other' : o.userName };
   return { remoteId: other ? 'stub-lm-other' : `stub-lm-${o.userId.slice(0, 8)}`, name: other ? 'Alex Other' : o.userName };
 }
@@ -39,7 +43,7 @@ export const stubPages = (businessName: string, userName: string): SocialPage[] 
   [{ id: 'stub-pg1', name: businessName || 'Your business', followers: 1204 }, { id: 'stub-pg2', name: `${userName} Studio`, followers: 312 }];
 
 const urlFor = (ch: SocialChannel, handle: string | null, id: string) =>
-  ch === 'x' ? `https://x.com/${(handle || '@radar').replace(/^@/, '')}/status/${id}` : `https://www.linkedin.com/feed/update/urn:li:share:${id}/`;
+  ch === 'instagram' ? `https://www.instagram.com/p/${id}/` : ch === 'tiktok' ? `https://www.tiktok.com/@${(handle || '@radar').replace(/^@/, '')}/video/${id}` : ch === 'youtube' ? `https://www.youtube.com/watch?v=${id}` : ch === 'x' ? `https://x.com/${(handle || '@radar').replace(/^@/, '')}/status/${id}` : `https://www.linkedin.com/feed/update/urn:li:share:${id}/`;
 
 export function stubAdapter(ch: SocialChannel): Adapter {
   const a: Adapter = {
@@ -65,6 +69,13 @@ export function stubAdapter(ch: SocialChannel): Adapter {
       return { remoteId: id, url: urlFor(ch, acct.handle, id) };
     },
   };
+  if (ch === 'instagram' || ch === 'tiktok' || ch === 'youtube') {
+    a.publish = async (acct, p) => {
+      if (/\[\[radar:processing\]\]/.test(p.text)) { const ref = 'stub-processing-' + next(); await p.progress?.(ref); return { remoteId: ref, url: urlFor(ch, acct.handle, ref), pending: true }; }
+      return a.create(acct, { text: p.text, mediaIds: [], aiMedia: p.aiMedia });
+    };
+    a.resume = async (acct, ref) => ({ remoteId: ref, url: urlFor(ch, acct.handle, ref) });
+  }
   if (ch === 'x') {
     a.verify = async (acct, p) => {
       const hit = (stubState.posts.get(acct.remoteId) || []).find((x: StubPost) => x.at >= p.sinceMs && normForMatch(x.text) === normForMatch(p.text));
