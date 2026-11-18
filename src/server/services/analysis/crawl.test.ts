@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { lookup } = vi.hoisted(() => ({ lookup: vi.fn() }));
 vi.mock('node:dns/promises', () => ({ default: { lookup } }));
 vi.mock('@/server/env', () => ({ env: { devStubs: false, crawlerUserAgent: 'RadarBot/1.0' } }));
-import { fetchUrl } from './crawl';
+import { crawlFailCopy, crawlSite, fetchUrl } from './crawl';
 const fetchMock = vi.fn();
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock); fetchMock.mockReset(); lookup.mockReset();
@@ -34,5 +34,20 @@ describe('crawler redirects', () => {
     fetchMock.mockImplementation(async () => new Response(null, { status: 302, headers: { location: '/loop' } }));
     await expect(fetchUrl('https://public.example/')).rejects.toThrow('invalid redirect');
     expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+});
+
+describe('a site that will not be scanned', () => {
+  it('is reported as blocking Radar when its home page answers 403', async () => {
+    fetchMock.mockImplementation(async () => new Response('<html><title>Just a moment...</title></html>', { status: 403, headers: { 'content-type': 'text/html' } }));
+    await expect(crawlSite('blocked.example')).rejects.toMatchObject({ reason: 'blocked' });
+  });
+  it('is reported as unreachable when nothing answers', async () => {
+    fetchMock.mockRejectedValue(new Error('connect ECONNREFUSED'));
+    await expect(crawlSite('down.example')).rejects.toMatchObject({ reason: 'unreachable' });
+  });
+  it('gets a message that says which of the two it was', () => {
+    expect(crawlFailCopy('blocked.example', 'blocked')).toBe('blocked.example is blocking Radar, so Radar can’t read it. If it’s your site, allow RadarBot in your firewall and robots.txt, then try again.');
+    expect(crawlFailCopy('down.example', 'unreachable')).toBe('Radar couldn’t reach down.example. The site may be down, or the address may be wrong.');
   });
 });

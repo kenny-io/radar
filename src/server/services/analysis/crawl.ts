@@ -23,6 +23,11 @@ export interface CrawledPage { url: string; path: string; title: string; h1: str
 export interface CrawlResult { origin: string; host: string; pages: CrawledPage[]; homeHtml: string; robotsBlocked: boolean }
 
 export class CrawlError extends Error { constructor(public reason: 'unreachable' | 'blocked') { super(reason); } }
+/** What the owner reads when the scan stops at the site. A site that answered and refused (401, 403, robots.txt) is told
+ *  apart from one that did not answer: trying again does not help the first, and its owner can let Radar in. */
+export const crawlFailCopy = (domain: string, reason: CrawlError['reason']) => reason === 'blocked'
+  ? `${domain} is blocking Radar, so Radar can’t read it. If it’s your site, allow ${uaToken()} in your firewall and robots.txt, then try again.`
+  : `Radar couldn’t reach ${domain}. The site may be down, or the address may be wrong.`;
 
 const MAX_PAGES = 100;
 const MAX_BYTES = 2 * 1024 * 1024;
