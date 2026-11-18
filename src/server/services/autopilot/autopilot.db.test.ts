@@ -22,6 +22,7 @@ import { createPack } from '../social/generate';
 import * as access from '@/server/billing/access';
 import * as failures from '@/server/observability/failures';
 import * as scheduling from '../social/publish/schedule';
+import * as briefStore from '../brief/store';
 import '../calendar/jobs';
 import '../social/jobs';
 import './jobs';
@@ -52,6 +53,8 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
     await db.delete(S.socialAccounts).where(eq(S.socialAccounts.businessId, bid));
     await db.delete(S.briefDays).where(eq(S.briefDays.businessId, bid));
     await db.delete(S.connections).where(eq(S.connections.businessId, bid));
+    // A test that failed before its own cleanup must not leave its mail for the next run to count.
+    await db.delete(S.outboxEmails).where(like(S.outboxEmails.subject, '%Autopilot tests%'));
     await db.update(S.businesses).set({ timezone: 'UTC', autopilot: {}, blog: { mode: 'review' }, socialAuto: { on: false, post: 'library', freq: 'custom', days: [], platforms: ['x'], time: '00:00' }, calendarSettings: { cadence: 'custom', perWeek: 3 }, briefSetup: false }).where(eq(S.businesses.id, bid));
   });
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
@@ -423,6 +426,38 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
       expect((await mails()).map(m => [m.day, m.items.map(i => i.key)])).toEqual([[D1, ['blog-paused']]]);
     }, 30_000);
 
+    it('a reply the owner already copied no longer needs them and is left out', async () => {
+      await program(); await blog();
+      await brief(D1, [reply('open'), { ...reply('copied'), st: 'copied' }, { ...reply('posted'), st: 'posted' }]);
+      at(D1, '08:10'); await run();
+      expect(await keys(D1)).toEqual([`brief:${D1}:open`]);
+    }, 30_000);
+
+    it('a step that keeps failing and a blocked brief source are told once, and again only after a success in between', async () => {
+      await program(); await blog();
+      const job = (kind: string, d: string, status: 'done' | 'failed', result?: unknown) => db.insert(S.jobs).values({ kind, businessId: bid, ref: d, status, result: result as any, createdAt: new Date(zonedTimeToUtc(d, '06:00', NY)), payload: { autopilotActivationId: act } });
+      const day = async (d: string, ok: boolean) => { await job('calendar.generate', d, ok ? 'done' : 'failed'); await job('brief.scan', d, 'done', ok ? {} : { failed: 'reddit' }); at(d, '10:05'); await run(); };
+      const both = ['brief-source', 'job:calendar.generate'];
+      await day(D1, false); await day(D2, false);
+      expect((await mails()).map(m => [m.day, m.items.map(i => i.key).sort()])).toEqual([[D1, both]]);
+      expect((await mails())[0].items.map(i => i.title).sort()).toEqual(['A Daily Brief source is unavailable', 'Calendar research needs attention']);
+      await day(D3, true);
+      expect([await told('brief-source'), await told('job:calendar.generate')]).toEqual([false, false]);
+      await day(D4, false);
+      expect((await mails()).map(m => [m.day, m.items.map(i => i.key).sort()])).toEqual([[D1, both], [D4, both]]);
+    }, 30_000);
+
+    it('a stage that fails every run is told once, not every day', async () => {
+      await program(); await blog(); vi.spyOn(failures, 'reportFailure').mockResolvedValue();
+      const real = briefStore.getDay; const broken = vi.spyOn(briefStore, 'getDay').mockRejectedValue(new Error('storage unavailable'));
+      for (const d of [D1, D2]) { at(d, '10:05'); await run(); }
+      expect((await mails()).map(m => [m.day, m.items.map(i => i.key)])).toEqual([[D1, ['stage:Daily Brief']]]);
+      broken.mockImplementation(real); at(D3, '10:05'); await run();
+      expect(await told('stage:Daily Brief')).toBe(false);
+      broken.mockRejectedValue(new Error('storage unavailable')); at(D4, '10:05'); await run();
+      expect((await mails()).map(m => m.day)).toEqual([D1, D4]);
+    }, 30_000);
+
     it('a post that fails its own publishing check is that day\'s work, not a standing account problem (A15)', async () => {
       await program(); await blog(); await account(); const reported = vi.spyOn(failures, 'reportFailure').mockResolvedValue();
       for (const d of [D1, D2]) { await brief(d, [feed('long', 'x', 'word '.repeat(80))]); at(d, '10:05'); await run(); }
@@ -443,12 +478,11 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
       expect(await mails()).toHaveLength(2); expect(await marks()).not.toContain(`autopilot-day:${bid}:${D3}`); expect(await told('crossing')).toBe(false);
     }, 30_000);
 
-    it('rollout: a batch already sent today counts as today\'s email, and problems told under the per-day keys are not told again (A18)', async () => {
+    it('rollout: a batch the old code already sent today counts as today\'s email; nothing more goes out that day (A18)', async () => {
       await program({ social: ['linkedin'] }); vi.spyOn(failures, 'reportFailure').mockResolvedValue();
       const P = `autopilot-handoff:${bid}:${act}:`;
       await db.insert(S.cronMarks).values([{ key: `${P}blog:${D1}` }, { key: `${P}pack:${packId(D1)}:linkedin` }]);
-      const owner = (await getBiz(bid)).ownerId;
-      await db.insert(S.jobs).values({ kind: 'autopilot.handoff', businessId: bid, status: 'done', maxAttempts: 4, createdAt: new Date(zonedTimeToUtc(D1, '00:20', NY)), payload: { activationId: act, ownerId: owner, name: 'Autopilot tests', items: [{ key: `blog:${D1}`, title: 'Connect your publishing destination', reason: '', href: '' }] } });
+      await db.insert(S.jobs).values({ kind: 'autopilot.handoff', businessId: bid, status: 'done', maxAttempts: 4, createdAt: new Date(zonedTimeToUtc(D1, '00:20', NY)), payload: { activationId: act, ownerId: uid, name: 'Autopilot tests', items: [{ key: `blog:${D1}`, title: 'Connect your publishing destination', reason: '', href: '' }] } });
       await brief(D1, [reply('r1')]); await pack(D1, { linkedin: { text: 'Daily LinkedIn draft', copiedAt: null } });
       at(D1, '10:05'); await run(); at(D1, '15:00'); await run();
       expect(await mails()).toHaveLength(1); expect((await mails())[0].day).toBeUndefined();
@@ -457,6 +491,18 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
       await brief(D2, [reply('n1')]); await pack(D2, { linkedin: { text: 'Next LinkedIn draft', copiedAt: null } });
       at(D2, '08:10'); await run();
       expect(await keys(D2)).toEqual([`brief:${D2}:n1`]);
+    }, 30_000);
+
+    it('rollout: problems the old code told yesterday under per-day keys are not told again by the first new email (A18)', async () => {
+      await program({ social: ['linkedin'] }); vi.spyOn(failures, 'reportFailure').mockResolvedValue();
+      const P = `autopilot-handoff:${bid}:${act}:`;
+      await db.insert(S.cronMarks).values([`blog:${D1}`, `blog-paused:${D1}`, `pack:${packId(D1)}:linkedin`].map(k => ({ key: P + k })));
+      await db.insert(S.jobs).values({ kind: 'autopilot.handoff', businessId: bid, status: 'done', maxAttempts: 4, createdAt: new Date(zonedTimeToUtc(D1, '08:20', NY)), payload: { activationId: act, ownerId: uid, name: 'Autopilot tests', items: [] } });
+      await db.update(S.businesses).set({ blog: { mode: 'review', paused: true } }).where(eq(S.businesses.id, bid));
+      await brief(D2, [reply('n1')]); await pack(D2, { linkedin: { text: 'Next LinkedIn draft', copiedAt: null } });
+      at(D2, '08:10'); await run();
+      expect((await mails()).filter(m => m.day).map(m => [m.day, m.items.map(i => i.key)])).toEqual([[D2, [`brief:${D2}:n1`]]]);
+      expect([await told('blog'), await told('blog-paused'), await told('social:li_profile')]).toEqual([true, true, true]);
     }, 30_000);
   });
 });
