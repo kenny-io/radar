@@ -1,0 +1,76 @@
+{
+  "at": "2026-11-18T23:39:19.976Z",
+  "results": [
+    {
+      "name": "AC4 Accepted provider ref survives repeated recovery; second init never occurs",
+      "pass": true,
+      "detail": {
+        "init": 1,
+        "resumes": 3,
+        "status": "posted"
+      }
+    },
+    {
+      "name": "AC4 Permission refusal reading an accepted operation preserves its ref and never authorizes re-init",
+      "pass": true,
+      "detail": {
+        "init": 1,
+        "refPreserved": true,
+        "status": "sending"
+      }
+    },
+    {
+      "name": "AC4 Ambiguous init becomes unknown without retry and copy does not assert unpublished",
+      "pass": true,
+      "detail": {
+        "status": "failed",
+        "code": "unknown",
+        "init": 1
+      }
+    },
+    {
+      "name": "AC5 Actual video duration reaches provider and creator limit prevents init",
+      "pass": true,
+      "detail": {
+        "duration": 2,
+        "creatorLimit": 1,
+        "init": 0
+      }
+    },
+    {
+      "name": "AC3 Scheduled instagram publication uses existing claim path exactly once",
+      "pass": true,
+      "detail": {
+        "scheduled": true,
+        "posted": true,
+        "duplicateClaimRefused": true
+      }
+    },
+    {
+      "name": "AC3 Scheduled tiktok publication uses existing claim path exactly once",
+      "pass": true,
+      "detail": {
+        "scheduled": true,
+        "posted": true,
+        "duplicateClaimRefused": true
+      }
+    },
+    {
+      "name": "AC3 Scheduled youtube publication uses existing claim path exactly once",
+      "pass": true,
+      "detail": {
+        "scheduled": true,
+        "posted": true,
+        "duplicateClaimRefused": true
+      }
+    },
+    {
+      "name": "AC5 Foreign stored image cannot be read or published through new adapter",
+      "pass": true,
+      "detail": {
+        "foreignMediaRefused": true,
+        "init": 0
+      }
+    }
+  ]
+}

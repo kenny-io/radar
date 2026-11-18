@@ -498,7 +498,7 @@ describe('images via OpenRouter', () => {
     const { IMG_SIZES } = await import('@/lib/constants');
     const { BRIEF_IMG_W, BRIEF_IMG_H } = await import('../services/brief/visuals').catch(() => ({ BRIEF_IMG_W: 1200, BRIEF_IMG_H: 675 }));
     const got = Object.fromEntries([...Object.entries(IMG_SIZES), ['brief', [BRIEF_IMG_W, BRIEF_IMG_H]]].map(([k, [w, h]]: any) => [k, images.openrouterAspect(w, h)]));
-    expect(got).toEqual({ hero: '16:9', linkedin: '16:9', facebook: '16:9', quora: '16:9', x: '16:9', reddit: '4:3', brief: '16:9' });
+    expect(got).toEqual({ hero: '16:9', linkedin: '16:9', facebook: '16:9', quora: '16:9', x: '16:9', reddit: '4:3', brief: '16:9', instagram: '3:4', tiktok: '9:16', youtube: '16:9' });
   });
   for (const [type, w, h] of [['image/png', 1200, 628], ['image/jpeg', 1200, 900], ['image/jpeg', 1200, 675]] as const) {
     it(`decodes ${type} (with and without data: prefix) and cover-crops to exactly ${w}×${h}`, async () => {

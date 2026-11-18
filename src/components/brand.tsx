@@ -19,6 +19,7 @@ export function PlatMark({ k, s = 40 }: { k: string; s?: number }) {
 /** Platform logos for the Daily Brief (14–16px). Ported from the prototype's PlatLogo. */
 export function PlatLogo({ k, s = 16 }: { k: string; s?: number }) {
   const box: React.CSSProperties = { width: s, height: s, flex: 'none', display: 'block' };
+  if (['instagram', 'tiktok', 'youtube'].includes(k)) { const icon = BRAND_ICONS[k]; return <svg viewBox="0 0 24 24" style={{ ...box, color: 'var(--ink)' }} role="img" aria-label={k === 'youtube' ? 'YouTube' : k === 'tiktok' ? 'TikTok' : 'Instagram'}><path d={icon.path} fill={markFill(icon.hex)} /></svg>; }
   if (k === 'x') return <svg viewBox="0 0 24 24" style={box} aria-label="X"><rect width="24" height="24" rx="5.5" fill="#000" /><rect x=".5" y=".5" width="23" height="23" rx="5" fill="none" stroke="var(--line)" /><path transform="translate(4.6 4.6) scale(.62)" fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>;
   if (k === 'linkedin') return <svg viewBox="0 0 24 24" style={box} aria-label="LinkedIn"><rect width="24" height="24" rx="5.5" fill="#0A66C2" /><path transform="translate(4.4 4.4) scale(.64)" fill="#fff" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.064 2.064 0 1 1 0-4.128 2.064 2.064 0 0 1 0 4.128zm1.782 13.019H3.555V9h3.564v11.452z" /></svg>;
   if (k === 'hn') return <svg viewBox="0 0 24 24" style={box} aria-label="Hacker News"><rect width="24" height="24" rx="5.5" fill="#FF6600" /><path fill="#fff" d="M7.6 6h2.1l2.3 4.6L14.3 6h2.1l-3.4 6.4V18h-1.9v-5.6z" /></svg>;
@@ -46,7 +47,7 @@ export function GoogleButton({ children, busy, onClick, disabled, href }: { chil
   return <button type="button" className="gsi" onClick={onClick} disabled={disabled || busy}>{inner}</button>;
 }
 
-const PLAT_KEYS = ['reddit', 'x', 'linkedin', 'hn', 'quora', 'facebook'];
+const PLAT_KEYS = ['reddit', 'x', 'linkedin', 'hn', 'quora', 'facebook', 'instagram', 'tiktok', 'youtube'];
 /** Logo for any outside service by key (search console, AI engines and providers, GitHub, social platforms, CMSs). Falls back to
  *  a first-letter tile. Engine names like "ChatGPT" are accepted as-is. */
 export function BrandIcon({ k, s = 16, style }: { k: string; s?: number; style?: React.CSSProperties }) {

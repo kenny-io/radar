@@ -427,7 +427,7 @@ export const events = pgTable('events', {
 export const socialAccounts = pgTable('social_accounts', {
   id: id(),
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
-  ch: text('ch').$type<'x' | 'li_profile' | 'li_page'>().notNull(),
+  ch: text('ch').$type<'x' | 'li_profile' | 'li_page' | 'instagram' | 'tiktok' | 'youtube'>().notNull(),
   /** X user id | LinkedIn person id (the profile app's OIDC sub) | LinkedIn organization id */
   remoteId: text('remote_id').notNull(),
   name: text('name').notNull(),
@@ -449,10 +449,10 @@ export const socialPubs = pgTable('social_pubs', {
   businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
   sid: text('sid').notNull(),
   src: text('src').$type<'pack' | 'brief'>().notNull(),
-  platform: text('platform').$type<'x' | 'linkedin'>().notNull(),
+  platform: text('platform').$type<'x' | 'linkedin' | 'instagram' | 'tiktok' | 'youtube'>().notNull(),
   kind: text('kind').$type<'post' | 'reply'>().notNull().default('post'),
   acctId: uuid('acct_id').references(() => socialAccounts.id, { onDelete: 'set null' }),
-  ch: text('ch').$type<'x' | 'li_profile' | 'li_page'>().notNull(),
+  ch: text('ch').$type<'x' | 'li_profile' | 'li_page' | 'instagram' | 'tiktok' | 'youtube'>().notNull(),
   acctLabel: text('acct_label').notNull(),
   status: text('status').$type<'scheduled' | 'sending' | 'posted' | 'failed'>().notNull(),
   /** Wall clock in businesses.timezone; due_at is derived from it. */

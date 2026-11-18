@@ -13,7 +13,7 @@ import { STUCK_MS, claimScheduled, failStale, recoverStuck, runSend } from './se
 
 /** social.send (ref = sid, payload { pubId }). Scheduled and due → claim + send; stuck `sending` → verify or retry; else skip. */
 defineJob<{ pubId: string }>({
-  kind: 'social.send', maxAttempts: 1, timeoutMs: 120_000,
+  kind: 'social.send', maxAttempts: 1, timeoutMs: 150_000,
   run: async ctx => {
     const r = (await db.select().from(P).where(eq(P.id, ctx.payload.pubId)).limit(1))[0];
     if (!r) return { skipped: 'gone' };

@@ -1,0 +1,77 @@
+{
+  "at": "2026-11-18T23:39:18.902Z",
+  "results": [
+    {
+      "name": "AC2 Generate all three new platforms through real UI and stub worker",
+      "pass": true,
+      "detail": {
+        "platforms": [
+          "tiktok",
+          "youtube",
+          "instagram"
+        ],
+        "actualJob": true
+      }
+    },
+    {
+      "name": "AC2 Caption edit invalidates prior TikTok approval in UI and storage",
+      "pass": true,
+      "detail": {
+        "approvalCleared": true,
+        "persisted": true
+      }
+    },
+    {
+      "name": "AC2 Changed TikTok permissions disable interactions clear audience and approval",
+      "pass": true,
+      "detail": {
+        "creatorRestrictionsApplied": true,
+        "audienceCleared": true,
+        "approvalCleared": true
+      }
+    },
+    {
+      "name": "AC4 Processing UI is not posted and resumes stored operation to confirmed history",
+      "pass": true,
+      "detail": {
+        "initial": "sending",
+        "savedProviderRef": true,
+        "recovered": "posted"
+      }
+    },
+    {
+      "name": "AC4 Provider rejection shows readable failed state and retry control",
+      "pass": true,
+      "detail": {
+        "failureVisible": true,
+        "retryVisible": true
+      }
+    },
+    {
+      "name": "AC3 Schedule Instagram through browser persists and unschedule preserves draft",
+      "pass": true,
+      "detail": {
+        "time": "14:30",
+        "persisted": true,
+        "draftPreserved": true
+      }
+    },
+    {
+      "name": "AC1 Expired Instagram reconnects through actual popup; disconnect removes token and keeps posted history",
+      "pass": true,
+      "detail": {
+        "reconnected": true,
+        "tokensDeleted": true,
+        "postedHistoryPreserved": true
+      }
+    },
+    {
+      "name": "AC6 Additional browser flows have no runtime exceptions",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ],
+  "errors": []
+}

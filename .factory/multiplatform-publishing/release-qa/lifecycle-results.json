@@ -1,0 +1,25 @@
+{
+  "at": "2026-11-18T23:39:32.012Z",
+  "results": [
+    {
+      "name": "Q3 IG final media_publish gate blocks deleted occurring during provider-status await",
+      "pass": true,
+      "detail": {
+        "containers": 1,
+        "mediaPublish": 0,
+        "refPreserved": true,
+        "status": "sending"
+      }
+    },
+    {
+      "name": "Q3 IG final media_publish gate blocks autopilotOff occurring during provider-status await",
+      "pass": true,
+      "detail": {
+        "containers": 1,
+        "mediaPublish": 0,
+        "refPreserved": true,
+        "status": "sending"
+      }
+    }
+  ]
+}

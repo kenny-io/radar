@@ -73,9 +73,9 @@ export function heldLines(pub: Pick<Pub, 'status' | 'held' | 'date' | 'time'> | 
 /** Toast after Compress images: only claim a change when Radar re-encoded something (divergence: neutral copy for 0). */
 export const compressToast = (changed: number | null | undefined) => (changed ? 'Images compressed' : 'Images are already small enough.');
 /** The Social status line says "scheduled to connected accounts" only while automatic posts can really be scheduled:
- *  publishing on, auto set to Schedule posts, and at least one connected X or LinkedIn account that isn't expired. */
+ *  publishing on, auto set to Schedule posts, and at least one connected X, LinkedIn or Instagram account that isn't expired. */
 export const autoSchedules = (B: Pick<Workspace, 'social'>) =>
-  !!B.social.publishing && B.social.auto.post === 'schedule' && (B.social.accounts || []).some(a => !a.expired);
+  !!B.social.publishing && B.social.auto.post === 'schedule' && (B.social.accounts || []).some(a => !a.expired && ['x', 'li_profile', 'li_page', 'instagram'].includes(a.ch));
 
 /* ── Dashboard → Needs attention ── */
 export interface SocialIssue { id: string; tone: 'bad' | 'warn'; label: string; head: string; body: string; open?: SocialItem; reconnect?: SocialAccount }

@@ -102,13 +102,16 @@ export const SECRET_FIELDS = ['pass', 'key'];
 export const PLAT: { k: Platform; l: string; d: string; ratio: number }[] = [
   { k: 'linkedin', l: 'LinkedIn', d: 'Professional, a few short paragraphs', ratio: 1.91 },
   { k: 'x', l: 'X', d: 'Short and direct, up to 280 characters', ratio: 16 / 9 },
+  { k: 'instagram', l: 'Instagram', d: 'Visual stories and short captions', ratio: 4 / 5 },
+  { k: 'tiktok', l: 'TikTok', d: 'Photo posts or an uploaded video', ratio: 9 / 16 },
+  { k: 'youtube', l: 'YouTube', d: 'A description for your uploaded video', ratio: 16 / 9 },
   { k: 'facebook', l: 'Facebook', d: 'Friendly and conversational', ratio: 1.91 },
   { k: 'reddit', l: 'Reddit', d: 'Community-first, disclosed, no hard sell', ratio: 4 / 3 },
   { k: 'quora', l: 'Quora', d: 'Written as a helpful answer', ratio: 1.91 },
 ];
 export const plat = (k: string) => PLAT.find(p => p.k === k)!;
 export const STYLES = [{ k: 'photography', l: 'Photography' }, { k: 'illustration', l: 'Illustration' }, { k: 'branded', l: 'Branded graphic' }, { k: 'infographic', l: 'Infographic' }, { k: 'custom', l: 'Custom direction' }] as const;
-export const IMG_SIZES: Record<string, [number, number]> = { hero: [1200, 628], linkedin: [1200, 628], facebook: [1200, 628], quora: [1200, 628], x: [1200, 675], reddit: [1200, 900] };
+export const IMG_SIZES: Record<string, [number, number]> = { hero: [1200, 628], instagram: [1080, 1350], tiktok: [1080, 1920], youtube: [1280, 720], linkedin: [1200, 628], facebook: [1200, 628], quora: [1200, 628], x: [1200, 675], reddit: [1200, 900] };
 
 /* ── Daily Brief ── */
 export const BPLAT: Record<BriefPlatform, string> = { reddit: 'Reddit', x: 'X', linkedin: 'LinkedIn', hn: 'Hacker News', quora: 'Quora' };

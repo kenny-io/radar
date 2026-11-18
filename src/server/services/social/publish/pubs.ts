@@ -6,9 +6,11 @@ import { getPack, renderPostImage, updatePack, type StoredPack } from '../genera
 import { getDay, withDay } from '../../brief/store';
 import { LIMITS, canPost, canReply, parseSid, zonedTimeToUtc, type PostPlatform, type PreflightInput } from '@/lib/socialPublish';
 import { textOf } from '@/features/brief/model';
-import type { BriefItem, MediaMeta, Profile, Pub, PubErrCode, SocialAccount } from '@/lib/types';
+import type { BriefItem, MediaMeta, Profile, Pub, PubErrCode, SocialAccount, SocialVideo, SocialPublishOptions } from '@/lib/types';
 import type { BizRow } from '../../../workspace';
-import { metaOf } from './media';
+import { readImage, videoMeta, videoDuration } from './media';
+import { readStored, storedKey } from '../../storage';
+import { RadarError } from '../../../errors';
 import { MODEL_STYLES, imageModelConfigured } from '../../images';
 
 export type PubRow = typeof schema.socialPubs.$inferSelect;
@@ -50,6 +52,7 @@ export const pubsByIds = (ids: string[]) => (ids.length ? db.select().from(P).wh
 export interface Img { url: string; meta: MediaMeta | null; /** brief: index in img.urls */ i?: number }
 export interface Target {
   sid: string; src: 'pack' | 'brief'; platform: PostPlatform; kind: 'post' | 'reply';
+  video?: SocialVideo | null; options?: SocialPublishOptions;
   text: string; images: Img[]; imagesPending: boolean;
   pack?: StoredPack; packId?: string;
   day?: string; item?: BriefItem; company?: boolean;
@@ -64,7 +67,7 @@ export async function loadTarget(bid: string, sid: string): Promise<Target | nul
   if (s.src === 'pack') {
     const pack = await getPack(bid, s.packId); const post = pack?.posts[s.platform];
     if (!pack || !post) return null;
-    return { sid, src: 'pack', platform: s.platform, kind: 'post', text: post.text || '', images: post.imageUrl ? [{ url: post.imageUrl, meta: post.imageMeta ?? null }] : [], imagesPending: false, pack, packId: pack.id, needsRender: !post.imageUrl, aiMedia: !!(post as { photo?: boolean }).photo };
+    return { sid, src: 'pack', platform: s.platform, kind: 'post', text: post.text || '', video: post.video, options: post.publishOptions, images: !post.video && s.platform !== 'youtube' && post.imageUrl ? [{ url: post.imageUrl, meta: post.imageMeta ?? null }] : [], imagesPending: false, pack, packId: pack.id, needsRender: !post.video && s.platform !== 'youtube' && !post.imageUrl, aiMedia: !post.video && !!(post as { photo?: boolean }).photo };
   }
   const day = await getDay(bid, s.day);
   const item = (day?.items as BriefItem[] | undefined)?.find(i => i.id === s.itemId);
@@ -75,7 +78,7 @@ export async function loadTarget(bid: string, sid: string): Promise<Target | nul
   if (item.kind === 'post' && item.img) item.img.urls.forEach((u, i) => { if (u) imgs.push({ url: u, meta: item.img!.meta?.[i] ?? null, i }); });
   return { sid, src: 'brief', platform: k as PostPlatform, kind: item.kind, text: textOf(item), images: k === 'x' ? imgs.slice(0, LIMITS.x.imgs) : imgs, imagesPending: item.kind === 'post' && item.img?.status === 'generating', day: s.day, item, company: (item.acct || 'founder') === 'company', aiMedia: !!item.img && MODEL_STYLES.includes(item.img.style) && imageModelConfigured() };
 }
-export const preflightInput = (t: Target): PreflightInput => ({ text: t.text, images: t.images.map(i => i.meta), imagesPending: t.imagesPending });
+export const preflightInput = (t: Target): PreflightInput => ({ text: t.text, images: t.images.map(i => i.meta), imagesPending: t.imagesPending, video: t.video, options: t.options });
 
 /** Give every image a real file and known meta: render a pack post's missing visual, read unknown sizes from the file, and
  *  persist both (A21). Mutates and returns the target. */
@@ -87,9 +90,19 @@ export async function ensureImages(biz: BizRow, t: Target): Promise<Target> {
     await updatePack(bid, t.pack.id, x => { const cur = x.posts[t.platform]; return cur && !cur.imageUrl ? { ...x, posts: { ...x.posts, [t.platform]: { ...cur, imageUrl: r.url, imageMeta: r.meta, photo: r.photo } } } : x; });
     t.images = [{ url: r.url, meta: r.meta }]; t.needsRender = false; t.aiMedia = r.photo;
   }
-  const unknown = t.images.filter(i => !i.meta);
-  if (!unknown.length) return t;
-  for (const i of unknown) i.meta = await metaOf(i.url);
+  if (t.video) {
+    const f = await readStored(bid, t.video.url);
+    const meta = f && videoMeta(f.body);
+    if (!meta) throw new RadarError('That video is missing or invalid. Upload it again.', 400, 'media');
+    t.video = { ...t.video, meta, durationSec: videoDuration(f!.body) };
+  }
+  for (const i of t.images) {
+    if (!storedKey(bid, i.url)) throw new RadarError('That image does not belong to this business.', 400, 'media');
+    const file = await readImage(i.url, bid);
+    if (!file) throw new RadarError('That image is missing. Generate it again.', 400, 'media');
+    i.meta = file.meta;
+  }
+  if (!t.images.length) return t;
   if (t.src === 'pack' && t.pack) {
     const i = t.images[0];
     if (i?.meta) await updatePack(bid, t.pack.id, x => { const cur = x.posts[t.platform]; return cur && cur.imageUrl === i.url ? { ...x, posts: { ...x.posts, [t.platform]: { ...cur, imageMeta: i.meta } } } : x; });

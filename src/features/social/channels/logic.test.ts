@@ -136,6 +136,8 @@ describe('Social status line (QA D5)', () => {
   const on = (post: 'library' | 'schedule' | undefined, accounts: SocialAccount[], publishing = true) => ({ social: { packs: [], img: null, auto: { post } as any, publishing, accounts } }) as unknown as Pick<Workspace, 'social'>;
   it('says scheduled only with Schedule posts and a live account', () => {
     expect(autoSchedules(on('schedule', [X]))).toBe(true);
+    expect(autoSchedules(on('schedule', [{ id: 'ig', ch: 'instagram', name: 'Studio' }]))).toBe(true);
+    expect(autoSchedules(on('schedule', [{ id: 'tt', ch: 'tiktok', name: 'Creator' }, { id: 'yt', ch: 'youtube', name: 'Channel' }]))).toBe(false);
     expect(autoSchedules(on('schedule', []))).toBe(false); // every account disconnected
     expect(autoSchedules(on('schedule', [{ ...X, expired: true }]))).toBe(false);
     expect(autoSchedules(on('library', [X]))).toBe(false);

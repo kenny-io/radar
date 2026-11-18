@@ -1,0 +1,63 @@
+{
+  "at": "2026-11-18T23:39:30.115Z",
+  "results": [
+    {
+      "name": "Q2 Start pins Meta mode config version and only publishing configuration despite untrusted query",
+      "pass": true,
+      "detail": {
+        "modeBound": true,
+        "minimalConfig": true,
+        "codeResponseOverride": true
+      }
+    },
+    {
+      "name": "Q2 Callback exchanges Meta code and follows trusted cursor pagination; encrypted pending identity never system user/first IG",
+      "pass": true,
+      "detail": {
+        "accounts": 2,
+        "paginationTrusted": true,
+        "clientBusinessId": "777",
+        "noImplicitSelection": true,
+        "encrypted": true,
+        "neverExpiry": true
+      }
+    },
+    {
+      "name": "Q2 Changed application configuration and malformed business identity fail closed",
+      "pass": true,
+      "detail": {
+        "changedAppRefused": true,
+        "systemUserNotClientBusiness": true
+      }
+    },
+    {
+      "name": "Q2 Never SUAT grants do not refresh; finite SUAT expiry and401 require reconnect without legacy calls",
+      "pass": true,
+      "detail": {
+        "refreshCalls": 0,
+        "revokeCalls": 0,
+        "finiteExpiryReconnect": true,
+        "invalidatedNeverGrantReconnect": true
+      }
+    },
+    {
+      "name": "Q2 Actual sender persists Unified container and resumes same Meta host without duplicate container or owner-id use",
+      "pass": true,
+      "detail": {
+        "containers": 1,
+        "publishes": 1,
+        "status": "posted",
+        "correctHost": true
+      }
+    },
+    {
+      "name": "Q2 Legacy token keeps original host/version through new deployment settings",
+      "pass": true,
+      "detail": {
+        "host": "graph.instagram.com",
+        "version": "v24.0",
+        "refreshPreservesProvenance": true
+      }
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import { LogoLabel } from './LogoLabel';
 import { ScheduleModal } from './ScheduleModal';
 import { compressToast, heldLines, postedAs, repub, rescheduleAction, withPub } from './logic';
 import { useNowMs } from './useSocial';
+import { PublishOptions } from './PublishOptions';
 
 /** Preflight problems: amber dot + text, with a one-click fix where there is one. */
 export function Issues({ list, onFix, busy }: { list: Problem[]; onFix: (p: Problem) => void; busy?: boolean }) {
@@ -23,16 +24,17 @@ export function Issues({ list, onFix, busy }: { list: Problem[]; onFix: (p: Prob
 /** Toast after a Post now / Try again that came back `failed` (a failed send is not an error). */
 export const failToast = (pub: Pub) => (pub.code === 'unknown' ? failedLine(pub) : 'Couldn’t post. Nothing was published.');
 
-export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: SocialPack; k: Platform; post: SocialPost; nImg: number; onCopy: () => void; onDownload: () => void }) {
+export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy = false }: { pack: SocialPack; k: Platform; post: SocialPost; nImg: number; onCopy: () => void; onDownload: () => void; mediaBusy?: boolean }) {
   const app = useApp(); const { toast } = app; const B = app.B!; const tz = B.tz; const now = useNowMs();
   const pl = plat(k).l; const all = accountsOf(B); const accts = accountsFor(all, k);
   const pub = post.pub || null;
   const [chosen, setChosen] = useState<string | null>(null); const [conn, setConn] = useState<SocialChannel | null>(null); const [re, setRe] = useState<SocialAccount | null>(null);
   const [sch, setSch] = useState(false); const [confirm, setConfirm] = useState(false); const [busy, setBusy] = useState(false); const [fixing, setFixing] = useState(false);
+  const [providerReady, setProviderReady] = useState(k !== 'tiktok');
   const cur = pickAccount(all, k, { pubAcct: pub?.acct, chosen });
   const state = packPanelState(k, post, all, cur, now);
-  const issues = canPost(k) ? preflight(k, packPreflightInput(post)) : [];
-  const blocked = issues.length > 0;
+  const issues = canPost(k) ? preflight(k, packPreflightInput(post, k)) : [];
+  const blocked = issues.length > 0 || !providerReady || mediaBusy || B.role === 'Viewer';
   const sid = canPost(k) ? packSid(pack.id, k) : '';
   const label = (acctLabel(cur) || pub?.acctLabel || '');
   const at = (p: Pub) => `${fmtDW(p.date)} at ${atTz(tz, p.date, p.time)}`;
@@ -54,7 +56,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
     const done = () => toast(`Scheduled for ${fmtDW(date)} at ${atTz(tz, date, time)}`, { tone: 'ok' });
     // Same time, new day: social.move (works while the account is on hold). A new time: social.schedule.
     if (how === 'move' && pub) { app.act('social.move', { sid, date }, { optimistic: b => withPub(b, sid, repub(pub, date, time, tz)) }).then(done).catch(() => {}); return; }
-    const base: Pub = pub || { status: 'scheduled', platform: k as 'x' | 'linkedin', date, time, dueAt: '', acct: cur?.id || null, acctLabel: label };
+    const base: Pub = pub || { status: 'scheduled', platform: k as Pub['platform'], date, time, dueAt: '', acct: cur?.id || null, acctLabel: label };
     app.act('social.schedule', { sid, date, time, acctId: cur?.id }, { optimistic: b => withPub(b, sid, { ...repub(base, date, time, tz), status: 'scheduled', acct: cur?.id || null, err: null, code: null }) })
       .then(done).catch(() => {});
   };
@@ -74,7 +76,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
       initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('pack', k, B.today)} onSave={schedule} />
     <Modal open={confirm} onClose={() => setConfirm(false)} width={440} label="Post now"><div className="col" style={{ padding: 30, gap: 16 }}>
       <h2 className="h2">{`Post to ${pl} now?`}</h2>
-      <p className="sub">It goes live as <span style={{ color: 'var(--ink)' }}>{label}</span>{nImg > 0 ? ` with ${nImg} image${nImg > 1 ? 's' : ''}` : ''}. You can delete it on {pl} afterwards.</p>
+      <p className="sub">{`It will be sent to ${pl} as `}<span style={{ color: 'var(--ink)' }}>{label}</span>{post.video ? ' with your attached video' : nImg > 0 ? ` with ${nImg} image${nImg > 1 ? 's' : ''}` : ''}.{k === 'youtube' ? ` Visibility: ${post.publishOptions?.privacy || 'not selected'}.` : k === 'tiktok' ? ' Your selected audience and disclosure settings apply.' : ''} You can delete it on {pl} afterwards.</p>
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 6 }}><Btn kind="ghost" onClick={() => setConfirm(false)}>Cancel</Btn><Btn kind="primary" onClick={doPost}><LogoLabel k={k}>Post now</LogoLabel></Btn></div>
     </div></Modal>
   </>;
@@ -87,7 +89,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
     <span className="xs sub" style={{ textAlign: 'center' }}>{canPost(k) ? 'Copying or downloading doesn’t publish anything.' : `Radar can’t post to ${pl}. Copy it and post it yourself.`}</span>
   </div>;
   if (state === 'not_connected') return <div className="col" style={{ gap: 10 }}>
-    {connectable.map(c => <Btn key={c.k} className="btn-block" onClick={() => { setRe(null); setConn(c.k); }}><LogoLabel k={c.plat}>{`Connect ${c.l}`}</LogoLabel></Btn>)}
+    {connectable.map(c => <Btn key={c.k} className="btn-block" disabled={B.role === 'Viewer'} onClick={() => { setRe(null); setConn(c.k); }}><LogoLabel k={c.plat}>{`Connect ${c.l}`}</LogoLabel></Btn>)}
     <span className="xs sub" style={{ textAlign: 'center' }}>Connect once to post or schedule from Radar.</span>
     {secondary}{modals}
   </div>;
@@ -99,7 +101,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
     {secondary}
   </div>;
   if (state === 'sending' && pub) return <div className="col" style={{ gap: 12 }}>
-    <Status tone="signal" pulse>{pub.status === 'sending' || minsUntil(pub, now) < 0 ? `Sending to ${pl}…` : `Sending at ${atTz(tz, pub.date, pub.time)}`}</Status>
+    <Status tone="signal" pulse>{pub.status === 'sending' || minsUntil(pub, now) < 0 ? `${['instagram', 'tiktok', 'youtube'].includes(k) ? 'Processing on' : 'Sending to'} ${pl}…` : `Sending at ${atTz(tz, pub.date, pub.time)}`}</Status>
     <span className="small sub" style={{ marginTop: -6 }}>{`As ${label} · it’s too close to send time to change now`}</span>
     {secondary}
   </div>;
@@ -109,10 +111,11 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload }: { pack: 
       : state === 'scheduled' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${at(pub)}`}</Status><span className="small sub">{`As ${label} · edits are included until it posts`}</span></div>
         : state === 'failed' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="bad">{`Didn’t post ${at(pub)}`}</Status><span className="small sub">{failedLine(pub)}</span></div>
           : <div className="row" style={{ gap: 12 }}><span className="small grow">Post as</span>{accts.length > 1 ? <select className="input" style={{ width: 200, height: 34, fontSize: 13 }} value={cur?.id} onChange={e => setChosen(e.target.value)} aria-label="Post as">{accts.map(a => <option key={a.id} value={a.id}>{acctLabel(a) + (a.expired ? ' (reconnect)' : '')}</option>)}</select> : <span className="small sub">{label}</span>}</div>}
+    <PublishOptions packId={pack.id} platform={k} post={post} acctId={cur?.id} disabled={B.role === 'Viewer' || busy || mediaBusy} onReady={setProviderReady} />
     <Issues list={issues} onFix={fix} busy={fixing} />
-    {expired && cur ? <Btn kind="primary" className="btn-block" onClick={() => { setRe(cur); setConn(cur.ch); }}><LogoLabel k={k}>{`Reconnect ${chOf(cur.ch).l}`}</LogoLabel></Btn>
+    {expired && cur ? <Btn kind="primary" className="btn-block" disabled={B.role === 'Viewer'} onClick={() => { setRe(cur); setConn(cur.ch); }}><LogoLabel k={k}>{`Reconnect ${chOf(cur.ch).l}`}</LogoLabel></Btn>
       : <Btn kind="primary" className="btn-block" loading={busy} disabled={blocked} onClick={() => setConfirm(true)}><LogoLabel k={k}>{state === 'failed' ? 'Try again' : 'Post now'}</LogoLabel></Btn>}
-    {scheduled ? <div className="row" style={{ gap: 8 }}><Btn className="grow" icon="calendar" disabled={busy || blocked} onClick={() => setSch(true)}>Reschedule</Btn><Btn kind="ghost" disabled={busy} onClick={unschedule}>Unschedule</Btn></div>
+    {scheduled ? <div className="row" style={{ gap: 8 }}><Btn className="grow" icon="calendar" disabled={busy || blocked} onClick={() => setSch(true)}>Reschedule</Btn><Btn kind="ghost" disabled={busy || B.role === 'Viewer'} onClick={unschedule}>Unschedule</Btn></div>
       : !expired && <Btn className="btn-block" icon="calendar" disabled={blocked || busy} onClick={() => setSch(true)}>Schedule</Btn>}
     {secondary}{modals}
   </div>;

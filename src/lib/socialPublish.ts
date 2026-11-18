@@ -3,23 +3,26 @@
 // corrected for production: business time zone instead of the browser clock, absolute `dueAt` instants, ids that may
 // contain colons, real image sizes. Contract: .factory/social-channels/architecture.md. Owner: architect (via the PM).
 // Rules: no React, no server imports, and never read the clock here — callers pass `nowMs`.
-import type { BriefItem, MediaMeta, Pub, PubErrCode, PubStatus, SocialAccount, SocialChannel, SocialPost, Workspace } from './types';
+import type { BriefItem, MediaMeta, Pub, PubErrCode, PubStatus, SocialAccount, SocialChannel, SocialPost, SocialPublishOptions, SocialVideo, Workspace } from './types';
 import { addDays, fmtTime, nowHMIn, todayIn } from './format';
 
 /* ── Channels, platforms, accounts ── */
 
 /** Platforms Radar can post to. Everything else stays copy-and-paste. */
-export type PostPlatform = 'x' | 'linkedin';
+export type PostPlatform = 'x' | 'linkedin' | 'instagram' | 'tiktok' | 'youtube';
 export interface ChannelDef { k: SocialChannel; plat: PostPlatform; l: string; d: string; /** OAuth provider name (`openOAuth(provider, bid)`) */ provider: string }
 export const SOC_CH: ChannelDef[] = [
   { k: 'x', plat: 'x', l: 'X', d: 'Post to your X account.', provider: 'x' },
   { k: 'li_profile', plat: 'linkedin', l: 'LinkedIn profile', d: 'Post as yourself.', provider: 'linkedin' },
   { k: 'li_page', plat: 'linkedin', l: 'LinkedIn page', d: 'Post as a company page you manage.', provider: 'linkedin_page' },
+  { k: 'instagram', plat: 'instagram', l: 'Instagram', d: 'Post images or reels to a professional account.', provider: 'instagram' },
+  { k: 'tiktok', plat: 'tiktok', l: 'TikTok', d: 'Post photos or videos to your account.', provider: 'tiktok' },
+  { k: 'youtube', plat: 'youtube', l: 'YouTube', d: 'Upload videos to your channel.', provider: 'youtube' },
 ];
 export const chOf = (k: SocialChannel): ChannelDef => SOC_CH.find(c => c.k === k)!;
-export const PLAT_L: Record<PostPlatform, string> = { x: 'X', linkedin: 'LinkedIn' };
+export const PLAT_L: Record<PostPlatform, string> = { x: 'X', linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
 /** Posts: X and LinkedIn. */
-export const canPost = (k: string | null | undefined): k is PostPlatform => k === 'x' || k === 'linkedin';
+export const canPost = (k: string | null | undefined): k is PostPlatform => k === 'x' || k === 'linkedin' || k === 'instagram' || k === 'tiktok' || k === 'youtube';
 /** Replies: X only (and only on an explicit Reply now). */
 export const canReply = (k: string | null | undefined): k is 'x' => k === 'x';
 
@@ -37,6 +40,7 @@ export function pickAccount(accts: SocialAccount[], k: string, o: { pubAcct?: st
 export function briefAccount(accts: SocialAccount[], k: string | null | undefined, company: boolean): SocialAccount | null {
   if (k === 'x') return accts.find(a => a.ch === 'x') || null;
   if (k === 'linkedin') return accts.find(a => a.ch === (company ? 'li_page' : 'li_profile')) || null;
+  if (k === 'instagram' || k === 'tiktok' || k === 'youtube') return accts.find(a => a.ch === k) || null;
   return null;
 }
 
@@ -65,9 +69,9 @@ export function parseSid(sid: string): Sid | null {
 
 /* ── Preflight (handoff §3 "Checks before posting"; the server enforces the same function) ── */
 
-export const LIMITS: Record<PostPlatform, { chars: number; imgs: number }> = { x: { chars: 280, imgs: 4 }, linkedin: { chars: 3000, imgs: 9 } };
+export const LIMITS: Record<PostPlatform, { chars: number; imgs: number }> = { x: { chars: 280, imgs: 4 }, linkedin: { chars: 3000, imgs: 9 }, instagram: { chars: 2200, imgs: 10 }, tiktok: { chars: 2200, imgs: 35 }, youtube: { chars: 5000, imgs: 0 } };
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const IMAGE_TYPES: Record<PostPlatform, string[]> = { x: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], linkedin: ['image/jpeg', 'image/png', 'image/gif'] };
+export const IMAGE_TYPES: Record<PostPlatform, string[]> = { x: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], linkedin: ['image/jpeg', 'image/png', 'image/gif'], instagram: ['image/jpeg'], tiktok: ['image/jpeg', 'image/png', 'image/webp'], youtube: [] };
 /** LinkedIn Images API: fewer than 36,152,320 pixels (checked on the server, where dimensions are known). */
 export const LINKEDIN_MAX_PIXELS = 36_152_320;
 const X_URL_LEN = 23;
@@ -83,7 +87,7 @@ const graphemes = (t: string): string[] => typeof Intl !== 'undefined' && 'Segme
 
 /** Characters as each platform counts them: X uses weighted length (every URL = 23, emoji = 2), LinkedIn code points. */
 export function charCount(k: PostPlatform, text: string): number {
-  if (k === 'linkedin') return [...text].length;
+  if (k !== 'x') return k === 'tiktok' ? text.length : [...text].length;
   let n = 0;
   const rest = text.replace(URL_RE, () => { n += X_URL_LEN; return ''; });
   for (const g of graphemes(rest)) {
@@ -95,10 +99,14 @@ export function charCount(k: PostPlatform, text: string): number {
 /** Does the text carry a link as X sees it (scheme or bare domain)? Drives the link price. */
 export const hasLink = (text: string) => new RegExp(URL_RE.source, 'i').test(text);
 
-export type ProblemCode = 'empty' | 'too_long' | 'too_many_images' | 'images_pending' | 'image_too_big' | 'image_format';
+export type ProblemCode = 'empty' | 'too_long' | 'too_many_images' | 'images_pending' | 'image_too_big' | 'image_format' | 'media_required' | 'video_format' | 'video_too_big' | 'publish_options';
 export interface Problem { code: ProblemCode; msg: string; fix?: { l: string; action: 'compress' } }
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const VIDEO_TYPES = ['video/mp4', 'video/webm'];
 export interface PreflightInput {
   text: string;
+  video?: SocialVideo | null;
+  options?: SocialPublishOptions;
   /** One entry per image that would be uploaded; null/undefined meta = unknown (the server checks the real file). */
   images: (MediaMeta | null | undefined)[];
   /** Daily Brief: images are still being made. */
@@ -113,8 +121,33 @@ export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
   const L = LIMITS[k]; const pl = PLAT_L[k]; const out: Problem[] = [];
   if (!p.text.trim()) out.push({ code: 'empty', msg: 'Write something to post.' });
   const len = charCount(k, p.text);
-  if (len > L.chars) out.push({ code: 'too_long', msg: `Shorten to ${n0(L.chars)} characters to post on ${pl}. It’s ${n0(len)} now.` });
+  if (k === 'youtube') {
+    const bytes = new TextEncoder().encode(p.text).length;
+    if (bytes > L.chars) out.push({ code: 'too_long', msg: `Shorten the YouTube description to ${n0(L.chars)} UTF-8 bytes. It’s ${n0(bytes)} bytes now.` });
+    if (/[<>]/.test(p.text)) out.push({ code: 'publish_options', msg: 'Remove angle brackets (< and >) from the YouTube description.' });
+  } else {
+    const max = k === 'tiktok' && !p.video ? 4000 : L.chars;
+    if (len > max) out.push({ code: 'too_long', msg: `Shorten to ${n0(max)} characters to post on ${pl}. It’s ${n0(len)} now.` });
+  }
   if (p.imagesPending) out.push({ code: 'images_pending', msg: 'Radar is still making the images.' });
+  if (k === 'youtube' && !p.video) out.push({ code: 'media_required', msg: 'Upload a video to post on YouTube.' });
+  if ((k === 'instagram' || k === 'tiktok') && !p.video && !p.images.length) out.push({ code: 'media_required', msg: `Add an image or video to post on ${pl}.` });
+  if (p.video && !VIDEO_TYPES.includes(p.video.meta.type)) out.push({ code: 'video_format', msg: 'Upload an MP4 or WebM video.' });
+  if (p.video && p.video.meta.bytes > MAX_VIDEO_BYTES) out.push({ code: 'video_too_big', msg: 'Upload a video smaller than 100 MB.' });
+  if (p.video && k === 'instagram' && p.video.meta.type !== 'video/mp4') out.push({ code: 'video_format', msg: 'Instagram reels need an MP4 video.' });
+  if (k === 'youtube') {
+    if (!p.options?.title?.trim() || p.options.title.length > 100 || /[<>]/.test(p.options.title)) out.push({ code: 'publish_options', msg: 'Add a YouTube title of up to 100 characters, without angle brackets.' });
+    if (!p.options?.privacy) out.push({ code: 'publish_options', msg: 'Choose who can watch your YouTube video.' });
+    if (typeof p.options?.madeForKids !== 'boolean') out.push({ code: 'publish_options', msg: 'Choose whether your YouTube video is made for kids.' });
+  }
+  if (k === 'tiktok') {
+    const o = p.options?.tiktok;
+    if (!p.video && p.options?.title && p.options.title.length > 90) out.push({ code: 'publish_options', msg: 'Shorten the TikTok photo title to 90 characters.' });
+    if (!o?.privacyLevel) out.push({ code: 'publish_options', msg: 'Choose who can watch this TikTok post.' });
+    if (!o?.consent) out.push({ code: 'publish_options', msg: 'Confirm TikTok’s music usage and content terms before posting.' });
+    if (o?.commercialContent && !o.brandOrganic && !o.brandedContent) out.push({ code: 'publish_options', msg: 'Choose whether this promotes your brand or another brand.' });
+    if (o?.brandedContent && o.privacyLevel === 'SELF_ONLY') out.push({ code: 'publish_options', msg: 'Branded TikTok content cannot be private.' });
+  }
   if (p.images.length > L.imgs) out.push({ code: 'too_many_images', msg: `${pl} allows up to ${L.imgs} images.` });
   const big = p.images.findIndex(m => !!m && m.bytes > MAX_IMAGE_BYTES);
   if (big >= 0) out.push({ code: 'image_too_big', msg: `Image ${big + 1} is ${mb(p.images[big]!.bytes)} MB. ${pl}’s limit is 5 MB.`, fix: { l: 'Compress images', action: 'compress' } });
@@ -124,7 +157,7 @@ export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
 }
 
 /** What a pack post would upload: always its one visual (rendered on the server if `imageUrl` is missing). */
-export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta'>): PreflightInput => ({ text: p.text, images: [p.imageMeta ?? null] });
+export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions'>, k?: PostPlatform): PreflightInput => ({ text: p.text, images: p.video || k === 'youtube' ? [] : [p.imageMeta ?? null], video: p.video, options: p.publishOptions });
 /** What a Brief post would upload: its finished images (X takes the first 4, as the X preview shows). Replies have none. */
 export function briefPreflightInput(it: Pick<BriefItem, 'kind' | 'img'>, k: PostPlatform, text: string): PreflightInput {
   if (it.kind !== 'post' || !it.img) return { text, images: [] };
@@ -140,7 +173,7 @@ export const LOCK_MS = 5 * 60_000;
 export const STALE_MS = 24 * 3600_000;
 /** Dates a scheduled post may use: today … +365 days. */
 export const MAX_AHEAD_DAYS = 365;
-export const STAGGER: Record<PostPlatform, string> = { linkedin: '09:00', x: '12:30' };
+export const STAGGER: Record<PostPlatform, string> = { linkedin: '09:00', x: '12:30', instagram: '10:00', tiktok: '14:00', youtube: '16:00' };
 export const BRIEF_DEFAULT_TIME = '17:00';
 /** Schedule window times: 6:00 AM–10:00 PM in 30-minute steps. */
 export const TIME_SLOTS: string[] = (() => { const o: string[] = []; for (let h = 6; h <= 22; h++) for (const m of ['00', '30']) { if (h === 22 && m === '30') break; o.push(String(h).padStart(2, '0') + ':' + m); } return o; })();
@@ -224,7 +257,7 @@ export const COPY = {
   notConnected: (ch: SocialChannel) => `Connect ${chOf(ch).l} first.`,
   expired: (ch: SocialChannel) => `${chOf(ch).l} needs reconnecting.`,
   unscheduleFirst: 'Unschedule it first.',
-  noAccountForAuto: 'Connect X or LinkedIn in Settings first.',
+  noAccountForAuto: 'Connect a social account in Settings first.',
   replyNotAllowed: 'X only lets apps reply when the post mentions you. Reply in X’s own box instead.',
 } as const;
 
@@ -233,7 +266,7 @@ export function errCopy(code: PubErrCode, k: PostPlatform): string {
   switch (code) {
     case 'duplicate': return `${pl} rejected it as a duplicate of a recent post.`;
     case 'too_long': return `${pl} said the text is too long.`;
-    case 'media': return `${pl} rejected the image.`;
+    case 'media': return `${pl} rejected the media.`;
     case 'rate_limit': return `${pl} is limiting posts right now. Try again later.`;
     case 'unavailable': return `${pl} didn’t respond.`;
     case 'auth': return `${pl} refused Radar’s access. Reconnect and try again.`;
@@ -330,7 +363,7 @@ export function scheduleAllWhy(k: string, post: Pick<SocialPost, 'pub' | 'text' 
   if (isLocked(post.pub, nowMs)) return 'Sending soon';
   const as = accountsFor(accts, k);
   if (!as.some(a => !a.expired)) return as.length ? 'Reconnect needed' : 'Not connected';
-  if (preflight(k, packPreflightInput(post)).length) return 'Fix issues first';
+  if (preflight(k, packPreflightInput(post, k)).length) return 'Fix issues first';
   return null;
 }
 

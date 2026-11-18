@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 vi.hoisted(() => {
   process.env.RADAR_DEV_STUBS = '1';
   process.env.RADAR_SOCIAL_PUBLISHING = 'all';
-  process.env.STORAGE_DIR = '.data/test-social-uploads';
+  process.env.STORAGE_DIR = `.data/test-social-uploads/${process.pid}-${Date.now()}`;
 });
 
 import fs from 'node:fs/promises';
@@ -84,7 +84,7 @@ describe.skipIf(!ON)('social channels (database)', () => {
     await db.delete(S.notifications).where(eq(S.notifications.businessId, bid));
     await db.delete(S.businesses).where(eq(S.businesses.id, bid));
     await db.delete(S.users).where(inArray(S.users.id, [owner.id, viewer.id]));
-    await fs.rm(path.join(process.cwd(), '.data/test-social-uploads'), { recursive: true, force: true });
+    await fs.rm(path.join(process.cwd(), process.env.STORAGE_DIR!), { recursive: true, force: true });
   });
   beforeEach(() => { process.env.RADAR_SOCIAL_PUBLISHING = 'all'; setAdapterForTests('x', null); setAdapterForTests('li_profile', null); setAdapterForTests('li_page', null); });
 
@@ -99,7 +99,7 @@ describe.skipIf(!ON)('social channels (database)', () => {
     expect(Date.parse(prof.account.expiresAt) - Date.now()).toBeGreaterThan(59 * 864e5); // 60-day token, no refresh
     const ws = await loadWorkspace(bid, owner.id, 'Owner');
     expect(ws.social.publishing).toBe(true);
-    expect(ws.social.channels).toEqual(['x', 'li_profile', 'li_page']);
+    expect(ws.social.channels).toEqual(['x', 'li_profile', 'li_page', 'instagram', 'tiktok', 'youtube']);
     expect(ws.social.accounts!.map(a => a.ch).sort()).toEqual(['li_page', 'li_profile', 'x']);
     expect(typeof ws.now).toBe('string');
     expect(JSON.stringify(ws)).not.toMatch(/stub-(x|li|lp)-(at|rt)-/);

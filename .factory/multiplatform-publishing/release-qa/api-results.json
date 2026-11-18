@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-18T23:39:20.661Z",
+  "results": [
+    {
+      "name": "AC5 Anonymous video upload denied before storage",
+      "pass": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "AC5 Viewer video upload denied before storage",
+      "pass": true,
+      "detail": {
+        "status": 403
+      }
+    },
+    {
+      "name": "AC5 Outsider video upload denied before storage",
+      "pass": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "AC5 Foreign Origin upload refused",
+      "pass": true,
+      "detail": {
+        "status": 403
+      }
+    },
+    {
+      "name": "AC5 Forged MP4 and HEIC MIME cannot masquerade as video",
+      "pass": true,
+      "detail": {
+        "invalidFilesRejected": 3
+      }
+    },
+    {
+      "name": "AC5 Sniff actual MP4 despite forged browser MIME; metadata persists",
+      "pass": true,
+      "detail": {
+        "realMime": "video/mp4",
+        "duration": 2
+      }
+    },
+    {
+      "name": "AC5 Foreign pack and foreign account ids refused",
+      "pass": true,
+      "detail": {
+        "foreignPack": 404,
+        "foreignAccount": 404
+      }
+    }
+  ]
+}

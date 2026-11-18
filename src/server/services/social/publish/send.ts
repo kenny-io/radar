@@ -15,12 +15,13 @@ import { enqueue } from '../../../jobs/queue';
 import { withDay } from '../../brief/store';
 import { resolveEngagement } from '../../lifecycle/engagement';
 import { acctOf } from '@/features/brief/model';
-import { LOCK_MS, PLAT_L, STALE_MS, acctLabel, parseSid, errCopy, localParts, publishCostUsd, type PostPlatform } from '@/lib/socialPublish';
+import { LOCK_MS, PLAT_L, STALE_MS, acctLabel, parseSid, errCopy, localParts, publishCostUsd, type PostPlatform, preflight } from '@/lib/socialPublish';
 import type { BriefItem, PubErrCode } from '@/lib/types';
-import { type AcctCtx, type Adapter, SendError } from './api';
+import { type AcctCtx, type Adapter, type Created, type Media, SendError } from './api';
 import { AccountExpired, acctPublic, adapterFor, ensureToken, type AcctRow } from './accounts';
-import { CONTENT_MISSING, P, ensureImages, loadTarget, type PubRow, type Target } from './pubs';
-import { mediaProblem, readImage } from './media';
+import { CONTENT_MISSING, P, ensureImages, loadTarget, preflightInput, type PubRow, type Target } from './pubs';
+import { mediaProblem, readImage, videoMeta } from './media';
+import { readStored } from '../../storage';
 
 /** Scheduled sends: attempts 1–3 return to `scheduled` after this backoff; the 4th failure is final. */
 export const MAX_ATTEMPTS = 4;
@@ -57,7 +58,7 @@ export async function claimManual(o: { bid: string; t: Target; acct: AcctRow; us
 /* ── Outcome writes (all conditional on the attempt) ── */
 
 const mine = (r: PubRow) => and(eq(P.id, r.id), eq(P.attemptKey, r.attemptKey!), eq(P.status, 'sending'));
-const packHref = (r: PubRow, platform: string) => { const m = /^s:(.+):(x|linkedin)$/.exec(r.sid); return m ? `/social?pack=${encodeURIComponent(m[1])}&plat=${platform}` : '/brief'; };
+const packHref = (r: PubRow, platform: string) => { const m = /^s:(.+):(x|linkedin|instagram|tiktok|youtube)$/.exec(r.sid); return m ? `/social?pack=${encodeURIComponent(m[1])}&plat=${platform}` : '/brief'; };
 const sidDay = (sid: string) => (sid.startsWith('b:') ? { day: sid.slice(2, 12), itemId: sid.slice(13) } : null);
 
 /** Tests only: side effects after a post is live (P2 — they may fail, and must never cause a resend). */
@@ -171,6 +172,18 @@ async function loadAccount(id: string | null): Promise<AcctRow | null> {
   return id ? (await db.select().from(schema.socialAccounts).where(eq(schema.socialAccounts.id, id)).limit(1))[0] || null : null;
 }
 
+/** Provider checks and processing reads can await network I/O after the original stage gate. Recheck before a create. */
+async function beforeProviderCreate(r: PubRow, accepted: boolean): Promise<void> {
+  const refuse = () => new SendError(accepted ? 'unknown' : 'definitive', accepted ? 'unknown' : 'rejected', 'publication authorization changed before provider create', null, 'Posting stopped because the business or its publishing permission changed.');
+  const biz = await getBiz(r.businessId);
+  if (biz.status !== 'active' || !(await socialOn(biz)) || (r.autopilotActivationId && !(await canRun(r.businessId, r.autopilotActivationId)))) throw refuse();
+  const rows = await db.update(P).set({ updatedAt: new Date() }).where(and(mine(r), r.acctId ? eq(P.acctId, r.acctId) : sql`false`,
+    sql`EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND NOT sa.expired)`,
+    sql`EXISTS (SELECT 1 FROM ${schema.businesses} b WHERE b.id = ${P.businessId} AND b.status = 'active' AND (${P.autopilotActivationId} IS NULL OR (b.autopilot->>'enabled' = 'true' AND b.autopilot->>'activationId' = ${P.autopilotActivationId})))`,
+  )).returning({ id: P.id });
+  if (!rows.length) throw refuse();
+}
+
 /** Send a claimed row (status 'sending'). Returns the final row, or null when another attempt took it over. */
 export async function runSend(r: PubRow, o: { manual: boolean; userId?: string | null }): Promise<PubRow | null> {
   const manual = o.manual; const userId = o.userId ?? null;
@@ -183,10 +196,13 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
   if (!t || t.platform !== r.platform) return finishFailed(r, 'rejected', CONTENT_MISSING, manual, userId);
   try { t = await ensureImages(biz, t); } catch (e: any) { return finishFailed(r, 'media', `render: ${e?.message || e}`, manual, userId); }
   const k = r.platform as PostPlatform;
-  const ok = await db.update(P).set({ payload: { text: t.text, media: t.images.map(i => ({ url: i.url, bytes: i.meta?.bytes ?? null, type: i.meta?.type ?? null })), manual } }).where(mine(r)).returning({ id: P.id });
+  const problems = preflight(k, preflightInput(t));
+  if (problems.length) return finishFailed(r, 'media', problems[0].msg, manual, userId, problems[0].msg);
+  const payload = { text: t.text, media: t.images.map(i => ({ url: i.url, bytes: i.meta?.bytes ?? null, type: i.meta?.type ?? null })), video: t.video, options: t.options, manual, providerRef: undefined as string | undefined, processingStartedAt: Date.now() };
+  const ok = await db.update(P).set({ payload }).where(mine(r)).returning({ id: P.id });
   if (!ok.length) return null;
 
-  let ad: Adapter; const a: AcctCtx = { ch: acct.ch, remoteId: acct.remoteId, handle: acct.handle, token: '' };
+  let ad: Adapter; const a: AcctCtx = { ch: acct.ch, remoteId: acct.remoteId, handle: acct.handle, token: '', beforeCreate: () => beforeProviderCreate(r, !!payload.providerRef) };
   try { const tok = await ensureToken(acct.id); a.token = tok.t.access_token; ad = adapterFor(acct.ch, tok.t); }
   catch (e: any) {
     if (e instanceof AccountExpired) return hold(r, manual, userId);
@@ -201,25 +217,42 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
       try { return await fn(); } catch (e2: any) { if (e2 instanceof SendError && e2.kind === 'auth') throw new SendError('definitive', 'auth', e2.detail); throw e2; }
     }
   };
-  let created: { remoteId: string; url: string };
+  let created: Created;
   try {
     const ids: string[] = [];
+    const images: Media[] = [];
     for (const img of t.images) {
-      const f = await readImage(img.url);
+      const f = await readImage(img.url, r.businessId);
       if (!f) throw new SendError('definitive', 'media', 'image file missing');
       const bad = await mediaProblem(k, f);
       if (bad) throw new SendError('definitive', 'media', `image ${bad}`); // never auto-compress at send time
-      ids.push(await authed(() => ad.upload(a, f)));
+      const media = { ...f, url: new URL(img.url, env.appUrl).toString() };
+      if (ad.publish) images.push(media);
+      else ids.push(await authed(() => ad.upload(a, f)));
     }
     if (ad.awaitMedia && ids.length) await ad.awaitMedia(a, ids);
+    let video: Media | undefined;
+    if (t.video) {
+      const file = await readStored(r.businessId, t.video.url);
+      const meta = file && videoMeta(file.body);
+      if (!file || !meta) throw new SendError('definitive', 'media', 'video missing or invalid');
+      video = { bytes: file.body, type: meta.type, durationSec: t.video.durationSec, url: new URL(t.video.url, env.appUrl).toString() };
+    }
     // The last write before the post is created. It only lands while the business is active, so a business deleted
     // since the claim gets no post (DEL-5): the row stays `sending` at stage `media`, and a restore fails it as stale.
     const go = await db.update(P).set({ stage: 'create', updatedAt: new Date() })
       .where(and(mine(r), sql`EXISTS (SELECT 1 FROM ${schema.businesses} b WHERE b.id = ${P.businessId} AND b.status = 'active')`)).returning({ id: P.id });
     if (!go.length) return null;
     if (r.autopilotActivationId && (!(await canRun(r.businessId, r.autopilotActivationId)) || !(await socialOn(biz)))) return finishFailed(r, 'rejected', 'Autopilot is off. Schedule this draft manually to publish it.', manual, userId, 'Autopilot is off. Schedule this draft manually to publish it.');
-    try { created = await authed(() => ad.create(a, { text: t!.text, mediaIds: ids, aiMedia: !!t!.aiMedia })); }
+    const progress = async (ref: string) => {
+      if (!ref || ref.length > 1000) throw new SendError('unknown', 'unknown', 'invalid provider tracking reference');
+      payload.providerRef = ref;
+      const saved = await db.update(P).set({ payload, updatedAt: new Date() }).where(mine(r)).returning({ id: P.id });
+      if (!saved.length) throw new SendError('unknown', 'unknown', 'publication ownership changed');
+    };
+    try { created = await authed(() => payload.providerRef && ad.resume ? ad.resume(a, payload.providerRef) : ad.publish ? ad.publish(a, { text: t!.text, images, video, options: t!.options, aiMedia: !!t!.aiMedia, progress }) : ad.create(a, { text: t!.text, mediaIds: ids, aiMedia: !!t!.aiMedia })); }
     catch (e: any) {
+      if (payload.providerRef && (!(e instanceof SendError) || !e.confirmedUnpublished)) return keepProcessing(r, payload);
       if (e instanceof SendError && e.kind === 'unknown') return verifyOrFail(r, ad, a, t.text, manual, userId, e.detail);
       if (e instanceof SendError || e instanceof AccountExpired) throw e;
       return verifyOrFail(r, ad, a, t.text, manual, userId, `create: ${e?.message || e}`); // a crash mid-request: unknown
@@ -233,17 +266,53 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
     }
     return transient(r, new SendError('transient', 'unavailable', String(e?.message || e)), manual, userId);
   }
+  if (created.pending) {
+    if (!payload.providerRef) return finishFailed(r, 'unknown', 'provider pending without tracking reference', manual, userId);
+    return keepProcessing(r, payload);
+  }
   // Live: outside every retry/verify path (P2).
   return finishPosted(r, created, manual, userId, t.text);
+}
+
+/** Accepted provider work remains locked until a read confirms completion. Never send a second init. */
+async function keepProcessing(r: PubRow, payload: any): Promise<PubRow | null> {
+  const [u] = await db.update(P).set({ payload, claimedAt: new Date(), stage: 'create', updatedAt: new Date() }).where(mine(r)).returning();
+  if (u) await bump(r.businessId);
+  return u || null;
+}
+async function resumeProcessing(r: PubRow): Promise<PubRow | null> {
+  const manual = !!r.payload?.manual; const text = String(r.payload?.text || '');
+  if (Date.now() - Number(r.payload?.processingStartedAt || r.createdAt.getTime()) > STALE_MS) return finishFailed(r, 'unknown', 'provider processing not confirmed within 24 hours', manual, null);
+  const acct = await loadAccount(r.acctId);
+  if (!acct) return finishFailed(r, 'unknown', 'provider processing; account disconnected', manual, null);
+  try {
+    const tok = await ensureToken(acct.id); const ad = adapterFor(acct.ch, tok.t);
+    if (!ad.resume) return finishFailed(r, 'unknown', 'provider processing cannot be resumed', manual, null);
+    await beforeProviderCreate(r, true);
+    const a: AcctCtx = { ch: acct.ch, remoteId: acct.remoteId, handle: acct.handle, token: tok.t.access_token, beforeCreate: () => beforeProviderCreate(r, true) };
+    let result: Created;
+    try { result = await ad.resume(a, String(r.payload.providerRef)); }
+    catch (error) {
+      if (!(error instanceof SendError) || error.kind !== 'auth') throw error;
+      const refreshed = await ensureToken(acct.id, { stale: a.token }); a.token = refreshed.t.access_token;
+      result = await ad.resume(a, String(r.payload.providerRef));
+    }
+    return result.pending ? keepProcessing(r, r.payload) : finishPosted(r, result, manual, null, text);
+  } catch (e: any) {
+    if (e instanceof SendError && e.confirmedUnpublished) return finishFailed(r, e.code, e.detail, manual, null, e.userMsg);
+    // A rate limit, disconnected/revoked grant or outage during status read must never authorize a new init.
+    return keepProcessing(r, r.payload);
+  }
 }
 
 /** A `sending` row left behind by a dead process. Re-key it (the old attempt can no longer write), then: create stage →
  *  verify or fail; earlier stages never reached the platform → the transient path (a manual send fails). */
 export async function recoverStuck(pubId: string): Promise<PubRow | null> {
-  const [r] = await db.update(P).set({ attemptKey: sql`gen_random_uuid()`, updatedAt: sql`now()` })
+  const [r] = await db.update(P).set({ attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, updatedAt: sql`now()` })
     .where(and(eq(P.id, pubId), eq(P.status, 'sending'), sql`${P.claimedAt} < now() - ${`${STUCK_MS / 1000} seconds`}::interval`)).returning();
   if (!r) return null;
   const manual = !!r.payload?.manual;
+  if (r.payload?.providerRef) return resumeProcessing(r);
   if (r.stage !== 'create') return transient(r, new SendError('transient', 'unavailable', `stuck at ${r.stage || 'claim'}`), manual, null);
   const acct = await loadAccount(r.acctId);
   if (!acct) return finishFailed(r, 'unknown', 'stuck at create; account gone', manual, null);

@@ -28,6 +28,9 @@ export function stubPost(k: Platform, topic: string, p: Profile, v = 0): string 
       `${h}.\n\nPick one simple system. Review it weekly. ${cap(need0)}.\n\nThat’s most of it.`,
       `For ${seg}: ${lcf(h)} is a systems problem, not a discipline problem.`,
     ],
+    instagram: [`${h}.\n\nOne simple idea for ${seg}: ${need0}. Start small and make it part of your routine.`, `${h}.\n\n${d0}. What would you try first?`],
+    tiktok: [`${h}. A simple way for ${seg} to ${need0}.`, `${h}: start with one small change and keep what works.`],
+    youtube: [`${h}.\n\nPractical ideas for ${seg} who want to ${need0}. Learn the approach and choose what works for your team.`, `${h}.\n\nA closer look at ${d0} and ways to keep the process simple.`],
     facebook: [
       `${h} — a question we hear a lot.\n\nHere’s the short version: the easier it is to ${need0}, the more likely you’ll keep doing it. That’s the thinking behind ${n}: “${d0}.” Tell us how you handle it!`,
       `Quick question for the ${seg} here: how do you handle this? ${h}.\n\nWe’ve collected a few ideas that have worked for people we work with, and we’d love to hear yours too.`,

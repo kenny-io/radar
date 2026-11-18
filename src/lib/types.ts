@@ -137,9 +137,25 @@ export type ConnType = 'wordpress' | 'ghost' | 'webflow' | 'notion' | 'wix' | 's
 export interface ConnectionPublic { id: string; type: ConnType; url: string; target: string | null; targetId?: string | null; f: Record<string, string>; secretHint?: string | null; status: 'ok' | 'error'; lastError?: string | null }
 export interface BlogState { conns: ConnectionPublic[]; defaultId: string | null; mode: 'review' | 'autopilot'; autopilotAckAt: string | null; paused: boolean; tz: string; time: string; /** platforms this deployment can connect (OAuth apps configured) */ available?: string[] }
 
-export type Platform = 'linkedin' | 'x' | 'facebook' | 'reddit' | 'quora';
+export type Platform = 'linkedin' | 'x' | 'facebook' | 'reddit' | 'quora' | 'instagram' | 'tiktok' | 'youtube';
 export type PackStyle = ImageStyle | 'custom';
+export interface SocialVideo { url: string; meta: MediaMeta; durationSec?: number }
+export interface TikTokCreatorInfo {
+  username: string; nickname: string; avatarUrl: string; privacyLevels: string[];
+  commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxVideoDurationSec: number;
+}
+export interface SocialPublishOptions {
+  title?: string; privacy?: 'public' | 'private' | 'unlisted'; madeForKids?: boolean;
+  tiktok?: {
+    privacyLevel?: 'PUBLIC_TO_EVERYONE' | 'MUTUAL_FOLLOW_FRIENDS' | 'FOLLOWER_OF_CREATOR' | 'SELF_ONLY';
+    allowComment?: boolean; allowDuet?: boolean; allowStitch?: boolean;
+    commercialContent?: boolean; brandOrganic?: boolean; brandedContent?: boolean; consent?: boolean;
+  };
+}
 export interface SocialPost {
+  /** Uploaded video replaces the generated visual for Instagram, TikTok and YouTube publishing. */
+  video?: SocialVideo | null;
+  publishOptions?: SocialPublishOptions;
   text: string; style: PackStyle; seed: number; imageUrl: string | null; copiedAt: number | null; v: number;
   /** Size and type of the file at `imageUrl`, recorded when Radar renders it (social channels). Absent on older posts: the server checks the real file. */
   imageMeta?: MediaMeta | null;
@@ -164,7 +180,7 @@ export interface SocialAuto {
 
 /* ── Social channels (UPDATE-2026-10-23-social-channels; .factory/social-channels/architecture.md) ── */
 /** A connectable account slot. One account per channel per business. */
-export type SocialChannel = 'x' | 'li_profile' | 'li_page';
+export type SocialChannel = 'x' | 'li_profile' | 'li_page' | 'instagram' | 'tiktok' | 'youtube';
 /** Connected account as the client sees it. Tokens never leave the server. */
 export interface SocialAccount {
   id: string; ch: SocialChannel;
@@ -186,7 +202,7 @@ export type PubErrCode = 'rejected' | 'duplicate' | 'too_long' | 'media' | 'rate
 export interface Pub {
   status: PubStatus;
   /** Where it goes. Packs: the post's platform key. Brief: the item's platform when it was scheduled/posted (pinned; `pl` can't change while scheduled). */
-  platform: 'x' | 'linkedin';
+  platform: 'x' | 'linkedin' | 'instagram' | 'tiktok' | 'youtube';
   /** YYYY-MM-DD and HH:MM in the business time zone (B.tz). Scheduled/sending: when it goes out. Posted: when it went out. Failed: when it was meant to go out. */
   date: string; time: string;
   /** The absolute instant of date+time in B.tz (ISO). Lock and past checks use this, never local clocks. */

@@ -1,18 +1,25 @@
 // Shared plumbing for the X and LinkedIn adapters (architecture.md §7, §9): token shapes, the adapter interface, the
 // error taxonomy the sender acts on, and a fetch wrapper with a 30 s timeout. Nothing here logs tokens or post text.
-import type { PubErrCode, SocialChannel, SocialPage } from '@/lib/types';
+import type { PubErrCode, SocialChannel, SocialPage, SocialPost } from '@/lib/types';
 
 /** Decrypted `social_accounts.tokens_enc`. Times are epoch ms. `stub` tokens come from the dev OAuth stub only. */
 export interface Tokens {
   access_token: string; refresh_token?: string | null; expires_at?: number | null; refresh_expires_at?: number | null; scope?: string;
+  /** Encrypted grant provenance; never choose an existing account’s API host from current deployment settings. */
+  instagram?: { mode: 'instagram' | 'unified'; clientBusinessId?: string; configId?: string; apiVersion?: string };
   stub?: boolean; /** dev stubs: the next refresh fails definitively (social.devSimulate 'expire') */ refreshFails?: boolean;
 }
 /** Identity of the signed-in remote account (pending authorization). */
 export interface Identity { remoteId: string; name: string; handle?: string | null }
 /** What the sender knows about the account when it calls the platform. */
-export interface AcctCtx { ch: SocialChannel; remoteId: string; handle: string | null; token: string }
-export interface Media { bytes: Buffer; type: string }
-export interface Created { remoteId: string; url: string }
+export interface AcctCtx { ch: SocialChannel; remoteId: string; handle: string | null; token: string; /** Ephemeral last-moment authorization check; never stored in a token or payload. */ beforeCreate?: () => Promise<void> }
+export interface Media { bytes: Buffer; type: string; /** Public, tenant-owned storage URL. */ url?: string; durationSec?: number }
+export interface Created { remoteId: string; url: string; /** Accepted by provider, still processing; never shown as posted. */ pending?: boolean }
+export interface PublishInput {
+  text: string; images: Media[]; video?: Media; options?: SocialPost['publishOptions']; aiMedia?: boolean;
+  /** Persist the provider tracking reference before polling or further non-idempotent work. */
+  progress?: (ref: string) => Promise<void>;
+}
 
 /**
  * How a send step failed:
@@ -23,6 +30,8 @@ export interface Created { remoteId: string; url: string }
  * `detail` is the provider status/body excerpt for logs and `err_detail` only.
  */
 export class SendError extends Error {
+  /** A provider status explicitly confirms no publication; HTTP read errors never set this. */
+  confirmedUnpublished = false;
   constructor(public kind: 'transient' | 'definitive' | 'unknown' | 'auth', public code: PubErrCode, public detail: string, public retryAt: number | null = null,
     /** The platform's own short, readable reason, shown instead of errCopy (X cashtag / crypto / invalid URL refusals). */
     public userMsg: string | null = null) { super(`${kind}/${code}: ${detail}`); }
@@ -31,6 +40,10 @@ export class SendError extends Error {
 export class TokenError extends Error { constructor(public definitive: boolean, public detail: string) { super(detail); } }
 
 export interface Adapter {
+  /** Platforms that publish media and options together use this instead of upload/create. */
+  publish?(a: AcctCtx, p: PublishInput): Promise<Created>;
+  /** Continue an accepted publish, never initialize it a second time. */
+  resume?(a: AcctCtx, ref: string): Promise<Created>;
   refresh(t: Tokens): Promise<Tokens>;
   revoke(t: Tokens): Promise<void>;
   upload(a: AcctCtx, m: Media): Promise<string>;

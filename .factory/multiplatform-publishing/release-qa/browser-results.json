@@ -1,0 +1,167 @@
+{
+  "at": "2026-11-18T23:39:04.195Z",
+  "base": "http://localhost:3841",
+  "results": [
+    {
+      "name": "AC1 Settings exposes configured Instagram TikTok YouTube account rows",
+      "pass": true,
+      "detail": {
+        "newChannelRows": 3
+      }
+    },
+    {
+      "name": "AC1 Stub OAuth connect Instagram persists without tokens exposed",
+      "pass": true,
+      "detail": {
+        "connected": true,
+        "persists": true,
+        "encrypted": true
+      }
+    },
+    {
+      "name": "AC1 Stub OAuth connect TikTok persists without tokens exposed",
+      "pass": true,
+      "detail": {
+        "connected": true,
+        "persists": true,
+        "encrypted": true
+      }
+    },
+    {
+      "name": "AC1 Stub OAuth connect YouTube persists without tokens exposed",
+      "pass": true,
+      "detail": {
+        "connected": true,
+        "persists": true,
+        "encrypted": true
+      }
+    },
+    {
+      "name": "AC1 Stub OAuth connect X persists without tokens exposed",
+      "pass": true,
+      "detail": {
+        "connected": true,
+        "persists": true,
+        "encrypted": true
+      }
+    },
+    {
+      "name": "AC1 Stub OAuth connect LinkedIn profile persists without tokens exposed",
+      "pass": true,
+      "detail": {
+        "connected": true,
+        "persists": true,
+        "encrypted": true
+      }
+    },
+    {
+      "name": "AC2 YouTube explicit missing-media and audience controls block publication",
+      "pass": true,
+      "detail": {
+        "missingVideoBlocked": true,
+        "noDefaultVisibility": true,
+        "noDefaultAudience": true
+      }
+    },
+    {
+      "name": "AC2 Valid video upload previews and YouTube metadata persist after refresh",
+      "pass": true,
+      "detail": {
+        "videoAttached": true,
+        "metadataPersisted": true
+      }
+    },
+    {
+      "name": "AC2 TikTok has no default audience or approval and shows creator info",
+      "pass": true,
+      "detail": {
+        "noDefaultAudience": true,
+        "uncheckedInteractions": true,
+        "explicitApprovalRequired": true
+      }
+    },
+    {
+      "name": "AC2 TikTok creator-info failure blocks post and refresh recovers",
+      "pass": true,
+      "detail": {
+        "failedClosed": true,
+        "retryWorking": true
+      }
+    },
+    {
+      "name": "AC2 TikTok commercial disclosure and explicit consent persist",
+      "pass": true,
+      "detail": {
+        "disclosureValidated": true,
+        "explicitConsentPersisted": true
+      }
+    },
+    {
+      "name": "AC6 Mobile TikTok editor is usable without page overflow",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390,
+        "keyboard": true
+      }
+    },
+    {
+      "name": "AC3 Stub Post now instagram confirmed history survives refresh",
+      "pass": true,
+      "detail": {
+        "status": "posted",
+        "providerLink": true
+      }
+    },
+    {
+      "name": "AC3 Stub Post now tiktok confirmed history survives refresh",
+      "pass": true,
+      "detail": {
+        "status": "posted",
+        "providerLink": true
+      }
+    },
+    {
+      "name": "AC3 Stub Post now youtube confirmed history survives refresh",
+      "pass": true,
+      "detail": {
+        "status": "posted",
+        "providerLink": true
+      }
+    },
+    {
+      "name": "AC3 Stub Post now x confirmed history survives refresh",
+      "pass": true,
+      "detail": {
+        "status": "posted",
+        "providerLink": true
+      }
+    },
+    {
+      "name": "AC3 Stub Post now linkedin confirmed history survives refresh",
+      "pass": true,
+      "detail": {
+        "status": "posted",
+        "providerLink": true
+      }
+    },
+    {
+      "name": "AC5 Viewer actions and upload rejected, outsider tenant inaccessible",
+      "pass": true,
+      "detail": {
+        "viewerWrite403": true,
+        "viewerUpload403": true,
+        "outsider404": true,
+        "foreignPack404": true
+      }
+    },
+    {
+      "name": "AC6 No feature browser runtime exceptions",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    }
+  ],
+  "errors": []
+}

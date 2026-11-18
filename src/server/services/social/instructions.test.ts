@@ -15,6 +15,9 @@ const opts = (patch: Record<string, unknown> = {}) => ({ kind: 'idea' as const, 
 const OK: Record<Platform, string> = {
   linkedin: 'Docs drift when nobody owns them. Give each page an owner.',
   x: 'Docs drift when nobody owns them.',
+  instagram: 'Docs drift when nobody owns them. Give each page an owner.',
+  tiktok: 'Docs drift when nobody owns them. Give each page an owner.',
+  youtube: 'Docs drift when nobody owns them. Give each page an owner.',
   facebook: 'Docs drift when nobody owns them. Give each page an owner.',
   reddit: 'Docs drift when nobody owns them.\n\n(Disclosure: I work on Fieldnote.)',
   quora: 'Q: How do you keep docs current?\n\nShort answer: give each page an owner.',
@@ -24,7 +27,7 @@ const specs = () => run.mock.calls.map(c => c[1].instructions);
 beforeEach(() => run.mockReset());
 
 describe('Social Marketing posts', () => {
-  it.each(['linkedin', 'x', 'facebook', 'reddit', 'quora'] as Platform[])('a %s post asks for social instructions and that platform only', async k => {
+  it.each(['linkedin', 'x', 'facebook', 'reddit', 'quora', 'instagram', 'tiktok', 'youtube'] as Platform[])('a %s post asks for social instructions and that platform only', async k => {
     run.mockResolvedValue({ json: { text: OK[k] } });
     await writePost('biz-a', profile, k, opts());
     expect(run).toHaveBeenCalledTimes(1);

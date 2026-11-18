@@ -58,7 +58,7 @@ export function AutopilotSettings({ onSection }: { onSection: (section: 'calenda
       </Row>
       {error && <p role="alert" className="small" style={{ color: 'var(--bad)', marginBottom: 18 }}>{error}</p>}
       <Row title="What Radar handles" hint="Uses your Business Profile and saved schedule.">
-        <p className="small sub">Creates and replenishes your content calendar, drafts articles, and publishes them to your connected blog. Generates social posts and publishes or schedules them through connected X and LinkedIn accounts.</p>
+        <p className="small sub">Creates and replenishes your content calendar, drafts articles, and publishes them to your connected blog. Generates social posts and publishes or schedules them through connected X, LinkedIn and Instagram accounts. TikTok and YouTube drafts wait for the required media and per-post choices.</p>
         <p className="xs sub">Your calendar frequency, social draft days and business timezone guide the program. Existing drafts and manual publication choices are preserved.</p>
         <div className="row" style={{ gap: 14, flexWrap: 'wrap' }}>
           <button type="button" className="unlink" onClick={() => onSection('calendar')}>Calendar defaults</button>
