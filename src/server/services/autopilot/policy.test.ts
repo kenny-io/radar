@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authorized, autopilotOf, autopilotPublic, effectiveSocial, publicationAllowed, socialSlot } from './policy';
+import { authorized, autopilotOf, autopilotPublic, effectiveSocial, handoffReady, publicationAllowed, socialSlot } from './policy';
 import type { SocialAuto } from '@/lib/types';
 
 const active = { status: 'active', autopilot: { enabled: true, activationId: 'current', enabledBy: 'owner', enabledAt: '2026-11-09T06:00:00Z', lastRunAt: '2026-11-09T07:00:00Z', lastError: null, summary: 'Checked the program.' } };
@@ -57,5 +57,50 @@ describe('Autopilot publication slots use the business local day', () => {
     ['fall change', '2026-11-01T14:15:00Z', { date: '2026-11-01', time: '09:16' }],
   ])('uses local time after the New York %s', (_name, now, expected) => {
     expect(socialSlot('America/New_York', '08:00', new Date(now))).toEqual(expected);
+  });
+});
+
+describe('the day\'s owner email waits for the day\'s work (A17)', () => {
+  const NY = 'America/New_York';
+  const ready = (now: string, o: Partial<Parameters<typeof handoffReady>[0]> = {}) => handoffReady({ tz: NY, date: '2026-11-09', time: '08:00', enabledAt: '2026-01-01T12:00:00Z', settled: false, ...o, now: Date.parse(now) });
+  it('never goes out before the saved daily time, even when the work is done', () => {
+    expect(ready('2026-11-09T12:59:59Z', { settled: true })).toBe(false);
+    expect(ready('2026-11-09T05:10:00Z', { settled: true })).toBe(false);
+  });
+  it('goes out from the daily time as soon as the brief and the pack are processed', () => {
+    expect(ready('2026-11-09T13:00:00Z', { settled: true })).toBe(true);
+    expect(ready('2026-11-09T13:00:00Z')).toBe(false);
+  });
+  it('stops waiting two hours after the daily time', () => {
+    expect(ready('2026-11-09T14:59:59Z')).toBe(false);
+    expect(ready('2026-11-09T15:00:00Z')).toBe(true);
+  });
+  it('counts the two hours from when the program was turned on, when that was later', () => {
+    const enabledAt = '2026-11-09T20:00:00Z'; // 15:00 local
+    expect(ready('2026-11-09T21:59:59Z', { enabledAt })).toBe(false);
+    expect(ready('2026-11-09T22:00:00Z', { enabledAt })).toBe(true);
+    expect(ready('2026-11-09T20:01:00Z', { enabledAt, settled: true })).toBe(true);
+    expect(ready('2026-11-09T22:00:00Z', { enabledAt: null })).toBe(true);
+  });
+  it('never waits past 23:30 local, so a late daily time still sends that day', () => {
+    expect(ready('2026-11-10T04:29:59Z', { time: '23:00' })).toBe(false);
+    expect(ready('2026-11-10T04:30:00Z', { time: '23:00' })).toBe(true);
+    expect(ready('2026-11-10T04:44:59Z', { time: '23:45' })).toBe(false);
+    expect(ready('2026-11-10T04:45:00Z', { time: '23:45' })).toBe(true);
+  });
+  it.each([
+    ['spring change', '2026-03-08', '2026-03-08T11:59:59Z', '2026-03-08T13:59:59Z', '2026-03-08T14:00:00Z', '2026-03-09T03:29:59Z', '2026-03-09T03:30:00Z'],
+    ['fall change', '2026-11-01', '2026-11-01T12:59:59Z', '2026-11-01T14:59:59Z', '2026-11-01T15:00:00Z', '2026-11-02T04:29:59Z', '2026-11-02T04:30:00Z'],
+  ])('keeps local wall-clock times on the New York %s', (_name, date, beforeTime, beforeCut, cut, beforeBound, bound) => {
+    expect(ready(beforeTime, { date, settled: true })).toBe(false);
+    expect(ready(beforeCut, { date })).toBe(false);
+    expect(ready(cut, { date })).toBe(true);
+    expect(ready(beforeBound, { date, time: '23:00' })).toBe(false);
+    expect(ready(bound, { date, time: '23:00' })).toBe(true);
+  });
+  it('treats a timezone the runtime does not know as UTC instead of failing the run', () => {
+    expect(ready('2026-11-09T07:59:59Z', { tz: 'Not/AZone', settled: true })).toBe(false);
+    expect(ready('2026-11-09T08:00:00Z', { tz: 'Not/AZone', settled: true })).toBe(true);
+    expect(ready('2026-11-09T10:00:00Z', { tz: 'Not/AZone' })).toBe(true);
   });
 });

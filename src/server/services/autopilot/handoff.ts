@@ -1,38 +1,58 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
-import { sha256 } from '@/server/crypto';
 import { env } from '@/server/env';
 import { RadarError } from '@/server/errors';
 import { PermanentJobError } from '@/server/jobs/queue';
 import { autopilotHandoffEmail } from '../legacyContent';
 import { sendMail } from '../mail';
 import { canRun } from './guard';
-import { authorized } from './policy';
+import { authorized, safeZone } from './policy';
+import { todayIn } from '@/lib/format';
+import { zonedTimeToUtc } from '@/lib/socialPublish';
 import { openBusinessUrl } from '@/server/billing/guard';
 import { getBiz } from '@/server/workspace';
 import type { JobCtx } from '@/server/jobs/queue';
 
 export interface Handoff { key: string; title: string; reason: string; href: string; text?: string; sourceUrl?: string }
-export interface HandoffPayload { activationId: string; ownerId: string; name: string; items: Handoff[] }
+export interface HandoffPayload { activationId: string; ownerId: string; name: string; items: Handoff[];
+  /** Business-local date this email is the one for. Absent on jobs queued by the per-batch code. */ day?: string }
+/** What one run found. `items`: everything that needs the owner now. `clear`: standing keys checked and resolved.
+ *  `legacy`: standing key -> the keys the per-day scheme used for the same condition (rollout only). */
+export interface HandoffRun { date: string; ready: boolean; items: Handoff[]; clear?: string[]; legacy?: Record<string, string[]> }
 /** Business-specific links survive the owner having a different workspace open. */
 export const businessHref = (bid: string, path: string) => `${env.appUrl}${openBusinessUrl(bid, path)}`;
 const safeSource = (s?: string) => { try { const u = new URL(s || ''); return ['http:', 'https:'].includes(u.protocol) ? u.href : null; } catch { return null; } };
 
-/** Claim digest membership and persist the exact email work atomically. Later brief arrivals get a separate batch. */
-export async function enqueueHandoff(bid: string, activationId: string, items: Handoff[]): Promise<number> {
-  if (!items.length || !(await canRun(bid, activationId))) return 0;
+/** One owner email per business-local day. An item is marked only in the commit that puts it in an email, so one found
+ *  after the day's email stays unmarked, is found again by later runs while it is true, and goes into the next email.
+ *  The day, the item marks and the exact email work commit together or not at all. */
+export async function enqueueHandoff(bid: string, activationId: string, run: HandoffRun): Promise<number> {
+  if (!(await canRun(bid, activationId))) return 0;
   return db.transaction(async tx => {
     const [b] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, bid)).for('update');
     if (!b || !authorized(b, activationId)) return 0;
-    const fresh: Handoff[] = [];
-    for (const item of items) {
-      const key = `autopilot-handoff:${bid}:${activationId}:${item.key}`;
-      const mark = await tx.insert(schema.cronMarks).values({ key }).onConflictDoNothing().returning({ key: schema.cronMarks.key });
-      if (mark.length) fresh.push(item);
-    }
-    if (!fresh.length) return 0;
-    const key = 'autopilot-mail:' + sha256(`${bid}:${activationId}:${fresh.map(i => i.key).sort().join('|')}`);
-    await tx.insert(schema.jobs).values({ kind: 'autopilot.handoff', businessId: bid, ref: key, singletonKey: key, maxAttempts: 4, payload: { activationId, ownerId: b.ownerId, name: b.profile?.business?.name || b.domain, items: fresh } satisfies HandoffPayload });
+    const P = `autopilot-handoff:${bid}:${activationId}:`;
+    const items = run.items.filter((item, i) => run.items.findIndex(x => x.key === item.key) === i);
+    // A standing problem that was checked and is resolved may be told again when it comes back.
+    const cleared = (run.clear || []).filter(k => !items.some(i => i.key === k));
+    if (cleared.length) await tx.delete(schema.cronMarks).where(inArray(schema.cronMarks.key, cleared.map(k => P + k)));
+    if (!items.length) return 0;
+    const old = Object.fromEntries(items.map(i => [i.key, run.legacy?.[i.key] || []]));
+    const told = new Set((await tx.select({ key: schema.cronMarks.key }).from(schema.cronMarks).where(inArray(schema.cronMarks.key, items.flatMap(i => [i.key, ...old[i.key]]).map(k => P + k)))).map(m => m.key.slice(P.length)));
+    // Rollout: a standing problem the per-day keys already announced today or yesterday is not announced again.
+    const moved = items.filter(i => !told.has(i.key) && old[i.key].some(k => told.has(k)));
+    if (moved.length) await tx.insert(schema.cronMarks).values(moved.map(i => ({ key: P + i.key }))).onConflictDoNothing();
+    const fresh = items.filter(i => !told.has(i.key) && !moved.includes(i));
+    // A run that crossed local midnight must not send yesterday's email today.
+    if (!run.ready || !fresh.length || todayIn(b.timezone, new Date()) !== run.date) return 0;
+    const day = await tx.insert(schema.cronMarks).values({ key: `autopilot-day:${bid}:${run.date}` }).onConflictDoNothing().returning({ key: schema.cronMarks.key });
+    if (!day.length) return 0;
+    // Rollout: a batch the per-batch code queued since local midnight was today's email. The day stays taken.
+    const [sent] = await tx.select({ id: schema.jobs.id }).from(schema.jobs).where(and(eq(schema.jobs.kind, 'autopilot.handoff'), eq(schema.jobs.businessId, bid), sql`${schema.jobs.payload}->>'day' IS NULL`, gte(schema.jobs.createdAt, new Date(zonedTimeToUtc(run.date, '00:00', safeZone(b.timezone)))))).limit(1);
+    if (sent) return 0;
+    await tx.insert(schema.cronMarks).values(fresh.map(i => ({ key: P + i.key })));
+    const key = `autopilot-mail:${bid}:${run.date}`;
+    await tx.insert(schema.jobs).values({ kind: 'autopilot.handoff', businessId: bid, ref: key, singletonKey: key, maxAttempts: 4, payload: { activationId, ownerId: b.ownerId, name: b.profile?.business?.name || b.domain, items: fresh, day: run.date } satisfies HandoffPayload });
     return fresh.length;
   });
 }
