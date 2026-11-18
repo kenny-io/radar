@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, like, sql } from 'drizzle-orm';
 import { db, schema } from '@/server/db';
 import { env } from '@/server/env';
 import { RadarError } from '@/server/errors';
@@ -38,9 +38,14 @@ export async function enqueueHandoff(bid: string, activationId: string, run: Han
     if (cleared.length) await tx.delete(schema.cronMarks).where(inArray(schema.cronMarks.key, cleared.map(k => P + k)));
     if (!items.length) return 0;
     const old = Object.fromEntries(items.map(i => [i.key, run.legacy?.[i.key] || []]));
-    const told = new Set((await tx.select({ key: schema.cronMarks.key }).from(schema.cronMarks).where(inArray(schema.cronMarks.key, items.flatMap(i => [i.key, ...old[i.key]]).map(k => P + k)))).map(m => m.key.slice(P.length)));
-    // Rollout: a standing problem the per-day keys already announced today or yesterday is not announced again.
-    const moved = items.filter(i => !told.has(i.key) && old[i.key].some(k => told.has(k)));
+    const found = await tx.select().from(schema.cronMarks).where(inArray(schema.cronMarks.key, items.flatMap(i => [i.key, ...old[i.key]]).map(k => P + k)));
+    const told = new Set(found.map(m => m.key.slice(P.length)));
+    // Rollout: a standing problem the per-day keys already announced today or yesterday is not announced again. Only a
+    // mark older than the business's first day mark counts: this code writes post keys too (a failed publishing check, a
+    // hand-published post), always in a commit that holds a day mark, and those say nothing about the account.
+    const [first] = await tx.select({ at: sql<Date | null>`min(${schema.cronMarks.createdAt})` }).from(schema.cronMarks).where(like(schema.cronMarks.key, `autopilot-day:${bid}:%`));
+    const before = new Set(found.filter(m => !first?.at || m.createdAt < new Date(first.at)).map(m => m.key.slice(P.length)));
+    const moved = items.filter(i => !told.has(i.key) && old[i.key].some(k => before.has(k)));
     if (moved.length) await tx.insert(schema.cronMarks).values(moved.map(i => ({ key: P + i.key }))).onConflictDoNothing();
     const fresh = items.filter(i => !told.has(i.key) && !moved.includes(i));
     // A run that crossed local midnight must not send yesterday's email today.

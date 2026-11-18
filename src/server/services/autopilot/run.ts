@@ -7,7 +7,7 @@ import { enqueue, type JobCtx } from '@/server/jobs/queue';
 import { getBiz, calendarSettingsOf, socialAutoOf } from '@/server/workspace';
 import { socialOn } from '@/server/flags';
 import { addDays, todayIn } from '@/lib/format';
-import { briefSid, canPost, packSid } from '@/lib/socialPublish';
+import { briefSid, canPost, packSid, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { Article, BriefItem, Platform, SocialChannel } from '@/lib/types';
 import { textOf } from '@/features/brief/model';
 import { startDraft } from '../drafting/start';
@@ -15,7 +15,7 @@ import { dailyPackId, isDue } from '../social/auto';
 import { getPack } from '../social/generate';
 import { scheduleChecks, resolve, writeScheduled } from '../social/publish/schedule';
 import { getDay } from '../brief/store';
-import { authorized, autopilotOf, effectiveSocial, handoffReady, socialSlot } from './policy';
+import { authorized, autopilotOf, effectiveSocial, handoffReady, safeZone, socialSlot } from './policy';
 import { canRun } from './guard';
 import { businessHref, enqueueHandoff, type Handoff } from './handoff';
 
@@ -130,8 +130,9 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       if (post.copiedAt == null) issue(`pack:${id}:${platform}`, `Publish your ${platform} post`, !publishing && canPost(platform) ? 'Direct social publishing is not available for this workspace. Copy the prepared draft to your account.' : 'This platform requires you to publish the prepared draft yourself.', packHref(id, platform), post.text);
       return true;
     };
-    // Yesterday's hand-published post that missed yesterday's email is carried for one day.
-    const before = await getPack(bid, dailyPackId(bid, yesterday));
+    // Yesterday's hand-published post that missed yesterday's email is carried for one day, by the program that was on then.
+    const carried = (Date.parse(autopilotOf(b).enabledAt || '') || Infinity) < zonedTimeToUtc(date, '00:00', safeZone(b.timezone));
+    const before = carried ? await getPack(bid, dailyPackId(bid, yesterday)) : null;
     for (const [platform, post] of Object.entries(before?.posts || {})) if (post) manual(before!.id, platform, post);
     const { due } = isDue(auto, b.timezone, now);
     if (!due) { packDone = true; return; }

@@ -458,6 +458,25 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
       expect((await mails()).map(m => m.day)).toEqual([D1, D4]);
     }, 30_000);
 
+    it('an account that expires after its post was emailed for a publishing check is still announced, once (QA-1)', async () => {
+      await program({ social: ['x'] }); await blog(); const x = await account(); vi.spyOn(failures, 'reportFailure').mockResolvedValue();
+      const long = 'word '.repeat(80);
+      const day = async (d: string, hm = '10:05') => { await brief(d, [feed('long', 'x', long)]); await pack(d, { x: { text: long, copiedAt: null } }).onConflictDoNothing(); at(d, hm); await run(); };
+      await day(D1, '08:10');
+      expect(await keys(D1)).toEqual([`brief:${D1}:long`, `pack:${packId(D1)}:x`]);
+      at(D1, '12:00'); await db.update(S.socialAccounts).set({ expired: true }).where(eq(S.socialAccounts.id, x.id));
+      at(D1, '12:05'); await run(); expect(await mails()).toHaveLength(1); expect(await told('social:x')).toBe(false);
+      await day(D2); await day(D3);
+      expect((await mails()).map(m => [m.day, m.items.map(i => i.key)])).toEqual([[D1, [`pack:${packId(D1)}:x`, `brief:${D1}:long`]], [D2, ['social:x']]]);
+    }, 30_000);
+
+    it('a program turned on today does not carry yesterday\'s hand-published post into its first email', async () => {
+      await program({ social: ['reddit'], enabled: [D2, '07:00'] });
+      await pack(D1, { reddit: { text: 'Yesterday reddit draft', copiedAt: null } }); await pack(D2, { reddit: { text: 'Today reddit draft', copiedAt: null } }); await brief(D2);
+      at(D2, '08:10'); await run();
+      expect(await keys(D2)).toEqual(['blog', `pack:${packId(D2)}:reddit`]);
+    }, 30_000);
+
     it('a post that fails its own publishing check is that day\'s work, not a standing account problem (A15)', async () => {
       await program(); await blog(); await account(); const reported = vi.spyOn(failures, 'reportFailure').mockResolvedValue();
       for (const d of [D1, D2]) { await brief(d, [feed('long', 'x', 'word '.repeat(80))]); at(d, '10:05'); await run(); }
