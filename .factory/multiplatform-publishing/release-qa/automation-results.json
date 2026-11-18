@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-18T23:39:31.155Z",
+  "results": [
+    {
+      "name": "Q3 Master Autopilot schedules X LinkedIn Instagram while TikTok YouTube missing individual choices remain drafts",
+      "pass": true,
+      "detail": {
+        "scheduled": [
+          "instagram",
+          "linkedin",
+          "x"
+        ],
+        "tiktokAndYouTubeDraft": true,
+        "repeatDidNotDuplicate": true
+      }
+    },
+    {
+      "name": "Q3 Disabling master program revokes only its unsent schedules; manual Instagram schedule still publishes once",
+      "pass": true,
+      "detail": {
+        "masterQueueRevoked": true,
+        "legacyScheduleStillWorks": true,
+        "duplicateClaimRefused": true
+      }
+    }
+  ]
+}

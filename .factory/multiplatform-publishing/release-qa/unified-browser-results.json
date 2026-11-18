@@ -1,0 +1,79 @@
+{
+  "at": "2026-11-18T23:39:29.222Z",
+  "results": [
+    {
+      "name": "Q2 Picker renders empty shared-assets state and allows retry without connection",
+      "pass": true,
+      "detail": {
+        "emptyState": true,
+        "noImplicitAccount": true
+      }
+    },
+    {
+      "name": "Q2 Multiple assigned Instagram assets require explicit selection; keyboard chooses second asset",
+      "pass": true,
+      "detail": {
+        "account": "9002",
+        "noFirstAccountDefault": true,
+        "keyboard": true,
+        "encrypted": true,
+        "pendingConsumed": true,
+        "persists": true
+      }
+    },
+    {
+      "name": "Q2 Pending grant owner and business isolation plus viewer denial",
+      "pass": true,
+      "detail": {
+        "viewer403": true,
+        "userScoped": true,
+        "businessScoped": true,
+        "unsharedAccountRefused": true
+      }
+    },
+    {
+      "name": "Q2 Reconnect preserves selected remote account and row; differently shared grant cannot replace it",
+      "pass": true,
+      "detail": {
+        "sameRow": true,
+        "sameRemoteId": true,
+        "unsharedGrant409": true
+      }
+    },
+    {
+      "name": "Q2 No token metadata leaks in public workspace and disconnect preserves remote host boundary",
+      "pass": true,
+      "detail": {
+        "tokensServerOnly": true,
+        "localGrantDeleted": true
+      }
+    },
+    {
+      "name": "Q2 Mobile explicit picker fits390px and empty submit remains disabled",
+      "pass": true,
+      "detail": {
+        "scroll": 390,
+        "client": 390
+      }
+    },
+    {
+      "name": "Q2 Real callback rejects missing/mismatched state and wrong user; invalid grants never connect",
+      "pass": true,
+      "detail": {
+        "missingStateRejected": true,
+        "wrongUserRejected": true,
+        "replayRejected": true
+      }
+    },
+    {
+      "name": "Q2 Separate synthetic browser has no runtime exceptions or external requests",
+      "pass": true,
+      "detail": {
+        "runtimeErrors": 0,
+        "externalRequests": 0
+      }
+    }
+  ],
+  "errors": [],
+  "external": []
+}

@@ -13,3 +13,11 @@ Release gates: architecture/dependency review, clean-main feature port, focused 
 Rollback reference: both prior successful deployment IDs and base SHA above. Preserve saved account credentials and already accepted provider operation references; avoid reverting workers to code that could resend pending media without inspection. No irreversible database change is planned.
 
 Status: preparing feature-only integration; not yet merged or deployed.
+
+## Validated candidate
+
+PR https://github.com/kenny-io/radar/pull/63, runtime code e81d816bc628c9d3be7a2658df94e1394a0224b3. Engineer257 tests, independent249 tests plus60 browser/integration scenarios and final Node22 production build passed. Broad-suite retry304/305 has only the identical existing main raster golden failure. See verification.md for complete counts and baseline distinction.
+
+No production defect remains identified. No package/config/migration or business preference mutation is included. Final evidence commit contains documentation and reproducible synthetic QA only; runtime source remains the tested candidate.
+
+Status: release-ready; user-authorized merge/deployment is next. No live posts performed for verification.
