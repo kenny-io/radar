@@ -123,6 +123,16 @@ export async function optionalDeliveryAfter(userId: string, now = new Date(), ex
   return new Date(zonedTimeToUtc(hour < 9 ? day : addDays(day, 1), '09:00', tz));
 }
 
+export const WORK_EVERY = 7 * DAY;
+/** Work reminders are weekly per account. Same evidence as the daily optional cap: a first attempt counts even if
+ *  its acknowledgment was lost. */
+export async function workUpdateAfter(userId: string, now = new Date(), excludeId?: string, q: Q = db): Promise<Date | null> {
+  const since = new Date(now.getTime() - WORK_EVERY);
+  const rows = await q.select({ at: M.firstAttemptAt, sent: M.sentAt, created: M.createdAt, status: M.status }).from(M).where(and(eq(M.userId, userId), eq(M.type, 'work_update'), ...(excludeId ? [ne(M.id, excludeId)] : []), or(gt(M.firstAttemptAt, since), gt(M.sentAt, since), and(eq(M.status, 'logged'), gt(M.createdAt, since)))));
+  const latest = rows.reduce((t, r) => Math.max(t, r.sent?.getTime() || 0, r.at?.getTime() || 0, r.status === 'logged' ? r.created.getTime() : 0), 0);
+  return latest && latest + WORK_EVERY > now.getTime() ? new Date(latest + WORK_EVERY) : null;
+}
+
 /** Existing cron invokes this; transaction lock also makes direct/concurrent invocations safe. */
 export async function collectWorkUpdates(now = new Date(), onlyUsers?: string[]) {
   const due = await db.selectDistinct({ userId: E.userId }).from(E).where(and(isNull(E.resolvedAt), lte(E.eligibleAt, now), ...(onlyUsers ? [inArray(E.userId, onlyUsers)] : []))).limit(200);
@@ -130,7 +140,7 @@ export async function collectWorkUpdates(now = new Date(), onlyUsers?: string[])
   for (const { userId } of due) await db.transaction(async tx => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`radar-work:${userId}`}, 0))`);
     const active = await tx.select({ id: M.id }).from(M).where(and(eq(M.userId, userId), eq(M.type, 'work_update'), inArray(M.status, ['queued', 'sending']))).limit(1);
-    const after = active.length ? new Date(now.getTime() + 3600e3) : await optionalDeliveryAfter(userId, now, undefined, tx);
+    const after = active.length ? new Date(now.getTime() + 3600e3) : await workUpdateAfter(userId, now, undefined, tx) || await optionalDeliveryAfter(userId, now, undefined, tx);
     if (after) {
       // Advance only already-due unassigned work, so capped/quiet owners cannot monopolize the bounded user page.
       await tx.update(E).set({ eligibleAt: after }).where(and(eq(E.userId, userId), isNull(E.resolvedAt), lte(E.eligibleAt, now)));

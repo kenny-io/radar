@@ -10,8 +10,8 @@ import { onboardingAllowed } from './preferences';
 import { lifecyclePayload, type LifecyclePayload } from './queue';
 import { prepareGuide, acknowledgeGuide, finishGuide } from './guides';
 import { prepareEducation, acknowledgeEducation, blockEducation } from './education';
-import { currentWorkSections, optionalDeliveryAfter } from './engagement';
-const M = schema.lifecycleEmails;
+import { currentWorkSections, optionalDeliveryAfter, workUpdateAfter } from './engagement';
+const M = schema.lifecycleEmails, E = schema.engagementEvents;
 type Mail = typeof M.$inferSelect;
 const MAX_ATTEMPTS = 8;
 const RETRY_WINDOW = 23 * 3600e3; // less than provider24h dedupe retention, including scheduling/clock margin
@@ -206,6 +206,18 @@ export async function dispatchLifecycleBatch(options: DispatchOptions = {}) {
         const [attempted] = await db.update(M).set({ attempts: row.attempts + 1 }).where(owned(row)).returning();
         if (attempted) await retry(attempted, 'eligibility_check_unavailable', now);
         continue;
+      }
+      if (row.type === 'work_update' && !row.firstAttemptAt) {
+        // Nothing was attempted, so the sources can go back for the end of the week. A deferral that long would outlive
+        // the row's delivery window and lose them.
+        const week = await workUpdateAfter(row.userId, now, row.id);
+        if (week) {
+          await db.transaction(async tx => {
+            const held = await tx.update(M).set({ status: 'suppressed', lastError: 'work_weekly_limit', claimedAt: null, claimToken: null }).where(owned(row)).returning({ id: M.id });
+            if (held.length) await tx.update(E).set({ resolvedAt: null, resolvedReason: null, lifecycleEmailId: null, eligibleAt: week }).where(and(eq(E.lifecycleEmailId, row.id), eq(E.resolvedReason, 'queued')));
+          });
+          continue;
+        }
       }
       if (row.type === 'work_update' || row.type === 'founder_note' || row.type === 'weekly_education' || row.type === 'lifecycle_guide' || row.type === 'ai_weekly_report') {
         const after = await optionalDeliveryAfter(row.userId, now, row.id, db, row.type);
