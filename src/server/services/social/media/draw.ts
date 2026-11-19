@@ -1,11 +1,11 @@
 import { createCanvas,GlobalFonts,type SKRSContext2D } from '@napi-rs/canvas';
 import path from 'node:path';
-import type { Scene,Timeline } from './model';
+import { PlanningValidationError,type Scene,type Timeline } from './model';
 let fonts=false;
 export function loadFonts(){if(fonts)return;for(const [file,name]of [['Kalam-Regular.ttf','Radar Hand'],['NotoSans.ttf','Radar Sans']]){if(!GlobalFonts.registerFromPath(path.join(process.cwd(),'assets/social-media',file),name))throw new Error('Explainer font is missing');}fonts=true;}
 const color={bg:'#10151d',line:'#f1ecdf',input:'#77b8f1',output:'#90d5ae',attention:'#f1cf6d'};
 export function wrap(ctx:SKRSContext2D,text:string,max:number,maxLines=3):string[]{
- const lines:string[]=[];let line='';for(const word of text.split(/\s+/)){if(ctx.measureText(word).width>max)throw new Error('Diagram label is too wide');if(line&&ctx.measureText(line+' '+word).width>max){lines.push(line);line=word;}else line+=(line?' ':'')+word;}if(line)lines.push(line);if(lines.length>maxLines)throw new Error('Explanation text needs shorter labels');return lines;
+ const lines:string[]=[];let line='';for(const word of text.split(/\s+/)){if(ctx.measureText(word).width>max)throw new PlanningValidationError('layout','label_width','Diagram label is too wide');if(line&&ctx.measureText(line+' '+word).width>max){lines.push(line);line=word;}else line+=(line?' ':'')+word;}if(line)lines.push(line);if(lines.length>maxLines)throw new PlanningValidationError('layout','label_lines','Explanation text needs shorter labels');return lines;
 }
 function text(ctx:SKRSContext2D,value:string,x:number,y:number,width:number,size:number,lines=3,fill=color.line){ctx.font=`${size}px "Radar Hand", "Radar Sans"`;ctx.fillStyle=fill;ctx.textAlign='center';const rows=wrap(ctx,value,width,lines);rows.forEach((s,i)=>ctx.fillText(s,x,y+i*size*1.15));return rows.length*size*1.15;}
 export function captionLines(value:string):string[]{
@@ -14,9 +14,9 @@ export function captionLines(value:string):string[]{
  let best:string[]|null=null,score=Infinity;
  for(let i=2;i<=words.length-2;i++){const a=words.slice(0,i).join(' '),b=words.slice(i).join(' '),wa=c.measureText(a).width,wb=c.measureText(b).width;if(Math.max(wa,wb)>790)continue;
  const penalty=Math.abs(wa-wb)+(/\b(?:a|an|the|of|to|for|with|and|or|if|when|before|after|at|in|on|should|can|will|have|has)$/.test(a)?250:0);if(penalty<score){score=penalty;best=[a,b];}}
- if(!best)throw new Error('Caption needs a shorter complete phrase');return best;
+ if(!best)throw new PlanningValidationError('layout','caption_width','Caption needs a shorter complete phrase');return best;
 }
-export const captionFits=(s:string)=>{try{captionLines(s);return true;}catch{return false;}};
+export const captionFits=(s:string)=>{try{captionLines(s);return true;}catch(error){if(error instanceof PlanningValidationError)return false;throw error;}};
 const clamp=(v:number)=>Math.max(0,Math.min(1,v));
 function nodePositions(s:Scene,carousel:boolean){const columns=s.nodes.length<=3?1:2;const w=columns===1?570:355,h=carousel?180:210;const top=carousel?325:360;const step=carousel?270:310;return s.nodes.map((node,i)=>({node,x:columns===1?540: i%2===0?300:780,y:top+Math.floor(i/columns)*step,w,h}));}
 export function drawScene(ctx:SKRSContext2D,s:Scene,elapsed:number,carousel=false,carried=new Set<string>(),carriedEdges=new Set<string>(),timing?:Timeline['scenes'][number],now=0){
