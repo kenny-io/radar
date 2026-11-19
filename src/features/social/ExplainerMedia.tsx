@@ -28,7 +28,11 @@ const stageLabel = (post: SocialPost) => {
   const g = post.mediaGeneration;
   if (!g) return '';
   if (g.stage === 'Explanation prepared') return 'Explanation prepared';
-  if (g.status === 'preparing') return g.stage === 'mechanism_reviewed' || g.stage === 'clarity_reviewed' ? 'Checking accuracy and clarity' : 'Preparing explanation';
+  if (g.status === 'preparing') {
+    const stages = ['Reading sources', 'Writing explanation', 'Checking accuracy', 'Checking clarity', 'Revising explanation'];
+    if (g.stage && stages.includes(g.stage)) return g.stage;
+    return g.stage === 'mechanism_reviewed' || g.stage === 'clarity_reviewed' ? 'Checking accuracy and clarity' : 'Preparing explanation';
+  }
   return ({ queued: 'Queued', narrating: 'Recording Brian', rendering: 'Drawing and rendering', ready: 'Explainer ready', failed: 'Generation needs attention', needs_attention: 'Check narration before retrying', cancelled: 'Generation cancelled' } as Record<string, string>)[g.status] || 'Preparing explanation';
 };
 

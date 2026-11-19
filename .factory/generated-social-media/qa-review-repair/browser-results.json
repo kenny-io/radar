@@ -1,0 +1,82 @@
+{
+  "at": "2026-11-19T02:12:05.114Z",
+  "results": [
+    {
+      "name": "Q7R persisted preparing stage Reading sources survives refresh without misleading ready",
+      "pass": true,
+      "detail": {
+        "actualApp": true,
+        "persisted": true,
+        "ariaLive": "polite"
+      }
+    },
+    {
+      "name": "Q7R persisted preparing stage Writing explanation survives refresh without misleading ready",
+      "pass": true,
+      "detail": {
+        "actualApp": true,
+        "persisted": true,
+        "ariaLive": "polite"
+      }
+    },
+    {
+      "name": "Q7R persisted preparing stage Checking accuracy survives refresh without misleading ready",
+      "pass": true,
+      "detail": {
+        "actualApp": true,
+        "persisted": true,
+        "ariaLive": "polite"
+      }
+    },
+    {
+      "name": "Q7R persisted preparing stage Checking clarity survives refresh without misleading ready",
+      "pass": true,
+      "detail": {
+        "actualApp": true,
+        "persisted": true,
+        "ariaLive": "polite"
+      }
+    },
+    {
+      "name": "Q7R persisted preparing stage Revising explanation survives refresh without misleading ready",
+      "pass": true,
+      "detail": {
+        "actualApp": true,
+        "persisted": true,
+        "ariaLive": "polite"
+      }
+    },
+    {
+      "name": "Q7R active browser polls actual changed persisted review stage",
+      "pass": true,
+      "detail": {
+        "polling": true
+      }
+    },
+    {
+      "name": "Q7R legacy markers and unknown or missing stage retain safe fallback",
+      "pass": true,
+      "detail": {
+        "fallbacks": 4
+      }
+    },
+    {
+      "name": "Q7R Revising stage mobile and keyboard cancellation control remain usable",
+      "pass": true,
+      "detail": {
+        "width": 390,
+        "keyboardFocus": true
+      }
+    },
+    {
+      "name": "Q7R existing prepared/failed labels stay accurate and browser has no runtime exception",
+      "pass": true,
+      "detail": {
+        "terminalLabels": true,
+        "exceptions": 0
+      }
+    }
+  ],
+  "errors": [],
+  "fixture": "persisted local stage states; no provider mocked success"
+}
