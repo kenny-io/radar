@@ -20,6 +20,11 @@ export const EdgeZ = z.object({ from: Id, to: Id, label: z.string().max(35), kin
 export const CueZ=z.object({kind:z.enum(['node','edge','revisit']),target:z.string().min(1).max(70),phrase:z.string().trim().min(3).max(120),occurrence:z.number().int().min(1).max(5)});
 export const SceneZ = z.object({ id: Id, title: z.string().min(1).max(65), narration: z.string().trim().min(30).max(800),cues:z.array(CueZ).min(3).max(20), nodes: z.array(NodeZ).min(2).max(6), edges: z.array(EdgeZ).min(1).max(8), revisit: z.array(Id).max(3), mainIdea: z.string().min(8).max(300) });
 export const PlanZ = z.object({ topic: z.string().min(5).max(120), question: z.string().max(200), example: z.string().max(300), assumptions: z.string().max(400), caveats: z.string().max(600), recommendation: z.object({ format:z.enum(['video','carousel']), reason:z.string().min(15).max(400), evidence:z.string().min(20).max(500) }), claims:z.array(z.object({id:z.string().min(1).max(80),claim:z.string().min(5).max(400),source:z.string().min(1).max(500),qualification:z.string().max(300)})).min(1).max(20), scenes:z.array(SceneZ).min(3).max(8) });
+export const EntityDefinitionZ=NodeZ.pick({id:true,kind:true,label:true}).strict();
+export const EntityReferenceZ=NodeZ.omit({kind:true,label:true}).strict();
+export const RegistrySceneZ=SceneZ.extend({nodes:z.array(EntityReferenceZ).min(2).max(6)});
+export const RegistryDraftZ=PlanZ.extend({entities:z.array(EntityDefinitionZ).min(2).max(48),scenes:z.array(RegistrySceneZ).min(3).max(8)});
+export type RegistryDraft=z.infer<typeof RegistryDraftZ>;
 export type Plan = z.infer<typeof PlanZ>;
 export type Scene = Plan['scenes'][number];
 export interface Alignment { characters:string[]; character_start_times_seconds:number[]; character_end_times_seconds:number[] }
@@ -30,8 +35,11 @@ export interface Choice { platform:ExplainerPlatform; format:ExplainerFormat|'re
 export interface Consumer { packId:string; platform:ExplainerPlatform; requestId:string; mediaRevision:number; youtubeOptionsRevision?:number; options?:MediaOptions }
 export type PlanningPhase='semantic'|'layout'|'duration'|'mechanism'|'clarity'|'source'|'unexpected';
 export interface PlanningDiagnostic {phase:PlanningPhase;code:string;scene?:number;frames?:string[]}
-export interface PlanningRecovery {version:1;sourceHash:string;maxDuration:number;candidate:Plan;repair:'available'|'dispatched'|'completed';diagnostic?:PlanningDiagnostic}
-export type PlanningValidationCode='script_limit'|'duplicate_node'|'duplicate_cue'|'cue_phrase'|'cue_target'|'node_cue'|'edge_cue'|'revisit_cue'|'opening_cue'|'revisit_target'|'unchanged_scene'|'edge_target'|'node_identity'|'chart_evidence'|'label_width'|'label_lines'|'caption_width'|'platform_duration';
+interface PlanningRecoveryBase {sourceHash:string;maxDuration:number;repair:'available'|'dispatched'|'completed';diagnostic?:PlanningDiagnostic}
+export interface LegacyPlanningRecovery extends PlanningRecoveryBase {version:1;candidate:Plan}
+export interface RegistryPlanningRecovery extends PlanningRecoveryBase {version:2;candidate:RegistryDraft}
+export type PlanningRecovery=LegacyPlanningRecovery|RegistryPlanningRecovery;
+export type PlanningValidationCode='entity_duplicate'|'entity_reference'|'script_limit'|'duplicate_node'|'duplicate_cue'|'cue_phrase'|'cue_target'|'node_cue'|'edge_cue'|'revisit_cue'|'opening_cue'|'revisit_target'|'unchanged_scene'|'edge_target'|'node_identity'|'chart_evidence'|'label_width'|'label_lines'|'caption_width'|'platform_duration';
 export class PlanningValidationError extends RadarError {
  constructor(public phase:'semantic'|'layout'|'duration',public diagnosticCode:PlanningValidationCode,message:string,public scene?:number){super(message,400,phase==='semantic'?'media_plan_invalid':phase==='layout'?'media_layout':'media_duration_limit');}
 }
@@ -40,7 +48,7 @@ export function planningDiagnostic(error:unknown):PlanningDiagnostic {
  const frames=error instanceof Error?[...new Set((error.stack||'').split('\n').slice(1).flatMap(line=>line.match(/src\/server\/services\/social\/media\/(?:planner|model|draw|index|render|renderChild|timeline|narration|budget|config|db|jobs|material)\.ts:\d{1,7}:\d{1,7}(?!\d)/g)||[]))].slice(0,3):[];
  return {phase:error instanceof RadarError&&error.code==='media_needs_source'?'source':'unexpected',code:error instanceof RadarError&&error.code==='media_needs_source'?'media_needs_source':'media_plan_internal',...(frames.length?{frames}:{})};
 }
-export function recoveryMatches(value:PlanningRecovery|undefined,sourceHash:string,maxDuration:number):value is PlanningRecovery{return value?.version===1&&value.sourceHash===sourceHash&&value.maxDuration===maxDuration;}
+export function recoveryMatches(value:PlanningRecovery|undefined,sourceHash:string,maxDuration:number):value is PlanningRecovery{return (value?.version===1||value?.version===2)&&value.sourceHash===sourceHash&&value.maxDuration===maxDuration;}
 export function planMatches(cp:Checkpoint,sourceHash:string,maxDuration:number){return !!cp.plan&&cp.planSourceHash===sourceHash&&cp.planMaxDuration===maxDuration;}
 /** Atomic replacement patch: an old plan must never acquire the identity of a newer source/cap. */
 export function planningSourcePatch(cp:Checkpoint,source:NonNullable<Checkpoint['source']>,maxDuration:number):Partial<Checkpoint>{
@@ -74,4 +82,12 @@ export function validatePlan(plan:Plan):Plan {
    if(n.kind==='chart'&&(!n.values?.length||!n.units||(!n.illustrative&&!plan.claims.some(c=>c.id===n.claimRef))))throw new PlanningValidationError('semantic','chart_evidence','Charts require source-backed values and units',scene);}
  }
  return plan;
+}
+
+/** Authoring representation only: no renaming, label selection, cue changes or narrative edits. */
+export function compileRegistryDraft(value:RegistryDraft):Plan {
+ const draft=RegistryDraftZ.parse(value);const registry=new Map<string,z.infer<typeof EntityDefinitionZ>>();
+ for(const entity of draft.entities){if(registry.has(entity.id))throw new PlanningValidationError('semantic','entity_duplicate','Declare each diagram entity once with a distinct identity.');registry.set(entity.id,entity);}
+ const {entities,...metadata}=draft;void entities;
+ return validatePlan(PlanZ.parse({...metadata,scenes:draft.scenes.map((scene,index)=>({...scene,nodes:scene.nodes.map(ref=>{const entity=registry.get(ref.id);if(!entity)throw new PlanningValidationError('semantic','entity_reference','Every scene object must reference a declared diagram entity.',index);return {...entity,...ref};})}))}));
 }
