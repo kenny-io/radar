@@ -1,3 +1,4 @@
+import { clearedYouTubeDefaults } from '../services/social/publish/youtubeAutomation';
 import { cleanupYouTube } from '../services/social/publish/youtubeRetention';
 import { YOUTUBE_NO_RESEND } from '@/lib/youtubeLifecycle';
 import { youtubeMayResend, youtubeApproved } from '../services/social/publish/youtubeGuards';
@@ -16,7 +17,7 @@ import { socialOn } from '../flags';
 import { bizToday } from '../workspace';
 import { updatePack } from '../services/social/generate';
 import { markActed, withDay } from '../services/brief/store';
-import { COPY, DATE_RE, HM_RE, PLAT_L, SID_MAX, acctLabel, isLocked, moveCheck, packSid, zonedTimeToUtc } from '@/lib/socialPublish';
+import { COPY, DATE_RE, HM_RE, PLAT_L, SID_MAX, acctLabel, isLocked, mediaGenerationPending, moveCheck, packSid, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { BriefItem, Profile, SocialChannel, SocialPage } from '@/lib/types';
 import { AccountExpired, acctPublic, accountRow, adapterFor, deletePendingSocial, ensureToken, readPendingSocial, tokenFields, tokensOf } from '../services/social/publish/accounts';
 import type { Tokens } from '../services/social/publish/api';
@@ -86,7 +87,7 @@ const base: ActionMap = {
       await updatePack(ctx.bid, i.packId, async p => {
         await assertVideoEditable(ctx.biz, i.packId, i.platform);
         const post = p.posts[i.platform]; if (!post) throw notFound('Post');
-        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, publishOptions: i.options } } };
+        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, publishOptions: i.options, ...(i.platform === 'youtube' ? { publishOptionsRevision: (post.publishOptionsRevision || 0) + 1, youtubeAutomation: undefined, youtubeGeneratedTitle: undefined } : {}) } } };
       });
       return { options: i.options };
     },
@@ -99,8 +100,9 @@ const base: ActionMap = {
       await updatePack(ctx.bid, i.packId, async p => {
         await assertVideoEditable(ctx.biz, i.packId, i.platform);
         const post = p.posts[i.platform]; if (!post) throw notFound('Post');
+        if (mediaGenerationPending(post)) throw refuse('Finish or cancel explainer generation before removing the video.', 'media_pending', 409);
         const options = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
-        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, video: null, publishOptions: options } } };
+        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, video: null, slides: null, generatedMedia: undefined, mediaRecommendation: null, mediaGeneration: null, mediaRevision: (post.mediaRevision || 0) + 1, publishOptions: options } } };
       });
       return { removed: true };
     },
@@ -182,6 +184,7 @@ const base: ActionMap = {
         const [current] = await tx.select().from(A).where(and(eq(A.businessId, ctx.bid), eq(A.ch, 'youtube'))).for('update');
         if (current && current.remoteId !== remoteId) throw refuse('Disconnect the current YouTube channel before switching accounts.', 'other_account', 409);
         const [saved] = current ? await tx.update(A).set({ name, handle, ...tokenFields(pend.tokens), expired: false, expiredAt: null, updatedAt: new Date() }).where(eq(A.id, current.id)).returning() : await tx.insert(A).values({ businessId: ctx.bid, ch, remoteId, name, handle, ...tokenFields(pend.tokens), connectedBy: ctx.user.id }).returning();
+        await tx.update(schema.businesses).set({ socialAuto: clearedYouTubeDefaults(business.socialAuto) }).where(eq(schema.businesses.id, ctx.bid));
         await tx.delete(schema.oauthStates).where(eq(schema.oauthStates.state, i.oauthRef));
         return saved;
       });
@@ -327,6 +330,21 @@ const base: ActionMap = {
       if (r.existing?.status === 'posted') throw refuse(COPY.alreadyPosted, 'posted');
       let n = 0; const k = r.t.platform;
       if (r.t.src === 'pack') {
+        if (r.t.mediaPending) throw refuse('Finish or cancel explainer generation before compressing media.', 'media_pending', 409);
+        if (r.t.pack?.posts[k]?.slides?.length) {
+          const replacements: { was: string; url: string; meta: import('@/lib/types').MediaMeta }[] = [];
+          for (const img of r.t.images) { const next = await compressIfNeeded(ctx.bid, k, img.url); if (next) replacements.push({ was: img.url, ...next }); }
+          if (!replacements.length) return { compressed: 0 };
+          await updatePack(ctx.bid, r.t.packId!, async x => {
+            await assertVideoEditable(ctx.biz, x.id, k as typeof VIDEO_PLATFORMS[number]);
+            const cur = x.posts[k];
+            if (!cur?.slides || mediaGenerationPending(cur) || cur.slides.length !== r.t.images.length || cur.slides.some((slide, index) => slide.url !== r.t.images[index]?.url)) throw refuse('The slides changed. Try again.', 'media_changed', 409);
+            n = replacements.length;
+            const slides = cur.slides.map(slide => { const replacement = replacements.find(item => item.was === slide.url); return replacement ? { ...slide, url: replacement.url, meta: replacement.meta } : slide; });
+            return { ...x, posts: { ...x.posts, [k]: { ...cur, slides, compressed: true, mediaRevision: (cur.mediaRevision || 0) + 1 } } };
+          });
+          return { compressed: n };
+        }
         const img = r.t.images[0]; if (!img) return { compressed: 0 };
         const c = await compressIfNeeded(ctx.bid, k, img.url);
         if (c) { n = 1; await updatePack(ctx.bid, r.t.packId!, x => { const cur = x.posts[k]; return cur && cur.imageUrl === img.url ? { ...x, posts: { ...x.posts, [k]: { ...cur, imageUrl: c.url, imageMeta: c.meta, compressed: true, ...(k === 'tiktok' && cur.publishOptions?.tiktok ? { publishOptions: { ...cur.publishOptions, tiktok: { ...cur.publishOptions.tiktok, consent: false } } } : {}) } } } : x; }); }

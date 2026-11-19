@@ -1,0 +1,44 @@
+{
+  "at": "2026-11-19T01:29:36.849Z",
+  "results": [
+    {
+      "name": "M1/M5 actual authentic cached Brian audio drives real MP4 render and attaches all three targets",
+      "pass": true,
+      "detail": {
+        "duration": 30.34,
+        "bytes": 2042109,
+        "targets": 3,
+        "sharedRender": true,
+        "freshTtsRequests": 0,
+        "historicalSpeed": 0.88
+      }
+    },
+    {
+      "name": "M8 real output probes H264/AAC24fps1080x1920 and full-decodes with non-silent safe audio",
+      "pass": true,
+      "detail": {
+        "fullDecode": true,
+        "peakDb": -1.3,
+        "duration": 30.34
+      }
+    },
+    {
+      "name": "M4/M5 downloaded script/captions/alignment preserve authentic spoken words and exact cue timing",
+      "pass": true,
+      "detail": {
+        "allWordsOnce": true,
+        "scenes": 3,
+        "cues": 19
+      }
+    },
+    {
+      "name": "M5/M6 cache GC preserves narration referenced transitively by attached video and uncertain paid tombstone",
+      "pass": true,
+      "detail": {
+        "transitiveAudioPreserved": true,
+        "uncertainPreserved": true,
+        "cancelledOrphanCollected": true
+      }
+    }
+  ]
+}

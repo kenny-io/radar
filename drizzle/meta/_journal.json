@@ -141,6 +141,13 @@
       "when": 1794837306109,
       "tag": "0019_delete_business",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795048762226,
+      "tag": "0020_social_media",
+      "breakpoints": true
     }
   ]
 }

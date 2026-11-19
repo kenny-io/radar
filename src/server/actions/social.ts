@@ -11,11 +11,12 @@ import { getPack, renderPostImage, updatePack, writePost, type StoredPack } from
 import { suggestIdeas } from '../services/social/ideas';
 import { DAYS } from '../services/social/auto';
 import type { ImageStyle, Platform, Profile } from '@/lib/types';
-import { COPY, canPost, packSid } from '@/lib/socialPublish';
+import { COPY, canPost, mediaGenerationPending, packSid } from '@/lib/socialPublish';
 import { socialOn } from '../flags';
 import { assertEditable } from '../services/social/publish/guards';
 import { randomToken } from '../crypto';
 import { accountRows } from '../services/social/publish/accounts';
+import { assertVideoEditable, VIDEO_PLATFORMS } from '../services/social/publish/video';
 
 const PlatformZ = z.enum(['linkedin', 'x', 'facebook', 'reddit', 'quora', 'instagram', 'tiktok', 'youtube']);
 const ImageStyleZ = z.enum(['branded', 'illustration', 'photography', 'infographic']);
@@ -32,12 +33,14 @@ const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any
 
 /** Reserve a request before rendering; update only its image fields after storage succeeds. */
 async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform; prompt?: string; style?: ImageStyle }) {
-  await editable(ctx, i.packId, i.platform);
+  const mediaEditable = () => VIDEO_PLATFORMS.includes(i.platform as typeof VIDEO_PLATFORMS[number]) ? assertVideoEditable(ctx.biz, i.packId, i.platform as typeof VIDEO_PLATFORMS[number]) : editable(ctx, i.packId, i.platform);
+  await mediaEditable();
   await packOr404(ctx.bid, i.packId);
   const request = randomToken(16);
   const reserved = await updatePack(ctx.bid, i.packId, async p => {
-    await editable(ctx, i.packId, i.platform);
+    await mediaEditable();
     const q = postOr404(p, i.platform);
+    if (mediaGenerationPending(q)) throw new RadarError('Finish or cancel explainer generation before replacing the image.', 409, 'media_pending');
     return { ...p, posts: { ...p.posts, [i.platform]: { ...q, imageRequest: request, ...(i.prompt !== undefined ? { imagePrompt: i.prompt } : {}) } } };
   }).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
   const q = postOr404(reserved, i.platform); const seed = (q.seed || 1) + 11; const style = i.style || q.style;
@@ -45,10 +48,10 @@ async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform;
   try { result = await renderPostImage(ctx.bid, profileOf(ctx.biz), i.platform, { style, seed, imagePrompt: q.imagePrompt }, reserved.headline || reserved.source.label, reserved.custom); }
   catch (e: any) { console.error('[social] render failed', e?.message); if (e instanceof RadarError) throw e; throw new RadarError('Radar couldn’t generate this image. Your previous image is kept. Try again.', 502, 'image_failed'); }
   await updatePack(ctx.bid, i.packId, async p => {
-    await editable(ctx, i.packId, i.platform);
+    await mediaEditable();
     const cur = postOr404(p, i.platform);
-    if (cur.imageRequest !== request || cur.seed !== q.seed || cur.style !== q.style || cur.imageUrl !== q.imageUrl || cur.imagePrompt !== q.imagePrompt) throw new RadarError('The image changed while Radar was generating it. Try again.', 409, 'image_changed');
-    return { ...p, posts: { ...p.posts, [i.platform]: { ...cur, seed, style, imageUrl: result.url, photo: result.photo, imageMeta: result.meta, compressed: false, ...(i.platform === 'tiktok' && cur.publishOptions?.tiktok ? { publishOptions: { ...cur.publishOptions, tiktok: { ...cur.publishOptions.tiktok, consent: false } } } : {}) } } };
+    if (cur.imageRequest !== request || cur.mediaRevision !== q.mediaRevision || mediaGenerationPending(cur) || cur.seed !== q.seed || cur.style !== q.style || cur.imageUrl !== q.imageUrl || cur.imagePrompt !== q.imagePrompt) throw new RadarError('The image changed while Radar was generating it. Try again.', 409, 'image_changed');
+    return { ...p, posts: { ...p.posts, [i.platform]: { ...cur, seed, style, imageUrl: result.url, photo: result.photo, imageMeta: result.meta, compressed: false, video: null, slides: null, mediaGeneration: null, mediaRecommendation: null, generatedMedia: undefined, mediaRevision: (cur.mediaRevision || 0) + 1, ...(i.platform === 'tiktok' && cur.publishOptions?.tiktok ? { publishOptions: { ...cur.publishOptions, tiktok: { ...cur.publishOptions.tiktok, consent: false } } } : {}) } } };
   }).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
   return { seed, imageUrl: result.url };
 }
@@ -60,6 +63,7 @@ export const actions: ActionMap = {
       token: z.string().min(6).max(64),
       source: z.object({ kind: z.enum(['idea', 'url', 'article', 'suggest']), label: z.string().max(2000), ref: z.string().max(200).nullish() }),
       platforms: z.array(PlatformZ).max(8), style: PackStyleZ, custom: z.string().max(600).optional(), voice: z.string().max(600).optional(),
+      media: z.array(z.object({ platform: z.enum(['instagram', 'tiktok', 'youtube']), format: z.enum(['recommended', 'video', 'carousel']) })).max(3).optional(),
       idea: z.object({ metric: z.string().max(400).optional(), why: z.string().max(400).optional(), tie: z.string().max(400).nullish(), page: z.string().max(400).nullish(), q: z.string().max(400).optional() }).nullish(),
     }),
     run: async (ctx, i) => {
@@ -76,9 +80,12 @@ export const actions: ActionMap = {
       }
       const platforms = [...new Set(i.platforms)];
       if (!platforms.length) throw new RadarError('Pick at least one platform.');
+      const media = platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform)).map(platform => i.media?.find(choice => choice.platform === platform) || { platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const });
+      if (new Set((i.media || []).map(x => x.platform)).size !== (i.media || []).length || (i.media || []).some(x => !platforms.includes(x.platform)) || media.some(x => !platforms.includes(x.platform) || (x.format === 'carousel' && x.platform !== 'instagram'))) throw new RadarError('Choose one supported media format per selected platform.');
+      if (media.length) await (await import('../services/social/media/config')).requireMedia(ctx.bid);
       if (i.style === 'custom' && !(i.custom || '').trim()) throw new RadarError('Describe the look you want.');
       const label2 = k === 'article' ? (await db.select({ t: schema.calendarEntries.title }).from(schema.calendarEntries).where(eq(schema.calendarEntries.id, ref!)).limit(1))[0].t : label;
-      const jobId = await enqueue('social.generate', { source: { kind: k, label: label2, ref }, platforms, style: i.style, custom: i.custom?.trim() || '', voice: i.voice?.trim() || '', idea: k === 'suggest' ? i.idea || null : null }, { businessId: ctx.bid, ref: i.token, maxAttempts: 2 });
+      const jobId = await enqueue('social.generate', { source: { kind: k, label: label2, ref }, platforms, style: i.style, custom: i.custom?.trim() || '', voice: i.voice?.trim() || '', idea: k === 'suggest' ? i.idea || null : null, ...(media.length ? { media } : {}) }, { businessId: ctx.bid, ref: i.token, maxAttempts: 2, ...(media.length ? { singletonKey: `social.generate:${ctx.bid}:${i.token}` } : {}) });
       return { jobId };
     },
   }),
@@ -132,7 +139,7 @@ export const actions: ActionMap = {
   /** Automatic generation settings (AutoModal). */
   'social.auto': action({
     role: 'Editor',
-    input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(8), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), post: z.enum(['library', 'schedule']).optional() }) }),
+    input: z.object({ auto: z.object({ on: z.boolean(), freq: z.enum(['daily', 'custom']), days: z.array(z.enum(DAYS as [string, ...string[]])).max(7), platforms: z.array(PlatformZ).max(8), style: ImageStyleZ, time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), post: z.enum(['library', 'schedule']).optional(), generateMedia: z.boolean().optional() }) }),
     run: async (ctx, { auto }) => {
       if (auto.on && !auto.platforms.length) throw new RadarError('Pick at least one platform.');
       if (auto.on && auto.freq === 'custom' && !auto.days.length) throw new RadarError('Pick at least one day.');
@@ -141,8 +148,13 @@ export const actions: ActionMap = {
       const post = !publishing ? (auto.post ? 'library' as const : undefined) : auto.post;
       if (publishing && auto.on && post === 'schedule' && !(await accountRows(ctx.bid)).some(r => !r.expired)) throw new RadarError(COPY.noAccountForAuto, 400, 'no_account');
       const a = { ...auto, ...(post ? { post } : {}), days: DAYS.filter(d => auto.days.includes(d)), platforms: (['linkedin', 'x', 'facebook', 'reddit', 'quora', 'instagram', 'tiktok', 'youtube'] as Platform[]).filter(k => auto.platforms.includes(k)) };
-      await db.update(schema.businesses).set({ socialAuto: a }).where(eq(schema.businesses.id, ctx.bid));
-      return a;
+      return db.transaction(async tx => {
+        const [b] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, ctx.bid)).for('update');
+        const preserved = (await import('@/lib/youtubeAutomation')).youtubeDefaultsState(b?.socialAuto);
+        const saved = { ...a, ...preserved };
+        await tx.update(schema.businesses).set({ socialAuto: saved }).where(eq(schema.businesses.id, ctx.bid));
+        return saved;
+      });
     },
   }),
 };

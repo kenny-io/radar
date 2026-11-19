@@ -8,17 +8,25 @@ describe('worker rollout readiness', () => {
     ["CHECK (guide_id IN ('article_workflow','search_refresh','autopilot_intro'))", true],
     ["CHECK (guide_id IN ('article_workflow','search_refresh','autopilot_intro_wrong'))", false],
   ])('checks the validated guide allowlist capability before starting: %s', async (definition, ready) => {
-    const probe = vi.spyOn(pool, 'query').mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [{ definition }] } as never);
+    const probe = vi.spyOn(pool, 'query').mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [{ definition }] } as never);
     try {
       const result = waitForWorkerSchema({ timeoutMs: 0, log: () => {} });
       if (ready) await expect(result).resolves.toBeUndefined();
       else await expect(result).rejects.toThrow('schema is not ready');
-      expect(probe).toHaveBeenCalledTimes(3);
+      expect(probe).toHaveBeenCalledTimes(5);
+      expect(probe.mock.calls[1][0]).toContain('FROM social_media_generations');
+      expect(probe.mock.calls[2][0]).toContain('social_media_cache_idx');
       // A worker must not claim jobs before the delete-business migration: the queue reads the deleted state.
       expect(probe.mock.calls[0][0]).toMatchObject({ text: expect.stringMatching(/\bb\.purge_at\b[\s\S]*CROSS JOIN businesses b\b/) });
-      expect(probe.mock.calls[2][0]).toMatchObject({ text: expect.stringContaining("conname = 'lifecycle_guide_id_check'") });
-      expect(probe.mock.calls[2][0]).toMatchObject({ text: expect.stringContaining("conrelid = 'lifecycle_guide_states'::regclass") });
+      expect(probe.mock.calls[4][0]).toMatchObject({ text: expect.stringContaining("conname = 'lifecycle_guide_id_check'") });
+      expect(probe.mock.calls[4][0]).toMatchObject({ text: expect.stringContaining("conrelid = 'lifecycle_guide_states'::regclass") });
     } finally { probe.mockRestore(); }
+  });
+  it('refuses job startup until the media authority table and unique cache index are migrated',async()=>{
+    const probe=vi.spyOn(pool,'query').mockResolvedValueOnce({rows:[]} as never).mockRejectedValueOnce(new Error('media table missing'));
+    try{await expect(waitForWorkerSchema({timeoutMs:0,log:()=>{}})).rejects.toThrow('schema is not ready');expect(probe).toHaveBeenCalledTimes(2);}finally{probe.mockRestore();}
+    const index=vi.spyOn(pool,'query').mockResolvedValueOnce({rows:[]} as never).mockResolvedValueOnce({rows:[]} as never).mockRejectedValueOnce(new Error('media index missing'));
+    try{await expect(waitForWorkerSchema({timeoutMs:0,log:()=>{}})).rejects.toThrow('schema is not ready');expect(index).toHaveBeenCalledTimes(3);}finally{index.mockRestore();}
   });
   it('waits through old-schema failures before allowing job startup, with one bounded diagnostic', async () => {
     let time = 0;

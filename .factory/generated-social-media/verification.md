@@ -1,0 +1,17 @@
+# Verification
+
+Required checks are M1–M10 in brief.md. Implementation is active, not release-ready. Record exact tested revision and independent acceptance after freeze.
+
+PM setup: real Brian eleven_v4 timestamped narration succeeded once, source/review/alignment/audio retained /tmp/radar-explainer-spike. Actual audio29.04s/81words, alignment monotonic/matching, maxpeak-2.4dB, mean-22.8dB; metadata/diagnostics only, no listening claim.
+
+First cached-audio real render: /tmp/radar-media-spike/video.mp4,1080x1920/24fps,H264/AAC,30.34s,2,011,209bytes; backend reports full decode and volume diagnostics passed. PM visually inspected opening/midstroke/handoff/revisit/final frames. Text size/colors/diagram arrows legible, but M4/M5 fail this first pass: orphan caption line 'go' then next caption 'out.', phrase split 'record of / what happened', and entirely blank diagram at scene handoff although all semantic objects recur. Backend asked to fix measured balanced clause captions, immediate first input and persistent common objects at transitions, with regressions and cached rerender. These are required fixes, not accepted limitations. Fixture also needs a visible time gate/account check/receipt feedback rather than repeated generic three-card scenes; semantic node kinds must render meaningful shape/state distinctions.
+
+V2 cached-audio render /tmp/radar-media-spike/video-v2.mp4: PM inspected opening-v2/handoff-v2/revisit-v2 images; previous orphan caption and blank handoff defects resolved. Balanced complete sentence captions, immediate recognizable input and retained-receipt cylinder/feedback clearly visible. Spike visual pass approved; this does not yet verify an actual model-generated plan, full workflow, listening or production artifacts.
+
+PM inspected actual JPEG carousel slide-01-v2 and slide-03-v2 at1080x1350: legible labels/relationships, complete explanatory summaries, meaningful queue/time-gate and retained-receipt feedback, correct visible1/3and3/3order, no visible truncation/overflow. Full ordered publishing path remains Q7 acceptance-owned.
+
+Final local acceptance now passes: independent27DB/provider cases,19browser scenarios,4real-render/timing/cache groups,3resource/cancel/lock-loss cases and363developer tests across16files. FinalNode22typecheck/diff checks passed; qa.md and qa/fingerprint.json identify the exact906-file candidate. Both empty-material and obsolete automatic-media defects were corrected and independently retested. All local browser servers stopped. Cached authentic0.88Brian audio is explicitly not a fresh0.78provider-generation claim. No public post was used for QA.
+
+Final isolated Node22 production build passed on876files, unchanged source/copy/finalhash3b942adad6822cfea8edc147be2ec3aff9ea3b6600d89d0c07483e0e6fdc45d5 and BUILD_IDgcFbhDqBBIh-DqNfrEABj. Guarded deployment with generationoff is supported by local evidence. Actual Linux worker image/binaries and fresh production model→Brian0.78→R2 generation remain release gates before enabling the intended cohort or declaring this phase complete.
+
+Local Linux worker image precheck attempted with Docker Desktop29.7.2/aarch64 and linux/amd64 target. It stopped at public Node base-manifest fetch with DeadlineExceeded, before any Dockerfile package/source step. Log /tmp/radar-media-worker-docker.log; this is not a passing Linux image build. Worker binary/font/runtime checks and actual image build remain required in the deployment environment. Do not weaken TLS or system network settings to bypass the local registry issue.

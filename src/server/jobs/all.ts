@@ -20,3 +20,5 @@ import '../services/lifecycle/engagementJobs';
 import '../services/autopilot/jobs';
 
 import '../observability/jobs';
+
+import '../services/social/media/jobs';

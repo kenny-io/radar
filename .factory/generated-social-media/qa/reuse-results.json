@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-19T01:26:11.769Z",
+  "passed": [
+    "same_source_output_cache_reused_after_caption_edit",
+    "same_audio_cache_preserved",
+    "zero_new_provider_requests"
+  ],
+  "sameGeneration": true
+}

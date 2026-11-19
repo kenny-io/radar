@@ -20,6 +20,7 @@ import { setAdapterForTests } from '../social/publish/accounts';
 import { stubAdapter } from '../social/publish/stubs';
 import { createPack, getPack } from '../social/generate';
 import { dailyPackId } from '../social/auto';
+import * as mediaConfig from '../social/media/config';
 import * as access from '@/server/billing/access';
 import * as failures from '@/server/observability/failures';
 import * as scheduling from '../social/publish/schedule';
@@ -157,12 +158,32 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
     expect((await runSend(claimed!, { manual: false }))?.status).toBe('posted');
     expect(await claimScheduled(posts[0].id)).toBeNull();
   }, 30_000);
-  it('schedules eligible Instagram drafts but hands TikTok and YouTube to the owner for per-post media and choices', async () => {
+  it('waits for complete generated media for the selected video platforms instead of scheduling caption-only drafts', async () => {
     const platforms = ['instagram', 'tiktok', 'youtube'] as const;
     await db.update(S.businesses).set({ socialAuto: { on: false, post: 'library', freq: 'daily', platforms: [...platforms], time: '00:00', style: 'branded' } }).where(eq(S.businesses.id, bid));
     await db.insert(S.socialAccounts).values(platforms.map(ch => ({ businessId: bid, ch, name: ch, remoteId: `test-${ch}`, tokensEnc: encrypt({ access_token: 'stub', stub: true }) })));
     await setAutopilot(await context(), true); const a = autopilotOf(await getBiz(bid));
-    const packId = await createPack(bid, { source: { kind: 'idea', label: 'An actionable social update' }, platforms: [...platforms], style: 'branded' }, undefined, { id: dailyPackId(bid, date) });
+    const packId = await createPack(bid, { source: { kind: 'idea', label: 'A source-grounded explanation of how a queue processes a scheduled item and saves the upload receipt before checking completion.' }, platforms: [...platforms], style: 'branded' }, undefined, { id: dailyPackId(bid, date) });
+    await db.insert(S.briefDays).values({ businessId: bid, date, scannedAt: '08:00', items: [] });
+    await runAutopilot(runCtx(a.activationId!));
+    expect(await db.select().from(S.socialPubs).where(eq(S.socialPubs.businessId, bid))).toHaveLength(0);
+    const pack = (await getPack(bid, packId))!;
+    for (const platform of platforms) {
+      expect(pack.posts[platform]?.imageUrl).toBeNull();
+      expect(pack.posts[platform]?.mediaGeneration?.status).toBe('preparing');
+    }
+    expect((await rows('social.media'))).toHaveLength(1);
+  }, 30_000);
+  it('schedules legacy ready Instagram images but hands TikTok and YouTube to the owner for per-post media and choices', async () => {
+    const platforms = ['instagram', 'tiktok', 'youtube'] as const;
+    await db.update(S.businesses).set({ socialAuto: { on: false, post: 'library', freq: 'daily', platforms: [...platforms], time: '00:00', style: 'branded' } }).where(eq(S.businesses.id, bid));
+    await db.insert(S.socialAccounts).values(platforms.map(ch => ({ businessId: bid, ch, name: ch, remoteId: `test-${ch}`, tokensEnc: encrypt({ access_token: 'stub', stub: true }) })));
+    await setAutopilot(await context(), true); const a = autopilotOf(await getBiz(bid));
+    // Construct the legacy image-only pack shape; normal generation now queues complete explainer media.
+    const legacy = vi.spyOn(mediaConfig, 'mediaEnabled').mockResolvedValueOnce(false);
+    let packId: string;
+    try { packId = await createPack(bid, { source: { kind: 'idea', label: 'An actionable social update' }, platforms: [...platforms], style: 'branded' }, undefined, { id: dailyPackId(bid, date) }); }
+    finally { legacy.mockRestore(); }
     await db.insert(S.briefDays).values({ businessId: bid, date, scannedAt: '08:00', items: [] });
     await runAutopilot(runCtx(a.activationId!)); await runAutopilot(runCtx(a.activationId!));
     const pubs = await db.select().from(S.socialPubs).where(eq(S.socialPubs.businessId, bid));
@@ -170,7 +191,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
     const pack = (await getPack(bid, packId))!; expect(pack.posts.instagram?.imageMeta?.type).toBe('image/jpeg');
     expect(pack.posts.tiktok?.publishOptions?.tiktok?.consent).not.toBe(true); expect(pack.posts.youtube?.video).toBeUndefined();
     const handoffs = (await rows('autopilot.handoff')).flatMap(j => (j.payload as any).items as { key: string; href: string }[]);
-    expect(handoffs).toEqual(expect.arrayContaining([expect.objectContaining({ key: `pack:${packId}:tiktok`, href: expect.stringContaining('plat%3Dtiktok') }), expect.objectContaining({ key: `pack:${packId}:youtube`, href: expect.stringContaining('plat%3Dyoutube') })]));
+    expect(handoffs).toEqual(expect.arrayContaining([expect.objectContaining({ key: `pack:${packId}:tiktok`, href: expect.stringContaining('plat%3Dtiktok') }), expect.objectContaining({ key: `pack:${packId}:youtube`, href: expect.stringContaining('auto%3Dtrue'), reason: 'YouTube will remain a draft until the owner chooses visibility and audience.' })]));
     expect((await getBiz(bid)).socialAuto).toMatchObject({ on: false, post: 'library' });
   }, 30_000);
   it('a concurrent manual publication cannot be overwritten by the program scheduling upsert', async () => {

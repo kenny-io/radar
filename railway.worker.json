@@ -1,6 +1,9 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
-  "build": { "buildCommand": "echo worker" },
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.worker"
+  },
   "deploy": {
     "startCommand": "npm run worker",
     "restartPolicyType": "ALWAYS"

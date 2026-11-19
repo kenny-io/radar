@@ -21,6 +21,8 @@ export async function waitForWorkerSchema(options: ReadyOptions = {}): Promise<v
     FROM user_email_preferences p CROSS JOIN engagement_events e CROSS JOIN lifecycle_emails m CROSS JOIN education_enrollments ed CROSS JOIN users u CROSS JOIN lifecycle_guide_states g CROSS JOIN businesses b CROSS JOIN calendar_entries c CROSS JOIN social_pubs sp CROSS JOIN outbox_emails o CROSS JOIN ai_observations obs CROSS JOIN visibility_preferences vp CROSS JOIN ai_miss_topics mt CROSS JOIN brief_days bd CROSS JOIN members mb CROSS JOIN billing_accounts ba LIMIT 0`, query_timeout: 5000 };
   const probe = options.probe || (async () => {
     await pool.query(query);
+    await pool.query("SELECT id, checkpoint, lease_token, reserved_usd FROM social_media_generations LIMIT 0");
+    await pool.query("SELECT 'social_media_cache_idx'::regclass, 'social_media_lease_idx'::regclass");
     await pool.query("SELECT 'ai_observations_series_day'::regclass, 'ai_observations_business_day'::regclass, 'lifecycle_report_business_sent_idx'::regclass");
     // Guide IDs are a checked allowlist: identical columns from0015 alone cannot admit the new guide safely.
     const constraintQuery = { text: `SELECT pg_get_constraintdef(oid) AS definition

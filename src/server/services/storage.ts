@@ -13,16 +13,16 @@ async function bucket() {
   return { sdk, s3: new sdk.S3Client({ region: env.s3Region, ...(env.s3Endpoint ? { endpoint: env.s3Endpoint, forcePathStyle: true } : {}) }) };
 }
 
-export async function putObject(key: string, body: Buffer, contentType: string): Promise<string> {
+export async function putObject(key: string, body: Buffer, contentType: string, options: { signal?: AbortSignal } = {}): Promise<string> {
   if (env.s3Bucket) {
     const { sdk: { PutObjectCommand }, s3 } = await bucket();
-    await s3.send(new PutObjectCommand({ Bucket: env.s3Bucket, Key: key, Body: body, ContentType: contentType, CacheControl: 'public, max-age=31536000, immutable' }));
+    await s3.send(new PutObjectCommand({ Bucket: env.s3Bucket, Key: key, Body: body, ContentType: contentType, CacheControl: 'public, max-age=31536000, immutable' }), { abortSignal: options.signal });
     return `${publicBase()}/${key}`;
   }
   const full = path.join(process.cwd(), env.storageDir, key);
   await fs.mkdir(path.dirname(full), { recursive: true });
-  await fs.writeFile(full, body);
-  await fs.writeFile(full + '.type', contentType);
+  await fs.writeFile(full, body, { signal: options.signal });
+  await fs.writeFile(full + '.type', contentType, { signal: options.signal });
   return `/api/files/${key}`;
 }
 export async function readLocal(key: string): Promise<{ body: Buffer; type: string } | null> {
@@ -143,4 +143,21 @@ export async function putDataUrl(bid: string, kind: string, dataUrl: string): Pr
   const buf = Buffer.from(m[2], 'base64');
   if (buf.length > 5 * 1024 * 1024) throw new Error('File too large');
   return putObject(objectKey(bid, kind, ext), buf, type);
+}
+
+/** Bounded tenant-owned read for larger generated media. Never follows an arbitrary external URL. */
+export async function readStoredBounded(bid: string, url: string, maxBytes: number): Promise<{body:Buffer;type:string}|null> {
+  const key=storedKey(bid,url);if(!key||maxBytes<=0||maxBytes>105*1024*1024)return null;
+  if(url.startsWith('/api/files/')){
+    const full=path.join(process.cwd(),env.storageDir,key);try{const stat=await fs.stat(full);if(stat.size>maxBytes)return null;const body=await fs.readFile(full);return body.length<=maxBytes?{body,type:await fs.readFile(full+'.type','utf8').catch(()=>'application/octet-stream')}:null;}catch{return null;}
+  }
+  const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),30000);
+  try{const r=await fetch(`${publicBase()}/${key}`,{signal:ctl.signal,redirect:'error'});if(!r.ok||Number(r.headers.get('content-length'))>maxBytes)return null;const reader=r.body?.getReader();if(!reader)return null;const chunks:Buffer[]=[];let size=0;for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>maxBytes){await reader.cancel();return null;}chunks.push(Buffer.from(value));}return {body:Buffer.concat(chunks),type:r.headers.get('content-type')||'application/octet-stream'};}catch{return null;}finally{clearTimeout(timer);}
+}
+
+/** Remove one tenant-owned immutable artifact; callers must establish it is unreferenced first. */
+export async function deleteStoredObject(bid:string,url:string,options:{signal?:AbortSignal}={}):Promise<void>{
+ const key=storedKey(bid,url);if(!key)throw new Error('Artifact is not owned by this workspace');
+ if(env.s3Bucket){const {sdk:{DeleteObjectCommand},s3}=await bucket();await s3.send(new DeleteObjectCommand({Bucket:env.s3Bucket,Key:key}),{abortSignal:options.signal});return;}
+ const full=path.join(process.cwd(),env.storageDir,key);await fs.unlink(full).catch(e=>{if(e.code!=='ENOENT')throw e;});await fs.unlink(full+'.type').catch(e=>{if(e.code!=='ENOENT')throw e;});
 }

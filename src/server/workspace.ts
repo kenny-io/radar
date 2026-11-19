@@ -1,3 +1,4 @@
+import { youtubeDefaultsState } from '@/lib/youtubeAutomation';
 import { publicPublishError, publicPublishingJob } from '@/lib/publishingFailure';
 import { env } from './env';
 import { autopilotPublic } from './services/autopilot/policy';
@@ -74,7 +75,7 @@ export function blogOf(b: BizRow, conns: ConnectionPublic[]): BlogState {
   return { conns, defaultId: def, mode: bl.mode || 'review', autopilotAckAt: bl.autopilotAckAt || null, paused: !!bl.paused, tz: b.timezone, time: bl.time || '09:00', available: availablePlatforms() };
 }
 export function socialAutoOf(b: BizRow): SocialAuto {
-  return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}) };
+  return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}), ...youtubeDefaultsState(b.socialAuto) };
 }
 export function briefSettingsOf(b: BizRow) { return { ...BRIEF_DEFAULT, ...(b.briefSettings || {}) }; }
 /** Model choices only: writing instructions share the `ai` column but are projected separately (Workspace.instructions).
@@ -174,7 +175,7 @@ export async function loadWorkspace(bid: string, userId: string, role: Role, opt
     calendar: { entries: calEntries, settings: calendarSettingsOf(b), generatedAt: b.calendarGeneratedAt ? b.calendarGeneratedAt.toISOString() : null },
     articles,
     blog: blogOf(b, connsPub),
-    social: { packs: socialPacks, auto, img: b.socialImg ? imageSettingsOf(b.socialImg) : null, ...(proj ? { publishing: true, accounts: proj.accounts, channels: proj.channels } : {}) },
+    social: { mediaGeneration: await (await import('./services/social/media/config')).mediaEnabled(bid), packs: socialPacks, auto, img: b.socialImg ? imageSettingsOf(b.socialImg) : null, ...(proj ? { publishing: true, accounts: proj.accounts, channels: proj.channels } : {}) },
     brief, backlinks, ai: aiPrefsOf(b), instructions: readInstructions(b.ai), team: members,
     site: { pages: b.site?.pages ?? null, articles: b.site?.articles ?? null, ranking: b.site?.ranking ?? null, analyzedAt: b.site?.analyzedAt ?? null },
     jobs, measured, kwSuggestions: (b.kwSuggestions || []) as any,

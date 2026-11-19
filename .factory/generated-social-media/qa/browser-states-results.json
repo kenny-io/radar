@@ -1,0 +1,35 @@
+{
+  "at": "2026-11-19T01:28:26.242Z",
+  "results": [
+    {
+      "name": "M6/M7 real Regenerate shows old slides while pending, blocks publishing and Cancel persists old attachment",
+      "pass": true,
+      "detail": {
+        "oldPreviewRetained": true,
+        "publishingBlockedUntilCancel": true,
+        "cancelPersists": true
+      }
+    },
+    {
+      "name": "M6 actual missing-voice-config failure preserves previous slides and useful retry without asking upload",
+      "pass": true,
+      "detail": {
+        "realFailure": true,
+        "oldMediaPreserved": true,
+        "retryVisible": true,
+        "noUploadFallback": true
+      }
+    },
+    {
+      "name": "M6 ambiguity UI asks explicit billed retry acknowledgment; Cancel does not retry",
+      "pass": true,
+      "detail": {
+        "failureStateFixture": true,
+        "explicitChargeWarning": true,
+        "cancelNoRetry": true,
+        "browserErrors": 0
+      }
+    }
+  ],
+  "errors": []
+}

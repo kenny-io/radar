@@ -1025,3 +1025,19 @@ describe('an answer cut off at the output-token limit', () => {
     expect(src).toMatch(/purpose: 'brief\.rank'[^\n]*maxTokens: 8000/);
   });
 });
+
+describe('paid-stage admission hook',()=>{
+ it('stops all paid routes when reservation is refused',async()=>{
+  const {ai}=await bootOR();mockFetch(()=>{throw new Error('must not dispatch');});
+  const refusal=new Error('daily media allowance');const beforeAttempt=vi.fn(async()=>{throw refusal;});
+  await expect(ai.run('writing',{purpose:'social.media.plan',prompt:'source facts',maxTokens:2000,beforeAttempt})).rejects.toBe(refusal);
+  expect(beforeAttempt).toHaveBeenCalledTimes(1);expect(calls).toHaveLength(0);
+ });
+ it('awaits a fresh reservation for a failed route and its fallback',async()=>{
+  const {ai}=await bootOR();const admissions:any[]=[];
+  mockFetch((url)=>url===OR?err(401,'invalid key'):anText('A clear explanation'));
+  const result=await ai.run('writing',{purpose:'social.media.plan',prompt:'source facts',maxTokens:2000,beforeAttempt:async a=>{admissions.push(a);}});
+  expect(result.text).toBe('A clear explanation');expect(admissions.length).toBe(calls.length);expect(admissions.length).toBeGreaterThan(1);
+  expect(admissions.every(a=>a.maxTokens>=2000&&a.prompt==='source facts')).toBe(true);
+ });
+});

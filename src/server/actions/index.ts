@@ -4,7 +4,9 @@ import { actions as onboarding } from './onboarding';
 import { actions as calendar } from './calendar';
 import { actions as article } from './article';
 import { actions as publishing } from './publishing';
+import { actions as youtubeDefaults } from './youtubeDefaults';
 import { actions as social } from './social';
+import { actions as socialMedia } from './socialMedia';
 import { actions as socialPublish } from './socialPublish';
 import { actions as brief } from './brief';
 import { actions as performance } from './performance';
@@ -17,4 +19,4 @@ import { actions as presence } from './presence';
 import { actions as firstRun } from './firstRun';
 import { actions as activity } from './activity';
 
-export const ACTIONS: ActionMap = { ...core, ...profile, ...onboarding, ...calendar, ...article, ...publishing, ...social, ...socialPublish, ...brief, ...performance, ...visibility, ...backlinks, ...team, ...settings, ...presence, ...firstRun, ...activity };
+export const ACTIONS: ActionMap = { ...core, ...profile, ...onboarding, ...calendar, ...article, ...publishing, ...social, ...youtubeDefaults, ...socialMedia, ...socialPublish, ...brief, ...performance, ...visibility, ...backlinks, ...team, ...settings, ...presence, ...firstRun, ...activity };

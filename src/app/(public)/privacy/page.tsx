@@ -25,6 +25,7 @@ export default function PrivacyPage() {
 
     <h2>How we use it</h2>
     <p>We use your information to provide and secure Radar, administer accounts and subscriptions, process payments, prevent abuse, respond to support requests, and meet legal obligations. Radar&rsquo;s features include analyzing your site, planning and drafting content, publishing to your connected blog and social accounts, preparing social posts, finding relevant online conversations, reporting search performance and AI-assistant visibility, and sending service emails such as team invitations. We do not sell your data or use it for advertising.</p>
+    <p>If you choose explainer media generation, Radar sends the relevant source content and your notes to the configured AI providers to plan and check the explanation, and sends the finished script to ElevenLabs to generate narration. Source notes, scripts and timing records are available to authorized members of that business. Publishable audio, video and slides are hosted in file storage so you can preview them and the social platforms can retrieve them when you post. Avoid putting confidential information into content you intend to publish. Generating media does not itself publish it or turn on Autopilot.</p>
 
     <h2>Google user data</h2>
     <p>Radar requests the <code>openid</code>, <code>email</code> and <code>profile</code> scopes to sign you in, and the read-only <code>webmasters.readonly</code> scope to show your Search Console performance and suggest content. Radar cannot change anything in your Search Console account.</p>
@@ -41,6 +42,7 @@ export default function PrivacyPage() {
       <li>Stripe for payments, recurring billing, invoices, subscription management and fraud prevention. See <a href="https://stripe.com/privacy">Stripe&rsquo;s Privacy Policy</a>.</li>
       <li>Data providers (DataForSEO, YouTube Data API, Open PageRank, Reddit, X, Hacker News) to look up keyword data and public conversations. We send them search terms, not your personal information.</li>
       <li>The blog and social platforms you choose to connect, when you publish.</li>
+      <li>ElevenLabs, when you request narrated explainer media, receives the script and voice settings needed to produce the audio. Its processing is subject to its API terms and service settings.</li>
     </ul>
 
     <h2>Security and retention</h2>

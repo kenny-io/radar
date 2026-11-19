@@ -11,6 +11,9 @@ import { createPack, getPack } from './generate';
 import { dailyContext } from './proactive';
 import { autoSchedule } from './publish/schedule';
 import { activityTier, cadenceDue, lastRuns } from '../../idle';
+import { enqueue } from '../../jobs/queue';
+import { mediaGenerationPending } from '@/lib/socialPublish';
+import { bizAccess } from '../../billing/access';
 
 class DailyDraftCancelled extends Error {}
 
@@ -64,17 +67,30 @@ export async function autoRun(bid: string, date?: string, autopilotActivationId?
   if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) return null;
   if (current.status !== 'active' || !settings.on || !settings.platforms.length || bizToday(current) !== day) return null;
   let packId: string;
-  try { packId = await createPack(bid, { platforms: settings.platforms, style: settings.style, auto: true, source: selection.source, idea: selection.idea }, undefined, { id, created: day, grounding: selection.grounding, context: selection.context, recent: selection.recent, beforeSave: async () => {
+  const media = await (await import('./media/config')).mediaEnabled(bid) ? settings.platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform)).map(platform => ({ platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const })) : [];
+  try { packId = await createPack(bid, { platforms: settings.platforms, style: settings.style, auto: true, source: selection.source, idea: selection.idea, ...(media.length ? { media } : {}) }, undefined, { id, created: day, grounding: selection.grounding, context: selection.context, recent: selection.recent, mediaOptions: { generateRecommended: true, autoActivationId: autopilotActivationId, autoDate: day }, beforeSave: async () => {
     const latest = await getBiz(bid); const latestSettings = autopilotActivationId ? effectiveSocial(socialAutoOf(latest)) : socialAutoOf(latest);
     if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) throw new DailyDraftCancelled();
     if (latest.status !== 'active' || !latestSettings.on || !latestSettings.platforms.length || bizToday(latest) !== day || (latestSettings.freq === 'custom' && !latestSettings.days.includes(dayName(day)))) throw new DailyDraftCancelled();
   } }); } catch (e) { if (e instanceof DailyDraftCancelled) return null; throw e; }
   // Only an already-explicit opt-in can schedule generated posts. The default never creates publication rows.
-  if (!autopilotActivationId && settings.post === 'schedule') {
+  if (!media.length && !autopilotActivationId && settings.post === 'schedule') {
     try { await autoSchedule(bid, packId); } catch (e: any) {
       await reportFailure(e, { source: 'social', operation: 'social.autoSchedule', businessId: bid, ref: packId, degraded: true });
       console.error('[social] auto schedule failed', e?.message || e);
     }
   }
   return packId;
+}
+
+/** A durable media completion resumes only the same still-authorized daily program. Never schedules a manual pack. */
+export async function mediaReady(bid: string, packId: string, options: { autoActivationId?: string; generateRecommended?: boolean; autoDate?: string }) {
+  if (!options.generateRecommended) return;
+  const b = await getBiz(bid); const a = options.autoActivationId ? effectiveSocial(socialAutoOf(b)) : socialAutoOf(b);
+  const pack = await getPack(bid, packId);
+  if (b.status !== 'active' || !pack?.auto || !a.on || !options.autoDate || options.autoDate !== bizToday(b) || packId !== dailyPackId(bid, options.autoDate) || (a.freq === 'custom' && !a.days.includes(dayName(options.autoDate))) || Object.values(pack.posts).some(post => post && mediaGenerationPending(post)) || !(await bizAccess(b))) return;
+  if (options.autoActivationId) {
+    if (!(await canRun(bid, options.autoActivationId))) return;
+    await enqueue('autopilot.run', { activationId: options.autoActivationId }, { businessId: bid, singletonKey: `autopilot.run:${bid}`, maxAttempts: 3 });
+  } else if (!autopilotOf(b).enabled && a.post === 'schedule') await autoSchedule(bid, packId, { onlyMissing: true, platforms: a.platforms });
 }

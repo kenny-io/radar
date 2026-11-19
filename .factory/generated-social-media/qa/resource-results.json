@@ -1,0 +1,30 @@
+{
+  "at": "2026-11-19T01:27:37.648Z",
+  "results": [
+    {
+      "name": "M8 global render advisory lock refuses concurrent renderer without spawning",
+      "pass": true,
+      "detail": {
+        "busyRefused": true
+      }
+    },
+    {
+      "name": "M8 real renderer cancellation terminates child group and removes temp directory/lock",
+      "pass": true,
+      "detail": {
+        "cancelled": true,
+        "elapsedMs": 436,
+        "noTemporaryLeak": true
+      }
+    },
+    {
+      "name": "M8 dedicated advisory connection loss aborts actual child and releases lock",
+      "pass": true,
+      "detail": {
+        "ownLockConnectionTerminated": true,
+        "childAborted": true,
+        "noLockOrTempLeak": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '.factory/generated-social-media/qa/actual-cached-brian.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf62.12.100
+  Duration: 00:00:30.34, start: 0.000000, bitrate: 538 kb/s
+  Stream #0:0[0x1](und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(progressive), 1080x1920, 402 kb/s, 24 fps, 24 tbr, 12288 tbn (default)
+    Metadata:
+      handler_name    : VideoHandler
+      encoder         : Lavc62.28.100 libx264
+  Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, mono, fltp, 129 kb/s (default)
+    Metadata:
+      handler_name    : SoundHandler
+[Parsed_volumedetect_0 @ 0x9f1018600] n_samples: 0
+Stream mapping:
+  Stream #0:1 -> #0:0 (aac (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'pipe:':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf62.12.100
+  Stream #0:0(und): Audio: pcm_s16le, 48000 Hz, mono, s16, 768 kb/s (default)
+    Metadata:
+      encoder         : Lavc62.28.100 pcm_s16le
+      handler_name    : SoundHandler
+[Parsed_volumedetect_0 @ 0x9f1018a80] n_samples: 1454080
+[Parsed_volumedetect_0 @ 0x9f1018a80] mean_volume: -17.4 dB
+[Parsed_volumedetect_0 @ 0x9f1018a80] max_volume: -1.3 dB
+[Parsed_volumedetect_0 @ 0x9f1018a80] histogram_1db: 274
+[Parsed_volumedetect_0 @ 0x9f1018a80] histogram_2db: 814
+[Parsed_volumedetect_0 @ 0x9f1018a80] histogram_3db: 1773
+[out#0/null @ 0x9f1018300] video:0KiB audio:2840KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+size=N/A time=00:00:30.35 bitrate=N/A speed=1.34e+03x elapsed=0:00:00.02

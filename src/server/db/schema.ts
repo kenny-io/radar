@@ -597,3 +597,18 @@ export const visibilityPreferences = pgTable('visibility_preferences', {
   weeklyEmail: boolean('weekly_email').notNull().default(true),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Durable paid-request/checkpoint authority. Scripts/source notes stay authenticated in DB, never public storage. */
+export const socialMediaGenerations = pgTable('social_media_generations', {
+  id: id(), businessId: uuid('business_id').notNull().references(() => businesses.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(), cacheKey: text('cache_key').notNull(), sourceHash: text('source_hash').notNull(),
+  status: text('status').notNull(), stage: text('stage').notNull(), requestVersion: uuid('request_version').notNull(),
+  leaseToken: uuid('lease_token'), leaseUntil: timestamp('lease_until', { withTimezone: true }),
+  checkpoint: jsonb('checkpoint').notNull().default({}), consumers: jsonb('consumers').notNull().default([]),
+  errorCode: text('error_code'), reservedUsd: doublePrecision('reserved_usd').notNull().default(0),
+  actualUsd: doublePrecision('actual_usd'), chargedCharacters: integer('charged_characters'),
+  createdAt: created(), updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [uniqueIndex('social_media_cache_idx').on(t.businessId,t.kind,t.cacheKey),
+  index('social_media_lease_idx').on(t.status,t.leaseUntil), index('social_media_business_idx').on(t.businessId,t.updatedAt),
+  check('social_media_kind_check',sql`${t.kind} IN ('video','carousel','narration')`),
+  check('social_media_status_check',sql`${t.status} IN ('preparing','queued','narrating','rendering','ready','failed','needs_attention','cancelled')`)]);

@@ -7,7 +7,7 @@ import { IMG_SIZES } from '@/lib/constants';
 import { packPreflightInput, preflight } from '@/lib/socialPublish';
 import type { Platform, Profile } from '@/lib/types';
 
-const H = vi.hoisted(() => ({ rows: [] as any[], packs: [] as any[], stored: [] as { key: string; body: Buffer }[], reports: [] as any[], put: null as null | ((key: string) => void) }));
+const H = vi.hoisted(() => ({ rows: [] as any[], packs: [] as any[], stored: [] as { key: string; body: Buffer }[], reports: [] as any[], intents: [] as any[], put: null as null | ((key: string) => void) }));
 vi.mock('@/server/db', () => {
   const tx = { insert: () => ({ values: (v: any) => ({ onConflictDoNothing: () => ({ returning: async () => { H.packs.push(v.data); return [{ id: v.id }]; } }) }) }) };
   return { db: { insert: () => ({ values: (row: any) => { H.rows.push(row); return Promise.resolve(); } }), transaction: async (fn: any) => fn(tx) }, schema: { aiCalls: {}, socialPacks: { id: 'id', businessId: 'business_id' } } };
@@ -19,6 +19,7 @@ vi.mock('@/server/services/storage', () => ({ objectKey: (bid: string, kind: str
 vi.mock('@/server/services/lifecycle/engagement', () => ({ recordEngagement: async () => {}, resolveEngagement: async () => {} }));
 vi.mock('./source', () => ({ readArticle: async () => { throw new Error('unused'); }, readUrl: async () => { throw new Error('unused'); } }));
 vi.mock('./stubs', () => ({}));
+vi.mock('./media', () => ({ requestMediaIntent: async (...args: any[]) => { H.intents.push(args); } }));
 
 const PROFILE = { business: { name: 'Fieldnote', description: 'Documentation tools' }, brand: { voice: 'Clear', language: 'English (US)', primary: '#112233', secondary: '#445566' }, audience: { competitors: ['Docly'] } };
 const P = { ...PROFILE, domain: 'fieldnote.test' } as unknown as Profile;
@@ -60,7 +61,7 @@ const BLUE = [0, 0, 255, 255], RED = [255, 0, 0, 255];
 const lastPack = () => H.packs[H.packs.length - 1];
 
 beforeEach(() => {
-  H.rows.length = 0; H.packs.length = 0; H.stored.length = 0; H.reports.length = 0; H.put = null;
+  H.rows.length = 0; H.packs.length = 0; H.stored.length = 0; H.reports.length = 0; H.intents.length = 0; H.put = null;
   vi.spyOn(Math, 'random').mockReturnValue(0.5); // seed0 = 25, so the posts' seeds are 175, 176, 177
   vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -120,6 +121,24 @@ describe('a new pack whose style goes to the image model', () => {
     expect(preflight('tiktok', packPreflightInput(posts.tiktok, 'tiktok')).map(x => x.code)).toContain('publish_options');
     expect(preflight('youtube', packPreflightInput(posts.youtube, 'youtube')).map(x => x.code)).toContain('media_required');
     expect(H.rows).toHaveLength(1); expect(H.reports).toEqual([]);
+  });
+  it('skips paid still generation for selected explainer targets and persists their preparation intent', async () => {
+    const { gen } = await boot(); mockFetch(answers);
+    await gen.createPack('biz-1', { ...input(['instagram', 'tiktok', 'youtube']), media: [
+      { platform: 'instagram', format: 'recommended' }, { platform: 'tiktok', format: 'video' }, { platform: 'youtube', format: 'video' },
+    ] });
+    expect(generations()).toHaveLength(0); expect(H.stored).toHaveLength(0);
+    expect(Object.values(lastPack().posts).every((p: any) => !p.imageUrl)).toBe(true);
+    expect(H.intents).toHaveLength(1);
+    expect(H.intents[0].slice(1, 4)).toEqual(['biz-1', lastPack().id, [
+      { platform: 'instagram', format: 'recommended' }, { platform: 'tiktok', format: 'video' }, { platform: 'youtube', format: 'video' },
+    ]]);
+  });
+  it('renders only remaining single-image targets using their own crop geometry', async () => {
+    const { gen } = await boot(); mockFetch(answers);
+    await gen.createPack('biz-1', { ...input(['x', 'instagram']), media: [{ platform: 'instagram', format: 'carousel' }] });
+    expect(generations()).toHaveLength(1); expect(generations()[0].body.aspect_ratio).toBe('16:9');
+    expect(H.stored).toHaveLength(1); expect(lastPack().posts.x.imageUrl).toBeTruthy(); expect(lastPack().posts.instagram.imageUrl).toBeNull();
   });
   it('asks for 3:2 with Reddit in the pack and 16:9 without it', async () => {
     const { gen } = await boot(); mockFetch(answers);

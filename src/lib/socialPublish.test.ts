@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   acctLabel, atTz, briefAccount, liCommentary, normForMatch, xReplyIntentUrl, xReplyMode, publishCostUsd, expiresBefore, expiryNote, briefPreflightInput, briefPublish, briefSid, charCount, dayOptions, defaultSlot, dueAtIso, errCopy, failedLine,
-  isLocked, isPastSlot, localParts, mentions, moveCheck, packPanelState, packSid, parseSid, pickAccount, preflight, scheduleAllWhy, scheduledCount,
+  isLocked, isPastSlot, packPreflightInput, localParts, mentions, moveCheck, packPanelState, packSid, parseSid, pickAccount, preflight, scheduleAllWhy, scheduledCount,
   shortTime, showScheduleAll, socialItems, TIME_SLOTS, tzLabel, tzNote, xStatusId, zonedTimeToUtc, COPY, LOCK_MS, MAX_IMAGE_BYTES,
 } from './socialPublish';
-import type { BriefItem, Pub, SocialAccount, Workspace } from './types';
+import type { BriefItem, Pub, SocialAccount, SocialPost, Workspace } from './types';
 
 const X: SocialAccount = { id: 'a1', ch: 'x', name: 'Fieldnote', handle: '@fieldnoteapp' };
 const PROF: SocialAccount = { id: 'a2', ch: 'li_profile', name: 'Maya Chen' };
@@ -359,5 +359,28 @@ describe('Instagram, TikTok and YouTube publishing rules', () => {
     expect(preflight('instagram', { text: 'Caption', images: [{ type: 'image/png', bytes: 10 }] })[0].fix?.action).toBe('compress');
     expect(preflight('instagram', { text: 'Caption', images: [], video })).toEqual([]);
     expect(preflight('instagram', { text: 'Caption', images: [], video: { ...video, meta: { bytes: 10, type: 'video/webm' } } })[0].code).toBe('video_format');
+  });
+});
+
+
+describe('generated explainer publishing checks', () => {
+  const post = (): SocialPost => ({ text: 'A useful explanation', style: 'branded', seed: 1, imageUrl: null, v: 0, copiedAt: null });
+  it('checks every ordered carousel slide rather than a legacy thumbnail', () => {
+    const p = { ...post(), imageMeta: { bytes: 1, type: 'image/png' }, slides: [
+      { url: 'slide-a', alt: 'Input', meta: { bytes: 100, type: 'image/jpeg' } },
+      { url: 'slide-b', alt: 'Result', meta: { bytes: MAX_IMAGE_BYTES + 1, type: 'image/jpeg' } },
+    ] };
+    expect(packPreflightInput(p, 'instagram').images).toEqual(p.slides.map(s => s.meta));
+    expect(preflight('instagram', packPreflightInput(p, 'instagram'))).toEqual([expect.objectContaining({ code: 'image_too_big', msg: expect.stringContaining('Image 2') })]);
+  });
+  it.each(['preparing', 'queued', 'narrating', 'rendering'] as const)('blocks posting and schedule-all during %s while keeping the previous image', status => {
+    const p = { ...post(), imageUrl: 'old-image', imageMeta: { bytes: 1, type: 'image/jpeg' }, mediaGeneration: { id: 'g', requestId: 'r', format: 'video' as const, status, reason: '', overridden: false } };
+    expect(preflight('instagram', packPreflightInput(p, 'instagram'))).toEqual([expect.objectContaining({ code: 'images_pending' })]);
+    expect(scheduleAllWhy('instagram', p, [{ id: 'ig', ch: 'instagram', name: 'Account' }], T0)).toBe('Fix issues first');
+  });
+  it('requires actual generated media after a failed initial generation and permits the previous media after cancellation', () => {
+    const p = { ...post(), mediaGeneration: { id: 'g', requestId: 'r', format: 'video' as const, status: 'failed' as const, reason: '', overridden: false } };
+    expect(preflight('instagram', packPreflightInput(p, 'instagram'))).toEqual([expect.objectContaining({ code: 'media_required' })]);
+    expect(preflight('instagram', packPreflightInput({ ...p, imageUrl: 'old', imageMeta: { bytes: 1, type: 'image/jpeg' }, mediaGeneration: { ...p.mediaGeneration, status: 'cancelled' } }, 'instagram'))).toEqual([]);
   });
 });

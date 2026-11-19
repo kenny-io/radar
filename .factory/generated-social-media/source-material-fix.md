@@ -1,0 +1,9 @@
+# M2 — Empty material context regression
+
+Base11905d5ed9ae27297f7a89f6c2a33d51f508e241. Scoped engineer fix: planner.ts, new material.ts and sourceMaterial.test.ts only. No A7A/default/lock/options/renderer changes, commit/deploy, provider or paid generation calls.
+
+The old160-character check ran after profileContext headings and empty labels were appended, so an empty template plus `Hello` always passed. sourceFor now qualifies substantive source/saved references, explanation notes, selected business/audience facts and website body/description **before** decorating the prompt. Identity URLs/names, titles, empty field scaffolding/placeholders, duplicate copied topic text and recognized presentation-only directions do not inflate the evidence check. Brand voice/language and pack.voice are not factual input candidates.
+
+The minimum gate uses24letter/number characters and4content units (CJK-aware), preserving concise useful facts rather than requiring padded prose. It is not a truth/mechanism classifier: the existing accuracy/source and plain-language reviewers are unchanged. A missing-material failure uses the existing actionable media_needs_source state before a plan or narration exists.
+
+Verification: Node22.18.0, synthetic local-only DB radar_media_backend_final.17/17 tests passed:7new material/source regressions plus10existing realDB pipeline cases. New cases cover the exact empty-template/Hello failure with long voice/language directions and no narration/plan, valid short-topic business context, actual website body versus URL/title-only metadata, explanation notes versus presentation-only notes, repeated labels/placeholders and CJK prose. Full typecheck and diff check passed. Logs /tmp/radar-media-source-material-final-tests.log and /tmp/radar-media-source-material-final-typecheck.log. Three-file fingerprint /tmp/radar-source-material-fingerprint.json. QA owns independent repro rerun; no release-ready claim.
