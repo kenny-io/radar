@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-19T02:17:05.163Z",
+  "head": "04270aba81ad8dd9bc6ebf7e98dc364762efcace",
+  "workspace": "/Users/ekene/.codex/worktrees/radar-generated-media/radar-push",
+  "runtimeSha256": "d15883f870cb151f1b69d3370f207969d7096e6169dfe83490e1173b16bbdacb",
+  "patchSha256": "933b32f61db7212abc29bd9d11fca9348fb1f3224bd500750d4eff3dbc8a18ef",
+  "runtimePaths": [
+    "src/features/social/ExplainerMedia.tsx",
+    "src/server/services/social/media/planner.ts"
+  ],
+  "files": {
+    "src/features/social/ExplainerMedia.tsx": "f33b33d6e6e3a1f643d4286326ef9d7d970e6d08c7ec3a3caf8e4a5515edb2e6",
+    "src/server/services/social/media/planner.ts": "5f3f7eed90b4543d4cad7981275d6501822401fc8861a39e88b8273c93213070",
+    "src/server/services/social/media/planner.repair.test.ts": "df28361ea3d68e407d1bcd8f571516ad2f2ddfb84543ee115650083396e1f589"
+  },
+  "snapshot": "/tmp/radar-review-repair-qa-fbi9887i",
+  "uiSnapshotMatches": true,
+  "plannerSnapshotMatches": true
+}

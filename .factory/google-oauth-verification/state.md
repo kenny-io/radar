@@ -1,3 +1,7 @@
+# Current verification status
+
+PR65 lifecycle is deployed and independently verified (historical record below). PR66 generation is deployed to the owner cohort; actual production generation is still being validated and a bounded review-repair follow-up is in progress. Data Access now has the generated-first justification and no unrelated demo link. Google scope review remains unsubmitted and unapproved; actual Radar recording/upload required. See demo-plan.md and generated-draft-state.md.
+
 # Lifecycle delivery state
 
 - PM R0 requirements/architecture accepted. Branch kenny/youtube-lifecycle at main a8956315.
