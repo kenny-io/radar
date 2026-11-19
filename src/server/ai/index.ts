@@ -21,6 +21,8 @@ export type AiTask = 'writing' | 'research';
 export interface AiInput<T = any> {
   /** Short machine name of what this call is for, e.g. 'article.draft'. Used for logging and dev stubs. */
   purpose: string;
+  /** Optional paid-stage admission, awaited outside provider retry handling so refusal stops every route. */
+  beforeAttempt?: (attempt: { modelId: string; provider: string; maxTokens: number; prompt: string; system?: string }) => Promise<void>;
   system?: string;
   prompt: string;
   /** Zod schema → structured JSON output (validated). */
@@ -252,6 +254,7 @@ export async function run<T = any>(task: AiTask, input: AiInput<T>, opts: { busi
     for (let attempt = 0; attempt <= tries; attempt++) {
       // A breaker that opened during this route's own retries ends them when a direct route follows.
       if (viaOr && attempt > 0 && !force && !orUsable(orModel, directNext)) break;
+      await input.beforeAttempt?.({ modelId, provider: logProvider, maxTokens: call.maxTokens, prompt: call.prompt, system: call.system });
       const t0 = Date.now();
       input.onReset?.();
       const row = { businessId: opts.businessId, task: tiered.logTask, purpose: input.purpose, model: modelId, provider: logProvider };

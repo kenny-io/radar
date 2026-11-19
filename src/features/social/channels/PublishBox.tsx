@@ -69,14 +69,14 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
     setFixing(false);
   };
 
-  const secondary = <div className="row" style={{ gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}><Btn size="sm" kind="ghost" icon="copy" onClick={onCopy}>Copy text</Btn>{nImg > 0 && <Btn size="sm" kind="ghost" icon="download" onClick={onDownload}>{nImg > 1 ? `${nImg} images` : 'Image'}</Btn>}</div>;
+  const secondary = <div className="row" style={{ gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}><Btn size="sm" kind="ghost" icon="copy" onClick={onCopy}>Copy text</Btn>{(nImg > 0 || post.video) && <Btn size="sm" kind="ghost" icon="download" onClick={onDownload}>{post.video ? 'Video' : nImg > 1 ? `${nImg} slides` : 'Image'}</Btn>}</div>;
   const modals = canPost(k) && <>
     <ConnectSocial ch={conn} reconnect={re} open={!!conn} onClose={() => { setConn(null); setRe(null); }} onConnected={a => setChosen(a.id)} />
     <ScheduleModal open={sch} onClose={() => setSch(false)} title={`Schedule ${pl} post`} sub="You can drag it to another day on the calendar later." acct={cur} lockTime={!!cur?.expired && pub?.status === 'scheduled'}
       initial={pub && pub.status === 'scheduled' ? { date: pub.date, time: pub.time } : defaultSlot('pack', k, B.today)} onSave={schedule} />
     <Modal open={confirm} onClose={() => setConfirm(false)} width={440} label="Post now"><div className="col" style={{ padding: 30, gap: 16 }}>
       <h2 className="h2">{`Post to ${pl} now?`}</h2>
-      <p className="sub">{`It will be sent to ${pl} as `}<span style={{ color: 'var(--ink)' }}>{label}</span>{post.video ? ' with your attached video' : nImg > 0 ? ` with ${nImg} image${nImg > 1 ? 's' : ''}` : ''}.{k === 'youtube' ? ` Visibility: ${post.publishOptions?.privacy || 'not selected'}.` : k === 'tiktok' ? ' Your selected audience and disclosure settings apply.' : ''} You can delete it on {pl} afterwards.</p>
+      <p className="sub">{`It will be sent to ${pl} as `}<span style={{ color: 'var(--ink)' }}>{label}</span>{post.video ? ' with the video shown in your preview' : nImg > 0 ? ` with ${nImg} image${nImg > 1 ? 's' : ''}` : ''}.{k === 'youtube' ? ` Visibility: ${post.publishOptions?.privacy || 'not selected'}.` : k === 'tiktok' ? ' Your selected audience and disclosure settings apply.' : ''} You can delete it on {pl} afterwards.</p>
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 6 }}><Btn kind="ghost" onClick={() => setConfirm(false)}>Cancel</Btn><Btn kind="primary" onClick={doPost}><LogoLabel k={k}>Post now</LogoLabel></Btn></div>
     </div></Modal>
   </>;
@@ -85,7 +85,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
   const connectable = SOC_CH.filter(c => c.plat === k && avail.includes(c.k));
   if (state === 'copy_only' || (state === 'not_connected' && !connectable.length)) return <div className="col" style={{ gap: 10 }}>
     <Btn kind="primary" className="btn-block" icon="copy" onClick={onCopy}>Copy text</Btn>
-    {nImg > 0 && <Btn className="btn-block" icon="download" onClick={onDownload}>{nImg > 1 ? `Download ${nImg} images` : 'Download image'}</Btn>}
+    {(nImg > 0 || post.video) && <Btn className="btn-block" icon="download" onClick={onDownload}>{post.video ? 'Download video' : nImg > 1 ? `Download ${nImg} slides` : 'Download image'}</Btn>}
     <span className="xs sub" style={{ textAlign: 'center' }}>{canPost(k) ? 'Copying or downloading doesn’t publish anything.' : `Radar can’t post to ${pl}. Copy it and post it yourself.`}</span>
   </div>;
   if (state === 'not_connected') return <div className="col" style={{ gap: 10 }}>

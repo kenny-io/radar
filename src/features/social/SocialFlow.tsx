@@ -1,6 +1,6 @@
 'use client';
 // Generate flow — port of SocialFlow + SuggestIdeas (prototype/radar-social.jsx). Generation is the `social.generate`
-// job (ref = client token); the "Writing your pack…" rows follow its progress { done }.
+// job (ref = client token); the "Creating your posts…" rows follow its progress { done }.
 import { PlatName, PlatLogo } from '@/components/brand';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
@@ -9,10 +9,10 @@ import { Visual } from '@/components/Visual';
 import { PLAT, STYLES, plat } from '@/lib/constants';
 import type { Platform, PackStyle } from '@/lib/types';
 
-const SF_STEPS: [string, string][] = [['source', 'Source'], ['platforms', 'Platforms'], ['style', 'Image style'], ['brand', 'Brand']];
+const SF_STEPS: [string, string][] = [['source', 'Source'], ['platforms', 'Platforms'], ['style', 'Media'], ['brand', 'Brand']];
 type Kind = 'idea' | 'url' | 'article' | 'suggest';
 export interface IdeaRow { t: string; metric: string; why: string; tie: string | null; page: string | null; q: string }
-interface St { step: string; kind: Kind; idea: string; url: string; article: string | null; platforms: Platform[]; style: PackStyle; custom: string; voice: string; picked?: string | null; pickedIdea?: IdeaRow | null }
+interface St { step: string; kind: Kind; idea: string; url: string; article: string | null; platforms: Platform[]; style: PackStyle; custom: string; voice: string; picked?: string | null; pickedIdea?: IdeaRow | null; mediaModes: Partial<Record<Platform, 'recommended' | 'video' | 'carousel'>> }
 const GENERIC = 'Radar couldn’t finish this. Try again.';
 const newToken = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
@@ -48,7 +48,7 @@ export function SuggestIdeas({ gsc, picked, onPick, onGenerate }: { gsc: boolean
 
 export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
   const app = useApp(); const B = app.B!; const { go, toast } = app;
-  const [st, setSt] = useState<St>({ step: 'source', kind: 'idea', idea: '', url: '', article: null, platforms: ['linkedin', 'x'], style: 'branded', custom: '', voice: '' });
+  const [st, setSt] = useState<St>({ step: 'source', kind: 'idea', idea: '', url: '', article: null, platforms: B.social.auto.platforms.length ? B.social.auto.platforms : ['linkedin', 'x'], style: B.social.auto.style || 'branded', custom: '', voice: '', mediaModes: {} });
   const [gen, setGen] = useState(-1); const [err, setErr] = useState('');
   const [job, setJob] = useState<{ id: string; token: string } | null>(null);
   const articleFromLink = typeof app.route.params?.article === 'string' ? app.route.params.article : null;
@@ -56,24 +56,29 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
     if (!open) return;
     const article = articleFromLink && B.calendar.entries.find(entry => entry.id === articleFromLink && entry.status !== 'proposed' && B.articles[entry.id]?.generated);
     setGen(-1); setJob(null);
-    setSt(state => ({ ...state, step: 'source', ...(article ? { kind: 'article' as const, article: article.id } : {}) }));
+    setSt(state => ({ ...state, step: 'source', platforms: B.social.auto.platforms.length ? B.social.auto.platforms : ['linkedin', 'x'], ...(article ? { kind: 'article' as const, article: article.id } : {}) }));
   }, [open, articleFromLink, B.id]);
   const set = (p: Partial<St>) => { setErr(''); setSt(s => ({ ...s, ...p })); };
+  const generatedPlatform = (k: Platform) => ['instagram', 'tiktok', 'youtube'].includes(k);
+  const availablePlatforms = PLAT.filter(p => !generatedPlatform(p.k) || B.social.mediaGeneration);
+  const hasSingleImages = st.platforms.some(k => !generatedPlatform(k));
   const arts = B.calendar.entries.filter(e => e.status !== 'proposed');
   const srcLabel = st.kind === 'suggest' ? st.picked || '' : st.kind === 'idea' ? st.idea.trim() : st.kind === 'url' ? st.url.trim() : (arts.find(a => a.id === st.article) || { title: '' }).title;
   const next = () => {
     const i = SF_STEPS.findIndex(s => s[0] === st.step);
     if (st.step === 'source') { if (st.kind === 'suggest' && !st.picked) return setErr('Pick an idea to continue.'); if (st.kind === 'idea' && st.idea.trim().length < 8) return setErr('Describe the idea in a few words.'); if (st.kind === 'url' && !/^https?:\/\/\S+\.\S+/.test(st.url.trim())) return setErr('Paste a full URL, starting with https://'); if (st.kind === 'article' && !st.article) return setErr('Choose an article.'); }
     if (st.step === 'platforms' && !st.platforms.length) return setErr('Pick at least one platform.');
-    if (st.step === 'style' && st.style === 'custom' && !st.custom.trim()) return setErr('Describe the look you want.');
+    if (st.step === 'style' && hasSingleImages && st.style === 'custom' && !st.custom.trim()) return setErr('Describe the look you want.');
     if (i < SF_STEPS.length - 1) set({ step: SF_STEPS[i + 1][0] }); else run();
   };
   const back = () => { const i = SF_STEPS.findIndex(s => s[0] === st.step); if (i > 0) set({ step: SF_STEPS[i - 1][0] }); };
+  const mediaChoices = st.platforms.filter((k): k is 'instagram' | 'tiktok' | 'youtube' => generatedPlatform(k)).map(platform => ({ platform, format: st.mediaModes[platform] || (platform === 'instagram' ? 'recommended' as const : 'video' as const) }));
   const run = async () => {
+    if (mediaChoices.length && !B.social.mediaGeneration) { setErr('Explainer generation is currently unavailable. Try again later.'); return; }
     const token = newToken(); setErr(''); setGen(0);
     const source = st.kind === 'article' ? { kind: st.kind, label: srcLabel, ref: st.article } : { kind: st.kind, label: srcLabel };
     try {
-      const r = await app.act<{ jobId: string }>('social.generate', { token, source, platforms: st.platforms, style: st.style, custom: st.style === 'custom' ? st.custom : '', voice: st.voice, idea: st.kind === 'suggest' ? st.pickedIdea || null : null }, { silent: true });
+      const r = await app.act<{ jobId: string }>('social.generate', { token, source, platforms: st.platforms, style: !hasSingleImages && st.style === 'custom' ? 'branded' : st.style, custom: hasSingleImages && st.style === 'custom' ? st.custom : '', voice: st.voice, idea: st.kind === 'suggest' ? st.pickedIdea || null : null, media: mediaChoices }, { silent: true });
       setJob({ id: r.jobId, token });
     } catch (e: any) { setGen(-1); setErr(e?.message || GENERIC); }
   };
@@ -104,7 +109,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
       const packId = cur.result && cur.result.packId;
       if (!packId) return; // wait for the polled result
       finished.current = job.id; setGen(st.platforms.length);
-      (async () => { await app.refresh(); setJob(null); onClose(); go('social', { pack: packId }); toast('Pack saved to your library', { tone: 'ok' }); })();
+      (async () => { await app.refresh(); setJob(null); onClose(); go('social', { pack: packId }); toast(mediaChoices.length ? 'Your posts and media are being prepared.' : 'Pack saved to your library', { tone: 'ok' }); })();
     }
   }, [cur, job]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -115,7 +120,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
       <nav className="row hide-sm" style={{ gap: 18 }}>{SF_STEPS.map(([k, l], i) => <span key={k} className="row small" style={{ gap: 6, color: i === idx ? 'var(--ink)' : i < idx ? 'var(--ink2)' : 'var(--faint)', fontWeight: i === idx ? 500 : 400 }}>{i < idx ? <Icon n="check" s={13} w={2} /> : <i className="dot" style={{ background: i === idx ? 'var(--signal)' : 'var(--line)' }} />}{l}</span>)}</nav>
       {gen < 0 && <Btn kind="ghost" icon="x" onClick={onClose} aria-label="Close" style={{ marginLeft: 8 }} />}</div>
     <div key={st.step + (gen >= 0)} className="grow col enter" style={{ padding: '30px clamp(20px,4vw,40px)', gap: 22 }}>
-      {gen >= 0 ? <div className="col" style={{ gap: 4, maxWidth: 520 }}><h2 className="h1" style={{ fontSize: 24, marginBottom: 16 }}>Writing your pack…</h2>{st.platforms.map((k, i) => <div key={k} className="row" style={{ height: 46, borderTop: i ? '1px solid var(--line2)' : 0, opacity: i > gen ? .4 : 1 }}><span style={{ width: 20 }}>{i < gen ? <Icon n="check" s={15} w={2} style={{ color: 'var(--ok)' }} /> : i === gen ? <span className="spin" style={{ color: 'var(--signal)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span><span className="grow"><PlatName k={k} l={plat(k).l} /></span>{i < gen && <span className="small sub">Copy + visual</span>}</div>)}</div>
+      {gen >= 0 ? <div className="col" style={{ gap: 4, maxWidth: 520 }}><h2 className="h1" style={{ fontSize: 24, marginBottom: 16 }}>Creating your posts…</h2>{st.platforms.map((k, i) => <div key={k} className="row" style={{ height: 46, borderTop: i ? '1px solid var(--line2)' : 0, opacity: i > gen ? .4 : 1 }}><span style={{ width: 20 }}>{i < gen ? <Icon n="check" s={15} w={2} style={{ color: 'var(--ok)' }} /> : i === gen ? <span className="spin" style={{ color: 'var(--signal)' }} /> : <i className="dot" style={{ background: 'var(--line)' }} />}</span><span className="grow"><PlatName k={k} l={plat(k).l} /></span>{i < gen && <span className="small sub">{mediaChoices.some(c => c.platform === k) ? 'Copy ready · media next' : 'Copy + visual'}</span>}</div>)}</div>
         : st.step === 'source' ? <>
           <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>What should the posts be about?</h2></div>
           <Seg wrap value={st.kind} onChange={k => set({ kind: k })} options={[{ v: 'idea' as Kind, l: 'An idea' }, { v: 'url' as Kind, l: 'Article URL' }, { v: 'article' as Kind, l: 'Radar article' }, { v: 'suggest' as Kind, l: 'Suggest ideas' }]} />
@@ -127,16 +132,25 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
             : <p className="sub small">No approved Radar articles yet. <a href="#" onClick={e => { e.preventDefault(); onClose(); go('calendar'); }}>Open the calendar</a> or use an idea instead.</p>)}
         </>
           : st.step === 'platforms' ? <>
-            <div className="row"><h2 className="h1 grow" style={{ fontSize: 24 }}>Where will you post?</h2><Btn kind="link" className="small" onClick={() => set({ platforms: st.platforms.length === PLAT.length ? [] : PLAT.map(p => p.k) })}>{st.platforms.length === PLAT.length ? 'Clear' : 'Select all'}</Btn></div>
-            <div className="grid-2" style={{ gap: 12 }}>{PLAT.map(p => { const on = st.platforms.includes(p.k); return <button key={p.k} aria-pressed={on} onClick={() => set({ platforms: on ? st.platforms.filter(x => x !== p.k) : [...st.platforms, p.k] })} className="row" style={{ padding: '16px 18px', borderRadius: 14, border: '1px solid ' + (on ? 'var(--ink)' : 'var(--line)'), background: 'var(--surface)', boxShadow: on ? 'inset 0 0 0 1px var(--ink)' : 'none', textAlign: 'left', cursor: 'pointer', transition: 'all .2s', gap: 14 }}>
-              <PlatLogo k={p.k} s={28} /><span className="col grow"><span style={{ fontWeight: 500 }}>{p.l}</span><span className="small sub">{p.d}</span></span><span style={{ width: 22, height: 22, borderRadius: 99, border: on ? 0 : '1.5px solid var(--line)', background: on ? 'var(--ink)' : 'transparent', color: 'var(--on-ink)', display: 'grid', placeItems: 'center' }}>{on && <Icon n="check" s={13} w={2.4} />}</span></button>; })}</div>
+            <div className="row"><h2 className="h1 grow" style={{ fontSize: 24 }}>Where will you post?</h2><Btn kind="link" className="small" onClick={() => set({ platforms: st.platforms.length === availablePlatforms.length ? [] : availablePlatforms.map(p => p.k) })}>{st.platforms.length === availablePlatforms.length ? 'Clear' : 'Select all'}</Btn></div>
+            <div className="grid-2" style={{ gap: 12 }}>{PLAT.map(p => { const on = st.platforms.includes(p.k); return <button key={p.k} aria-pressed={on} disabled={generatedPlatform(p.k) && !B.social.mediaGeneration} onClick={() => set({ platforms: on ? st.platforms.filter(x => x !== p.k) : [...st.platforms, p.k] })} className="row" style={{ padding: '16px 18px', borderRadius: 14, border: '1px solid ' + (on ? 'var(--ink)' : 'var(--line)'), background: 'var(--surface)', boxShadow: on ? 'inset 0 0 0 1px var(--ink)' : 'none', textAlign: 'left', cursor: 'pointer', transition: 'all .2s', gap: 14 }}>
+              <PlatLogo k={p.k} s={28} /><span className="col grow"><span style={{ fontWeight: 500 }}>{p.l}</span><span className="small sub">{generatedPlatform(p.k) && !B.social.mediaGeneration ? 'Generation is currently unavailable' : p.d}</span></span><span style={{ width: 22, height: 22, borderRadius: 99, border: on ? 0 : '1.5px solid var(--line)', background: on ? 'var(--ink)' : 'transparent', color: 'var(--on-ink)', display: 'grid', placeItems: 'center' }}>{on && <Icon n="check" s={13} w={2.4} />}</span></button>; })}</div>
           </>
             : st.step === 'style' ? <>
-              <h2 className="h1" style={{ fontSize: 24 }}>Choose an image style</h2>
+              <h2 className="h1" style={{ fontSize: 24 }}>Choose your media</h2>
+              {B.social.mediaGeneration && st.platforms.filter(k => ['instagram', 'tiktok', 'youtube'].includes(k)).map(k => <Field key={k} label={plat(k).l + ' format'}><select className="input" aria-label={plat(k).l + ' media format'} value={st.mediaModes[k] || (k === 'instagram' ? 'recommended' : 'video')} onChange={e => set({ mediaModes: { ...st.mediaModes, [k]: e.target.value as St['mediaModes'][Platform] } })}>
+                {k === 'instagram' && <option value="recommended">Let Radar recommend video or explanatory slides</option>}
+                <option value="video">Narrated explainer video · Brian</option>
+                {k === 'instagram' && <option value="carousel">Explanatory slides</option>}
+              </select></Field>)}
+              {!!mediaChoices.length && <p className="small sub">Radar uses your source, Business Profile and marketing context to create the complete video or explanatory slides. Instagram’s recommended format is chosen from the topic. Videos use Brian and timed captions, usually 1–3 minutes.</p>}
+              {hasSingleImages && <>
+              <span className="small" style={{ fontWeight: 500 }}>Image style for single-image posts</span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 14 }}>{STYLES.map(s => { const on = st.style === s.k; return <button key={s.k} onClick={() => set({ style: s.k })} className="col" style={{ gap: 8, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
                 <span style={{ borderRadius: 14, boxShadow: on ? '0 0 0 2px var(--ink)' : '0 0 0 1px var(--line)', padding: 3, transition: 'box-shadow .2s' }}><Visual style={s.k} brand={brand} headline={previewHead} seed={3} name="" radius={10} ratio={1} /></span>
                 <span className="small" style={{ fontWeight: on ? 500 : 400, paddingLeft: 2 }}>{s.l}</span></button>; })}</div>
               {st.style === 'custom' && <textarea autoFocus className="input enter" rows={2} placeholder="e.g. Hand-drawn ink sketches on cream paper, lots of whitespace" value={st.custom} onChange={e => set({ custom: e.target.value })} />}
+              </>}
             </>
               : <>
                 <div className="col" style={{ gap: 6 }}><h2 className="h1" style={{ fontSize: 24 }}>Your brand, applied</h2><p className="sub">Inherited from your Business Profile. Change it there to update every future pack.</p></div>
@@ -147,6 +161,6 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
               </>}
       {err && <span className="small" style={{ color: 'var(--bad)' }}>{err}</span>}
     </div>
-    {gen < 0 && <div className="row" style={{ padding: '16px 28px', borderTop: '1px solid var(--line2)' }}>{idx > 0 && <Btn kind="ghost" icon="back" onClick={back}>Back</Btn>}<span className="grow" /><Btn kind="primary" iconR={st.step === 'brand' ? null : 'arrow'} onClick={next}>{st.step === 'brand' ? `Generate ${st.platforms.length} post${st.platforms.length > 1 ? 's' : ''}` : 'Continue'}</Btn></div>}
+    {gen < 0 && <div className="row" style={{ padding: '16px 28px', borderTop: '1px solid var(--line2)' }}>{idx > 0 && <Btn kind="ghost" icon="back" onClick={back}>Back</Btn>}<span className="grow" /><Btn kind="primary" iconR={st.step === 'brand' ? null : 'arrow'} onClick={next}>{st.step === 'brand' ? mediaChoices.length ? 'Generate posts and media' : `Generate ${st.platforms.length} post${st.platforms.length > 1 ? 's' : ''}` : 'Continue'}</Btn></div>}
   </div></Modal>;
 }

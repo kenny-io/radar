@@ -25,7 +25,7 @@ export interface AiCallRecord extends Usage {
 
 /** Provider credentials never reach a row, even when a provider echoes one back in an error body. */
 function redact(s: string): string {
-  for (const k of [env.openrouterKey, env.anthropicKey, env.openaiKey, env.xaiKey, env.perplexityKey, env.geminiKey]) if (k && k.length >= 6) s = s.split(k).join('[redacted]');
+  for (const k of [env.openrouterKey, env.anthropicKey, env.openaiKey, env.xaiKey, env.perplexityKey, env.geminiKey, env.elevenlabsKey]) if (k && k.length >= 6) s = s.split(k).join('[redacted]');
   return s;
 }
 

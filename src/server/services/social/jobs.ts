@@ -4,6 +4,7 @@ import { defineCron } from '../../jobs/cron';
 import { RadarError } from '../../errors';
 import { createPack, type PackInput } from './generate';
 import { autoRun, autoTick } from './auto';
+import { createHash } from 'node:crypto';
 
 /** social.generate (ref = client token) — progress { done }, result { packId }. */
 defineJob<PackInput>({
@@ -11,7 +12,8 @@ defineJob<PackInput>({
   run: async ctx => {
     await ctx.progress({ done: 0 });
     try {
-      const packId = await createPack(ctx.businessId!, ctx.payload, done => ctx.progress({ done }));
+      const id = ctx.payload.platforms.some(platform => ['instagram', 'tiktok', 'youtube'].includes(platform)) ? 'media-' + createHash('sha256').update(`${ctx.businessId}:${ctx.job.ref || ctx.job.id}`).digest('hex').slice(0, 32) : undefined;
+      const packId = await createPack(ctx.businessId!, ctx.payload, done => ctx.progress({ done }), id ? { id } : undefined);
       await ctx.touch();
       return { packId };
     } catch (e: any) {

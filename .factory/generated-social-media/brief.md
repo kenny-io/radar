@@ -1,0 +1,34 @@
+# Generated social explainers
+
+User-authorized delivery: implement, verify and ship production generation for YouTube, Instagram and TikTok. Extend Radar’s existing social pack, media storage and publisher; preserve account choices and publishing consent.
+
+## Latest user direction (supersedes optional-upload wording)
+
+Users are not supposed to upload videos to Radar. Radar generates their content from their business/social marketing context. YouTube and TikTok default to complete narrated-video generation; Instagram defaults to the contextual video/carousel recommendation. The ordinary Generate pack journey must end in usable generated media, rather than a caption/still requiring an uploaded file or an optional second workflow. Existing packs offer Generate/Regenerate as the primary media action. Remove Upload/Replace-video prompts and manual-file requirements from the regular product flow; preserve legacy stored attachments and the internal compatibility endpoint without advertising it as the journey. Generation failure offers a useful retry/source/config action, never an instruction to supply a video file. Existing publishing approval, master Autopilot state and per-post provider consent remain authoritative.
+
+The user additionally authorized a subsequent phase: five selectable video style presets, with the local drawing/narration style one of five. Finish and verify this phase first, then implement that choice. See .factory/video-style-presets/brief.md; do not delay the current delivery by mixing untested preset work into it.
+
+## Journey and experience
+
+From an existing business/topic or article social pack, Radar selects a useful visual format using the available source content, business context and target platform. YouTube and TikTok receive narrated explainer videos. Instagram receives either a video or explanatory carousel: temporal processes, transformations and demonstrations favor video; comparisons, checklists and referenceable independent steps favor slides. Show a short reason and allow a format override before generation. Reuse the existing PackView panels, controls, progress and toast conventions; settle exact states in architecture before implementation.
+
+Use the explicitly requested create-explainer-video skill at /Users/ekene/.agents/skills/create-explainer-video/SKILL.md. Default to Brian narration, plain language causal explanations, a consistent dark hand-drawn diagram style, progressive drawing, and captions aligned to actual narration. Length follows the topic, usually 1–3 minutes, constrained by platform limits. A video must contain meaningful explanatory visual changes, not just a caption over a static image. Slides must explain the content in an ordered sequence and remain readable on a phone.
+
+## Acceptance criteria
+
+- M1: The normal generated-first production workflow produces a playable, nonempty MP4 with audio for all three target platforms without a manual video upload, attaches it to the correct tenant/pack/platform and publishes through existing adapters. Preview and download work after refresh.
+- M2: Context selection chooses Instagram video or carousel, persists a useful reason, and supports explicit user override. Insufficient context returns a useful action rather than inventing facts.
+- M3: Instagram carousels contain multiple ordered, legible explanatory slides, preview all slides, and publish all selected slides through the real carousel endpoint; photo/video attachments cannot conflict.
+- M4: Script and storyboard describe inputs, actions and results using the supplied sources. Internal mechanism and plain-language review precedes narration. Retain source notes, final script, timing/captions and storyboard with the generated asset. Treat retrieved content as untrusted data.
+- M5: Brian continuous timestamped narration drives diagram/caption timing; cache unchanged successful narration and render outputs. No voice substitution, silent video fallback, or repeated paid retries on quota/access failures.
+- M6: Generation is durable and bounded, survives worker restart, isolates tenant artifacts, and does not duplicate paid generation on retries or concurrent clicks. Expose queued/running/completed/failed states and useful retry behavior. Preserve an already usable attachment if replacement fails.
+- M7: Use existing authenticated authorization, provider consent, media validation, scheduling, budget and publishing controls. Generation does not implicitly publish or enable Autopilot. Automation uses the same generation contract and existing user-authorized posting policy.
+- M8: Generated media meets actual adapter size/type/duration/aspect constraints; render verification includes audio presence, measured duration, dimensions, full decode and representative frame/caption readability. Bound CPU, memory, download size and render concurrency.
+- M9: Focused backend and independent browser QA cover format choice/override, video and carousel preview, persistence, cancellation/failure/retry, tenant boundaries, scheduling and existing upload/image flows. Test at least one real narration/render/storage path without public posting.
+- M10: Production runtime has the required rendering tools and securely stored narration configuration; verify web and worker deployment and a live generated pack. Document any external provider approval limits accurately.
+
+## Scope and dependencies
+
+Use existing design, AI context, job queue, storage and budgets where possible. No stock footage marketplace, avatar generator, music subscription or account privacy changes. Do not hard-code one topic or rely on a developer laptop for production renders. Keep urgent OAuth hotfix and Google retention changes isolated for independent shipment. Production tests use owner-controlled content, never public posting as an incidental test.
+
+Architecture must resolve format/planning contracts, rendering strategy, durable artifact state, reuse keys, platform variants, narration provider configuration and cost constraints before implementation.

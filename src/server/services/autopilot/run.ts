@@ -7,7 +7,7 @@ import { enqueue, type JobCtx } from '@/server/jobs/queue';
 import { getBiz, calendarSettingsOf, socialAutoOf } from '@/server/workspace';
 import { socialOn } from '@/server/flags';
 import { addDays, todayIn } from '@/lib/format';
-import { briefSid, canPost, packSid, zonedTimeToUtc } from '@/lib/socialPublish';
+import { briefSid, canPost, mediaGenerationPending, packSid, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { Article, BriefItem, Platform, SocialChannel } from '@/lib/types';
 import { textOf } from '@/features/brief/model';
 import { startDraft } from '../drafting/start';
@@ -143,13 +143,18 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       if (await dailyJob(bid, activationId, `autopilot-social:${bid}:${activationId}:${date}${retry}`, 'social.autoRun', { date, autopilotActivationId: activationId }, `social.auto:${bid}:${date}`, date)) summary.push('Daily social generation queued');
       return;
     }
-    let scheduled = 0;
+    let scheduled = 0; let mediaPending = false;
     for (const [platform, post] of Object.entries(pack.posts)) {
       if (!post || !auto.platforms.includes(platform as Platform) || manual(pack.id, platform, post) || !canPost(platform)) continue;
+      if (mediaGenerationPending(post)) { mediaPending = true; continue; }
+      if (post.mediaGeneration && ['failed', 'needs_attention'].includes(post.mediaGeneration.status)) {
+        issue(`pack:${pack.id}:${platform}`, `Your ${platform} explainer needs attention`, post.mediaGeneration.status === 'needs_attention' ? 'The narration request may have completed. Review it before requesting another recording.' : 'Radar could not finish the explainer. Your draft is saved; review the source details and retry in Radar.', packHref(pack.id, platform), post.text);
+        continue;
+      }
       if (await schedule(packSid(pack.id, platform), 'autopilot.scheduleSocial', pack.id, platform, `pack:${pack.id}:${platform}`, [`pack:${dailyPackId(bid, yesterday)}:${platform}`], `Your ${platform} post needs attention`, 'Connect or reconnect the account, or resolve the publishing check in Radar. Your draft is saved.', packHref(pack.id, platform), post.text) === 'scheduled') scheduled++;
     }
-    summary.push(scheduled ? `${scheduled} social ${scheduled === 1 ? 'post' : 'posts'} scheduled` : 'Daily social drafts ready');
-    packDone = true;
+    summary.push(mediaPending ? 'Social explainer media is being prepared' : scheduled ? `${scheduled} social ${scheduled === 1 ? 'post' : 'posts'} scheduled` : 'Daily social drafts ready');
+    packDone = !mediaPending;
   });
 
   await stage('Daily Brief', async () => {

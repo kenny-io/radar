@@ -12,6 +12,9 @@ export const env = {
   // Auth
   googleClientId: e.GOOGLE_CLIENT_ID || '',
   googleClientSecret: e.GOOGLE_CLIENT_SECRET || '',
+  // Narrated explainers: worker-only credential; never projected into client state.
+  elevenlabsKey: e.ELEVENLABS_API_KEY || '',
+  elevenlabsModel: e.ELEVENLABS_MODEL_ID || 'eleven_v4',
   // AI providers (Radar's own models)
   anthropicKey: e.ANTHROPIC_API_KEY || '',
   openaiKey: e.OPENAI_API_KEY || '',

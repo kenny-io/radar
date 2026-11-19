@@ -1,0 +1,7 @@
+# Video style presets — next authorized phase
+
+User explicitly requested five video-generation style presets. The existing local drawing-and-narration style is one of the five. Radar must generate content in the user’s selected style, rather than treating drawing as the universal style. User requested this work after the current generated-first publishing task is complete.
+
+Status: planned; no preset design or implementation has started. PM must deliver/verify current generated-social-media first, then architecture/experience design, bounded implementation and independent QA under the software-factory workflow. Do not create a separate chat without explicit request.
+
+Acceptance outline: S1 exactly five meaningful, visually distinct rendered presets including the local drawing/narration preset. S2 users can understand/preview and select a style in the normal generation flow. S3 chosen style persists with the appropriate business/social marketing defaults and applies to manual and authorized automatic generation. S4 script/visuals remain source-grounded, platform-appropriate and readable; style never bypasses video/carousel judgment, budgets, consent or source boundaries. S5 cache keys/artifacts reflect the selected preset so outputs from another style are not reused. S6 real representative outputs and independent UI/persistence/automation regression checks establish all five work. Settle the exact other four styles through a concrete design before implementation; routine decisions do not need another user questionnaire.

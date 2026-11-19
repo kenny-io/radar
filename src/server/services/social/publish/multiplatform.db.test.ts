@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.hoisted(() => { process.env.RADAR_DEV_STUBS = '1'; process.env.RADAR_SOCIAL_PUBLISHING = 'all'; process.env.STORAGE_DIR = `.data/test-multiplatform-uploads/${process.pid}-${Date.now()}`; });
 import fs from 'node:fs/promises';
+import { createCanvas } from '@napi-rs/canvas';
 import path from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import { db, schema as S } from '../../../db';
@@ -8,7 +9,7 @@ import { ACTIONS } from '../../../actions';
 import { requireRole } from '../../../access';
 import { getBiz, loadWorkspace, defaultProfile } from '../../../workspace';
 import { encrypt } from '../../../crypto';
-import { objectKey, putObject } from '../../storage';
+import { objectKey, putObject, readStored, storedKey } from '../../storage';
 import { getPack, updatePack } from '../generate';
 import { setAdapterForTests } from './accounts';
 import { stubAdapter, stubTokens } from './stubs';
@@ -74,6 +75,54 @@ describe.skipIf(!ON)('direct multiplatform publishing integration', () => {
     expect(ws.social.packs.find(p => p.id === PACK)!.posts.instagram!.pub?.status).toBe('posted');
     expect(JSON.stringify(ws.social.accounts)).not.toContain('access_token');
   });
+  it('sends every generated carousel slide in order through the actual Instagram adapter', async () => {
+    const bytes = createCanvas(108, 135).toBuffer('image/jpeg');
+    const slides = await Promise.all([1, 2, 3].map(async n => ({ url: await putObject(objectKey(bid, 'slide', 'jpg'), bytes, 'image/jpeg'), alt: `Step ${n}`, meta: { bytes: 1, type: 'image/png' } })));
+    await updatePack(bid, PACK, p => ({ ...p, posts: { ...p.posts, instagram: { ...p.posts.instagram!, imageUrl: 'unused-thumbnail', slides, generatedMedia: { id: 'render', format: 'carousel', sourceHash: 'source', aiGenerated: true } } } }));
+    const bodies: URLSearchParams[] = []; let child = 0;
+    vi.stubGlobal('fetch', vi.fn(async (_url: unknown, init: RequestInit = {}) => {
+      const body = new URLSearchParams(String(init.body || ''));
+      if (body.get('image_url')) { bodies.push(body); return Response.json({ id: String(100 + ++child) }); }
+      if (body.get('media_type') === 'CAROUSEL') { bodies.push(body); return Response.json({ id: '999' }); }
+      if (String(_url).includes('status_code')) return Response.json({ status_code: 'FINISHED' });
+      if (String(_url).endsWith('/media_publish')) return Response.json({ id: '777' });
+      return Response.json({ permalink: 'https://www.instagram.com/p/carousel/' });
+    }));
+    setAdapterForTests('instagram', instagramAdapter);
+    const r = await act('social.postNow', { sid: `s:${PACK}:instagram`, acctId: ids.instagram });
+    expect(r.pub.status).toBe('posted');
+    expect(bodies.slice(0, 3).map(body => body.get('image_url'))).toEqual(slides.map(slide => new URL(slide.url, env.appUrl).toString()));
+    expect(bodies.slice(0, 3).every(body => body.get('is_carousel_item') === 'true')).toBe(true);
+    expect(bodies[3].get('children')).toBe('101,102,103');
+    const post = (await getPack(bid, PACK))!.posts.instagram!;
+    expect(post.slides?.every(slide => slide.meta.type === 'image/jpeg' && slide.meta.bytes === bytes.length)).toBe(true);
+  });
+  it('blocks pending replacement before claim and retains a carousel when video upload is refused', async () => {
+    const bytes = createCanvas(108, 135).toBuffer('image/jpeg');
+    const url = await putObject(objectKey(bid, 'slide', 'jpg'), bytes, 'image/jpeg');
+    await updatePack(bid, PACK, p => ({ ...p, posts: { ...p.posts, instagram: { ...p.posts.instagram!, slides: [1, 2, 3].map(n => ({ url, meta: { bytes: bytes.length, type: 'image/jpeg' }, alt: `Step ${n}` })), mediaGeneration: { id: 'pending', requestId: 'request', format: 'video', status: 'rendering', reason: 'A process', overridden: false } } } }));
+    await expect(act('social.postNow', { sid: `s:${PACK}:instagram` })).rejects.toMatchObject({ code: 'media_pending' });
+    expect(await pub('instagram')).toBeUndefined();
+    await expect(attachVideo(await getBiz(bid), PACK, 'instagram', mp4())).rejects.toMatchObject({ code: 'media_pending' });
+    await expect(act('social.regenImage', { packId: PACK, platform: 'instagram', prompt: 'A replacement image' })).rejects.toMatchObject({ code: 'media_pending' });
+    expect((await getPack(bid, PACK))!.posts.instagram!.imagePrompt).toBeUndefined();
+    expect((await getPack(bid, PACK))!.posts.instagram!.slides).toHaveLength(3);
+    await updatePack(bid, PACK, p => ({ ...p, posts: { ...p.posts, instagram: { ...p.posts.instagram!, mediaGeneration: null } } }));
+    await attachVideo(await getBiz(bid), PACK, 'instagram', mp4());
+    expect((await getPack(bid, PACK))!.posts.instagram).toMatchObject({ slides: null, mediaRevision: 1, video: { meta: { type: 'video/mp4' } } });
+  });
+  it('rejects foreign, malformed and wrongly shaped carousel slides before any provider call', async () => {
+    const square = createCanvas(108, 135).toBuffer('image/jpeg'); const foreignUrl = await putObject(objectKey(foreign, 'slide', 'jpg'), square, 'image/jpeg');
+    const ownUrl = await putObject(objectKey(bid, 'slide', 'jpg'), square, 'image/jpeg');
+    const invalidUrl = await putObject(objectKey(bid, 'slide', 'jpg'), Buffer.from('not a JPEG'), 'image/jpeg');
+    const wide = createCanvas(250, 100).toBuffer('image/jpeg'); const wideUrl = await putObject(objectKey(bid, 'slide', 'jpg'), wide, 'image/jpeg');
+    const publish = vi.fn(async () => ({ remoteId: 'unexpected', url: '' })); setAdapterForTests('instagram', { ...stubAdapter('instagram'), publish });
+    for (const url of [foreignUrl, invalidUrl, wideUrl]) {
+      await updatePack(bid, PACK, p => ({ ...p, posts: { ...p.posts, instagram: { ...basePost(), slides: [ownUrl, url].map(url => ({ url, meta: { bytes: 1, type: 'image/jpeg' }, alt: 'Slide' })) } } }));
+      await expect(act('social.postNow', { sid: `s:${PACK}:instagram` })).rejects.toMatchObject({ code: 'media' });
+    }
+    expect(publish).not.toHaveBeenCalled();
+  });
   it('passes actual video bytes, parsed duration and explicit YouTube settings without generated AI preview metadata', async () => {
     await attachVideo(await getBiz(bid), PACK, 'youtube', mp4());
     await options('youtube', { title: 'My useful video', privacy: 'unlisted', madeForKids: false });
@@ -84,6 +133,40 @@ describe.skipIf(!ON)('direct multiplatform publishing integration', () => {
     expect(publish.mock.calls[0]).toMatchObject([{ ch: 'youtube' }, { images: [], video: { type: 'video/mp4', durationSec: 6 }, options: { privacy: 'unlisted', madeForKids: false }, aiMedia: false }]);
     expect((publish.mock.calls[0] as any)[1].video.bytes.equals(mp4())).toBe(true);
     expect((await loadTarget(bid, `s:${PACK}:youtube`))?.aiMedia).toBe(false);
+  });
+  it('attaches and publishes tenant-owned video through the configured R2 public URL, never accepting another tenant URL', async () => {
+    const sdk = await import('@aws-sdk/client-s3');
+    const previous = { s3Bucket: env.s3Bucket, s3PublicUrl: env.s3PublicUrl };
+    const base = 'https://pub-6570838483bc471db790d04d3dd0df51.r2.dev';
+    const objects = new Map<string, Buffer>();
+    const send = vi.spyOn(sdk.S3Client.prototype, 'send').mockImplementation((async (command: any) => {
+      if (!(command instanceof sdk.PutObjectCommand)) throw new Error('Unexpected object-store request');
+      expect(command.input.Bucket).toBe('video-qa'); expect(command.input.Key).toMatch(new RegExp('^' + bid + '/social-video/'));
+      const key = command.input.Key; const body = command.input.Body;
+      if (!key || !Buffer.isBuffer(body)) throw new Error('Unexpected object-store payload');
+      objects.set(key, body); return {};
+    }) as any);
+    const fetch = vi.fn(async (url: unknown) => {
+      expect(String(url).startsWith(base + '/' + bid + '/social-video/')).toBe(true);
+      const body = objects.get(String(url).slice(base.length + 1));
+      return body ? new Response(new Uint8Array(body), { headers: { 'content-type': 'video/mp4' } }) : new Response('', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetch);
+    try {
+      Object.assign(env, { s3Bucket: 'video-qa', s3PublicUrl: base + '/' });
+      const attached = await attachVideo(await getBiz(bid), PACK, 'youtube', mp4());
+      expect(attached.url.startsWith(base + '/' + bid + '/social-video/')).toBe(true);
+      expect(storedKey(bid, attached.url)).toMatch(new RegExp('^' + bid + '/social-video/'));
+      expect(storedKey(foreign, attached.url)).toBeNull(); expect(await readStored(foreign, attached.url)).toBeNull(); expect(fetch).not.toHaveBeenCalled();
+      await options('youtube', { title: 'R2 video', privacy: 'private', madeForKids: false });
+      const publish = vi.fn(async () => ({ remoteId: 'r2-video', url: 'https://www.youtube.com/watch?v=r2-video' }));
+      setAdapterForTests('youtube', { ...stubAdapter('youtube'), publish });
+      const result = await act('social.postNow', { sid: `s:${PACK}:youtube`, acctId: ids.youtube });
+      expect(result.pub.status).toBe('posted');
+      expect(publish.mock.calls[0]).toMatchObject([{ ch: 'youtube' }, { video: { url: attached.url, type: 'video/mp4', durationSec: 6 } }]);
+      expect((publish.mock.calls[0] as any)[1].video.bytes.equals(mp4())).toBe(true);
+      expect(send).toHaveBeenCalledTimes(1); expect(fetch).toHaveBeenCalled();
+    } finally { send.mockRestore(); Object.assign(env, previous); }
   });
   it('blocks missing YouTube media/options and missing TikTok approval before claiming a publication', async () => {
     await expect(act('social.postNow', { sid: `s:${PACK}:youtube` })).rejects.toMatchObject({ code: 'preflight' });

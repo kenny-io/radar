@@ -17,7 +17,7 @@ export const SOC_CH: ChannelDef[] = [
   { k: 'li_page', plat: 'linkedin', l: 'LinkedIn page', d: 'Post as a company page you manage.', provider: 'linkedin_page' },
   { k: 'instagram', plat: 'instagram', l: 'Instagram', d: 'Post images or reels to a professional account.', provider: 'instagram' },
   { k: 'tiktok', plat: 'tiktok', l: 'TikTok', d: 'Post photos or videos to your account.', provider: 'tiktok' },
-  { k: 'youtube', plat: 'youtube', l: 'YouTube', d: 'Upload videos to your channel.', provider: 'youtube' },
+  { k: 'youtube', plat: 'youtube', l: 'YouTube', d: 'Publish generated videos to your channel.', provider: 'youtube' },
 ];
 export const chOf = (k: SocialChannel): ChannelDef => SOC_CH.find(c => c.k === k)!;
 export const PLAT_L: Record<PostPlatform, string> = { x: 'X', linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
@@ -111,6 +111,7 @@ export interface PreflightInput {
   images: (MediaMeta | null | undefined)[];
   /** Daily Brief: images are still being made. */
   imagesPending?: boolean;
+  mediaPending?: boolean;
 }
 const n0 = (x: number) => x.toLocaleString('en-US');
 const mb = (b: number) => (b / (1024 * 1024)).toFixed(1);
@@ -130,10 +131,11 @@ export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
     if (len > max) out.push({ code: 'too_long', msg: `Shorten to ${n0(max)} characters to post on ${pl}. It’s ${n0(len)} now.` });
   }
   if (p.imagesPending) out.push({ code: 'images_pending', msg: 'Radar is still making the images.' });
-  if (k === 'youtube' && !p.video) out.push({ code: 'media_required', msg: 'Upload a video to post on YouTube.' });
-  if ((k === 'instagram' || k === 'tiktok') && !p.video && !p.images.length) out.push({ code: 'media_required', msg: `Add an image or video to post on ${pl}.` });
-  if (p.video && !VIDEO_TYPES.includes(p.video.meta.type)) out.push({ code: 'video_format', msg: 'Upload an MP4 or WebM video.' });
-  if (p.video && p.video.meta.bytes > MAX_VIDEO_BYTES) out.push({ code: 'video_too_big', msg: 'Upload a video smaller than 100 MB.' });
+  if (p.mediaPending) out.push({ code: 'images_pending', msg: 'Finish or cancel the explainer media generation before posting.' });
+  if (k === 'youtube' && !p.video) out.push({ code: 'media_required', msg: 'Generate the video before posting to YouTube.' });
+  if ((k === 'instagram' || k === 'tiktok') && !p.video && !p.images.length) out.push({ code: 'media_required', msg: k === 'tiktok' ? 'Generate the video before posting to TikTok.' : 'Generate a video or explanatory slides before posting to Instagram.' });
+  if (p.video && !VIDEO_TYPES.includes(p.video.meta.type)) out.push({ code: 'video_format', msg: 'Regenerate the video in a supported format.' });
+  if (p.video && p.video.meta.bytes > MAX_VIDEO_BYTES) out.push({ code: 'video_too_big', msg: 'Regenerate a shorter video to fit the 100 MB limit.' });
   if (p.video && k === 'instagram' && p.video.meta.type !== 'video/mp4') out.push({ code: 'video_format', msg: 'Instagram reels need an MP4 video.' });
   if (k === 'youtube') {
     if (!p.options?.title?.trim() || p.options.title.length > 100 || /[<>]/.test(p.options.title)) out.push({ code: 'publish_options', msg: 'Add a YouTube title of up to 100 characters, without angle brackets.' });
@@ -157,7 +159,11 @@ export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
 }
 
 /** What a pack post would upload: always its one visual (rendered on the server if `imageUrl` is missing). */
-export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions'>, k?: PostPlatform): PreflightInput => ({ text: p.text, images: p.video || k === 'youtube' ? [] : [p.imageMeta ?? null], video: p.video, options: p.publishOptions });
+export const mediaGenerationPending = (p: Pick<SocialPost, 'mediaGeneration'>) => !!p.mediaGeneration && ['preparing', 'queued', 'narrating', 'rendering'].includes(p.mediaGeneration.status);
+export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl'>, k?: PostPlatform): PreflightInput => ({
+  text: p.text, images: p.video || k === 'youtube' ? [] : p.slides?.length ? p.slides.map(s => s.meta) : p.mediaGeneration && !p.imageUrl ? [] : [p.imageMeta ?? null],
+  video: p.video, options: p.publishOptions, mediaPending: mediaGenerationPending(p),
+});
 /** What a Brief post would upload: its finished images (X takes the first 4, as the X preview shows). Replies have none. */
 export function briefPreflightInput(it: Pick<BriefItem, 'kind' | 'img'>, k: PostPlatform, text: string): PreflightInput {
   if (it.kind !== 'post' || !it.img) return { text, images: [] };
@@ -357,7 +363,7 @@ export type ScheduleAllWhy = 'Copy and paste' | 'Not connected' | 'Reconnect nee
 /** Shown in the pack header when two or more of the pack's platforms are postable. */
 export const showScheduleAll = (platforms: string[]) => platforms.filter(canPost).length >= 2;
 /** Why a row can't be scheduled (null = eligible). */
-export function scheduleAllWhy(k: string, post: Pick<SocialPost, 'pub' | 'text' | 'imageMeta'>, accts: SocialAccount[], nowMs: number): ScheduleAllWhy | null {
+export function scheduleAllWhy(k: string, post: Pick<SocialPost, 'pub' | 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl'>, accts: SocialAccount[], nowMs: number): ScheduleAllWhy | null {
   if (!canPost(k)) return 'Copy and paste';
   if (post.pub?.status === 'posted') return 'Already posted';
   if (isLocked(post.pub, nowMs)) return 'Sending soon';

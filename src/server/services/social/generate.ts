@@ -23,6 +23,7 @@ export interface IdeaContext { metric?: string; why?: string; tie?: string | nul
 export interface PackInput {
   source: { kind: SourceKind; label: string; ref?: string | null };
   platforms: Platform[]; style: PackStyle; custom?: string; voice?: string; auto?: boolean; idea?: IdeaContext | null;
+  media?: { platform: 'instagram' | 'tiktok' | 'youtube'; format: 'recommended' | 'video' | 'carousel' }[];
 }
 /** Stored with the pack (jsonb) so Regenerate stays grounded in the same source. */
 export interface PackExtra { headline: string; order: Platform[]; grounding: { brief: string; link: string | null; idea?: IdeaContext | null } }
@@ -43,7 +44,7 @@ export async function groundingFor(bid: string, src: PackInput['source'], idea?:
   return { headline: src.label, brief: `Idea from the user: ${src.label}`, link: null };
 }
 
-export interface PackOptions { id?: string; created?: string; grounding?: Grounding; context?: string; recent?: string; beforeSave?: () => Promise<void> }
+export interface PackOptions { id?: string; created?: string; grounding?: Grounding; context?: string; recent?: string; beforeSave?: () => Promise<void>; mediaOptions?: { autoActivationId?: string; generateRecommended?: boolean; generateAfterPrepare?: boolean; autoDate?: string } }
 
 const PostSchema = z.object({ text: z.string().min(1).max(6000) });
 
@@ -123,6 +124,10 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   const seed0 = Math.floor(Math.random() * 50);
   const posts: Partial<Record<Platform, SocialPost & { photo?: boolean }>> = {};
   const headline = input.source.kind === 'url' ? g.headline : input.source.label;
+  const mediaTargets = input.platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform));
+  const useGeneratedMedia = !!input.media?.length || (mediaTargets.length > 0 && await (await import('./media/config')).mediaEnabled(bid));
+  const media = useGeneratedMedia ? mediaTargets.map(platform => input.media?.find(choice => choice.platform === platform) || { platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const }) : [];
+  const stillPlatforms = input.platforms.filter(k => !media.some(choice => choice.platform === k));
   // A style that goes to the image model: one generation for the whole pack, made at the first platform's image step.
   const modelPack = sharedPackImage() && MODEL_STYLES.includes(renderStyle(style)) && imageModelConfigured();
   let shared: ImageSource | undefined;
@@ -130,9 +135,9 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   for (const k of input.platforms) {
     const text = await writePost(bid, p, k, { kind: input.source.kind, label: input.source.label, g, voice: input.voice, v: seed0 + i, context: options.context, recent: options.recent });
     const post: SocialPost & { photo?: boolean } = { text, style, seed: seed0 * 7 + i, imageUrl: null, copiedAt: null, v: 0 };
-    try {
+    if (!media.some(choice => choice.platform === k)) try {
       if (modelPack && shared === undefined) {
-        const a = packAspect(input.platforms), sizes = new Set(input.platforms.map(x => IMG_SIZES[x].join('x')));
+        const a = packAspect(stillPlatforms), sizes = new Set(stillPlatforms.map(x => IMG_SIZES[x].join('x')));
         shared = 'template'; // the model is asked once per pack: if it fails, every platform gets its template
         try { shared = { raw: await generatePhotoRaw({ bid, kind: 'social', style: renderStyle(style), brand: p.brand, headline, name: p.business.name, seed: seed0 * 7, prompt: postImagePrompt(post, headline, input.custom), w: 1200, h: Math.round(1200 / a), cropSafe: sizes.size > 1 }) }; }
         catch (e: any) { await reportFailure(e, { source: 'image', operation: 'image.generate', businessId: bid, degraded: true }); console.error('[social] pack image failed, using templates', e?.message); }
@@ -148,7 +153,7 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   const pack: StoredPack = {
     id, name: shortHead(input.source.kind === 'url' ? g.headline : input.source.label, input.source.kind === 'suggest' ? 120 : 64), source: { kind: input.source.kind, label: input.source.label, ref: input.source.ref ?? null },
     created: options.created || bizToday(b), style, custom: input.custom || '', voice: input.voice || '', auto: !!input.auto, posts, order: input.platforms,
-    headline, grounding: { brief: g.brief.slice(0, 2500), link: g.link, idea: input.idea || null },
+    headline, grounding: { brief: g.brief.slice(0, 12000), link: g.link, idea: input.idea || null },
   };
   await options.beforeSave?.();
   await db.transaction(async tx => {
@@ -156,6 +161,10 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
     if (!created) {
       if (!options.id || !(await getPack(bid, id))) throw new Error('Daily social pack conflict');
       return;
+    }
+    if (media.length) {
+      const { requestMediaIntent } = await import('./media');
+      await requestMediaIntent(tx, bid, id, media, { ...options.mediaOptions, generateAfterPrepare: true });
     }
     if (Object.keys(posts).length) await recordEngagement(tx, { businessId: bid, kind: 'social_publish', ref: id });
     if (input.source.kind === 'article' && input.source.ref) await resolveEngagement(tx, bid, 'article_social', input.source.ref);

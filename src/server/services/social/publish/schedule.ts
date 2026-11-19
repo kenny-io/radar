@@ -103,13 +103,15 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
 
 /** Automatic generation, "When a pack is ready → Schedule posts" (AC-16): the new pack's X and LinkedIn posts go out tomorrow at
  *  auto.time to the connected accounts. A platform with no live account or a preflight problem stays in the library. */
-export async function autoSchedule(bid: string, packId: string): Promise<number> {
+export async function autoSchedule(bid: string, packId: string, options: { onlyMissing?: boolean; platforms?: string[] } = {}): Promise<number> {
   const biz = await getBiz(bid);
   if (!(await socialOn(biz)) || socialAutoOf(biz).post !== 'schedule') return 0;
   const date = addDays(bizToday(biz), 1); const time = socialAutoOf(biz).time || '08:00'; let n = 0;
   for (const k of ['x', 'linkedin', 'instagram'] as PostPlatform[]) {
+    if (options.platforms && !options.platforms.includes(k)) continue;
     try {
       const r = await resolve(bid, packSid(packId, k));
+      if (options.onlyMissing && r.existing) continue;
       await scheduleChecks(biz, r, date, time, Date.now());
       const row = await writeScheduled(db, { biz, r, date, time, userId: null, auto: true });
       if (!row) continue;

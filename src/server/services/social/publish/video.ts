@@ -1,4 +1,4 @@
-import { COPY, MAX_VIDEO_BYTES, packSid } from '@/lib/socialPublish';
+import { COPY, MAX_VIDEO_BYTES, mediaGenerationPending, packSid } from '@/lib/socialPublish';
 import { RadarError, notFound } from '../../../errors';
 import type { BizRow } from '../../../workspace';
 import { bump } from '../../../workspace';
@@ -17,6 +17,7 @@ export async function assertVideoEditable(biz: Pick<BizRow, 'id' | 'ownerId'>, p
 export async function attachVideo(biz: BizRow, packId: string, platform: VideoPlatform, bytes: Buffer) {
   const pack = await getPack(biz.id, packId);
   if (!pack?.posts[platform]) throw notFound('Post');
+  if (mediaGenerationPending(pack.posts[platform]!)) throw new RadarError('Finish or cancel explainer generation before replacing the video.', 409, 'media_pending');
   await assertVideoEditable(biz, packId, platform);
   const meta = videoMeta(bytes);
   if (!meta) throw new RadarError(`Upload a valid MP4 or WebM video smaller than ${MAX_VIDEO_BYTES / 1024 / 1024} MB.`, 400, 'invalid_video');
@@ -26,8 +27,9 @@ export async function attachVideo(biz: BizRow, packId: string, platform: VideoPl
   await updatePack(biz.id, packId, async p => {
     await assertVideoEditable(biz, packId, platform);
     const post = p.posts[platform]; if (!post) throw notFound('Post');
+    if (mediaGenerationPending(post)) throw new RadarError('Finish or cancel explainer generation before replacing the video.', 409, 'media_pending');
     const publishOptions = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
-    return { ...p, posts: { ...p.posts, [platform]: { ...post, video, publishOptions } } };
+    return { ...p, posts: { ...p.posts, [platform]: { ...post, video, slides: null, mediaGeneration: null, mediaRecommendation: null, generatedMedia: undefined, mediaRevision: (post.mediaRevision || 0) + 1, publishOptions } } };
   });
   await bump(biz.id);
   return video;

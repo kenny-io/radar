@@ -106,8 +106,9 @@ describe.skipIf(!ON)('social channels (database)', () => {
     expect(ws.social.packs.find(p => p.id === PACK)!.posts.x!.pub).toBeNull();
   });
 
-  it('Viewers are refused every new action; Editors pass the role check', async () => {
-    for (const name of Object.keys(ACTIONS).filter(n => n.startsWith('social.') && !['social.copied', 'social.ideas', 'social.generate', 'social.text', 'social.regenText', 'social.regenImage', 'social.style', 'social.auto'].includes(n))) {
+  it('Viewers are refused every publishing write action; read-only notes remain available', async () => {
+    expect(ACTIONS['social.mediaNotes']).toMatchObject({ read: true, role: 'Viewer' });
+    for (const name of Object.keys(ACTIONS).filter(n => n.startsWith('social.') && !ACTIONS[n].read && !['social.copied', 'social.ideas', 'social.generate', 'social.text', 'social.regenText', 'social.regenImage', 'social.style', 'social.auto'].includes(n))) {
       expect(await refusal(act(name, {}, viewer)), name).toBe('You don’t have permission to do that.');
     }
   });

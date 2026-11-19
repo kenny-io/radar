@@ -1,0 +1,10 @@
+.git
+.factory
+.claude
+.next*
+.env*
+node_modules
+.data
+Users
+*.log
+*.tsbuildinfo

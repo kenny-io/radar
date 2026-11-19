@@ -8,10 +8,10 @@ import { AutoText, Btn, Field, LogoTile, PageHead, Tabs, copyText, downloadBlob,
 import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
 import { packKeys } from './PackThumb';
 import { PublishBox } from './channels/PublishBox';
-import { VideoAttachment } from './channels/VideoAttachment';
+import { CarouselPreview, ExplainerMedia } from './ExplainerMedia';
 import { ScheduleAll } from './channels/ScheduleAll';
 import { useNowMs } from './channels/useSocial';
-import { charCount, isLocked } from '@/lib/socialPublish';
+import { charCount, isLocked, mediaGenerationPending } from '@/lib/socialPublish';
 import { IMG_SIZES, STYLES, plat } from '@/lib/constants';
 import { ago, fmtD } from '@/lib/format';
 import type { Platform, SocialPack, SocialPost, Workspace } from '@/lib/types';
@@ -22,7 +22,6 @@ export function PackView({ pack }: { pack: SocialPack }) {
   const rp = pubOn ? (app.route.params?.plat as Platform | undefined) : undefined;
   const keys = packKeys(pack); const [cur, setCur] = useState<Platform>(rp && keys.includes(rp) ? rp : keys[0]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
-  const [mediaBusy, setMediaBusy] = useState(false);
   const [directions, setDirections] = useState<Partial<Record<Platform, string>>>({});
   const [imageErrors, setImageErrors] = useState<Partial<Record<Platform, string>>>({});
   useEffect(() => { setDirections({}); setImageErrors({}); }, [pack.id]);
@@ -42,7 +41,16 @@ export function PackView({ pack }: { pack: SocialPack }) {
     setBusy(b => ({ ...b, [what]: false }));
   };
   const fname = (k: string) => `${pack.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}-${k}`;
-  const dlOne = async (k: Platform) => { const q = pack.posts[k]!; const [w, h] = IMG_SIZES[k]; const blob = await visualBlob(q.imageUrl, { style: q.style === 'custom' ? 'illustration' : q.style, brand, headline, seed: q.seed, name: B.profile.business.name }, w, h, app.bid); if (blob) downloadBlob(blob, fname(k) + '.png'); else toast(DL_ERROR, { tone: 'bad' }); return !!blob; };
+  const dlOne = async (k: Platform) => {
+    const q = pack.posts[k]!;
+    if (q.video || q.slides?.length) {
+      const files = q.video ? [{ url: q.video.url, name: fname(k) + (q.video.meta.type === 'video/webm' ? '.webm' : '.mp4') }] : q.slides!.map((slide, i) => ({ url: slide.url, name: fname(k) + `-slide-${String(i + 1).padStart(2, '0')}.jpg` }));
+      try { for (const file of files) { const r = await fetch(`/api/b/${app.bid}/media?url=${encodeURIComponent(file.url)}`, { credentials: 'same-origin' }); if (!r.ok) throw new Error(); downloadBlob(await r.blob(), file.name); if (files.length > 1) await sleep(150); } return true; }
+      catch { toast('Radar couldn’t download the media. Try again.', { tone: 'bad' }); return false; }
+    }
+    if (q.mediaGeneration && !q.imageUrl) { toast('Generate the explainer before downloading it.'); return false; }
+    const [w, h] = IMG_SIZES[k]; const blob = await visualBlob(q.imageUrl, { style: q.style === 'custom' ? 'illustration' : q.style, brand, headline, seed: q.seed, name: B.profile.business.name }, w, h, app.bid); if (blob) downloadBlob(blob, fname(k) + '.png'); else toast(DL_ERROR, { tone: 'bad' }); return !!blob;
+  };
   const dlAll = async () => { const txt = keys.map(k => `— ${plat(k).l} —\n\n${pack.posts[k]!.text}\n`).join('\n'); downloadBlob(new Blob([txt], { type: 'text/plain' }), fname('copy') + '.txt'); let got = 0; for (const k of keys) { await sleep(250); if (await dlOne(k)) got++; } if (got) toast(`Downloaded copy and ${got} visual${got > 1 ? 's' : ''}. Nothing was posted.`); };
   const len = p ? (pubOn ? charCount('x', p.text) : p.text.length) : 0;
   const locked = B.role === 'Viewer' || (pubOn && !!p && isLocked(p.pub, now));
@@ -55,25 +63,27 @@ export function PackView({ pack }: { pack: SocialPack }) {
     `Use brand colors ${brand.primary} and ${brand.secondary}, a simple background and one strong focal point. Keep it readable at social-feed size. No text, logos, watermarks or invented charts.`,
   ].filter(Boolean).join('\n\n');
   const direction = directions[cur] ?? (p?.imagePrompt?.trim() ? p.imagePrompt : pack.custom?.trim() || suggestedDirection);
-  const imageDisabled = locked || busy.image;
+  const explainerTarget = ['instagram', 'tiktok', 'youtube'].includes(cur);
+  const generating = !!p && mediaGenerationPending(p);
+  const imageDisabled = locked || p?.pub?.status === 'posted' || busy.image || generating;
   return <div className="page">
     <Btn kind="ghost" size="sm" icon="back" onClick={() => go('social')} style={{ marginLeft: -10, marginBottom: 18 }}>Content library</Btn>
     <PageHead title={pack.name} sub={<span>From {pack.source.kind === 'suggest' ? 'a Radar suggestion' : pack.source.kind === 'idea' ? 'an idea' : pack.source.kind === 'url' ? 'an article URL' : 'a Radar article'} · {fmtD(pack.created)}{pack.auto ? ' · Prepared by Radar' : ''}</span>}>
       {pubOn && <ScheduleAll pack={pack} />}<Btn icon="download" onClick={dlAll}>Download all</Btn>
     </PageHead>
-    <Tabs value={cur} onChange={k => { if (!mediaBusy) setCur(k); }} items={keys.map(k => ({ v: k, l: <PlatName k={k} l={plat(k).l} /> }))} style={{ marginBottom: 30 }} />
+    <Tabs value={cur} onChange={setCur} items={keys.map(k => ({ v: k, l: <PlatName k={k} l={plat(k).l} /> }))} style={{ marginBottom: 30 }} />
     {p && <div className="pack-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(240px,1fr)', gap: 40, alignItems: 'start' }}>
       <style>{`@media(max-width:1100px){.pack-grid{grid-template-columns:1fr!important}}`}</style>
       <div className="card" style={{ padding: 18, borderRadius: 20, display: 'grid' }}>
         {keys.filter(k => k === cur).map(k => { const q = pack.posts[k]!; const on = k === cur; return <div key={k} style={{ gridArea: '1/1' }}>
           <div className="row" style={{ marginBottom: 12, gap: 10 }}><LogoTile brand={brand} s={36} /><span className="col grow"><span className="small" style={{ fontWeight: 600 }}>{B.profile.business.name}</span><span className="xs sub row" style={{ gap: 6 }}><PlatLogo k={k} s={12} />{plat(k).l} preview</span></span></div>
           <AutoText className="input-bare" tabIndex={on ? 0 : -1} value={q.text} readOnly={B.role === 'Viewer' || (pubOn && isLocked(q.pub, now))} onChange={e => { const text = e.target.value; app.actLater(`social.text:${pack.id}:${k}`, 'social.text', { packId: pack.id, platform: k, text }, { optimistic: patchPost(k, { text }) }); }} style={{ display: 'block', lineHeight: 1.55, fontSize: 15, opacity: on && busy.text ? .4 : 1, transition: 'opacity .3s' }} aria-label={plat(k).l + ' post text'} />
-          <div style={{ marginTop: 12 }}>{q.video ? <video controls={on} preload="metadata" src={q.video.url} style={{ width: '100%', maxHeight: 600, borderRadius: 12, background: '#111' }} aria-label={plat(k).l + ' attached video'} /> : <Visual style={q.style === 'custom' ? 'illustration' : q.style} brand={brand} headline={headline} seed={q.seed} ratio={plat(k).ratio} name={B.profile.business.name} radius={12} busy={on && busy.image} url={q.imageUrl} />}</div>
+          <div style={{ marginTop: 12 }}>{q.video ? <video controls={on} preload="metadata" src={q.video.url} style={{ width: '100%', maxHeight: 600, borderRadius: 12, background: '#111' }} aria-label={plat(k).l + ' video preview'} /> : q.slides?.length ? <CarouselPreview slides={q.slides} /> : (k === 'youtube' || (q.mediaGeneration && !q.imageUrl)) ? <div role="status" className="col sub" style={{ minHeight: 280, justifyContent: 'center', alignItems: 'center', padding: 24, textAlign: 'center' }}><span>Your explainer preview will appear here.</span><span className="xs">{mediaGenerationPending(q) ? 'Radar is creating the video or explanatory slides for this post.' : 'Generate an explainer from the post’s source and marketing context.'}</span></div> : <Visual style={q.style === 'custom' ? 'illustration' : q.style} brand={brand} headline={headline} seed={q.seed} ratio={plat(k).ratio} name={B.profile.business.name} radius={12} busy={on && busy.image} url={q.imageUrl} />}</div>
         </div>; })}
       </div>
       <div className={'col' + (pubOn ? ' pack-side' : '')} style={{ gap: 26, position: 'sticky', top: 24 }}>
-        {pubOn && <VideoAttachment key={`video:${cur}`} packId={pack.id} platform={cur} post={p} disabled={locked || p.pub?.status === 'posted'} onBusy={setMediaBusy} />}
-        {pubOn ? <PublishBox key={cur} pack={pack} k={cur} post={p} nImg={p.video ? 0 : 1} mediaBusy={mediaBusy} onCopy={() => { copyText(p.text); app.act('social.copied', { packId: pack.id, platform: cur }, { optimistic: patchPost(cur, { copiedAt: Date.now() }) }).catch(() => {}); toast(`Copied. Paste it into ${plat(cur).l} to publish.`); }} onDownload={() => dlOne(cur)} />
+        <ExplainerMedia key={`explainer:${pack.id}:${cur}`} packId={pack.id} platform={cur} post={p} disabled={locked || p.pub?.status === 'posted'} />
+        {pubOn ? <PublishBox key={cur} pack={pack} k={cur} post={p} nImg={p.video ? 0 : p.slides?.length || (p.mediaGeneration && !p.imageUrl ? 0 : 1)} mediaBusy={generating} onCopy={() => { copyText(p.text); app.act('social.copied', { packId: pack.id, platform: cur }, { optimistic: patchPost(cur, { copiedAt: Date.now() }) }).catch(() => {}); toast(`Copied. Paste it into ${plat(cur).l} to publish.`); }} onDownload={() => dlOne(cur)} />
         : <div className="col" style={{ gap: 10 }}>
           <Btn kind="primary" size="lg" className="btn-block" icon="copy" onClick={() => { copyText(p.text); app.act('social.copied', { packId: pack.id, platform: cur }, { optimistic: patchPost(cur, { copiedAt: Date.now() }) }).catch(() => {}); toast(`Copied. Paste it into ${plat(cur).l} to publish.`); }}>Copy text</Btn>
           <Btn size="lg" className="btn-block" icon="download" onClick={() => dlOne(cur)}>Download visual</Btn>
@@ -81,16 +91,16 @@ export function PackView({ pack }: { pack: SocialPack }) {
         </div>}
         <div className="col" style={{ borderTop: '1px solid var(--line2)' }}>
           <div className="row" style={{ padding: '14px 0', borderBottom: '1px solid var(--line2)' }}><span className="grow small">Text{cur === 'x' && <span className="num" style={{ marginLeft: 8, color: len > 280 ? 'var(--bad)' : 'var(--mute)' }}>{len}/280</span>}</span><Btn size="sm" kind="ghost" icon="refresh" loading={busy.text} disabled={locked} onClick={() => regen('text')}>Regenerate</Btn></div>
-          <div className="row" style={{ padding: '14px 0', borderBottom: '1px solid var(--line2)' }}><span className="grow small">Image · {(STYLES.find(s => s.k === p.style) || STYLES[1]).l}</span><Btn size="sm" kind="ghost" icon="refresh" loading={busy.image} disabled={imageDisabled} onClick={() => regen('image')}>Regenerate</Btn></div>
-          <div className="row" style={{ padding: '14px 0' }}><span className="grow small">Style</span><select className="input" style={{ width: 170, height: 34, fontSize: 13 }} value={p.style} disabled={imageDisabled} aria-label="Image style" onChange={async e => { const style = e.target.value as SocialPost['style']; setBusy(b => ({ ...b, image: true })); try { await app.act('social.style', { packId: pack.id, platform: cur, style }); setImageErrors(x => ({ ...x, [cur]: '' })); } catch (error: any) { setImageErrors(x => ({ ...x, [cur]: error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous image is kept. Try again.' })); } finally { setBusy(b => ({ ...b, image: false })); } }}>{STYLES.filter(s => s.k !== 'custom').map(s => <option key={s.k} value={s.k}>{s.l}</option>)}</select></div>
+          {!explainerTarget && <div className="row" style={{ padding: '14px 0', borderBottom: '1px solid var(--line2)' }}><span className="grow small">Image · {(STYLES.find(s => s.k === p.style) || STYLES[1]).l}</span><Btn size="sm" kind="ghost" icon="refresh" loading={busy.image} disabled={imageDisabled} onClick={() => regen('image')}>Regenerate</Btn></div>}
+          {!explainerTarget && <div className="row" style={{ padding: '14px 0' }}><span className="grow small">Style</span><select className="input" style={{ width: 170, height: 34, fontSize: 13 }} value={p.style} disabled={imageDisabled} aria-label="Image style" onChange={async e => { const style = e.target.value as SocialPost['style']; setBusy(b => ({ ...b, image: true })); try { await app.act('social.style', { packId: pack.id, platform: cur, style }); setImageErrors(x => ({ ...x, [cur]: '' })); } catch (error: any) { setImageErrors(x => ({ ...x, [cur]: error?.code === 'image_unavailable' ? error.message : 'Radar couldn’t generate this image. Your previous image is kept. Try again.' })); } finally { setBusy(b => ({ ...b, image: false })); } }}>{STYLES.filter(s => s.k !== 'custom').map(s => <option key={s.k} value={s.k}>{s.l}</option>)}</select></div>}
         </div>
-        <div className="col" style={{ gap: 12 }}>
+        {!explainerTarget && <div className="col" style={{ gap: 12 }}>
           <Field label="Describe your image" hint="Start with this suggested prompt or edit it, then generate your image. Generated scenes may differ from real subjects.">
             <textarea className="input" rows={3} maxLength={1000} value={direction} disabled={imageDisabled} placeholder="Describe the subject, scene and details you want" onChange={e => setDirections(x => ({ ...x, [cur]: e.target.value }))} />
           </Field>
-          <Btn icon="image" loading={busy.image} disabled={locked || !direction.trim() || direction.trim().length > 1000} onClick={() => regen('image', direction)}>Generate image</Btn>
+          <Btn icon="image" loading={busy.image} disabled={imageDisabled || !direction.trim() || direction.trim().length > 1000} onClick={() => regen('image', direction)}>Generate image</Btn>
           {imageErrors[cur] && <span className="xs" role="status" style={{ color: 'var(--bad)' }}>{imageErrors[cur]}</span>}
-        </div>
+        </div>}
         {cur === 'reddit' && <p className="xs sub">Includes a disclosure line. Check each community’s self-promotion rules before posting.</p>}
       </div>
     </div>}
