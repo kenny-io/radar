@@ -1,3 +1,4 @@
+import { legacyVideoStyle } from '@/lib/videoStyles';
 import { reportFailure } from '@/server/observability/failures';
 // Proactive daily generation, local to each business. New defaults save editable drafts; explicit legacy scheduling survives.
 import { autopilotOf, effectiveSocial } from '../autopilot/policy';
@@ -67,7 +68,7 @@ export async function autoRun(bid: string, date?: string, autopilotActivationId?
   if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) return null;
   if (current.status !== 'active' || !settings.on || !settings.platforms.length || bizToday(current) !== day) return null;
   let packId: string;
-  const media = await (await import('./media/config')).mediaEnabled(bid) ? settings.platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform)).map(platform => ({ platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const })) : [];
+  const media = await (await import('./media/config')).mediaEnabled(bid) ? settings.platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform)).map(platform => ({ platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const, videoStyle: legacyVideoStyle(settings.videoStyle) })) : [];
   try { packId = await createPack(bid, { platforms: settings.platforms, style: settings.style, auto: true, source: selection.source, idea: selection.idea, ...(media.length ? { media } : {}) }, undefined, { id, created: day, grounding: selection.grounding, context: selection.context, recent: selection.recent, mediaOptions: { generateRecommended: true, autoActivationId: autopilotActivationId, autoDate: day }, beforeSave: async () => {
     const latest = await getBiz(bid); const latestSettings = autopilotActivationId ? effectiveSocial(socialAutoOf(latest)) : socialAutoOf(latest);
     if (autopilotActivationId && !(await canRun(bid, autopilotActivationId))) throw new DailyDraftCancelled();

@@ -1,0 +1,272 @@
+{
+  "method": "actual final normal renderChild from cached original MP3; no TTS; native expected-frame SSIM; full FFmpeg decode",
+  "audioHashUsesRawPCMBytes": true,
+  "sharedDecodedAudio": true,
+  "results": [
+    {
+      "style": "drawn",
+      "videoBytes": 6741443,
+      "videoSHA256": "41b9c10f5030af5e9758abd3ffc508fb7d119859f02a6d0e5fc3f1f9d01db96c",
+      "frameCount": 2567,
+      "duration": 106.958333,
+      "peakDb": -1.3,
+      "decodedPCMHash": "84f65aee8319281d8007124c109d18769674fc0b13bc4d6a93555da3d83108f1",
+      "decodedPCMBytes": 10266624,
+      "oneAudioOffset": true,
+      "planTimelineSame": true,
+      "fullDecode": true,
+      "minSampleSSIM": 0.997857,
+      "sampleFrames": [
+        0,
+        16,
+        98,
+        264,
+        541,
+        990,
+        1368,
+        1896,
+        2384,
+        2565
+      ],
+      "slides": [
+        {
+          "index": 0,
+          "bytes": 109197,
+          "sha256": "37d685cff8b52934f41c95a8a1d4c9e1837536ca63d53124abbc5e142ca2859e"
+        },
+        {
+          "index": 1,
+          "bytes": 132585,
+          "sha256": "fb846866e61956000ab108ef0c2d7b56c6a251a1f55cff2354d9ed059ffe744f"
+        },
+        {
+          "index": 2,
+          "bytes": 130236,
+          "sha256": "b7aa5a65abb6c20b7589f07a26eeaea95add7f9620c9e4ab071a48c8d1f6fb50"
+        },
+        {
+          "index": 3,
+          "bytes": 119644,
+          "sha256": "3809669285bc4c9e79a5cad6bff569e3465c41b138589101d75cf8541d1fe6fb"
+        },
+        {
+          "index": 4,
+          "bytes": 125989,
+          "sha256": "ed7d745875ec02424a93f52573b9117d54ca5b6276e20a9064368798b3895b15"
+        }
+      ]
+    },
+    {
+      "style": "kinetic",
+      "videoBytes": 6658636,
+      "videoSHA256": "130909a4b0fa2b961c7451866a48986de19a6bd3849a6e0e1cc6c5eaf7d0820b",
+      "frameCount": 2567,
+      "duration": 106.958333,
+      "peakDb": -1.3,
+      "decodedPCMHash": "84f65aee8319281d8007124c109d18769674fc0b13bc4d6a93555da3d83108f1",
+      "decodedPCMBytes": 10266624,
+      "oneAudioOffset": true,
+      "planTimelineSame": true,
+      "fullDecode": true,
+      "minSampleSSIM": 0.997166,
+      "sampleFrames": [
+        0,
+        16,
+        98,
+        264,
+        541,
+        990,
+        1368,
+        1896,
+        2384,
+        2565
+      ],
+      "slides": [
+        {
+          "index": 0,
+          "bytes": 95955,
+          "sha256": "3115f92f3fa941eaeb3c0806d07a83ed63e43eea8aeef6ea0e5516aa3b91a4cf"
+        },
+        {
+          "index": 1,
+          "bytes": 121675,
+          "sha256": "2b0b84e0000dffe25c3e6eaca40f88c6a9c5d66503a953ebe2172b77d17a89cf"
+        },
+        {
+          "index": 2,
+          "bytes": 122134,
+          "sha256": "1c8ce5061d300ee320aaf62c73f861f8bea99823c06442a01e261ee26f3a8f0d"
+        },
+        {
+          "index": 3,
+          "bytes": 101702,
+          "sha256": "6649aaf667b8a2a65dde495e9a9bfc005e5d2000d38610d7b4e735f334977dcd"
+        },
+        {
+          "index": 4,
+          "bytes": 113650,
+          "sha256": "e43fb6f1291f909faf90c3d5cc86651bb5516e4112aa392d53b02815cc82e7de"
+        }
+      ]
+    },
+    {
+      "style": "editorial",
+      "videoBytes": 6600432,
+      "videoSHA256": "1430761a58fd0831189f31be1ecd6771fb807cbb5cc86d688b623aafe9c11bf4",
+      "frameCount": 2567,
+      "duration": 106.958333,
+      "peakDb": -1.3,
+      "decodedPCMHash": "84f65aee8319281d8007124c109d18769674fc0b13bc4d6a93555da3d83108f1",
+      "decodedPCMBytes": 10266624,
+      "oneAudioOffset": true,
+      "planTimelineSame": true,
+      "fullDecode": true,
+      "minSampleSSIM": 0.999508,
+      "sampleFrames": [
+        0,
+        16,
+        98,
+        264,
+        541,
+        990,
+        1368,
+        1896,
+        2384,
+        2565
+      ],
+      "slides": [
+        {
+          "index": 0,
+          "bytes": 106503,
+          "sha256": "1d842c4873451074e7841fae440eaaaf8bf0ebeacce19fa989df37a7f33b8dfe"
+        },
+        {
+          "index": 1,
+          "bytes": 129140,
+          "sha256": "a7d08dbcf18f991c4ab177f277ca0e8988da7965dd25d1b9a9a86187ba8abbdf"
+        },
+        {
+          "index": 2,
+          "bytes": 130886,
+          "sha256": "f60a45adc09ef682dd2458f96913a8e0e640fadcf0a6ab194fa156dd5d8ee834"
+        },
+        {
+          "index": 3,
+          "bytes": 114097,
+          "sha256": "295f3c0ececb837ca484def67976a95c2a248a0e0dd842430ee3fe9d387e608a"
+        },
+        {
+          "index": 4,
+          "bytes": 126331,
+          "sha256": "b4de6c5109d7e672ecccf03709f6ebeb233ecce2f0d6e4460587db0bf685dd68"
+        }
+      ]
+    },
+    {
+      "style": "paper-cut",
+      "videoBytes": 7566343,
+      "videoSHA256": "d59761d22aae85defd49f46c0b7baf49e7bb99755147f3f51fd7187d7c72c063",
+      "frameCount": 2567,
+      "duration": 106.958333,
+      "peakDb": -1.3,
+      "decodedPCMHash": "84f65aee8319281d8007124c109d18769674fc0b13bc4d6a93555da3d83108f1",
+      "decodedPCMBytes": 10266624,
+      "oneAudioOffset": true,
+      "planTimelineSame": true,
+      "fullDecode": true,
+      "minSampleSSIM": 0.999529,
+      "sampleFrames": [
+        0,
+        16,
+        98,
+        264,
+        541,
+        990,
+        1368,
+        1896,
+        2384,
+        2565
+      ],
+      "slides": [
+        {
+          "index": 0,
+          "bytes": 104501,
+          "sha256": "4a308ae0815e8c790e8dad979330a0431086657eda5c1a1e083994778161d6ff"
+        },
+        {
+          "index": 1,
+          "bytes": 126482,
+          "sha256": "9afb182c99ddae18fcaa59578af1988cf1a294dd9a6451aabfa90d36c5ad3104"
+        },
+        {
+          "index": 2,
+          "bytes": 124908,
+          "sha256": "c0a43bcad9bad75edc19675fee96f42f607805a2ea16f5b8f02424cb0aa312b4"
+        },
+        {
+          "index": 3,
+          "bytes": 113353,
+          "sha256": "1a544ec9fe4e01c27fcdf2ed0e27374eacf9a8279d1bb4ab85de3ce22258b1a9"
+        },
+        {
+          "index": 4,
+          "bytes": 119974,
+          "sha256": "5f4ed9bd859658e125b5d825abc9d778a8088be6334731fa25595871cbbfead1"
+        }
+      ]
+    },
+    {
+      "style": "blueprint",
+      "videoBytes": 7642804,
+      "videoSHA256": "056afd5d2b24785ee913e582dff1cfedfc6b4375081ccd4de423c8a55ba07800",
+      "frameCount": 2567,
+      "duration": 106.958333,
+      "peakDb": -1.3,
+      "decodedPCMHash": "84f65aee8319281d8007124c109d18769674fc0b13bc4d6a93555da3d83108f1",
+      "decodedPCMBytes": 10266624,
+      "oneAudioOffset": true,
+      "planTimelineSame": true,
+      "fullDecode": true,
+      "minSampleSSIM": 0.98604,
+      "sampleFrames": [
+        0,
+        16,
+        98,
+        264,
+        541,
+        990,
+        1368,
+        1896,
+        2384,
+        2565
+      ],
+      "slides": [
+        {
+          "index": 0,
+          "bytes": 169803,
+          "sha256": "142af2a19eeedb15f29410e9b608351299cebad1c7573991e42cf2aa73cc9ed1"
+        },
+        {
+          "index": 1,
+          "bytes": 194384,
+          "sha256": "fee8a7402657e18199d689e01629b5072d51a721f8f49ff9719c46c5eded80cf"
+        },
+        {
+          "index": 2,
+          "bytes": 195083,
+          "sha256": "d34cc5cbf982dfdc1f3170c93d6c149be879ea4b787dd1794dff5991497fd1e4"
+        },
+        {
+          "index": 3,
+          "bytes": 175840,
+          "sha256": "2aafd3f45133a8107124f0ec1da34962647d86d986cfa724669fc520d1b37c94"
+        },
+        {
+          "index": 4,
+          "bytes": 194897,
+          "sha256": "9a3a85a38986617ec048f75a523d987c3c167a2c77f4a53b9646610eb9465ef3"
+        }
+      ]
+    }
+  ]
+}

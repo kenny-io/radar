@@ -13,4 +13,4 @@ Use a dedicated, owned test channel/account. Final submission must use actual li
 
 Primary requirements: https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification and https://support.google.com/cloud/answer/13461325
 
-Current operator state: Data Access uses the generated-content justification and has no demo URL. This worktree is now the active recording/submission record; the earlier release worktree contains historical setup notes only. Native recorder foreground request and actual production generation checks are pending.
+Current operator state: Data Access uses the generated-content justification and has no demo URL. This worktree is now the active recording/submission record; the earlier release worktree contains historical setup notes only. Actual production generation is verified: use the normal draft media-099ade32e56238eb7745134e7d4afcf3 and its generated106.959s video, not the old manually attached fixture. Native recorder foreground request remains pending.

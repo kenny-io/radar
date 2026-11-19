@@ -7,12 +7,14 @@ import { useApp } from '@/client/app';
 import { Btn, EntryStatus, Field, Icon, LogoTile, Modal, Seg, Skel } from '@/components/ui';
 import { Visual } from '@/components/Visual';
 import { PLAT, STYLES, plat } from '@/lib/constants';
+import { VideoStylePicker } from './VideoStylePicker';
+import { legacyVideoStyle, type VideoStyleId } from '@/lib/videoStyles';
 import type { Platform, PackStyle } from '@/lib/types';
 
 const SF_STEPS: [string, string][] = [['source', 'Source'], ['platforms', 'Platforms'], ['style', 'Media'], ['brand', 'Brand']];
 type Kind = 'idea' | 'url' | 'article' | 'suggest';
 export interface IdeaRow { t: string; metric: string; why: string; tie: string | null; page: string | null; q: string }
-interface St { step: string; kind: Kind; idea: string; url: string; article: string | null; platforms: Platform[]; style: PackStyle; custom: string; voice: string; picked?: string | null; pickedIdea?: IdeaRow | null; mediaModes: Partial<Record<Platform, 'recommended' | 'video' | 'carousel'>> }
+interface St { step: string; kind: Kind; idea: string; url: string; article: string | null; platforms: Platform[]; style: PackStyle; custom: string; voice: string; picked?: string | null; pickedIdea?: IdeaRow | null; mediaModes: Partial<Record<Platform, 'recommended' | 'video' | 'carousel'>>; videoStyle: VideoStyleId }
 const GENERIC = 'Radar couldn’t finish this. Try again.';
 const newToken = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
@@ -48,7 +50,7 @@ export function SuggestIdeas({ gsc, picked, onPick, onGenerate }: { gsc: boolean
 
 export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => void }) {
   const app = useApp(); const B = app.B!; const { go, toast } = app;
-  const [st, setSt] = useState<St>({ step: 'source', kind: 'idea', idea: '', url: '', article: null, platforms: B.social.auto.platforms.length ? B.social.auto.platforms : ['linkedin', 'x'], style: B.social.auto.style || 'branded', custom: '', voice: '', mediaModes: {} });
+  const [st, setSt] = useState<St>({ step: 'source', kind: 'idea', idea: '', url: '', article: null, platforms: B.social.auto.platforms.length ? B.social.auto.platforms : ['linkedin', 'x'], style: B.social.auto.style || 'branded', custom: '', voice: '', mediaModes: {}, videoStyle: legacyVideoStyle(B.social.auto.videoStyle) });
   const [gen, setGen] = useState(-1); const [err, setErr] = useState('');
   const [job, setJob] = useState<{ id: string; token: string } | null>(null);
   const articleFromLink = typeof app.route.params?.article === 'string' ? app.route.params.article : null;
@@ -56,7 +58,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
     if (!open) return;
     const article = articleFromLink && B.calendar.entries.find(entry => entry.id === articleFromLink && entry.status !== 'proposed' && B.articles[entry.id]?.generated);
     setGen(-1); setJob(null);
-    setSt(state => ({ ...state, step: 'source', platforms: B.social.auto.platforms.length ? B.social.auto.platforms : ['linkedin', 'x'], ...(article ? { kind: 'article' as const, article: article.id } : {}) }));
+    setSt(state => ({ ...state, step: 'source', videoStyle: legacyVideoStyle(B.social.auto.videoStyle), platforms: B.social.auto.platforms.length ? B.social.auto.platforms : ['linkedin', 'x'], ...(article ? { kind: 'article' as const, article: article.id } : {}) }));
   }, [open, articleFromLink, B.id]);
   const set = (p: Partial<St>) => { setErr(''); setSt(s => ({ ...s, ...p })); };
   const generatedPlatform = (k: Platform) => ['instagram', 'tiktok', 'youtube'].includes(k);
@@ -72,7 +74,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
     if (i < SF_STEPS.length - 1) set({ step: SF_STEPS[i + 1][0] }); else run();
   };
   const back = () => { const i = SF_STEPS.findIndex(s => s[0] === st.step); if (i > 0) set({ step: SF_STEPS[i - 1][0] }); };
-  const mediaChoices = st.platforms.filter((k): k is 'instagram' | 'tiktok' | 'youtube' => generatedPlatform(k)).map(platform => ({ platform, format: st.mediaModes[platform] || (platform === 'instagram' ? 'recommended' as const : 'video' as const) }));
+  const mediaChoices = st.platforms.filter((k): k is 'instagram' | 'tiktok' | 'youtube' => generatedPlatform(k)).map(platform => ({ platform, videoStyle: st.videoStyle, format: st.mediaModes[platform] || (platform === 'instagram' ? 'recommended' as const : 'video' as const) }));
   const run = async () => {
     if (mediaChoices.length && !B.social.mediaGeneration) { setErr('Explainer generation is currently unavailable. Try again later.'); return; }
     const token = newToken(); setErr(''); setGen(0);
@@ -144,6 +146,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
                 {k === 'instagram' && <option value="carousel">Explanatory slides</option>}
               </select></Field>)}
               {!!mediaChoices.length && <p className="small sub">Radar uses your source, Business Profile and marketing context to create the complete video or explanatory slides. Instagram’s recommended format is chosen from the topic. Videos use Brian and timed captions, usually 1–3 minutes.</p>}
+              {!!mediaChoices.length && <VideoStylePicker value={st.videoStyle} onChange={videoStyle => set({ videoStyle })} />}
               {hasSingleImages && <>
               <span className="small" style={{ fontWeight: 500 }}>Image style for single-image posts</span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 14 }}>{STYLES.map(s => { const on = st.style === s.k; return <button key={s.k} onClick={() => set({ style: s.k })} className="col" style={{ gap: 8, border: 0, background: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>

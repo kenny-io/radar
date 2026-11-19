@@ -1,0 +1,20 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-generated-media/radar-push
+
+ ✓ .factory/video-style-presets/qa/native.test.mjs (28 tests) 837ms
+stdout | .factory/video-style-presets/qa/independent.test.mjs > Q8 current automation and accepted provider boundaries > accepted YouTube provider reference resumes once after desired style changes and automation pauses, never uploads again
+[social.send] pub a23b7293-6e4d-45a3-9069-f430b9c8faa4 s:style-qa-baf9b385-fcd2-433a-93b0-e380596db591:youtube: posted (attempt 0)
+
+ ✓ .factory/video-style-presets/qa/independent.test.mjs (38 tests) 4096ms
+   ✓ Q8 real render completion and captured metadata > actual drawn carousel completes with captured artifact style, preserving unrelated consent/options  411ms
+   ✓ Q8 real render completion and captured metadata > actual kinetic carousel completes with captured artifact style, preserving unrelated consent/options  390ms
+   ✓ Q8 real render completion and captured metadata > actual editorial carousel completes with captured artifact style, preserving unrelated consent/options  412ms
+   ✓ Q8 real render completion and captured metadata > actual paper-cut carousel completes with captured artifact style, preserving unrelated consent/options  501ms
+   ✓ Q8 real render completion and captured metadata > actual blueprint carousel completes with captured artifact style, preserving unrelated consent/options  396ms
+   ✓ Q8 real SQL narration cache and uncertainty > five visual style completions reuse exactly one matching narration authority with no network or new call  388ms
+
+ Test Files  2 passed (2)
+      Tests  66 passed (66)
+   Start at  08:54:01
+   Duration  7.24s (transform 794ms, setup 0ms, collect 2.01s, tests 4.93s, environment 0ms, prepare 74ms)
+

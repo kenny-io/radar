@@ -38,13 +38,13 @@ describe.skipIf(!process.env.DATABASE_URL)('lease-bound planning recovery and so
  it('re-enters preparation for a legacy recommendation while preserving format and previous attachment',async()=>{
   const prepared=await prepare();delete prepared.checkpoint.planSourceHash;delete prepared.checkpoint.planMaxDuration;await pool.query('UPDATE social_media_generations SET checkpoint=$2 WHERE id=$1',[prepared.id,prepared.checkpoint]);
   const result=await generateMedia(bid,packId,[{platform:'instagram',format:'carousel'}],prepared.request_version);
-  const pending=await row(result.generationIds[0]);expect(pending.status).toBe('preparing');expect(pending.checkpoint.requestedChoices).toEqual([{platform:'instagram',format:'carousel'}]);expect(pending.checkpoint.options!.generateAfterPrepare).toBe(true);
+  const pending=await row(result.generationIds[0]);expect(pending.status).toBe('preparing');expect(pending.checkpoint.requestedChoices).toEqual([{platform:'instagram',format:'carousel',videoStyle:'drawn'}]);expect(pending.checkpoint.options!.generateAfterPrepare).toBe(true);
   expect((await getPack(bid,packId))!.posts.instagram!.imageUrl).toBe('/previous.jpg');expect(pending.checkpoint.planOnly).toBe(true);
  });
  it('Generate transparently reprepares changed bound sources with the chosen format',async()=>{
   const before=await prepare();await db.update(S.articles).set({data:{generated:true,body:[['p',evidence+' A completed receipt is available to the next worker.']]}}).where(eq(S.articles.entryId,entry));
   const refreshed=await generateMedia(bid,packId,[{platform:'instagram',format:'carousel'}],before.request_version);const pending=await row(refreshed.generationIds[0]);
-  expect(pending.status).toBe('preparing');expect(pending.checkpoint.options!.generateAfterPrepare).toBe(true);expect(pending.checkpoint.requestedChoices).toEqual([{platform:'instagram',format:'carousel'}]);expect(pending.request_version).not.toBe(before.request_version);
+  expect(pending.status).toBe('preparing');expect(pending.checkpoint.options!.generateAfterPrepare).toBe(true);expect(pending.checkpoint.requestedChoices).toEqual([{platform:'instagram',format:'carousel',videoStyle:'drawn'}]);expect(pending.request_version).not.toBe(before.request_version);
   expect((await getPack(bid,packId))!.posts.instagram!.imageUrl).toBe('/previous.jpg');expect(await runMediaGeneration(bid,pending.id)).toEqual({prepared:true});
   const prepared=await row(pending.id);expect(prepared.source_hash).not.toBe(before.source_hash);expect(prepared.checkpoint.planSourceHash).toBe(prepared.source_hash);
  });

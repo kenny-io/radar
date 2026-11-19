@@ -3,7 +3,8 @@ import { RadarError } from '@/server/errors';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { ExplainerFormat, ExplainerPlatform } from '@/lib/types';
+import type { ExplainerFormat, ExplainerPlatform,VideoStyleId } from '@/lib/types';
+import {legacyVideoStyle,videoStylePreset} from '@/lib/videoStyles';
 
 export const VERSION = 'diagram-v2-aligned-cues';
 export const LAYOUT_VERSION = 'readable-layout-v1';
@@ -11,7 +12,7 @@ export const VOICE = 'nPczCjzI2devNBz1zQrb';
 export const voiceSettings = { stability: 0.4, similarity_boost: 0.8, style: 0.25, speed: 0.78 };
 export function narrationSettings(){const speed=Number(process.env.ELEVENLABS_SPEED||voiceSettings.speed);if(!Number.isFinite(speed)||speed<0.7||speed>1.1)throw new Error('Narration speed configuration is invalid');return {...voiceSettings,speed};}
 let identity:Promise<string>|undefined;
-export function rendererIdentity(){return identity??=Promise.all(['Kalam-Regular.ttf','NotoSans.ttf'].map(f=>fs.readFile(path.join(process.cwd(),'assets/social-media',f)))).then(files=>hash({version:VERSION,layout:LAYOUT_VERSION,fonts:files.map(f=>createHash('sha256').update(f).digest('hex'))}));}
+export async function rendererIdentity(videoStyle?:VideoStyleId){const id=legacyVideoStyle(videoStyle),version=videoStylePreset(id).version;const base=await (identity??=Promise.all(['Kalam-Regular.ttf','NotoSans.ttf'].map(f=>fs.readFile(path.join(process.cwd(),'assets/social-media',f)))).then(files=>hash({version:VERSION,layout:LAYOUT_VERSION,fonts:files.map(f=>createHash('sha256').update(f).digest('hex'))})));return hash({base,videoStyle:id,styleVersion:version});}
 export const PLATFORMS = ['instagram','tiktok','youtube'] as const;
 export const hash = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
 export function canonical(value: any): string { return JSON.stringify(value, (_,v) => v && !Array.isArray(v) && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])) : v); }
@@ -32,8 +33,8 @@ export interface Alignment { characters:string[]; character_start_times_seconds:
 export interface Caption { start:number; end:number; text:string }
 export interface Timeline { duration:number; scenes:{start:number;end:number;scene:Scene;cues:{kind:'node'|'edge'|'revisit';target:string;start:number;end:number}[]}[]; captions:Caption[] }
 export interface MediaOptions { generateAfterPrepare?:boolean; choices?:Choice[]; autoActivationId?:string; generateRecommended?:boolean; autoDate?:string; sourceNotes?:string }
-export interface Choice { platform:ExplainerPlatform; format:ExplainerFormat|'recommended' }
-export interface Consumer { packId:string; platform:ExplainerPlatform; requestId:string; mediaRevision:number; youtubeOptionsRevision?:number; options?:MediaOptions }
+export interface Choice { platform:ExplainerPlatform; format:ExplainerFormat|'recommended'; videoStyle?:VideoStyleId }
+export interface Consumer { packId:string; platform:ExplainerPlatform; requestId:string; mediaRevision:number; videoStyle?:VideoStyleId;styleVersion?:number;requestedFormat?:Choice['format']; youtubeOptionsRevision?:number; options?:MediaOptions }
 export type PlanningPhase='semantic'|'layout'|'duration'|'mechanism'|'clarity'|'source'|'unexpected';
 export interface PlanningDiagnostic {phase:PlanningPhase;code:string;scene?:number;frames?:string[]}
 interface PlanningRecoveryBase {sourceHash:string;maxDuration:number;repair:'available'|'dispatched'|'completed';diagnostic?:PlanningDiagnostic}
@@ -56,6 +57,7 @@ export function planningSourcePatch(cp:Checkpoint,source:NonNullable<Checkpoint[
  const key=hash(source);return {source,maxDuration,...(!planMatches(cp,key,maxDuration)?{plan:undefined,planSourceHash:undefined,planMaxDuration:undefined}:{}),...(!recoveryMatches(cp.planningRecovery,key,maxDuration)?{planningRecovery:undefined}:{}),planningDiagnostic:undefined};
 }
 export interface Checkpoint {
+ renderStyle?:{id:VideoStyleId;version:number};
  planningRecovery?:PlanningRecovery; planningDiagnostic?:PlanningDiagnostic; planSourceHash?:string;planMaxDuration?:number;
  inputHash?:string; estimatedCostUsd?:number; maxDuration?:number; requestedChoices?:Choice[]; planOnly?:boolean; sourceNotes?:string; source?:{brief:string;link:string|null;title:string;presentationNotes?:string}; plan?:Plan; options?:MediaOptions;
  audioUrl?:string; alignment?:Alignment; originalAlignment?:Alignment; timeline?:Timeline;

@@ -7,13 +7,13 @@ import { IMG_SIZES } from '@/lib/constants';
 import { packPreflightInput, preflight } from '@/lib/socialPublish';
 import type { Platform, Profile } from '@/lib/types';
 
-const H = vi.hoisted(() => ({ rows: [] as any[], packs: [] as any[], stored: [] as { key: string; body: Buffer }[], reports: [] as any[], intents: [] as any[], put: null as null | ((key: string) => void) }));
+const H = vi.hoisted(() => ({ rows: [] as any[], packs: [] as any[], stored: [] as { key: string; body: Buffer }[], reports: [] as any[], intents: [] as any[], defaultStyle: undefined as import('@/lib/videoStyles').VideoStyleId | undefined, put: null as null | ((key: string) => void) }));
 vi.mock('@/server/db', () => {
   const tx = { insert: () => ({ values: (v: any) => ({ onConflictDoNothing: () => ({ returning: async () => { H.packs.push(v.data); return [{ id: v.id }]; } }) }) }) };
   return { db: { insert: () => ({ values: (row: any) => { H.rows.push(row); return Promise.resolve(); } }), transaction: async (fn: any) => fn(tx) }, schema: { aiCalls: {}, socialPacks: { id: 'id', businessId: 'business_id' } } };
 });
 vi.mock('@/server/ai', () => ({ ai: { run: async (_task: string, input: any) => ({ json: { text: `Docs drift when nobody owns them. Give each page an owner. (${input.stubContext.platform})` } }) }, profileContext: () => 'BUSINESS PROFILE\nName: Fieldnote' }));
-vi.mock('@/server/workspace', () => ({ getBiz: async () => ({ domain: 'fieldnote.test', profile: PROFILE }), bizToday: () => '2026-11-10' }));
+vi.mock('@/server/workspace', () => ({ getBiz: async () => ({ domain: 'fieldnote.test', profile: PROFILE, socialAuto: { videoStyle: H.defaultStyle } }), bizToday: () => '2026-11-10' }));
 vi.mock('@/server/observability/failures', () => ({ reportFailure: async (_e: unknown, context: any) => { H.reports.push(context); } }));
 vi.mock('@/server/services/storage', () => ({ objectKey: (bid: string, kind: string, ext: string) => `${bid}/${kind}/${H.stored.length}.${ext}`, putObject: async (key: string, body: Buffer) => { H.put?.(key); H.stored.push({ key, body }); return `mem://${key}`; }, readStored: async (bid: string, url: string) => { if (!url.startsWith(`mem://${bid}/`)) return null; const f = H.stored.find(f => `mem://${f.key}` === url); return f ? { body: f.body, type: 'image/png' } : null; } }));
 vi.mock('@/server/services/lifecycle/engagement', () => ({ recordEngagement: async () => {}, resolveEngagement: async () => {} }));
@@ -25,7 +25,7 @@ const PROFILE = { business: { name: 'Fieldnote', description: 'Documentation too
 const P = { ...PROFILE, domain: 'fieldnote.test' } as unknown as Profile;
 const HEADLINE = 'Keeping docs current';
 const OR_KEY = 'sk-or-v1-packimage0123456789';
-const VARS = ['OPENROUTER_API_KEY', 'OPENAI_API_KEY', 'XAI_API_KEY', 'OPENROUTER_IMAGE_MODEL', 'OPENAI_IMAGE_MODEL', 'XAI_IMAGE_MODEL', 'RADAR_DEV_STUBS', 'RADAR_SOCIAL_PACK_IMAGE'];
+const VARS = ['OPENROUTER_API_KEY', 'OPENAI_API_KEY', 'XAI_API_KEY', 'OPENROUTER_IMAGE_MODEL', 'OPENAI_IMAGE_MODEL', 'XAI_IMAGE_MODEL', 'RADAR_DEV_STUBS', 'RADAR_SOCIAL_PACK_IMAGE', 'RADAR_SOCIAL_MEDIA_GENERATION'];
 const saved: Record<string, string | undefined> = {};
 for (const v of VARS) saved[v] = process.env[v];
 async function boot(keys: Record<string, string | undefined> = { OPENROUTER_API_KEY: OR_KEY }) {
@@ -61,7 +61,7 @@ const BLUE = [0, 0, 255, 255], RED = [255, 0, 0, 255];
 const lastPack = () => H.packs[H.packs.length - 1];
 
 beforeEach(() => {
-  H.rows.length = 0; H.packs.length = 0; H.stored.length = 0; H.reports.length = 0; H.intents.length = 0; H.put = null;
+  H.defaultStyle = undefined; H.rows.length = 0; H.packs.length = 0; H.stored.length = 0; H.reports.length = 0; H.intents.length = 0; H.put = null;
   vi.spyOn(Math, 'random').mockReturnValue(0.5); // seed0 = 25, so the posts' seeds are 175, 176, 177
   vi.spyOn(console, 'warn').mockImplementation(() => {}); vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -131,8 +131,17 @@ describe('a new pack whose style goes to the image model', () => {
     expect(Object.values(lastPack().posts).every((p: any) => !p.imageUrl)).toBe(true);
     expect(H.intents).toHaveLength(1);
     expect(H.intents[0].slice(1, 4)).toEqual(['biz-1', lastPack().id, [
-      { platform: 'instagram', format: 'recommended' }, { platform: 'tiktok', format: 'video' }, { platform: 'youtube', format: 'video' },
+      { platform: 'instagram', format: 'recommended', videoStyle: 'drawn' }, { platform: 'tiktok', format: 'video', videoStyle: 'drawn' }, { platform: 'youtube', format: 'video', videoStyle: 'drawn' },
     ]]);
+  });
+  it('captures explicit and business-default video styles in the saved posts and one shared preparation intent', async () => {
+    const { gen } = await boot(); mockFetch(answers); H.defaultStyle = 'blueprint';
+    await gen.createPack('biz-1', { ...input(['instagram', 'tiktok']), media: [{ platform: 'instagram', format: 'recommended', videoStyle: 'editorial' }, { platform: 'tiktok', format: 'video' }] });
+    expect(lastPack().posts.instagram.videoStyle).toBe('editorial'); expect(lastPack().posts.tiktok.videoStyle).toBe('blueprint');
+    expect(H.intents[0][3]).toEqual([{ platform: 'instagram', format: 'recommended', videoStyle: 'editorial' }, { platform: 'tiktok', format: 'video', videoStyle: 'blueprint' }]);
+    H.defaultStyle = 'paper-cut';
+    expect(lastPack().posts.instagram.videoStyle).toBe('editorial'); expect(lastPack().posts.tiktok.videoStyle).toBe('blueprint');
+    expect(generations()).toHaveLength(0); expect(H.stored).toHaveLength(0);
   });
   it('renders only remaining single-image targets using their own crop geometry', async () => {
     const { gen } = await boot(); mockFetch(answers);

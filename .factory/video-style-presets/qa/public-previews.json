@@ -1,0 +1,62 @@
+[
+  {
+    "style": "drawn",
+    "seconds": 7.5,
+    "h264": true,
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "audioStreams": 0,
+    "fullDecode": true,
+    "httpMatchesDisk": true,
+    "sha256": "2297c6572def10719fd8bed1f32e8bc1daf91486e75ebe87243817e8ec35e499"
+  },
+  {
+    "style": "kinetic",
+    "seconds": 7.5,
+    "h264": true,
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "audioStreams": 0,
+    "fullDecode": true,
+    "httpMatchesDisk": true,
+    "sha256": "7fcb7f7bb21d5776d2f85aeec9819370bccefb0635aadb91adc84c58c12cb540"
+  },
+  {
+    "style": "editorial",
+    "seconds": 7.5,
+    "h264": true,
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "audioStreams": 0,
+    "fullDecode": true,
+    "httpMatchesDisk": true,
+    "sha256": "48e11e833c92df9bead6f4c705ef61a8b36bd9a8cd34546318b4a7debbd3161c"
+  },
+  {
+    "style": "paper-cut",
+    "seconds": 7.5,
+    "h264": true,
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "audioStreams": 0,
+    "fullDecode": true,
+    "httpMatchesDisk": true,
+    "sha256": "4911f8fc47631d7c04923b466c8db2077c273fbf665aac16b8e29ca7185aab30"
+  },
+  {
+    "style": "blueprint",
+    "seconds": 7.5,
+    "h264": true,
+    "width": 1080,
+    "height": 1920,
+    "fps": 24,
+    "audioStreams": 0,
+    "fullDecode": true,
+    "httpMatchesDisk": true,
+    "sha256": "a10d14aba82431e86103b2559ed675b19b8e8475a18d666c50ec7d258fb60595"
+  }
+]

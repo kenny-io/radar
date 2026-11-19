@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-19T04:54:28.232Z",
+  "results": [
+    {
+      "name": "Normal Generate snapshots its default and completes real chosen-style carousel in one generation action",
+      "pass": true,
+      "detail": {
+        "defaultSnapshot": "blueprint",
+        "actualChoice": "paper-cut",
+        "actualJpegs": 3,
+        "noUpload": true
+      }
+    },
+    {
+      "name": "Pending, failed and cancelled replacements keep actual Drawn label and only rendering shows frame count",
+      "pass": true,
+      "detail": {
+        "oldAssetPreserved": true,
+        "renderingOnlyCounter": true
+      }
+    },
+    {
+      "name": "Failed generation changed style and format starts new intent, preserves omitted notes and atomically attaches chosen media",
+      "pass": true,
+      "detail": {
+        "newPrepareNotObsoleteRetry": true,
+        "notesRetained": true,
+        "attached": "blueprint"
+      }
+    },
+    {
+      "name": "Uncertain narration disables choices and requires deliberate review without requesting speech",
+      "pass": true,
+      "detail": {
+        "explicitConsent": true,
+        "noSpeech": true
+      }
+    }
+  ],
+  "errors": [],
+  "rpcActions": [
+    "app.seen",
+    "social.generate",
+    "job.get",
+    "job.get",
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "social.mediaStyle",
+    "social.mediaPrepare",
+    "app.seen",
+    "app.seen"
+  ]
+}

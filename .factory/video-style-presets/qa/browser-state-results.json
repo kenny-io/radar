@@ -1,0 +1,38 @@
+{
+  "at": "2026-11-19T04:53:49.420Z",
+  "results": [
+    {
+      "name": "Pending, failed and cancelled replacements keep actual Drawn label and only rendering shows frame count",
+      "pass": true,
+      "detail": {
+        "oldAssetPreserved": true,
+        "renderingOnlyCounter": true
+      }
+    },
+    {
+      "name": "Stale style save shows an actionable failure without relabeling actual media; refresh reads authoritative choice",
+      "pass": true,
+      "detail": {
+        "stale409": true,
+        "actualPreserved": true
+      }
+    },
+    {
+      "name": "Legacy manual video is not mislabeled as generated Drawn media",
+      "pass": true,
+      "detail": {
+        "manualUnknown": true
+      }
+    }
+  ],
+  "errors": [],
+  "rpcActions": [
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "social.mediaStyle",
+    "app.seen",
+    "app.seen"
+  ]
+}

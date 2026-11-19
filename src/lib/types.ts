@@ -1,3 +1,5 @@
+import type { VideoStyleId } from './videoStyles';
+export type { VideoStyleId } from './videoStyles';
 // Shared types — the contract between server and client.
 // Shapes mirror 02-system.md §1 and the prototype's per-business state ("B").
 
@@ -144,6 +146,7 @@ export type ExplainerPlatform = 'instagram' | 'tiktok' | 'youtube';
 export interface SocialSlide { url: string; meta: MediaMeta; alt: string }
 export interface SocialMediaGeneration {
   id: string; requestId: string; format: ExplainerFormat;
+  videoStyle?: VideoStyleId; styleVersion?: number; requestedFormat?: ExplainerFormat | 'recommended';
   status: 'preparing' | 'queued' | 'narrating' | 'rendering' | 'ready' | 'failed' | 'needs_attention' | 'cancelled';
   stage?: string; reason: string; overridden: boolean; errorCode?: string;
   progress?: { done: number; total: number };
@@ -163,11 +166,13 @@ export interface SocialPublishOptions {
   };
 }
 export interface SocialPost {
+  /** Persisted desired visual style for the next generation; does not relabel the saved attachment. */
+  videoStyle?: VideoStyleId;
   slides?: SocialSlide[] | null;
   mediaGeneration?: SocialMediaGeneration | null;
   mediaRecommendation?: MediaRecommendation | null;
   mediaRevision?: number;
-  generatedMedia?: { id: string; format: ExplainerFormat; sourceHash: string; aiGenerated: true };
+  generatedMedia?: { id: string; format: ExplainerFormat; sourceHash: string; aiGenerated: true; videoStyle?: VideoStyleId; styleVersion?: number };
   /** Uploaded video replaces the generated visual for Instagram, TikTok and YouTube publishing. */
   video?: SocialVideo | null;
   publishOptions?: SocialPublishOptions;
@@ -192,6 +197,7 @@ export interface SocialPack {
 }
 export interface YouTubeAutoDefaults { acctId: string; privacy: 'private' | 'unlisted' | 'public'; madeForKids: boolean; version: string }
 export interface SocialAuto {
+  videoStyle?: VideoStyleId;
   youtubeDefaults?: YouTubeAutoDefaults | null;
   youtubeDefaultsVersion?: string;
   generateMedia?: boolean;
