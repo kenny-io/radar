@@ -1,0 +1,14 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-generated-media/radar-push
+
+ ✓ src/server/services/social/media/styles.test.ts (10 tests) 1000ms
+   ✓ five measured materials and cue-driven visual presets > uses existing cues for style motion, carries existing identities, and bounds kinetic focus below captions  723ms
+ ✓ src/lib/socialPublish.test.ts (51 tests) 28ms
+ ✓ src/lib/videoStyles.test.ts (3 tests) 5ms
+ ✓ src/server/services/social/autoStyle.test.ts (3 tests) 3ms
+
+ Test Files  4 passed (4)
+      Tests  67 passed (67)
+   Start at  08:52:49
+   Duration  3.26s (transform 406ms, setup 0ms, collect 1.67s, tests 1.04s, environment 0ms, prepare 137ms)
+

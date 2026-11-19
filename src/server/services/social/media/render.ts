@@ -8,14 +8,14 @@ import { videoMeta,videoDuration } from '../publish/media';
 import { RadarError } from '@/server/errors';
 import { type Plan,type Timeline,type Checkpoint } from './model';
 
-export async function renderMedia(bid:string,id:string,format:'video'|'carousel',plan:Plan,audioUrl:string|undefined,timeline:Timeline|undefined,signal:AbortSignal,progress:(p:{done:number;total:number})=>Promise<void>):Promise<Pick<Checkpoint,'video'|'slides'>>{
+export async function renderMedia(bid:string,id:string,format:'video'|'carousel',plan:Plan,audioUrl:string|undefined,timeline:Timeline|undefined,signal:AbortSignal,progress:(p:{done:number;total:number})=>Promise<void>,renderStyle?:Checkpoint['renderStyle']):Promise<Pick<Checkpoint,'video'|'slides'>>{
  const lock=await pool.connect();const lockAbort=new AbortController();let lockLost=false;const lost=()=>{lockLost=true;lockAbort.abort();};lock.on('error',lost);lock.on('end',lost);signal=AbortSignal.any([signal,lockAbort.signal]);let locked=false;let dir='';
  try{
   locked=(await lock.query('SELECT pg_try_advisory_lock(71839211) AS ok')).rows[0].ok;if(!locked)throw new RadarError('Another explanation is rendering. Radar will retry shortly.',409,'media_renderer_busy');
   dir=await fs.mkdtemp(path.join(os.tmpdir(),'radar-media-'));await fs.chmod(dir,0o700);
   let audio:string|undefined;
   if(format==='video'){if(!audioUrl||!timeline)throw new Error('Narration must be recorded first');const bytes=await readStoredBounded(bid,audioUrl,12*1024*1024);if(!bytes)throw new Error('Cached narration could not be read');audio=path.join(dir,'audio.mp3');await fs.writeFile(audio,bytes.body);}
-  const input=path.join(dir,'input.json');await fs.writeFile(input,JSON.stringify({format,plan,timeline,dir,audio,ffmpeg:process.env.FFMPEG_PATH||'ffmpeg',ffprobe:process.env.FFPROBE_PATH||'ffprobe'}),{mode:0o600});
+  const input=path.join(dir,'input.json');await fs.writeFile(input,JSON.stringify({format,plan,timeline,dir,audio,renderStyle,ffmpeg:process.env.FFMPEG_PATH||'ffmpeg',ffprobe:process.env.FFPROBE_PATH||'ffprobe'}),{mode:0o600});
   await new Promise<void>((resolve,reject)=>{
    const child=spawn(process.execPath,['--import','tsx',path.join(process.cwd(),'src/server/services/social/media/renderChild.ts'),input],{detached:true,shell:false,env:{PATH:process.env.PATH||'/usr/bin:/bin',HOME:dir,TMPDIR:dir,NODE_ENV:process.env.NODE_ENV||'development'},stdio:['ignore','ignore','pipe','ipc']});let error='';let settled=false;
    const kill=()=>{if(child.pid)try{process.kill(-child.pid,'SIGKILL');}catch{}};

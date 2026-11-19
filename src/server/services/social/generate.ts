@@ -1,3 +1,4 @@
+import { legacyVideoStyle, type VideoStyleId } from '@/lib/videoStyles';
 import { eligibleYouTubeDefaults, initialYouTubePost } from '@/lib/youtubeAutomation';
 // Social pack generation (02-system.md §8.1): per-platform copy with the writing model + on-brand visuals at exact sizes.
 // Radar never posts anything (README §2.5 #1): packs are only stored for the user to copy and download.
@@ -24,7 +25,7 @@ export interface IdeaContext { metric?: string; why?: string; tie?: string | nul
 export interface PackInput {
   source: { kind: SourceKind; label: string; ref?: string | null };
   platforms: Platform[]; style: PackStyle; custom?: string; voice?: string; auto?: boolean; idea?: IdeaContext | null;
-  media?: { platform: 'instagram' | 'tiktok' | 'youtube'; format: 'recommended' | 'video' | 'carousel' }[];
+  media?: { platform: 'instagram' | 'tiktok' | 'youtube'; format: 'recommended' | 'video' | 'carousel'; videoStyle?: VideoStyleId }[];
 }
 /** Stored with the pack (jsonb) so Regenerate stays grounded in the same source. */
 export interface PackExtra { headline: string; order: Platform[]; grounding: { brief: string; link: string | null; idea?: IdeaContext | null } }
@@ -127,7 +128,7 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   const headline = input.source.kind === 'url' ? g.headline : input.source.label;
   const mediaTargets = input.platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform));
   const useGeneratedMedia = !!input.media?.length || (mediaTargets.length > 0 && await (await import('./media/config')).mediaEnabled(bid));
-  const media = useGeneratedMedia ? mediaTargets.map(platform => input.media?.find(choice => choice.platform === platform) || { platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const }) : [];
+  const media = useGeneratedMedia ? mediaTargets.map(platform => { const choice = input.media?.find(choice => choice.platform === platform); return { platform, format: choice?.format || (platform === 'instagram' ? 'recommended' as const : 'video' as const), videoStyle: choice?.videoStyle || legacyVideoStyle(b.socialAuto?.videoStyle) }; }) : [];
   const stillPlatforms = input.platforms.filter(k => !media.some(choice => choice.platform === k));
   // A style that goes to the image model: one generation for the whole pack, made at the first platform's image step.
   const modelPack = sharedPackImage() && MODEL_STYLES.includes(renderStyle(style)) && imageModelConfigured();
@@ -135,7 +136,8 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
   let i = 0;
   for (const k of input.platforms) {
     const text = await writePost(bid, p, k, { kind: input.source.kind, label: input.source.label, g, voice: input.voice, v: seed0 + i, context: options.context, recent: options.recent });
-    const post: SocialPost & { photo?: boolean } = { text, style, seed: seed0 * 7 + i, imageUrl: null, copiedAt: null, v: 0 };
+    const selectedMedia = media.find(choice => choice.platform === k);
+    const post: SocialPost & { photo?: boolean } = { text, style, ...(selectedMedia ? { videoStyle: selectedMedia.videoStyle } : {}), seed: seed0 * 7 + i, imageUrl: null, copiedAt: null, v: 0 };
     if (!media.some(choice => choice.platform === k)) try {
       if (modelPack && shared === undefined) {
         const a = packAspect(stillPlatforms), sizes = new Set(stillPlatforms.map(x => IMG_SIZES[x].join('x')));

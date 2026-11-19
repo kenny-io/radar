@@ -2,6 +2,7 @@
 // Posting to connected X / LinkedIn accounts lives in ./socialPublish (behind RADAR_SOCIAL_PUBLISHING); here it only adds
 // the edit lock near a post's send time and the image meta the posting checks use.
 import { z } from 'zod';
+import { VIDEO_STYLE_IDS, legacyVideoStyle } from '@/lib/videoStyles';
 import { and, eq, ne } from 'drizzle-orm';
 import { action, type ActionMap, type ActCtx } from './define';
 import { db, schema } from '../db';
@@ -63,7 +64,7 @@ export const actions: ActionMap = {
       token: z.string().min(6).max(64),
       source: z.object({ kind: z.enum(['idea', 'url', 'article', 'suggest']), label: z.string().max(2000), ref: z.string().max(200).nullish() }),
       platforms: z.array(PlatformZ).max(8), style: PackStyleZ, custom: z.string().max(600).optional(), voice: z.string().max(600).optional(),
-      media: z.array(z.object({ platform: z.enum(['instagram', 'tiktok', 'youtube']), format: z.enum(['recommended', 'video', 'carousel']) })).max(3).optional(),
+      media: z.array(z.object({ platform: z.enum(['instagram', 'tiktok', 'youtube']), format: z.enum(['recommended', 'video', 'carousel']), videoStyle: z.enum(VIDEO_STYLE_IDS).optional() })).max(3).optional(),
       idea: z.object({ metric: z.string().max(400).optional(), why: z.string().max(400).optional(), tie: z.string().max(400).nullish(), page: z.string().max(400).nullish(), q: z.string().max(400).optional() }).nullish(),
     }),
     run: async (ctx, i) => {
@@ -80,7 +81,8 @@ export const actions: ActionMap = {
       }
       const platforms = [...new Set(i.platforms)];
       if (!platforms.length) throw new RadarError('Pick at least one platform.');
-      const media = platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform)).map(platform => i.media?.find(choice => choice.platform === platform) || { platform, format: platform === 'instagram' ? 'recommended' as const : 'video' as const });
+      const defaultVideoStyle = legacyVideoStyle(ctx.biz.socialAuto?.videoStyle);
+      const media = platforms.filter((platform): platform is 'instagram' | 'tiktok' | 'youtube' => ['instagram', 'tiktok', 'youtube'].includes(platform)).map(platform => { const choice = i.media?.find(choice => choice.platform === platform); return { platform, format: choice?.format || (platform === 'instagram' ? 'recommended' as const : 'video' as const), videoStyle: choice?.videoStyle || defaultVideoStyle }; });
       if (new Set((i.media || []).map(x => x.platform)).size !== (i.media || []).length || (i.media || []).some(x => !platforms.includes(x.platform)) || media.some(x => !platforms.includes(x.platform) || (x.format === 'carousel' && x.platform !== 'instagram'))) throw new RadarError('Choose one supported media format per selected platform.');
       if (media.length) await (await import('../services/social/media/config')).requireMedia(ctx.bid);
       if (i.style === 'custom' && !(i.custom || '').trim()) throw new RadarError('Describe the look you want.');
@@ -136,6 +138,18 @@ export const actions: ActionMap = {
     run: changeImage,
   }),
 
+  /** Presentation default only; saving it never grants automatic posting permission. */
+  'social.videoStyleDefault': action({
+    role: 'Editor', input: z.object({ videoStyle: z.enum(VIDEO_STYLE_IDS) }).strict(),
+    run: async (ctx, { videoStyle }) => db.transaction(async tx => {
+      const [b] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, ctx.bid)).for('update');
+      if (!b) throw notFound('Business');
+      const saved = { ...(b.socialAuto || {}), videoStyle };
+      await tx.update(schema.businesses).set({ socialAuto: saved }).where(eq(schema.businesses.id, ctx.bid));
+      return { videoStyle };
+    }),
+  }),
+
   /** Automatic generation settings (AutoModal). */
   'social.auto': action({
     role: 'Editor',
@@ -151,7 +165,7 @@ export const actions: ActionMap = {
       return db.transaction(async tx => {
         const [b] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, ctx.bid)).for('update');
         const preserved = (await import('@/lib/youtubeAutomation')).youtubeDefaultsState(b?.socialAuto);
-        const saved = { ...a, ...preserved };
+        const saved = { ...a, ...preserved, videoStyle: legacyVideoStyle(b?.socialAuto?.videoStyle) };
         await tx.update(schema.businesses).set({ socialAuto: saved }).where(eq(schema.businesses.id, ctx.bid));
         return saved;
       });

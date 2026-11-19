@@ -1,3 +1,4 @@
+import { legacyVideoStyle,isVideoStyle } from './videoStyles';
 // Social channels: the isomorphic rules shared by the UI (features/social/channels, Calendar, Dashboard, Daily Brief)
 // and the server (services/social/publish, actions). A pure TypeScript port of prototype/radar-channels.jsx helpers,
 // corrected for production: business time zone instead of the browser clock, absolute `dueAt` instants, ids that may
@@ -159,7 +160,15 @@ export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
 }
 
 /** Automatic publishing must use the output of the latest completed intent; kept old media stays available manually. */
-export const automaticMediaReady = (p: Pick<SocialPost, 'mediaGeneration' | 'generatedMedia'> | undefined) => !!p && (!p.mediaGeneration || (p.mediaGeneration.status === 'ready' && p.generatedMedia?.id === p.mediaGeneration.id));
+export const automaticMediaReady = (p: Pick<SocialPost, 'mediaGeneration' | 'generatedMedia' | 'videoStyle'> | undefined) => {
+ if(!p)return false;
+ if(p.videoStyle!==undefined&&!isVideoStyle(p.videoStyle))return false;
+ if(p.generatedMedia?.videoStyle!==undefined&&!isVideoStyle(p.generatedMedia.videoStyle))return false;
+ if(p.mediaGeneration?.videoStyle!==undefined&&!isVideoStyle(p.mediaGeneration.videoStyle))return false;
+ const actual=legacyVideoStyle(p.generatedMedia?.videoStyle),desired=legacyVideoStyle(p.videoStyle);
+ if((p.videoStyle!==undefined||p.generatedMedia)&&(!p.generatedMedia||actual!==desired))return false;
+ return !p.mediaGeneration||(p.mediaGeneration.status==='ready'&&p.generatedMedia?.id===p.mediaGeneration.id&&legacyVideoStyle(p.mediaGeneration.videoStyle)===actual&&(p.mediaGeneration.styleVersion===undefined||p.mediaGeneration.styleVersion===p.generatedMedia.styleVersion));
+};
 export const mediaGenerationPending = (p: Pick<SocialPost, 'mediaGeneration'>) => !!p.mediaGeneration && ['preparing', 'queued', 'narrating', 'rendering'].includes(p.mediaGeneration.status);
 /** What a pack post would upload: its current complete visual. */
 export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl'>, k?: PostPlatform): PreflightInput => ({

@@ -1,6 +1,7 @@
 'use client';
 // Automatic generation modal — port of AutoModal (prototype/radar-social.jsx). Saves via `social.auto`. With social publishing
 // off nothing is posted; with it on, "When a pack is ready → Schedule posts" is an explicit opt-in.
+import { VideoStyleDefaults } from './VideoStyleDefaults';
 import { YouTubeAutoSettings } from './YouTubeAutoSettings';
 import { PlatLogo } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
@@ -43,6 +44,7 @@ export function AutoModal({ open, onClose }: { open: boolean; onClose: () => voi
       <p className="xs sub">For your selected platforms, Radar generates narrated videos for YouTube and TikTok. It chooses video or explanatory slides for Instagram based on the topic and your marketing context. Eligible YouTube videos use the owner’s saved visibility and audience. TikTok still needs fresh privacy and consent choices for each post.</p>
       <Field label="Single-image style" hint="For the other selected social platforms."><select className="input" value={a.style} onChange={e => setA({ ...a, style: e.target.value as SocialAuto['style'] })}>{STYLES.filter(s => s.k !== 'custom').map(s => <option key={s.k} value={s.k}>{s.l}</option>)}</select></Field>
     </fieldset>
+    <VideoStyleDefaults />
     <YouTubeAutoSettings />
     {!a.on && <p className="small sub">{B.autopilot?.enabled ? 'Separate automatic drafts are paused. Marketing Autopilot continues until the owner turns it off in Settings → Autopilot.' : 'Automatic drafts are paused. Your existing packs stay in the library. You can still generate a pack manually.'}</p>}
     {error && <p role="alert" className="small" style={{ color: 'var(--bad)' }}>{error}</p>}

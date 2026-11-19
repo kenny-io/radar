@@ -1,0 +1,64 @@
+{
+  "at": "2026-11-19T04:52:18.252Z",
+  "results": [
+    {
+      "name": "Existing picker has exactly five styles and saves desired choice without generation while retaining actual Drawn",
+      "pass": true,
+      "detail": {
+        "fiveStyles": true,
+        "payZero": true,
+        "actualPreserved": true
+      }
+    },
+    {
+      "name": "All five public previews actually play/pause by keyboard with no autoplay, no mutation, nested Escape/focus",
+      "pass": true,
+      "detail": {
+        "actualFivePlay": true,
+        "duration": 7.5,
+        "noAutoplay": true,
+        "escapeFocus": true
+      }
+    },
+    {
+      "name": "Paused automation keeps dedicated default editable; separate save changes only videoStyle and broad save preserves it",
+      "pass": true,
+      "detail": {
+        "onlyStyleChanged": true,
+        "unsavedPendingNotImplicit": true
+      }
+    },
+    {
+      "name": "Viewer preview remains usable while selection/default saves and API writes are denied; foreign tenant hidden",
+      "pass": true,
+      "detail": {
+        "viewer403": true,
+        "foreign404": true,
+        "unknown400": true
+      }
+    },
+    {
+      "name": "Mobile picker has no overflow, visible keyboard selection and usable preview controls",
+      "pass": true,
+      "detail": {
+        "width": 390,
+        "keyboardSaves": true,
+        "previewPlays": true
+      }
+    }
+  ],
+  "errors": [],
+  "rpcActions": [
+    "app.seen",
+    "social.mediaStyle",
+    "app.seen",
+    "app.seen",
+    "social.videoStyleDefault",
+    "social.auto",
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "app.seen",
+    "social.mediaStyle"
+  ]
+}
