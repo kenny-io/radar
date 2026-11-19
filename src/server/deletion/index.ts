@@ -1,6 +1,7 @@
 // Delete and restore a business (.factory/delete-business/architecture.md §3). A delete marks the row and stops its
 // queued work; nothing is removed until the wipe, 168 hours later, so a restore brings back exactly the same business.
 // The database clock decides every time here: `deleted_at`, `purge_at`, and whether a restore is still allowed.
+import { scrubYouTubeData, attemptYouTubeRevokes } from '../services/social/publish/youtubeRetention';
 import { and, desc, eq, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { RadarError, forbidden, notFound } from '../errors';
@@ -59,18 +60,20 @@ export async function deleteBusiness(userId: string, bid: string, input: { domai
     const biz = (await tx.select().from(B).where(eq(B.id, bid)).for('update'))[0];
     if (!biz) throw notFound('Business');
     if (biz.ownerId !== userId) throw forbidden();
-    if (biz.status === 'deleted' && biz.deletedAt && biz.purgeAt) return { biz, deletedAt: biz.deletedAt, purgeAt: biz.purgeAt, fresh: false };
+    if (biz.status === 'deleted' && biz.deletedAt && biz.purgeAt) { const cleanup = await scrubYouTubeData(tx, { bid, reason: 'delete', now: new Date(), bumpRevision: false }); return { biz, deletedAt: biz.deletedAt, purgeAt: biz.purgeAt, fresh: false, revokeJobIds: cleanup.revokeJobIds }; }
     if (biz.status !== 'active') throw notActive();
     if (!domainMatches(input.domain, biz.domain)) throw domainMismatch();
     const [marked] = await tx.update(B)
       .set({ status: 'deleted', deletedAt: sql`now()`, purgeAt: sql`now() + ${RETENTION_INTERVAL}`, rev: sql`${B.rev} + 1`, updatedAt: sql`now()` })
       .where(and(eq(B.id, bid), eq(B.status, 'active'))).returning({ deletedAt: B.deletedAt, purgeAt: B.purgeAt });
     if (!marked?.deletedAt || !marked.purgeAt) throw new Error('Business delete did not mark the row');
+    const cleanup = await scrubYouTubeData(tx, { bid, reason: 'delete', now: new Date(), bumpRevision: false });
     await cancelQueuedJobs(tx, bid);
     // An OAuth flow started before the delete must not save tokens into it afterwards.
     await tx.delete(schema.oauthStates).where(eq(schema.oauthStates.businessId, bid));
-    return { biz, deletedAt: marked.deletedAt, purgeAt: marked.purgeAt, fresh: true };
+    return { biz, deletedAt: marked.deletedAt, purgeAt: marked.purgeAt, fresh: true, revokeJobIds: cleanup.revokeJobIds };
   });
+  await attemptYouTubeRevokes(out.revokeJobIds);
   const result: DeleteBusinessResult = { id: bid, name: nameOf(out.biz), domain: out.biz.domain, deletedAt: out.deletedAt.toISOString(), purgeAt: out.purgeAt.toISOString(), nextId: null };
   // The delete is committed. Nothing below may fail it.
   if (out.fresh) {

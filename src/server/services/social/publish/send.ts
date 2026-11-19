@@ -1,3 +1,5 @@
+import { youtubeMayResend, youtubeMayInitialize, youtubeApproved, clearYouTubeApproval, lockYouTubeAccount } from './youtubeGuards';
+import { YOUTUBE_LABEL } from '@/lib/youtubeLifecycle';
 import { reportFailure } from '@/server/observability/failures';
 // Claim and send one pub (architecture.md §9). One code path for the worker (scheduled) and Post now / Try again (manual).
 // Never twice: a conditional claim gives each attempt a fresh attempt_key and every later write is conditional on it; only
@@ -28,6 +30,8 @@ export const MAX_ATTEMPTS = 4;
 export const backoffMs = (attempt: number) => (env.devStubs ? [3, 6, 12] : [60, 300, 900])[Math.min(attempt, 3) - 1] * 1000;
 /** A `sending` row this old belongs to a dead process: verify (create stage) or retry (earlier stages). */
 export const STUCK_MS = 3 * 60_000;
+const safeFailure = (r: Pick<PubRow, 'ch'>, error: unknown) => r.ch === 'youtube' ? new Error('YouTube publishing operation failed; inspect local status code') : error;
+const safeDetail = (r: Pick<PubRow, 'ch'>, detail: string) => r.ch !== 'youtube' || detail === CONTENT_MISSING || detail === 'Autopilot is off. Schedule this draft manually to publish it.' ? detail : 'YouTube publishing operation failed';
 const log = (r: Pick<PubRow, 'id' | 'sid'>, msg: string) => console.log(`[social.send] pub ${r.id} ${r.sid}: ${msg}`);
 
 /* ── Claims ── */
@@ -35,7 +39,7 @@ const log = (r: Pick<PubRow, 'id' | 'sid'>, msg: string) => console.log(`[social
 /** Worker claim: only a due, not stale, not held, not backing-off `scheduled` row. */
 export async function claimScheduled(pubId: string): Promise<PubRow | null> {
   const [r] = await db.update(P).set({ status: 'sending', attemptKey: sql`gen_random_uuid()`, attempts: sql`${P.attempts} + 1`, claimedAt: sql`now()`, stage: 'media', err: null, errCode: null, updatedAt: sql`now()` })
-    .where(and(eq(P.id, pubId), eq(P.status, 'scheduled'), lte(P.dueAt, sql`now()`), sql`${P.dueAt} > now() - ${`${STALE_MS / 1000} seconds`}::interval`,
+    .where(and(eq(P.id, pubId), eq(P.status, 'scheduled'), youtubeMayInitialize, youtubeApproved, lte(P.dueAt, sql`now()`), sql`${P.dueAt} > now() - ${`${STALE_MS / 1000} seconds`}::interval`,
       sql`(${P.retryAt} IS NULL OR ${P.retryAt} <= now())`, sql`EXISTS (SELECT 1 FROM social_accounts a WHERE a.id = ${P.acctId} AND NOT a.expired)`, sql`(${P.autopilotActivationId} IS NULL OR EXISTS (SELECT 1 FROM businesses b WHERE b.id = ${P.businessId} AND b.status = 'active' AND b.autopilot->>'enabled' = 'true' AND b.autopilot->>'activationId' = ${P.autopilotActivationId}))`))
     .returning();
   return r || null;
@@ -43,21 +47,26 @@ export async function claimScheduled(pubId: string): Promise<PubRow | null> {
 
 /** Post now / Try again: create or take over the row unless it is posted, sending, or scheduled within the lock window.
  *  Returns null when someone else has the post. */
-export async function claimManual(o: { bid: string; t: Target; acct: AcctRow; userId: string | null; tz: string }): Promise<PubRow | null> {
+async function claimManualInside(q: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0], o: { bid: string; t: Target; acct: AcctRow; userId: string | null; tz: string }): Promise<PubRow | null> {
   const now = Date.now(); const { date, time } = localParts(now, o.tz);
-  const v = { platform: o.t.platform, kind: o.t.kind, acctId: o.acct.id, ch: o.acct.ch, acctLabel: acctLabel(acctPublic(o.acct)), date, time, dueAt: new Date(now), updatedBy: o.userId, autopilotActivationId: null };
-  const [r] = await db.insert(P).values({ businessId: o.bid, sid: o.t.sid, src: o.t.src, ...v, status: 'sending', attempts: 1, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', createdBy: o.userId })
+  const v = { platform: o.t.platform, kind: o.t.kind, acctId: o.acct.id, ch: o.acct.ch, acctLabel: o.acct.ch === 'youtube' ? YOUTUBE_LABEL : acctLabel(acctPublic(o.acct)), date, time, dueAt: new Date(now), updatedBy: o.userId, autopilotActivationId: null };
+  const [r] = await q.insert(P).values({ businessId: o.bid, sid: o.t.sid, src: o.t.src, ...v, status: 'sending', attempts: 1, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', createdBy: o.userId })
     .onConflictDoUpdate({
       target: [P.businessId, P.sid],
-      set: { ...v, status: 'sending', attempts: sql`${P.attempts} + 1`, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', retryAt: null, err: null, errCode: null, errDetail: null, updatedAt: sql`now()` },
-      setWhere: sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND ${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval)`,
+      set: { ...v, payload: clearYouTubeApproval, status: 'sending', attempts: sql`${P.attempts} + 1`, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', retryAt: null, err: null, errCode: null, errDetail: null, updatedAt: sql`now()` },
+      setWhere: and(youtubeMayInitialize, sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND ${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval)`),
     }).returning();
   return r || null;
 }
 
+export async function claimManual(o: { bid: string; t: Target; acct: AcctRow; userId: string | null; tz: string }): Promise<PubRow | null> {
+  if (o.acct.ch !== 'youtube') return claimManualInside(db, o);
+  return db.transaction(async q => (await lockYouTubeAccount(q, o.bid, o.acct.id)) ? claimManualInside(q, o) : null);
+}
+
 /* ── Outcome writes (all conditional on the attempt) ── */
 
-const mine = (r: PubRow) => and(eq(P.id, r.id), eq(P.attemptKey, r.attemptKey!), eq(P.status, 'sending'));
+const mine = (r: PubRow) => and(eq(P.id, r.id), eq(P.attemptKey, r.attemptKey!), eq(P.status, 'sending'), youtubeMayResend, youtubeApproved);
 const packHref = (r: PubRow, platform: string) => { const m = /^s:(.+):(x|linkedin|instagram|tiktok|youtube)$/.exec(r.sid); return m ? `/social?pack=${encodeURIComponent(m[1])}&plat=${platform}` : '/brief'; };
 const sidDay = (sid: string) => (sid.startsWith('b:') ? { day: sid.slice(2, 12), itemId: sid.slice(13) } : null);
 
@@ -76,12 +85,12 @@ async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, man
       if (!x) return null; // another attempt owns the row
       u = x;
     } catch (e: any) {
-      await reportFailure(e, { source: 'social', operation: 'social.persistPosted', businessId: r.businessId, userId, ref: r.id, provider: r.platform, attempt: i + 1, maxAttempts: 3, retrying: i < 2, degraded: true });
-      console.error(`[social.send] pub ${r.id} ${r.sid}: posted as ${c.remoteId} but saving failed (try ${i + 1}): ${e?.message || e}`);
+      await reportFailure(safeFailure(r, e), { source: 'social', operation: 'social.persistPosted', businessId: r.businessId, userId, ref: r.id, provider: r.platform, attempt: i + 1, maxAttempts: 3, retrying: i < 2, degraded: true });
+      console.error(`[social.send] pub ${r.id} ${r.sid}: posted${r.ch === 'youtube' ? '' : ` as ${c.remoteId}`} but saving failed (try ${i + 1}): ${r.ch === 'youtube' ? 'YouTube operation failed' : e?.message || e}`);
       if (i < 2) await new Promise(res => setTimeout(res, 500 * (i + 1)));
     }
   }
-  if (!u) { console.error(`[social.send] pub ${r.id} ${r.sid}: LIVE as ${c.remoteId} (${c.url}) but not saved; left 'sending' for verify`); return null; }
+  if (!u) { console.error(`[social.send] pub ${r.id} ${r.sid}: LIVE${r.ch === 'youtube' ? '' : ` as ${c.remoteId} (${c.url})`} but not saved; left 'sending' for verify`); return null; }
   // A reminder failure must never prevent saving a live post or cause a second provider create.
   try {
     const source = parseSid(u.sid);
@@ -91,8 +100,8 @@ async function finishPosted(r: PubRow, c: { remoteId: string; url: string }, man
   log(r, `posted (attempt ${r.attempts}${manual ? ', now' : ''})`);
   try { await sendHooks.afterPosted(r, c, manual, userId, text); }
   catch (e: any) {
-    await reportFailure(e, { source: 'social', operation: 'social.afterPosted', businessId: r.businessId, userId, ref: r.id, provider: r.platform, degraded: true });
-    console.error(`[social.send] pub ${r.id} ${r.sid}: posted; follow-up failed: ${e?.message || e}`);
+    await reportFailure(safeFailure(r, e), { source: 'social', operation: 'social.afterPosted', businessId: r.businessId, userId, ref: r.id, provider: r.platform, degraded: true });
+    console.error(`[social.send] pub ${r.id} ${r.sid}: posted; follow-up failed: ${r.ch === 'youtube' ? 'YouTube operation failed' : e?.message || e}`);
   }
   return u;
 }
@@ -108,16 +117,17 @@ async function afterPostedDefault(r: PubRow, c: { remoteId: string; url: string 
     });
     if (it) await track(it.kind === 'post' ? 'brief.post_posted' : 'brief.reply_posted', { bid: r.businessId, uid: userId, ref: it.id, props: { date: bd.day, kind: it.kind, acct: acctOf(it), plat: it.kind === 'post' ? it.pl : it.plat, edited: Object.keys(it.edits || {}).length > 0, where: it.where, url: it.url, title: it.title, direct: true } });
   }
-  await track('social.posted', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, remoteId: c.remoteId, url: c.url, scheduled: !manual, attempt: r.attempts, direct: r.src === 'brief', costUsd: publishCostUsd(r.platform, 'post', text) } });
+  await track('social.posted', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, ...(r.ch === 'youtube' ? {} : { remoteId: c.remoteId, url: c.url }), scheduled: !manual, attempt: r.attempts, direct: r.src === 'brief', costUsd: publishCostUsd(r.platform, 'post', text) } });
   await bump(r.businessId);
 }
 
 async function finishFailed(r: PubRow, code: PubErrCode, detail: string, manual: boolean, userId: string | null, userMsg?: string | null): Promise<PubRow | null> {
+  if (r.ch === 'youtube') detail = safeDetail(r, detail);
   const [u] = await db.update(P).set({ status: 'failed', err: userMsg || errCopy(code, r.platform), errCode: code, errDetail: detail.slice(0, 500), stage: null, retryAt: null, updatedAt: new Date() }).where(mine(r)).returning();
   if (!u) return null;
   // Revoking Autopilot intentionally stops a claimed send; this is an authorization outcome.
   if (!(code === 'rejected' && detail === 'Autopilot is off. Schedule this draft manually to publish it.'))
-    await reportFailure(new Error(detail), { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code, attempt: r.attempts, maxAttempts: manual ? r.attempts : MAX_ATTEMPTS, retrying: false });
+    await reportFailure(new Error(safeDetail(r, detail)), { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code, attempt: r.attempts, maxAttempts: manual ? r.attempts : MAX_ATTEMPTS, retrying: false });
   log(r, `failed ${code} after ${r.attempts} attempt(s): ${detail.slice(0, 200)}`);
   if (detail !== CONTENT_MISSING) {
     await track('social.failed', { bid: r.businessId, uid: userId, ref: r.sid, props: { sid: r.sid, src: r.src, kind: r.kind, platform: r.platform, acct: r.acctId, ch: r.ch, code, attempts: r.attempts, scheduled: !manual } });
@@ -131,9 +141,9 @@ async function finishFailed(r: PubRow, code: PubErrCode, detail: string, manual:
 async function transient(r: PubRow, e: SendError, manual: boolean, userId: string | null): Promise<PubRow | null> {
   if (manual || r.attempts >= MAX_ATTEMPTS) return finishFailed(r, e.code === 'rate_limit' ? 'rate_limit' : 'unavailable', e.detail, manual, userId);
   const at = Math.max(Date.now() + backoffMs(r.attempts), e.retryAt || 0);
-  const [u] = await db.update(P).set({ status: 'scheduled', stage: null, retryAt: new Date(at), errDetail: e.detail.slice(0, 500), updatedAt: new Date() }).where(mine(r)).returning();
+  const [u] = await db.update(P).set({ status: 'scheduled', stage: null, retryAt: new Date(at), errDetail: safeDetail(r, e.detail).slice(0, 500), updatedAt: new Date() }).where(mine(r)).returning();
   if (!u) return null;
-  await reportFailure(e, { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: e.code, attempt: r.attempts, maxAttempts: MAX_ATTEMPTS, retrying: true });
+  await reportFailure(safeFailure(r, e), { source: 'social', operation: 'social.publish', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: e.code, attempt: r.attempts, maxAttempts: MAX_ATTEMPTS, retrying: true });
   log(r, `retry ${r.attempts}/${MAX_ATTEMPTS - 1} at ${new Date(at).toISOString()} (${e.code})`);
   // A per-attempt key: the running job still holds `social.send:{id}`. The claim decides who sends.
   await enqueue('social.send', { pubId: r.id }, { businessId: r.businessId, ref: r.sid, runAt: new Date(at), singletonKey: `social.send:${r.id}:${r.attempts}`, maxAttempts: 1 }).catch(async error => { await reportFailure(error, { source: 'social', operation: 'social.enqueueRetry', businessId: r.businessId, ref: r.id, provider: r.platform, attempt: r.attempts }); });
@@ -154,7 +164,7 @@ async function hold(r: PubRow, manual: boolean, userId: string | null): Promise<
 
 /** Unknown outcome after create: read back on X; LinkedIn can't, so it fails as `unknown`. Never resends. */
 async function verifyOrFail(r: PubRow, ad: Adapter, a: AcctCtx, text: string, manual: boolean, userId: string | null, why: string): Promise<PubRow | null> {
-  await reportFailure(new Error(why), { source: 'social', operation: 'social.verifyUnknown', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: 'unknown', attempt: r.attempts, retrying: false, degraded: true });
+  await reportFailure(new Error(safeDetail(r, why)), { source: 'social', operation: 'social.verifyUnknown', businessId: r.businessId, userId, ref: r.id, provider: r.platform, code: 'unknown', attempt: r.attempts, retrying: false, degraded: true });
   if (ad.verify && text) {
     try {
       if (ad.verifyDelayMs) await new Promise(res => setTimeout(res, ad.verifyDelayMs));
@@ -186,6 +196,7 @@ async function beforeProviderCreate(r: PubRow, accepted: boolean): Promise<void>
 
 /** Send a claimed row (status 'sending'). Returns the final row, or null when another attempt took it over. */
 export async function runSend(r: PubRow, o: { manual: boolean; userId?: string | null }): Promise<PubRow | null> {
+  if (r.ch === 'youtube' && (r.payload?.youtubeRetention?.noResend || r.payload?.youtubeRetention?.needsApproval)) return null;
   const manual = o.manual; const userId = o.userId ?? null;
   const acct = await loadAccount(r.acctId);
   if (!acct) return finishFailed(r, 'auth', 'account disconnected', manual, userId);
@@ -194,7 +205,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
   // The latest text and images, read now (edits are refused from 5 minutes before the send).
   let t = await loadTarget(r.businessId, r.sid);
   if (!t || t.platform !== r.platform) return finishFailed(r, 'rejected', CONTENT_MISSING, manual, userId);
-  try { t = await ensureImages(biz, t); } catch (e: any) { return finishFailed(r, 'media', `render: ${e?.message || e}`, manual, userId); }
+  try { t = await ensureImages(biz, t); } catch (e: any) { return finishFailed(r, 'media', `render: ${r.ch === 'youtube' ? 'YouTube operation failed' : e?.message || e}`, manual, userId); }
   const k = r.platform as PostPlatform;
   const problems = preflight(k, preflightInput(t));
   if (problems.length) return finishFailed(r, 'media', problems[0].msg, manual, userId, problems[0].msg);
@@ -207,7 +218,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
   catch (e: any) {
     if (e instanceof AccountExpired) return hold(r, manual, userId);
     if (e instanceof SendError) return transient(r, e, manual, userId);
-    return transient(r, new SendError('transient', 'unavailable', `token: ${e?.message || e}`), manual, userId);
+    return transient(r, new SendError('transient', 'unavailable', `token: ${r.ch === 'youtube' ? 'YouTube operation failed' : e?.message || e}`), manual, userId);
   }
   // One forced refresh after a 401; if the account is then expired the post is held, a second 401 is `auth`.
   const authed = async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -255,7 +266,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
       if (payload.providerRef && (!(e instanceof SendError) || !e.confirmedUnpublished)) return keepProcessing(r, payload);
       if (e instanceof SendError && e.kind === 'unknown') return verifyOrFail(r, ad, a, t.text, manual, userId, e.detail);
       if (e instanceof SendError || e instanceof AccountExpired) throw e;
-      return verifyOrFail(r, ad, a, t.text, manual, userId, `create: ${e?.message || e}`); // a crash mid-request: unknown
+      return verifyOrFail(r, ad, a, t.text, manual, userId, `create: ${r.ch === 'youtube' ? 'YouTube operation failed' : e?.message || e}`); // a crash mid-request: unknown
     }
   } catch (e: any) {
     if (e instanceof AccountExpired) return hold(r, manual, userId);
@@ -281,6 +292,7 @@ async function keepProcessing(r: PubRow, payload: any): Promise<PubRow | null> {
   return u || null;
 }
 async function resumeProcessing(r: PubRow): Promise<PubRow | null> {
+  if (r.ch === 'youtube' && r.payload?.youtubeRetention) return null;
   const manual = !!r.payload?.manual; const text = String(r.payload?.text || '');
   if (Date.now() - Number(r.payload?.processingStartedAt || r.createdAt.getTime()) > STALE_MS) return finishFailed(r, 'unknown', 'provider processing not confirmed within 24 hours', manual, null);
   const acct = await loadAccount(r.acctId);
@@ -291,11 +303,11 @@ async function resumeProcessing(r: PubRow): Promise<PubRow | null> {
     await beforeProviderCreate(r, true);
     const a: AcctCtx = { ch: acct.ch, remoteId: acct.remoteId, handle: acct.handle, token: tok.t.access_token, beforeCreate: () => beforeProviderCreate(r, true) };
     let result: Created;
-    try { result = await ad.resume(a, String(r.payload.providerRef)); }
+    try { result = await ad.resume(a, String(r.payload?.providerRef)); }
     catch (error) {
       if (!(error instanceof SendError) || error.kind !== 'auth') throw error;
       const refreshed = await ensureToken(acct.id, { stale: a.token }); a.token = refreshed.t.access_token;
-      result = await ad.resume(a, String(r.payload.providerRef));
+      result = await ad.resume(a, String(r.payload?.providerRef));
     }
     return result.pending ? keepProcessing(r, r.payload) : finishPosted(r, result, manual, null, text);
   } catch (e: any) {
@@ -309,7 +321,7 @@ async function resumeProcessing(r: PubRow): Promise<PubRow | null> {
  *  verify or fail; earlier stages never reached the platform → the transient path (a manual send fails). */
 export async function recoverStuck(pubId: string): Promise<PubRow | null> {
   const [r] = await db.update(P).set({ attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, updatedAt: sql`now()` })
-    .where(and(eq(P.id, pubId), eq(P.status, 'sending'), sql`${P.claimedAt} < now() - ${`${STUCK_MS / 1000} seconds`}::interval`)).returning();
+    .where(and(eq(P.id, pubId), eq(P.status, 'sending'), youtubeMayResend, youtubeApproved, sql`${P.claimedAt} < now() - ${`${STUCK_MS / 1000} seconds`}::interval`)).returning();
   if (!r) return null;
   const manual = !!r.payload?.manual;
   if (r.payload?.providerRef) return resumeProcessing(r);

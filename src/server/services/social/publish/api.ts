@@ -7,6 +7,7 @@ export interface Tokens {
   access_token: string; refresh_token?: string | null; expires_at?: number | null; refresh_expires_at?: number | null; scope?: string;
   /** Encrypted grant provenance; never choose an existing account’s API host from current deployment settings. */
   instagram?: { mode: 'instagram' | 'unified'; clientBusinessId?: string; configId?: string; apiVersion?: string };
+  youtube?: { profileFetchedAt: number; authorizationCheckedAt: number; verificationHold?: 'configuration' };
   stub?: boolean; /** dev stubs: the next refresh fails definitively (social.devSimulate 'expire') */ refreshFails?: boolean;
 }
 /** Identity of the signed-in remote account (pending authorization). */

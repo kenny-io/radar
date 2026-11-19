@@ -1,7 +1,7 @@
 import { pgTable, text, uuid, timestamp, jsonb, integer, boolean, doublePrecision, check, date, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { MailSenderMeta } from '../services/mailIdentity';
-import type { OnboardingState, SubStatus } from '@/lib/types';
+import type { OnboardingState, SubStatus, SocialPubPayload } from '@/lib/types';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
 const created = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -466,7 +466,7 @@ export const socialPubs = pgTable('social_pubs', {
   claimedAt: timestamp('claimed_at', { withTimezone: true }),
   retryAt: timestamp('retry_at', { withTimezone: true }),
   /** Snapshot at claim: { text, media: [{ url, bytes, type }], manual } (for verify) */
-  payload: jsonb('payload').$type<any>(),
+  payload: jsonb('payload').$type<SocialPubPayload>(),
   remoteId: text('remote_id'),
   remoteUrl: text('remote_url'),
   postedAt: timestamp('posted_at', { withTimezone: true }),

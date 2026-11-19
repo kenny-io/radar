@@ -42,7 +42,7 @@ function stubStart(ctx: OAuthStartCtx) {
 }
 /** Re-check the role, then store the pending authorization and hand the popup its reference. */
 async function finish(ctx: OAuthCallbackCtx, ch: SocialChannel, tokens: Tokens, id: Identity, identities?: Identity[]) {
-  const oauthRef = await savePendingSocial(ctx.bid, ctx.user!.id, ch, { tokens, id, ...(identities ? { identities } : {}) });
+  const oauthRef = await savePendingSocial(ctx.bid, ctx.user!.id, ch, { tokens, id, ...(identities ? { identities } : {}), ...(ch === 'youtube' ? { authorizationStartedAt: ctx.data?.youtubeStartedAt } : {}) });
   console.log(`[social.oauth] ${ch} authorized for ${ctx.bid}`);
   return { ok: true, result: { oauthRef, ch, ...(identities ? { pickAccount: true } : {}) } };
 }
@@ -52,7 +52,8 @@ async function callbackFor(ctx: OAuthCallbackCtx, ch: SocialChannel, real: () =>
   if (!ctx.params.get('code')) return { ok: false, error: 'denied' };
   if (isStub(ctx)) {
     const b = await getBiz(ctx.bid);
-    return finish(ctx, ch, stubTokens(ch), stubIdentity(ch, { businessName: (b.profile as Profile)?.business?.name || b.domain, userName: ctx.user.name, userId: ctx.user.id, as: ctx.params.get('stub_as') }));
+    const tokens = stubTokens(ch); if (ch === 'youtube') tokens.youtube = { profileFetchedAt: Date.now(), authorizationCheckedAt: Date.now() };
+    return finish(ctx, ch, tokens, stubIdentity(ch, { businessName: (b.profile as Profile)?.business?.name || b.domain, userName: ctx.user.name, userId: ctx.user.id, as: ctx.params.get('stub_as') }));
   }
   try {
     const r = await real();
@@ -158,13 +159,14 @@ defineOAuth('tiktok', {
 defineOAuth('youtube', {
   role: 'Editor',
   async start(ctx) {
-    await gate(ctx); if (env.devStubs) return stubStart(ctx);
+    await gate(ctx); if (env.devStubs) return { ...stubStart(ctx), data: { youtubeStartedAt: Date.now() } };
     if (!env.youtubeClientId || !env.youtubeClientSecret) throw new RadarError(UNAVAILABLE, 503, 'oauth_unconfigured');
     const verifier = randomToken(48); const challenge = b64url(crypto.createHash('sha256').update(verifier).digest());
-    return { url: `${YOUTUBE_AUTHORIZE}?${q({ client_id: env.youtubeClientId, redirect_uri: ctx.redirectUri, response_type: 'code', scope: YOUTUBE_SCOPES, state: ctx.state, access_type: 'offline', prompt: 'consent', code_challenge: challenge, code_challenge_method: 'S256' })}`, data: { v: encrypt(verifier) } };
+    return { url: `${YOUTUBE_AUTHORIZE}?${q({ client_id: env.youtubeClientId, redirect_uri: ctx.redirectUri, response_type: 'code', scope: YOUTUBE_SCOPES, state: ctx.state, access_type: 'offline', prompt: 'consent', code_challenge: challenge, code_challenge_method: 'S256' })}`, data: { v: encrypt(verifier), youtubeStartedAt: Date.now() } };
   },
   callback: ctx => callbackFor(ctx, 'youtube', async () => {
     const verifier = decrypt<string>(ctx.data?.v); if (!verifier) throw new Error('missing PKCE verifier');
-    const tokens = await youtubeExchange(ctx.params.get('code') || '', verifier, ctx.redirectUri); return { tokens, id: await youtubeMe(tokens.access_token) };
+    const tokens = await youtubeExchange(ctx.params.get('code') || '', verifier, ctx.redirectUri); const id = await youtubeMe(tokens.access_token);
+    tokens.youtube = { profileFetchedAt: Date.now(), authorizationCheckedAt: Date.now() }; return { tokens, id };
   }),
 });

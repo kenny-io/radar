@@ -1,7 +1,7 @@
 // Connected social accounts (architecture.md §7): encrypted tokens, the public projection, pending authorizations, and token
 // refresh serialized per account under a Postgres row lock (X refresh tokens are single-use and rotate, so two processes
 // refreshing at once must never burn the token or wrongly mark the account expired). Logs carry ids, never tokens.
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, gte, ne, sql } from 'drizzle-orm';
 import { db, schema } from '../../../db';
 import { env } from '../../../env';
 import { decrypt, encrypt, randomToken } from '../../../crypto';
@@ -18,7 +18,8 @@ import { liAdapter } from './linkedin';
 import { stubAdapter } from './stubs';
 import { instagramAdapterFor, instagramUnifiedConfigured } from './instagram';
 import { tiktokAdapter } from './tiktok';
-import { youtubeAdapter } from './youtube';
+import { youtubeAdapter, YouTubeTokenError } from './youtube';
+import { YOUTUBE_LABEL, youtubeProfileStale } from '@/lib/youtubeLifecycle';
 
 export type AcctRow = typeof schema.socialAccounts.$inferSelect;
 const A = schema.socialAccounts;
@@ -68,7 +69,9 @@ export function acctPublic(r: AcctRow): SocialAccount {
   let expiresAt: string | null = null;
   if (r.ch === 'li_profile') expiresAt = r.expiresAt ? r.expiresAt.toISOString() : null;
   else if (r.ch === 'li_page') { const t = tokensOf(r); expiresAt = t?.refresh_expires_at ? new Date(t.refresh_expires_at).toISOString() : r.expiresAt ? r.expiresAt.toISOString() : null; }
-  return { id: r.id, ch: r.ch, name: r.name, handle: r.handle ?? null, expired: r.expired, expiresAt };
+  const yt = r.ch === 'youtube' ? tokensOf(r)?.youtube : undefined;
+  const stale = r.ch === 'youtube' && youtubeProfileStale(r, yt);
+  return { id: r.id, ch: r.ch, name: stale ? YOUTUBE_LABEL : r.name, handle: stale ? null : r.handle ?? null, expired: stale || r.expired, expiresAt, ...(yt?.verificationHold ? { verificationHold: true } : {}) };
 }
 export async function accountRows(bid: string): Promise<AcctRow[]> { return db.select().from(A).where(eq(A.businessId, bid)).orderBy(A.createdAt); }
 export async function accountRow(bid: string, id: string): Promise<AcctRow | null> {
@@ -78,12 +81,21 @@ export async function accountRow(bid: string, id: string): Promise<AcctRow | nul
 export const tokenFields = (t: Tokens) => ({ tokensEnc: encrypt(t), expiresAt: t.expires_at ? new Date(t.expires_at) : null });
 
 /* ── Pending authorizations (OAuth callback → social.connect), 1 hour, pruned by maintenance ── */
-export interface Pending { tokens: Tokens; id: Identity; /** Unified grants may share multiple accounts; selection stays server-validated. */ identities?: Identity[] }
+export interface Pending { tokens: Tokens; id: Identity; /** Unified grants may share multiple accounts; selection stays server-validated. */ identities?: Identity[]; authorizationStartedAt?: number }
 const PENDING = 'social-pending:';
 const PENDING_TTL_MS = 3600e3;
 export async function savePendingSocial(bid: string, userId: string | null, ch: SocialChannel, p: Pending): Promise<string> {
   const ref = 'spend_' + randomToken(18);
-  await db.insert(schema.oauthStates).values({ state: ref, userId, businessId: bid, provider: PENDING + ch, data: { enc: encrypt(p) } });
+  const save = async (q: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
+    if (ch === 'youtube') {
+      const [business] = await q.select().from(schema.businesses).where(eq(schema.businesses.id, bid)).for('update');
+      if (!business || business.status !== 'active') throw new AccountExpired('authorization');
+      const [cutoff] = await q.select().from(schema.cronMarks).where(eq(schema.cronMarks.key, `youtube.cleanup:${bid}`));
+      if (cutoff && (!p.authorizationStartedAt || p.authorizationStartedAt <= cutoff.createdAt.getTime())) throw new AccountExpired('authorization');
+    }
+    await q.insert(schema.oauthStates).values({ state: ref, userId, businessId: bid, provider: PENDING + ch, data: { enc: encrypt(p) } });
+  };
+  if (ch === 'youtube') await db.transaction(save); else await save(db);
   return ref;
 }
 export async function readPendingSocial(bid: string, userId: string, ref: string | null | undefined, ch: SocialChannel): Promise<Pending | null> {
@@ -115,14 +127,14 @@ async function emitExpired(row: AcctRow) {
  * Throws AccountExpired (definitive) or SendError transient/unavailable (5xx, network: the account is not marked).
  */
 export async function ensureToken(acctId: string, o: { force?: boolean; stale?: string } = {}): Promise<{ row: AcctRow; t: Tokens }> {
-  type R = { k: 'ok'; row: AcctRow; t: Tokens } | { k: 'expired'; row: AcctRow | null; newly: boolean } | { k: 'transient'; detail: string };
+  type R = { k: 'ok'; row: AcctRow; t: Tokens } | { k: 'expired'; row: AcctRow | null; newly: boolean; cleanup?: boolean } | { k: 'transient'; detail: string };
   const r: R = await db.transaction(async tx => {
     const row = (await tx.select().from(A).where(eq(A.id, acctId)).for('update').limit(1))[0];
     if (!row) return { k: 'expired', row: null, newly: false };
     if (row.expired) return { k: 'expired', row, newly: false };
     const t = tokensOf(row); const now = Date.now();
-    const expire = async (): Promise<R> => { await tx.update(A).set({ expired: true, expiredAt: new Date(), updatedAt: new Date() }).where(eq(A.id, row.id)); return { k: 'expired', row, newly: true }; };
-    if (!t) return expire();
+    const expire = async (): Promise<R> => { await tx.update(A).set({ expired: true, expiredAt: new Date(), updatedAt: new Date() }).where(eq(A.id, row.id)); return { k: 'expired', row, newly: true, cleanup: row.ch === 'youtube' }; };
+    if (!t || row.ch === 'youtube' && youtubeProfileStale(row, t.youtube, now)) return expire();
     const fresh = !t.expires_at || t.expires_at - REFRESH_EARLY_MS > now;
     if (o.stale ? t.access_token !== o.stale : !o.force && fresh) return { k: 'ok', row, t };
     if (!canRefresh(t, now)) {
@@ -132,16 +144,22 @@ export async function ensureToken(acctId: string, o: { force?: boolean; stale?: 
     let nt: Tokens;
     try { nt = await adapterFor(row.ch, t).refresh(t); }
     catch (e: any) {
+      if (row.ch === 'youtube' && e instanceof YouTubeTokenError && e.reason === 'configuration') {
+        const fallback = row.createdAt.getTime();
+        await tx.update(A).set({ expired: true, expiredAt: new Date(), ...tokenFields({ ...t, youtube: { profileFetchedAt: t.youtube?.profileFetchedAt ?? fallback, authorizationCheckedAt: t.youtube?.authorizationCheckedAt ?? fallback, verificationHold: 'configuration' } }), updatedAt: new Date() }).where(eq(A.id, row.id));
+        return { k: 'transient', detail: 'YouTube connection verification is paused for configuration' };
+      }
       if (e instanceof TokenError && e.definitive) { console.warn(`[social.tokens] refresh refused for ${row.id}: ${e.detail.slice(0, 200)}`); return expire(); }
       return { k: 'transient', detail: String(e?.detail || e?.message || e).slice(0, 300) };
     }
-    const next = { ...nt, stub: t.stub || undefined };
+    const next = { ...nt, ...(row.ch === 'youtube' && t.youtube ? { youtube: { ...t.youtube, authorizationCheckedAt: now } } : {}), stub: t.stub || undefined };
     const [upd] = await tx.update(A).set({ ...tokenFields(next), updatedAt: new Date() }).where(eq(A.id, row.id)).returning();
     return { k: 'ok', row: upd, t: next };
   });
   if (r.k === 'ok') return { row: r.row, t: r.t };
   if (r.k === 'transient') throw new SendError('transient', 'unavailable', `token refresh: ${r.detail}`);
-  if (r.newly && r.row) await emitExpired(r.row);
+  if (r.cleanup && r.row) { const { cleanupYouTube } = await import('./youtubeRetention'); await cleanupYouTube({ bid: r.row.businessId, acctId: r.row.id, reason: 'revoked', expectedTokensEnc: r.row.tokensEnc }); }
+  else if (r.newly && r.row) await emitExpired(r.row);
   throw new AccountExpired(acctId);
 }
 
@@ -151,7 +169,7 @@ export async function ensureToken(acctId: string, o: { force?: boolean; stale?: 
 export async function tokensTick(now: Date) {
   // Active businesses only: a deleted one gets no refresh and no "access ends" notice. Its refresh tokens outlive the
   // 7 days, and ensureToken refreshes on demand after a restore.
-  const rows = await db.select({ a: A, ownerId: schema.businesses.ownerId }).from(A).innerJoin(schema.businesses, eq(schema.businesses.id, A.businessId)).where(and(eq(A.expired, false), eq(schema.businesses.status, 'active')));
+  const rows = await db.select({ a: A, ownerId: schema.businesses.ownerId }).from(A).innerJoin(schema.businesses, eq(schema.businesses.id, A.businessId)).where(and(ne(A.ch, 'youtube'), eq(A.expired, false), eq(schema.businesses.status, 'active')));
   const flag = new Map<string, boolean>();
   const day = now.toISOString().slice(0, 10);
   for (const { a, ownerId } of rows) {

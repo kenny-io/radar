@@ -1,6 +1,7 @@
 'use client';
 // Post panel on a social pack — port of PublishBox (prototype/radar-channels.jsx, handoff §3). The state comes from
 // `packPanelState`, problems from `preflight`, and every write is a server action (the server re-checks all of it).
+import { YOUTUBE_HOLD, YOUTUBE_NO_RESEND } from '@/lib/youtubeLifecycle';
 import React, { useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Modal, Status } from '@/components/ui';
@@ -34,7 +35,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
   const cur = pickAccount(all, k, { pubAcct: pub?.acct, chosen });
   const state = packPanelState(k, post, all, cur, now);
   const issues = canPost(k) ? preflight(k, packPreflightInput(post, k)) : [];
-  const blocked = issues.length > 0 || !providerReady || mediaBusy || B.role === 'Viewer';
+  const blocked = !!pub?.noResend || !!cur?.verificationHold || issues.length > 0 || !providerReady || mediaBusy || B.role === 'Viewer';
   const sid = canPost(k) ? packSid(pack.id, k) : '';
   const label = (acctLabel(cur) || pub?.acctLabel || '');
   const at = (p: Pub) => `${fmtDW(p.date)} at ${atTz(tz, p.date, p.time)}`;
@@ -83,6 +84,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
 
   const avail = B.social.channels || SOC_CH.map(c => c.k);
   const connectable = SOC_CH.filter(c => c.plat === k && avail.includes(c.k));
+  if (pub?.noResend && pub.status !== 'posted') return <div className="col" style={{ gap: 10 }}><Status tone="warn">Upload outcome unavailable</Status><p className="small sub">{YOUTUBE_NO_RESEND}</p>{secondary}{modals}</div>;
   if (state === 'copy_only' || (state === 'not_connected' && !connectable.length)) return <div className="col" style={{ gap: 10 }}>
     <Btn kind="primary" className="btn-block" icon="copy" onClick={onCopy}>Copy text</Btn>
     {nImg > 0 && <Btn className="btn-block" icon="download" onClick={onDownload}>{nImg > 1 ? `Download ${nImg} images` : 'Download image'}</Btn>}
@@ -96,7 +98,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
   const as = pub ? postedAs(pub, all) : '';
   if (state === 'posted' && pub) return <div className="col" style={{ gap: 12 }}>
     <Status tone="ok">{`Posted ${at(pub)}`}</Status>
-    {as && <span className="small sub" style={{ marginTop: -6 }}>{`As ${as}`}</span>}
+    {as && <span className="small sub" style={{ marginTop: -6 }}>{`As ${as}`}</span>}{pub.historyExpired && <p className="xs sub">YouTube connection details were removed. This is Radar’s local upload history; check YouTube for the current video.</p>}
     <Btn className="btn-block" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={k}>{`View on ${pl}`}</LogoLabel></Btn>
     {secondary}
   </div>;
@@ -107,13 +109,13 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
   </div>;
   const expired = state === 'expired'; const scheduled = pub?.status === 'scheduled';
   return <div className="col" style={{ gap: 12 }}>
-    {expired && cur ? <div className="col" style={{ gap: 2 }}><Status tone="warn">{`${chOf(cur.ch).l} needs reconnecting`}</Status><span className="small sub">{heldLines(pub, cur, tz)?.body ?? `${pl} access for ${acctLabel(cur)} expired.`}</span></div>
+    {expired && cur ? <div className="col" style={{ gap: 2 }}><Status tone="warn">{cur.verificationHold ? 'YouTube verification paused' : `${chOf(cur.ch).l} needs reconnecting`}</Status><span className="small sub">{cur.verificationHold ? YOUTUBE_HOLD : heldLines(pub, cur, tz)?.body ?? `${pl} access for ${acctLabel(cur)} expired.`}</span></div>
       : state === 'scheduled' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${at(pub)}`}</Status><span className="small sub">{`As ${label} · edits are included until it posts`}</span></div>
         : state === 'failed' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="bad">{`Didn’t post ${at(pub)}`}</Status><span className="small sub">{failedLine(pub)}</span></div>
           : <div className="row" style={{ gap: 12 }}><span className="small grow">Post as</span>{accts.length > 1 ? <select className="input" style={{ width: 200, height: 34, fontSize: 13 }} value={cur?.id} onChange={e => setChosen(e.target.value)} aria-label="Post as">{accts.map(a => <option key={a.id} value={a.id}>{acctLabel(a) + (a.expired ? ' (reconnect)' : '')}</option>)}</select> : <span className="small sub">{label}</span>}</div>}
     <PublishOptions packId={pack.id} platform={k} post={post} acctId={cur?.id} disabled={B.role === 'Viewer' || busy || mediaBusy} onReady={setProviderReady} />
     <Issues list={issues} onFix={fix} busy={fixing} />
-    {expired && cur ? <Btn kind="primary" className="btn-block" disabled={B.role === 'Viewer'} onClick={() => { setRe(cur); setConn(cur.ch); }}><LogoLabel k={k}>{`Reconnect ${chOf(cur.ch).l}`}</LogoLabel></Btn>
+    {cur?.verificationHold ? <Btn kind="primary" className="btn-block" disabled>Verification paused</Btn> : expired && cur ? <Btn kind="primary" className="btn-block" disabled={B.role === 'Viewer'} onClick={() => { setRe(cur); setConn(cur.ch); }}><LogoLabel k={k}>{`Reconnect ${chOf(cur.ch).l}`}</LogoLabel></Btn>
       : <Btn kind="primary" className="btn-block" loading={busy} disabled={blocked} onClick={() => setConfirm(true)}><LogoLabel k={k}>{state === 'failed' ? 'Try again' : 'Post now'}</LogoLabel></Btn>}
     {scheduled ? <div className="row" style={{ gap: 8 }}><Btn className="grow" icon="calendar" disabled={busy || blocked} onClick={() => setSch(true)}>Reschedule</Btn><Btn kind="ghost" disabled={busy || B.role === 'Viewer'} onClick={unschedule}>Unschedule</Btn></div>
       : !expired && <Btn className="btn-block" icon="calendar" disabled={blocked || busy} onClick={() => setSch(true)}>Schedule</Btn>}
