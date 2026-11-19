@@ -11,3 +11,5 @@ V2 cached-audio render /tmp/radar-media-spike/video-v2.mp4: PM inspected opening
 PM inspected actual JPEG carousel slide-01-v2 and slide-03-v2 at1080x1350: legible labels/relationships, complete explanatory summaries, meaningful queue/time-gate and retained-receipt feedback, correct visible1/3and3/3order, no visible truncation/overflow. Full ordered publishing path remains Q7 acceptance-owned.
 
 No independent Q7 acceptance, integrated build or production generation verified yet. No public post used for QA.
+
+Local Linux worker image precheck attempted with Docker Desktop29.7.2/aarch64 and linux/amd64 target. It stopped at public Node base-manifest fetch with DeadlineExceeded, before any Dockerfile package/source step. Log /tmp/radar-media-worker-docker.log; this is not a passing Linux image build. Worker binary/font/runtime checks and actual image build remain required in the deployment environment. Do not weaken TLS or system network settings to bypass the local registry issue.

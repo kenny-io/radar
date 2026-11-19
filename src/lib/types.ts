@@ -171,6 +171,9 @@ export interface SocialPost {
   /** Uploaded video replaces the generated visual for Instagram, TikTok and YouTube publishing. */
   video?: SocialVideo | null;
   publishOptions?: SocialPublishOptions;
+  publishOptionsRevision?: number;
+  youtubeGeneratedTitle?: string;
+  youtubeAutomation?: { defaultsVersion: string; acctId: string };
   text: string; style: PackStyle; seed: number; imageUrl: string | null; copiedAt: number | null; v: number;
   /** Size and type of the file at `imageUrl`, recorded when Radar renders it (social channels). Absent on older posts: the server checks the real file. */
   imageMeta?: MediaMeta | null;
@@ -187,7 +190,10 @@ export interface SocialPack {
   id: string; name: string; source: { kind: 'idea' | 'url' | 'article' | 'suggest'; label: string; ref?: string | null };
   created: string; style: PackStyle; custom?: string; voice?: string; auto: boolean; posts: Partial<Record<Platform, SocialPost>>;
 }
+export interface YouTubeAutoDefaults { acctId: string; privacy: 'private' | 'unlisted' | 'public'; madeForKids: boolean; version: string }
 export interface SocialAuto {
+  youtubeDefaults?: YouTubeAutoDefaults | null;
+  youtubeDefaultsVersion?: string;
   generateMedia?: boolean;
   on: boolean; freq: 'daily' | 'custom'; days: string[]; platforms: Platform[]; style: ImageStyle; time: string;
   /** When a pack is ready: 'library' (default, also when absent) or 'schedule' (X and LinkedIn posts for the next day at `time`). Omitted from the workspace while publishing is off (absent = 'library'), and never acted on. */
@@ -464,6 +470,7 @@ export type AuthResult = { ok: true; next: string; verificationRequired?: never 
 
 /** Server-only publication snapshot and identifier-free lifecycle tombstone; never API identifiers in retention state. */
 export interface SocialPubPayload {
+  youtubeAutomation?: { defaultsVersion: string; acctId: string; mode: 'master' | 'standalone' };
   text?: string; media?: { url: string; bytes: number | null; type: string | null }[]; video?: SocialVideo | null; options?: SocialPublishOptions; manual?: boolean; providerRef?: string; processingStartedAt?: number;
   youtubeRetention?: { scrubbedAt: number; reason: 'disconnect' | 'revoked' | 'delete' | 'cache_expired'; noResend: boolean; needsApproval: boolean };
 }

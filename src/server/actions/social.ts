@@ -148,8 +148,13 @@ export const actions: ActionMap = {
       const post = !publishing ? (auto.post ? 'library' as const : undefined) : auto.post;
       if (publishing && auto.on && post === 'schedule' && !(await accountRows(ctx.bid)).some(r => !r.expired)) throw new RadarError(COPY.noAccountForAuto, 400, 'no_account');
       const a = { ...auto, ...(post ? { post } : {}), days: DAYS.filter(d => auto.days.includes(d)), platforms: (['linkedin', 'x', 'facebook', 'reddit', 'quora', 'instagram', 'tiktok', 'youtube'] as Platform[]).filter(k => auto.platforms.includes(k)) };
-      await db.update(schema.businesses).set({ socialAuto: a }).where(eq(schema.businesses.id, ctx.bid));
-      return a;
+      return db.transaction(async tx => {
+        const [b] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, ctx.bid)).for('update');
+        const preserved = (await import('@/lib/youtubeAutomation')).youtubeDefaultsState(b?.socialAuto);
+        const saved = { ...a, ...preserved };
+        await tx.update(schema.businesses).set({ socialAuto: saved }).where(eq(schema.businesses.id, ctx.bid));
+        return saved;
+      });
     },
   }),
 };

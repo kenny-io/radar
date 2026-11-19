@@ -1,3 +1,4 @@
+import { clearedYouTubeDefaults } from '../services/social/publish/youtubeAutomation';
 import { cleanupYouTube } from '../services/social/publish/youtubeRetention';
 import { YOUTUBE_NO_RESEND } from '@/lib/youtubeLifecycle';
 import { youtubeMayResend, youtubeApproved } from '../services/social/publish/youtubeGuards';
@@ -86,7 +87,7 @@ const base: ActionMap = {
       await updatePack(ctx.bid, i.packId, async p => {
         await assertVideoEditable(ctx.biz, i.packId, i.platform);
         const post = p.posts[i.platform]; if (!post) throw notFound('Post');
-        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, publishOptions: i.options } } };
+        return { ...p, posts: { ...p.posts, [i.platform]: { ...post, publishOptions: i.options, ...(i.platform === 'youtube' ? { publishOptionsRevision: (post.publishOptionsRevision || 0) + 1, youtubeAutomation: undefined, youtubeGeneratedTitle: undefined } : {}) } } };
       });
       return { options: i.options };
     },
@@ -183,6 +184,7 @@ const base: ActionMap = {
         const [current] = await tx.select().from(A).where(and(eq(A.businessId, ctx.bid), eq(A.ch, 'youtube'))).for('update');
         if (current && current.remoteId !== remoteId) throw refuse('Disconnect the current YouTube channel before switching accounts.', 'other_account', 409);
         const [saved] = current ? await tx.update(A).set({ name, handle, ...tokenFields(pend.tokens), expired: false, expiredAt: null, updatedAt: new Date() }).where(eq(A.id, current.id)).returning() : await tx.insert(A).values({ businessId: ctx.bid, ch, remoteId, name, handle, ...tokenFields(pend.tokens), connectedBy: ctx.user.id }).returning();
+        await tx.update(schema.businesses).set({ socialAuto: clearedYouTubeDefaults(business.socialAuto) }).where(eq(schema.businesses.id, ctx.bid));
         await tx.delete(schema.oauthStates).where(eq(schema.oauthStates.state, i.oauthRef));
         return saved;
       });

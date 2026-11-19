@@ -59,7 +59,7 @@ async function schedulePost(bid: string, activationId: string, sid: string, now:
 /** A schedule refused for something only the owner can fix (no account connected, an expired one, a post that fails the
  *  platform's checks) goes to the handoff only. Every run meets it again, so reporting it would raise an operator alert
  *  every five minutes. Any other refusal means Radar built a schedule it should not have, and is reported. */
-const OWNER_FIXABLE = new Set(['not_connected', 'expired', 'preflight']);
+const OWNER_FIXABLE = new Set(['not_connected', 'expired', 'preflight', 'youtube_defaults']);
 const refused = (e: unknown, context: FailureContext) => e instanceof RadarError && OWNER_FIXABLE.has(e.code) ? Promise.resolve() : reportFailure(e, context);
 
 export async function runAutopilot(ctx: JobCtx<RunPayload>) {
@@ -149,6 +149,10 @@ export async function runAutopilot(ctx: JobCtx<RunPayload>) {
       if (mediaGenerationPending(post)) { mediaPending = true; continue; }
       if (post.mediaGeneration && ['failed', 'needs_attention'].includes(post.mediaGeneration.status)) {
         issue(`pack:${pack.id}:${platform}`, `Your ${platform} explainer needs attention`, post.mediaGeneration.status === 'needs_attention' ? 'The narration request may have completed. Review it before requesting another recording.' : 'Radar could not finish the explainer. Your draft is saved; review the source details and retry in Radar.', packHref(pack.id, platform), post.text);
+        continue;
+      }
+      if (platform === 'youtube' && !(await import('@/lib/youtubeAutomation')).automaticYouTubePostEligible(post, (await import('@/lib/youtubeAutomation')).eligibleYouTubeDefaults(b.socialAuto, (await (await import('../social/publish/accounts')).accountRows(bid)).filter(a => a.ch === 'youtube').map((await import('../social/publish/accounts')).acctPublic)[0]))) {
+        issue(`pack:${pack.id}:youtube`, 'Choose YouTube automatic publishing options', 'YouTube will remain a draft until the owner chooses visibility and audience.', '/social?auto=true', post.text);
         continue;
       }
       if (await schedule(packSid(pack.id, platform), 'autopilot.scheduleSocial', pack.id, platform, `pack:${pack.id}:${platform}`, [`pack:${dailyPackId(bid, yesterday)}:${platform}`], `Your ${platform} post needs attention`, 'Connect or reconnect the account, or resolve the publishing check in Radar. Your draft is saved.', packHref(pack.id, platform), post.text) === 'scheduled') scheduled++;

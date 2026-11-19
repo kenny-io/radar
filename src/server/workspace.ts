@@ -1,3 +1,4 @@
+import { youtubeDefaultsState } from '@/lib/youtubeAutomation';
 import { publicPublishError, publicPublishingJob } from '@/lib/publishingFailure';
 import { env } from './env';
 import { autopilotPublic } from './services/autopilot/policy';
@@ -74,7 +75,7 @@ export function blogOf(b: BizRow, conns: ConnectionPublic[]): BlogState {
   return { conns, defaultId: def, mode: bl.mode || 'review', autopilotAckAt: bl.autopilotAckAt || null, paused: !!bl.paused, tz: b.timezone, time: bl.time || '09:00', available: availablePlatforms() };
 }
 export function socialAutoOf(b: BizRow): SocialAuto {
-  return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}) };
+  return { on: true, freq: 'daily', days: ['Mon', 'Wed', 'Fri'], platforms: ['linkedin', 'x'], style: 'branded', time: '08:00', post: 'library', ...(b.socialAuto || {}), ...youtubeDefaultsState(b.socialAuto) };
 }
 export function briefSettingsOf(b: BizRow) { return { ...BRIEF_DEFAULT, ...(b.briefSettings || {}) }; }
 /** Model choices only: writing instructions share the `ai` column but are projected separately (Workspace.instructions).

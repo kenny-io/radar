@@ -1,3 +1,4 @@
+import { eligibleYouTubeDefaults, initialYouTubePost } from '@/lib/youtubeAutomation';
 // Social pack generation (02-system.md §8.1): per-platform copy with the writing model + on-brand visuals at exact sizes.
 // Radar never posts anything (README §2.5 #1): packs are only stored for the user to copy and download.
 import { z } from 'zod';
@@ -146,7 +147,12 @@ export async function createPack(bid: string, input: PackInput, onProgress?: (do
       post.imageUrl = r.url; post.photo = r.photo; post.imageMeta = r.meta;
     }
     catch (e: any) { console.error('[social] image render failed', e?.message); } // the live template shows while imageUrl is missing
-    posts[k] = post; i++;
+    if (k === 'youtube') {
+      const { accountRows, acctPublic } = await import('./publish/accounts');
+      const account = input.auto ? (await accountRows(bid)).find(a => a.ch === 'youtube') : null;
+      posts[k] = initialYouTubePost(post, headline, account ? eligibleYouTubeDefaults(b.socialAuto, acctPublic(account)) : null);
+    } else posts[k] = post;
+    i++;
     await onProgress?.(i);
   }
   const id = options.id || 'p' + Date.now().toString(36) + randomToken(4);

@@ -26,6 +26,7 @@ Use the explicitly requested create-explainer-video skill at /Users/ekene/.agent
 - M8: Generated media meets actual adapter size/type/duration/aspect constraints; render verification includes audio presence, measured duration, dimensions, full decode and representative frame/caption readability. Bound CPU, memory, download size and render concurrency.
 - M9: Focused backend and independent browser QA cover format choice/override, video and carousel preview, persistence, cancellation/failure/retry, tenant boundaries, scheduling and existing upload/image flows. Test at least one real narration/render/storage path without public posting.
 - M10: Production runtime has the required rendering tools and securely stored narration configuration; verify web and worker deployment and a live generated pack. Document any external provider approval limits accurately.
+- M11: YouTube automatic posting has an explicit Owner configuration path for future-video visibility and made-for-kids choices, with no inferred selection. Generated editable titles and these choices allow both existing authorized automation modes to schedule YouTube. Missing choices leave a usable draft with setup guidance. Persistent local versions invalidate standing choices on disconnect/reconnect and reject stale settings or late auto uploads; manual edits/schedules and accepted provider references retain their existing rules. TikTok still requires fresh per-post consent. See the approved youtube-automation-design.md contract.
 
 ## Scope and dependencies
 

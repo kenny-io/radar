@@ -26,9 +26,9 @@ export interface Caption { start:number; end:number; text:string }
 export interface Timeline { duration:number; scenes:{start:number;end:number;scene:Scene;cues:{kind:'node'|'edge'|'revisit';target:string;start:number;end:number}[]}[]; captions:Caption[] }
 export interface MediaOptions { generateAfterPrepare?:boolean; choices?:Choice[]; autoActivationId?:string; generateRecommended?:boolean; autoDate?:string; sourceNotes?:string }
 export interface Choice { platform:ExplainerPlatform; format:ExplainerFormat|'recommended' }
-export interface Consumer { packId:string; platform:ExplainerPlatform; requestId:string; mediaRevision:number; options?:MediaOptions }
+export interface Consumer { packId:string; platform:ExplainerPlatform; requestId:string; mediaRevision:number; youtubeOptionsRevision?:number; options?:MediaOptions }
 export interface Checkpoint {
- inputHash?:string; estimatedCostUsd?:number; maxDuration?:number; requestedChoices?:Choice[]; planOnly?:boolean; sourceNotes?:string; source?:{brief:string;link:string|null;title:string}; plan?:Plan; options?:MediaOptions;
+ inputHash?:string; estimatedCostUsd?:number; maxDuration?:number; requestedChoices?:Choice[]; planOnly?:boolean; sourceNotes?:string; source?:{brief:string;link:string|null;title:string;presentationNotes?:string}; plan?:Plan; options?:MediaOptions;
  audioUrl?:string; alignment?:Alignment; originalAlignment?:Alignment; timeline?:Timeline;
  video?:import('@/lib/types').SocialVideo; slides?:import('@/lib/types').SocialSlide[];
  budget?:Record<string,number>; narrationId?:string; paidAttempt?:string; errorMessage?:string; progress?:{done:number;total:number};

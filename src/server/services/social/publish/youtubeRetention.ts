@@ -1,3 +1,4 @@
+import { clearedYouTubeDefaults } from './youtubeAutomation';
 // Connected YouTube API data only. No remote video deletion and no cross-tenant provider-ID matching.
 import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db, schema as S } from '../../../db';
@@ -33,10 +34,11 @@ async function scrubReceipt(q: RetentionTx, row: typeof P.$inferSelect, reason: 
 
 /** Trusted local business/account scope only; caller owns transaction. Locks business -> account -> pubs. */
 export async function scrubYouTubeData(q: RetentionTx, o: { bid: string; acctId?: string; reason: CleanupReason; now: Date; expectedTokensEnc?: string; bumpRevision?: boolean }): Promise<{ unscheduled: number; scrubbedPubs: number; revokeJobIds: string[] }> {
-  const biz = (await q.select({ id: S.businesses.id }).from(S.businesses).where(eq(S.businesses.id, o.bid)).for('update'))[0];
+  const biz = (await q.select({ id: S.businesses.id, socialAuto: S.businesses.socialAuto }).from(S.businesses).where(eq(S.businesses.id, o.bid)).for('update'))[0];
   if (!biz) return { unscheduled: 0, scrubbedPubs: 0, revokeJobIds: [] };
   const accounts = await q.select().from(A).where(and(eq(A.businessId, o.bid), eq(A.ch, 'youtube'), ...(o.acctId ? [eq(A.id, o.acctId)] : []))).for('update');
   if (o.expectedTokensEnc && (!accounts[0] || accounts[0].tokensEnc !== o.expectedTokensEnc)) return { unscheduled: 0, scrubbedPubs: 0, revokeJobIds: [] };
+  await q.update(S.businesses).set({ socialAuto: clearedYouTubeDefaults(biz.socialAuto) }).where(eq(S.businesses.id, o.bid));
   const rows = await q.select().from(P).where(and(eq(P.businessId, o.bid), eq(P.ch, 'youtube'), ...(o.acctId ? [or(eq(P.acctId, o.acctId), isNull(P.acctId))!] : []))).orderBy(P.id).for('update');
   for (const row of rows) await scrubReceipt(q, row, o.reason, o.now, true);
   const pending = await q.select({ data: S.oauthStates.data }).from(S.oauthStates).where(and(eq(S.oauthStates.businessId, o.bid), eq(S.oauthStates.provider, 'social-pending:youtube'))).for('update');

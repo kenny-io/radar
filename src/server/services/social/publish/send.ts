@@ -1,3 +1,4 @@
+import { youtubeAutomaticAuthorization } from './youtubeAutomation';
 import { youtubeMayResend, youtubeMayInitialize, youtubeApproved, clearYouTubeApproval, lockYouTubeAccount } from './youtubeGuards';
 import { YOUTUBE_LABEL } from '@/lib/youtubeLifecycle';
 import { reportFailure } from '@/server/observability/failures';
@@ -49,11 +50,11 @@ export async function claimScheduled(pubId: string): Promise<PubRow | null> {
  *  Returns null when someone else has the post. */
 async function claimManualInside(q: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0], o: { bid: string; t: Target; acct: AcctRow; userId: string | null; tz: string }): Promise<PubRow | null> {
   const now = Date.now(); const { date, time } = localParts(now, o.tz);
-  const v = { platform: o.t.platform, kind: o.t.kind, acctId: o.acct.id, ch: o.acct.ch, acctLabel: o.acct.ch === 'youtube' ? YOUTUBE_LABEL : acctLabel(acctPublic(o.acct)), date, time, dueAt: new Date(now), updatedBy: o.userId, autopilotActivationId: null };
+  const v = { platform: o.t.platform, kind: o.t.kind, acctId: o.acct.id, ch: o.acct.ch, acctLabel: o.acct.ch === 'youtube' ? YOUTUBE_LABEL : acctLabel(acctPublic(o.acct)), date, time, dueAt: new Date(now), updatedBy: o.userId, autopilotActivationId: null, auto: false };
   const [r] = await q.insert(P).values({ businessId: o.bid, sid: o.t.sid, src: o.t.src, ...v, status: 'sending', attempts: 1, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', createdBy: o.userId })
     .onConflictDoUpdate({
       target: [P.businessId, P.sid],
-      set: { ...v, payload: clearYouTubeApproval, status: 'sending', attempts: sql`${P.attempts} + 1`, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', retryAt: null, err: null, errCode: null, errDetail: null, updatedAt: sql`now()` },
+      set: { ...v, payload: sql`(${clearYouTubeApproval}) - 'youtubeAutomation'`, status: 'sending', attempts: sql`${P.attempts} + 1`, attemptKey: sql`gen_random_uuid()`, claimedAt: sql`now()`, stage: 'media', retryAt: null, err: null, errCode: null, errDetail: null, updatedAt: sql`now()` },
       setWhere: and(youtubeMayInitialize, sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND ${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval)`),
     }).returning();
   return r || null;
@@ -186,12 +187,22 @@ async function loadAccount(id: string | null): Promise<AcctRow | null> {
 async function beforeProviderCreate(r: PubRow, accepted: boolean): Promise<void> {
   const refuse = () => new SendError(accepted ? 'unknown' : 'definitive', accepted ? 'unknown' : 'rejected', 'publication authorization changed before provider create', null, 'Posting stopped because the business or its publishing permission changed.');
   const biz = await getBiz(r.businessId);
-  if (biz.status !== 'active' || !(await socialOn(biz)) || (r.autopilotActivationId && !(await canRun(r.businessId, r.autopilotActivationId)))) throw refuse();
-  const rows = await db.update(P).set({ updatedAt: new Date() }).where(and(mine(r), r.acctId ? eq(P.acctId, r.acctId) : sql`false`,
-    sql`EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND NOT sa.expired)`,
-    sql`EXISTS (SELECT 1 FROM ${schema.businesses} b WHERE b.id = ${P.businessId} AND b.status = 'active' AND (${P.autopilotActivationId} IS NULL OR (b.autopilot->>'enabled' = 'true' AND b.autopilot->>'activationId' = ${P.autopilotActivationId})))`,
-  )).returning({ id: P.id });
-  if (!rows.length) throw refuse();
+  const observingAcceptedYouTube = accepted && r.ch === 'youtube';
+  if (biz.status !== 'active' || !(await socialOn(biz)) || (!observingAcceptedYouTube && r.autopilotActivationId && !(await canRun(r.businessId, r.autopilotActivationId)))) throw refuse();
+  await db.transaction(async q => {
+    if (r.ch === 'youtube' && !accepted && r.auto) {
+      const snapshot = r.payload?.youtubeAutomation;
+      const sid = parseSid(r.sid);
+      if (!snapshot || !r.acctId || sid?.src !== 'pack') throw refuse();
+      const current = await youtubeAutomaticAuthorization(q, r.businessId, r.acctId, sid.packId, r.autopilotActivationId);
+      if (!current || current.defaultsVersion !== snapshot.defaultsVersion || current.acctId !== snapshot.acctId || current.mode !== snapshot.mode) throw refuse();
+    }
+    const rows = await q.update(P).set({ updatedAt: new Date() }).where(and(mine(r), r.acctId ? eq(P.acctId, r.acctId) : sql`false`,
+      sql`EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND NOT sa.expired)`,
+      sql`EXISTS (SELECT 1 FROM ${schema.businesses} b WHERE b.id = ${P.businessId} AND b.status = 'active' AND (${observingAcceptedYouTube} OR ${P.autopilotActivationId} IS NULL OR (b.autopilot->>'enabled' = 'true' AND b.autopilot->>'activationId' = ${P.autopilotActivationId})))`,
+    )).returning({ id: P.id });
+    if (!rows.length) throw refuse();
+  });
 }
 
 /** Send a claimed row (status 'sending'). Returns the final row, or null when another attempt took it over. */
@@ -209,7 +220,7 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
   const k = r.platform as PostPlatform;
   const problems = preflight(k, preflightInput(t));
   if (problems.length) return finishFailed(r, 'media', problems[0].msg, manual, userId, problems[0].msg);
-  const payload = { text: t.text, media: t.images.map(i => ({ url: i.url, bytes: i.meta?.bytes ?? null, type: i.meta?.type ?? null })), video: t.video, options: t.options, manual, providerRef: undefined as string | undefined, processingStartedAt: Date.now() };
+  const payload = { ...(r.payload?.youtubeAutomation ? { youtubeAutomation: r.payload.youtubeAutomation } : {}), ...(r.payload?.youtubeRetention ? { youtubeRetention: r.payload.youtubeRetention } : {}), text: t.text, media: t.images.map(i => ({ url: i.url, bytes: i.meta?.bytes ?? null, type: i.meta?.type ?? null })), video: t.video, options: t.options, manual, providerRef: undefined as string | undefined, processingStartedAt: Date.now() };
   const ok = await db.update(P).set({ payload }).where(mine(r)).returning({ id: P.id });
   if (!ok.length) return null;
 

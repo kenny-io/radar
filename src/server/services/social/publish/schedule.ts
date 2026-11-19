@@ -1,8 +1,9 @@
+import { youtubeAutomaticAuthorization, YOUTUBE_AUTO_SETUP } from './youtubeAutomation';
 // The rules every publishing action shares (architecture.md §6): resolve a sid to its content and account, refuse with the
 // shared COPY, and write a `scheduled` row without ever overwriting one that is posted, sending or locked.
 import { youtubeMayInitialize, youtubeApproved, clearYouTubeApproval, lockYouTubeAccount } from './youtubeGuards';
 import { YOUTUBE_HOLD, YOUTUBE_LABEL, YOUTUBE_NO_RESEND } from '@/lib/youtubeLifecycle';
-import { sql, and } from 'drizzle-orm';
+import { sql, and, eq } from 'drizzle-orm';
 import { db } from '../../../db';
 import type { Q } from '../../../billing/draft';
 import { resolveEngagement } from '../../lifecycle/engagement';
@@ -88,15 +89,22 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
 
   const a = o.r.acct!;
   if (a.ch === 'youtube' && !(await lockYouTubeAccount(q as Parameters<Parameters<typeof db.transaction>[0]>[0], o.biz.id, a.id))) return null;
+  if (a.ch === 'youtube' && o.auto) {
+    const [history] = await q.select({ id: P.id }).from(P).where(and(eq(P.businessId, o.biz.id), eq(P.sid, o.r.t.sid))).for('update');
+    if (history) return null; // Automatic work cannot take over A6 holds or any prior owner/publication decision.
+  }
+  const authorization = a.ch === 'youtube' && o.auto ? await youtubeAutomaticAuthorization(q as Parameters<Parameters<typeof db.transaction>[0]>[0], o.biz.id, a.id, o.r.t.packId || '', o.autopilotActivationId, true, { time: o.biz.socialAuto?.time, timezone: o.biz.timezone }) : null;
+  if (a.ch === 'youtube' && o.auto && !authorization) throw refuse(YOUTUBE_AUTO_SETUP, 'youtube_defaults');
+  const payload = authorization ? { youtubeAutomation: authorization } : null;
   const v = {
     platform: o.r.t.platform, kind: o.r.t.kind, acctId: a.id, ch: a.ch, acctLabel: a.ch === 'youtube' ? YOUTUBE_LABEL : acctLabel(acctPublic(a)), status: 'scheduled' as const,
     date: o.date, time: o.time, dueAt: new Date(zonedTimeToUtc(o.date, o.time, o.biz.timezone)), attempts: 0, attemptKey: null, stage: null,
     retryAt: null, err: null, errCode: null, errDetail: null, autopilotActivationId: o.autopilotActivationId || null, auto: !!o.auto, updatedBy: o.userId,
   };
-  const [row] = await q.insert(P).values({ businessId: o.biz.id, sid: o.r.t.sid, src: o.r.t.src, ...v, createdBy: o.userId })
+  const [row] = await q.insert(P).values({ businessId: o.biz.id, sid: o.r.t.sid, src: o.r.t.src, ...v, payload, createdBy: o.userId })
     .onConflictDoUpdate({
-      target: [P.businessId, P.sid], set: { ...v, payload: clearYouTubeApproval, updatedAt: sql`now()` },
-      setWhere: o.autopilotActivationId ? sql`false` : and(youtubeMayInitialize, ...(o.auto ? [youtubeApproved] : []), sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`),
+      target: [P.businessId, P.sid], set: { ...v, payload: authorization ? sql`coalesce(${P.payload}, '{}'::jsonb) || ${JSON.stringify(payload)}::jsonb` : sql`(${clearYouTubeApproval}) - 'youtubeAutomation'`, updatedAt: sql`now()` },
+      setWhere: o.autopilotActivationId || (a.ch === 'youtube' && o.auto) ? sql`false` : and(youtubeMayInitialize, ...(o.auto ? [youtubeApproved] : []), sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`),
     }).returning();
   if (row) {
     const source = parseSid(row.sid);
@@ -112,11 +120,11 @@ export async function autoSchedule(bid: string, packId: string, options: { onlyM
   const biz = await getBiz(bid);
   if (!(await socialOn(biz)) || socialAutoOf(biz).post !== 'schedule') return 0;
   const date = addDays(bizToday(biz), 1); const time = socialAutoOf(biz).time || '08:00'; let n = 0;
-  for (const k of ['x', 'linkedin', 'instagram'] as PostPlatform[]) {
+  for (const k of ['x', 'linkedin', 'instagram', 'youtube'] as PostPlatform[]) {
     if (options.platforms && !options.platforms.includes(k)) continue;
     try {
       const r = await resolve(bid, packSid(packId, k));
-      if (options.onlyMissing && r.existing) continue;
+      if ((options.onlyMissing || k === 'youtube') && r.existing) continue;
       await scheduleChecks(biz, r, date, time, Date.now());
       const row = await writeScheduled(db, { biz, r, date, time, userId: null, auto: true });
       if (!row) continue;

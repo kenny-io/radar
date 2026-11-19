@@ -191,7 +191,7 @@ describe.skipIf(!process.env.DATABASE_URL)('Autopilot program (database)', () =>
     const pack = (await getPack(bid, packId))!; expect(pack.posts.instagram?.imageMeta?.type).toBe('image/jpeg');
     expect(pack.posts.tiktok?.publishOptions?.tiktok?.consent).not.toBe(true); expect(pack.posts.youtube?.video).toBeUndefined();
     const handoffs = (await rows('autopilot.handoff')).flatMap(j => (j.payload as any).items as { key: string; href: string }[]);
-    expect(handoffs).toEqual(expect.arrayContaining([expect.objectContaining({ key: `pack:${packId}:tiktok`, href: expect.stringContaining('plat%3Dtiktok') }), expect.objectContaining({ key: `pack:${packId}:youtube`, href: expect.stringContaining('plat%3Dyoutube') })]));
+    expect(handoffs).toEqual(expect.arrayContaining([expect.objectContaining({ key: `pack:${packId}:tiktok`, href: expect.stringContaining('plat%3Dtiktok') }), expect.objectContaining({ key: `pack:${packId}:youtube`, href: expect.stringContaining('auto%3Dtrue'), reason: 'YouTube will remain a draft until the owner chooses visibility and audience.' })]));
     expect((await getBiz(bid)).socialAuto).toMatchObject({ on: false, post: 'library' });
   }, 30_000);
   it('a concurrent manual publication cannot be overwritten by the program scheduling upsert', async () => {
