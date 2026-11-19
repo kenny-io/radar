@@ -1,14 +1,28 @@
 // YouTube videos.insert. Unlike image-based networks, YouTube requires an actual video file.
 import crypto from 'node:crypto';
 import { env } from '../../../env';
-import { type Adapter, type AcctCtx, type Created, type Identity, type Res, type Tokens, call, form, mapCommon, refreshError, SendError, TokenError } from './api';
+import { type Adapter, type AcctCtx, type Created, type Identity, type Res, type Tokens, call, form, mapCommon, SendError, TokenError } from './api';
 export const YOUTUBE_AUTHORIZE = 'https://accounts.google.com/o/oauth2/v2/auth';
 export const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly';
 export class YouTubeConnectionError extends Error { constructor(public code: 'youtube_channel_missing' | 'scope_denied') { super(code); } }
 const TOKEN = 'https://oauth2.googleapis.com/token';
 const API = 'https://www.googleapis.com/youtube/v3';
+/** Structured lifecycle classification; never include provider response bodies or identifiers. */
+export class YouTubeTokenError extends TokenError {
+  constructor(public reason: 'revoked' | 'configuration' | 'retry', public status?: number) { super(reason === 'revoked', `youtube authorization ${reason}${status ? ` HTTP ${status}` : ''}`); }
+}
+function tokenFailure(r: Res): YouTubeTokenError {
+  const code = r.json?.error;
+  return new YouTubeTokenError(code === 'invalid_grant' ? 'revoked' : code === 'invalid_client' || code === 'unauthorized_client' || r.status === 401 ? 'configuration' : 'retry', r.status);
+}
+/** Lifecycle I/O includes body consumption inside the 15 second abort budget. */
+export async function youtubeRead(url: string, init: RequestInit, timeoutMs = 15_000): Promise<Res> {
+  const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try { const r = await fetch(url, { ...init, signal: controller.signal }); const text = await r.text(); let json: any = null; try { json = JSON.parse(text); } catch {} return { status: r.status, headers: r.headers, text: '', json }; }
+  catch { throw new YouTubeTokenError('retry'); } finally { clearTimeout(timer); }
+}
 const auth = (token: string) => ({ authorization: `Bearer ${token}` });
-const tokensFrom = (j: any, prev?: Tokens): Tokens => ({ access_token: j.access_token, refresh_token: j.refresh_token || prev?.refresh_token || null, expires_at: Date.now() + Number(j.expires_in || 3600) * 1000, scope: j.scope || prev?.scope });
+const tokensFrom = (j: any, prev?: Tokens): Tokens => ({ access_token: j.access_token, refresh_token: j.refresh_token || prev?.refresh_token || null, expires_at: Date.now() + Number(j.expires_in || 3600) * 1000, scope: j.scope || prev?.scope, ...(prev?.youtube ? { youtube: { ...prev.youtube, authorizationCheckedAt: Date.now() } } : {}) });
 export async function youtubeExchange(code: string, verifier: string, redirectUri: string): Promise<Tokens> {
   const r = await call(TOKEN, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ client_id: env.youtubeClientId, client_secret: env.youtubeClientSecret, grant_type: 'authorization_code', code, code_verifier: verifier, redirect_uri: redirectUri }) }, 'auth');
   if (r.status !== 200 || !r.json?.access_token) throw new Error(`youtube token ${r.status}`);
@@ -16,23 +30,26 @@ export async function youtubeExchange(code: string, verifier: string, redirectUr
   if (tokens.scope && !YOUTUBE_SCOPES.split(' ').every(scope => tokens.scope!.split(/\s+/).includes(scope))) throw new YouTubeConnectionError('scope_denied');
   return tokens;
 }
-export async function youtubeMe(token: string): Promise<Identity> {
-  const r = await call(`${API}/channels?part=snippet&mine=true`, { headers: auth(token) }, 'auth');
+export async function youtubeMe(token: string, timeoutMs = 15_000): Promise<Identity> {
+  const r = await youtubeRead(`${API}/channels?part=snippet&mine=true&fields=items(id,snippet(title,customUrl))`, { headers: auth(token) }, timeoutMs);
   const ch = r.json?.items?.[0];
-  if (r.status !== 200) throw new Error(`youtube channel ${r.status}`);
+  if (r.status === 401) throw new YouTubeTokenError('revoked', 401);
+  if (r.status !== 200) throw new YouTubeTokenError(r.status === 403 && !/quota|rateLimit/i.test(String(r.json?.error?.errors?.[0]?.reason || '')) ? 'configuration' : 'retry', r.status);
   if (!ch?.id) throw new YouTubeConnectionError('youtube_channel_missing');
   return { remoteId: String(ch.id), name: String(ch.snippet?.title || 'YouTube channel'), handle: ch.snippet?.customUrl || null };
 }
 function ytError(r: Res, stage: 'media' | 'create'): SendError {
   const reason = r.json?.error?.errors?.[0]?.reason || '';
-  if (/quotaExceeded|dailyLimitExceeded|uploadLimitExceeded/.test(reason)) return new SendError('definitive', 'quota', `youtube ${r.status} ${reason}`);
-  if (/forbidden|youtubeSignupRequired|insufficientPermissions/.test(reason)) return new SendError('definitive', 'auth', `youtube ${r.status} ${reason}`);
+  if (/quotaExceeded|dailyLimitExceeded|uploadLimitExceeded/.test(reason)) return new SendError('definitive', 'quota', `youtube provider refusal HTTP ${r.status}`);
+  if (/forbidden|youtubeSignupRequired|insufficientPermissions/.test(reason)) return new SendError('definitive', 'auth', `youtube provider refusal HTTP ${r.status}`);
   if (stage === 'create' && r.status >= 500) return new SendError('unknown', 'unknown', `provider create ${r.status}`);
-  return mapCommon(r, stage, 'youtube');
+  return mapCommon({ ...r, text: '' }, stage, 'youtube');
 }
 async function resume(a: AcctCtx, id: string): Promise<Created> {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new SendError('unknown', 'unknown', 'youtube invalid video reference');
-  const r = await call(`${API}/videos?part=status,processingDetails&id=${encodeURIComponent(id)}`, { headers: auth(a.token) });
+  let r: Res;
+  try { r = await youtubeRead(`${API}/videos?part=status,processingDetails&id=${encodeURIComponent(id)}`, { headers: auth(a.token) }); }
+  catch { throw new SendError('transient', 'unavailable', 'youtube status network unavailable'); }
   if (r.status !== 200) {
     if (r.status === 401 || r.status === 403) throw new SendError('auth', 'auth', `youtube status read ${r.status}`);
     throw new SendError('transient', r.status === 429 ? 'rate_limit' : 'unavailable', `youtube status read ${r.status}`);
@@ -44,6 +61,21 @@ async function resume(a: AcctCtx, id: string): Promise<Created> {
   if (status === 'processed' || v?.processingDetails?.processingStatus === 'succeeded') return { remoteId: id, url };
   return { remoteId: id, url, pending: true };
 }
+export async function refreshYouTube(t: Tokens, timeoutMs = 15_000): Promise<Tokens> {
+    if (!t.refresh_token) throw new YouTubeTokenError('revoked');
+    const r = await youtubeRead(TOKEN, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ client_id: env.youtubeClientId, client_secret: env.youtubeClientSecret, grant_type: 'refresh_token', refresh_token: t.refresh_token }) }, timeoutMs);
+    if (r.status !== 200 || !r.json?.access_token) throw tokenFailure(r);
+    const next = tokensFrom(r.json, t);
+    if (next.scope && !YOUTUBE_SCOPES.split(' ').every(scope => next.scope!.split(/\s+/).includes(scope))) throw new YouTubeTokenError('revoked');
+    return next;
+}
+
+export async function revokeYouTube(t: Tokens, timeoutMs = 15_000): Promise<void> {
+    const r = await youtubeRead('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ token: t.refresh_token || t.access_token }) }, timeoutMs);
+    if (r.status === 200 || (r.status === 400 && ['invalid_token', 'invalid_grant'].includes(r.json?.error))) return;
+    throw new YouTubeTokenError(r.status === 400 || r.status === 401 || r.status === 403 ? 'configuration' : 'retry', r.status);
+}
+
 export const youtubeAdapter: Adapter = {
   resume,
   async publish(a, p) {
@@ -63,15 +95,8 @@ export const youtubeAdapter: Adapter = {
     try { return await resume(a, id); }
     catch (e) { if (e instanceof SendError && (e.kind === 'transient' || e.kind === 'auth')) return { remoteId: id, url: `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`, pending: true }; throw e; }
   },
-  async refresh(t) {
-    if (!t.refresh_token) throw new TokenError(true, 'youtube: no refresh token');
-    let r: Res;
-    try { r = await call(TOKEN, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ client_id: env.youtubeClientId, client_secret: env.youtubeClientSecret, grant_type: 'refresh_token', refresh_token: t.refresh_token }) }, 'auth'); }
-    catch { throw new TokenError(false, 'youtube refresh network'); }
-    if (r.status !== 200 || !r.json?.access_token) throw refreshError(r, 'youtube refresh');
-    return tokensFrom(r.json, t);
-  },
-  async revoke(t) { const r = await call('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ token: t.refresh_token || t.access_token }) }, 'auth'); if (r.status >= 400) throw new Error(`youtube revoke ${r.status}`); },
+  refresh: t => refreshYouTube(t),
+  revoke: t => revokeYouTube(t),
   async upload() { throw new SendError('definitive', 'media', 'YouTube uses direct video publishing.'); },
   async create() { throw new SendError('definitive', 'rejected', 'YouTube uses direct video publishing.'); },
 };

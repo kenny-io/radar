@@ -8,13 +8,6 @@ import { POST } from './route';
 
 const previousUrl = env.appUrl;
 const context = { params: Promise.resolve({ bid: 'business-a' }) };
-const refusedHeaders: Record<string, string>[] = [
-  { origin: 'https://evil.example', 'x-forwarded-host': 'evil.example', 'x-forwarded-proto': 'https' },
-  { origin: 'http://0.0.0.0:3000' },
-  { origin: 'null' },
-  { origin: 'https://radar.example.test', 'sec-fetch-site': 'cross-site' },
-  { 'sec-fetch-site': 'cross-site' },
-];
 function request(headers: Record<string, string> = {}) {
   const data = new FormData(); data.set('packId', 'pack-a'); data.set('platform', 'youtube');
   data.set('file', new Blob(['video-body'], { type: 'video/mp4' }), 'clip.mp4');
@@ -35,6 +28,13 @@ describe('social video upload origin behind a reverse proxy', () => {
     expect(H.role).toHaveBeenCalledWith('business-a', 'owner', 'Editor');
     expect(H.attach).toHaveBeenCalledExactlyOnceWith({ id: 'business-a', ownerId: 'owner' }, 'pack-a', 'youtube', Buffer.from('video-body'));
   });
+  const refusedHeaders: Record<string, string>[] = [
+    { origin: 'https://evil.example', 'x-forwarded-host': 'evil.example', 'x-forwarded-proto': 'https' },
+    { origin: 'http://0.0.0.0:3000' },
+    { origin: 'null' },
+    { origin: 'https://radar.example.test', 'sec-fetch-site': 'cross-site' },
+    { 'sec-fetch-site': 'cross-site' },
+  ];
   it.each(refusedHeaders)('refuses a foreign/opaque origin or cross-site fetch before any upload: %j', async headers => {
     const response = await POST(request(headers), context);
     expect(response.status).toBe(403); expect(await response.json()).toMatchObject({ ok: false, code: 'forbidden' });

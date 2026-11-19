@@ -1,6 +1,8 @@
 // The rules every publishing action shares (architecture.md §6): resolve a sid to its content and account, refuse with the
 // shared COPY, and write a `scheduled` row without ever overwriting one that is posted, sending or locked.
-import { sql } from 'drizzle-orm';
+import { youtubeMayInitialize, youtubeApproved, clearYouTubeApproval, lockYouTubeAccount } from './youtubeGuards';
+import { YOUTUBE_HOLD, YOUTUBE_LABEL, YOUTUBE_NO_RESEND } from '@/lib/youtubeLifecycle';
+import { sql, and } from 'drizzle-orm';
 import { db } from '../../../db';
 import type { Q } from '../../../billing/draft';
 import { resolveEngagement } from '../../lifecycle/engagement';
@@ -49,6 +51,8 @@ export function briefGate(r: Resolved, today: string) {
   if ((it.st === 'skipped' || it.st === 'expired') && !hasPub) throw new RadarError('That conversation wasn’t found.', 404, 'not_found');
 }
 export function accountGate(r: Resolved) {
+  if (r.existing?.ch === 'youtube' && (r.existing.payload?.youtubeRetention?.noResend || r.existing.payload?.providerRef || r.existing.remoteId || r.existing.errCode === 'unknown')) throw refuse(YOUTUBE_NO_RESEND, 'no_resend', 409);
+  if (r.acct && acctPublic(r.acct).verificationHold) throw refuse(YOUTUBE_HOLD, 'verification_hold', 409);
   if (!r.acct) throw refuse(COPY.notConnected(r.ch), 'not_connected');
   if (r.acct.expired) throw refuse(COPY.expired(r.acct.ch), 'expired');
 }
@@ -83,15 +87,16 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
   if (q === db) return db.transaction(tx => writeScheduled(tx, o));
 
   const a = o.r.acct!;
+  if (a.ch === 'youtube' && !(await lockYouTubeAccount(q as Parameters<Parameters<typeof db.transaction>[0]>[0], o.biz.id, a.id))) return null;
   const v = {
-    platform: o.r.t.platform, kind: o.r.t.kind, acctId: a.id, ch: a.ch, acctLabel: acctLabel(acctPublic(a)), status: 'scheduled' as const,
+    platform: o.r.t.platform, kind: o.r.t.kind, acctId: a.id, ch: a.ch, acctLabel: a.ch === 'youtube' ? YOUTUBE_LABEL : acctLabel(acctPublic(a)), status: 'scheduled' as const,
     date: o.date, time: o.time, dueAt: new Date(zonedTimeToUtc(o.date, o.time, o.biz.timezone)), attempts: 0, attemptKey: null, stage: null,
     retryAt: null, err: null, errCode: null, errDetail: null, autopilotActivationId: o.autopilotActivationId || null, auto: !!o.auto, updatedBy: o.userId,
   };
   const [row] = await q.insert(P).values({ businessId: o.biz.id, sid: o.r.t.sid, src: o.r.t.src, ...v, createdBy: o.userId })
     .onConflictDoUpdate({
-      target: [P.businessId, P.sid], set: { ...v, updatedAt: sql`now()` },
-      setWhere: o.autopilotActivationId ? sql`false` : sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`,
+      target: [P.businessId, P.sid], set: { ...v, payload: clearYouTubeApproval, updatedAt: sql`now()` },
+      setWhere: o.autopilotActivationId ? sql`false` : and(youtubeMayInitialize, ...(o.auto ? [youtubeApproved] : []), sql`${P.status} = 'failed' OR (${P.status} = 'scheduled' AND (${P.dueAt} > now() + ${`${LOCK_MS / 1000} seconds`}::interval OR EXISTS (SELECT 1 FROM social_accounts sa WHERE sa.id = ${P.acctId} AND sa.expired)))`),
     }).returning();
   if (row) {
     const source = parseSid(row.sid);

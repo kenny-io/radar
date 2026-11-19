@@ -1,5 +1,6 @@
 // Pubs (social_pubs rows) as the client sees them, and the content a sid points at (architecture.md §3–§4, §9.2).
 // Pack and brief jsonb hold content only; publishing state lives in the row and is projected on read.
+import { YOUTUBE_LABEL, YOUTUBE_NO_RESEND, YOUTUBE_APPROVAL, youtubeReceiptStale } from '@/lib/youtubeLifecycle';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '../../../db';
 import { getPack, renderPostImage, updatePack, type StoredPack } from '../generate';
@@ -20,11 +21,14 @@ export const P = schema.socialPubs;
 export const CONTENT_MISSING = 'content missing';
 
 export function pubOf(r: PubRow, accts: Pick<SocialAccount, 'id' | 'expired'>[]): Pub {
+  const removed = r.ch === 'youtube' && youtubeReceiptStale(r);
+  const marker = r.payload?.youtubeRetention;
+  const noResend = r.ch === 'youtube' && (!!marker?.noResend || r.status === 'failed' && (r.errCode === 'unknown' || !!r.payload?.providerRef || !!r.remoteId) || removed && (r.status === 'posted' || r.errCode === 'unknown' || !!r.payload?.providerRef || !!r.remoteId || r.status === 'sending' && r.stage === 'create'));
   const a = r.acctId ? accts.find(x => x.id === r.acctId) : null;
   return {
     status: r.status, platform: r.platform, date: String(r.date), time: r.time, dueAt: r.dueAt.toISOString(),
-    acct: r.acctId, acctLabel: r.acctLabel, err: r.err, code: (r.errCode as PubErrCode) || null,
-    at: r.postedAt ? r.postedAt.getTime() : null, url: r.remoteUrl,
+    acct: r.acctId, acctLabel: removed ? YOUTUBE_LABEL : r.acctLabel, err: removed && r.status !== 'posted' ? noResend ? YOUTUBE_NO_RESEND : YOUTUBE_APPROVAL : r.err, code: (r.errCode as PubErrCode) || null,
+    at: r.postedAt ? r.postedAt.getTime() : null, url: removed ? null : r.remoteUrl, ...(r.ch === 'youtube' ? { noResend, needsApproval: !!marker?.needsApproval, historyExpired: removed } : {}),
     direct: r.src === 'brief' || undefined,
     held: r.status === 'scheduled' && !!a?.expired,
   };

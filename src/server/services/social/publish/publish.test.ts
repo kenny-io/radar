@@ -193,7 +193,7 @@ describe.skipIf(!ON)('social channels (database)', () => {
     expect([a, b].filter(Boolean)).toHaveLength(1);
     const done = await runSend((a || b)!, { manual: false });
     expect(done).toMatchObject({ status: 'posted', remoteUrl: expect.stringContaining('linkedin.com/feed/update/urn:li:share:') });
-    expect(done!.payload.text).toBe('Edited after scheduling.');
+    expect(done!.payload!.text).toBe('Edited after scheduling.');
     const before = stubState.creates;
     const r = await jobDefs().get('social.send')!.run({ payload: { pubId: id } } as any);
     expect(r).toMatchObject({ skipped: 'posted' });

@@ -1,5 +1,6 @@
 // Job + cron definitions for posting from Radar (architecture.md §9.1). Imported by src/server/jobs/all.ts.
 // Retry state lives on the row (retry_at, attempts), so `social.send` has maxAttempts 1 and every run is idempotent from the row.
+import { youtubeRetentionTick } from './youtubeRetentionJobs';
 import { canRun } from '../../autopilot/guard';
 import { and, eq, lte, or, sql } from 'drizzle-orm';
 import { db, schema } from '../../../db';
@@ -53,4 +54,4 @@ export async function publisherTick(now: Date) {
 }
 
 defineCron('social.publisher', publisherTick);
-defineCron('social.tokens', tokensTick);
+defineCron('social.tokens', async now => { await youtubeRetentionTick(now); await tokensTick(now); });

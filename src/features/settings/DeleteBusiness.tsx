@@ -22,7 +22,7 @@ export function DeleteBusiness() {
   if (!B || !bid || B.role !== 'Owner') return null;
   const name = B.profile.business.name || B.profile.domain;
   return <>
-    <p className="small sub" style={{ maxWidth: 560 }}>This removes {name} from Radar with everything in it: the profile, calendar, articles, posts, connections and team access. Radar keeps it for {DELETE_RETENTION_DAYS} days so you can restore it, then wipes it for good.</p>
+    <p className="small sub" style={{ maxWidth: 560 }}>This removes {name} from Radar with everything in it: the profile, calendar, articles, posts, connections and team access. Radar keeps it for {DELETE_RETENTION_DAYS} days so you can restore it, then wipes it for good. YouTube authorization and connection details are removed immediately; restoring this business requires reconnecting YouTube.</p>
     <Btn ref={trigger} kind="danger" aria-haspopup="dialog" onClick={() => setOpen(true)}>Delete business</Btn>
     {open && <DeleteDialog bid={bid} name={name} domain={B.profile.domain} back={trigger} onClose={() => setOpen(false)} />}
   </>;

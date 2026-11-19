@@ -208,6 +208,8 @@ export interface SocialAccount {
   expired?: boolean;
   /** When access ends without a reconnect (ISO). Set for LinkedIn profiles (60-day token, no refresh) and pages (365-day refresh token); absent for X (auto-refreshed). */
   expiresAt?: string | null;
+  /** YouTube operator/configuration verification pause; grant was not classified as revoked. */
+  verificationHold?: boolean;
 }
 /** Size and MIME type of an image file Radar would upload. */
 export interface MediaMeta { bytes: number; type: string }
@@ -238,6 +240,10 @@ export interface Pub {
   direct?: boolean;
   /** Server-computed: scheduled and its account is expired, so it is on hold. Never locked while held. */
   held?: boolean;
+  /** API receipt removed; an accepted/uncertain upload must never be initialized again for this sid. */
+  noResend?: boolean;
+  needsApproval?: boolean;
+  historyExpired?: boolean;
 }
 export interface SocialPage { id: string; name: string; followers: number | null }
 
@@ -455,3 +461,9 @@ export interface OnboardingStageProps {
   deleted: DeletedBusiness[];
 }
 export type AuthResult = { ok: true; next: string; verificationRequired?: never } | { ok: true; verificationRequired: true; next?: never };
+
+/** Server-only publication snapshot and identifier-free lifecycle tombstone; never API identifiers in retention state. */
+export interface SocialPubPayload {
+  text?: string; media?: { url: string; bytes: number | null; type: string | null }[]; video?: SocialVideo | null; options?: SocialPublishOptions; manual?: boolean; providerRef?: string; processingStartedAt?: number;
+  youtubeRetention?: { scrubbedAt: number; reason: 'disconnect' | 'revoked' | 'delete' | 'cache_expired'; noResend: boolean; needsApproval: boolean };
+}

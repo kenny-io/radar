@@ -1,3 +1,6 @@
+import { cleanupYouTube } from '../services/social/publish/youtubeRetention';
+import { YOUTUBE_NO_RESEND } from '@/lib/youtubeLifecycle';
+import { youtubeMayResend, youtubeApproved } from '../services/social/publish/youtubeGuards';
 import { reportFailure } from '@/server/observability/failures';
 // Posting from Radar: connected X / LinkedIn accounts, Post now, Schedule, drag to reschedule (architecture.md §6,
 // CONTRACTS.md § Social channels). Every action is behind RADAR_SOCIAL_PUBLISHING (404 not_enabled when off) and needs Editor.
@@ -49,6 +52,7 @@ function scheduledEvent(ctx: ActCtx, kind: 'social.scheduled' | 'social.reschedu
 /** Re-read after a conditional write lost: say why. */
 async function lostWrite(bid: string, sid: string): Promise<never> {
   const r = (await db.select().from(P).where(and(eq(P.businessId, bid), eq(P.sid, sid))).limit(1))[0];
+  if (r?.ch === 'youtube' && r.payload?.youtubeRetention?.noResend) throw refuse(YOUTUBE_NO_RESEND, 'no_resend', 409);
   if (r?.status === 'posted') throw refuse(COPY.alreadyPosted, 'posted');
   if (r?.status === 'sending') throw refuse(COPY.sending, 'sending', 409);
   throw refuse(COPY.lockedMove, 'locked', 409);
@@ -169,7 +173,20 @@ const base: ActionMap = {
         throw refuse(`You signed in as ${acctLabel({ id: '', ch, name, handle })}. Sign in as ${acctLabel(acctPublic(old))} to keep its scheduled posts, or disconnect it first.`, 'other_account', 409);
       }
       let row;
-      if (old) [row] = await db.update(A).set({ name, handle, ...tokenFields(pend.tokens), expired: false, expiredAt: null, updatedAt: new Date() }).where(eq(A.id, old.id)).returning();
+      if (ch === 'youtube') row = await db.transaction(async tx => {
+        const [business] = await tx.select().from(schema.businesses).where(eq(schema.businesses.id, ctx.bid)).for('update');
+        if (!business || business.status !== 'active') throw refuse(SIGN_IN_EXPIRED, 'auth_expired');
+        const [pending] = await tx.select().from(schema.oauthStates).where(and(eq(schema.oauthStates.state, i.oauthRef), eq(schema.oauthStates.businessId, ctx.bid), eq(schema.oauthStates.provider, 'social-pending:youtube'))).for('update');
+        if (!pending || pending.userId && pending.userId !== ctx.user.id) throw refuse(SIGN_IN_EXPIRED, 'auth_expired');
+        const [cutoff] = await tx.select().from(schema.cronMarks).where(eq(schema.cronMarks.key, `youtube.cleanup:${ctx.bid}`));
+        if (cutoff && (!pend.authorizationStartedAt || pend.authorizationStartedAt <= cutoff.createdAt.getTime())) throw refuse(SIGN_IN_EXPIRED, 'auth_expired');
+        const [current] = await tx.select().from(A).where(and(eq(A.businessId, ctx.bid), eq(A.ch, 'youtube'))).for('update');
+        if (current && current.remoteId !== remoteId) throw refuse('Disconnect the current YouTube channel before switching accounts.', 'other_account', 409);
+        const [saved] = current ? await tx.update(A).set({ name, handle, ...tokenFields(pend.tokens), expired: false, expiredAt: null, updatedAt: new Date() }).where(eq(A.id, current.id)).returning() : await tx.insert(A).values({ businessId: ctx.bid, ch, remoteId, name, handle, ...tokenFields(pend.tokens), connectedBy: ctx.user.id }).returning();
+        await tx.delete(schema.oauthStates).where(eq(schema.oauthStates.state, i.oauthRef));
+        return saved;
+      });
+      else if (old) [row] = await db.update(A).set({ name, handle, ...tokenFields(pend.tokens), expired: false, expiredAt: null, updatedAt: new Date() }).where(eq(A.id, old.id)).returning();
       else [row] = await db.insert(A).values({ businessId: ctx.bid, ch, remoteId, name, handle, ...tokenFields(pend.tokens), connectedBy: ctx.user.id }).returning();
       await deletePendingSocial(i.oauthRef);
       const released = old ? await scheduledCountFor(row.id, Date.now() - STALE_MS) : 0;
@@ -185,6 +202,11 @@ const base: ActionMap = {
       await requireSocial(ctx);
       const row = await accountRow(ctx.bid, i.acctId);
       if (!row) throw notFound('Account');
+      if (row.ch === 'youtube') {
+        const result = await cleanupYouTube({ bid: ctx.bid, acctId: row.id, reason: 'disconnect' });
+        await track('social.disconnected', { bid: ctx.bid, uid: ctx.user.id, ref: row.id, props: { ch: row.ch, acct: row.id, unscheduled: result.unscheduled } });
+        return { ch: row.ch, unscheduled: result.unscheduled };
+      }
       const t = tokensOf(row);
       if (t) { try { await adapterFor(row.ch, t).revoke(t); } catch (error) { await reportFailure(error, { source: 'social', operation: 'social.revoke', businessId: ctx.bid, ref: row.id, provider: row.ch, degraded: true }); } }
       const unscheduled = await db.transaction(async tx => {
@@ -246,7 +268,7 @@ const base: ActionMap = {
       slotGate(i.date, r.existing!.time, today, ctx.biz.timezone, now);
       const old = r.existing!;
       const [row] = await db.update(P).set({ date: i.date, dueAt: new Date(zonedTimeToUtc(i.date, old.time, ctx.biz.timezone)), retryAt: null, updatedBy: ctx.user.id, updatedAt: new Date() })
-        .where(and(eq(P.id, old.id), eq(P.status, 'scheduled'), eq(P.dueAt, old.dueAt))).returning();
+        .where(and(eq(P.id, old.id), eq(P.status, 'scheduled'), youtubeMayResend, youtubeApproved, eq(P.dueAt, old.dueAt))).returning();
       if (!row) return lostWrite(ctx.bid, i.sid);
       await scheduledEvent(ctx, 'social.rescheduled', row, String(old.date));
       return { pub: pubOf(row, r.accts) };
@@ -261,7 +283,7 @@ const base: ActionMap = {
       if (!r.existing || r.existing.status !== 'scheduled') throw refuse(COPY.notScheduled, 'not_scheduled');
       if (isLocked(r.pub, Date.now())) throw refuse(COPY.lockedMove, 'locked', 409);
       const old = r.existing;
-      const del = await db.delete(P).where(and(eq(P.id, old.id), eq(P.status, 'scheduled'), eq(P.dueAt, old.dueAt))).returning({ id: P.id });
+      const del = await db.delete(P).where(and(eq(P.id, old.id), eq(P.status, 'scheduled'), youtubeMayResend, youtubeApproved, eq(P.dueAt, old.dueAt))).returning({ id: P.id });
       if (!del.length) return lostWrite(ctx.bid, i.sid);
       await track('social.unscheduled', { bid: ctx.bid, uid: ctx.user.id, ref: old.sid, props: { sid: old.sid, src: old.src, platform: old.platform, acct: old.acctId, ch: old.ch, date: String(old.date), time: old.time, dueAt: old.dueAt.toISOString() } });
       return { ok: true };

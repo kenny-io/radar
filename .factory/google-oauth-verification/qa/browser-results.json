@@ -1,0 +1,90 @@
+{
+  "at": "2026-11-19T00:39:04.112Z",
+  "results": [
+    {
+      "name": "Q6 ordinary video attachment and options persist before lifecycle operations",
+      "pass": true,
+      "detail": {
+        "realUpload": true,
+        "optionsPersisted": true
+      }
+    },
+    {
+      "name": "Q6 configuration hold visibly pauses settings and prevents posting",
+      "pass": true,
+      "detail": {
+        "holdExplained": true,
+        "postingDisabled": true
+      }
+    },
+    {
+      "name": "Q6 disconnect from real settings scrubs posted/uncertain/unsent rows and preserves owner drafts",
+      "pass": true,
+      "detail": {
+        "realDisconnectAction": true,
+        "noApiCopies": true,
+        "persists": true
+      }
+    },
+    {
+      "name": "Q6 scrubbed posted history has disabled stale link and local-history explanation",
+      "pass": true,
+      "detail": {
+        "staleLinkDisabled": true,
+        "localHistoryExplained": true
+      }
+    },
+    {
+      "name": "Q6 uncertain upload has no retry or schedule before and after actual reconnect",
+      "pass": true,
+      "detail": {
+        "actualReconnect": true,
+        "noResurrection": true,
+        "server409": true,
+        "keyboardOpensDialog": true
+      }
+    },
+    {
+      "name": "Q6 unsent draft preserves video/caption/options and needs explicit fresh schedule approval",
+      "pass": true,
+      "detail": {
+        "ownerMediaPreserved": true,
+        "explicitScheduleApproved": true,
+        "persisted": true
+      }
+    },
+    {
+      "name": "Q6 mobile unknown-history state stays usable and offers no resend",
+      "pass": true,
+      "detail": {
+        "noHorizontalOverflow": true,
+        "keyboardCopyReachable": true
+      }
+    },
+    {
+      "name": "Q6 viewer and foreign-tenant mutation guards retain data",
+      "pass": true,
+      "detail": {
+        "viewer403": true,
+        "foreign404": true
+      }
+    },
+    {
+      "name": "Q6 existing X and LinkedIn actual UI posting still work in synthetic providers",
+      "pass": true,
+      "detail": {
+        "xAndLinkedIn": "posted",
+        "stubOnly": true
+      }
+    },
+    {
+      "name": "Q6 public privacy explains lifecycle and runtime errors remain absent",
+      "pass": true,
+      "detail": {
+        "disclosuresVisible": true,
+        "browserErrors": 0
+      }
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,130 @@
+{
+  "at": "2026-11-19T00:35:20.983Z",
+  "results": [
+    {
+      "name": "Q6 scoped cleanup scrubs API copies, preserves owner media/settings and foreign platform/tenant",
+      "pass": true,
+      "detail": {
+        "committedBeforeRevoke": true,
+        "preservedOwnerVideo": true
+      }
+    },
+    {
+      "name": "Q6 permanent no-resend survives reconnect and every claim/schedule/recovery",
+      "pass": true,
+      "detail": {
+        "guardedPaths": 5,
+        "noProviderCreate": true
+      }
+    },
+    {
+      "name": "Q6 unsent draft needs explicit new approval, automatic claim cannot resurrect",
+      "pass": true,
+      "detail": {
+        "explicitApprovalRequired": true
+      }
+    },
+    {
+      "name": "Q6 upload completion racing disconnect never restores receipt or retries",
+      "pass": true,
+      "detail": {
+        "lateWriteDiscarded": true
+      }
+    },
+    {
+      "name": "Q6 status completion racing disconnect cannot reintroduce references",
+      "pass": true,
+      "detail": {
+        "lateStatusDiscarded": true
+      }
+    },
+    {
+      "name": "Q6 late profile from prior token generation cannot overwrite reconnected account",
+      "pass": true,
+      "detail": {
+        "generationProtected": true
+      }
+    },
+    {
+      "name": "Q6 invalid_grant scrubs while configuration hold persists and only valid read clears",
+      "pass": true,
+      "detail": {
+        "holdAndRecovery": true,
+        "definitiveScrub": true
+      }
+    },
+    {
+      "name": "Q6 transient failure keeps grant and timestamps; API401 forces one fresh retry",
+      "pass": true,
+      "detail": {
+        "transientNoPurge": true,
+        "read401Recovered": true
+      }
+    },
+    {
+      "name": "Q6 day28 hard expiry uses old profile despite rotated token/new updatedAt and hides before sweep",
+      "pass": true,
+      "detail": {
+        "exactBoundary": true,
+        "readSuppressed": true
+      }
+    },
+    {
+      "name": "Q6 receipt expiry preserves fresh connection, owner draft and posted fact",
+      "pass": true,
+      "detail": {
+        "freshAccountPreserved": true
+      }
+    },
+    {
+      "name": "Q6 malformed profile timestamp fails closed and unstamped recent connection remains viable",
+      "pass": true,
+      "detail": {
+        "legacyInitialized": true,
+        "malformedScrub": true
+      }
+    },
+    {
+      "name": "Q6 revoke transient intent is encrypted, global, bounded and wiped on expiry/exhaustion",
+      "pass": true,
+      "detail": {
+        "retryExpires24h": true,
+        "terminalWiped": true
+      }
+    },
+    {
+      "name": "Q6 deleted-business cleanup commits immediately and restoration requires reconnect",
+      "pass": true,
+      "detail": {
+        "deleteBeforePurge": true,
+        "restoreNoGrant": true
+      }
+    },
+    {
+      "name": "Q6 global registered queue verifies >batch held off-flag unpaid accounts and deleted business",
+      "pass": true,
+      "detail": {
+        "globalRuns": 2,
+        "checked": 13,
+        "maxParallel": 2,
+        "neverPublished": true
+      }
+    },
+    {
+      "name": "Q6 >100 expiry continuations scrub disconnected old receipts/events/legacy snapshots without starving",
+      "pass": true,
+      "detail": {
+        "receipts": 207,
+        "passes": 3
+      }
+    },
+    {
+      "name": "Q6 contact dry-run/apply validates local tenant and safe aggregate report",
+      "pass": true,
+      "detail": {
+        "dryRunUnchanged": true,
+        "confirmationAndScopeValidated": true
+      }
+    }
+  ]
+}
