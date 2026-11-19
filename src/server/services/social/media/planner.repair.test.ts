@@ -6,13 +6,13 @@ vi.mock('./db',()=>({transaction:async(fn:(tx:unknown)=>Promise<unknown>)=>fn({}
 vi.mock('../source',()=>({readUrl:mocks.read}));
 import { env } from '@/server/env';
 import { RadarError } from '@/server/errors';
-import { planExplanation,stubPlan } from './planner';
+import { planExplanation,stubRegistryDraft } from './planner';
 
 const previous=env.devStubs;
 const source={title:'How a queue reduces duplicate uploads',link:null,brief:'Owner-provided: the queue retains a receipt and checks it before retrying. This reduces duplicate uploads but does not guarantee their prevention.',presentationNotes:'Explain calmly.'};
 const pass={pass:true,problems:[]};
 const defect={pass:false,problems:['The source says reduces duplicate uploads; it does not guarantee no duplicate upload or exclusive claiming.']};
-const original=()=>({...stubPlan(source),claims:[{id:'receipt',claim:'The queue guarantees no duplicate uploads.',source:'owner-provided',qualification:''}]});
+const original=()=>({...stubRegistryDraft(source),claims:[{id:'receipt',claim:'The queue guarantees no duplicate uploads.',source:'owner-provided',qualification:''}]});
 const repaired=()=>({...original(),claims:[{id:'receipt',claim:'The receipt check reduces duplicate uploads.',source:'owner-provided',qualification:'Does not guarantee prevention.'}]});
 const purposes=()=>mocks.run.mock.calls.map(c=>c[1].purpose);
 async function run(){const stages:string[]=[];const plan=await planExplanation('synthetic-business','synthetic-generation',source,async()=>{},async(s)=>{stages.push(s);});return {plan,stages};}

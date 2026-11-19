@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const run=vi.hoisted(()=>vi.fn());
 vi.mock('@/server/ai',()=>({ai:{run},profileContext:()=>''}));
 import { env } from '@/server/env';
-import { planExplanation, stubPlan } from './planner';
+import { planExplanation, stubRegistryDraft } from './planner';
 const previous=env.devStubs;
 afterEach(()=>{env.devStubs=previous;run.mockReset();});
 describe('explainer presentation direction',()=>{
  it('provides bounded owner tone/audience notes to planning and both reviews separately from claim evidence',async()=>{
-  env.devStubs=false;const plan=stubPlan({title:'How a queue keeps a receipt'});
+  env.devStubs=false;const plan=stubRegistryDraft({title:'How a queue keeps a receipt'});
   run.mockResolvedValueOnce({json:plan}).mockResolvedValue({json:{pass:true,problems:[]}});
   const direction='Explain calmly for first-time shop owners.';
   const evidence='Owner reference: a queue retains work until its due time and records the accepted receipt before resuming a status check.';

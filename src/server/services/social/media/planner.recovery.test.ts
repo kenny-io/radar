@@ -4,10 +4,11 @@ vi.mock('@/server/ai',()=>({ai:{run:mocks.run},profileContext:()=>''}));
 import {env} from '@/server/env';
 import {RadarError} from '@/server/errors';
 import {planExplanation,stubPlan} from './planner';
-import {hash,planningSourcePatch,planningDiagnostic,type PlanningRecovery,type Checkpoint} from './model';
+import {hash,planningSourcePatch,planningDiagnostic,type PlanningRecovery,type Plan,type RegistryDraft,type Checkpoint} from './model';
 import * as draw from './draw';
 const source={title:'How a queue saves a receipt',brief:'Owner reference: a worker saves the accepted receipt before checking status. It reuses the receipt when resuming a status check.',link:null};
 const good=()=>stubPlan(source);
+const draft=(p:Plan):RegistryDraft=>({...p,entities:p.scenes[0].nodes.map(({id,kind,label})=>({id,kind,label})),scenes:p.scenes.map(scene=>({...scene,nodes:scene.nodes.map(({kind,label,...ref})=>{void kind;void label;return ref;})}))});
 const bad=()=>{const p=good();p.scenes[0].cues[0].phrase='Missing phrase';return p;};
 const pass={pass:true,problems:[]};
 const old=env.devStubs;
@@ -20,8 +21,8 @@ afterEach(()=>{env.devStubs=old;mocks.run.mockReset();vi.restoreAllMocks();});
 describe('private durable storyboard recovery',()=>{
  it('checkpoints the invalid initial candidate before semantic validation, then spends its single correction',async()=>{
   mocks.run.mockImplementation(async(_task,request)=>{
-   if(request.purpose==='social.media.plan')return {json:bad()};
-   if(request.purpose==='social.media.revise'){expect(saved.at(-1)?.repair).toBe('dispatched');expect(saved.at(-1)?.diagnostic).toEqual({phase:'semantic',code:'cue_phrase',scene:0});return {json:good()};}
+   if(request.purpose==='social.media.plan')return {json:draft(bad())};
+   if(request.purpose==='social.media.revise'){expect(saved.at(-1)?.repair).toBe('dispatched');expect(saved.at(-1)?.diagnostic).toEqual({phase:'semantic',code:'cue_phrase',scene:0});return {json:draft(good())};}
    return {json:pass};
   });
   await run();expect(saved[0].candidate.scenes[0].cues[0].phrase).toBe('Missing phrase');
@@ -30,14 +31,14 @@ describe('private durable storyboard recovery',()=>{
   for(const c of mocks.run.mock.calls.filter(c=>c[1].purpose!=='social.media.review'))expect(c[1]).toMatchObject({maxTokens:12000,timeoutMs:120000});
  });
  it('uses the same single allowance for a semantic defect followed by a factual review failure',async()=>{
-  mocks.run.mockResolvedValueOnce({json:bad()}).mockResolvedValueOnce({json:good()}).mockResolvedValue({json:{pass:false,problems:['A source qualification is absent.']}});
+  mocks.run.mockResolvedValueOnce({json:draft(bad())}).mockResolvedValueOnce({json:draft(good())}).mockResolvedValue({json:{pass:false,problems:['A source qualification is absent.']}});
   await expect(run()).rejects.toMatchObject({code:'media_review_failed'});
   expect(mocks.run.mock.calls.map(c=>c[1].purpose)).toEqual(['social.media.plan','social.media.revise','social.media.review']);
   expect(saved.at(-1)?.repair).toBe('completed');
  });
  it.each(['layout','duration']as const)('repairs a known %s defect before both reviews',async(kind)=>{
   const p=good();if(kind==='layout')p.scenes[0].narration+=' '+('W'.repeat(200));else for(const scene of p.scenes)scene.narration+=' '+Array(30).fill('word').join(' ');
-  mocks.run.mockResolvedValueOnce({json:p}).mockResolvedValueOnce({json:good()}).mockResolvedValue({json:pass});
+  mocks.run.mockResolvedValueOnce({json:draft(p)}).mockResolvedValueOnce({json:draft(good())}).mockResolvedValue({json:pass});
   await planExplanation('synthetic-business','synthetic-generation',source,async()=>{},async()=>{},kind==='duration'?70:180,{...options(),checkpoint:undefined});
   expect(saved.some(s=>s.diagnostic?.phase===kind)).toBe(true);expect(mocks.run).toHaveBeenCalledTimes(4);
  });
@@ -54,14 +55,14 @@ describe('private durable storyboard recovery',()=>{
   await expect(run(state('dispatched'))).rejects.toMatchObject({code:'media_plan_interrupted'});expect(mocks.run).not.toHaveBeenCalled();
  });
  it('awaits durable candidate persistence and refuses correction if that guarded save fails',async()=>{
-  mocks.run.mockResolvedValueOnce({json:bad()});
+  mocks.run.mockResolvedValueOnce({json:draft(bad())});
   const save=vi.fn(async()=>{throw new RadarError('Request changed',409,'media_cancelled');});
   await expect(planExplanation('synthetic-business','synthetic-generation',source,async()=>{},async()=>{},180,{...options(),save})).rejects.toMatchObject({code:'media_cancelled'});
   expect(mocks.run).toHaveBeenCalledTimes(1);
  });
  it('does not spend a correction on a font/runtime failure and records only safe diagnostics',async()=>{
   const marker='SECRET_SOURCE_MARKER';vi.spyOn(draw,'carouselFrame').mockImplementation(()=>{throw new Error(marker);});
-  mocks.run.mockResolvedValueOnce({json:good()});await expect(run()).rejects.toMatchObject({code:'media_plan_internal'});
+  mocks.run.mockResolvedValueOnce({json:draft(good())});await expect(run()).rejects.toMatchObject({code:'media_plan_internal'});
   expect(mocks.run).toHaveBeenCalledTimes(1);expect(saved.at(-1)?.diagnostic?.code).toBe('media_plan_internal');
   expect(JSON.stringify(saved.at(-1)?.diagnostic)).not.toContain(marker);
  });
