@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 /Users/ekene/.codex/worktrees/radar-generated-media/radar-push
+
+ ✓ .factory/social-draft-navigation/qa/independent.test.mjs (20 tests) 20ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  18:44:10
+   Duration  547ms (transform 161ms, setup 0ms, collect 250ms, tests 20ms, environment 0ms, prepare 47ms)
+

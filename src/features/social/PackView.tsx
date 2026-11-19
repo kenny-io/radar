@@ -3,10 +3,10 @@
 // (B.social.publishing): the post panel (PublishBox), Schedule all, and edits locked while a post is about to send.
 import { PlatName, PlatLogo } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
-import { useApp } from '@/client/app';
-import { AutoText, Btn, Field, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
+import { routeToUrl, useApp } from '@/client/app';
+import { AutoText, Btn, Field, Icon, LogoTile, PageHead, Tabs, copyText, downloadBlob, sleep } from '@/components/ui';
 import { DL_ERROR, Visual, visualBlob } from '@/components/Visual';
-import { packKeys } from './PackThumb';
+import { packKeys, libraryParams, type LibraryQuery } from './library';
 import { PublishBox } from './channels/PublishBox';
 import { CarouselPreview, ExplainerMedia } from './ExplainerMedia';
 import { ScheduleAll } from './channels/ScheduleAll';
@@ -16,7 +16,7 @@ import { IMG_SIZES, STYLES, plat } from '@/lib/constants';
 import { ago, fmtD } from '@/lib/format';
 import type { Platform, SocialPack, SocialPost, Workspace } from '@/lib/types';
 
-export function PackView({ pack }: { pack: SocialPack }) {
+export function PackView({ pack, library = { q: '' } }: { pack: SocialPack; library?: LibraryQuery }) {
   const app = useApp(); const B = app.B!; const { go, toast } = app; const brand = B.profile.brand;
   const pubOn = !!B.social.publishing; const now = useNowMs();
   const rp = pubOn ? (app.route.params?.plat as Platform | undefined) : undefined;
@@ -67,7 +67,7 @@ export function PackView({ pack }: { pack: SocialPack }) {
   const generating = !!p && mediaGenerationPending(p);
   const imageDisabled = locked || p?.pub?.status === 'posted' || busy.image || generating;
   return <div className="page">
-    <Btn kind="ghost" size="sm" icon="back" onClick={() => go('social')} style={{ marginLeft: -10, marginBottom: 18 }}>Content library</Btn>
+    <a className="btn btn-ghost btn-sm" href={routeToUrl('social', libraryParams(library))} onClick={event => { if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); go('social', libraryParams(library)); }} style={{ marginLeft: -10, marginBottom: 18 }}><Icon n="back" s={16} />Content library</a>
     <PageHead title={pack.name} sub={<span>From {pack.source.kind === 'suggest' ? 'a Radar suggestion' : pack.source.kind === 'idea' ? 'an idea' : pack.source.kind === 'url' ? 'an article URL' : 'a Radar article'} · {fmtD(pack.created)}{pack.auto ? ' · Prepared by Radar' : ''}</span>}>
       {pubOn && <ScheduleAll pack={pack} />}<Btn icon="download" onClick={dlAll}>Download all</Btn>
     </PageHead>

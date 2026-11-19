@@ -111,7 +111,7 @@ export function SocialFlow({ open, onClose }: { open: boolean; onClose: () => vo
       const packId = cur.result && cur.result.packId;
       if (!packId) return; // wait for the polled result
       finished.current = job.id; setGen(st.platforms.length);
-      (async () => { await app.refresh(); setJob(null); onClose(); go('social', { pack: packId }); toast(mediaChoices.length ? 'Your posts and media are being prepared.' : 'Pack saved to your library', { tone: 'ok' }); })();
+      (async () => { await app.refresh(); setJob(null); onClose(); go('social', { pack: packId }); toast(mediaChoices.length ? 'Pack saved to Content library. Your media is being prepared.' : 'Pack saved to Content library.', { tone: 'ok', action: { label: 'Content library', fn: () => go('social') } }); })();
     }
   }, [cur, job]); // eslint-disable-line react-hooks/exhaustive-deps
 
