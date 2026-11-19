@@ -1,5 +1,9 @@
 # Delivery state
 
+## Current authoritative status
+
+Architecture, implementation and independent local QA are verified; PR66 is ready for guarded deployment with generationoff after final commit/status checks. Real Linux runtime and fresh model→Brian0.78→R2 production acceptance remain required. Phase1 is not yet declared delivered. All specialist source work is frozen and local test servers are stopped. Five video styles are planned only after phase1 delivery. Google verification remains unsubmitted pending a proper recorded walkthrough; Owner automatic YouTube defaults question is unanswered and must not be inferred. Historical milestone notes follow.
+
 - PM M0: requirements and confirmed platform scope recorded; active.
 - Architect A7: verified and approved, architecture.md; owns design records only.
 - Engineer E7B /media_backend: active; owns media/**, shared types/schema/migration, media actions/jobs, AI beforeAttempt budget hook, env/redaction/readiness/storage helper and worker Docker/render tooling; backend-integration.md.
