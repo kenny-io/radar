@@ -2,7 +2,7 @@
 // Dashboard — port of prototype/radar-dashboard.jsx (Dashboard, dashIssues, PerfSummary, DashEmpty, CalMotif, PostMotif).
 import { BrandIcon } from '@/components/brand';
 import React, { useEffect, useState } from 'react';
-import { useApp, type AppCtx } from '@/client/app';
+import { routeToUrl, useApp, type AppCtx } from '@/client/app';
 import { Btn, EntryStatus, Icon, Metric, Section, Skel, Spark, Status } from '@/components/ui';
 import { PackThumb } from '@/features/social/PackThumb';
 import { WeekStrip } from '@/features/social/channels/WeekStrip';
@@ -70,7 +70,7 @@ export function Dashboard() {
       </Section>
     </div>}
     <Section title="Recent social packs" action={<Btn kind="link" size="sm" iconR="chevR" onClick={() => go('social')}>All packs</Btn>}>
-      {packs.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16 }}>{packs.slice(0, 4).map(p => <PackThumb key={p.id} p={p} brand={B.profile.brand} onClick={() => go('social', { pack: p.id })} />)}</div>
+      {packs.length ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16 }}>{packs.slice(0, 4).map(p => <PackThumb key={p.id} p={p} brand={B.profile.brand} href={routeToUrl('social', { pack: p.id })} onOpen={() => go('social', { pack: p.id })} />)}</div>
         : <div className="row" style={{ padding: '12px 0', gap: 16, flexWrap: 'wrap' }}><p className="sub small grow">No packs yet. Turn an idea or article into posts for every platform.</p><Btn icon="social" onClick={() => go('social', { generate: true })}>Create social posts</Btn></div>}
     </Section>
   </div>;

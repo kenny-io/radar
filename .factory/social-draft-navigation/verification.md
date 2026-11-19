@@ -1,0 +1,26 @@
+# Verification evidence
+
+Baseline PM userChrome: posted ownerdemo Content library returns /social with demo first; Settings→sidebarSocialMarketing also lists it. Screenshot /tmp/radar-draft-library-before.jpg. This rules out a reproduced missing-row issue for the current case. Actual cardvisuals show generic still thumbnails, mixed savedcontent and no status/search/open affordance.
+
+Independent source audit: workspace loadsalltenantpacks ordered createdAt desc, SocialMarketing mapsallpacks; no fixedpagination/filter/IDprefixomission found. FinalN1 acceptance pending.
+
+D2 v2helpers frozen from independentlyapprovedD1 operation: helperSHA d0afdb3a6dd074b8bc8b34d17e00fc4887f233dc6ede332c2373716896927abf; runnerSHA318ae1d7465259e0cbdd8767880ed58d8722698e9ef2e3e20947a7e7f5170d38. Only helpertargetID/name changes. No production execution in engineerhand-off. QAindependentdelta andPMsource-currentdryrun stillrequired.
+
+
+D2 independentexact2literalhelperdeltaapproval+8checksPASS. Actualnewsource/media/preflightdryrun passed withproposal f4596ffaddf2255034adcadc92f3d4a264fc49eb53bd99d833e6af94115f5452. PMapplyreturnedcreated_unpublished; actualSocialMarketingcardappearedfirstandopenednewpack, per-postPrivate/notmadeforkidsselectedthroughnormalUI, reloadretainsbothPostnow/Scheduleenabled. Originalpub/historyandbusinesspreferencespreservedbytransactionguards. No model,narration,renderorplatformupload. BaselineNode22socialPublish51/51testsPASS.
+
+
+N8 newuserreportreproducedbyPM inactualChrome: ownedpostedD1pack (media-youtube-demo-099ade32e56238eb7745134e7d4afcf3), ViewonYouTubebutton enabledtrue; clickleavespageunchanged, immediatefulltabinventoryshowsnoYouTubepage/newwindow. Thisconfirmsfailurebutdoesnotprovespecificpopupblocking. Sourcearchitectidentifiedscript-only window.open(pub.url,_blank,noopener) inPublishBox. ApprovednativeHTTP(S)link/noinertmissinghistorycontractinupdateddesign. Finaltests/postdeployclickpending. User'sfreshD2draftuntouched/unpublished.
+
+
+N8read-onlyproductionbaseline: D1postedreceiptremoteID1wMU2gOxKeM, canonicalhttps://www.youtube.com/watch?v=1wMU2gOxKeM, attempts1. Thus livefailedclickhadavalidretainedURL, notscrubbedhistory. D2freshrecordingpackcurrentlyhasnopublication. Private /tmp/radar-posted-link-baseline.json retainedforpostdeployhrefcomparison. No recordwrites/providerrequests inbaselinecheck.
+
+
+N1E/N8engineerfreeze:7runtimepaths aggregate85d223d2c6045616139cd5fb41fe43a9a1705400076eec7123de95c3fd0221c2, exactmap /tmp/radar-navigation-runtime-fingerprint.json. 39focusedtests, Node22typecheck/diffPASS;8/8realindependentsyntheticbrowserjourneys,zeropageerrors/productactions. SeparateindependentQAactive, notyetaccepted. PMvisuallyinspectedengineerdesktop/mobilecovers/status/nativeOpenlayout; directionaccepted.
+
+PMisolatedNode22productionbuildPASS898files source/copy/final3b181adc857e3b1f62cdc766e62cd28596c6c71d353a74c4dd5e2b8646f2b488,BUILD_IDZtaXyoynZS4n3td4xyZzr. /tmp/radar-navigation-build.{json,log}. Runtime maprecomputedmatchesfreeze. No sourcechangesafterbuildwithoutreproduceddefect/affectedrecheck/rebuild. No merge/deployyet.
+
+
+IndependentN1/N8FINALPASS:20/20 independentchecks(including125statuscombinations),90/90 focusedregressions,8/8actualChromejourneys,typecheck/diffPASS. Real26syntheticDBpacks+pubprojection (not inventedworkspace), authenticlocalapp, actualrange-capablegenericMP4 pausedframe1.5/offscreen/errorcases. NativeYTclick/EnteropenexactlocallyfulfilledURL; noactualprovideravailabilityclaim. Productactions/pageerrors empty; DBprefs/packs/pubshashes+job/model/gen countsunchanged. qa.md andqa/** retainproof. Local/api/filesRangeunsupportedispreexistingbaseline; actualproductionR2boundedGET0-15was206and16bytes. No sourcefix.
+
+PMrecomputedall898buildselectedfilesafterfinalQA: still3b181adc857e3b1f62cdc766e62cd28596c6c71d353a74c4dd5e2b8646f2b488;7runtimepathsallmatch85d223... . Sourcefrozen, no remaininglocalmaterialdefect. ProceedauthorizedPR/merge/deploy; finalactuallibrary/nativeYouTubelinksmokerequired.

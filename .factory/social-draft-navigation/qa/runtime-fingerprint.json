@@ -1,0 +1,17 @@
+{
+  "base": "13e2272870781951c86d578fa225462f43ddc5b4",
+  "aggregate": "85d223d2c6045616139cd5fb41fe43a9a1705400076eec7123de95c3fd0221c2",
+  "paths": {
+    "src/features/dashboard/Dashboard.tsx": "768cba1457f4f7a311f9969327684ddae19f84b30e01915a3d118ce82f575870",
+    "src/features/social/PackThumb.tsx": "8cd5576092a978085a359e0af31d283338cc798e5e894a59021e26208190f096",
+    "src/features/social/PackView.tsx": "d816886f8993eece7d20b6c5b9a85c168c5517e3005b201e1b6c91a29b0c30c1",
+    "src/features/social/SocialFlow.tsx": "b942f862c8db1be41bb513588b3bebc96f67b10c13d074800511c6425e216978",
+    "src/features/social/SocialMarketing.tsx": "362e15923ea1039e90bad294a88f352662a155d07d354b4d5978a12f036237cf",
+    "src/features/social/library.ts": "2591a5c5d66fbe32949d86d1dd5830cb2cce5b668d7d09611236f6914a1b4751",
+    "src/features/social/channels/PublishBox.tsx": "8a138dff655e98e6f07acf2ccafd0823c7cb8c3327a1ac78fd8471938b868bcf"
+  },
+  "testedHead": "13e2272870781951c86d578fa225462f43ddc5b4",
+  "independentMapVerified": true,
+  "independentAlgorithm": "sha256(sorted relative-path TAB file-sha256 LF)",
+  "independentAggregate": "6cad12c05f0c5d276840687f3cb0ab973a6c3d63c63522258d77a75413d5aef0"
+}

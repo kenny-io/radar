@@ -1,26 +1,51 @@
 'use client';
-// CONTRACT (owned by the social area): pack thumbnail card used in the library and on the Dashboard.
-// Port of PackThumb (prototype/radar-social.jsx).
-import React from 'react';
+// Native saved-pack links shared by the full library and the four-item Dashboard summary.
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
-import { scheduledCount } from '@/lib/socialPublish';
+import { Icon, Status } from '@/components/ui';
 import { Visual } from '@/components/Visual';
-import { PLAT, plat } from '@/lib/constants';
+import { plat } from '@/lib/constants';
 import { fmtD } from '@/lib/format';
-import type { SocialPack, Brand, Platform } from '@/lib/types';
-export interface PackThumbProps { p: SocialPack; brand: Brand; onClick: () => void }
-/** Platforms of a pack in the order they were picked (jsonb doesn't keep object key order). */
-export function packKeys(p: SocialPack): Platform[] {
-  const has = Object.keys(p.posts || {}) as Platform[]; const ord = ((p as any).order || []) as Platform[];
-  return [...ord.filter(k => has.includes(k)), ...PLAT.map(x => x.k).filter(k => has.includes(k) && !ord.includes(k))];
+import type { SocialPack, Brand } from '@/lib/types';
+import { packCover, packKeys, packSummary, type LibraryCover } from './library';
+export { packKeys } from './library';
+export interface PackThumbProps { p: SocialPack; brand: Brand; href: string; onOpen?: () => void }
+
+function Cover({ cover, pack, brand }: { cover: LibraryCover; pack: SocialPack; brand: Brand }) {
+  const ref = useRef<HTMLDivElement>(null); const [visible, setVisible] = useState(false); const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [cover.url]);
+  useEffect(() => {
+    if (cover.kind !== 'video' || !ref.current || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) { setVisible(true); observer.disconnect(); } }, { rootMargin: '120px' });
+    observer.observe(ref.current); return () => observer.disconnect();
+  }, [cover.kind, cover.url]);
+  const duration = Math.round(cover.duration || 0);
+  const label = cover.kind === 'video' ? `Video${duration ? ` · ${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}` : ''}` : cover.kind === 'carousel' ? `Carousel · ${cover.slides} slides` : cover.kind === 'image' ? 'Image' : 'Preview';
+  return <div ref={ref} style={{ aspectRatio: '1.6', position: 'relative', overflow: 'hidden', borderRadius: 11, background: 'var(--line2)', display: 'grid', placeItems: 'center' }}>
+    {cover.kind === 'placeholder' ? <Visual style={pack.style} brand={brand} headline={(pack as SocialPack & { headline?: string }).headline || pack.source.label} seed={cover.post?.seed || 1} name="" radius={11} ratio={1.6} />
+      : failed ? <span className="col xs sub" style={{ alignItems: 'center', gap: 8, padding: 18 }}><Icon n={cover.kind === 'video' ? 'play' : 'image'} s={24} /><span>{cover.kind === 'video' ? 'Video' : cover.kind === 'carousel' ? 'Carousel' : 'Image'} preview unavailable</span></span>
+      : cover.kind === 'video' ? <><Icon n="play" s={30} style={{ position: 'absolute', color: 'var(--faint)' }} /><video muted playsInline preload={visible ? 'metadata' : 'none'} src={visible ? cover.url : undefined} onLoadedMetadata={event => { const video = event.currentTarget; if (Number.isFinite(video.duration) && video.duration > 0) video.currentTime = Math.min(1.5, video.duration / 2); }} onError={() => setFailed(true)} aria-label={`${cover.platform ? plat(cover.platform).l : ''} saved video preview`} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none', position: 'absolute' }} /></>
+      : <img src={cover.url} alt={cover.alt || `${cover.platform ? plat(cover.platform).l : ''} saved ${cover.kind === 'carousel' ? 'slide' : 'image'}`} loading="lazy" decoding="async" onError={() => setFailed(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+    <span className="xs" style={{ position: 'absolute', left: 9, bottom: 9, borderRadius: 6, padding: '4px 7px', background: '#10151de8', color: '#fff', display: 'inline-flex', gap: 5, alignItems: 'center' }}>{cover.kind === 'video' && <Icon n="play" s={11} />}{label}</span>
+  </div>;
 }
 
-export function PackThumb({ p, brand, onClick }: PackThumbProps) {
-  const keys = packKeys(p); const first: any = keys.length ? p.posts[keys[0]] : null;
-  const headline = (p as any).headline || p.source.label;
-  const { B } = useApp(); const n = B?.social.publishing ? scheduledCount(p.posts) : 0;
-  return <button className="card tap col" onClick={onClick} style={{ padding: 10, textAlign: 'left', cursor: 'pointer', gap: 12, borderRadius: 18 }}>
-    <Visual style={p.style} brand={brand} headline={headline} seed={first ? first.seed : 1} name="" radius={11} ratio={1.6} url={first && first.photo ? first.imageUrl : null} />
-    <span className="col" style={{ padding: '0 6px 6px', gap: 2 }}><span className="trunc" style={{ fontWeight: 500 }}>{p.name}</span><span className="xs sub">{fmtD(p.created)} · {keys.map(k => plat(k).l).join(', ')}{n ? ` · ${n} scheduled` : ''}</span>{p.auto && <span className="xs sub">Prepared by Radar</span>}</span>
-  </button>;
+export function PackThumb({ p, brand, href, onOpen }: PackThumbProps) {
+  const { B } = useApp(); const pubOn = !!B?.social.publishing; const keys = packKeys(p); const summary = packSummary(p); const cover = packCover(p);
+  const open = (event: React.MouseEvent<HTMLAnchorElement>) => { if (!onOpen || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onOpen(); };
+  const bucketLabels = { draft: 'Draft', scheduled: 'Scheduled', posted: 'Posted', mixed: 'Mixed' };
+  const counts = (['draft', 'scheduled', 'posted'] as const).filter(key => summary[key]).map(key => `${summary[key]} ${key}`).join(' · ');
+  return <article className="card col" aria-label={p.name} style={{ padding: 10, gap: 12, borderRadius: 18, minWidth: 0 }}>
+    <a href={href} onClick={open} aria-label={`Open ${p.name}`} style={{ color: 'inherit', textDecoration: 'none', display: 'block', borderRadius: 11 }}><Cover cover={cover} pack={p} brand={brand} /></a>
+    <div className="col" style={{ padding: '0 6px 6px', gap: 7, minWidth: 0 }}>
+      <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}><Status tone={!pubOn ? 'mute' : summary.kind === 'posted' ? 'ok' : summary.kind === 'scheduled' ? 'signal' : 'ink'}>{pubOn ? bucketLabels[summary.kind] : 'Saved'}</Status>{pubOn && summary.failed > 0 && <Status tone="warn">Needs attention · {summary.failed}</Status>}{pubOn && summary.sending > 0 && <Status tone="signal">Sending · {summary.sending}</Status>}</div>
+      <a href={href} onClick={open} style={{ color: 'var(--ink)', fontWeight: 500, textDecoration: 'none', overflowWrap: 'anywhere' }}>{p.name}</a>
+      <span className="xs sub">{fmtD(p.created)} · {keys.map(key => plat(key).l).join(', ')}</span>
+      {pubOn && summary.kind === 'mixed' && <span className="xs sub">{counts}</span>}
+      {cover.platform && <span className="xs sub">Cover: {plat(cover.platform).l}{cover.style ? ` · ${cover.style}` : ''}</span>}
+      {cover.state && <span className="xs sub">{cover.state}</span>}
+      {p.auto && <span className="xs sub">Prepared by Radar</span>}
+      <a href={href} onClick={open} className="unlink small" aria-label={`Open pack: ${p.name}`} style={{ alignSelf: 'flex-start', padding: '5px 0' }}>Open pack <span aria-hidden="true">→</span></a>
+    </div>
+  </article>;
 }

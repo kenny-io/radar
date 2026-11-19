@@ -25,6 +25,17 @@ export function Issues({ list, onFix, busy }: { list: Problem[]; onFix: (p: Prob
 /** Toast after a Post now / Try again that came back `failed` (a failed send is not an error). */
 export const failToast = (pub: Pub) => (pub.code === 'unknown' ? failedLine(pub) : 'Couldn’t post. Nothing was published.');
 
+/** Use the projected receipt verbatim; removed YouTube history must never reconstruct a remote link. */
+export function PostedLink({ pub, platform }: { pub: Pub; platform: Platform }) {
+  const label = plat(platform).l;
+  let href: string | undefined;
+  if (pub.url && !(platform === 'youtube' && pub.historyExpired)) {
+    try { const parsed = new URL(pub.url); if (parsed.protocol === 'https:' || parsed.protocol === 'http:') href = pub.url; } catch { /* unavailable receipt */ }
+  }
+  if (href) return <a className="btn btn-secondary btn-block" href={href} target="_blank" rel="noopener noreferrer"><LogoLabel k={platform}>{`View on ${label}`}</LogoLabel></a>;
+  return <p className="xs sub">{platform === 'youtube' && pub.historyExpired ? 'YouTube connection details were removed. This is Radar’s local upload history; check YouTube for the current video.' : `The post link is unavailable. Check ${label} for this post.`}</p>;
+}
+
 export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy = false }: { pack: SocialPack; k: Platform; post: SocialPost; nImg: number; onCopy: () => void; onDownload: () => void; mediaBusy?: boolean }) {
   const app = useApp(); const { toast } = app; const B = app.B!; const tz = B.tz; const now = useNowMs();
   const pl = plat(k).l; const all = accountsOf(B); const accts = accountsFor(all, k);
@@ -98,8 +109,8 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
   const as = pub ? postedAs(pub, all) : '';
   if (state === 'posted' && pub) return <div className="col" style={{ gap: 12 }}>
     <Status tone="ok">{`Posted ${at(pub)}`}</Status>
-    {as && <span className="small sub" style={{ marginTop: -6 }}>{`As ${as}`}</span>}{pub.historyExpired && <p className="xs sub">YouTube connection details were removed. This is Radar’s local upload history; check YouTube for the current video.</p>}
-    <Btn className="btn-block" disabled={!pub.url} onClick={() => pub.url && window.open(pub.url, '_blank', 'noopener')}><LogoLabel k={k}>{`View on ${pl}`}</LogoLabel></Btn>
+    {as && <span className="small sub" style={{ marginTop: -6 }}>{`As ${as}`}</span>}
+    <PostedLink pub={pub} platform={k} />
     {secondary}
   </div>;
   if (state === 'sending' && pub) return <div className="col" style={{ gap: 12 }}>

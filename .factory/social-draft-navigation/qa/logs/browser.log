@@ -1,0 +1,8 @@
+{"name":"Actual tenant DB packs, overlapping statuses, real paused frames and offscreen sources","pass":true,"detail":{"all26":true,"countsOverlap":true,"actualFrameColors":153,"offscreenLazy":true}}
+{"name":"Search and Draft URL persist through refresh, native middleclick, Content library and browser history","pass":true,"detail":{"middleclickNative":true,"refreshBackForward":true}}
+{"name":"Filter empty/reset, missing and foreign pack state, literalone and out-of-filter direct pack","pass":true,"detail":{"missingExplicit":true,"foreignHidden":true,"outsideFilterOpens":true}}
+{"name":"Sidebar Settings return, cross-pack tab reset and Dashboard four-to-All navigation","pass":true,"detail":{"tabReset":true,"sidebarAll":true,"dashboard4to26":true}}
+{"name":"Actual fresh DB receipt uses native click and Enter new-tab exact destination, no opener or write","pass":true,"detail":{"clickAndEnter":true,"noProviderHit":true,"noOpener":true}}
+{"name":"Invalid and removed posted receipts stay readonly; stale history URL cannot resurrect View","pass":true,"detail":{"projectedHistory":true,"staleClientIgnored":true}}
+{"name":"Viewer/mobile search and keyboard open preserve read-only permissions and no overflow","pass":true,"detail":{"viewerReadOnly":true,"width390":true}}
+{"name":"Flagoff neutral Saved, hidden status filters, stale status cleaned and genuine empty state","pass":true,"detail":{"flagoffSaved":true,"emptyDistinct":true}}
