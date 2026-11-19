@@ -1,0 +1,28 @@
+{
+  "at": "2026-11-19T03:52:32.570643+00:00",
+  "head": "e8c9d06a7e81e261e8c29a8d5147030dd6000f59",
+  "workspace": "/Users/ekene/.codex/worktrees/radar-generated-media/radar-push",
+  "runtimePaths": [
+    "src/server/services/social/media/draw.ts",
+    "src/server/services/social/media/layout.ts",
+    "src/server/services/social/media/model.ts"
+  ],
+  "runtimeSha256": "e4d27e99c0975e4976cc6b7156a80a9eb914f684c07efe4f803262aa34e6b419",
+  "files": {
+    "src/server/services/social/media/draw.ts": "50d6d6b66729df79fef0da2fc2064e7947832498e01dbee9271ed1ef968d1d2a",
+    "src/server/services/social/media/layout.ts": "312749f2326cb9804c06bab6880950efba5e7f3341f3e912dafc0d19ccdc536b",
+    "src/server/services/social/media/model.ts": "7ced81a453a0a1e2c3ab93b28309c5f64e16b09b8aca4e722323c279a1cdb4c1"
+  },
+  "independentPassed": 22,
+  "affectedDeveloperPassed": 38,
+  "privateOwnedArtifacts": "/tmp/radar-readable-layout-owned-qa",
+  "allFiveSlidesAndFiveVideoFramesVisuallyInspected": true,
+  "changedAfterFix": [
+    "scene-0.jpg",
+    "scene-4.jpg",
+    "frame-0-0.png",
+    "frame-4-0.png"
+  ],
+  "changedArtifactsReinspected": true,
+  "noAudioOrProviderRequest": true
+}

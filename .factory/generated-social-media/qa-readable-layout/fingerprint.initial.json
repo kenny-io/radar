@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-19T03:49:46.462969+00:00",
+  "head": "e8c9d06a7e81e261e8c29a8d5147030dd6000f59",
+  "runtimePaths": [
+    "src/server/services/social/media/draw.ts",
+    "src/server/services/social/media/layout.ts",
+    "src/server/services/social/media/model.ts"
+  ],
+  "runtimeSha256": "d5cf39a17b7e66f3ffa240e09da5c0fb7f065cb44fe1cb5893adc35e4bf8f458",
+  "files": {
+    "src/server/services/social/media/draw.ts": "50d6d6b66729df79fef0da2fc2064e7947832498e01dbee9271ed1ef968d1d2a",
+    "src/server/services/social/media/layout.ts": "575f9a93e4796d97a17cacbb834cc52047dad3d6790a37622a004f86031232f2",
+    "src/server/services/social/media/model.ts": "7ced81a453a0a1e2c3ab93b28309c5f64e16b09b8aca4e722323c279a1cdb4c1"
+  },
+  "ownedArtifacts": "/tmp/radar-readable-layout-owned-qa (private, uncommitted)",
+  "allFiveSlidesAndVideoFramesVisuallyInspected": true,
+  "firstIndependentPass": 20,
+  "firstIndependentFailed": 2
+}

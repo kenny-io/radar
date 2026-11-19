@@ -6,11 +6,12 @@ import path from 'node:path';
 import type { ExplainerFormat, ExplainerPlatform } from '@/lib/types';
 
 export const VERSION = 'diagram-v2-aligned-cues';
+export const LAYOUT_VERSION = 'readable-layout-v1';
 export const VOICE = 'nPczCjzI2devNBz1zQrb';
 export const voiceSettings = { stability: 0.4, similarity_boost: 0.8, style: 0.25, speed: 0.78 };
 export function narrationSettings(){const speed=Number(process.env.ELEVENLABS_SPEED||voiceSettings.speed);if(!Number.isFinite(speed)||speed<0.7||speed>1.1)throw new Error('Narration speed configuration is invalid');return {...voiceSettings,speed};}
 let identity:Promise<string>|undefined;
-export function rendererIdentity(){return identity??=Promise.all(['Kalam-Regular.ttf','NotoSans.ttf'].map(f=>fs.readFile(path.join(process.cwd(),'assets/social-media',f)))).then(files=>hash({version:VERSION,fonts:files.map(f=>createHash('sha256').update(f).digest('hex'))}));}
+export function rendererIdentity(){return identity??=Promise.all(['Kalam-Regular.ttf','NotoSans.ttf'].map(f=>fs.readFile(path.join(process.cwd(),'assets/social-media',f)))).then(files=>hash({version:VERSION,layout:LAYOUT_VERSION,fonts:files.map(f=>createHash('sha256').update(f).digest('hex'))}));}
 export const PLATFORMS = ['instagram','tiktok','youtube'] as const;
 export const hash = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
 export function canonical(value: any): string { return JSON.stringify(value, (_,v) => v && !Array.isArray(v) && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])) : v); }
@@ -39,7 +40,7 @@ interface PlanningRecoveryBase {sourceHash:string;maxDuration:number;repair:'ava
 export interface LegacyPlanningRecovery extends PlanningRecoveryBase {version:1;candidate:Plan}
 export interface RegistryPlanningRecovery extends PlanningRecoveryBase {version:2;candidate:RegistryDraft}
 export type PlanningRecovery=LegacyPlanningRecovery|RegistryPlanningRecovery;
-export type PlanningValidationCode='entity_duplicate'|'entity_reference'|'script_limit'|'duplicate_node'|'duplicate_cue'|'cue_phrase'|'cue_target'|'node_cue'|'edge_cue'|'revisit_cue'|'opening_cue'|'revisit_target'|'unchanged_scene'|'edge_target'|'node_identity'|'chart_evidence'|'label_width'|'label_lines'|'caption_width'|'platform_duration';
+export type PlanningValidationCode='layout_collision'|'entity_duplicate'|'entity_reference'|'script_limit'|'duplicate_node'|'duplicate_cue'|'cue_phrase'|'cue_target'|'node_cue'|'edge_cue'|'revisit_cue'|'opening_cue'|'revisit_target'|'unchanged_scene'|'edge_target'|'node_identity'|'chart_evidence'|'label_width'|'label_lines'|'caption_width'|'platform_duration';
 export class PlanningValidationError extends RadarError {
  constructor(public phase:'semantic'|'layout'|'duration',public diagnosticCode:PlanningValidationCode,message:string,public scene?:number){super(message,400,phase==='semantic'?'media_plan_invalid':phase==='layout'?'media_layout':'media_duration_limit');}
 }
