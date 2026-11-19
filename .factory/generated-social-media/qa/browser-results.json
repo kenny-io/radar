@@ -1,0 +1,57 @@
+{
+  "at": "2026-11-19T01:43:22.484Z",
+  "results": [
+    {
+      "name": "M1/M2 generated-first single Generate completes actual JPEG carousel without upload or second media action",
+      "pass": true,
+      "detail": {
+        "packCreated": true,
+        "actualWorkerRender": true,
+        "slides": 3,
+        "noAutoPost": true
+      }
+    },
+    {
+      "name": "M3/M9 carousel refresh keyboard navigation and authenticated source download persist",
+      "pass": true,
+      "detail": {
+        "refresh": true,
+        "keyboard": true,
+        "notesDownloaded": true
+      }
+    },
+    {
+      "name": "M9 mobile carousel stays readable without overflow",
+      "pass": true,
+      "detail": {
+        "width": 390,
+        "noOverflow": true
+      }
+    },
+    {
+      "name": "M7 Viewer previews actual generated slides/notes but has no generation controls",
+      "pass": true,
+      "detail": {
+        "preview": true,
+        "notes200": true,
+        "mutation403": true
+      }
+    },
+    {
+      "name": "M1 generated-first product exposes video generation instead of manual upload for YouTube/TikTok",
+      "pass": true,
+      "detail": {
+        "platforms": 2,
+        "noUploadControls": true
+      }
+    },
+    {
+      "name": "M9 browser has no unhandled runtime exceptions",
+      "pass": true,
+      "detail": {
+        "errors": 0
+      }
+    }
+  ],
+  "errors": []
+}

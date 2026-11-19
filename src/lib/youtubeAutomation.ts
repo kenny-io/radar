@@ -1,4 +1,4 @@
-import { mediaGenerationPending } from './socialPublish';
+import { automaticMediaReady } from './socialPublish';
 import type { SocialAccount, SocialAuto, SocialPost, YouTubeAutoDefaults } from './types';
 const uuid = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 export function youtubeDefaultsState(value: unknown): { youtubeDefaults: YouTubeAutoDefaults | null; youtubeDefaultsVersion?: string } {
@@ -25,5 +25,5 @@ export function finishYouTubeTitle(post: SocialPost, topic: string, revision: nu
   return { ...post, publishOptions: { ...post.publishOptions, title }, youtubeGeneratedTitle: title };
 }
 export function automaticYouTubePostEligible(post: SocialPost | undefined, defaults: YouTubeAutoDefaults | null): boolean {
-  return !!post && !mediaGenerationPending(post) && !!defaults && post.youtubeAutomation?.defaultsVersion === defaults.version && post.youtubeAutomation.acctId === defaults.acctId && post.publishOptions?.privacy === defaults.privacy && post.publishOptions.madeForKids === defaults.madeForKids && !!post.publishOptions.title?.trim();
+  return !!post && automaticMediaReady(post) && !!defaults && post.youtubeAutomation?.defaultsVersion === defaults.version && post.youtubeAutomation.acctId === defaults.acctId && post.publishOptions?.privacy === defaults.privacy && post.publishOptions.madeForKids === defaults.madeForKids && !!post.publishOptions.title?.trim();
 }

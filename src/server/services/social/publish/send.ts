@@ -1,3 +1,4 @@
+import { automaticMediaReadyAtBoundary } from './mediaReadiness';
 import { youtubeAutomaticAuthorization } from './youtubeAutomation';
 import { youtubeMayResend, youtubeMayInitialize, youtubeApproved, clearYouTubeApproval, lockYouTubeAccount } from './youtubeGuards';
 import { YOUTUBE_LABEL } from '@/lib/youtubeLifecycle';
@@ -190,6 +191,7 @@ async function beforeProviderCreate(r: PubRow, accepted: boolean): Promise<void>
   const observingAcceptedYouTube = accepted && r.ch === 'youtube';
   if (biz.status !== 'active' || !(await socialOn(biz)) || (!observingAcceptedYouTube && r.autopilotActivationId && !(await canRun(r.businessId, r.autopilotActivationId)))) throw refuse();
   await db.transaction(async q => {
+    if (r.ch === 'instagram' && !accepted && r.auto && !await automaticMediaReadyAtBoundary(q, r.businessId, r.sid)) throw new SendError('definitive', 'rejected', 'latest explainer intent is not ready', null, 'The latest explainer is not ready. Review the saved draft before publishing.');
     if (r.ch === 'youtube' && !accepted && r.auto) {
       const snapshot = r.payload?.youtubeAutomation;
       const sid = parseSid(r.sid);

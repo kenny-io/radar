@@ -1,0 +1,5 @@
+# Sources
+
+- The explanation uses the supplied owner reference.
+  Source: owner-provided
+  Qualification: Illustrative

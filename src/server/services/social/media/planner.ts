@@ -13,6 +13,7 @@ import { PlanZ,validatePlan,scriptOf,type Plan,type Checkpoint } from './model';
 import { reserveBudget } from './budget';
 import { carouselFrame,captionFits } from './draw';
 import { transaction,query } from './db';
+import { hasMaterialEvidence } from './material';
 
 export async function sourceFor(bid:string,packId:string,notes=''){
  const pack=await getPack(bid,packId);if(!pack)throw new RadarError('This social pack was not found.',404,'not_found');
@@ -20,8 +21,12 @@ export async function sourceFor(bid:string,packId:string,notes=''){
  const [business,pages]=await Promise.all([getBiz(bid),db.select({url:schema.crawlPages.url,title:schema.crawlPages.title,description:schema.crawlPages.description,text:schema.crawlPages.text}).from(schema.crawlPages).where(eq(schema.crawlPages.businessId,bid)).orderBy(desc(schema.crawlPages.fetchedAt)).limit(12)]);
  const terms=(g.headline+' '+pack.source.label).toLowerCase().match(/[a-z]{4,}/g)||[];const relevant=pages.map(p=>({...p,score:terms.reduce((n,t)=>n+((p.title+' '+p.description+' '+p.text.slice(0,3000)).toLowerCase().includes(t)?1:0),0)})).sort((a,b)=>b.score-a.score).slice(0,3);
  const saved=(pack.source.kind==='idea'||pack.source.kind==='suggest')?pack.grounding?.brief||'':'';
+ const profile=business.profile as Profile;
+ const material=[g.brief,saved,notes,profile.business?.description,profile.business?.industry,profile.business?.positioning,
+  ...(profile.business?.offerings||[]),...(profile.business?.differentiators||[]),...(profile.audience?.segments||[]),...(profile.audience?.buyers||[]),...(profile.audience?.needs||[]),
+  ...relevant.flatMap(page=>[page.description,page.text])];
+ if(!hasMaterialEvidence(material))throw new RadarError('Add an article, a source link, or details of how this works.',400,'media_needs_source');
  const brief=[g.brief.slice(0,8000),saved&&'Saved social marketing context:\n'+saved.slice(0,2500),'Business profile reference (owner-provided):\n'+profileContext({...business.profile as Profile,domain:business.domain}).slice(0,3000),relevant.length&&'Relevant existing business website context (cached reference, publication date unknown):\n'+relevant.map(p=>`${p.url}\n${p.title}\n${p.description}\n${p.text.slice(0,1800)}`).join('\n\n'),notes.trim()&&'Owner reference details:\n'+notes.trim()].filter(Boolean).join('\n\n').slice(0,18000);
- if(brief.trim().length<160)throw new RadarError('Add an article, a source link, or details of how this works.',400,'media_needs_source');
  return {brief,link:g.link,title:g.headline||pack.name,presentationNotes:pack.voice?.trim().slice(0,600)||''};
 }
 export async function planExplanation(bid:string,id:string,source:NonNullable<Checkpoint['source']>,guard:()=>Promise<void>,stage:(s:string)=>Promise<void>,maxDuration=180):Promise<Plan>{

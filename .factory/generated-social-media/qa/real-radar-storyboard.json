@@ -1,0 +1,256 @@
+[
+  {
+    "id": "scene0",
+    "cues": [
+      {
+        "kind": "node",
+        "phrase": "A schedule says",
+        "target": "post",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "A queue turns",
+        "target": "queue",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "nine o’clock",
+        "target": "clock",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "A queue turns",
+        "target": "post->queue",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "Before then, it waits.",
+        "target": "clock->queue",
+        "occurrence": 1
+      }
+    ],
+    "edges": [
+      {
+        "to": "queue",
+        "from": "post",
+        "kind": "flow",
+        "label": "wait"
+      },
+      {
+        "to": "queue",
+        "from": "clock",
+        "kind": "transform",
+        "label": "unlock"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "post",
+        "kind": "input",
+        "label": "Approved post"
+      },
+      {
+        "id": "queue",
+        "kind": "storage",
+        "label": "Waiting queue",
+        "state": "Saved until nine"
+      },
+      {
+        "id": "clock",
+        "kind": "process",
+        "label": "Time gate",
+        "state": "Nine o’clock"
+      }
+    ],
+    "title": "A schedule becomes work",
+    "revisit": [],
+    "mainIdea": "Wait until the planned time.",
+    "narration": "A schedule says when a post should go out. A queue turns that plan into work. Imagine a post saved for nine o’clock. Before then, it waits."
+  },
+  {
+    "id": "scene1",
+    "cues": [
+      {
+        "kind": "node",
+        "phrase": "At nine",
+        "target": "post",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "the account is still connected",
+        "target": "account",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "a worker claims",
+        "target": "worker",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "sends the approved content",
+        "target": "result",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "a worker claims",
+        "target": "post->worker",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "the account is still connected",
+        "target": "account->worker",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "sends the approved content",
+        "target": "worker->result",
+        "occurrence": 1
+      },
+      {
+        "kind": "revisit",
+        "phrase": "approved content",
+        "target": "post",
+        "occurrence": 1
+      }
+    ],
+    "edges": [
+      {
+        "to": "worker",
+        "from": "post",
+        "kind": "flow",
+        "label": "claim"
+      },
+      {
+        "to": "worker",
+        "from": "account",
+        "kind": "branch",
+        "label": "verify"
+      },
+      {
+        "to": "result",
+        "from": "worker",
+        "kind": "transform",
+        "label": "send"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "post",
+        "kind": "input",
+        "label": "Approved post"
+      },
+      {
+        "id": "account",
+        "kind": "actor",
+        "label": "Connected account"
+      },
+      {
+        "id": "worker",
+        "kind": "process",
+        "label": "Queue worker",
+        "state": "Check then send"
+      },
+      {
+        "id": "result",
+        "kind": "output",
+        "label": "Upload result"
+      }
+    ],
+    "title": "The worker sends the post",
+    "revisit": [
+      "post"
+    ],
+    "mainIdea": "Check the account before sending.",
+    "narration": "At nine, a worker claims the job, checks that the account is still connected, and sends the approved content."
+  },
+  {
+    "id": "scene2",
+    "cues": [
+      {
+        "kind": "node",
+        "phrase": "The important part",
+        "target": "result",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "keeping a record",
+        "target": "receipt",
+        "occurrence": 1
+      },
+      {
+        "kind": "node",
+        "phrase": "the worker checks",
+        "target": "worker",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "keeping a record",
+        "target": "result->receipt",
+        "occurrence": 1
+      },
+      {
+        "kind": "edge",
+        "phrase": "checks the existing upload",
+        "target": "receipt->worker",
+        "occurrence": 1
+      },
+      {
+        "kind": "revisit",
+        "phrase": "before starting again",
+        "target": "receipt",
+        "occurrence": 1
+      }
+    ],
+    "edges": [
+      {
+        "to": "receipt",
+        "from": "result",
+        "kind": "flow",
+        "label": "record"
+      },
+      {
+        "to": "worker",
+        "from": "receipt",
+        "kind": "feedback",
+        "label": "check"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "result",
+        "kind": "output",
+        "label": "Upload result"
+      },
+      {
+        "id": "receipt",
+        "kind": "storage",
+        "label": "Retained receipt",
+        "state": "Accepted upload"
+      },
+      {
+        "id": "worker",
+        "kind": "process",
+        "label": "Queue worker",
+        "state": "Check before retry"
+      }
+    ],
+    "title": "Keep the receipt",
+    "revisit": [
+      "receipt"
+    ],
+    "mainIdea": "Check an existing upload before retrying.",
+    "narration": "The important part is keeping a record of what happened. If the network stops responding, the worker checks the existing upload before starting again. That helps prevent a retry from publishing the same post twice."
+  }
+]

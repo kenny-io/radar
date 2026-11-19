@@ -1,0 +1,5 @@
+# Sources
+
+- Radar keeps accepted provider references for processing retries.
+  Source: owner-provided
+  Qualification: Local implementation evidence

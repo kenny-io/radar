@@ -1,0 +1,59 @@
+{
+  "at": "2026-11-19T01:25:17.588Z",
+  "results": [
+    {
+      "name": "M1/M8 actual three-platform cached-Brian video previews play after refresh and media download matches renderer",
+      "pass": true,
+      "detail": {
+        "platforms": 3,
+        "actualPlay": true,
+        "refresh": true,
+        "downloadBytesMatch": true,
+        "noInferredOptions": true
+      }
+    },
+    {
+      "name": "M4 browser downloads actual captions and timeline alignment under authenticated notes action",
+      "pass": true,
+      "detail": {
+        "captionsAndAlignment": true
+      }
+    },
+    {
+      "name": "M11 Owner has unset explicit choices; save false preserves program/master state and existing post choices",
+      "pass": true,
+      "detail": {
+        "explicitFalse": true,
+        "noActivation": true,
+        "noRetrospectiveEdits": true
+      }
+    },
+    {
+      "name": "M11 Editor and Viewer see saved automatic choices read-only; direct defaults writes forbidden",
+      "pass": true,
+      "detail": {
+        "roles": 2,
+        "readOnly": true,
+        "server403": true
+      }
+    },
+    {
+      "name": "M11 Owner Public summary and Clear preserve explicit setup-required state; mobile no overflow",
+      "pass": true,
+      "detail": {
+        "publicSummary": true,
+        "clearPersists": true,
+        "mobile": true
+      }
+    },
+    {
+      "name": "M7 foreign tenant cannot read notes or start generation; no runtime exceptions",
+      "pass": true,
+      "detail": {
+        "foreign404": true,
+        "browserErrors": 0
+      }
+    }
+  ],
+  "errors": []
+}

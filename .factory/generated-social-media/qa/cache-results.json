@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-19T01:21:06.163Z",
+  "passed": [
+    "attached_output_keeps_transitive_narration_and_audio",
+    "uncertain_paid_tombstone_survives",
+    "cancelled_unreferenced_orphan_collected"
+  ],
+  "externalRequests": 0
+}

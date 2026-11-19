@@ -158,8 +158,10 @@ export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
   return out;
 }
 
-/** What a pack post would upload: always its one visual (rendered on the server if `imageUrl` is missing). */
+/** Automatic publishing must use the output of the latest completed intent; kept old media stays available manually. */
+export const automaticMediaReady = (p: Pick<SocialPost, 'mediaGeneration' | 'generatedMedia'> | undefined) => !!p && (!p.mediaGeneration || (p.mediaGeneration.status === 'ready' && p.generatedMedia?.id === p.mediaGeneration.id));
 export const mediaGenerationPending = (p: Pick<SocialPost, 'mediaGeneration'>) => !!p.mediaGeneration && ['preparing', 'queued', 'narrating', 'rendering'].includes(p.mediaGeneration.status);
+/** What a pack post would upload: its current complete visual. */
 export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl'>, k?: PostPlatform): PreflightInput => ({
   text: p.text, images: p.video || k === 'youtube' ? [] : p.slides?.length ? p.slides.map(s => s.meta) : p.mediaGeneration && !p.imageUrl ? [] : [p.imageMeta ?? null],
   video: p.video, options: p.publishOptions, mediaPending: mediaGenerationPending(p),

@@ -1,0 +1,5 @@
+A schedule says when a post should go out. A queue turns that plan into work. Imagine a post saved for nine o’clock. Before then, it waits.
+
+At nine, a worker claims the job, checks that the account is still connected, and sends the approved content.
+
+The important part is keeping a record of what happened. If the network stops responding, the worker checks the existing upload before starting again. That helps prevent a retry from publishing the same post twice.

@@ -1,0 +1,34 @@
+WEBVTT
+
+00:00:00.500 --> 00:00:03.020
+A schedule says when a post should go out.
+
+00:00:03.220 --> 00:00:05.820
+A queue turns that plan into work.
+
+00:00:06.100 --> 00:00:08.340
+Imagine a post saved for nine o’clock.
+
+00:00:08.580 --> 00:00:10.260
+Before then, it waits.
+
+00:00:10.500 --> 00:00:13.140
+At nine, a worker claims the job,
+
+00:00:13.300 --> 00:00:15.220
+checks that the account is still connected,
+
+00:00:15.300 --> 00:00:16.820
+and sends the approved content.
+
+00:00:17.300 --> 00:00:19.860
+The important part is keeping a record of what happened.
+
+00:00:20.340 --> 00:00:22.260
+If the network stops responding,
+
+00:00:22.340 --> 00:00:25.620
+the worker checks the existing upload before starting again.
+
+00:00:25.940 --> 00:00:29.620
+That helps prevent a retry from publishing the same post twice.

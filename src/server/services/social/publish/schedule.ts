@@ -1,3 +1,4 @@
+import { automaticMediaReadyAtBoundary } from './mediaReadiness';
 import { youtubeAutomaticAuthorization, YOUTUBE_AUTO_SETUP } from './youtubeAutomation';
 // The rules every publishing action shares (architecture.md §6): resolve a sid to its content and account, refuse with the
 // shared COPY, and write a `scheduled` row without ever overwriting one that is posted, sending or locked.
@@ -88,6 +89,7 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
   if (q === db) return db.transaction(tx => writeScheduled(tx, o));
 
   const a = o.r.acct!;
+  if (a.ch === 'instagram' && o.auto && !await automaticMediaReadyAtBoundary(q as Parameters<Parameters<typeof db.transaction>[0]>[0], o.biz.id, o.r.t.sid)) throw refuse('The latest Instagram explainer is not ready. Your previous media is kept for manual posting.', 'preflight');
   if (a.ch === 'youtube' && !(await lockYouTubeAccount(q as Parameters<Parameters<typeof db.transaction>[0]>[0], o.biz.id, a.id))) return null;
   if (a.ch === 'youtube' && o.auto) {
     const [history] = await q.select({ id: P.id }).from(P).where(and(eq(P.businessId, o.biz.id), eq(P.sid, o.r.t.sid))).for('update');
