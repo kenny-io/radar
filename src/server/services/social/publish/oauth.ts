@@ -19,7 +19,7 @@ import { LI_AUTHORIZE, LI_PAGE_SCOPES, LI_PROFILE_SCOPES, liCreds, liExchange, l
 import { stubIdentity, stubTokens } from './stubs';
 import { INSTAGRAM_AUTHORIZE, INSTAGRAM_SCOPES, INSTAGRAM_UNIFIED_SCOPES, instagramUnifiedConfigured, instagramUnifiedExchange, type InstagramOAuthState, instagramExchange, instagramMe } from './instagram';
 import { TIKTOK_AUTHORIZE, TIKTOK_SCOPES, tiktokExchange, tiktokMe } from './tiktok';
-import { YOUTUBE_AUTHORIZE, YOUTUBE_SCOPES, youtubeExchange, youtubeMe } from './youtube';
+import { YOUTUBE_AUTHORIZE, YOUTUBE_SCOPES, YouTubeConnectionError, youtubeExchange, youtubeMe } from './youtube';
 
 const UNAVAILABLE = 'This connection isn’t available right now. Try again later.';
 /** Shown when the user unticked a permission on the consent screen (§21 P6). Nothing is saved. */
@@ -59,7 +59,7 @@ async function callbackFor(ctx: OAuthCallbackCtx, ch: SocialChannel, real: () =>
     if (!scopesOk(ch, r.tokens.scope, r.tokens.instagram?.mode)) { console.warn(`[social.oauth] ${ch} missing scopes for ${ctx.bid}`); return { ok: false, error: SCOPE_ERROR }; }
     return finish(ctx, ch, r.tokens, r.id, r.identities);
   }
-  catch (e: any) { console.error(`[social.oauth] ${ch} exchange failed: ${String(e?.message || e).slice(0, 300)}`); return { ok: false, error: 'exchange_failed' }; }
+  catch (e: any) { console.error(`[social.oauth] ${ch} exchange failed: ${String(e?.message || e).slice(0, 300)}`); return { ok: false, error: ch === 'youtube' && e instanceof YouTubeConnectionError ? e.code : 'exchange_failed' }; }
 }
 
 /* X — OAuth 2.0 Authorization Code with PKCE (S256), confidential client */

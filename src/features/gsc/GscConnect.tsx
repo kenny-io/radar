@@ -3,8 +3,9 @@
 // bid: the business to connect (the onboarding business during onboarding). onConnected receives the chosen property after the server has saved it and queued the backfill.
 // Port of GscConnect (prototype/radar-onboarding.jsx) minus the drawn consent card: the real Google consent happens in the popup.
 import { BrandIcon } from '@/components/brand';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
+import { oauthErrorCopy } from '@/lib/oauthReturn';
 import { actCall, openOAuth } from '@/client/api';
 import { Btn, Skel, Status } from '@/components/ui';
 
@@ -13,19 +14,27 @@ interface Prop { v: string; l: string; note: string; recommended: boolean; other
 
 export function GscConnect({ bid, domain, compact, onConnected }: GscConnectProps) {
   const app = useApp();
+  const pending = useRef<AbortController | null>(null); const generation = useRef(0);
+  const [error, setError] = useState('');
+  useEffect(() => () => { generation.current++; pending.current?.abort(); pending.current = null; }, [bid]);
+  const cancel = () => { generation.current++; const request = pending.current; pending.current = null; request?.abort(); setSt('idle'); };
   const [st, setSt] = useState<'idle' | 'authing' | 'loading' | 'pick' | 'denied' | 'empty'>('idle');
   const [props, setProps] = useState<Prop[]>([]); const [prop, setProp] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   const allow = async () => {
-    setSt('authing');
-    const r = await openOAuth('gsc', bid);
-    if (!r.ok) { setSt('denied'); return; }
+    const g = ++generation.current; const request = new AbortController(); pending.current?.abort(); pending.current = request;
+    setError(''); setSt('authing');
+    const r = await openOAuth('gsc', bid, {}, { signal: request.signal });
+    if (pending.current !== request || request.signal.aborted || g !== generation.current) return;
+    pending.current = null;
+    if (!r.ok) { setError(oauthErrorCopy('Google Search Console', r.error)); setSt('denied'); return; }
     setSt('loading');
     try {
       const res = await actCall<{ properties: Prop[] }>(bid, 'gsc.properties', {});
+      if (g !== generation.current) return;
       const list = res.data?.properties || [];
       if (!list.length) { setSt('empty'); return; }
       setProps(list); setProp((list.find(p => p.recommended) || list[0]).v); setSt('pick');
-    } catch { setSt('denied'); }
+    } catch { if (g === generation.current) { setError('Radar could not load your Search Console properties. Try again.'); setSt('denied'); } }
   };
   const connect = async () => {
     if (!prop) return;
@@ -37,8 +46,8 @@ export function GscConnect({ bid, domain, compact, onConnected }: GscConnectProp
     } catch (e: any) { app.toast(e?.message || 'Radar couldn’t finish this. Try again.', { tone: 'bad' }); }
     finally { setBusy(false); }
   };
-  if (st === 'idle' || st === 'authing') return <button className={'btn btn-secondary' + (compact ? '' : ' btn-lg')} disabled={st === 'authing'} onClick={allow}>{st === 'authing' ? <span className="spin" /> : <BrandIcon k="gsc" s={18} />}<span>Connect Google Search Console</span></button>;
-  if (st === 'denied') return <div className="col enter" style={{ gap: 12 }}><Status tone="bad">Access wasn’t granted</Status><p className="small sub" style={{ maxWidth: 440 }}>Google didn’t return permission. This happens if the window was closed or the account doesn’t own the property.</p><div className="row"><Btn kind="primary" icon="refresh" onClick={allow}>Try again</Btn></div></div>;
+  if (st === 'idle' || st === 'authing') return <div className="col" style={{ gap: 10, alignItems: 'flex-start' }}><button className={'btn btn-secondary' + (compact ? '' : ' btn-lg')} disabled={st === 'authing'} onClick={allow}>{st === 'authing' ? <span className="spin" /> : <BrandIcon k="gsc" s={18} />}<span>Connect Google Search Console</span></button>{st === 'authing' && <><p className="xs sub" role="status">Finish sign-in in the other window. If it closed or stopped responding, cancel and try again.</p><Btn kind="ghost" size="sm" onClick={cancel}>Cancel sign-in</Btn></>}</div>;
+  if (st === 'denied') return <div className="col enter" style={{ gap: 12 }}><Status tone="bad">Couldn’t connect Search Console</Status><p className="small sub" role="alert" style={{ maxWidth: 440 }}>{error}</p><div className="row"><Btn kind="primary" icon="refresh" onClick={allow}>Try again</Btn></div></div>;
   if (st === 'empty') return <div className="col enter" style={{ gap: 12 }}><Status tone="warn">No properties found</Status><p className="small sub" style={{ maxWidth: 440 }}>This Google account doesn’t have access to a Search Console property. Try again with the account that manages {domain}.</p><div className="row"><Btn kind="primary" icon="refresh" onClick={allow}>Try again</Btn></div></div>;
   if (st === 'loading') return <div className="col" style={{ gap: 10, maxWidth: 520 }}><span className="small sub row" style={{ gap: 8 }}><span className="spin" />Finding your properties…</span><Skel h={52} /><Skel h={52} /></div>;
   const cur = props.find(p => p.v === prop);
