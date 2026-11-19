@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RadarError } from '@/server/errors';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -27,7 +28,26 @@ export interface Timeline { duration:number; scenes:{start:number;end:number;sce
 export interface MediaOptions { generateAfterPrepare?:boolean; choices?:Choice[]; autoActivationId?:string; generateRecommended?:boolean; autoDate?:string; sourceNotes?:string }
 export interface Choice { platform:ExplainerPlatform; format:ExplainerFormat|'recommended' }
 export interface Consumer { packId:string; platform:ExplainerPlatform; requestId:string; mediaRevision:number; youtubeOptionsRevision?:number; options?:MediaOptions }
+export type PlanningPhase='semantic'|'layout'|'duration'|'mechanism'|'clarity'|'source'|'unexpected';
+export interface PlanningDiagnostic {phase:PlanningPhase;code:string;scene?:number;frames?:string[]}
+export interface PlanningRecovery {version:1;sourceHash:string;maxDuration:number;candidate:Plan;repair:'available'|'dispatched'|'completed';diagnostic?:PlanningDiagnostic}
+export type PlanningValidationCode='script_limit'|'duplicate_node'|'duplicate_cue'|'cue_phrase'|'cue_target'|'node_cue'|'edge_cue'|'revisit_cue'|'opening_cue'|'revisit_target'|'unchanged_scene'|'edge_target'|'node_identity'|'chart_evidence'|'label_width'|'label_lines'|'caption_width'|'platform_duration';
+export class PlanningValidationError extends RadarError {
+ constructor(public phase:'semantic'|'layout'|'duration',public diagnosticCode:PlanningValidationCode,message:string,public scene?:number){super(message,400,phase==='semantic'?'media_plan_invalid':phase==='layout'?'media_layout':'media_duration_limit');}
+}
+export function planningDiagnostic(error:unknown):PlanningDiagnostic {
+ if(error instanceof PlanningValidationError)return {phase:error.phase,code:error.diagnosticCode,...(error.scene===undefined?{}:{scene:error.scene})};
+ const frames=error instanceof Error?[...new Set((error.stack||'').split('\n').slice(1).flatMap(line=>line.match(/src\/server\/services\/social\/media\/(?:planner|model|draw|index|render|renderChild|timeline|narration|budget|config|db|jobs|material)\.ts:\d{1,7}:\d{1,7}(?!\d)/g)||[]))].slice(0,3):[];
+ return {phase:error instanceof RadarError&&error.code==='media_needs_source'?'source':'unexpected',code:error instanceof RadarError&&error.code==='media_needs_source'?'media_needs_source':'media_plan_internal',...(frames.length?{frames}:{})};
+}
+export function recoveryMatches(value:PlanningRecovery|undefined,sourceHash:string,maxDuration:number):value is PlanningRecovery{return value?.version===1&&value.sourceHash===sourceHash&&value.maxDuration===maxDuration;}
+export function planMatches(cp:Checkpoint,sourceHash:string,maxDuration:number){return !!cp.plan&&cp.planSourceHash===sourceHash&&cp.planMaxDuration===maxDuration;}
+/** Atomic replacement patch: an old plan must never acquire the identity of a newer source/cap. */
+export function planningSourcePatch(cp:Checkpoint,source:NonNullable<Checkpoint['source']>,maxDuration:number):Partial<Checkpoint>{
+ const key=hash(source);return {source,maxDuration,...(!planMatches(cp,key,maxDuration)?{plan:undefined,planSourceHash:undefined,planMaxDuration:undefined}:{}),...(!recoveryMatches(cp.planningRecovery,key,maxDuration)?{planningRecovery:undefined}:{}),planningDiagnostic:undefined};
+}
 export interface Checkpoint {
+ planningRecovery?:PlanningRecovery; planningDiagnostic?:PlanningDiagnostic; planSourceHash?:string;planMaxDuration?:number;
  inputHash?:string; estimatedCostUsd?:number; maxDuration?:number; requestedChoices?:Choice[]; planOnly?:boolean; sourceNotes?:string; source?:{brief:string;link:string|null;title:string;presentationNotes?:string}; plan?:Plan; options?:MediaOptions;
  audioUrl?:string; alignment?:Alignment; originalAlignment?:Alignment; timeline?:Timeline;
  video?:import('@/lib/types').SocialVideo; slides?:import('@/lib/types').SocialSlide[];
@@ -40,18 +60,18 @@ export function phraseOffset(text:string,phrase:string,occurrence:number):number
 }
 export function validatePlan(plan:Plan):Plan {
  plan=PlanZ.parse(plan);
- const text=scriptOf(plan); if(text.length>3000 || text.split(/\s+/).length>310) throw new Error('The explanation is too long. Narrow the topic before recording.');
+ const text=scriptOf(plan); if(text.length>3000 || text.split(/\s+/).length>310) throw new PlanningValidationError('duration','script_limit','The explanation is too long. Narrow the topic before recording.');
  const identities=new Map<string,string>();let previousDiagram='';
- for(const s of plan.scenes){ const ids=new Set(s.nodes.map(n=>n.id)); if(ids.size!==s.nodes.length)throw new Error('Duplicate diagram object');
-  const cueKeys=new Set<string>();const positions=new Map<string,number>();for(const cue of s.cues){const key=cue.kind+':'+cue.target;if(cueKeys.has(key))throw new Error('Duplicate drawing cue');cueKeys.add(key);const at=phraseOffset(s.narration,cue.phrase,cue.occurrence);positions.set(key,at);if(cue.kind==='edge'?!s.edges.some(e=>e.from+'->'+e.to===cue.target):!ids.has(cue.target))throw new Error('A drawing cue has no semantic target');}
-  for(const n of s.nodes)if(!cueKeys.has('node:'+n.id))throw new Error('Every diagram object needs a spoken introduction cue');
-  for(const e of s.edges)if(!cueKeys.has('edge:'+e.from+'->'+e.to))throw new Error('Every relationship needs a spoken cue');
-  for(const id of s.revisit)if(!cueKeys.has('revisit:'+id))throw new Error('Every highlight needs a spoken cue');
-  if(Math.min(...s.nodes.map(n=>positions.get('node:'+n.id)!))!==0)throw new Error('The opening drawing must begin with the narration');
-  if(s.revisit.some(id=>!ids.has(id)))throw new Error('A highlight must point to an existing diagram object');const diagram=hash({nodes:s.nodes,edges:s.edges});if(diagram===previousDiagram)throw new Error('Each scene must show a new relationship or state');previousDiagram=diagram;
-  for(const e of s.edges) if(!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw new Error('Diagram relation has no target');
-  for(const n of s.nodes){const identity=n.kind+':'+n.label; if(identities.has(n.id)&&identities.get(n.id)!==identity)throw new Error('Recurring diagram objects must retain identity'); identities.set(n.id,identity);
-   if(n.kind==='chart'&&(!n.values?.length||!n.units||(!n.illustrative&&!plan.claims.some(c=>c.id===n.claimRef))))throw new Error('Charts require source-backed values and units');}
+ for(const [scene,s] of plan.scenes.entries()){ const ids=new Set(s.nodes.map(n=>n.id)); if(ids.size!==s.nodes.length)throw new PlanningValidationError('semantic','duplicate_node','Duplicate diagram object',scene);
+  const cueKeys=new Set<string>();const positions=new Map<string,number>();for(const cue of s.cues){const key=cue.kind+':'+cue.target;if(cueKeys.has(key))throw new PlanningValidationError('semantic','duplicate_cue','Duplicate drawing cue',scene);cueKeys.add(key);let at:number;try{at=phraseOffset(s.narration,cue.phrase,cue.occurrence);}catch{throw new PlanningValidationError('semantic','cue_phrase','A drawing cue must quote the scene narration exactly',scene);}positions.set(key,at);if(cue.kind==='edge'?!s.edges.some(e=>e.from+'->'+e.to===cue.target):!ids.has(cue.target))throw new PlanningValidationError('semantic','cue_target','A drawing cue has no semantic target',scene);}
+  for(const n of s.nodes)if(!cueKeys.has('node:'+n.id))throw new PlanningValidationError('semantic','node_cue','Every diagram object needs a spoken introduction cue',scene);
+  for(const e of s.edges)if(!cueKeys.has('edge:'+e.from+'->'+e.to))throw new PlanningValidationError('semantic','edge_cue','Every relationship needs a spoken cue',scene);
+  for(const id of s.revisit)if(!cueKeys.has('revisit:'+id))throw new PlanningValidationError('semantic','revisit_cue','Every highlight needs a spoken cue',scene);
+  if(Math.min(...s.nodes.map(n=>positions.get('node:'+n.id)!))!==0)throw new PlanningValidationError('semantic','opening_cue','The opening drawing must begin with the narration',scene);
+  if(s.revisit.some(id=>!ids.has(id)))throw new PlanningValidationError('semantic','revisit_target','A highlight must point to an existing diagram object',scene);const diagram=hash({nodes:s.nodes,edges:s.edges});if(diagram===previousDiagram)throw new PlanningValidationError('semantic','unchanged_scene','Each scene must show a new relationship or state',scene);previousDiagram=diagram;
+  for(const e of s.edges) if(!ids.has(e.from)||!ids.has(e.to)||e.from===e.to)throw new PlanningValidationError('semantic','edge_target','Diagram relation has no target',scene);
+  for(const n of s.nodes){const identity=n.kind+':'+n.label; if(identities.has(n.id)&&identities.get(n.id)!==identity)throw new PlanningValidationError('semantic','node_identity','Recurring diagram objects must retain identity',scene); identities.set(n.id,identity);
+   if(n.kind==='chart'&&(!n.values?.length||!n.units||(!n.illustrative&&!plan.claims.some(c=>c.id===n.claimRef))))throw new PlanningValidationError('semantic','chart_evidence','Charts require source-backed values and units',scene);}
  }
  return plan;
 }

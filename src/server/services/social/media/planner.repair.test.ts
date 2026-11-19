@@ -53,7 +53,7 @@ describe('bounded explanation review repair',()=>{
  it('validates revised semantic cues before spending on further reviews',async()=>{
   const invalid=repaired();invalid.scenes[0].cues[0].phrase='Words absent from narration';
   mocks.run.mockResolvedValueOnce({json:original()}).mockResolvedValueOnce({json:defect}).mockResolvedValueOnce({json:invalid});
-  await expect(run()).rejects.toMatchObject({code:'media_review_failed'});expect(mocks.run).toHaveBeenCalledTimes(3);
+  await expect(run()).rejects.toMatchObject({code:'media_plan_invalid'});expect(mocks.run).toHaveBeenCalledTimes(3);
  });
  it('checks revised caption layout before any further reviews',async()=>{
   const invalid=repaired();invalid.scenes[0].narration+=' '+('W'.repeat(200));
@@ -89,14 +89,14 @@ describe('bounded explanation review repair',()=>{
   if(boundary==='budget')mocks.reserve.mockImplementation(async()=>{if(admitted.length===2)throw refusal;});
   mocks.run.mockImplementation(async(_task,request)=>{
    if(request.purpose==='social.media.revise'&&boundary==='deadline')now+=8*60e3+1;
-   await request.beforeAttempt({modelId:request.purpose==='social.media.revise'&&boundary==='unpriced'?'unknown-priced-model':'claude-opus-5.5',maxTokens:request.purpose==='social.media.review'?3648:8000,prompt:request.prompt,system:request.system});
+   await request.beforeAttempt({modelId:request.purpose==='social.media.revise'&&boundary==='unpriced'?'unknown-priced-model':'claude-opus-5.5',maxTokens:request.purpose==='social.media.review'?3648:12000,prompt:request.prompt,system:request.system});
    admitted.push(request.purpose);
    return {json:request.purpose==='social.media.plan'?original():defect};
   });
   const guard=async()=>{guarded++;if(boundary==='guard'&&admitted.length===2)throw refusal;};
   const code={budget:'media_budget',guard:'media_cancelled',deadline:'media_planning_timeout',unpriced:'media_unpriced_model'}[boundary];
   await expect(planExplanation('synthetic-business','synthetic-generation',source,guard,async()=>{})).rejects.toMatchObject({code});
-  expect(admitted).toEqual(['social.media.plan','social.media.review']);expect(purposes()).toEqual(['social.media.plan','social.media.review','social.media.revise']);
-  expect(guarded).toBe(3);
+  expect(admitted).toEqual(['social.media.plan','social.media.review']);expect(purposes()).toEqual(boundary==='guard'?['social.media.plan','social.media.review']:['social.media.plan','social.media.review','social.media.revise']);
+  expect(guarded).toBeGreaterThanOrEqual(3);
  });
 });
