@@ -1,6 +1,7 @@
 'use client';
 // Settings → Social accounts — port of SocialAccounts (prototype/radar-channels.jsx). One row per channel; channels this
 // deployment can't connect yet (no OAuth app configured) show "Not available yet".
+import { YOUTUBE_HOLD } from '@/lib/youtubeLifecycle';
 import React, { useState } from 'react';
 import { useApp } from '@/client/app';
 import { PlatLogo } from '@/components/brand';
@@ -19,6 +20,7 @@ export function SocialAccounts() {
     try {
       const r = await app.act<{ ch: SocialChannel; unscheduled: number }>('social.disconnect', { acctId: a.id });
       const n = r.unscheduled || 0;
+      if (a.ch === 'youtube') { toast('YouTube disconnected. Connection details were removed; your drafts and videos remain. Reconnect and approve drafts again to publish.'); return; }
       toast(`${chOf(a.ch).l} disconnected${n ? `. ${n} scheduled post${n > 1 ? 's were' : ' was'} unscheduled.` : ''}`);
     } catch { /* toasted */ }
     setBusy(null);
@@ -28,8 +30,8 @@ export function SocialAccounts() {
       const a = accts.find(x => x.ch === c.k);
       return <div key={c.k} className="row" style={{ gap: 14, padding: '16px 0', borderTop: '1px solid var(--line2)', flexWrap: 'wrap' }}>
         <PlatLogo k={c.plat} s={28} />
-        <span className="col grow" style={{ minWidth: 180, gap: 2 }}><span className="small" style={{ fontWeight: 500 }}>{c.l}</span><span className="xs sub">{a ? (a.expired ? `${acctLabel(a)} · access expired, scheduled posts are on hold` : acctLabel(a)) : c.d}</span></span>
-        {a && a.expired ? <><Status tone="warn">Reconnect needed</Status><Btn size="sm" onClick={() => { setRe(a); setCh(c.k); }}><LogoLabel k={c.plat}>Reconnect</LogoLabel></Btn></>
+        <span className="col grow" style={{ minWidth: 180, gap: 2 }}><span className="small" style={{ fontWeight: 500 }}>{c.l}</span><span className="xs sub">{a ? (a.verificationHold ? YOUTUBE_HOLD : a.expired ? `${acctLabel(a)} · access expired, scheduled posts are on hold` : acctLabel(a)) : c.d}</span></span>
+        {a?.verificationHold ? <><Status tone="warn">Verification paused</Status><button type="button" className="unlink" disabled={busy === a.id} onClick={() => disconnect(a)}>Disconnect</button></> : a && a.expired ? <><Status tone="warn">Reconnect needed</Status><Btn size="sm" onClick={() => { setRe(a); setCh(c.k); }}><LogoLabel k={c.plat}>Reconnect</LogoLabel></Btn><button type="button" className="unlink" disabled={busy === a.id} onClick={() => disconnect(a)}>Disconnect</button></>
           : a ? <><Status tone="ok">Connected</Status><button type="button" className="unlink" disabled={busy === a.id} aria-busy={busy === a.id} onClick={() => disconnect(a)}>Disconnect</button></>
             : avail.includes(c.k) ? <Btn size="sm" onClick={() => { setRe(null); setCh(c.k); }}><LogoLabel k={c.plat}>Connect</LogoLabel></Btn>
               : <span className="small sub">Not available yet</span>}

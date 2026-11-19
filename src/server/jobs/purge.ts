@@ -7,6 +7,7 @@
 // What decides: `status = 'deleted'`, `purge_at` passed and `deleted_at` at least 168 hours ago, all on the database
 // clock, read in the selector, again under the row lock, and again in the DELETE itself. `businesses_deleted_check`
 // makes a wipe time earlier than that impossible to store.
+import { scrubYouTubeData, attemptYouTubeRevokes } from '../services/social/publish/youtubeRetention';
 import { and, eq, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
 import { db, schema } from '../db';
 import { decrypt } from '../crypto';
@@ -38,13 +39,15 @@ export type PurgeResult = { skipped: 'off' } | { blocked: 'too_many_due'; due: n
  *  never deleted, still inside its window, or held by a restore or another worker right now. */
 export async function purgeOne(bid: string): Promise<PurgeOne> {
   if (typeof bid !== 'string' || !BUSINESS_ID.test(bid)) throw new Error('purgeOne needs a business id');
-  let google: GscTokens | null = null; const social: AcctRow[] = [];
+  let google: GscTokens | null = null; const social: AcctRow[] = []; const youtubeRevokeIds: string[] = [];
   const files = await db.transaction(async tx => {
     await tx.execute(sql`SET LOCAL lock_timeout = '10s'`);
     await tx.execute(sql`SET LOCAL statement_timeout = '120s'`);
     // 1. The lock, with the whole predicate again. SKIP LOCKED: a restore or another worker has it; leave it to them.
     const [locked] = await tx.select({ id: B.id, ownerId: B.ownerId }).from(B).where(and(eq(B.id, bid), DUE)).for('update', { skipLocked: true });
     if (!locked) return null;
+
+    const youtube = await scrubYouTubeData(tx, { bid, reason: 'delete', now: new Date(), bumpRevision: false }); youtubeRevokeIds.push(...youtube.revokeJobIds);
 
     // 2. Everything the later steps need is read now, before anything is removed.
     //    Tokens to revoke after commit. Google's revoke removes the whole grant, so it is only called when no other
@@ -87,6 +90,7 @@ export async function purgeOne(bid: string): Promise<PurgeOne> {
   if (!files) return 'skipped';
 
   // 7. After commit, best effort: a failed revoke is reported and never fails the wipe.
+  await attemptYouTubeRevokes(youtubeRevokeIds);
   if (google) await revokeGoogle(google);                      // reports its own failures and never throws
   for (const acct of social) {
     const t = tokensOf(acct);

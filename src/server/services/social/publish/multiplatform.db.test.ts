@@ -96,7 +96,7 @@ describe.skipIf(!ON)('direct multiplatform publishing integration', () => {
     const resume = vi.fn<NonNullable<Adapter['resume']>>().mockRejectedValueOnce(new SendError('transient', 'unavailable', 'status outage')).mockRejectedValueOnce(new SendError('auth', 'auth', 'expired access token')).mockResolvedValueOnce({ remoteId: 'accepted-123', url: 'https://www.tiktok.com/', pending: true }).mockResolvedValueOnce({ remoteId: 'final-456', url: 'https://www.tiktok.com/@creator' });
     setAdapterForTests('tiktok', { ...stubAdapter('tiktok'), publish, resume });
     expect((await act('social.postNow', { sid: `s:${PACK}:tiktok` })).pub.status).toBe('sending');
-    expect((await pub('tiktok')).payload.providerRef).toBe('accepted-123');
+    expect((await pub('tiktok')).payload!.providerRef).toBe('accepted-123');
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('sending');
     await db.update(S.socialAccounts).set({ expired: true }).where(eq(S.socialAccounts.id, ids.tiktok!));
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('sending');
@@ -114,7 +114,7 @@ describe.skipIf(!ON)('direct multiplatform publishing integration', () => {
     await db.update(S.businesses).set({ status: 'deleted', deletedAt: new Date(), purgeAt: new Date(Date.now() + 168 * 3600_000) }).where(eq(S.businesses.id, bid));
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('sending');
     expect(resume).not.toHaveBeenCalled(); expect(publish).toHaveBeenCalledTimes(1);
-    expect((await pub('tiktok')).payload.providerRef).toBe('accepted-before-delete');
+    expect((await pub('tiktok')).payload!.providerRef).toBe('accepted-before-delete');
     await db.update(S.businesses).set({ status: 'active', deletedAt: null, purgeAt: null }).where(eq(S.businesses.id, bid));
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('posted'); expect(publish).toHaveBeenCalledTimes(1);
   });
@@ -134,7 +134,7 @@ describe.skipIf(!ON)('direct multiplatform publishing integration', () => {
     expect((await act('social.postNow', { sid: `s:${PACK}:instagram` })).pub.status).toBe('sending');
     expect((await recoverStuck(await age('instagram')))?.status).toBe('sending');
     expect(urls.some(u => u.includes('media_publish'))).toBe(false);
-    expect((await pub('instagram')).payload.providerRef).toBe('987654');
+    expect((await pub('instagram')).payload!.providerRef).toBe('987654');
     expect(urls.filter(u => u.endsWith('/media'))).toHaveLength(1);
   });
   it('keeps tracking after a lost status response and never automatically reinitializes an unknown init', async () => {
@@ -157,7 +157,7 @@ describe.skipIf(!ON)('direct multiplatform publishing integration', () => {
     expect((await act('social.postNow', { sid: `s:${PACK}:tiktok` })).pub.status).toBe('sending');
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('sending');
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('sending');
-    expect((await pub('tiktok')).payload.providerRef).toBe('durable-403');
+    expect((await pub('tiktok')).payload!.providerRef).toBe('durable-403');
     expect((await recoverStuck(await age('tiktok')))?.status).toBe('failed');
     expect(publish).toHaveBeenCalledTimes(1);
   });
