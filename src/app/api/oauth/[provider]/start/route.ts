@@ -1,3 +1,4 @@
+import { OAUTH_FLOW_QUERY, oauthFlow } from '@/lib/oauthReturn';
 import { reportFailure } from '@/server/observability/failures';
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/server/db';
@@ -13,14 +14,15 @@ import { RadarError } from '@/server/errors';
 export async function GET(req: Request, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
   const q = new URL(req.url).searchParams;
+  const flow = oauthFlow(q.get(OAUTH_FLOW_QUERY));
   try {
     const u = await requireActor();
     const bid = q.get('bid') || '';
     const p = oauthProvider(provider);
-    if (!p) return popupResult(provider, { ok: false, error: 'unknown_provider' });
+    if (!p) return popupResult(provider, { ok: false, error: 'unknown_provider' }, flow);
     // A guest may connect only Search Console, only on its own draft (architecture §4.4). On a draft, other providers need
     // own access, like any non-allowlisted action.
-    if (u.guest && provider !== 'gsc') return popupResult(provider, { ok: false, error: 'Business wasn’t found.' });
+    if (u.guest && provider !== 'gsc') return popupResult(provider, { ok: false, error: 'Business wasn’t found.' }, flow);
     await requireRole(bid, u.id, p.role || 'Editor');
     await gateBusiness(u, bid, { action: provider === 'gsc' ? undefined : `oauth.${provider}`, own: await ownAccess(u) });
     const state = randomToken(18);
@@ -29,6 +31,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
     return NextResponse.redirect(url);
   } catch (e: any) {
     if (!(e instanceof RadarError && e.status < 500) && e?.name !== 'ZodError') await reportFailure(e, { source: 'http', operation: 'oauth.start', provider });
-    return popupResult(provider, { ok: false, error: e?.userMessage || 'start_failed' });
+    return popupResult(provider, { ok: false, error: e?.userMessage || 'start_failed' }, flow);
   }
 }

@@ -4,6 +4,7 @@
 // Port of BlogConnect (radar-publish.jsx): real OAuth popups, targets from the platform, a real test (draft created, then deleted).
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
+import { oauthErrorCopy } from '@/lib/oauthReturn';
 import { openOAuth } from '@/client/api';
 import { Btn, Field, Modal, Status } from '@/components/ui';
 import { BrandIcon, PlatMark } from '@/components/brand';
@@ -29,12 +30,13 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
   const [step, setStep] = useState<'conn' | 'mode'>('conn'); const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState(B.blog.mode); const [ack, setAck] = useState(false); const [tz, setTz] = useState(B.blog.tz); const [time, setTime] = useState(B.blog.time);
   const [secret, setSecret] = useState<{ ref: string; secret: string; masked: string } | null>(null); const [showSecret, setShowSecret] = useState(false);
+  const pendingAuth = useRef<AbortController | null>(null); const [authError, setAuthError] = useState('');
   const gen = useRef(0); const targetsRequest = useRef(0); const testRequest = useRef(0); const currentPick = useRef<string | null>(null);
   const tzs = useRef<string[] | null>(null); if (!tzs.current) tzs.current = timezones();
   const key = t ? `${t.type}|${t.id || ''}|${t.step || ''}` : '';
   const invalidateTest = () => { testRequest.current++; setTest('idle'); setFailMsg(''); };
   const choose = (value: string | null) => { currentPick.current = value; setPick(value); invalidateTest(); };
-  const close = () => { gen.current++; targetsRequest.current++; testRequest.current++; onClose(); };
+  const close = () => { const request = pendingAuth.current; pendingAuth.current = null; request?.abort(); gen.current++; targetsRequest.current++; testRequest.current++; onClose(); };
 
   useEffect(() => {
     if (!key || !showNextHint || test === 'ok') return;
@@ -58,6 +60,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
   useEffect(() => {
     if (!t || !P) return;
     const g = ++gen.current;
+    setAuthError('');
     const init: Record<string, string> = {};
     (P.fields || []).forEach(([k]) => { init[k] = k === 'url' && P.k !== 'framer' ? 'https://' + dom : k === 'path' ? 'content/posts' : ''; });
     if (editing) Object.assign(init, Object.fromEntries(Object.entries(editing.f || {}).filter(([k]) => !SECRET_FIELDS.includes(k))));
@@ -72,7 +75,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
     setSecret(null); setOpts(curOpt ? [curOpt] : null);
     if (editing && P.pick && !t.step) void loadTargets({ type: P.k, id: editing.id }, g);
     if (!editing && P.secret) app.act<{ oauthRef: string; secret: string; masked: string }>('blog.newSecret', {}, { silent: true }).then(r => { if (g === gen.current) setSecret({ ref: r.oauthRef, secret: r.secret, masked: r.masked }); }).catch(() => {});
-    return () => { gen.current++; targetsRequest.current++; testRequest.current++; };
+    return () => { const request = pendingAuth.current; pendingAuth.current = null; request?.abort(); gen.current++; targetsRequest.current++; testRequest.current++; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -99,11 +102,13 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
 
   const doAuth = async () => {
     const g = ++gen.current; targetsRequest.current++;
+    const request = new AbortController(); pendingAuth.current?.abort(); pendingAuth.current = request; setAuthError('');
     setAuth('authing'); setOauthRef(null); choose(null); setOpts(null); setTargetsError(''); setTargetsLoading(false); setManualRepo(false);
     try {
-      const r = await openOAuth(providerOf(P.k), app.bid!, P.k === 'shopify' ? { shop: (f.store || '').trim() } : {});
-      if (g !== gen.current) return;
-      if (!r.ok || !r.result?.oauthRef) { setAuth('none'); if (r.error && r.error !== 'closed') app.toast(GENERIC, { tone: 'bad' }); return; }
+      const r = await openOAuth(providerOf(P.k), app.bid!, P.k === 'shopify' ? { shop: (f.store || '').trim() } : {}, { signal: request.signal });
+      if (g !== gen.current || pendingAuth.current !== request || request.signal.aborted) return;
+      pendingAuth.current = null;
+      if (!r.ok || !r.result?.oauthRef) { setAuth('none'); setAuthError(oauthErrorCopy(P.oauthLabel || P.l, r.error)); return; }
       setOauthRef(r.result.oauthRef); setAuth('ok');
       if (P.pick) {
         const unchanged = testRequest.current;
@@ -111,7 +116,7 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
         if (g !== gen.current) return;
         if (unchanged === testRequest.current && !currentPick.current && list?.[0] && (P.k !== 'nextjs' || list[0].suggested)) choose(list[0].id);
       }
-    } catch { if (g === gen.current) { setAuth('none'); app.toast(GENERIC, { tone: 'bad' }); } }
+    } catch { if (g === gen.current) { pendingAuth.current = null; setAuth('none'); setAuthError(GENERIC); } }
   };
   const refreshTargets = () => loadTargets({ type: P.k, ...(oauthRef ? { oauthRef } : { id: editing?.id }) }, gen.current);
   const payload = () => ({ type: P.k, id: editing?.id || null, fields: f, target: pickName, targetId: pick, oauthRef: P.k === 'webhook' ? secret?.ref || null : oauthRef });
@@ -153,6 +158,8 @@ export function BlogConnect({ type, onClose, onSaved }: BlogConnectProps) {
       {!P.authFirst && fieldsEl}
       {P.secret && <Field label="Signing secret" hint="Use it to verify each request came from Radar."><input className="input mono" style={{ fontSize: 13 }} readOnly value={secretValue} onFocus={e => { if (secret && !editing) { setShowSecret(true); const el = e.currentTarget; setTimeout(() => el.select(), 0); } }} onBlur={() => setShowSecret(false)} /></Field>}
       {P.oauth && <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>{auth === 'ok' ? <Status tone="ok">Authorized with {P.oauthLabel || P.l}</Status> : <button className="btn btn-secondary btn-sm" disabled={(!!P.fields && !P.authFirst && !fieldsOk) || auth === 'authing'} onClick={doAuth}>{auth === 'authing' ? <span className="spin" /> : <BrandIcon k={P.k === 'nextjs' ? 'github' : P.k} s={16} />}<span>Sign in with {P.oauthLabel || P.l}</span></button>}{auth === 'ok' && <Btn kind="link" className="small" onClick={() => { gen.current++; targetsRequest.current++; setAuth('none'); setOauthRef(null); choose(null); setOpts(null); setTargetsLoading(false); setTargetsError(''); setManualRepo(false); }}>Switch account</Btn>}</div>}
+      {auth === 'authing' && <p className="xs sub" role="status">Finish sign-in in the other window. If it closed or stopped responding, cancel this connection and try again.</p>}
+      {authError && <p className="small" role="alert" style={{ color: 'var(--bad)' }}>{authError}</p>}
       {P.pick && (auth === 'ok' || !P.oauth) && <div className="col" style={{ gap: 10 }}>
         <Field label={P.pick}><select className="input" value={pick || ''} disabled={P.k === 'nextjs' && manualRepo} aria-busy={targetsLoading} onChange={e => choose(e.target.value)}><option value="" disabled>Choose…</option>{selectOpts.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>
         {P.k === 'nextjs' && <>

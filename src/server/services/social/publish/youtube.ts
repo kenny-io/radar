@@ -4,6 +4,7 @@ import { env } from '../../../env';
 import { type Adapter, type AcctCtx, type Created, type Identity, type Res, type Tokens, call, form, mapCommon, refreshError, SendError, TokenError } from './api';
 export const YOUTUBE_AUTHORIZE = 'https://accounts.google.com/o/oauth2/v2/auth';
 export const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly';
+export class YouTubeConnectionError extends Error { constructor(public code: 'youtube_channel_missing' | 'scope_denied') { super(code); } }
 const TOKEN = 'https://oauth2.googleapis.com/token';
 const API = 'https://www.googleapis.com/youtube/v3';
 const auth = (token: string) => ({ authorization: `Bearer ${token}` });
@@ -11,12 +12,15 @@ const tokensFrom = (j: any, prev?: Tokens): Tokens => ({ access_token: j.access_
 export async function youtubeExchange(code: string, verifier: string, redirectUri: string): Promise<Tokens> {
   const r = await call(TOKEN, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form({ client_id: env.youtubeClientId, client_secret: env.youtubeClientSecret, grant_type: 'authorization_code', code, code_verifier: verifier, redirect_uri: redirectUri }) }, 'auth');
   if (r.status !== 200 || !r.json?.access_token) throw new Error(`youtube token ${r.status}`);
-  return tokensFrom(r.json);
+  const tokens = tokensFrom(r.json);
+  if (tokens.scope && !YOUTUBE_SCOPES.split(' ').every(scope => tokens.scope!.split(/\s+/).includes(scope))) throw new YouTubeConnectionError('scope_denied');
+  return tokens;
 }
 export async function youtubeMe(token: string): Promise<Identity> {
   const r = await call(`${API}/channels?part=snippet&mine=true`, { headers: auth(token) }, 'auth');
   const ch = r.json?.items?.[0];
-  if (r.status !== 200 || !ch?.id) throw new Error(`youtube channel missing ${r.status}`);
+  if (r.status !== 200) throw new Error(`youtube channel ${r.status}`);
+  if (!ch?.id) throw new YouTubeConnectionError('youtube_channel_missing');
   return { remoteId: String(ch.id), name: String(ch.snippet?.title || 'YouTube channel'), handle: ch.snippet?.customUrl || null };
 }
 function ytError(r: Res, stage: 'media' | 'create'): SendError {

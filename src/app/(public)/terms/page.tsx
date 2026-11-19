@@ -6,7 +6,7 @@ export const metadata = metadataFor('/terms');
 export const dynamic = 'force-dynamic';
 
 export default function TermsPage() {
-  return <LegalPage title="Terms of Service" updated="November 3, 2026">
+  return <LegalPage title="Terms of Service" updated="November 19, 2026">
     <Operator />
     <p>These terms govern your use of Radar at radar.thally.io. By creating an account or using Radar, you agree to them. If you use Radar for a business, you confirm you are allowed to accept these terms for it.</p>
     <p>The <a href="https://thally.io/terms">Thally Terms of Service</a> also apply. The Radar-specific features and billing terms on this page take precedence where they differ, including the trial described below.</p>
@@ -28,6 +28,8 @@ export default function TermsPage() {
 
     <h2>Connected services</h2>
     <p>When you connect Google Search Console, a blog platform or another service, you authorize Radar to act on that service within the permissions you grant: reading data, or creating and publishing posts. You can disconnect at any time. Your use of those services stays subject to their own terms.</p>
+
+    <p>Radar uses YouTube API Services. By using Radar&rsquo;s YouTube features, you also agree to be bound by the <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>.</p>
 
     <h2>Acceptable use</h2>
     <p>Do not use Radar to publish content that is unlawful, deceptive or infringing; to spam, including in online communities surfaced by the Daily Brief; to access sites or accounts you are not authorized to use; or to interfere with Radar or other users. Follow each community&rsquo;s rules when you join conversations Radar suggests.</p>

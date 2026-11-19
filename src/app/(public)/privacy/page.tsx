@@ -5,7 +5,7 @@ export const metadata = metadataFor('/privacy');
 export const dynamic = 'force-dynamic';
 
 export default function PrivacyPage() {
-  return <LegalPage title="Privacy Policy" updated="November 3, 2026">
+  return <LegalPage title="Privacy Policy" updated="November 19, 2026">
     <Operator />
     <p>This policy explains what information Radar collects, how it is used, and the choices you have. Radar is a search and social marketing service for small businesses, available at radar.thally.io.</p>
     <p>Fairspleet LLC is responsible for Radar&rsquo;s account, billing and service-operation data. This page supplements the <a href="https://thally.io/privacy">Thally Privacy Policy</a> with Radar&rsquo;s specific data uses and providers. Its provisions about legal bases, international transfers and privacy rights also apply to Radar.</p>
@@ -15,6 +15,7 @@ export default function PrivacyPage() {
       <li><b>Account information.</b> Your name, email address and profile picture, from Google Sign-In or the details you enter when you sign up. If you sign up with a password, we store only a salted hash of it.</li>
       <li><b>Business information.</b> Your website address and what Radar learns from reading your public website, plus the profile, keywords, articles, social posts and settings you create or edit in Radar.</li>
       <li><b>Google Search Console data.</b> If you connect Search Console, we read search performance data (queries, pages, clicks, impressions, position) for the property you choose.</li>
+      <li><b>YouTube publishing.</b> If you connect YouTube, we receive your channel ID, channel name and handle, OAuth access and refresh tokens, and the video IDs and processing results for videos you upload through Radar. We also store the video files, titles, descriptions, visibility and audience settings you provide for those uploads.</li>
       <li><b>Connected services.</b> If you connect a blog platform (for example WordPress, Ghost, Webflow, Shopify or GitHub), we store the access tokens or credentials needed to publish on your behalf.</li>
       <li><b>Team members.</b> Email addresses of people you invite to your workspace.</li>
       <li><b>Billing information.</b> Stripe customer, payment and subscription identifiers, payment status, trial and renewal dates, and limited card information such as brand, last four digits and a card fingerprint used to prevent repeated trials. Stripe collects card details directly; Radar does not store your full card number or security code.</li>
@@ -23,10 +24,12 @@ export default function PrivacyPage() {
     </ul>
 
     <h2>How we use it</h2>
-    <p>We use your information to provide and secure Radar, administer accounts and subscriptions, process payments, prevent abuse, respond to support requests, and meet legal obligations. Radar&rsquo;s features include analyzing your site, planning and drafting content, publishing to your connected blog, preparing social posts, finding relevant online conversations, reporting search performance and AI-assistant visibility, and sending service emails such as team invitations. We do not sell your data or use it for advertising.</p>
+    <p>We use your information to provide and secure Radar, administer accounts and subscriptions, process payments, prevent abuse, respond to support requests, and meet legal obligations. Radar&rsquo;s features include analyzing your site, planning and drafting content, publishing to your connected blog and social accounts, preparing social posts, finding relevant online conversations, reporting search performance and AI-assistant visibility, and sending service emails such as team invitations. We do not sell your data or use it for advertising.</p>
 
     <h2>Google user data</h2>
     <p>Radar requests the <code>openid</code>, <code>email</code> and <code>profile</code> scopes to sign you in, and the read-only <code>webmasters.readonly</code> scope to show your Search Console performance and suggest content. Radar cannot change anything in your Search Console account.</p>
+    <p>The optional YouTube connection uses YouTube API Services and separately requests <code>youtube.upload</code> to upload videos you choose and <code>youtube.readonly</code> to identify your channel and check upload processing. Radar sends your selected video, title, description, visibility and audience choices to YouTube when you publish or schedule it. This connection does not publish a video by itself. Your connected channel details and upload-processing responses are not sent to AI model providers.</p>
+    <p>Google processes information under the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>. Using Radar&rsquo;s YouTube features is also subject to the <a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>.</p>
     <p>Radar&rsquo;s use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. Google user data is used only to provide or improve user-facing features in Radar. Transfers are limited to providing those features with your consent, security, legal requirements, or a merger or acquisition with your explicit prior consent. It is not used for advertising, and people do not read it unless you ask us to for support, it is needed for security or legal reasons, or it has been aggregated and anonymized for internal operations in accordance with applicable law.</p>
     <p>Search Console data is not sent to AI model providers to train their models. Where Radar uses an AI model to suggest content from your search data, only the specific data needed for that suggestion is sent, under the provider&rsquo;s API terms.</p>
 
@@ -42,6 +45,7 @@ export default function PrivacyPage() {
 
     <h2>Security and retention</h2>
     <p>Data is encrypted in transit. Access tokens and blog credentials are additionally encrypted at rest. We keep your data while your account is active. When you delete a business or your account, or ask us to, we delete the associated data, including Search Console data and connected-service tokens, within 30 days, except where we must keep records by law. Images inside articles Radar already published stay available so those articles keep working. You can disconnect Search Console at any time in Settings, or revoke Radar&rsquo;s access from your <a href="https://myaccount.google.com/permissions">Google Account permissions</a>.</p>
+    <p>You can disconnect YouTube in Settings → Social accounts. Radar then removes that connection&rsquo;s stored tokens, asks Google to revoke access, and removes its queued and failed publications. Published-post history and content you supplied to Radar can remain in your business library; contact <Contact legal /> to request deletion. You can also revoke access at any time through your <a href="https://security.google.com/settings/security/permissions">Google security settings</a>. Disconnecting or deleting Radar data does not delete a video already on YouTube; use YouTube&rsquo;s controls to remove it.</p>
     <p>Financial, security and backup records may be retained where needed for legal obligations, security or recovery. Disconnecting Radar does not erase posts already published or records held by Stripe or another connected service; use that service&rsquo;s controls or contact us for assistance. Essential cookies can be blocked in your browser, but sign-in and other features may then stop working.</p>
 
     <h2>Your choices</h2>
