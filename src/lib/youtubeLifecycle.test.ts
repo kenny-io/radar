@@ -10,7 +10,8 @@ describe('YouTube lifecycle clocks', () => {
     expect(youtubeProfileStale({ createdAt: new Date(now - YOUTUBE_CACHE_MS) }, undefined, now)).toBe(true);
   });
   it('fails closed for malformed/future clocks and falls back to immutable creation only when absent', () => {
-    for (const value of [NaN, Infinity, -1, '123', now + 3600e3]) expect(trustedClock(value, createdAt, now)).toBe(0);
+    for (const value of [null, NaN, Infinity, -1, '123', now + 3600e3]) expect(trustedClock(value, createdAt, now)).toBe(0);
+    expect(youtubeProfileStale({ createdAt }, { profileFetchedAt: null, authorizationCheckedAt: now } as any, now)).toBe(true);
     expect(trustedClock(undefined, createdAt, now)).toBe(createdAt.getTime());
     expect(trustedClock(undefined, new Date('invalid'), now)).toBe(0);
   });

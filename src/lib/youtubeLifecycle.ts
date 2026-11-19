@@ -6,7 +6,7 @@ export const YOUTUBE_NO_RESEND = 'YouTube connection details were removed. This 
 export const YOUTUBE_APPROVAL = 'Reconnect YouTube and explicitly approve this draft again before publishing.';
 export const YOUTUBE_HOLD = 'YouTube publishing is paused while Radar verifies the connection. Radar will retry automatically; your access was not classified as revoked.';
 export function trustedClock(value: unknown, fallback: Date, now: number): number {
-  if (value === undefined || value === null) value = fallback.getTime();
+  if (value === undefined) value = fallback.getTime();
   return typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= now + 60_000 ? value : 0;
 }
 export function youtubeProfileStale(row: { createdAt: Date }, meta: { profileFetchedAt?: number; authorizationCheckedAt?: number } | undefined, now = Date.now()): boolean {

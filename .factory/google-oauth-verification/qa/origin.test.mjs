@@ -1,0 +1,22 @@
+import {afterAll,beforeAll,describe,expect,it,vi}from'vitest';
+const H=vi.hoisted(()=>({jar:new Map()}));
+vi.mock('next/headers',async()=>(await import('@/server/testing/jar')).headersMock(()=>H.jar));
+import fs from'node:fs/promises';
+import {db,schema as S}from'@/server/db';
+import {Fixtures}from'@/server/testing/fixtures';
+import {env}from'@/server/env';
+import {POST}from'@/app/api/b/[bid]/social-video/route';
+import {getPack}from'@/server/services/social/generate';
+const F=new Fixtures(),PUBLIC='https://qa-public-radar.test',INTERNAL='http://radar-web.railway.internal:8080';let owner,viewer,stranger,biz,pack,bytes;const old=env.appUrl;
+const as=async u=>{H.jar.clear();if(u)await F.signIn(u,H.jar)};
+const upload=async(headers={})=>{const body=new FormData();body.set('packId',pack);body.set('platform','youtube');body.set('file',new File([bytes],'owned.mp4',{type:'video/mp4'}));return POST(new Request(INTERNAL+'/api/b/'+biz.id+'/social-video',{method:'POST',body,headers}),{params:Promise.resolve({bid:biz.id})});};
+describe('independent real-DB upload public origin behind internal reverse proxy',()=>{
+beforeAll(async()=>{env.appUrl=PUBLIC;owner=await F.user();viewer=await F.user();stranger=await F.user();biz=await F.biz(owner);await F.member(biz.id,viewer,'Viewer');pack='qa-origin-'+crypto.randomUUID();await db.insert(S.socialPacks).values({id:pack,businessId:biz.id,data:{id:pack,name:'Origin QA',posts:{youtube:{text:'Owner video',style:'branded',seed:1,imageUrl:null,copiedAt:null,v:0}}}});bytes=await fs.readFile('.data/youtube-lifecycle-qa/fixture.mp4');await as(owner);});
+afterAll(async()=>{env.appUrl=old;H.jar.clear();await F.cleanup();});
+it('accepts configured public Origin with internal req.url and persists actual video',async()=>{const r=await upload({origin:PUBLIC,'sec-fetch-site':'same-origin'});expect(r.status).toBe(200);const post=(await getPack(biz.id,pack)).posts.youtube;expect(post.video.meta.type).toBe('video/mp4');expect(post.video.url).toContain('/api/files/'+biz.id+'/');});
+it('does not let forged forwarded host/proto authorize evil browser origin',async()=>{const r=await upload({origin:'https://evil.test','x-forwarded-host':'qa-public-radar.test','x-forwarded-proto':'https',forwarded:'host=qa-public-radar.test;proto=https'});expect(r.status).toBe(403);});
+it('rejects internal Origin even when forged forwarding names the internal host',async()=>{const r=await upload({origin:INTERNAL,'x-forwarded-host':'radar-web.railway.internal:8080','x-forwarded-proto':'http'});expect(r.status).toBe(403);});
+it.each([{origin:PUBLIC,'sec-fetch-site':'cross-site'},{'sec-fetch-site':'cross-site'},{origin:'null'}])('rejects cross-site and opaque-origin requests %j',async headers=>{expect((await upload(headers)).status).toBe(403);});
+it('permits deliberate API client without Origin consistent with existing guard contract',async()=>{expect((await upload()).status).toBe(200);});
+it('keeps real session/role/tenant checks for upload',async()=>{await as(viewer);expect((await upload({origin:PUBLIC})).status).toBe(403);await as(stranger);expect((await upload({origin:PUBLIC})).status).toBe(404);await as(null);expect((await upload({origin:PUBLIC})).status).toBe(401);});
+});
