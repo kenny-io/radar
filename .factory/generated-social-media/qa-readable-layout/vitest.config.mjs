@@ -1,0 +1,1 @@
+import{defineConfig}from'vitest/config';import path from'node:path';export default defineConfig({test:{include:['.factory/generated-social-media/qa-readable-layout/independent.test.mjs'],testTimeout:20000},resolve:{alias:{'@':path.resolve(process.cwd(),'src')}}});

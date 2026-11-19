@@ -1,0 +1,9 @@
+# Q7L independent deterministic layout acceptance
+
+Base e8c9d06a7e81e261e8c29a8d5147030dd6000f59, branch kenny/media-readable-layout. QA records/harness only; no implementation/provider/deploy/production actions. Full owned candidate and its source remain /tmp private; never put them or its rendered owned JPEGs into committed evidence. Baseline reproduction is field-path/glyph-metric only.
+
+Actual bundled-font baseline: strict5scenePlan valid. Carousel scene0 passes; scenes1–4 fail label_lines. Scenes1/2/3 mainIdea require3lines at40px/850 vs2limit; scene4node3state2lines at30px/325 vs1, edge1label2lines at30px/220 vs1. All retained owned texts unchanged.
+
+Final frozen drawing implementation: privately render every owned scene JPEG and actual video frame at representative object/edge/revisit times. Verify adaptive metrics with actual fonts: readable minimum fonts, all text preserved/wrapped without ellipsis/clipping, title/main idea/node label+state/chart units separated; labels separate from foreign shapes/labels and diagram lines, outgoing arrows retain topology and cue timing; shape+revisit ink inside safe bounds. Long node/state/edge/title/main-idea cases and deliberately impossible fallback refusals. Exact frame output deterministic, bounded layout candidate search/cache/performance. Visual renderer identity must change; reviewed script/voice/settings/narration identity must not. Existing native-error semantics remain configuration failures. No audio rendered with mismatched script; reused0.88fixture optional encoder-only evidence, not new0.78speech.
+
+Final tests wait for engineer freeze. No unrelated publishing suite repeat or new UI journey; primary user-visible output is actual local JPEG/frame artifact. Report exact source fingerprint and exclusions; retain private owned artifacts outside repo.
