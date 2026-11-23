@@ -221,7 +221,8 @@ export async function runSend(r: PubRow, o: { manual: boolean; userId?: string |
   try { t = await ensureImages(biz, t); } catch (e: any) { return finishFailed(r, 'media', `render: ${r.ch === 'youtube' ? 'YouTube operation failed' : e?.message || e}`, manual, userId); }
   const k = r.platform as PostPlatform;
   const problems = preflight(k, preflightInput(t));
-  if (problems.length) return finishFailed(r, 'media', problems[0].msg, manual, userId, problems[0].msg);
+  // Text edited over the limit after scheduling is a length failure, not a media one (logs, metrics, copy by code).
+  if (problems.length) return finishFailed(r, problems[0].code === 'too_long' ? 'too_long' : 'media', problems[0].msg, manual, userId, problems[0].msg);
   const payload = { ...(r.payload?.youtubeAutomation ? { youtubeAutomation: r.payload.youtubeAutomation } : {}), ...(r.payload?.youtubeRetention ? { youtubeRetention: r.payload.youtubeRetention } : {}), text: t.text, media: t.images.map(i => ({ url: i.url, bytes: i.meta?.bytes ?? null, type: i.meta?.type ?? null })), video: t.video, options: t.options, manual, providerRef: undefined as string | undefined, processingStartedAt: Date.now() };
   const ok = await db.update(P).set({ payload }).where(mine(r)).returning({ id: P.id });
   if (!ok.length) return null;

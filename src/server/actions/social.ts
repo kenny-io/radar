@@ -17,7 +17,7 @@ import { bizToday } from '../workspace';
 import { removeImage } from '../services/social/publish/upload';
 import { COPY, canPost, mediaGenerationPending, packSid } from '@/lib/socialPublish';
 import { socialOn } from '../flags';
-import { assertEditable } from '../services/social/publish/guards';
+import { lockedError, pubState } from '../services/social/publish/guards';
 import { randomToken } from '../crypto';
 import { accountRows } from '../services/social/publish/accounts';
 import { assertVideoEditable, VIDEO_PLATFORMS } from '../services/social/publish/video';
@@ -30,8 +30,14 @@ const profileOf = (biz: any): Profile => ({ ...(biz.profile as Profile), domain:
 
 async function packOr404(bid: string, id: string) { const p = await getPack(bid, id); if (!p) throw notFound('Pack'); return p; }
 const postOr404 = (p: StoredPack, k: Platform) => { const q = p.posts[k]; if (!q) throw notFound('Post'); return q; };
-/** Social channels: a post that sends within 5 minutes can't be changed (COPY.lockedEdit, 409). No-op with the flag off. */
-const editable = (ctx: { biz: any }, packId: string, k: Platform) => (canPost(k) ? assertEditable(ctx.biz, packSid(packId, k)) : Promise.resolve());
+/** Social channels: a post that sends within 5 minutes (COPY.lockedEdit, 409) or has already been posted (COPY.alreadyPosted,
+ *  409) can't be changed, so the pack never shows text that differs from what went out. No-op with the flag off. */
+async function editable(ctx: { biz: any }, packId: string, k: Platform) {
+  if (!canPost(k)) return;
+  const s = await pubState(ctx.biz, packSid(packId, k));
+  if (s?.pub.status === 'posted') throw new RadarError(COPY.alreadyPosted, 409, 'posted');
+  if (s?.locked) throw lockedError();
+}
 const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any>) =>
   updatePack(bid, id, p => ({ ...p, posts: { ...p.posts, [k]: { ...postOr404(p, k), ...patch, ...(k === 'tiktok' && ('text' in patch || 'imageUrl' in patch) && postOr404(p, k).publishOptions?.tiktok ? { publishOptions: { ...postOr404(p, k).publishOptions, tiktok: { ...postOr404(p, k).publishOptions!.tiktok, consent: false } } } : {}) } } })).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
 

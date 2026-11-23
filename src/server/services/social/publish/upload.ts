@@ -14,6 +14,7 @@ import { objectKey, putObject } from '../../storage';
 import { ImageRefused, decodeInChild, overPixelLimits, probeImage } from '../../untrustedImage';
 import { pubState } from './guards';
 import { VIDEO_PLATFORMS, assertVideoEditable, boundedForm, type VideoPlatform } from './video';
+import { discardUpload } from './uploadCleanup';
 
 export const UPLOAD_COPY = {
   tooLarge: 'Choose an image smaller than 5 MB.',
@@ -123,13 +124,20 @@ export async function attachImage(biz: BizRow, packId: string, k: Platform, byte
     const r = await recodeUpload(k, bytes);
     const url = await putObject(objectKey(biz.id, 'social-upload', EXT[r.type]), r.bytes, r.type);
     const meta: MediaMeta = { bytes: r.bytes.length, type: r.type };
+    // `previous` comes from the locked row, so two concurrent uploads each discard only what they replaced. `refused`: a
+    // check inside the lock threw, the update rolled back, and the new file was never referenced.
+    let previous = null as string | null; let refused = false as boolean;
     await updatePack(biz.id, packId, async p => {
-      const post = customPost(p, k);
-      await assertMediaEditable(biz, packId, k);
-      if (mediaGenerationPending(post)) throw new RadarError('Finish or cancel explainer generation before replacing the image.', 409, 'media_pending');
-      const publishOptions = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
-      return { ...p, posts: { ...p.posts, [k]: { ...post, imageUrl: url, imageMeta: meta, compressed: false, photo: false, video: null, slides: null, generatedMedia: undefined, mediaGeneration: null, mediaRecommendation: null, mediaRevision: (post.mediaRevision || 0) + 1, publishOptions } } };
-    }).catch(e => { if (e?.notFound) throw notFound('Post'); throw e; });
+      try {
+        const post = customPost(p, k);
+        await assertMediaEditable(biz, packId, k);
+        if (mediaGenerationPending(post)) throw new RadarError('Finish or cancel explainer generation before replacing the image.', 409, 'media_pending');
+        previous = post.imageUrl || null;
+        const publishOptions = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
+        return { ...p, posts: { ...p.posts, [k]: { ...post, imageUrl: url, imageMeta: meta, compressed: false, photo: false, video: null, slides: null, generatedMedia: undefined, mediaGeneration: null, mediaRecommendation: null, mediaRevision: (post.mediaRevision || 0) + 1, publishOptions } } };
+      } catch (e) { refused = true; throw e; }
+    }).catch(async e => { if (refused || e?.notFound) await discardUpload(biz.id, packId, k, url); if (e?.notFound) throw notFound('Post'); throw e; });
+    if (previous !== url) await discardUpload(biz.id, packId, k, previous);
     await bump(biz.id);
     await track('social.imageUploaded', { bid: biz.id, uid: uid || null, ref: packId, props: { platform: k, type: r.type, bytes: r.bytes.length, w: r.width, h: r.height } });
     return { url, meta, width: r.width, height: r.height };
@@ -142,11 +150,14 @@ export async function attachImage(biz: BizRow, packId: string, k: Platform, byte
 export async function removeImage(biz: BizRow, packId: string, k: Platform) {
   customPost(await getPack(biz.id, packId), k);
   await assertMediaEditable(biz, packId, k);
+  let previous = null as string | null;
   await updatePack(biz.id, packId, async p => {
     const post = customPost(p, k);
     await assertMediaEditable(biz, packId, k);
+    previous = post.imageUrl || null;
     const publishOptions = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
     return { ...p, posts: { ...p.posts, [k]: { ...post, imageUrl: null, imageMeta: null, compressed: false, photo: false, mediaRevision: (post.mediaRevision || 0) + 1, publishOptions } } };
   }).catch(e => { if (e?.notFound) throw notFound('Post'); throw e; });
+  await discardUpload(biz.id, packId, k, previous);
   return { removed: true as const };
 }

@@ -31,7 +31,7 @@ import { P, loadTarget } from '../services/social/publish/pubs';
 import { setAdapterForTests } from '../services/social/publish/accounts';
 import { stubAdapter, stubTokens } from '../services/social/publish/stubs';
 import type { Adapter } from '../services/social/publish/api';
-import { storedKey } from '../services/storage';
+import { readStored, storedKey } from '../services/storage';
 import { setAutopilot } from '../services/autopilot/control';
 import { autopilotOf } from '../services/autopilot/policy';
 import { runAutopilot } from '../services/autopilot/run';
@@ -164,8 +164,9 @@ describe.skipIf(!ON)('custom posts (database)', () => {
     const mp4 = Buffer.concat([box('ftyp', Buffer.from('isom0000')), box('moov', Buffer.concat([box('mvhd', mvhd), box('trak', box('mdia', box('hdlr', hdlr)))])), box('mdat', Buffer.from([1]))]);
     const { packId } = await create([{ platform: 'instagram', text: 'Reel' }]);
     const biz = await getBiz(bid);
-    await attachImage(biz, packId, 'instagram', png(800, 800));
+    const img = await attachImage(biz, packId, 'instagram', png(800, 800));
     await attachVideo(biz, packId, 'instagram', mp4);
+    expect(await readStored(bid, img.url)).toBeNull(); // the replaced upload is deleted
     expect((await pack(packId)).posts.instagram).toMatchObject({ imageUrl: null, imageMeta: null, video: { meta: { type: 'video/mp4' } } });
     await act('social.videoRemove', { packId, platform: 'instagram' });
     expect((await pack(packId)).posts.instagram).toMatchObject({ imageUrl: null, video: null });
@@ -189,6 +190,49 @@ describe.skipIf(!ON)('custom posts (database)', () => {
     await db.insert(S.socialPacks).values({ id: gid, businessId: bid, data: { id: gid, name: 'Generated', source: { kind: 'idea', label: 'An idea' }, created: '2026-11-24', style: 'branded', auto: false, posts: { x: { text: 'Radar', style: 'branded', seed: 1, imageUrl: '/old.png', copiedAt: null, v: 0 } } } });
     await expect(act('social.imageRemove', { packId: gid, platform: 'x' })).rejects.toMatchObject({ status: 409, code: 'not_custom' });
     expect((await pack(gid)).posts.x!.imageUrl).toBe('/old.png');
+  });
+
+  it('3b. replaced and removed uploads are deleted, except one a send recorded', async () => {
+    const { packId } = await create([{ platform: 'x', text: 'Pictures' }]);
+    const biz = await getBiz(bid);
+    const first = await attachImage(biz, packId, 'x', png());
+    const second = await attachImage(biz, packId, 'x', png(500, 500));
+    expect(await readStored(bid, first.url)).toBeNull();
+    expect(await readStored(bid, second.url)).not.toBeNull();
+    await act('social.imageRemove', { packId, platform: 'x' });
+    expect(await readStored(bid, second.url)).toBeNull();
+    // A send snapshot recorded the file (a provider may still pull it): removing the image keeps the file.
+    const third = await attachImage(biz, packId, 'x', png(600, 400));
+    await pubAt(packId, 'x', { dueInMs: 24 * 3_600_000 });
+    await db.update(P).set({ payload: { text: 'Pictures', media: [{ url: third.url, bytes: third.meta.bytes, type: third.meta.type }] } as any }).where(and(eq(P.businessId, bid), eq(P.sid, packSid(packId, 'x'))));
+    await act('social.imageRemove', { packId, platform: 'x' });
+    expect((await pack(packId)).posts.x!.imageUrl).toBeNull();
+    expect(await readStored(bid, third.url)).not.toBeNull();
+    await db.delete(P).where(eq(P.businessId, bid));
+  });
+
+  it('3c. an upload refused under the pack lock leaves no file behind', async () => {
+    const { packId } = await create([{ platform: 'x', text: 'Busy' }]);
+    const biz = await getBiz(bid);
+    const kept = await attachImage(biz, packId, 'x', png());
+    // Explainer generation is only checked under the lock, after the new file is stored.
+    await updatePack(bid, packId, p => ({ ...p, posts: { ...p.posts, x: { ...p.posts.x!, mediaGeneration: { id: 'g', requestId: 'r', format: 'video', status: 'rendering', reason: '', overridden: false } } } }));
+    const dir = path.join(process.cwd(), process.env.STORAGE_DIR!, bid, 'social-upload');
+    const before = (await fs.readdir(dir)).length;
+    await expect(attachImage(biz, packId, 'x', png(300, 300))).rejects.toMatchObject({ status: 409, code: 'media_pending' });
+    expect((await fs.readdir(dir)).length).toBe(before);
+    expect((await pack(packId)).posts.x!.imageUrl).toBe(kept.url);
+    expect(await readStored(bid, kept.url)).not.toBeNull();
+  });
+
+  it('3d. a posted post’s text can no longer be changed', async () => {
+    const { packId } = await create([{ platform: 'x', text: 'What went out' }, { platform: 'facebook', text: 'Copy only' }]);
+    await pubAt(packId, 'x', { status: 'posted', dueInMs: -60_000 });
+    await expect(act('social.text', { packId, platform: 'x', text: 'Something else' })).rejects.toMatchObject({ status: 409, code: 'posted' });
+    expect((await pack(packId)).posts.x!.text).toBe('What went out');
+    await act('social.text', { packId, platform: 'facebook', text: 'Still editable' }); // copy-and-paste platforms have no pub
+    expect((await pack(packId)).posts.facebook!.text).toBe('Still editable');
+    await db.delete(P).where(eq(P.businessId, bid));
   });
 
   it('4. every AI rewrite and media generation entry point refuses a custom pack', async () => {
@@ -268,7 +312,7 @@ describe.skipIf(!ON)('custom posts (database)', () => {
     const [row] = await rowsFor(packId);
     await db.update(P).set({ dueAt: new Date(Date.now() - 1000) }).where(eq(P.id, row.id));
     const failed = await runSend((await claimScheduled(row.id))!, { manual: false });
-    expect(failed).toMatchObject({ status: 'failed', err: 'Shorten to 280 characters to post on X. It’s 300 now.' });
+    expect(failed).toMatchObject({ status: 'failed', errCode: 'too_long', err: 'Shorten to 280 characters to post on X. It’s 300 now.' });
     expect(sent).toEqual([]);
     await act('social.text', { packId, platform: 'x', text: 'Fixed it' });
     expect((await act('social.postNow', { sid: packSid(packId, 'x'), acctId: accts.x })).pub.status).toBe('posted');

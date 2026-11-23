@@ -7,6 +7,7 @@ import { getPack, updatePack } from '../generate';
 import { objectKey, putObject } from '../../storage';
 import { pubState } from './guards';
 import { videoMeta, videoDuration } from './media';
+import { discardUpload } from './uploadCleanup';
 
 export const VIDEO_PLATFORMS = ['instagram', 'tiktok', 'youtube'] as const;
 export type VideoPlatform = typeof VIDEO_PLATFORMS[number];
@@ -25,14 +26,17 @@ export async function attachVideo(biz: BizRow, packId: string, platform: VideoPl
   if (platform === 'instagram' && meta.type !== 'video/mp4') throw new RadarError('Instagram reels need an MP4 video.', 400, 'invalid_video');
   const url = await putObject(objectKey(biz.id, 'social-video', meta.type === 'video/mp4' ? 'mp4' : 'webm'), bytes, meta.type);
   const video = { url, meta, durationSec: videoDuration(bytes) };
+  let replacedImage = null as string | null;
   await updatePack(biz.id, packId, async p => {
     await assertVideoEditable(biz, packId, platform);
     const post = p.posts[platform]; if (!post) throw notFound('Post');
     if (mediaGenerationPending(post)) throw new RadarError('Finish or cancel explainer generation before replacing the video.', 409, 'media_pending');
     const publishOptions = post.publishOptions?.tiktok ? { ...post.publishOptions, tiktok: { ...post.publishOptions.tiktok, consent: false } } : post.publishOptions;
     // Custom packs: the video replaces the user's image too, so removing the video never brings back an older image.
+    if (isCustomPack(p)) replacedImage = post.imageUrl || null;
     return { ...p, posts: { ...p.posts, [platform]: { ...post, ...(isCustomPack(p) ? { imageUrl: null, imageMeta: null, compressed: false, photo: false } : {}), video, slides: null, mediaGeneration: null, mediaRecommendation: null, generatedMedia: undefined, mediaRevision: (post.mediaRevision || 0) + 1, publishOptions } } };
   });
+  await discardUpload(biz.id, packId, platform, replacedImage);
   await bump(biz.id);
   return video;
 }
