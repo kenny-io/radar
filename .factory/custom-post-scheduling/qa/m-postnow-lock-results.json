@@ -1,0 +1,47 @@
+{
+  "at": "2026-11-23T23:31:35.514Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C5 Post now (UI) posts only that platform, shows Posted with link; other platform stays a draft",
+      "pass": true,
+      "detail": {
+        "confirm": "Post to X now? | It will be sent to X as @customqa. You can delete it on X afterwards. | Cancel | Post now",
+        "href": "https://x.com/customqa/status/1795476693409003",
+        "postedEditorReadOnly": false
+      }
+    },
+    {
+      "name": "C4 Instagram custom post with an uploaded image is sent with that image (stub)",
+      "pass": true,
+      "detail": {
+        "status": "posted",
+        "media": [
+          "image/jpeg"
+        ],
+        "url": "https://www.instagram.com/p/1795476693803004/"
+      }
+    },
+    {
+      "name": "C6 Five-minute lock: editor read-only, media buttons disabled with reason, server refuses text/upload/remove/reschedule",
+      "pass": true,
+      "detail": {
+        "refusals": {
+          "text": "409 locked This post sends in a few minutes, so it can’t be changed now.",
+          "remove": "409 locked This post sends in a few minutes, so it can’t be changed now.",
+          "upload": "409 locked This post sends in a few minutes, so it can’t be changed now.",
+          "reschedule": "409 locked This post sends in a few minutes, so it can’t be moved now."
+        },
+        "mediaButtons": [
+          "Replace image:disabled:It’s too close to send time to change now.",
+          "Remove image:disabled:It’s too close to send time to change now."
+        ],
+        "cleanupUnschedule": 409
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

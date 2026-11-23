@@ -1,0 +1,38 @@
+{
+  "at": "2026-11-23T23:29:53.761Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C11 375px: pack view with long link text and image, Schedule window and Schedule all fit",
+      "pass": true,
+      "detail": {
+        "modal": {
+          "x": 10,
+          "y": 330.3125,
+          "width": 355,
+          "height": 471.6875
+        },
+        "all": {
+          "x": 10,
+          "y": 38,
+          "width": 355,
+          "height": 764
+        },
+        "rows": [
+          "LinkedIn",
+          "X",
+          "Instagram",
+          "Fix issues first",
+          "TikTok",
+          "Fix issues first",
+          "YouTube",
+          "Fix issues first"
+        ]
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

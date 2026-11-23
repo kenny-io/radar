@@ -1,0 +1,104 @@
+{
+  "at": "2026-11-23T23:27:06.255Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C8 Viewer UI: Write a post disabled, ?write=1 opens nothing, pack is read-only with image shown and no media/schedule controls",
+      "pass": true,
+      "detail": {
+        "buttons": [
+          "Post now:disabled",
+          "Schedule:disabled",
+          "Copy text:enabled",
+          "Image:enabled"
+        ],
+        "scheduleAll": "ENABLED",
+        "viewerScheduleAll": {
+          "button": "Schedule 1 post",
+          "disabled": false,
+          "status": 403,
+          "toast": [
+            "QA permissions",
+            "You don’t have permission to do that."
+          ]
+        },
+        "pageErrors": [
+          "console: Failed to load resource: the server responded with a status of 403 (Forbidden)"
+        ]
+      }
+    },
+    {
+      "name": "C8 Viewer direct API: create, edit, upload, remove, schedule, post now all refused; pack unchanged",
+      "pass": true,
+      "detail": {
+        "create": "403 You don’t have permission to do that.",
+        "text": "403 You don’t have permission to do that.",
+        "imageRemove": "403 You don’t have permission to do that.",
+        "schedule": "403 You don’t have permission to do that.",
+        "scheduleAll": "403 You don’t have permission to do that.",
+        "postNow": "403 You don’t have permission to do that.",
+        "uploadImage": "403 You don’t have permission to do that.",
+        "uploadVideo": "403 You don’t have permission to do that."
+      }
+    },
+    {
+      "name": "C8 Another business cannot read, edit, upload to or schedule this pack, nor read its file",
+      "pass": true,
+      "detail": {
+        "workspaceOfA": 404,
+        "actOnA_text": 404,
+        "uploadToA": 404,
+        "videoToA": 404,
+        "ownBid_text": 404,
+        "ownBid_imageRemove": 404,
+        "ownBid_schedule": 404,
+        "ownBid_upload": 404,
+        "ownBid_video": 404,
+        "fileOfA": 200,
+        "mediaProxyOwnBid": 404,
+        "mediaProxyA": 404,
+        "ui": "Pack unavailable"
+      }
+    },
+    {
+      "name": "C8 Editor of this business cannot touch the other business pack or attach its file",
+      "pass": true,
+      "detail": {
+        "uploadToOtherBid": 404,
+        "uploadForeignPackOwnBid": 404,
+        "textForeignPack": 404,
+        "removeForeign": 404,
+        "scheduleForeign": 404,
+        "readForeignFile": 200,
+        "sidTraversal": 404
+      }
+    },
+    {
+      "name": "C8 Unauthenticated and cross-origin uploads are refused",
+      "pass": true,
+      "detail": {
+        "anonUpload": 401,
+        "anonAct": 401,
+        "anonFile": 200,
+        "crossOrigin": 403,
+        "crossSite": 403
+      }
+    },
+    {
+      "name": "C2 Server input validation: duplicate platform, all blank, unknown fields, >8 posts, huge text, control chars in name",
+      "pass": true,
+      "detail": {
+        "duplicate": "400 duplicate_platform Pick each platform once.",
+        "allBlank": "400 empty Write something to post.",
+        "unknownField": "400 invalid Some fields aren’t valid.",
+        "injectedSource": "400 invalid Some fields aren’t valid.",
+        "hugeText": "400 invalid Some fields aren’t valid.",
+        "noPosts": "400 invalid Some fields aren’t valid.",
+        "badPlatform": "400 invalid Some fields aren’t valid.",
+        "nameControlChars": "200  ok",
+        "storedName": "\"Launch <b>day</b>\"",
+        "h1": "Launch <b>day</b>"
+      }
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "at": "2026-11-23T23:24:52.280Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C3 Composer X counter follows X weighting for ASCII, emoji, CJK and links; over-limit says by how much",
+      "pass": true,
+      "detail": [
+        "ascii 280: 280 / 280",
+        "ascii 281: 281 / 280 · 1 over",
+        "emoji x140: 280 / 280",
+        "emoji x141: 282 / 280 · 2 over",
+        "cjk x140: 280 / 280",
+        "cjk x141: 282 / 280 · 2 over",
+        "long url: 280 / 280",
+        "long url +1: 281 / 280 · 1 over",
+        "two urls: 55 / 280",
+        "bare domain: 35 / 280",
+        "zwj family emoji: 5 / 280",
+        "flag: 2 / 280",
+        "mixed: 38 / 280"
+      ]
+    },
+    {
+      "name": "C3 Over-limit X and empty LinkedIn can be saved; PackView blocks Post now/Schedule with a message",
+      "pass": true,
+      "detail": {
+        "scheduleAll": "Schedule this pack | Every connected platform goes out on the same day. | Today | 24 | Wed | 25 | Thu | 26 | Fri | 27 | Sat | 28 | Sun | 29 | Mon | 30 | Tue | 1 | Wed | 2 | Thu | 3 | Fri | 4 | Sat | 5 | Sun | 6 | Mon | 7 | Timing | Staggered | Same time | LinkedIn | Fix issues first | X | Fix issues",
+        "scheduleAllDisabled": true
+      }
+    },
+    {
+      "name": "C3 Server refuses over-limit and empty text at schedule, post now and schedule all",
+      "pass": true,
+      "detail": {
+        "scheduleX": "400 preflight Shorten to 280 characters to post on X. It’s 282 now.",
+        "postNowX": "400 preflight Shorten to 280 characters to post on X. It’s 282 now.",
+        "scheduleLiEmpty": "400 preflight Write something to post.",
+        "postNowLiEmpty": "400 preflight Write something to post.",
+        "scheduleAll": "400 preflight X: Shorten to 280 characters to post on X. It’s 282 now."
+      }
+    },
+    {
+      "name": "C5 Past time refused (UI and server); partial failure in Schedule all names the platform and schedules nothing; fixing one platform schedules only it",
+      "pass": true,
+      "detail": {
+        "pastToday": "400 That time has passed. Pick a later time.",
+        "pastYesterday": "400 Pick today or a later day.",
+        "scheduleAllPartial": "400 X: Shorten to 280 characters to post on X. It’s 282 now.",
+        "uiPast": "first slot not past at 03:24"
+      }
+    },
+    {
+      "name": "C7 Custom pack shows no Regenerate / Style / Describe your image / explainer controls on any tab; header says Written by you",
+      "pass": true,
+      "detail": {
+        "id": "cmwtw83gfDNqFsw",
+        "seen": {
+          "LinkedIn": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Post now",
+              "Schedule",
+              "Copy text"
+            ]
+          },
+          "X": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Post now",
+              "Schedule",
+              "Copy text"
+            ]
+          },
+          "Instagram": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Upload video",
+              "Post now",
+              "Schedule",
+              "Copy text"
+            ]
+          },
+          "TikTok": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Upload video",
+              "Refresh TikTok permissions",
+              "Post now",
+              "Schedule",
+              "Copy text"
+            ]
+          },
+          "YouTube": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload video",
+              "Post now",
+              "Schedule",
+              "Copy text"
+            ]
+          },
+          "Facebook": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Copy text"
+            ]
+          },
+          "Reddit": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Copy text"
+            ]
+          },
+          "Quora": {
+            "hits": [],
+            "controls": [
+              "Schedule all",
+              "Download all",
+              "Upload image",
+              "Copy text"
+            ]
+          }
+        },
+        "refusals": {
+          "social.regenText": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.regenImage": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.regenImage+prompt": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.style": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.mediaPrepare": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.mediaGenerate": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.mediaStyle": "409 custom_pack You wrote this post, so Radar won’t rewrite it.",
+          "social.compress": "200 undefined undefined"
+        }
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "at": "2026-11-23T23:30:54.861Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "Regression: Generate social posts still produces a Radar pack (stub worker) with AI controls and no custom UI",
+      "pass": true,
+      "detail": {
+        "gid": "pmwtwfpfmIkeU5g",
+        "platforms": [
+          "x",
+          "linkedin"
+        ]
+      }
+    },
+    {
+      "name": "Regression: Regenerate text and Style still work on a generated pack",
+      "pass": true,
+      "detail": {
+        "regenText": 200,
+        "textChanged": true,
+        "style": "400 Some fields aren’t valid.",
+        "regenImage": "200 ok"
+      }
+    },
+    {
+      "name": "Regression: generated pack still schedules (UI) and posts now with Radar’s rendered image; custom-only actions refuse it",
+      "pass": true,
+      "detail": {
+        "scheduled": "Scheduled · Wed, Nov 25 at 3:00 PM GST",
+        "postNowMedia": [
+          "image/png"
+        ],
+        "uploadToGenerated": "409 Radar can only add your images to posts you wrote.",
+        "removeOnGenerated": "409 not_custom"
+      }
+    },
+    {
+      "name": "C7 Automatic scheduling code skips a custom pack and still schedules a generated one; custom send target is never AI-labelled or rendered",
+      "pass": true,
+      "detail": {
+        "autoScheduleCustom": 0,
+        "autoScheduleGenerated": 1,
+        "customTextOnly": {
+          "aiMedia": false,
+          "needsRender": false,
+          "images": 0
+        },
+        "customWithImage": {
+          "aiMedia": false,
+          "images": 1
+        },
+        "generatedForComparison": {
+          "aiMedia": false,
+          "needsRender": false,
+          "images": 1
+        }
+      }
+    },
+    {
+      "name": "C5 Past time in the Schedule window (business zone moved to Pacific/Auckland for this check, then restored)",
+      "pass": true,
+      "detail": {
+        "zone": "Times are in New Zealand Time (GMT+13). Change it in Settings → Publishing.",
+        "nowThere": "12:30"
+      }
+    },
+    {
+      "name": "C10 Library search finds a custom pack by its X text and its LinkedIn text; generated card is not marked Written by you",
+      "pass": true,
+      "detail": {
+        "Text only X post from QA": [
+          "Posted"
+        ],
+        "Text only LinkedIn post": [
+          "Posted"
+        ],
+        "QA text only": [
+          "Posted"
+        ],
+        "Mine, do not auto schedule": [
+          "Draft"
+        ],
+        "generatedCard": "Image | Mixed | A calendar based routine for tracking freelance project time | Nov 24 · X, LinkedIn | 1 draft · 1 posted | Cover: X | Open pack →"
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "at": "2026-11-23T23:15:10.886Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C1/C5 Schedule X tomorrow 12:00; LinkedIn row untouched; zone label shown",
+      "pass": false,
+      "error": "TypeError: Cannot read properties of undefined (reading 'status')\n    at file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/b-headline2.mjs:20:18\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async check (file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/lib.mjs:20:24)\n    at async file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/b-headline2.mjs:6:1"
+    },
+    {
+      "name": "C1 After reload both stay scheduled at their own times in the pack",
+      "pass": true,
+      "detail": {
+        "linkedin": "Scheduled · Wed, Nov 25 at 2:00 PM GST",
+        "x": "Scheduled · Wed, Nov 25 at 12:00 PM GST"
+      }
+    },
+    {
+      "name": "C1/C10 Library Scheduled filter shows the pack with the uploaded image thumbnail",
+      "pass": false,
+      "error": "AssertionError [ERR_ASSERTION]: Image\nScheduled\nThally launch day.\nNov 24 · LinkedIn, X\nCover: LinkedIn\nWritten by you\nOpen pack →\n    at file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/b-headline2.mjs:35:114\n    at async check (file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/lib.mjs:20:24)\n    at async file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/b-headline2.mjs:31:1"
+    },
+    {
+      "name": "C1 Calendar month grid and dashboard WeekStrip show both posts on tomorrow at their own times",
+      "pass": false,
+      "error": "locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator('[draggable=true]').first() to be visible\n\n    at /Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/b-headline2.mjs:42:81\n    at async check (/Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/lib.mjs:20:24)\n    at async file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/b-headline2.mjs:41:1"
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

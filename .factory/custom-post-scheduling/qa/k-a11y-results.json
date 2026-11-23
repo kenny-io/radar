@@ -1,0 +1,74 @@
+{
+  "at": "2026-11-23T23:28:49.169Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C11 Keyboard only: open composer, name, toggle platforms with Space, write per platform, save with Enter",
+      "pass": true,
+      "detail": {
+        "trail": [
+          "Name (optional)",
+          "Facebook on",
+          "Reddit on/off",
+          "Starting text",
+          "LinkedIn post text",
+          "X post text",
+          "Facebook post text"
+        ],
+        "order": [
+          "linkedin",
+          "x",
+          "facebook"
+        ]
+      }
+    },
+    {
+      "name": "C11 Focus stays in the dialog; Escape on a dirty composer asks before discarding; Keep writing keeps the text",
+      "pass": false,
+      "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(!p.url().includes('write='))\n\n    at file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/k-a11y.mjs:27:184\n    at async check (file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/lib.mjs:20:24)\n    at async file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/k-a11y.mjs:22:1"
+    },
+    {
+      "name": "C11 Labels and announcements: every composer field has a name; counters are described and announced politely on state change only",
+      "pass": true,
+      "detail": {
+        "liveAfterTyping": [
+          "X: within the 280 characters limit."
+        ],
+        "liveAfterOver": [
+          "X: 5 characters over the 280 limit."
+        ],
+        "describedBy": "285 / 280 · 5 over || Shorten by 5 characters to post on X. You can still save.",
+        "overColor": "oklch(0.55 0.2 25)"
+      }
+    },
+    {
+      "name": "C11 PackView by keyboard: editor is labelled and described; Upload image opens the file chooser from the keyboard",
+      "pass": true,
+      "detail": {
+        "describedBy": "45 / 3,000 || "
+      }
+    },
+    {
+      "name": "C11 375px: composer has no horizontal scroll with long unbroken text and all platforms on; footer buttons reachable",
+      "pass": true,
+      "detail": {
+        "innerOverflow": [],
+        "saveBox": {
+          "x": 16,
+          "y": 710,
+          "width": 343,
+          "height": 40
+        }
+      }
+    },
+    {
+      "name": "C11 375px: custom pack view, Schedule window and Schedule all have no horizontal scroll",
+      "pass": false,
+      "error": "AssertionError [ERR_ASSERTION]: pack page scrolls sideways\n    at file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/k-a11y.mjs:60:3\n    at async check (file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/lib.mjs:20:24)\n    at async file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/k-a11y.mjs:59:1"
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}
