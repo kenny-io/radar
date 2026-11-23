@@ -22,6 +22,11 @@ export function Issues({ list, onFix, busy }: { list: Problem[]; onFix: (p: Prob
   return <div className="col" style={{ gap: 8 }}>{list.map((x, i) => <div key={i} className="row" style={{ gap: 10, alignItems: 'flex-start' }}><i className="dot" style={{ background: 'var(--warn)', marginTop: 7, flex: 'none' }} /><span className="small grow">{x.msg}</span>{x.fix && <Btn size="sm" kind="ghost" loading={busy} onClick={() => onFix(x)}>{x.fix.l}</Btn>}</div>)}</div>;
 }
 
+/** Images the post would send (`nImg`). A post the user wrote sends only an image they uploaded; a generated post's
+ *  missing still is rendered by Radar at send, so it counts as one (unless an explainer replaces it). */
+export const postImageCount = (p: Pick<SocialPost, 'video' | 'slides' | 'imageUrl' | 'mediaGeneration' | 'author'>): number =>
+  p.video ? 0 : p.author === 'user' ? (p.imageUrl ? 1 : 0) : p.slides?.length || (p.mediaGeneration && !p.imageUrl ? 0 : 1);
+
 /** Toast after a Post now / Try again that came back `failed` (a failed send is not an error). */
 export const failToast = (pub: Pub) => (pub.code === 'unknown' ? failedLine(pub) : 'Couldn’t post. Nothing was published.');
 
@@ -121,7 +126,7 @@ export function PublishBox({ pack, k, post, nImg, onCopy, onDownload, mediaBusy 
   const expired = state === 'expired'; const scheduled = pub?.status === 'scheduled';
   return <div className="col" style={{ gap: 12 }}>
     {expired && cur ? <div className="col" style={{ gap: 2 }}><Status tone="warn">{cur.verificationHold ? 'YouTube verification paused' : `${chOf(cur.ch).l} needs reconnecting`}</Status><span className="small sub">{cur.verificationHold ? YOUTUBE_HOLD : heldLines(pub, cur, tz)?.body ?? `${pl} access for ${acctLabel(cur)} expired.`}</span></div>
-      : state === 'scheduled' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${at(pub)}`}</Status><span className="small sub">{`As ${label} · edits are included until it posts`}</span></div>
+      : state === 'scheduled' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="ok">{`Scheduled · ${at(pub)}`}</Status><span className="small sub">{`As ${label} · edits are included until it posts`}</span>{issues.length > 0 && <span className="small" style={{ color: 'var(--warn)', marginTop: 4 }}>{`Fix this before ${at(pub)} or it won’t post.`}</span>}</div>
         : state === 'failed' && pub ? <div className="col" style={{ gap: 2 }}><Status tone="bad">{`Didn’t post ${at(pub)}`}</Status><span className="small sub">{failedLine(pub)}</span></div>
           : <div className="row" style={{ gap: 12 }}><span className="small grow">Post as</span>{accts.length > 1 ? <select className="input" style={{ width: 200, height: 34, fontSize: 13 }} value={cur?.id} onChange={e => setChosen(e.target.value)} aria-label="Post as">{accts.map(a => <option key={a.id} value={a.id}>{acctLabel(a) + (a.expired ? ' (reconnect)' : '')}</option>)}</select> : <span className="small sub">{label}</span>}</div>}
     <PublishOptions packId={pack.id} platform={k} post={post} acctId={cur?.id} disabled={B.role === 'Viewer' || busy || mediaBusy} onReady={setProviderReady} />

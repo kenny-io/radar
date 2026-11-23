@@ -12,6 +12,14 @@ Radar extends its existing Social Marketing accounts, content packs, Post now an
 6. For TikTok, select an audience from the connected creator's current choices, choose allowed interactions, disclose commercial content where applicable, and explicitly accept the linked music confirmation and branded-content policy. No audience or consent is preselected. Review again after changing the content.
 7. Use Post now or Schedule. Schedule all includes only eligible posts. TikTok's accepted upload remains processing until TikTok confirms publication. Processing continues through the worker without creating a second post. Automatic scheduling supports eligible X, LinkedIn and Instagram posts; TikTok and YouTube drafts wait for the required per-post choices.
 
+### Your own posts (custom packs)
+
+1. In Social Marketing choose **Write a post** (Editors and above). Pick platforms and write the text for each; Radar saves it exactly as written and never rewrites it, so there is no Regenerate, Style or explainer generation on these posts, and automatic drafts, Autopilot and automatic scheduling never touch them. No reminder email is sent.
+2. Each platform counts characters its own way (X weighted: a link is 23, an emoji 2; YouTube in UTF-8 bytes). Text over the limit or empty is saved but blocked from Post now and Schedule, and checked again when a scheduled post sends: a post edited over the limit after scheduling fails with "Nothing was published." instead of going out shortened.
+3. Add an image per platform (JPEG, PNG or WebP stills up to 5 MB; no GIF or animated images). Radar reads the type from the file, re-encodes it upright without camera metadata, and fits it to the platform: Instagram takes JPEG between 4:5 and 1.91:1; TikTok photos are fitted within 1080 px on the short side; a transparent PNG becomes a white-backed JPEG on Instagram and TikTok. Image upload works with publishing off, for copy and download. Instagram, TikTok and YouTube can use Upload video instead (publishing on only).
+4. Your images are never labelled AI-generated, and Radar never adds an image of its own to a post you wrote.
+5. Schedule each platform at its own date and time in the business time zone, or use Schedule all.
+
 An expired account needs reconnecting. Reconnecting preserves its scheduled posts; switching identities requires disconnecting first. Unknown publish outcomes ask the user to check the provider before another manual attempt. Existing X/LinkedIn flows remain available, and Facebook/Reddit/Quora remain copy-and-paste.
 
 ## Developer applications

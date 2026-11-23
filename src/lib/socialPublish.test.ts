@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   acctLabel, atTz, briefAccount, liCommentary, normForMatch, xReplyIntentUrl, xReplyMode, publishCostUsd, expiresBefore, expiryNote, briefPreflightInput, briefPublish, briefSid, charCount, dayOptions, defaultSlot, dueAtIso, errCopy, failedLine,
   isLocked, isPastSlot, packPreflightInput, localParts, mentions, moveCheck, packPanelState, packSid, parseSid, pickAccount, preflight, scheduleAllWhy, scheduledCount,
-  shortTime, showScheduleAll, socialItems, TIME_SLOTS, tzLabel, tzNote, xStatusId, zonedTimeToUtc, COPY, LOCK_MS, MAX_IMAGE_BYTES,
+  shortTime, showScheduleAll, socialItems, textBudget, TIME_SLOTS, tzLabel, tzNote, xStatusId, zonedTimeToUtc, COPY, LOCK_MS, MAX_IMAGE_BYTES,
 } from './socialPublish';
 import type { BriefItem, Pub, SocialAccount, SocialPost, Workspace } from './types';
 
@@ -382,5 +382,62 @@ describe('generated explainer publishing checks', () => {
     const p = { ...post(), mediaGeneration: { id: 'g', requestId: 'r', format: 'video' as const, status: 'failed' as const, reason: '', overridden: false } };
     expect(preflight('instagram', packPreflightInput(p, 'instagram'))).toEqual([expect.objectContaining({ code: 'media_required' })]);
     expect(preflight('instagram', packPreflightInput({ ...p, imageUrl: 'old', imageMeta: { bytes: 1, type: 'image/jpeg' }, mediaGeneration: { ...p.mediaGeneration, status: 'cancelled' } }, 'instagram'))).toEqual([]);
+  });
+});
+
+describe('textBudget (custom post counters)', () => {
+  it('counts X weighted: a URL is 23, an emoji or ZWJ family 2, CJK 2 each', () => {
+    expect(textBudget('x', '日本語')).toEqual({ used: 6, max: 280, unit: 'characters', over: 0 });
+    expect(textBudget('x', '👨‍👩‍👧‍👦').used).toBe(2);
+    expect(textBudget('x', 'Read https://example.com/a/very/long/path?with=query now').used).toBe(5 + 23 + 4);
+    expect(textBudget('x', 'a'.repeat(281))).toMatchObject({ used: 281, over: 1 });
+  });
+  it('counts LinkedIn and Instagram in code points, YouTube in UTF-8 bytes', () => {
+    expect(textBudget('linkedin', '👍日本')).toEqual({ used: 3, max: 3000, unit: 'characters', over: 0 });
+    expect(textBudget('instagram', 'a'.repeat(2201))).toMatchObject({ max: 2200, over: 1 });
+    expect(textBudget('youtube', '界')).toEqual({ used: 3, max: 5000, unit: 'bytes', over: 0 });
+    expect(textBudget('youtube', '界'.repeat(1667))).toMatchObject({ used: 5001, over: 1 });
+  });
+  it('gives TikTok 2,200 with a video and 4,000 for photos', () => {
+    expect(textBudget('tiktok', 'a', { video: true }).max).toBe(2200);
+    expect(textBudget('tiktok', 'a').max).toBe(4000);
+  });
+  it('never blocks copy-only platforms', () => {
+    for (const k of ['facebook', 'reddit', 'quora'] as const) expect(textBudget(k, '👍'.repeat(70000))).toEqual({ used: 70000, max: null, unit: 'characters', over: 0 });
+  });
+  it('agrees with preflight on every postable platform, at and over the limit', () => {
+    const cases: [Parameters<typeof textBudget>[0], string][] = [['x', '界'.repeat(140)], ['x', '界'.repeat(141)], ['linkedin', 'a'.repeat(3001)], ['instagram', 'a'.repeat(2200)], ['tiktok', 'a'.repeat(4001)], ['youtube', '界'.repeat(1667)]];
+    for (const [k, text] of cases) {
+      const b = textBudget(k, text); const tooLong = preflight(k as 'x', { text, images: [] }).find(p => p.code === 'too_long');
+      expect(!!tooLong).toBe(b.over > 0);
+      if (tooLong) expect(tooLong.msg).toContain(b.used.toLocaleString('en-US'));
+    }
+  });
+});
+
+describe('custom posts (author: user)', () => {
+  const own = (p: Partial<SocialPost> = {}): SocialPost => ({ author: 'user', text: 'My caption', style: 'branded', seed: 0, imageUrl: null, imageMeta: null, v: 0, copiedAt: null, ...p });
+  it('counts a missing image as none, so Instagram and TikTok ask for media', () => {
+    expect(packPreflightInput(own(), 'instagram')).toMatchObject({ images: [], own: true });
+    expect(preflight('instagram', packPreflightInput(own(), 'instagram'))).toEqual([{ code: 'media_required', msg: 'Add an image or video before posting to Instagram.' }]);
+    expect(preflight('tiktok', packPreflightInput(own(), 'tiktok')).map(p => p.msg)).toContain('Add a photo or video before posting to TikTok.');
+    expect(preflight('youtube', packPreflightInput(own(), 'youtube')).map(p => p.msg)).toContain('Upload a video before posting to YouTube.');
+    expect(packPreflightInput(own({ imageUrl: '/api/files/b/social-upload/a.jpg', imageMeta: { bytes: 10, type: 'image/jpeg' } }), 'instagram').images).toEqual([{ bytes: 10, type: 'image/jpeg' }]);
+  });
+  it('leaves generated posts unchanged: a missing image is still one image Radar renders', () => {
+    const { author: _a, ...generated } = own();
+    expect(packPreflightInput(generated, 'x').images).toEqual([null]);
+    expect('own' in packPreflightInput(generated, 'x')).toBe(false);
+    expect(preflight('instagram', { text: 'c', images: [] })[0].msg).toBe('Generate a video or explanatory slides before posting to Instagram.');
+  });
+  it('uses upload wording for the user’s own video problems', () => {
+    const video = { url: 'v', meta: { bytes: 101 * 1024 * 1024, type: 'video/quicktime' } };
+    expect(preflight('tiktok', { text: 'c', images: [], video, own: true, options: { tiktok: { privacyLevel: 'SELF_ONLY', consent: true } } }).map(p => p.msg))
+      .toEqual(['Upload an MP4 or WebM video.', 'Upload a video under 100 MB.']);
+    expect(preflight('instagram', { text: 'c', images: [], video: { ...video, meta: { bytes: 1, type: 'video/webm' } }, own: true }).map(p => p.msg)).toEqual(['Instagram reels need an MP4 video.']);
+  });
+  it('schedule all reads the marker too', () => {
+    expect(scheduleAllWhy('instagram', own(), [{ id: 'ig', ch: 'instagram', name: 'Account' }], T0)).toBe('Fix issues first');
+    expect(scheduleAllWhy('x', own(), [X], T0)).toBeNull();
   });
 });

@@ -32,3 +32,30 @@ describe('actual-media covers and immutable style', () => {
   it('labels only legacy generated media Drawn, without inventing a manual upload style', () => { expect(packCover(pack({ youtube: post(undefined, { video, generatedMedia: { id: 'old', format: 'video', sourceHash: 'source', aiGenerated: true } }) })).style).toBe('Drawn explainer'); expect(packCover(pack({ youtube: post(undefined, { video }) })).style).toBeUndefined(); });
   it('keeps pending/failed/cancelled placeholder states distinct from real media', () => { const g = { id: 'g', requestId: 'r', format: 'video' as const, stage: '', reason: '', overridden: false }; expect(packCover(pack({ youtube: post(undefined, { mediaGeneration: { ...g, status: 'preparing' } }) }))).toMatchObject({ kind: 'placeholder', state: 'Preparing media' }); expect(packCover(pack({ youtube: post(undefined, { mediaGeneration: { ...g, status: 'failed' } }) }))).toMatchObject({ kind: 'placeholder', state: 'Media needs attention' }); expect(packCover(pack({ youtube: post(undefined, { mediaGeneration: { ...g, status: 'cancelled' } }) }))).toMatchObject({ kind: 'placeholder', state: 'Media cancelled' }); });
 });
+describe('custom packs the user wrote', () => {
+  const custom = (posts: Partial<Record<Platform, SocialPost>>, extra: Partial<SocialPack> & { order?: Platform[] } = {}): SocialPack => pack(posts, { id: 'c1', name: 'Thally launch', source: { kind: 'custom', label: 'Thally launch', ref: null }, ...extra });
+  const written = (text: string, status?: Pub['status'], extra: Partial<SocialPost> = {}) => post(status, { text, author: 'user', ...extra });
+  it('finds a custom pack by the text of any of its posts, normalized like names', () => {
+    const data = [custom({ linkedin: written('Docs that stay   fresh, automatically.'), x: written('Ship docs with 日本語 support https://thally.example/launch') }, { order: ['linkedin', 'x'] }), pack({ x: post(undefined, { text: 'Docs that stay fresh' }) })];
+    expect(filterPacks(data, { q: 'docs that STAY fresh' }).map(p => p.id)).toEqual(['c1']);
+    expect(filterPacks(data, { q: '日本語' }).map(p => p.id)).toEqual(['c1']);
+    expect(filterPacks(data, { q: 'thally.example/launch' }).map(p => p.id)).toEqual(['c1']);
+  });
+  it('only searches the first 2,000 characters of each post', () => {
+    const data = [custom({ x: written('a'.repeat(2000) + ' hidden-tail') })];
+    expect(filterPacks(data, { q: 'hidden-tail' })).toEqual([]);
+    expect(filterPacks(data, { q: 'thally launch' }).map(p => p.id)).toEqual(['c1']);
+  });
+  it('filters custom packs by status like any other pack', () => {
+    const data = [custom({ linkedin: written('LinkedIn text', 'scheduled'), x: written('X text', 'scheduled') }), custom({ x: written('Draft text') }, { id: 'c2' })];
+    expect(filterPacks(data, { q: '', status: 'scheduled' }).map(p => p.id)).toEqual(['c1']);
+    expect(filterPacks(data, { q: 'text', status: 'draft' }).map(p => p.id)).toEqual(['c2']);
+  });
+  it('covers a custom pack with its uploaded media, else a text tile of what the user wrote', () => {
+    expect(packCover(custom({ linkedin: written('No image'), x: written('With image', undefined, { imageUrl: '/uploaded.jpg' }) }, { order: ['linkedin', 'x'] }))).toMatchObject({ kind: 'image', platform: 'x', url: '/uploaded.jpg' });
+    expect(packCover(custom({ linkedin: written('  '), x: written('First   real\ntext') }, { order: ['linkedin', 'x'] }))).toEqual({ kind: 'text', text: 'First real text' });
+    const long = packCover(custom({ x: written('word '.repeat(60)) }));
+    expect([...long.text!].length).toBeLessThanOrEqual(140); expect(long.text!.endsWith('…')).toBe(true);
+  });
+  it('keeps the brand placeholder for generated packs without media', () => { expect(packCover(pack({ x: post() })).kind).toBe('placeholder'); });
+});
