@@ -1,0 +1,65 @@
+{
+  "normal2": {
+    "scrollWidth": 375,
+    "innerWidth": 375,
+    "wide": []
+  },
+  "longUrlText": {
+    "scrollWidth": 375,
+    "innerWidth": 375,
+    "wide": []
+  },
+  "longName": {
+    "scrollWidth": 2375,
+    "innerWidth": 375,
+    "wide": []
+  },
+  "defaultNameFromUrl": {
+    "scrollWidth": 933,
+    "innerWidth": 375,
+    "wide": []
+  },
+  "eightPlatforms": {
+    "scrollWidth": 375,
+    "innerWidth": 375,
+    "wide": [
+      "BUTTON. right=468 w=78 \"YouTube\"",
+      "SPAN. right=468 w=78 \"YouTube\"",
+      "svg.[object SVGAnimatedString] right=406 w=16 \"\"",
+      "path.[object SVGAnimatedString] right=406 w=16 \"\"",
+      "BUTTON. right=583 w=89 \"Facebook\"",
+      "SPAN. right=583 w=89 \"Facebook\"",
+      "svg.[object SVGAnimatedString] right=510 w=16 \"\"",
+      "circle.[object SVGAnimatedString] right=510 w=16 \"\"",
+      "path.[object SVGAnimatedString] right=505 w=7 \"\"",
+      "BUTTON. right=675 w=67 \"Reddit\"",
+      "SPAN. right=675 w=67 \"Reddit\"",
+      "svg.[object SVGAnimatedString] right=625 w=16 \"\""
+    ]
+  },
+  "generatedBaseline_longName8": {
+    "scrollWidth": 2375,
+    "innerWidth": 375,
+    "wide": [
+      "BUTTON. right=468 w=78 \"YouTube\"",
+      "SPAN. right=468 w=78 \"YouTube\"",
+      "svg.[object SVGAnimatedString] right=406 w=16 \"\"",
+      "path.[object SVGAnimatedString] right=406 w=16 \"\"",
+      "BUTTON. right=583 w=89 \"Facebook\"",
+      "SPAN. right=583 w=89 \"Facebook\"",
+      "svg.[object SVGAnimatedString] right=510 w=16 \"\"",
+      "circle.[object SVGAnimatedString] right=510 w=16 \"\"",
+      "path.[object SVGAnimatedString] right=505 w=7 \"\"",
+      "BUTTON. right=675 w=67 \"Reddit\"",
+      "SPAN. right=675 w=67 \"Reddit\"",
+      "svg.[object SVGAnimatedString] right=625 w=16 \"\""
+    ]
+  },
+  "library": {
+    "scrollWidth": 375,
+    "innerWidth": 375,
+    "wide": []
+  },
+  "urlAfterDiscard": "/social",
+  "dialogAfterReload": 0
+}

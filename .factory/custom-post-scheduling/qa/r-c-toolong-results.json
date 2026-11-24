@@ -1,0 +1,33 @@
+{
+  "at": "2026-11-24T00:04:53.080Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "5 Over-limit edit after scheduling → worker marks failed with err_code too_long; message and UI line unchanged; nothing sent",
+      "pass": true,
+      "detail": {
+        "x": {
+          "status": "failed",
+          "err_code": "too_long",
+          "err": "Shorten to 280 characters to post on X. It’s 304 now.",
+          "remote_url": null,
+          "payload": null
+        },
+        "linkedin": {
+          "status": "posted"
+        },
+        "failedPanel": [
+          "Didn’t post Wed, Nov 25 at 9:00 AM GST",
+          "Shorten to 280 characters to post on X. It’s 304 now. Nothing was published.",
+          "Shorten to 280 characters to post on X. It’s 304 now."
+        ],
+        "textKept": 304,
+        "tryAgainDisabled": true
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

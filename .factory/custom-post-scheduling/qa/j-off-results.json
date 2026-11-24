@@ -1,0 +1,68 @@
+{
+  "at": "2026-11-23T23:27:49.889Z",
+  "base": "http://localhost:3872",
+  "results": [
+    {
+      "name": "C9 Workspace reports publishing off; composer hints say Copy and paste; save works",
+      "pass": true,
+      "detail": {
+        "toggles": [
+          "LinkedIn / Copy and paste",
+          "X / Copy and paste",
+          "Instagram / Copy and paste",
+          "TikTok / Copy and paste",
+          "YouTube / Copy and paste",
+          "Facebook / Copy and paste",
+          "Reddit / Copy and paste",
+          "Quora / Copy and paste"
+        ],
+        "id": "cmwtwbsb4FkV2eA"
+      }
+    },
+    {
+      "name": "C9 PackView: no Post now / Schedule / Schedule all / video upload; Copy text and image upload + Download image work",
+      "pass": true,
+      "detail": {
+        "LinkedIn": [
+          "Download all",
+          "Upload image",
+          "Copy text"
+        ],
+        "X": [
+          "Download all",
+          "Upload image",
+          "Copy text"
+        ],
+        "Instagram": [
+          "Download all",
+          "Upload image",
+          "Copy text"
+        ],
+        "download": "publishing-off-custom-post-for-copy-and--instagram.jpg",
+        "xCounter": "325 / 280 · 45 over",
+        "clipboard": "Publishing-off X version xxxxx"
+      }
+    },
+    {
+      "name": "C9 Server refuses schedule / post now / video upload with publishing off; image remove works",
+      "pass": true,
+      "detail": {
+        "schedule": "404 not_enabled Posting from Radar isn’t available for this business yet.",
+        "postNow": "404 not_enabled Posting from Radar isn’t available for this business yet.",
+        "scheduleAll": "404 not_enabled Posting from Radar isn’t available for this business yet.",
+        "video": "404 not_enabled Posting from Radar isn’t available for this business yet."
+      }
+    },
+    {
+      "name": "C9/C10 Library with publishing off: custom pack listed, searchable, no status filter",
+      "pass": true,
+      "detail": {
+        "card": "Publishing-off custom post for copy and paste. | Text post | Saved | Publishing-off custom post for copy and paste. | Nov 24 · LinkedIn, X, Instagram | Written by you | Open pack →"
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

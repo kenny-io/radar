@@ -66,6 +66,8 @@ export interface Target {
   aiMedia?: boolean;
   /** Pack post with no rendered file yet (imageUrl null): rendered on the server before it's checked or sent. */
   needsRender?: boolean;
+  /** The user wrote this post and owns its media (`author: 'user'`): never rendered, never labelled AI. */
+  own?: boolean;
 }
 /** Resolve a sid inside this business. null when the pack/post or the brief day/item doesn't exist, or can't be posted. */
 export async function loadTarget(bid: string, sid: string): Promise<Target | null> {
@@ -73,11 +75,12 @@ export async function loadTarget(bid: string, sid: string): Promise<Target | nul
   if (s.src === 'pack') {
     const pack = await getPack(bid, s.packId); const post = pack?.posts[s.platform];
     if (!pack || !post) return null;
+    const own = post.author === 'user';
     return { sid, src: 'pack', platform: s.platform, kind: 'post', text: post.text || '', video: post.video, options: post.publishOptions,
       images: post.video || s.platform === 'youtube' ? [] : post.slides?.length ? post.slides.map(slide => ({ url: slide.url, meta: slide.meta })) : post.imageUrl ? [{ url: post.imageUrl, meta: post.imageMeta ?? null }] : [],
       imagesPending: false, mediaPending: mediaGenerationPending(post), pack, packId: pack.id,
-      needsRender: !post.video && !post.slides?.length && !post.mediaGeneration && s.platform !== 'youtube' && !post.imageUrl,
-      aiMedia: !!post.generatedMedia?.aiGenerated || (!post.video && !!(post as { photo?: boolean }).photo) };
+      needsRender: !own && !post.video && !post.slides?.length && !post.mediaGeneration && s.platform !== 'youtube' && !post.imageUrl,
+      aiMedia: !own && (!!post.generatedMedia?.aiGenerated || (!post.video && !!(post as { photo?: boolean }).photo)), ...(own ? { own } : {}) };
   }
   const day = await getDay(bid, s.day);
   const item = (day?.items as BriefItem[] | undefined)?.find(i => i.id === s.itemId);
@@ -88,7 +91,7 @@ export async function loadTarget(bid: string, sid: string): Promise<Target | nul
   if (item.kind === 'post' && item.img) item.img.urls.forEach((u, i) => { if (u) imgs.push({ url: u, meta: item.img!.meta?.[i] ?? null, i }); });
   return { sid, src: 'brief', platform: k as PostPlatform, kind: item.kind, text: textOf(item), images: k === 'x' ? imgs.slice(0, LIMITS.x.imgs) : imgs, imagesPending: item.kind === 'post' && item.img?.status === 'generating', day: s.day, item, company: (item.acct || 'founder') === 'company', aiMedia: !!item.img && MODEL_STYLES.includes(item.img.style) && imageModelConfigured() };
 }
-export const preflightInput = (t: Target): PreflightInput => ({ text: t.text, images: t.images.map(i => i.meta), imagesPending: t.imagesPending, mediaPending: t.mediaPending, video: t.video, options: t.options });
+export const preflightInput = (t: Target): PreflightInput => ({ text: t.text, images: t.images.map(i => i.meta), imagesPending: t.imagesPending, mediaPending: t.mediaPending, video: t.video, options: t.options, ...(t.own ? { own: true } : {}) });
 
 /** Give every image a real file and known meta: render a pack post's missing visual, read unknown sizes from the file, and
  *  persist both (A21). Mutates and returns the target. */
@@ -112,7 +115,7 @@ export async function ensureImages(biz: BizRow, t: Target): Promise<Target> {
   for (const i of t.images) {
     if (!storedKey(bid, i.url)) throw new RadarError('That image does not belong to this business.', 400, 'media');
     const file = await readImage(i.url, bid);
-    if (!file) throw new RadarError('That image is missing. Generate it again.', 400, 'media');
+    if (!file) throw new RadarError(t.own ? 'That image is missing. Upload it again.' : 'That image is missing. Generate it again.', 400, 'media');
     if (slides?.length) {
       if (file.type !== 'image/jpeg' || file.bytes.length > 5 * 1024 * 1024) throw new RadarError('Each Instagram slide must be a JPEG smaller than 5 MB.', 400, 'media');
       let dimensions;

@@ -1,0 +1,29 @@
+{
+  "at": "2026-11-23T23:16:31.927Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C1 Calendar and WeekStrip show both posts on tomorrow at their own times",
+      "pass": true,
+      "detail": {
+        "calendarChips": [
+          {
+            "text": "12p",
+            "label": "X · Scheduled 12:00 PM · Thally launch day. · @customqa · drag to another day",
+            "day": "12p"
+          },
+          {
+            "text": "2p",
+            "label": "LinkedIn · Scheduled 2:00 PM · Thally launch day. · Custom QA · drag to another day",
+            "day": "12p"
+          }
+        ],
+        "weekTomorrow": "Wed 25 | 12p | Thally launch day. | 2p | Thally launch day."
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

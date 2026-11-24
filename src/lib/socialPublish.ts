@@ -4,7 +4,7 @@ import { legacyVideoStyle,isVideoStyle } from './videoStyles';
 // corrected for production: business time zone instead of the browser clock, absolute `dueAt` instants, ids that may
 // contain colons, real image sizes. Contract: .factory/social-channels/architecture.md. Owner: architect (via the PM).
 // Rules: no React, no server imports, and never read the clock here — callers pass `nowMs`.
-import type { BriefItem, MediaMeta, Pub, PubErrCode, PubStatus, SocialAccount, SocialChannel, SocialPost, SocialPublishOptions, SocialVideo, Workspace } from './types';
+import type { BriefItem, MediaMeta, Platform, Pub, PubErrCode, PubStatus, SocialAccount, SocialChannel, SocialPost, SocialPublishOptions, SocialVideo, Workspace } from './types';
 import { addDays, fmtTime, nowHMIn, todayIn } from './format';
 
 /* ── Channels, platforms, accounts ── */
@@ -97,6 +97,14 @@ export function charCount(k: PostPlatform, text: string): number {
   }
   return n;
 }
+/** The text budget preflight enforces, for counters. Copy-only platforms: max null (count only, never blocks).
+ *  x: weighted vs 280 · linkedin 3,000 · instagram 2,200 · tiktok: 2,200 with a video, else 4,000 · youtube: UTF-8 bytes vs 5,000. */
+export function textBudget(k: Platform, text: string, o: { video?: boolean } = {}): { used: number; max: number | null; unit: 'characters' | 'bytes'; over: number } {
+  if (!canPost(k)) return { used: [...text].length, max: null, unit: 'characters', over: 0 };
+  if (k === 'youtube') { const used = new TextEncoder().encode(text).length; return { used, max: LIMITS.youtube.chars, unit: 'bytes', over: Math.max(0, used - LIMITS.youtube.chars) }; }
+  const used = charCount(k, text); const max = k === 'tiktok' && !o.video ? 4000 : LIMITS[k].chars;
+  return { used, max, unit: 'characters', over: Math.max(0, used - max) };
+}
 /** Does the text carry a link as X sees it (scheme or bare domain)? Drives the link price. */
 export const hasLink = (text: string) => new RegExp(URL_RE.source, 'i').test(text);
 
@@ -113,6 +121,8 @@ export interface PreflightInput {
   /** Daily Brief: images are still being made. */
   imagesPending?: boolean;
   mediaPending?: boolean;
+  /** The media is the user's own (custom pack, `author: 'user'`): same codes, upload wording instead of "Generate". */
+  own?: boolean;
 }
 const n0 = (x: number) => x.toLocaleString('en-US');
 const mb = (b: number) => (b / (1024 * 1024)).toFixed(1);
@@ -122,21 +132,19 @@ const fmtName = (type: string) => (type.split('/')[1] || type).toUpperCase().rep
 export function preflight(k: PostPlatform, p: PreflightInput): Problem[] {
   const L = LIMITS[k]; const pl = PLAT_L[k]; const out: Problem[] = [];
   if (!p.text.trim()) out.push({ code: 'empty', msg: 'Write something to post.' });
-  const len = charCount(k, p.text);
+  const tb = textBudget(k, p.text, { video: !!p.video });
   if (k === 'youtube') {
-    const bytes = new TextEncoder().encode(p.text).length;
-    if (bytes > L.chars) out.push({ code: 'too_long', msg: `Shorten the YouTube description to ${n0(L.chars)} UTF-8 bytes. It’s ${n0(bytes)} bytes now.` });
+    if (tb.over > 0) out.push({ code: 'too_long', msg: `Shorten the YouTube description to ${n0(tb.max!)} UTF-8 bytes. It’s ${n0(tb.used)} bytes now.` });
     if (/[<>]/.test(p.text)) out.push({ code: 'publish_options', msg: 'Remove angle brackets (< and >) from the YouTube description.' });
-  } else {
-    const max = k === 'tiktok' && !p.video ? 4000 : L.chars;
-    if (len > max) out.push({ code: 'too_long', msg: `Shorten to ${n0(max)} characters to post on ${pl}. It’s ${n0(len)} now.` });
-  }
+  } else if (tb.over > 0) out.push({ code: 'too_long', msg: `Shorten to ${n0(tb.max!)} characters to post on ${pl}. It’s ${n0(tb.used)} now.` });
   if (p.imagesPending) out.push({ code: 'images_pending', msg: 'Radar is still making the images.' });
   if (p.mediaPending) out.push({ code: 'images_pending', msg: 'Finish or cancel the explainer media generation before posting.' });
-  if (k === 'youtube' && !p.video) out.push({ code: 'media_required', msg: 'Generate the video before posting to YouTube.' });
-  if ((k === 'instagram' || k === 'tiktok') && !p.video && !p.images.length) out.push({ code: 'media_required', msg: k === 'tiktok' ? 'Generate the video before posting to TikTok.' : 'Generate a video or explanatory slides before posting to Instagram.' });
-  if (p.video && !VIDEO_TYPES.includes(p.video.meta.type)) out.push({ code: 'video_format', msg: 'Regenerate the video in a supported format.' });
-  if (p.video && p.video.meta.bytes > MAX_VIDEO_BYTES) out.push({ code: 'video_too_big', msg: 'Regenerate a shorter video to fit the 100 MB limit.' });
+  if (k === 'youtube' && !p.video) out.push({ code: 'media_required', msg: p.own ? 'Upload a video before posting to YouTube.' : 'Generate the video before posting to YouTube.' });
+  if ((k === 'instagram' || k === 'tiktok') && !p.video && !p.images.length) out.push({ code: 'media_required', msg: p.own
+    ? (k === 'tiktok' ? 'Add a photo or video before posting to TikTok.' : 'Add an image or video before posting to Instagram.')
+    : (k === 'tiktok' ? 'Generate the video before posting to TikTok.' : 'Generate a video or explanatory slides before posting to Instagram.') });
+  if (p.video && !VIDEO_TYPES.includes(p.video.meta.type)) out.push({ code: 'video_format', msg: p.own ? 'Upload an MP4 or WebM video.' : 'Regenerate the video in a supported format.' });
+  if (p.video && p.video.meta.bytes > MAX_VIDEO_BYTES) out.push({ code: 'video_too_big', msg: p.own ? 'Upload a video under 100 MB.' : 'Regenerate a shorter video to fit the 100 MB limit.' });
   if (p.video && k === 'instagram' && p.video.meta.type !== 'video/mp4') out.push({ code: 'video_format', msg: 'Instagram reels need an MP4 video.' });
   if (k === 'youtube') {
     if (!p.options?.title?.trim() || p.options.title.length > 100 || /[<>]/.test(p.options.title)) out.push({ code: 'publish_options', msg: 'Add a YouTube title of up to 100 characters, without angle brackets.' });
@@ -171,9 +179,10 @@ export const automaticMediaReady = (p: Pick<SocialPost, 'mediaGeneration' | 'gen
 };
 export const mediaGenerationPending = (p: Pick<SocialPost, 'mediaGeneration'>) => !!p.mediaGeneration && ['preparing', 'queued', 'narrating', 'rendering'].includes(p.mediaGeneration.status);
 /** What a pack post would upload: its current complete visual. */
-export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl'>, k?: PostPlatform): PreflightInput => ({
-  text: p.text, images: p.video || k === 'youtube' ? [] : p.slides?.length ? p.slides.map(s => s.meta) : p.mediaGeneration && !p.imageUrl ? [] : [p.imageMeta ?? null],
-  video: p.video, options: p.publishOptions, mediaPending: mediaGenerationPending(p),
+export const packPreflightInput = (p: Pick<SocialPost, 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl' | 'author'>, k?: PostPlatform): PreflightInput => ({
+  text: p.text, images: p.video || k === 'youtube' ? [] : p.slides?.length ? p.slides.map(s => s.meta)
+    : p.author === 'user' && !p.imageUrl ? [] : p.mediaGeneration && !p.imageUrl ? [] : [p.imageMeta ?? null],
+  video: p.video, options: p.publishOptions, mediaPending: mediaGenerationPending(p), ...(p.author === 'user' ? { own: true } : {}),
 });
 /** What a Brief post would upload: its finished images (X takes the first 4, as the X preview shows). Replies have none. */
 export function briefPreflightInput(it: Pick<BriefItem, 'kind' | 'img'>, k: PostPlatform, text: string): PreflightInput {
@@ -374,7 +383,7 @@ export type ScheduleAllWhy = 'Copy and paste' | 'Not connected' | 'Reconnect nee
 /** Shown in the pack header when two or more of the pack's platforms are postable. */
 export const showScheduleAll = (platforms: string[]) => platforms.filter(canPost).length >= 2;
 /** Why a row can't be scheduled (null = eligible). */
-export function scheduleAllWhy(k: string, post: Pick<SocialPost, 'pub' | 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl'>, accts: SocialAccount[], nowMs: number): ScheduleAllWhy | null {
+export function scheduleAllWhy(k: string, post: Pick<SocialPost, 'pub' | 'text' | 'imageMeta' | 'video' | 'publishOptions' | 'slides' | 'mediaGeneration' | 'imageUrl' | 'author'>, accts: SocialAccount[], nowMs: number): ScheduleAllWhy | null {
   if (!canPost(k)) return 'Copy and paste';
   if (post.pub?.status === 'posted') return 'Already posted';
   if (isLocked(post.pub, nowMs)) return 'Sending soon';

@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-23T23:23:52.434Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C1 Pack shows Posted with a working link on both platforms",
+      "pass": true,
+      "detail": {
+        "LinkedIn": {
+          "href": "https://www.linkedin.com/feed/update/urn:li:share:1795476174660011/",
+          "status": "Posted Tue, Nov 24 at 3:22 AM GST",
+          "mediaButtons": [
+            "Replace image:disabled",
+            "Remove image:disabled"
+          ]
+        },
+        "X": {
+          "href": "https://x.com/customqa/status/1795476054537007",
+          "status": "Posted Tue, Nov 24 at 3:20 AM GST",
+          "mediaButtons": [
+            "Replace image:disabled",
+            "Remove image:disabled"
+          ]
+        }
+      }
+    },
+    {
+      "name": "C6 A posted post refuses media/text changes on the server",
+      "pass": true,
+      "detail": {
+        "upload": "409 This post is already live.",
+        "remove": "409 This post is already live.",
+        "text": "200 accepted",
+        "textNow": "CHANGED",
+        "postAgain": "400 This post is already live."
+      }
+    },
+    {
+      "name": "C3/C6 Over-limit edit after scheduling shows a readable failed state: nothing published, Try again blocked until fixed",
+      "pass": true,
+      "detail": {
+        "side": "Media · X | Upload image | JPG, PNG or WebP, up to 5 MB. | Didn’t post Wed, Nov 25 at 10:00 AM GST | Shorten to 280 characters to post on X. It’s 308 now. Nothing was published. | Shorten to 280 characters to post on X. It’s 308 now. | Try again | Schedule | Copy text",
+        "tryAgainDisabled": true
+      }
+    },
+    {
+      "name": "C10 Library: Posted and Needs-attention filters, search by name and by post text, text tile for text-only pack",
+      "pass": false,
+      "error": "AssertionError [ERR_ASSERTION]: search by X text\n\n0 !== 1\n\n    at file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/h-posted.mjs:44:82\n    at async check (file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/lib.mjs:20:24)\n    at async file:///Users/ekene/Downloads/design_handoff_radar/radar-push/.claude/worktrees/thally-custom-post-scheduling-dfb0dc/.factory/custom-post-scheduling/qa/h-posted.mjs:32:1"
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

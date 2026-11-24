@@ -8,13 +8,16 @@ import { action, type ActionMap, type ActCtx } from './define';
 import { db, schema } from '../db';
 import { enqueue } from '../jobs/queue';
 import { RadarError, notFound } from '../errors';
-import { getPack, renderPostImage, updatePack, writePost, type StoredPack } from '../services/social/generate';
+import { getPack, refuseCustom, renderPostImage, updatePack, writePost, type StoredPack } from '../services/social/generate';
 import { suggestIdeas } from '../services/social/ideas';
 import { DAYS } from '../services/social/auto';
-import type { ImageStyle, Platform, Profile } from '@/lib/types';
+import type { ImageStyle, Platform, Profile, SocialPost } from '@/lib/types';
+import { defaultPostName } from '@/lib/customPost';
+import { bizToday } from '../workspace';
+import { removeImage } from '../services/social/publish/upload';
 import { COPY, canPost, mediaGenerationPending, packSid } from '@/lib/socialPublish';
 import { socialOn } from '../flags';
-import { assertEditable } from '../services/social/publish/guards';
+import { lockedError, pubState } from '../services/social/publish/guards';
 import { randomToken } from '../crypto';
 import { accountRows } from '../services/social/publish/accounts';
 import { assertVideoEditable, VIDEO_PLATFORMS } from '../services/social/publish/video';
@@ -27,8 +30,14 @@ const profileOf = (biz: any): Profile => ({ ...(biz.profile as Profile), domain:
 
 async function packOr404(bid: string, id: string) { const p = await getPack(bid, id); if (!p) throw notFound('Pack'); return p; }
 const postOr404 = (p: StoredPack, k: Platform) => { const q = p.posts[k]; if (!q) throw notFound('Post'); return q; };
-/** Social channels: a post that sends within 5 minutes can't be changed (COPY.lockedEdit, 409). No-op with the flag off. */
-const editable = (ctx: { biz: any }, packId: string, k: Platform) => (canPost(k) ? assertEditable(ctx.biz, packSid(packId, k)) : Promise.resolve());
+/** Social channels: a post that sends within 5 minutes (COPY.lockedEdit, 409) or has already been posted (COPY.alreadyPosted,
+ *  409) can't be changed, so the pack never shows text that differs from what went out. No-op with the flag off. */
+async function editable(ctx: { biz: any }, packId: string, k: Platform) {
+  if (!canPost(k)) return;
+  const s = await pubState(ctx.biz, packSid(packId, k));
+  if (s?.pub.status === 'posted') throw new RadarError(COPY.alreadyPosted, 409, 'posted');
+  if (s?.locked) throw lockedError();
+}
 const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any>) =>
   updatePack(bid, id, p => ({ ...p, posts: { ...p.posts, [k]: { ...postOr404(p, k), ...patch, ...(k === 'tiktok' && ('text' in patch || 'imageUrl' in patch) && postOr404(p, k).publishOptions?.tiktok ? { publishOptions: { ...postOr404(p, k).publishOptions, tiktok: { ...postOr404(p, k).publishOptions!.tiktok, consent: false } } } : {}) } } })).catch(e => { if (e?.notFound) throw notFound('Pack'); throw e; });
 
@@ -36,9 +45,10 @@ const setPost = (bid: string, id: string, k: Platform, patch: Record<string, any
 async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform; prompt?: string; style?: ImageStyle }) {
   const mediaEditable = () => VIDEO_PLATFORMS.includes(i.platform as typeof VIDEO_PLATFORMS[number]) ? assertVideoEditable(ctx.biz, i.packId, i.platform as typeof VIDEO_PLATFORMS[number]) : editable(ctx, i.packId, i.platform);
   await mediaEditable();
-  await packOr404(ctx.bid, i.packId);
+  refuseCustom(await packOr404(ctx.bid, i.packId));
   const request = randomToken(16);
   const reserved = await updatePack(ctx.bid, i.packId, async p => {
+    refuseCustom(p);
     await mediaEditable();
     const q = postOr404(p, i.platform);
     if (mediaGenerationPending(q)) throw new RadarError('Finish or cancel explainer generation before replacing the image.', 409, 'media_pending');
@@ -57,7 +67,46 @@ async function changeImage(ctx: ActCtx, i: { packId: string; platform: Platform;
   return { seed, imageUrl: result.url };
 }
 
+/** Custom post name: control characters stripped, whitespace collapsed, trimmed; blank → from the first written text. */
+const cleanName = (name: string | undefined, texts: string[]) =>
+  (name || '').replace(/\p{Cc}/gu, ' ').replace(/\s+/g, ' ').trim() || defaultPostName(texts.find(t => t.trim()) || '');
+/** YouTube title from the name: no angle brackets, at most 100 characters. */
+const youtubeTitle = (name: string) => {
+  let out = ''; for (const ch of name.replace(/[<>]/g, '').trim()) { if (out.length + ch.length > 100) break; out += ch; }   // preflight counts UTF-16 units
+  return out.trim();
+};
+
 export const actions: ActionMap = {
+  /** Custom posts (custom-post-scheduling §4): the user's own text per platform, stored verbatim. No job, no AI, not flag-gated,
+   *  no reminder email. Over-limit text is saved; preflight blocks it at schedule, post now and send. */
+  'social.createCustom': action({
+    input: z.object({
+      name: z.string().max(120).optional(),
+      posts: z.array(z.object({ platform: PlatformZ, text: z.string().max(20000) }).strict()).min(1).max(8),
+    }).strict(),
+    run: async (ctx, i) => {
+      const platforms = i.posts.map(p => p.platform);
+      if (new Set(platforms).size !== platforms.length) throw new RadarError('Pick each platform once.', 400, 'duplicate_platform');
+      if (!i.posts.some(p => p.text.trim())) throw new RadarError('Write something to post.', 400, 'empty');
+      const name = cleanName(i.name, i.posts.map(p => p.text));
+      const posts: Partial<Record<Platform, SocialPost>> = {};
+      for (const { platform: k, text } of i.posts) posts[k] = {
+        author: 'user', text, style: 'branded', seed: 0, imageUrl: null, imageMeta: null, copiedAt: null, v: 0,
+        ...(k === 'youtube' ? { publishOptions: { title: youtubeTitle(name) }, publishOptionsRevision: 0 } : {}),
+      };
+      const id = 'c' + Date.now().toString(36) + randomToken(4);
+      const pack: StoredPack = { id, name, source: { kind: 'custom', label: name, ref: null }, created: bizToday(ctx.biz), style: 'branded', custom: '', voice: '', auto: false, order: platforms, posts };
+      await db.insert(schema.socialPacks).values({ id, businessId: ctx.bid, data: pack });
+      return { packId: id };
+    },
+  }),
+
+  /** Custom posts: remove the user's image from one platform (custom packs only; same lock and posted checks as the upload). */
+  'social.imageRemove': action({
+    input: z.object({ packId: z.string().max(64), platform: PlatformZ }).strict(),
+    run: (ctx, i) => removeImage(ctx.biz, i.packId, i.platform),
+  }),
+
   /** Start a pack: job social.generate (ref = client token) → progress { done }, result { packId }. */
   'social.generate': action({
     input: z.object({
@@ -118,7 +167,7 @@ export const actions: ActionMap = {
     input: z.object({ packId: z.string().max(64), platform: PlatformZ }),
     run: async (ctx, i) => {
       await editable(ctx, i.packId, i.platform);
-      const p = await packOr404(ctx.bid, i.packId); const q = postOr404(p, i.platform); const v = (q.v || 0) + 1;
+      const p = await packOr404(ctx.bid, i.packId); refuseCustom(p); const q = postOr404(p, i.platform); const v = (q.v || 0) + 1;
       const g = { headline: p.headline || p.source.label, brief: p.grounding?.brief || `Idea from the user: ${p.source.label}`, link: p.grounding?.link ?? null };
       const text = await writePost(ctx.bid, profileOf(ctx.biz), i.platform, { kind: p.source.kind, label: p.source.label, g, voice: p.voice, v: v + (q.seed || 0), previous: q.text });
       await setPost(ctx.bid, i.packId, i.platform, { text, v });

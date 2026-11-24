@@ -14,7 +14,8 @@ import { DayPick, TimeSel, TzNote } from './ScheduleModal';
 import { scheduleAllRows } from './logic';
 import { useNowMs } from './useSocial';
 
-export function ScheduleAll({ pack }: { pack: SocialPack }) {
+/** `disabled`: Viewers, or an upload is still running for one of the pack's posts. */
+export function ScheduleAll({ pack, disabled }: { pack: SocialPack; disabled?: boolean }) {
   const app = useApp(); const { toast } = app; const B = app.B!; const now = useNowMs();
   const keys = packKeys(pack);
   const [open, setOpen] = useState(false); const [d, setD] = useState(addDays(B.today, 1)); const [mode, setMode] = useState<'stagger' | 'same'>('stagger'); const [same, setSame] = useState('09:00');
@@ -33,7 +34,7 @@ export function ScheduleAll({ pack }: { pack: SocialPack }) {
     } catch { /* toasted; the window stays open */ }
     setBusy(false);
   };
-  return <><Btn icon="calendar" onClick={() => setOpen(true)}>Schedule all</Btn>
+  return <><Btn icon="calendar" disabled={disabled} onClick={() => setOpen(true)}>Schedule all</Btn>
     <Modal open={open} onClose={() => setOpen(false)} dismissable={!busy} width={540} label="Schedule this pack"><div className="col" style={{ padding: 30, gap: 20 }}>
       <div className="col" style={{ gap: 6 }}><h2 className="h2">Schedule this pack</h2><p className="sub small">Every connected platform goes out on the same day.</p></div>
       <DayPick d={d} setD={setD} />
@@ -48,6 +49,6 @@ export function ScheduleAll({ pack }: { pack: SocialPack }) {
       })}</div>
       <TzNote />
       {past && <Status tone="warn">A time has passed. Pick a later day or time.</Status>}
-      <div className="row" style={{ justifyContent: 'flex-end' }}><Btn kind="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Btn><Btn kind="primary" icon="calendar" loading={busy} disabled={!go.length || past} onClick={save}>{go.length ? `Schedule ${go.length} post${go.length > 1 ? 's' : ''}` : 'Nothing to schedule'}</Btn></div>
+      <div className="row" style={{ justifyContent: 'flex-end' }}><Btn kind="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Btn><Btn kind="primary" icon="calendar" loading={busy} disabled={!go.length || past || disabled} onClick={save}>{go.length ? `Schedule ${go.length} post${go.length > 1 ? 's' : ''}` : 'Nothing to schedule'}</Btn></div>
     </div></Modal></>;
 }

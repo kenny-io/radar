@@ -15,6 +15,8 @@ import { track } from '../../../events';
 import { addDays } from '@/lib/format';
 import { COPY, LOCK_MS, packSid, parseSid, type PostPlatform, MAX_AHEAD_DAYS, accountsFor, acctLabel, briefAccount, isLocked, pickAccount, preflight, zonedTimeToUtc } from '@/lib/socialPublish';
 import type { Pub, SocialAccount, SocialChannel } from '@/lib/types';
+import { isCustomPack } from '@/lib/customPost';
+import { getPack } from '../generate';
 import { acctPublic, accountRows, type AcctRow } from './accounts';
 import { P, ensureImages, loadTarget, preflightInput, pubOf, pubRow, type PubRow, type Target } from './pubs';
 
@@ -121,6 +123,8 @@ export async function writeScheduled(q: Q, o: { biz: BizRow; r: Resolved; date: 
 export async function autoSchedule(bid: string, packId: string, options: { onlyMissing?: boolean; platforms?: string[] } = {}): Promise<number> {
   const biz = await getBiz(bid);
   if (!(await socialOn(biz)) || socialAutoOf(biz).post !== 'schedule') return 0;
+  // Defence in depth (custom posts C7): the user schedules their own posts; automatic code never does.
+  const pack = await getPack(bid, packId); if (!pack || isCustomPack(pack)) return 0;
   const date = addDays(bizToday(biz), 1); const time = socialAutoOf(biz).time || '08:00'; let n = 0;
   for (const k of ['x', 'linkedin', 'instagram', 'youtube'] as PostPlatform[]) {
     if (options.platforms && !options.platforms.includes(k)) continue;

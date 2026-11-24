@@ -1,0 +1,242 @@
+{
+  "at": "2026-11-23T23:59:10.188Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "1 Title wrap at 375px: link-first default name and 120-char unbroken name; normal titles unchanged",
+      "pass": true,
+      "detail": {
+        "urlName": {
+          "docW": 375,
+          "innerW": 375,
+          "h1ScrollW": 343,
+          "h1ClientW": 343,
+          "h1H": 97,
+          "h1Right": 359,
+          "lineH": 32.2,
+          "wrap": "break-word"
+        },
+        "longName": {
+          "docW": 375,
+          "innerW": 375,
+          "h1ScrollW": 343,
+          "h1ClientW": 343,
+          "h1H": 258,
+          "h1Right": 359,
+          "lineH": 32.2,
+          "wrap": "break-word"
+        },
+        "shortName": {
+          "docW": 375,
+          "innerW": 375,
+          "h1ScrollW": 343,
+          "h1ClientW": 343,
+          "h1H": 32,
+          "h1Right": 359,
+          "lineH": 32.2,
+          "wrap": "break-word"
+        },
+        "generated": {
+          "docW": 375,
+          "innerW": 375,
+          "h1ScrollW": 343,
+          "h1ClientW": 343,
+          "h1H": 97,
+          "h1Right": 359,
+          "lineH": 32.2,
+          "wrap": "break-word"
+        },
+        "library": {
+          "docW": 375,
+          "innerW": 375,
+          "h1ScrollW": 343,
+          "h1ClientW": 343,
+          "h1H": 32,
+          "h1Right": 359,
+          "lineH": 32.2,
+          "wrap": "break-word"
+        },
+        "dashboard": {
+          "docW": 375,
+          "innerW": 375,
+          "h1ScrollW": 343,
+          "h1ClientW": 343,
+          "h1H": 67,
+          "h1Right": 359,
+          "lineH": 33.39,
+          "wrap": "normal"
+        }
+      }
+    },
+    {
+      "name": "1 Title wrap at 1440px: link-first default name and 120-char unbroken name; normal titles unchanged",
+      "pass": true,
+      "detail": {
+        "urlName": {
+          "docW": 1440,
+          "innerW": 1440,
+          "h1ScrollW": 771,
+          "h1ClientW": 771,
+          "h1H": 64,
+          "h1Right": 1075,
+          "lineH": 32.2,
+          "wrap": "break-word",
+          "headButtons": [
+            {
+              "t": "Schedule all",
+              "right": 1232,
+              "w": 138
+            },
+            {
+              "t": "Download all",
+              "right": 1384,
+              "w": 142
+            }
+          ]
+        },
+        "longName": {
+          "docW": 1440,
+          "innerW": 1440,
+          "h1ScrollW": 771,
+          "h1ClientW": 771,
+          "h1H": 129,
+          "h1Right": 1075,
+          "lineH": 32.2,
+          "wrap": "break-word",
+          "headButtons": [
+            {
+              "t": "Schedule all",
+              "right": 1232,
+              "w": 138
+            },
+            {
+              "t": "Download all",
+              "right": 1384,
+              "w": 142
+            }
+          ]
+        },
+        "shortName": {
+          "docW": 1440,
+          "innerW": 1440,
+          "h1ScrollW": 771,
+          "h1ClientW": 771,
+          "h1H": 32,
+          "h1Right": 1075,
+          "lineH": 32.2,
+          "wrap": "break-word",
+          "headButtons": [
+            {
+              "t": "Schedule all",
+              "right": 1232,
+              "w": 138
+            },
+            {
+              "t": "Download all",
+              "right": 1384,
+              "w": 142
+            }
+          ]
+        },
+        "generated": {
+          "docW": 1440,
+          "innerW": 1440,
+          "h1ScrollW": 771,
+          "h1ClientW": 771,
+          "h1H": 32,
+          "h1Right": 1075,
+          "lineH": 32.2,
+          "wrap": "break-word",
+          "headButtons": [
+            {
+              "t": "Schedule all",
+              "right": 1232,
+              "w": 138
+            },
+            {
+              "t": "Download all",
+              "right": 1384,
+              "w": 142
+            }
+          ]
+        },
+        "library": {
+          "docW": 1440,
+          "innerW": 1440,
+          "h1ScrollW": 716,
+          "h1ClientW": 716,
+          "h1H": 32,
+          "h1Right": 1020,
+          "lineH": 32.2,
+          "wrap": "break-word"
+        },
+        "dashboard": {
+          "docW": 1440,
+          "innerW": 1440,
+          "h1ScrollW": 760,
+          "h1ClientW": 760,
+          "h1H": 47,
+          "h1Right": 1064,
+          "lineH": 46.64,
+          "wrap": "normal"
+        }
+      }
+    },
+    {
+      "name": "2 Viewer: Schedule all disabled on custom and generated packs; click, force click and keyboard open nothing",
+      "pass": true,
+      "detail": {
+        "custom": {
+          "disabled": true,
+          "dialogs": 0
+        },
+        "generated": {
+          "disabled": true,
+          "dialogs": 0
+        }
+      }
+    },
+    {
+      "name": "2 Editor: Schedule all enabled, window opens and schedules 2 posts",
+      "pass": true,
+      "detail": {
+        "label": "Schedule 2 posts",
+        "rows": [
+          "linkedin 2026-11-25 09:00",
+          "x 2026-11-25 12:30"
+        ]
+      }
+    },
+    {
+      "name": "3 Schedule all disabled while an image upload is in flight (held request), across tab switch; re-enabled after success",
+      "pass": true,
+      "detail": {
+        "during": true,
+        "afterTab": true,
+        "reenabled": true
+      }
+    },
+    {
+      "name": "3 Schedule all re-enabled after a failed (400) image upload",
+      "pass": true,
+      "detail": {
+        "during": true,
+        "reenabled": true,
+        "error": "QA forced failure."
+      }
+    },
+    {
+      "name": "3 Schedule all disabled while an Instagram video upload is in flight; re-enabled after",
+      "pass": true,
+      "detail": {
+        "during": true,
+        "postNowDisabledDuring": true,
+        "reenabled": true
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}

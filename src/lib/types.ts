@@ -166,6 +166,9 @@ export interface SocialPublishOptions {
   };
 }
 export interface SocialPost {
+  /** 'user': the text and media were written or uploaded by a person (custom pack). Radar never writes, renders,
+   *  regenerates or labels this post's media as AI. Set once by social.createCustom; never changed. Absent: Radar's. */
+  author?: 'user';
   /** Persisted desired visual style for the next generation; does not relabel the saved attachment. */
   videoStyle?: VideoStyleId;
   slides?: SocialSlide[] | null;
@@ -192,7 +195,7 @@ export interface SocialPost {
   pub?: Pub | null;
 }
 export interface SocialPack {
-  id: string; name: string; source: { kind: 'idea' | 'url' | 'article' | 'suggest'; label: string; ref?: string | null };
+  id: string; name: string; source: { kind: 'idea' | 'url' | 'article' | 'suggest' | 'custom'; label: string; ref?: string | null };
   created: string; style: PackStyle; custom?: string; voice?: string; auto: boolean; posts: Partial<Record<Platform, SocialPost>>;
 }
 export interface YouTubeAutoDefaults { acctId: string; privacy: 'private' | 'unlisted' | 'public'; madeForKids: boolean; version: string }

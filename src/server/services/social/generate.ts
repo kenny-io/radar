@@ -19,6 +19,8 @@ import './stubs';
 import { recordEngagement, resolveEngagement } from '../lifecycle/engagement';
 import { compressBytes } from './publish/media';
 import { objectKey, putObject, readStored } from '../storage';
+import { RadarError } from '../../errors';
+import { isCustomPack } from '@/lib/customPost';
 
 export type SourceKind = SocialPack['source']['kind'];
 export interface IdeaContext { metric?: string; why?: string; tie?: string | null; page?: string | null; q?: string }
@@ -31,7 +33,13 @@ export interface PackInput {
 export interface PackExtra { headline: string; order: Platform[]; grounding: { brief: string; link: string | null; idea?: IdeaContext | null } }
 export type StoredPack = SocialPack & Partial<PackExtra>;
 
-const KIND_L: Record<SourceKind, string> = { idea: 'an idea from the user', url: 'an article URL', article: 'one of the business’s own Radar articles', suggest: 'a Radar suggestion grounded in business knowledge or search data' };
+const KIND_L: Record<SourceKind, string> = { idea: 'an idea from the user', url: 'an article URL', article: 'one of the business’s own Radar articles', suggest: 'a Radar suggestion grounded in business knowledge or search data', custom: 'text the user wrote' };
+
+/** Custom packs (the user wrote them): every AI rewrite, re-render and media generation entry point refuses (409 custom_pack). */
+export const CUSTOM_PACK_REFUSAL = 'You wrote this post, so Radar won’t rewrite it.';
+export const refuseCustom = (p: Pick<SocialPack, 'source'> | null | undefined) => {
+  if (isCustomPack(p)) throw new RadarError(CUSTOM_PACK_REFUSAL, 409, 'custom_pack');
+};
 
 export async function groundingFor(bid: string, src: PackInput['source'], idea?: IdeaContext | null): Promise<Grounding> {
   if (src.kind === 'url') return readUrl(src.label);

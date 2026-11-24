@@ -1,0 +1,98 @@
+{
+  "at": "2026-11-23T23:25:08.843Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "C4 X: upload JPEG shows preview; every bad file shows a clear error and keeps the previous image",
+      "pass": true,
+      "detail": {
+        "notes.txt": "Choose a JPG, PNG or WebP image.",
+        "anim.gif": "Choose a JPG, PNG or WebP image.",
+        "gif-named.jpg": "Choose a JPG, PNG or WebP image.",
+        "text-named.jpg": "Choose a JPG, PNG or WebP image.",
+        "page.svg": "Choose a JPG, PNG or WebP image.",
+        "big.png": "Choose an image smaller than 5 MB.",
+        "corrupt.jpg": "Choose a JPG, PNG or WebP image.",
+        "truncated.jpg": "That image file is incomplete. Export it again."
+      }
+    },
+    {
+      "name": "C4 Server alone refuses the same files (client checks bypassed), by sniffed bytes not name/declared type",
+      "pass": true,
+      "detail": {
+        "anim.gif": "400 invalid_image Choose a JPG, PNG or WebP image.",
+        "notes.txt": "400 invalid_image Choose a JPG, PNG or WebP image.",
+        "page.svg": "400 invalid_image Choose a JPG, PNG or WebP image.",
+        "big.png": "413 too_large Choose an image smaller than 5 MB.",
+        "corrupt.jpg": "400 invalid_image Choose a JPG, PNG or WebP image.",
+        "truncated.jpg": "400 invalid_image That image file is incomplete. Export it again.",
+        "clip.mp4": "400 invalid_image Choose a JPG, PNG or WebP image.",
+        "second.png declared text/plain": "200 image/png",
+        "youtubeImage": "400 YouTube posts use a video.",
+        "missingPack": "404"
+      }
+    },
+    {
+      "name": "C4 Replace (PNG → WebP) and Remove; stored file is re-encoded and served only as an image",
+      "pass": true,
+      "detail": {
+        "replaced": {
+          "type": "image/webp",
+          "bytes": 7812
+        },
+        "servedType": "image/webp",
+        "nosniff": null,
+        "disposition": null
+      }
+    },
+    {
+      "name": "C4 Instagram: media-required said before scheduling; bad ratio refused and previous kept; PNG saved as JPG; then postable",
+      "pass": true,
+      "detail": {
+        "serverNoMedia": "400 Add an image or video before posting to Instagram.",
+        "tallFirst": "Instagram images must be between 4:5 portrait and 1.91:1 landscape.",
+        "stored": {
+          "type": "image/jpeg",
+          "bytes": 16579
+        },
+        "tallSecond": "Instagram images must be between 4:5 portrait and 1.91:1 landscape.",
+        "scheduleEnabled": true
+      }
+    },
+    {
+      "name": "C4 TikTok and YouTube say media is required; YouTube has no image upload; Facebook (copy-only) takes an image",
+      "pass": true,
+      "detail": {
+        "tiktok": "Add a photo or video before posting to TikTok.",
+        "youtube": "Upload a video before posting to YouTube.",
+        "server_tiktok": "400 Add a photo or video before posting to TikTok.",
+        "server_youtube": "400 Upload a video before posting to YouTube.",
+        "facebookButtons": [
+          "Replace image",
+          "Remove image",
+          "Copy text",
+          "Download image"
+        ]
+      }
+    },
+    {
+      "name": "C4 Video: upload MP4 to Instagram replaces the image, image-over-video asks first; LinkedIn/X have no video upload",
+      "pass": true,
+      "detail": {
+        "video": {
+          "type": "video/mp4",
+          "bytes": 85535
+        },
+        "fakeVideo": "400 Upload a valid MP4 or WebM video smaller than 100 MB.",
+        "linkedinVideoServer": "400"
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true,
+      "detail": {
+        "expected4xxConsoleLines": 6
+      }
+    }
+  ]
+}

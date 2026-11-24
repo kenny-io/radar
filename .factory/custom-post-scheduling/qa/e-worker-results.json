@@ -1,0 +1,261 @@
+{
+  "at": "2026-11-23T23:22:57.009Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "Worker leaves posts due tomorrow untouched across a minute tick",
+      "pass": true,
+      "detail": {
+        "rows": 6
+      }
+    },
+    {
+      "name": "Worker sends each post at its own due time (X first, LinkedIn later), never early",
+      "pass": true,
+      "detail": {
+        "timeline": [
+          {
+            "tSec": 0,
+            "sid": "s:HEADLINE:linkedin",
+            "status": "scheduled",
+            "dueSec": 200,
+            "err": null
+          },
+          {
+            "tSec": 0,
+            "sid": "s:HEADLINE:x",
+            "status": "scheduled",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 0,
+            "sid": "s:TEXTONLY:linkedin",
+            "status": "scheduled",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 0,
+            "sid": "s:TEXTONLY:x",
+            "status": "scheduled",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 0,
+            "sid": "s:EDITED:linkedin",
+            "status": "scheduled",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 0,
+            "sid": "s:EDITED:x",
+            "status": "scheduled",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 102,
+            "sid": "s:HEADLINE:x",
+            "status": "posted",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 102,
+            "sid": "s:TEXTONLY:linkedin",
+            "status": "posted",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 102,
+            "sid": "s:TEXTONLY:x",
+            "status": "posted",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 102,
+            "sid": "s:EDITED:linkedin",
+            "status": "posted",
+            "dueSec": 80,
+            "err": null
+          },
+          {
+            "tSec": 102,
+            "sid": "s:EDITED:x",
+            "status": "failed",
+            "dueSec": 80,
+            "err": "media"
+          },
+          {
+            "tSec": 222,
+            "sid": "s:HEADLINE:linkedin",
+            "status": "posted",
+            "dueSec": 200,
+            "err": null
+          }
+        ],
+        "lagSeconds": {
+          "x": 19.859,
+          "linkedin": 19.981
+        }
+      }
+    },
+    {
+      "name": "Headline pack sent with the user text verbatim and the uploaded image per platform",
+      "pass": true,
+      "detail": {
+        "x": {
+          "text": "Thally is live: calendar-based time tracking for designers. https://thally.test/launch",
+          "media": [
+            {
+              "url": "/api/files/<bid>/social-upload/1795475545374-P4C_KglM.png",
+              "type": "image/png",
+              "bytes": 15491
+            }
+          ],
+          "video": null,
+          "manual": false,
+          "processingStartedAt": 1795476054532
+        },
+        "linkedin": {
+          "text": "Thally launch day.\n\nWe built calendar-based time tracking for designers. Here is what we learned shipping it over six months, and why the weekly review matters more than the timer.",
+          "media": [
+            {
+              "url": "/api/files/<bid>/social-upload/1795475544247-8pRdyaGI.jpg",
+              "type": "image/jpeg",
+              "bytes": 13827
+            }
+          ],
+          "video": null,
+          "manual": false,
+          "processingStartedAt": 1795476174648
+        }
+      }
+    },
+    {
+      "name": "Text-only custom post is sent with NO image and no rendered/AI image is attached to the pack",
+      "pass": true,
+      "detail": {
+        "x": {
+          "text": "Text only X post from QA. No image attached.",
+          "media": [],
+          "manual": false,
+          "processingStartedAt": 1795476054532
+        },
+        "linkedin": {
+          "text": "Text only LinkedIn post from QA. No image attached.",
+          "media": [],
+          "manual": false,
+          "processingStartedAt": 1795476054529
+        }
+      }
+    },
+    {
+      "name": "Edited-after-scheduling: LinkedIn sends the edited text and replaced image; over-limit X fails, nothing sent, not truncated",
+      "pass": true,
+      "detail": {
+        "xFail": {
+          "err": "Shorten to 280 characters to post on X. It’s 308 now.",
+          "code": "media",
+          "payload": null
+        },
+        "linkedin": {
+          "text": "LinkedIn AFTER edit — this is what must be sent.",
+          "media": [
+            {
+              "url": "/api/files/<bid>/social-upload/1795475838742-NkPcWYX6.png",
+              "type": "image/png",
+              "bytes": 15491
+            }
+          ],
+          "video": null,
+          "manual": false,
+          "processingStartedAt": 1795476054535
+        }
+      }
+    },
+    {
+      "name": "No job or AI image generation ran for custom packs",
+      "pass": true,
+      "detail": {
+        "jobs": [
+          {
+            "kind": "visibility.run",
+            "status": "done"
+          },
+          {
+            "kind": "social.send",
+            "status": "done"
+          },
+          {
+            "kind": "social.send",
+            "status": "done"
+          },
+          {
+            "kind": "social.send",
+            "status": "done"
+          },
+          {
+            "kind": "social.send",
+            "status": "done"
+          },
+          {
+            "kind": "social.send",
+            "status": "done"
+          },
+          {
+            "kind": "social.send",
+            "status": "done"
+          }
+        ],
+        "events": [
+          {
+            "kind": "action.social.createCustom",
+            "n": 3
+          },
+          {
+            "kind": "action.social.schedule",
+            "n": 4
+          },
+          {
+            "kind": "action.social.scheduleAll",
+            "n": 1
+          },
+          {
+            "kind": "action.social.text",
+            "n": 2
+          },
+          {
+            "kind": "job.social.send",
+            "n": 6
+          },
+          {
+            "kind": "job.visibility.run",
+            "n": 1
+          },
+          {
+            "kind": "social.failed",
+            "n": 1
+          },
+          {
+            "kind": "social.imageUploaded",
+            "n": 4
+          },
+          {
+            "kind": "social.posted",
+            "n": 5
+          },
+          {
+            "kind": "social.scheduled",
+            "n": 6
+          }
+        ]
+      }
+    }
+  ]
+}
