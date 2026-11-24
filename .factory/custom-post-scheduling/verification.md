@@ -17,3 +17,9 @@
 - Not tested: live provider calls (AI-label flags not seen on the wire), TikTok/YouTube sends with uploaded video, deleted-business gates end to end, screen readers.
 - Pre-existing observations left out of scope: Viewer sees an enabled Schedule all (server refuses 403); text of a posted post stays editable; uploaded files are public at unguessable URLs (existing storage model).
 - Evidence: `.factory/custom-post-scheduling/qa/` (probes + result JSON).
+
+## Review leftovers (a384c862), 2026-11-24
+- PM: typecheck clean; fresh DB `radar_fix2`, 94 files / 1202 tests pass. New db tests 3b, 3c, 3d and the too_long assertion each fail with their fix disabled (checked by mutation) and pass with it.
+- Independent QA retest in Chrome on a384c862: title wrap at 375/1440, Viewer Schedule all disabled, Schedule all disabled during uploads, posted editor read-only + 409 `posted`, send failure stored as `too_long`, replaced/removed/refused uploads deleted while a send-recorded file is kept — all pass. Evidence: `qa/r-*.mjs` + results.
+- QA O1 (posted generated post's text Regenerate still clickable) fixed after the retest: button disabled like the image controls; UI unit tests pass, not re-run in a browser.
+- Known: deleted files may still show from a browser cache (immutable cache headers). S3 deletion path not exercised.

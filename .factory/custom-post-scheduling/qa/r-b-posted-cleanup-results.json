@@ -1,0 +1,151 @@
+{
+  "at": "2026-11-24T00:00:32.626Z",
+  "base": "http://localhost:3871",
+  "results": [
+    {
+      "name": "4 Custom pack: posted X is read-only (UI) and social.text 409 posted; unposted LinkedIn and copy-only Facebook stay editable",
+      "pass": true,
+      "detail": {
+        "xReadOnly": true,
+        "xTextAfterTyping": "X will be posted.",
+        "liReadOnly": false,
+        "fbReadOnly": false,
+        "api": {
+          "x": "409 posted This post is already live.",
+          "linkedin": "200  ok",
+          "facebook": "200  ok"
+        },
+        "copiedStatus": 200
+      }
+    },
+    {
+      "name": "4 A failed post stays editable (UI + API) so the user can fix it and Try again",
+      "pass": true,
+      "detail": {
+        "failedReadOnly": false,
+        "textAfterFail": 200,
+        "retried": "posted"
+      }
+    },
+    {
+      "name": "4 Generated pack: posted post read-only and 409 posted; Regenerate controls on posted post",
+      "pass": true,
+      "detail": {
+        "xReadOnly": true,
+        "regenButtons": [
+          "ENABLED",
+          "disabled"
+        ],
+        "imageControls": {
+          "style": true,
+          "generateImage": true
+        },
+        "regenTextClick": 409,
+        "toast": [
+          "Generated posted check",
+          "Posted Tue, Nov 24 at 4:00 AM GST",
+          "This post is already live."
+        ],
+        "api": {
+          "text": "409 posted This post is already live.",
+          "regenText": "409 posted This post is already live.",
+          "fb": "200  ok",
+          "li": "200  ok"
+        },
+        "fbReadOnly": false
+      }
+    },
+    {
+      "name": "6 Replace and remove delete the old file; current image still serves, previews and posts",
+      "pass": true,
+      "detail": {
+        "afterReplace": {
+          "old": 404,
+          "current": 200,
+          "files": {
+            "files": 2,
+            "sidecars": 2
+          }
+        },
+        "previewAfterReload": true,
+        "afterRemove": {
+          "removed": 404,
+          "files": {
+            "files": 1,
+            "sidecars": 1
+          }
+        },
+        "postNow": {
+          "status": "posted",
+          "payloadUrlIsCurrent": true,
+          "currentServes": 200
+        },
+        "counts": {
+          "before": {
+            "files": 1,
+            "sidecars": 1
+          },
+          "afterFirst": {
+            "files": 2,
+            "sidecars": 2
+          }
+        },
+        "cacheControl": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "name": "6 Video replacing a custom Instagram image deletes the image file",
+      "pass": true,
+      "detail": {
+        "imageStatus": 404,
+        "videoStatus": 200,
+        "files": {
+          "files": 2,
+          "sidecars": 2
+        },
+        "before": {
+          "files": 3,
+          "sidecars": 3
+        }
+      }
+    },
+    {
+      "name": "6 Guard: an image recorded in a failed send snapshot is kept after replace; replacing again later deletes only unsent files",
+      "pass": true,
+      "detail": {
+        "sendStatus": "failed",
+        "snapshotHasD": true,
+        "afterReplace": {
+          "D": 200,
+          "E": 200
+        },
+        "afterSecondReplace": {
+          "D": 200,
+          "E": 404,
+          "F": 200
+        }
+      }
+    },
+    {
+      "name": "6 Guard: an upload refused inside the 5-minute lock leaves no orphan and keeps the current image",
+      "pass": true,
+      "detail": {
+        "upload": "409 locked",
+        "remove": "409 locked",
+        "current": 200,
+        "before": {
+          "files": 5,
+          "sidecars": 5
+        },
+        "after": {
+          "files": 5,
+          "sidecars": 5
+        }
+      }
+    },
+    {
+      "name": "No page errors",
+      "pass": true
+    }
+  ]
+}
