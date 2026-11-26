@@ -2,12 +2,14 @@
 // Settings — port of SettingsPage + FreqSetting (prototype/radar-app.jsx), AISettings/ModelSelect (radar-models.jsx),
 // TeamSettings + FeatureRequest (radar-extras.jsx). Max-width 1080; a category sidebar and one section at a time (2026-10-23b).
 import { BrandIcon } from '@/components/brand';
+import { isGscReconnectNeeded } from '@/lib/gsc';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { routeToUrl, useApp } from '@/client/app';
 import { api } from '@/client/api';
 import { Btn, PageHead, Section, Seg, Status } from '@/components/ui';
 import { GscConnect } from '@/features/gsc/GscConnect';
+import { GscReconnect } from '@/features/gsc/GscReconnect';
 import { PublishingSettings } from '@/features/publishing/PublishingSettings';
 import { SocialAccounts } from '@/features/social/channels/SocialAccounts';
 import { BillingSettings } from '@/features/billing/BillingSettings';
@@ -105,8 +107,8 @@ export function SettingsPage() {
       <Row t="Connection" d="Read-only access to search performance.">
         {g.status === 'connected' || g.status === 'syncing' || g.status === 'error' ? <div className="row" style={{ gap: 14, flexWrap: 'wrap' }}>
           <span className="row grow" style={{ gap: 8, minWidth: 0 }}><BrandIcon k="gsc" s={16} /><span className="mono trunc" style={{ fontSize: 13 }}>{g.property}</span></span>
-          {g.status === 'connected' ? <Status tone="ok">Connected</Status> : g.status === 'syncing' ? <Status tone="signal" pulse>Syncing · {Math.round(g.progress)}%</Status> : <Status tone="bad">Sync paused</Status>}
-          {g.status === 'error' && <button className="unlink" style={{ color: 'var(--ink)' }} onClick={() => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {})}>Resume</button>}
+          {g.status === 'connected' ? <Status tone="ok">Connected</Status> : g.status === 'syncing' ? <Status tone="signal" pulse>Syncing · {Math.round(g.progress)}%</Status> : <Status tone="bad">{isGscReconnectNeeded(g) ? 'Reconnection needed' : 'Sync paused'}</Status>}
+          {isGscReconnectNeeded(g) ? <GscReconnect /> : g.status === 'error' && <button className="unlink" style={{ color: 'var(--ink)' }} onClick={() => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {})}>Resume</button>}
           <button className="unlink" onClick={() => act('gsc.disconnect', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'skipped', property: null, progress: 0 } }) }).then(() => toast('Search Console disconnected')).catch(() => {})}>Disconnect</button>
         </div>
           : <GscConnect bid={app.bid!} domain={B.profile.domain} compact onConnected={() => toast('Connected. Syncing in the background.', { tone: 'ok' })} />}

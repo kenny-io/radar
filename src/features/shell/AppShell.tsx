@@ -5,6 +5,8 @@ import { useApp, type Page } from '@/client/app';
 import { Btn, Icon, LogoTile, Mark, Popover, Skel, type IconName } from '@/components/ui';
 import { Onboarding } from '@/features/onboarding/Onboarding';
 import { SupportWidget } from '@/features/support/SupportWidget';
+import { GscReconnectBanner, GscReconnectProvider } from '@/features/gsc/GscReconnect';
+import '@/features/gsc/gsc.css';
 import { GraceBanner } from '@/features/billing/GraceBanner';
 import { TrialChip } from '@/features/billing/TrialChip';
 // Page-level stylesheets under (app) suspend the first commit and remount AppProvider (a second workspace load), so
@@ -23,17 +25,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!me.currentId) body = <GhostDash name={me.user.name} />;
   else if (!B) body = null; // workspace loading — keep the canvas calm
   else body = children;
-  return <div className="app">
+  return <GscReconnectProvider key={app.bid || 'none'}><div className="app">
     <Side open={side} onClose={() => setSide(false)} />
     {side && <div onClick={() => setSide(false)} style={{ position: 'fixed', inset: 0, zIndex: 55, background: 'oklch(0 0 0 / .2)' }} />}
     <div style={{ minWidth: 0 }}>
       <div className="mob-bar"><Btn kind="ghost" icon="menu" onClick={() => setSide(true)} aria-label="Menu" /><Mark s={20} /><span style={{ fontWeight: 600 }}>Radar</span><ActivityBell /></div>
       <GraceBanner />
-      <main className="main" key={page + (B?.id || '')}>{body}</main>
+      <main className="main"><GscReconnectBanner /><React.Fragment key={page + (B?.id || '')}>{body}</React.Fragment></main>
     </div>
     {onboarding.open && <Onboarding actor="user" draft={draftOf(me.businesses)} saveCommits autoDomain={null} inApp />}
     {B && !onboarding.open && <SupportWidget key={`${me.user.id}:${B.id}`} businessId={B.id} userEmail={me.user.email} page={page} />}
-  </div>;
+  </div></GscReconnectProvider>;
 }
 
 /** "Add a business" resumes the account's unfinished draft, if any; Onboarding reads its step from the workspace. */

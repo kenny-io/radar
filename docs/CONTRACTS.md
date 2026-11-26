@@ -18,6 +18,7 @@ it exactly as listed (you may add optional fields). If you consume one, call it 
 - `gsc.properties` (read) `{}` → `{ properties: { v, l, note, recommended, otherSite }[] }` — after the `gsc` OAuth popup succeeds.
 - `gsc.connect` `{ property }` — saves property, status `syncing`, queues the 16-month backfill.
 - `gsc.resume` `{}` · `gsc.disconnect` `{}`
+- `gsc.reconnect` `{}` — Editor or higher, after Google OAuth: validates access to the existing property, retains historical rows and the saved backfill cursor, then queues the remaining backfill or an incremental pull. Authorization failures require reconnection instead of `gsc.resume`; transient failures retain Resume.
 - `gsc.summary` (read) `{ days: 7|28|90 }` → `{ cur: Totals, prev: Totals|null, series: DayPoint[] } | null` (types in `src/server/services/gsc/metrics.ts`)
 - `suggestions.list` (read) `{}` → `{ id, prio, title, why, impact, page, kind, state: 'open'|'calendar'|'dismissed' }[]` sorted by impact. Dashboard uses the top open High one.
 - OAuth provider name: `gsc` (via `openOAuth('gsc', bid)`).

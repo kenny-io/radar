@@ -7,6 +7,7 @@ import { db, schema } from '../db';
 import { enqueue } from '../jobs/queue';
 import { RadarError } from '../errors';
 import type { Profile } from '@/lib/types';
+import { isGscReconnectNeeded } from '@/lib/gsc';
 import { GscApiError, loadTokens, revoke, saveTokens } from '../services/gsc/client';
 import { propertiesFor } from '../services/gsc/properties';
 import { getConn, setConn } from '../services/gsc/sync';
@@ -47,6 +48,7 @@ export const actions: ActionMap = {
   'gsc.resume': action({ input: z.object({}).optional(), run: async ctx => {
     const c = await getConn(ctx.bid);
     if (!c || !c.property || (c.status !== 'error' && c.status !== 'syncing')) return { ok: false };
+    if (isGscReconnectNeeded(c)) throw new RadarError('Reconnect Google to keep your search data up to date.', 409, 'gsc_reconnect_required');
     const cur = c.backfillCursor as any;
     if (cur && !cur.done) {
       await setConn(ctx.bid, { status: 'syncing', error: null });
@@ -54,6 +56,34 @@ export const actions: ActionMap = {
     } else {
       await setConn(ctx.bid, { status: 'connected', error: null });
       await enqueue('gsc.incremental', {}, { businessId: ctx.bid, ref: ctx.bid, singletonKey: 'gsc-inc:' + ctx.bid });
+    }
+    return { ok: true };
+  } }),
+
+  /** Fresh OAuth consent recovers this exact property, keeping historical rows and the backfill cursor. */
+  'gsc.reconnect': action({ role: 'Editor', input: z.object({}).optional(), run: async ctx => {
+    const original = await getConn(ctx.bid);
+    if (!original?.property || original.status === 'none' || original.status === 'skipped') throw new RadarError('Choose a Search Console property in Settings to connect.', 409, 'gsc_connection_changed');
+    let properties;
+    try { properties = await propertiesFor(ctx.bid, ctx.biz.domain); }
+    catch (error) {
+      await reportFailure(error, { source: 'action', operation: 'gsc.reconnect', businessId: ctx.bid, provider: 'Google Search Console' });
+      if (error instanceof GscApiError && !error.transient && (error.status === 401 || error.reason === 'invalid_grant')) throw new RadarError('Google didn’t return permission. Try reconnecting and allow Search Console access.', 403, 'gsc_denied');
+      throw new RadarError('Search Console didn’t respond. Try reconnecting again.', 502, 'gsc_unavailable');
+    }
+    if (!properties.some(p => p.v === original.property)) throw new RadarError('This Google account can’t access the connected property. Try reconnecting with the account that manages it.', 403, 'gsc_property');
+    // Consent and provider validation can take time. Never resurrect a disconnected or replaced connection.
+    const current = await getConn(ctx.bid);
+    if (!current || current.property !== original.property || current.status === 'none' || current.status === 'skipped') throw new RadarError('The Search Console connection changed. Check Settings and try again.', 409, 'gsc_connection_changed');
+    if (current.status === 'connected' || current.status === 'syncing') return { ok: true };
+    const backfill = current.backfillCursor && !(current.backfillCursor as { done?: boolean }).done;
+    await setConn(ctx.bid, { status: backfill ? 'syncing' : 'connected', error: null });
+    try {
+      await enqueue(backfill ? 'gsc.backfill' : 'gsc.incremental', {}, { businessId: ctx.bid, ref: ctx.bid, singletonKey: (backfill ? 'gsc-backfill:' : 'gsc-inc:') + ctx.bid });
+    } catch (error) {
+      // Keep the warning recoverable if the queue cannot accept the sync.
+      await setConn(ctx.bid, { status: current.status, error: current.error });
+      throw error;
     }
     return { ok: true };
   } }),

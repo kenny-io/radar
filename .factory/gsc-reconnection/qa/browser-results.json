@@ -1,0 +1,189 @@
+{
+  "at": "2026-11-26T21:07:01.705Z",
+  "base": "http://localhost:3846",
+  "browser": "Playwright bundled Chromium, headless",
+  "fixture": "Isolated local PostgreSQL with synthetic accounts; existing stub OAuth. Failure consent scenarios intercepted locally. No external calls or production mutations.",
+  "fingerprint": {
+    "src/lib/gsc.ts": "3ff586fa7fae6518edd7c55c7e47f40be0e065b9f0034d5c6e44ec2ef9fa1bd6",
+    "src/features/gsc/GscReconnect.tsx": "653d5b2e953f43d31eee3be1888a7fc0c3554c9db46553a2918a8e553fbc42a2",
+    "src/features/gsc/gsc.css": "99320bc48a5437005b1abcb211a9021e272231d76ca5fabb65073b1759d73f2c",
+    "src/features/shell/AppShell.tsx": "90a5e1989bfd23263988887c955109f999412076f06c0146dc9d5a95043ac1ec",
+    "src/client/api.ts": "9670c6bcb56050e5a074371d0cf43daac9a427a33f8d6a27e3ccbaaeb21582e8",
+    "src/server/actions/performance.ts": "a4ff48baf1b961f117491898ad78ada3ffae6732c7dd2a5d818c3ac2c03abd33",
+    "src/features/dashboard/Dashboard.tsx": "d6070dff539d2d237ec4d0f60ca7b01dc53b7bfcb6672f17d2f82d8c6630f644",
+    "src/features/performance/Performance.tsx": "fde6fd83d162b8b93b88d9b723243b785c313c4d5e6386aef1a235cdc8408e9c",
+    "src/features/settings/SettingsPage.tsx": "0d038162b9820f902313ecd564fa736f71942f1b2cd3682af2ae73c34165a85e"
+  },
+  "results": [
+    {
+      "name": "AC1/4 Desktop visible, keyboard focus, no raw errors, clean screenshots",
+      "pass": true,
+      "detail": {
+        "bannerBox": {
+          "x": 304,
+          "y": 44,
+          "width": 1080,
+          "height": 83
+        },
+        "keyboardFocus": true
+      }
+    },
+    {
+      "name": "AC1 Persistent across in-app pages and reload; no misleading auth Resume",
+      "pass": true,
+      "detail": {
+        "pages": [
+          "dashboard",
+          "performance",
+          "settings",
+          "profile"
+        ],
+        "reload": true
+      }
+    },
+    {
+      "name": "AC4 Mobile 390 and 320 widths, no overflow, visible action",
+      "pass": true,
+      "detail": {
+        "widths": [
+          390,
+          320
+        ],
+        "overflow": false
+      }
+    },
+    {
+      "name": "AC1 No banner for healthy, syncing, skipped, none, or transient provider failures",
+      "pass": true,
+      "detail": {
+        "healthyStates": 4,
+        "transientStates": 3
+      }
+    },
+    {
+      "name": "AC2 Popup blocked keeps warning and gives retry guidance",
+      "pass": true,
+      "detail": {
+        "warningRetained": true,
+        "retryEnabled": true
+      }
+    },
+    {
+      "name": "AC2 Closed popup can be explicitly cancelled; warning retained and retry enabled",
+      "pass": true,
+      "detail": {
+        "cancelRetainedError": true,
+        "explicitCancel": true,
+        "retrySucceeded": true
+      }
+    },
+    {
+      "name": "AC2 Denied permission retains warning and no reconnect action request",
+      "pass": true,
+      "detail": {
+        "noRecoveryMutation": true
+      }
+    },
+    {
+      "name": "AC4 Shared pending state prevents duplicate banner/settings attempts and rejects wrong-window messages",
+      "pass": true,
+      "detail": {
+        "sharedBusy": true,
+        "correctNonceWrongSourceIgnored": true,
+        "explicitCancel": true
+      }
+    },
+    {
+      "name": "AC2 Actual stub consent reconnects existing property, clears banner, preserves history and cursor",
+      "pass": true,
+      "detail": {
+        "actualStubOAuth": true,
+        "historyKept": true,
+        "cursorKept": true,
+        "jobs": [
+          {
+            "kind": "gsc.incremental",
+            "status": "queued"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AC2 Incomplete backfill resumes from saved cursor without data deletion",
+      "pass": true,
+      "detail": {
+        "backfillCursorKept": true
+      }
+    },
+    {
+      "name": "AC2 Missing saved property access keeps warning and historical data",
+      "pass": true,
+      "detail": {
+        "propertyRetained": true,
+        "historyRetained": true
+      }
+    },
+    {
+      "name": "AC2 Server failure retains banner and retry can complete",
+      "pass": true,
+      "detail": {
+        "failureRetainedWarning": true,
+        "retrySucceeded": true
+      }
+    },
+    {
+      "name": "AC4 Business switch while popup open cannot reconnect or replace new business",
+      "pass": true,
+      "detail": {
+        "otherBusinessUnaffected": true,
+        "staleRecoveryIgnored": true
+      }
+    },
+    {
+      "name": "AC5 Viewer sees editor guidance, no recovery action, and server denies write/OAuth",
+      "pass": true,
+      "detail": {
+        "viewerWriteStatus": 403,
+        "noButton": true
+      }
+    },
+    {
+      "name": "AC5 Editor reconnect succeeds; outsider cannot read/write another business",
+      "pass": true,
+      "detail": {
+        "editorRecovery": true,
+        "outsiderStatus": 404
+      }
+    },
+    {
+      "name": "AC1/4 No-data state has no invented saved-through date",
+      "pass": true,
+      "detail": {
+        "noInventedDate": true
+      }
+    },
+    {
+      "name": "AC4 Light and dark banner text contrast meets 4.5:1",
+      "pass": true,
+      "detail": {
+        "light": 5.194936907856562,
+        "dark": 7.1453671479160645
+      }
+    },
+    {
+      "name": "No browser runtime exceptions",
+      "pass": true,
+      "detail": {
+        "count": 0
+      }
+    },
+    {
+      "name": "AC2 COOP-severed consent completes through the nonce-bound same-origin callback",
+      "pass": false,
+      "error": "locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Finish synthetic consent' }) to be visible\u001b[22m\n\n    at /Users/ekene/.codex/worktrees/radar-gsc-reconnection-release/radar-push/.factory/gsc-reconnection/qa/browser.mjs:91:157\n    at async check (/Users/ekene/.codex/worktrees/radar-gsc-reconnection-release/radar-push/.factory/gsc-reconnection/qa/browser.mjs:32:116)\n    at async file:///Users/ekene/.codex/worktrees/radar-gsc-reconnection-release/radar-push/.factory/gsc-reconnection/qa/browser.mjs:87:2",
+      "status": "blocked",
+      "required": false,
+      "reason": "Optional synthetic cross-origin consent page did not become available before callback; unchanged main OAuth transport has independent passing coverage and actual same-origin nonce-bound callback passed."
+    }
+  ]
+}

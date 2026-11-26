@@ -1,6 +1,7 @@
 'use client';
 // Dashboard — port of prototype/radar-dashboard.jsx (Dashboard, dashIssues, PerfSummary, DashEmpty, CalMotif, PostMotif).
 import { BrandIcon } from '@/components/brand';
+import { isGscReconnectNeeded } from '@/lib/gsc';
 import React, { useEffect, useState } from 'react';
 import { routeToUrl, useApp, type AppCtx } from '@/client/app';
 import { Btn, EntryStatus, Icon, Metric, Section, Skel, Spark, Status } from '@/components/ui';
@@ -118,7 +119,7 @@ function suggestionIssue(app: AppCtx, n: number, sg: { top: Suggestion | null; h
 function dashIssues(app: AppCtx, B: Workspace, sg: { top: Suggestion | null; highs: Suggestion[] } | null, now: number): Issue[] {
   const { go, act } = app; const out: Issue[] = [];
   const resumeGsc = () => act('gsc.resume', {}, { optimistic: b => ({ ...b, gsc: { ...b.gsc, status: 'syncing', error: null } }) }).catch(() => {});
-  if (B.gsc.status === 'error') out.push({ id: 'gsc', tone: 'bad', label: 'Search Console sync paused', head: 'Search Console stopped syncing.', body: 'Google returned a temporary error.' + (B.gsc.lastSyncedThrough ? ` Data up to ${fmtD(B.gsc.lastSyncedThrough)} is safe.` : ''), btn: <Btn kind="primary" size="lg" icon="refresh" onClick={resumeGsc}>Resume sync</Btn>, btnSmall: <Btn size="sm" icon="refresh" onClick={resumeGsc}>Resume</Btn> });
+  if (B.gsc.status === 'error' && !isGscReconnectNeeded(B.gsc)) out.push({ id: 'gsc', tone: 'bad', label: 'Search Console sync paused', head: 'Search Console stopped syncing.', body: 'Google returned a temporary error.' + (B.gsc.lastSyncedThrough ? ` Data up to ${fmtD(B.gsc.lastSyncedThrough)} is safe.` : ''), btn: <Btn kind="primary" size="lg" icon="refresh" onClick={resumeGsc}>Resume sync</Btn>, btnSmall: <Btn size="sm" icon="refresh" onClick={resumeGsc}>Resume</Btn> });
   const failed = B.calendar.entries.find(e => e.status === 'failed');
   if (failed) {
     out.push({ id: 'pub', tone: 'bad', label: 'Publishing failed', head: 'Radar is unable to publish this post.', body: `“${failed.title}” Your article is saved.`, btn: <Btn kind="primary" size="lg" onClick={() => go('article', failed.id)}>View article</Btn>, btnSmall: <Btn size="sm" onClick={() => go('article', failed.id)}>View article</Btn> });
