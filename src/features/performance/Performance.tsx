@@ -2,6 +2,7 @@
 // Performance (Search + AI Visibility) — port of prototype/radar-performance.jsx.
 // Data: gsc.search / suggestions.list / visibility.list read actions; writes go through server actions and jobs.
 import { BrandIcon } from '@/components/brand';
+import { isGscReconnectNeeded } from '@/lib/gsc';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/client/app';
 import { Btn, Metric, PageHead, Section, Seg, Sheet, Skel, Status, Tabs } from '@/components/ui';
@@ -84,7 +85,7 @@ function SearchTab() {
     return <div className="col" style={{ gap: 18 }}><Status tone="signal" pulse>Syncing Search Console · {Math.round(pct)}%</Status><p className="sub small">Importing 16 months of data. This page fills in automatically.</p><SyncSkel /></div>;
   }
   const resume = async () => { setResuming(true); try { await app.act('gsc.resume', {}); } catch { /* toasted */ } finally { setResuming(false); } };
-  const errRow = g.status === 'error' && <div className="row" style={{ gap: 14, marginBottom: 22, flexWrap: 'wrap' }}><Status tone="bad">Sync paused</Status><span className="small sub grow">Showing data through {fmtD(g.lastSyncedThrough)}. Google returned a temporary error.</span><Btn size="sm" icon="refresh" loading={resuming} onClick={resume}>Resume</Btn></div>;
+  const errRow = g.status === 'error' && !isGscReconnectNeeded(g) && <div className="row" style={{ gap: 14, marginBottom: 22, flexWrap: 'wrap' }}><Status tone="bad">Sync paused</Status><span className="small sub grow">Showing data through {fmtD(g.lastSyncedThrough)}. Google returned a temporary error.</span><Btn size="sm" icon="refresh" loading={resuming} onClick={resume}>Resume</Btn></div>;
   if (data === undefined) return <div>{errRow}<div className="col" style={{ gap: 18 }}><SyncSkel /></div></div>;
   if (data === null) return <div>{errRow}{g.status !== 'error' && <p className="sub">Search Console has no data for this property yet.</p>}</div>;
   const agg = data.cur; const pagg = data.prev;

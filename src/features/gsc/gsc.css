@@ -1,0 +1,9 @@
+.gsc-reconnect-banner{display:flex;align-items:center;gap:14px 18px;max-width:1080px;margin:0 auto 28px;padding:18px 20px;border:1px solid color-mix(in oklch,var(--signal-ink) 22%,var(--signal-wash));border-radius:12px;background:var(--signal-wash);color:var(--signal-ink)}
+.gsc-reconnect-copy{flex:1;min-width:0}
+.gsc-reconnect-copy h2{font-size:15px;line-height:1.4;letter-spacing:-.01em}
+.gsc-reconnect-copy p,.gsc-reconnect-note{font-size:14px;line-height:1.5;color:var(--signal-ink)}
+.gsc-reconnect-copy p{margin-top:3px;max-width:70ch}
+.gsc-reconnect-action{display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:300px;min-width:0}
+.gsc-reconnect-error{font-size:14px;line-height:1.5;color:var(--bad);overflow-wrap:anywhere}
+.gsc-reconnect-note{max-width:28ch}
+@media(max-width:700px){.gsc-reconnect-banner{align-items:flex-start;flex-wrap:wrap;padding:16px;gap:10px 12px}.gsc-reconnect-copy{flex-basis:calc(100% - 32px)}.gsc-reconnect-banner>.gsc-reconnect-action,.gsc-reconnect-banner>.gsc-reconnect-note{margin-inline-start:32px;max-width:calc(100% - 32px)}.gsc-reconnect-copy p{font-size:14px}}
